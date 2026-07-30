@@ -15,6 +15,7 @@ const ROCK_DARK = 0x6e3a12;
 const ROCK_EDGE = 0x46220a;
 const GOLD = 0xc8a000;
 const GOLD_LIGHT = 0xe8cc50;
+const GOLD_DARK = 0x8a6e00;
 const GRASS = 0x00a800;
 const GRASS_DARK = 0x006e00;
 const WOOD = 0x8a5a28;
@@ -45,25 +46,62 @@ function speckle(
   count: number,
 ): void {
   for (let n = 0; n < count; n++) {
-    const sx = x + rng() * w;
-    const sy = y + rng() * h;
-    const size = 2 + rng() * 4;
+    const sx = Math.floor(x + rng() * w);
+    const sy = Math.floor(y + rng() * h);
+    const size = 2 + Math.floor(rng() * 3) * 2;
     const color = rng() < 0.5 ? ROCK_LIGHT : ROCK_DARK;
-    g.rect(sx, sy, size, Math.max(2, size * 0.6)).fill({ color, alpha: 0.55 });
+    g.rect(sx, sy, size, Math.max(2, size - 2)).fill({ color, alpha: 0.6 });
   }
+}
+
+/** Short stepped cracks of dark mineral running through the rock. */
+function veins(
+  g: Graphics,
+  rng: () => number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  count: number,
+): void {
+  for (let n = 0; n < count; n++) {
+    let vx = Math.floor(x + rng() * w);
+    let vy = Math.floor(y + rng() * h);
+    const steps = 4 + Math.floor(rng() * 5);
+    const down = rng() < 0.5 ? 1 : -1;
+    for (let s = 0; s < steps; s++) {
+      g.rect(vx, vy, 2, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
+      vx += 2;
+      if (rng() < 0.6) vy += 2 * down;
+    }
+  }
+}
+
+function mound(g: Graphics, x: number, w: number, h: number): void {
+  g.rect(x - w / 2, GROUND_Y - h, w, h).fill(ROCK);
+  g.rect(x - w / 2 + 5, GROUND_Y - h - 4, w - 10, 4).fill(ROCK);
+  g.rect(x - w / 2 + 5, GROUND_Y - h - 6, w - 10, 2).fill(GRASS);
+  g.rect(x - w / 2, GROUND_Y - h - 2, w, 2).fill(GRASS);
+  g.rect(x - w / 2, GROUND_Y - h, w, 2).fill(GRASS_DARK);
 }
 
 function drawScenery(g: Graphics): void {
   const rng = mulberry32(0xa9e27);
 
-  // Distant gold pillars, muted so the foreground reads.
+  // Distant gold pillars: capital, banded shaft, base.
   for (const px of [310, 490, 670]) {
-    g.rect(px - 23, 106, 46, 14).fill({ color: GOLD, alpha: 0.4 });
-    g.rect(px - 17, 120, 34, GROUND_Y - 120).fill({ color: GOLD, alpha: 0.36 });
-    g.rect(px - 10, 120, 8, GROUND_Y - 120).fill({ color: GOLD_LIGHT, alpha: 0.34 });
+    g.rect(px - 26, 100, 52, 8).fill({ color: GOLD, alpha: 0.5 });
+    g.rect(px - 22, 108, 44, 8).fill({ color: GOLD, alpha: 0.5 });
+    g.rect(px - 17, 116, 34, GROUND_Y - 116).fill({ color: GOLD, alpha: 0.45 });
+    g.rect(px - 10, 116, 8, GROUND_Y - 116).fill({ color: GOLD_LIGHT, alpha: 0.4 });
+    for (let by = 140; by < GROUND_Y - 20; by += 26) {
+      g.rect(px - 17, by, 34, 3).fill({ color: GOLD_DARK, alpha: 0.4 });
+    }
+    g.rect(px - 22, GROUND_Y - 12, 44, 12).fill({ color: GOLD, alpha: 0.5 });
   }
 
-  // Ceiling: rock mass with a jagged underside (flattened above the hatch).
+  // Ceiling: rock mass with a jagged underside (flattened above the hatch),
+  // stalactites at the deep points, and moss vines.
   const edge: [number, number][] = [];
   for (let x = 0; x <= WORLD_WIDTH; x += 60) {
     const flat = Math.abs(x - SPAWN_X) < 50;
@@ -72,28 +110,47 @@ function drawScenery(g: Graphics): void {
   const ceiling: number[] = [0, 0, WORLD_WIDTH, 0];
   for (let i = edge.length - 1; i >= 0; i--) ceiling.push(edge[i][0], edge[i][1]);
   g.poly(ceiling).fill(ROCK);
-  speckle(g, rng, 0, 0, WORLD_WIDTH, 42, 120);
+  speckle(g, rng, 0, 0, WORLD_WIDTH, 42, 150);
+  veins(g, rng, 20, 6, WORLD_WIDTH - 40, 30, 14);
   g.moveTo(edge[0][0], edge[0][1]);
   for (const [ex, ey] of edge) g.lineTo(ex, ey);
   g.stroke({ width: 3, color: ROCK_EDGE });
 
-  // Hanging moss strands.
   for (const [ex, ey] of edge) {
-    if (rng() < 0.4 || Math.abs(ex - SPAWN_X) < 60 || Math.abs(ex - EXIT_X) < 40) continue;
-    const len = 12 + rng() * 22;
-    g.rect(ex - 1, ey, 2, len).fill({ color: GRASS_DARK, alpha: 0.9 });
-    g.rect(ex - 1, ey, 2, len * 0.45).fill({ color: GRASS, alpha: 0.9 });
+    if (Math.abs(ex - SPAWN_X) < 60 || Math.abs(ex - EXIT_X) < 40) continue;
+    const roll = rng();
+    if (roll < 0.3 && ey > 66) {
+      // Stalactite: stacked shrinking blocks.
+      g.rect(ex - 6, ey - 2, 12, 6).fill(ROCK);
+      g.rect(ex - 4, ey + 4, 8, 5).fill(ROCK);
+      g.rect(ex - 2, ey + 9, 4, 5).fill(ROCK_DARK);
+    } else if (roll < 0.7) {
+      // Vine with leaf nubs.
+      const len = 16 + rng() * 26;
+      g.rect(ex - 1, ey, 2, len).fill({ color: GRASS_DARK, alpha: 0.95 });
+      g.rect(ex - 1, ey, 2, len * 0.4).fill({ color: GRASS, alpha: 0.95 });
+      for (let vy = ey + 6; vy < ey + len - 2; vy += 7) {
+        const side = Math.floor(vy / 7) % 2 === 0 ? 1 : -3;
+        g.rect(ex + side, vy, 2, 2).fill({ color: GRASS, alpha: 0.9 });
+      }
+    }
   }
 
   // Side walls.
   g.rect(0, 0, 22, VIEW_H).fill(ROCK);
   g.rect(WORLD_WIDTH - 26, 0, 26, VIEW_H).fill(ROCK);
-  speckle(g, rng, 0, 60, 20, VIEW_H - 60, 26);
-  speckle(g, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 26);
+  speckle(g, rng, 0, 60, 20, VIEW_H - 60, 30);
+  speckle(g, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 30);
 
-  // Floor slab with a grass fringe and a dithered shade band underneath.
+  // Low grassy mounds along the back of the walkway.
+  mound(g, 185, 64, 10);
+  mound(g, 555, 44, 8);
+  mound(g, 865, 52, 12);
+
+  // Floor slab: grass fringe, dithered shade band, mineral veins.
   g.rect(0, GROUND_Y + 2, WORLD_WIDTH, VIEW_H - GROUND_Y - 2).fill(ROCK);
-  speckle(g, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 110);
+  speckle(g, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 130);
+  veins(g, rng, 20, GROUND_Y + 10, WORLD_WIDTH - 40, VIEW_H - GROUND_Y - 20, 10);
   for (let row = 0; row < 3; row++) {
     for (let x = 24; x < WORLD_WIDTH - 26; x += 6) {
       g.rect(x + (row % 2) * 3, GROUND_Y + 7 + row * 3, 3, 3).fill({
@@ -104,25 +161,33 @@ function drawScenery(g: Graphics): void {
   }
   g.rect(0, GROUND_Y - 3, WORLD_WIDTH, 6).fill(GRASS);
   g.rect(0, GROUND_Y + 3, WORLD_WIDTH, 3).fill(GRASS_DARK);
-  for (let n = 0; n < 60; n++) {
-    const bx = 24 + rng() * (WORLD_WIDTH - 52);
-    g.rect(bx, GROUND_Y - 6, 1.5, 4).fill({ color: GRASS, alpha: 0.9 });
+  for (let n = 0; n < 90; n++) {
+    const bx = Math.floor(24 + rng() * (WORLD_WIDTH - 52));
+    g.rect(bx, GROUND_Y - 6, 2, 4).fill({ color: GRASS, alpha: 0.95 });
+    if (rng() < 0.3) g.rect(bx + 3, GROUND_Y - 5, 2, 3).fill({ color: GRASS_DARK, alpha: 0.9 });
   }
 
-  // Entrance hatch hanging under the ceiling above the spawn burrow.
+  // Entrance hatch: slatted wooden box with a propped-open slatted lid.
   g.poly([SPAWN_X - 18, 64, SPAWN_X - 36, 46, SPAWN_X - 30, 41, SPAWN_X - 12, 59]).fill(WOOD);
+  g.poly([SPAWN_X - 33, 46, SPAWN_X - 27, 40, SPAWN_X - 25, 42, SPAWN_X - 31, 48]).fill(WOOD_DARK);
   g.rect(SPAWN_X - 18, 62, 36, 14).fill(WOOD);
   g.rect(SPAWN_X - 18, 62, 36, 3).fill(WOOD_DARK);
+  for (const sx of [-8, 2, 12]) {
+    g.rect(SPAWN_X + sx, 65, 2, 11).fill({ color: WOOD_DARK, alpha: 0.8 });
+  }
   g.rect(SPAWN_X - 13, 67, 26, 7).fill(VOID);
 
-  // Exit: stone arch with a dark doorway (torch flames are animated).
+  // Exit: stone arch with grout lines and torch stands (flames animate).
   g.rect(EXIT_X - 18, GROUND_Y - 40, 36, 40).fill(STONE_DARK);
   g.circle(EXIT_X, GROUND_Y - 38, 18).fill(STONE_DARK);
+  g.rect(EXIT_X - 18, GROUND_Y - 28, 36, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
+  g.rect(EXIT_X - 18, GROUND_Y - 14, 36, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
+  g.rect(EXIT_X - 2, GROUND_Y - 52, 4, 8).fill({ color: ROCK_EDGE, alpha: 0.8 });
   g.rect(EXIT_X - 10, GROUND_Y - 32, 20, 32).fill(VOID);
   g.circle(EXIT_X, GROUND_Y - 32, 10).fill(VOID);
   for (const tx of [EXIT_X - 27, EXIT_X + 27]) {
     g.rect(tx - 2, GROUND_Y - 26, 4, 26).fill(WOOD_DARK);
-    g.rect(tx - 4, GROUND_Y - 29, 8, 4).fill(STONE_DARK);
+    g.rect(tx - 4, GROUND_Y - 30, 8, 5).fill(STONE_DARK);
   }
 }
 
@@ -133,16 +198,16 @@ interface Motion {
 
 function animFor(state: string): AgentAnim {
   switch (state) {
-    case 'walking':
-      return 'walk';
     case 'working':
       return 'work';
     case 'delivering':
       return 'deliver';
     default:
-      return 'idle';
+      return 'walk'; // idle IS walking: the patrol is the resting state
   }
 }
+
+const ANIM_FPS: Record<AgentAnim, number> = { walk: 12, work: 8, deliver: 10 };
 
 /**
  * Renders the side-view world. Pure presentation: positions and states come
@@ -173,7 +238,13 @@ export function WorldCanvas({
     const motion = new Map<string, Motion>();
 
     app
-      .init({ width: WORLD_WIDTH, height: VIEW_H, background: VOID, antialias: true })
+      .init({
+        width: WORLD_WIDTH,
+        height: VIEW_H,
+        background: VOID,
+        antialias: false,
+        roundPixels: true,
+      })
       .then(() => {
         if (destroyed) {
           app.destroy(true);
@@ -200,16 +271,15 @@ export function WorldCanvas({
           if (!w) return;
           const t = performance.now() / 1000;
 
-          // Torch flames flanking the exit.
+          // Pixel flames flanking the exit, three flicker frames.
           for (const [k, tx] of [EXIT_X - 27, EXIT_X + 27].entries()) {
-            const lick = Math.sin(t * 9 + k * 2.1) * 2.5;
-            const top = GROUND_Y - 40 - Math.abs(Math.sin(t * 7 + k)) * 3;
-            dynamic
-              .poly([tx - 4, GROUND_Y - 29, tx + 4, GROUND_Y - 29, tx + lick, top])
-              .fill(FLAME);
-            dynamic
-              .poly([tx - 2, GROUND_Y - 29, tx + 2, GROUND_Y - 29, tx + lick * 0.6, top + 5])
-              .fill(FLAME_CORE);
+            const v = Math.floor(t * 8 + k * 1.7) % 3;
+            const sway = v === 0 ? 0 : v === 1 ? -2 : 2;
+            const base = GROUND_Y - 30;
+            dynamic.rect(tx - 3, base - 4, 6, 4).fill(FLAME);
+            dynamic.rect(tx - 2 + sway, base - 8, 4, 4).fill(FLAME);
+            dynamic.rect(tx - 1 + sway, base - 7, 2, 3).fill(FLAME_CORE);
+            dynamic.rect(tx - 1 - sway, base - 11, 2, 3).fill(FLAME);
           }
 
           // Work stations: wooden signposts with a status pennant.
@@ -219,7 +289,7 @@ export function WorldCanvas({
             dynamic.rect(x - 1.5, GROUND_Y - 30, 3, 30).fill(WOOD_DARK);
             dynamic.rect(x - 11, GROUND_Y - 40, 22, 11).fill(WOOD);
             dynamic.rect(x - 11, GROUND_Y - 40, 22, 2).fill(WOOD_DARK);
-            const wave = Math.sin(t * 6 + job.slot) * 1.5;
+            const wave = Math.floor(t * 6 + job.slot) % 2 === 0 ? 0 : 2;
             dynamic
               .poly([x - 1, GROUND_Y - 52, x - 1, GROUND_Y - 41, x + 13 + wave, GROUND_Y - 46.5])
               .fill(job.status === 'running' ? FLAME : GRASS);
@@ -241,8 +311,7 @@ export function WorldCanvas({
             const rx = Math.round(m.x);
             const anim = animFor(a.state);
             const seq = agentTextures[anim];
-            const fps = anim === 'work' ? 6 : anim === 'idle' ? 1 : 10;
-            const frame = Math.floor(t * fps + i * 1.7) % seq.length;
+            const frame = Math.floor(t * ANIM_FPS[anim] + i * 1.7) % seq.length;
 
             let sprite = sprites.get(a.id);
             if (!sprite) {
@@ -252,6 +321,14 @@ export function WorldCanvas({
               sprite.cursor = 'pointer';
               const id = a.id;
               sprite.on('pointerdown', () => onSelectRef.current(id));
+              sprite.on('pointerover', () => {
+                const label = labels.get(id);
+                if (label) label.visible = true;
+              });
+              sprite.on('pointerout', () => {
+                const label = labels.get(id);
+                if (label) label.visible = false;
+              });
               spriteLayer.addChild(sprite);
               sprites.set(a.id, sprite);
             }
@@ -266,11 +343,12 @@ export function WorldCanvas({
                 style: { fill: a.color, fontSize: 9, fontFamily: 'monospace' },
               });
               label.anchor.set(0.5);
-              label.alpha = 0.85;
+              label.alpha = 0.9;
+              label.visible = false; // hover-only, like a proper diorama
               labelLayer.addChild(label);
               labels.set(a.id, label);
             }
-            label.position.set(rx, GROUND_Y - 46);
+            label.position.set(rx, GROUND_Y - 48);
           }
         });
       });

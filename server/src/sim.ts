@@ -1,5 +1,5 @@
 import type { Agentling, JobEvent, WorldState } from '@agentlings/shared';
-import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
+import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import type { Executor } from './executors/executor';
 import type { JobQueue } from './queue';
 
@@ -13,6 +13,8 @@ export type OnOutcome = (
 ) => void;
 
 const WALK_SPEED = 6; // world units per tick
+const PATROL_MIN = 48; // just clear of the left rock wall
+const PATROL_MAX = 950; // bounce at the right wall, past the arch
 const NAMES = ['Pip', 'Dot', 'Moss', 'Bea'];
 const COLORS = [0x7bd88f, 0x6fb7ff, 0xffb86c, 0xff8fa3];
 
@@ -28,6 +30,8 @@ export function stationX(slot: number): number {
 export class Sim {
   tick = 0;
   agentlings: Agentling[];
+  /** Patrol heading per agentling; 'idle' means walking the level like a lemming. */
+  private dirs = new Map<string, 1 | -1>();
 
   constructor(
     private queue: JobQueue,
@@ -40,12 +44,13 @@ export class Sim {
       name,
       color: COLORS[i],
       state: 'idle',
-      x: SPAWN_X + i * 26,
-      targetX: SPAWN_X + i * 26,
+      x: 150 + i * 180,
+      targetX: 150 + i * 180,
       role: 'worker',
       jobsDone: 0,
       jobsFailed: 0,
     }));
+    this.agentlings.forEach((a, i) => this.dirs.set(a.id, i % 2 === 0 ? 1 : -1));
   }
 
   state(): WorldState {
@@ -58,7 +63,7 @@ export class Sim {
       switch (a.state) {
         case 'idle':
           this.tryPickUp(a);
-          if (a.state === 'idle') this.wander(a);
+          if (a.state === 'idle') this.patrol(a);
           break;
         case 'walking':
         case 'delivering':
@@ -68,6 +73,20 @@ export class Sim {
           break; // waiting on the executor promise
       }
     }
+  }
+
+  /** The resting state is motion: march the level, turn at the walls. */
+  private patrol(a: Agentling): void {
+    const dir = this.dirs.get(a.id) ?? 1;
+    a.x += WALK_SPEED * dir;
+    if (a.x >= PATROL_MAX) {
+      a.x = PATROL_MAX;
+      this.dirs.set(a.id, -1);
+    } else if (a.x <= PATROL_MIN) {
+      a.x = PATROL_MIN;
+      this.dirs.set(a.id, 1);
+    }
+    a.targetX = a.x;
   }
 
   private tryPickUp(a: Agentling): void {
@@ -91,10 +110,10 @@ export class Sim {
 
   private arrive(a: Agentling): void {
     if (a.state === 'delivering') {
-      // Result dropped at the exit; head home.
+      // Result dropped at the exit; turn around and rejoin the patrol.
       a.jobId = undefined;
-      a.state = 'walking';
-      a.targetX = this.homeX();
+      a.state = 'idle';
+      this.dirs.set(a.id, -1);
       return;
     }
     if (!a.jobId) {
@@ -137,19 +156,7 @@ export class Sim {
         a.jobsFailed++;
         this.onOutcome(a, job.title, 'failed', message);
         a.jobId = undefined;
-        a.state = 'walking';
-        a.targetX = this.homeX();
+        a.state = 'idle'; // shake it off, back on patrol
       });
-  }
-
-  private wander(a: Agentling): void {
-    if (Math.random() < 0.02) {
-      a.state = 'walking';
-      a.targetX = this.homeX();
-    }
-  }
-
-  private homeX(): number {
-    return SPAWN_X + Math.random() * 100;
   }
 }

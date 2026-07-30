@@ -3,7 +3,8 @@ import { Texture } from 'pixi.js';
 /**
  * Hand-authored pixel-art frames for the agentlings, stored as character
  * grids and baked into nearest-neighbor textures at startup. 18x20 logical
- * pixels per frame, rendered at SPRITE_SCALE in the world.
+ * pixels per frame, rendered at SPRITE_SCALE in the world. Original art in
+ * the spirit of the classic: big mop of hair, blue gown, bare stepping feet.
  */
 export const SPRITE_SCALE = 2;
 
@@ -14,11 +15,11 @@ const PALETTE: Record<string, string> = {
   k: '#14141e', // eye / outline
   g: '#35c435', // hair
   G: '#1e8c1e', // hair shade
-  s: '#f0e0d0', // skin
+  s: '#f0e0d0', // skin / feet
   S: '#c09878', // skin shade
-  b: '#4650ff', // robe
-  B: '#2c34b4', // robe shade
-  f: '#202030', // legs / feet
+  b: '#4650ff', // gown
+  B: '#2c34b4', // gown shade
+  f: '#202030', // legs
   p: '#d8b830', // parcel
   P: '#a88820', // parcel shade
   h: '#7a4a20', // pickaxe handle
@@ -26,68 +27,98 @@ const PALETTE: Record<string, string> = {
 };
 
 // Facing right; the renderer flips with a negative x-scale.
-const IDLE = [
+// Stand pose — also the passing frame of the walk cycle and the portrait.
+const BASE = [
   '..................',
-  '..................',
-  '......ggggg.......',
-  '.....ggggggg......',
+  '.....gggggg.......',
   '....gggggggg......',
-  '....gGggggggg.....',
-  '....ggggggggg.....',
-  '....gGgggsssss....',
-  '....gggggsssks....',
-  '.....GggggsssS....',
-  '......ggssSS......',
-  '.....bbbbbbbb.....',
-  '....sbbbbbbbbs....',
-  '....sbbbbbbbbs....',
-  '.....bbbbbbbb.....',
-  '.....bbbbbbBB.....',
-  '.....bbbbbbBB.....',
-  '......ff..ff......',
-  '......ff..ff......',
-  '.....fff..fff.....',
+  '...gggggggggg.....',
+  '...gGggggggggg....',
+  '...gGgggggggg.....',
+  '....Gggggssss.....',
+  '....Gggggsssks....',
+  '.....GgggsssS.....',
+  '......ggsssS......',
+  '.....bbbbbbb......',
+  '.....bbbbbbbs.....',
+  '.....bbbbbbbs.....',
+  '.....bbbbbbb......',
+  '.....bbbbbBB......',
+  '.....bbbbbBB......',
+  '.....bbbbbbB......',
+  '.......ff.........',
+  '.......ss.........',
+  '......ssss........',
 ];
 
 function withRows(base: string[], patch: Record<number, string>): string[] {
   return base.map((row, i) => patch[i] ?? row);
 }
 
-const WALK_OPEN = withRows(IDLE, {
-  17: '.....ff....ff.....',
-  18: '....ff......ff....',
-  19: '...fff......fff...',
+// Classic 4-frame gait: contact (legs split) → down (body drops a pixel)
+// → passing (stand) → high (opposite split).
+const WALK_CONTACT = withRows(BASE, {
+  17: '......ff.ff.......',
+  18: '.....ss...ss......',
+  19: '....ss.....ss.....',
 });
 
-const WALK_SHUFFLE = withRows(IDLE, {
-  17: '.....ff...ff......',
-  18: '.....ff...ff......',
-  19: '....fff...fff.....',
+const WALK_HIGH = withRows(BASE, {
+  17: '......ff.ff.......',
+  18: '......ss..ss......',
+  19: '.....ss....ss.....',
 });
 
-const WORK_RAISED = withRows(IDLE, {
-  7: '....gGgggsssss.mm.',
-  8: '....gggggsssks..mm',
-  9: '.....GggggsssS.h..',
-  10: '......ggssSS..h...',
-  11: '.....bbbbbbbbh....',
-});
-
-const WORK_SWUNG = withRows(IDLE, {
-  13: '....sbbbbbbbbsh...',
-  14: '.....bbbbbbbb.h...',
-  15: '.....bbbbbbBB..hm.',
-  16: '.....bbbbbbBB.mm..',
-});
-
-const DELIVER_TOP = [
-  '......pppppp......',
-  '.....spPPPPps.....',
-  '......pppppp......',
+const WALK_DOWN = [
+  '..................',
+  ...BASE.slice(0, 16),
+  '......ffff........',
+  '......ss.ss.......',
+  '.....ss...ss......',
 ];
 
-const DELIVER_OPEN = [...DELIVER_TOP, ...IDLE.slice(3, 17), ...WALK_OPEN.slice(17)];
-const DELIVER_SHUFFLE = [...DELIVER_TOP, ...IDLE.slice(3, 17), ...WALK_SHUFFLE.slice(17)];
+// Three-frame pickaxe swing: raised → mid → struck.
+const WORK_RAISED = withRows(BASE, {
+  8: '.....GgggsssS..mm.',
+  9: '......ggsssS...hm.',
+  10: '.....bbbbbbb..h...',
+  11: '.....bbbbbbbsh....',
+});
+
+const WORK_MID = withRows(BASE, {
+  11: '.....bbbbbbbs..m..',
+  12: '.....bbbbbbbshhhm.',
+});
+
+const WORK_STRUCK = withRows(BASE, {
+  13: '.....bbbbbbb.h....',
+  14: '.....bbbbbBB..h...',
+  15: '.....bbbbbBB...hm.',
+  16: '.....bbbbbbB...mm.',
+});
+
+// Delivery walk: the result carried overhead, two-step gait underneath.
+const DELIVER_TOP = [
+  '.....ppppppp......',
+  '....spPPPPPps.....',
+  '.....ppppppp......',
+];
+
+const DELIVER_BODY = [...BASE.slice(2, 10), ...BASE.slice(10, 17)];
+
+const DELIVER_A = [
+  ...DELIVER_TOP,
+  ...DELIVER_BODY,
+  '.....ss...ss......',
+  '....ss.....ss.....',
+];
+
+const DELIVER_B = [
+  ...DELIVER_TOP,
+  ...DELIVER_BODY,
+  '......ss..ss......',
+  '.....ss....ss.....',
+];
 
 function makeTexture(rows: string[]): Texture {
   if (rows.length !== H || rows.some((r) => r.length !== W)) {
@@ -110,13 +141,13 @@ function makeTexture(rows: string[]): Texture {
   return texture;
 }
 
-/** Paints the idle frame big and crisp onto a plain canvas (profile portrait). */
+/** Paints the stand frame big and crisp onto a plain canvas (profile portrait). */
 export function renderPortrait(canvas: HTMLCanvasElement, scale = 4): void {
   canvas.width = W * scale;
   canvas.height = H * scale;
   const ctx = canvas.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
-  IDLE.forEach((row, y) => {
+  BASE.forEach((row, y) => {
     for (let x = 0; x < W; x++) {
       const color = PALETTE[row[x]];
       if (!color) continue;
@@ -126,14 +157,22 @@ export function renderPortrait(canvas: HTMLCanvasElement, scale = 4): void {
   });
 }
 
-export type AgentAnim = 'idle' | 'walk' | 'work' | 'deliver';
+export type AgentAnim = 'walk' | 'work' | 'deliver';
 
 export function buildAgentTextures(): Record<AgentAnim, Texture[]> {
-  const idle = makeTexture(IDLE);
   return {
-    idle: [idle],
-    walk: [makeTexture(WALK_OPEN), idle, makeTexture(WALK_SHUFFLE), idle],
-    work: [makeTexture(WORK_RAISED), makeTexture(WORK_SWUNG)],
-    deliver: [makeTexture(DELIVER_OPEN), makeTexture(DELIVER_SHUFFLE)],
+    walk: [
+      makeTexture(WALK_CONTACT),
+      makeTexture(WALK_DOWN),
+      makeTexture(BASE),
+      makeTexture(WALK_HIGH),
+    ],
+    work: [
+      makeTexture(WORK_RAISED),
+      makeTexture(WORK_MID),
+      makeTexture(WORK_STRUCK),
+      makeTexture(WORK_MID),
+    ],
+    deliver: [makeTexture(DELIVER_A), makeTexture(DELIVER_B)],
   };
 }

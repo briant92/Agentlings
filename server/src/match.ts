@@ -110,12 +110,22 @@ const DOMAIN: Record<string, string[]> = {
   online: ['web', 'sources'],
 };
 
-const INTENT_WEIGHT = 1;
-const DOMAIN_WEIGHT = 0.35;
+const INTENT_WEIGHT = 1.5;
+const DOMAIN_WEIGHT = 0.55;
 
+/**
+ * A concept is one word's worth of evidence however many synonyms express it.
+ * Splitting the weight across the set matters once the corpus is large: a
+ * four-synonym concept like "write" would otherwise get four shots at every
+ * document while a rare, specific word like "react" gets one.
+ */
 function expansionsFor(word: string): { terms: string[]; weight: number } {
-  if (INTENT[word]) return { terms: INTENT[word], weight: INTENT_WEIGHT };
-  if (DOMAIN[word]) return { terms: DOMAIN[word], weight: DOMAIN_WEIGHT };
+  const spread = (terms: string[], weight: number) => ({
+    terms,
+    weight: weight / Math.sqrt(terms.length),
+  });
+  if (INTENT[word]) return spread(INTENT[word], INTENT_WEIGHT);
+  if (DOMAIN[word]) return spread(DOMAIN[word], DOMAIN_WEIGHT);
   return { terms: [], weight: 0 };
 }
 
@@ -297,7 +307,11 @@ export class MatchIndex {
     const understood = spoken.filter((w) => this.understands(w)).length;
     const coverage = spoken.length > 0 ? understood / spoken.length : 0;
     const strength = best / (best + 2);
-    const confidence = Math.round((0.3 * strength + 0.7 * coverage) * 100) / 100;
+    let score = 0.3 * strength + 0.7 * coverage;
+    // Hard rule, not a weighting: if most of the sentence meant nothing to us,
+    // one strongly-matching word is a coincidence and can't buy confidence.
+    if (coverage < 0.3) score = Math.min(score, MIN_CONFIDENCE - 0.05);
+    const confidence = Math.round(score * 100) / 100;
 
     return {
       roles,

@@ -29,7 +29,8 @@ export function parseFrontmatter(
         .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
         .filter(Boolean);
     } else {
-      meta[kv[1]] = raw;
+      // Published templates quote descriptions as often as not.
+      meta[kv[1]] = raw.replace(/^(['"])([\s\S]*)\1$/, '$2');
     }
   }
   return { meta, body: match[2].trim() };

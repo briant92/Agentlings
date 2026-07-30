@@ -101,6 +101,13 @@ describe('concept matcher', () => {
     expect(result.role).toBeNull();
   });
 
+  it('will not let one strong word carry a sentence it did not understand', () => {
+    // "research" alone matches the scout hard; the rest is meaningless here.
+    const result = suggest('research the zorblatt frobnicator quux glorp');
+    expect(result.confidence).toBeLessThan(MIN_CONFIDENCE);
+    expect(result.role).toBeNull();
+  });
+
   it('reports what the library cannot cover', () => {
     const result = suggest('read my PDFs and pull the numbers into a spreadsheet');
     expect(result.gaps).toContain('pdfs');

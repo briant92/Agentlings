@@ -208,7 +208,10 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
                 </span>
                 {hit.state === 'installed' && <span className="badge done">in your library</span>}
                 {hit.state === 'outdated' && <span className="badge running">update available</span>}
-                <span className="dim lib-repo">{hit.entry.repo}</span>
+                <span className="dim lib-repo">
+                  {hit.entry.repo}
+                  {hit.entry.license ? ` · ${hit.entry.license}` : ''}
+                </span>
               </div>
               <p className="lib-desc">{hit.entry.description}</p>
               <div className="actions">

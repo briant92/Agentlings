@@ -21,6 +21,8 @@ export interface Source {
   kind: 'role' | 'skill';
   include: string[];
   trust: string;
+  /** The source repo's licence, shown before anything is copied in. */
+  license?: string;
 }
 
 export interface LibraryIndex {
@@ -36,9 +38,13 @@ export interface HttpResponse {
 }
 export type Http = (url: string, headers: Record<string, string>) => Promise<HttpResponse>;
 
-/** Per source, so one enormous repo can't stall a sync. Overflow is reported. */
-const MAX_PER_SOURCE = 60;
-const BATCH = 8;
+/**
+ * Per source, so one enormous repo can't stall a sync. Overflow is reported,
+ * never dropped quietly. Raw file reads don't count against the API rate
+ * limit, so the cap is about sync time rather than quota.
+ */
+const MAX_PER_SOURCE = 250;
+const BATCH = 12;
 const API = 'https://api.github.com';
 const RAW = 'https://raw.githubusercontent.com';
 /** A week: templates change slowly and every request is someone's rate limit. */
@@ -118,6 +124,7 @@ async function syncSource(
     repo: source.repo,
     kind: source.kind,
     trust: source.trust,
+    ...(source.license ? { license: source.license } : {}),
     count: 0,
     ok: false,
   };
@@ -159,6 +166,7 @@ async function syncSource(
           sha,
           source: source.name,
           trust: source.trust,
+          ...(source.license ? { license: source.license } : {}),
         } satisfies CatalogEntry;
       })
     ).filter((entry): entry is CatalogEntry => entry !== null);

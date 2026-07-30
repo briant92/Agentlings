@@ -104,6 +104,8 @@ export interface CatalogEntry {
   sha: string;
   source: string;
   trust: string;
+  /** The source repo's licence — installing copies the file into your project. */
+  license?: string;
 }
 
 export interface SourceStatus {
@@ -112,6 +114,7 @@ export interface SourceStatus {
   repo: string;
   kind: 'role' | 'skill';
   trust: string;
+  license?: string;
   sha?: string;
   count: number;
   ok: boolean;

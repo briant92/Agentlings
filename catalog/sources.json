@@ -1,10 +1,12 @@
 {
   "$comment": [
-    "Where the library looks for new roles and abilities. Curated on purpose:",
-    "an installed role or skill is executable instruction handed to an agent,",
-    "so the default list stays short and known-good. Add your own with the",
-    "same shape — owner/repo, a branch, and the paths worth reading.",
-    "'include' patterns support * and **/."
+    "Where the library looks for new jobs (roles) and abilities (skills).",
+    "Curated on purpose: an installed template is executable instruction",
+    "handed to an agent, so this list stays short, known-good, and checked.",
+    "Every entry below was verified to resolve and to contain parseable",
+    "Claude-format frontmatter. Add your own with the same shape.",
+    "'include' patterns support * (one segment) and **/ (any depth).",
+    "Order matters: on a name collision the first source listed wins."
   ],
   "sources": [
     {
@@ -14,7 +16,38 @@
       "ref": "main",
       "kind": "skill",
       "include": ["**/SKILL.md"],
-      "trust": "official"
+      "trust": "official",
+      "license": "Proprietary — see the repo's LICENSE.txt"
+    },
+    {
+      "name": "voltagent-subagents",
+      "label": "VoltAgent subagents",
+      "repo": "VoltAgent/awesome-claude-code-subagents",
+      "ref": "main",
+      "kind": "role",
+      "include": ["categories/**/*.md"],
+      "trust": "community",
+      "license": "MIT"
+    },
+    {
+      "name": "wshobson-agents",
+      "label": "wshobson agents",
+      "repo": "wshobson/agents",
+      "ref": "main",
+      "kind": "role",
+      "include": ["plugins/*/agents/*.md"],
+      "trust": "community",
+      "license": "MIT"
+    },
+    {
+      "name": "wshobson-skills",
+      "label": "wshobson skills",
+      "repo": "wshobson/agents",
+      "ref": "main",
+      "kind": "skill",
+      "include": ["plugins/**/SKILL.md"],
+      "trust": "community",
+      "license": "MIT"
     }
   ]
 }

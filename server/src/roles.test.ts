@@ -13,6 +13,18 @@ skills: [concise-reports]
 ---
 You are a scout agentling.`;
 
+describe('parseFrontmatter quoting', () => {
+  it('strips quotes published templates wrap descriptions in', () => {
+    const parsed = parseFrontmatter('---\nname: x\ndescription: "Use this when y"\n---\nbody');
+    expect(parsed?.meta.description).toBe('Use this when y');
+  });
+
+  it('leaves inner quotes alone', () => {
+    const parsed = parseFrontmatter('---\nname: x\ndescription: say "hi" twice\n---\nbody');
+    expect(parsed?.meta.description).toBe('say "hi" twice');
+  });
+});
+
 describe('parseFrontmatter', () => {
   it('parses keys, inline arrays, and the body', () => {
     const parsed = parseFrontmatter(SCOUT)!;

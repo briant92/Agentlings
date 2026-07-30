@@ -139,7 +139,32 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
   `tools: string[]` field, and the executor passes only those MCP servers
   into the agentling's Agent SDK session. Default remains no external
   connections — sandbox only.
-- **M3 — deepen the metaphor (parked ideas).** Hazards mapped to real
+- **M3 — say what you need (in progress).** The app is for a non-expert:
+  every setup step becomes a sentence in plain language.
+  - **M3.1 (built).** Concept matcher, `server/src/match.ts`: BM25 over the
+    installed catalog plus a hand-written concept map, split into INTENT
+    (what you want done, full weight) and DOMAIN (what it is done to, a
+    third) so the verb decides the role. Confidence leans on coverage over
+    raw score; below `MIN_CONFIDENCE` it says so instead of guessing, and
+    unknown words come back as `gaps`. Local, deterministic, no auth.
+    `POST /api/match`.
+  - **M3.2 (built).** Hire popup: the agentling lands, then asks "What will
+    <name>'s job be?". Live suggestion with the matched words shown as the
+    reason, `Change` one click away, and the user's sentence stored on the
+    agentling (`jobDescription`) and seeded as its first memory.
+  - **M3.3.** LLM refinement tier — a `--mode=match` single-turn call in
+    `agent-runner.mjs` (structured output, ~3s budget, cached). Refines the
+    local result and never blocks it; Tier 1 stands alone without auth.
+  - **M3.4.** Library sync: a curated `sources.json`, a background GitHub
+    tree sync pinned to commit SHAs, natural-language search over the
+    remote index, and preview-before-install with provenance recorded.
+    Installed templates are executable instructions — never auto-install,
+    never silently update.
+  - **M3.5.** Work intake in one box ("What do you need done?") and results
+    explained in plain English with Approve / Discard; the diff stays one
+    click away.
+  - **M3.6.** First-run tour on an empty install.
+- **M4 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.
 

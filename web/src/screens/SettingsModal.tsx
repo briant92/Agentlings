@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SettingsInfo } from '@agentlings/shared';
 import { api } from '../api';
+import { resetTour, tourSeen } from '../panels/Tour';
 import { crtEnabled, setCrt } from '../ui/crt';
 
 export function SettingsModal({
@@ -12,6 +13,7 @@ export function SettingsModal({
 }) {
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
   const [crt, setCrtState] = useState(crtEnabled());
+  const [tourDone, setTourDone] = useState(tourSeen());
 
   useEffect(() => {
     void api<SettingsInfo>('/api/settings').then(setSettings);
@@ -45,6 +47,23 @@ export function SettingsModal({
             />
             <span>CRT filter — scanlines and vignette over the whole screen.</span>
           </label>
+          <p className="lib-status">
+            {tourDone ? 'You have seen the tour.' : 'The tour runs the next time you open a level.'}
+            {tourDone && (
+              <>
+                {' · '}
+                <button
+                  className="work-link"
+                  onClick={() => {
+                    resetTour();
+                    setTourDone(false);
+                  }}
+                >
+                  show it again
+                </button>
+              </>
+            )}
+          </p>
           <div className="sect">executor</div>
           {settings === null && <p className="dim">Loading…</p>}
           {settings?.executor === 'claude-agent-sdk' && (

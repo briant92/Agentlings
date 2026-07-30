@@ -1020,6 +1020,75 @@ select {
   margin-left: auto;
   font-size: 11px;
 }
+/* First-run tour: a hole punched over the real control, plus a card. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.tour-dim,
+.tour-spot {
+  position: fixed;
+  pointer-events: none;
+}
+.tour-dim {
+  inset: 0;
+  background: rgba(6, 8, 12, 0.72);
+}
+.tour-spot {
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 9999px rgba(6, 8, 12, 0.72),
+    0 0 0 2px var(--db-lime-light) inset;
+}
+.tour-card {
+  position: fixed;
+  width: 300px;
+  background: #10131a;
+  border: 1px solid #33415c;
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.tour-title {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--db-lime-light);
+  margin: 0 0 8px;
+}
+.tour-body {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #d8dce6;
+  margin: 0 0 12px;
+}
+.tour-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tour-foot button {
+  padding: 3px 10px;
+  font-size: 11px;
+}
+.tour-foot button:last-child {
+  margin-left: 0;
+}
+.tour-dots {
+  display: flex;
+  gap: 5px;
+  margin-right: auto;
+}
+.tour-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #33415c;
+}
+.tour-dot.on {
+  background: var(--db-lime-light);
+}
+
 .lib-search {
   width: 100%;
   background: #171a21;

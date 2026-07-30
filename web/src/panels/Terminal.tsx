@@ -77,6 +77,7 @@ export function Terminal({
   return (
     <aside
       className="terminal"
+      data-tour="terminal"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

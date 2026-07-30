@@ -77,6 +77,7 @@ export function WorkBar({
       <form className="work-bar" onSubmit={submit}>
         <input
           className="work-input"
+          data-tour="work"
           placeholder="What do you need done?"
           value={text}
           onChange={(e) => setText(e.target.value)}

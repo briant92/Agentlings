@@ -193,7 +193,13 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     `job.changes`, the terminal card says what approving would change in
     plain words with Approve / Discard / See the changes, and the review
     modal leads with the report and file list, raw patch collapsed.
-  - **M3.6.** First-run tour on an empty install.
+  - **M3.6 (built).** First-run tour: three coach marks over the real
+    controls — hire, the work box, the terminal — rather than a slideshow,
+    so it teaches where things are. Anchored by `data-tour` attributes and
+    re-measured on resize and scroll; a step whose control isn't on screen
+    falls back to a centred card. Runs once (`agentlings:tour` in
+    localStorage), waits for the iris to finish, never opens over a modal,
+    and can be replayed from Settings.
 - **M4 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

@@ -1,13 +1,14 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import type { WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
+import { buildAgentTextures, SPRITE_SCALE, type AgentAnim } from './sprites';
 
 const VIEW_H = 320;
 const GROUND_Y = 258;
 
 // Palette in homage to the classic cave/pillar tilesets: navy void, ochre
-// rock, gold columns, grass greens, torch oranges, blue-robed critters.
+// rock, gold columns, grass greens, torch oranges.
 const ROCK = 0x9a5a22;
 const ROCK_LIGHT = 0xc8842e;
 const ROCK_DARK = 0x6e3a12;
@@ -22,10 +23,6 @@ const STONE_DARK = 0x4a2f14;
 const VOID = 0x0e1038;
 const FLAME = 0xffa030;
 const FLAME_CORE = 0xffd050;
-const HAIR = 0x35c435;
-const SKIN = 0xf0e0d0;
-const ROBE = 0x4650ff;
-const PARCEL = 0xd8b830;
 
 /** Deterministic PRNG so the rock texture doesn't reshuffle between mounts. */
 function mulberry32(seed: number): () => number {
@@ -94,9 +91,17 @@ function drawScenery(g: Graphics): void {
   speckle(g, rng, 0, 60, 20, VIEW_H - 60, 26);
   speckle(g, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 26);
 
-  // Floor slab with a grass fringe on the walkable surface.
+  // Floor slab with a grass fringe and a dithered shade band underneath.
   g.rect(0, GROUND_Y + 2, WORLD_WIDTH, VIEW_H - GROUND_Y - 2).fill(ROCK);
   speckle(g, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 110);
+  for (let row = 0; row < 3; row++) {
+    for (let x = 24; x < WORLD_WIDTH - 26; x += 6) {
+      g.rect(x + (row % 2) * 3, GROUND_Y + 7 + row * 3, 3, 3).fill({
+        color: ROCK_DARK,
+        alpha: 0.4,
+      });
+    }
+  }
   g.rect(0, GROUND_Y - 3, WORLD_WIDTH, 6).fill(GRASS);
   g.rect(0, GROUND_Y + 3, WORLD_WIDTH, 3).fill(GRASS_DARK);
   for (let n = 0; n < 60; n++) {
@@ -126,10 +131,23 @@ interface Motion {
   face: number;
 }
 
+function animFor(state: string): AgentAnim {
+  switch (state) {
+    case 'walking':
+      return 'walk';
+    case 'working':
+      return 'work';
+    case 'delivering':
+      return 'deliver';
+    default:
+      return 'idle';
+  }
+}
+
 /**
  * Renders the side-view world. Pure presentation: positions and states come
  * from the server sim at 10 Hz; the client lerps toward the latest snapshot
- * so movement stays smooth at render rate.
+ * and animates pixel-art sprite frames locally.
  */
 export function WorldCanvas({ world }: { world: WorldState | null }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -143,6 +161,7 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
     let destroyed = false;
     const app = new Application();
     const labels = new Map<string, Text>();
+    const sprites = new Map<string, Sprite>();
     const motion = new Map<string, Motion>();
 
     app
@@ -154,12 +173,16 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
         }
         host.appendChild(app.canvas);
 
+        const agentTextures = buildAgentTextures();
+
         const scenery = new Graphics();
         drawScenery(scenery);
         app.stage.addChild(scenery);
 
         const dynamic = new Graphics();
         app.stage.addChild(dynamic);
+        const spriteLayer = new Container();
+        app.stage.addChild(spriteLayer);
         const labelLayer = new Container();
         app.stage.addChild(labelLayer);
 
@@ -194,7 +217,7 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
               .fill(job.status === 'running' ? FLAME : GRASS);
           }
 
-          // Agentlings, Lemmings-style: green mop, pale face, blue robe.
+          // Agentlings: smoothed positions driving pixel-art sprite frames.
           const alpha = 1 - Math.exp(-ticker.deltaMS / 90);
           for (const [i, a] of w.agentlings.entries()) {
             let m = motion.get(a.id);
@@ -207,49 +230,22 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
             else m.x += dx * alpha;
             if (Math.abs(dx) > 0.6) m.face = Math.sign(dx);
 
-            const rx = m.x;
-            const f = m.face;
-            const moving = a.state === 'walking' || a.state === 'delivering';
-            const bob =
-              a.state === 'working'
-                ? Math.abs(Math.sin(t * 10 + i)) * 2
-                : moving
-                  ? Math.abs(Math.sin(t * 14 + i)) * 1.5
-                  : 0;
-            const by = GROUND_Y - bob;
+            const rx = Math.round(m.x);
+            const anim = animFor(a.state);
+            const seq = agentTextures[anim];
+            const fps = anim === 'work' ? 6 : anim === 'idle' ? 1 : 10;
+            const frame = Math.floor(t * fps + i * 1.7) % seq.length;
 
-            // Feet shuffle when moving.
-            const step = moving ? Math.sin(t * 12 + i * 2) * 3 : 2;
-            dynamic.rect(rx + f * step - 1.5, GROUND_Y - 4, 3, 4).fill(0x202030);
-            dynamic.rect(rx - f * step - 1.5, GROUND_Y - 4, 3, 4).fill(0x202030);
-
-            // Robe, face, hair mop, eye.
-            dynamic.roundRect(rx - 5, by - 16, 10, 13, 2).fill(ROBE);
-            dynamic.circle(rx + f * 1.5, by - 18, 4.2).fill(SKIN);
-            dynamic.circle(rx - f * 0.5, by - 22, 4.6).fill(HAIR);
-            dynamic.circle(rx + f * 2.5, by - 21, 3).fill(HAIR);
-            dynamic.circle(rx - f * 3.5, by - 20.5, 3).fill(HAIR);
-            dynamic.circle(rx + f * 3.2, by - 18.6, 1).fill(0x202030);
-
-            if (a.state === 'working') {
-              // One busy arm, swinging at the station.
-              const swing = Math.sin(t * 12 + i) * 4;
-              dynamic
-                .moveTo(rx + f * 4, by - 12)
-                .lineTo(rx + f * 9, by - 8 + swing)
-                .stroke({ width: 2, color: SKIN });
+            let sprite = sprites.get(a.id);
+            if (!sprite) {
+              sprite = new Sprite(seq[frame]);
+              sprite.anchor.set(0.5, 1);
+              spriteLayer.addChild(sprite);
+              sprites.set(a.id, sprite);
             }
-            if (a.state === 'delivering') {
-              // Both arms up, carrying the result overhead.
-              dynamic.rect(rx - 5, by - 32, 10, 6).fill(PARCEL);
-              dynamic.rect(rx - 5, by - 32, 10, 1.5).fill({ color: WOOD_DARK, alpha: 0.6 });
-              dynamic
-                .moveTo(rx - 4, by - 14)
-                .lineTo(rx - 4, by - 26)
-                .moveTo(rx + 4, by - 14)
-                .lineTo(rx + 4, by - 26)
-                .stroke({ width: 2, color: SKIN });
-            }
+            sprite.texture = seq[frame];
+            sprite.scale.set(SPRITE_SCALE * m.face, SPRITE_SCALE);
+            sprite.position.set(rx, GROUND_Y + 2);
 
             let label = labels.get(a.id);
             if (!label) {
@@ -262,7 +258,7 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
               labelLayer.addChild(label);
               labels.set(a.id, label);
             }
-            label.position.set(rx, by - (a.state === 'delivering' ? 40 : 32));
+            label.position.set(rx, GROUND_Y - 46);
           }
         });
       });

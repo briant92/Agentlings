@@ -37,7 +37,7 @@ the client renders it. Nothing in the world may block or corrupt a job.
 ## Architecture
 
 ```
-web  (Vite + React + PixiJS)  ── WebSocket /ws (world state, 10 Hz)
+web  (Vite + React + PixiJS)  ── WebSocket /ws (world 10 Hz + job events)
                               ── REST /api    (queue, review, resolve)
 server (Node + Hono + ws)     ── sim tick, job queue, sandboxes, executors
 packages/shared               ── domain types + world constants
@@ -51,6 +51,10 @@ packages/shared               ── domain types + world constants
 - `server/src/executors/` — `Executor` interface. M0 ships
   `SimulatedExecutor` (writes `RESULT.md` after a fake delay) so the whole
   loop runs end to end without an API key.
+- `server/src/events.ts` — typed job events (queued / started / progress /
+  done / failed / resolved) broadcast on the WS with a 200-entry replay
+  buffer; the terminal rail in the UI renders them. Movement is never an
+  event — the world tells that story.
 
 ### REST API
 

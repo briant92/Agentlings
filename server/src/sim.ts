@@ -1,7 +1,9 @@
-import type { Agentling, WorldState } from '@agentlings/shared';
+import type { Agentling, JobEvent, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import type { Executor } from './executors/executor';
 import type { JobQueue } from './queue';
+
+export type EmitEvent = (event: Omit<JobEvent, 'id' | 'at'>) => void;
 
 const WALK_SPEED = 6; // world units per tick
 const NAMES = ['Pip', 'Dot', 'Moss', 'Bea'];
@@ -23,6 +25,7 @@ export class Sim {
   constructor(
     private queue: JobQueue,
     private executor: Executor,
+    private emit: EmitEvent = () => {},
   ) {
     this.agentlings = NAMES.map((name, i) => ({
       id: `a${i + 1}`,
@@ -99,15 +102,21 @@ export class Sim {
     }
     a.state = 'working';
     const sandboxDir = this.queue.start(jobId);
+    this.emit({ type: 'started', jobId, title: job.title, agentling: a.name });
     this.executor
-      .run(job, sandboxDir)
+      .run(job, sandboxDir, (detail) =>
+        this.emit({ type: 'progress', jobId, title: job.title, agentling: a.name, detail }),
+      )
       .then((result) => {
         this.queue.complete(jobId, result.summary);
+        this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
         a.state = 'delivering';
         a.targetX = EXIT_X;
       })
       .catch((err: unknown) => {
-        this.queue.fail(jobId, err instanceof Error ? err.message : String(err));
+        const message = err instanceof Error ? err.message : String(err);
+        this.queue.fail(jobId, message);
+        this.emit({ type: 'failed', jobId, title: job.title, agentling: a.name, detail: message });
         a.jobId = undefined;
         a.state = 'walking';
         a.targetX = this.homeX();

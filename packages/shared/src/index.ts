@@ -46,7 +46,25 @@ export interface WorldState {
   jobs: Job[];
 }
 
-export type ServerMessage = { type: 'world'; state: WorldState };
+export type JobEventType = 'queued' | 'started' | 'progress' | 'done' | 'failed' | 'resolved';
+
+/** One line in the reporting terminal. Movement stays visual-only in the world. */
+export interface JobEvent {
+  /** Monotonic per server run; clients dedupe replays by id. */
+  id: number;
+  at: number;
+  type: JobEventType;
+  jobId: string;
+  title: string;
+  /** Agentling name for started/progress/done/failed. */
+  agentling?: string;
+  /** Progress text, result summary, failure reason, or resolve action. */
+  detail?: string;
+}
+
+export type ServerMessage =
+  | { type: 'world'; state: WorldState }
+  | { type: 'events'; events: JobEvent[] };
 
 // World geometry, in logical units the client scales to its canvas.
 export const WORLD_WIDTH = 1000;

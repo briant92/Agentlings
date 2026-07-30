@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { ServerMessage } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
+import { EventLog } from './events';
 import { SimulatedExecutor } from './executors/simulated';
 import { JobQueue } from './queue';
 import { Sim } from './sim';
@@ -16,7 +17,8 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
 const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
 
 const queue = new JobQueue(SANDBOX_ROOT);
-const sim = new Sim(queue, new SimulatedExecutor());
+const eventLog = new EventLog((event) => sendToAll({ type: 'events', events: [event] }));
+const sim = new Sim(queue, new SimulatedExecutor(), (event) => eventLog.emit(event));
 
 const app = new Hono();
 
@@ -32,6 +34,7 @@ app.post('/api/jobs', async (c) => {
     prompt: body.prompt.trim(),
     repoPath: body.repoPath?.trim() || undefined,
   });
+  eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });
 
@@ -55,7 +58,14 @@ app.post('/api/jobs/:id/resolve', async (c) => {
     return c.json({ error: 'action must be "promote" or "discard"' }, 400);
   }
   try {
-    return c.json(queue.resolve(c.req.param('id'), body.action));
+    const job = queue.resolve(c.req.param('id'), body.action);
+    eventLog.emit({
+      type: 'resolved',
+      jobId: job.id,
+      title: job.title,
+      detail: body.action === 'promote' ? 'promoted' : 'discarded',
+    });
+    return c.json(job);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
   }
@@ -67,15 +77,19 @@ const server = serve({ fetch: app.fetch, port: PORT }, (info) => {
 
 const wss = new WebSocketServer({ server: server as HttpServer, path: '/ws' });
 
-function broadcast(): void {
-  const msg: ServerMessage = { type: 'world', state: sim.state() };
+function sendToAll(msg: ServerMessage): void {
   const data = JSON.stringify(msg);
   for (const client of wss.clients) {
     if (client.readyState === WebSocket.OPEN) client.send(data);
   }
 }
 
+wss.on('connection', (socket) => {
+  socket.send(JSON.stringify({ type: 'world', state: sim.state() } satisfies ServerMessage));
+  socket.send(JSON.stringify({ type: 'events', events: eventLog.history() } satisfies ServerMessage));
+});
+
 setInterval(() => {
   sim.step();
-  broadcast();
+  sendToAll({ type: 'world', state: sim.state() });
 }, TICK_MS);

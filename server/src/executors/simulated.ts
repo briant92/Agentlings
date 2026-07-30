@@ -10,9 +10,18 @@ export class SimulatedExecutor implements Executor {
     private maxMs = 7000,
   ) {}
 
-  async run(job: Job, sandboxDir: string): Promise<ExecutorResult> {
+  async run(
+    job: Job,
+    sandboxDir: string,
+    onProgress?: (detail: string) => void,
+  ): Promise<ExecutorResult> {
     const duration = this.minMs + Math.random() * (this.maxMs - this.minMs);
-    await new Promise((r) => setTimeout(r, duration));
+    const pause = (fraction: number) => new Promise((r) => setTimeout(r, duration * fraction));
+    await pause(0.4);
+    onProgress?.('rummaging through the sandbox…');
+    await pause(0.35);
+    onProgress?.('writing RESULT.md…');
+    await pause(0.25);
     const summary = `Simulated result for "${job.title}" (${Math.round(duration)}ms of pretend work).`;
     writeFileSync(
       path.join(sandboxDir, 'RESULT.md'),

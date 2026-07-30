@@ -42,6 +42,8 @@ export interface JobMeter {
   cacheReadTokens?: number;
   /** The model that actually ran it. */
   model?: string;
+  /** True when code answered it and no session ran at all. */
+  routed?: boolean;
 }
 
 /** A connection a job can opt into. Secret values never appear here. */
@@ -73,6 +75,8 @@ export interface Job {
   preferredRole?: string;
   /** Connections this job opted into by name. Absent means sandbox only. */
   tools?: string[];
+  /** Set when the user asked for a proper session after a routed answer. */
+  noRouter?: boolean;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
   /** What the session cost — recorded whether it succeeded or failed. */

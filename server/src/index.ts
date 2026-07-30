@@ -20,6 +20,7 @@ import { activeCrew, crewMembers, syncRoster } from './crew';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor } from './executors/claude';
 import type { Executor } from './executors/executor';
+import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
 import { applyPatch, patchFile } from './gitwork';
 import {
@@ -153,11 +154,18 @@ function makeLevel(dir: string): LevelRuntime {
   const eventLog = new EventLog((event) =>
     sendToLevel(meta.id, { type: 'events', events: [event] }),
   );
-  const executor: Executor = useClaude
-    ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir), () =>
-        readConnections(CONNECTIONS_FILE),
-      )
-    : simulated;
+  // The deterministic layer wraps whichever executor is in use, so work it
+  // recognises never reaches a session at all.
+  const executor: Executor = new RoutedExecutor(
+    dir,
+    () => readKnowledge(dir),
+    () => readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web') ?? null,
+    useClaude
+      ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir), () =>
+          readConnections(CONNECTIONS_FILE),
+        )
+      : simulated,
+  );
   const roster = readRoster(dir);
   const sim = new Sim(
     activeCrew(roster),
@@ -306,6 +314,27 @@ app.post('/api/levels/:lid/work', async (c) => {
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: plan.role ?? undefined,
     tools: body.tools,
+  });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json(job, 201);
+});
+
+/**
+ * "Do it properly": the router answered without a session and the user
+ * disagrees. Re-queues the same request with the shortcut switched off.
+ */
+app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const previous = rt.queue.get(c.req.param('id'));
+  if (!previous) return c.json({ error: 'unknown job' }, 404);
+  const job = rt.queue.add({
+    title: previous.title,
+    prompt: previous.prompt,
+    repoPath: previous.repoPath,
+    preferredRole: previous.preferredRole,
+    tools: previous.tools,
+    noRouter: true,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);

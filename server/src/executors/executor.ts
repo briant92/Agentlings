@@ -6,6 +6,16 @@ export interface ExecutorResult {
   lesson?: string;
   /** What the session cost, when the executor can tell. */
   meter?: JobMeter;
+  /** How to do this kind of job next time; becomes a recipe. */
+  approach?: string;
+}
+
+/** Extra shaping for one run, set by the router rather than by the job. */
+export interface RunHint {
+  /** Run as a single call instead of an exploring loop. */
+  oneShot?: boolean;
+  /** What worked last time, handed to the session so it need not rediscover it. */
+  approach?: string;
 }
 
 /**
@@ -19,5 +29,6 @@ export interface Executor {
     sandboxDir: string,
     onProgress?: (detail: string) => void,
     agentling?: Agentling,
+    hint?: RunHint,
   ): Promise<ExecutorResult>;
 }

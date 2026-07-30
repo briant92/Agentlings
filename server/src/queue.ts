@@ -12,6 +12,8 @@ export interface NewJobSpec {
   preferredRole?: string;
   /** Connections this job may use; absent means sandbox only. */
   tools?: string[];
+  /** Skip the deterministic router and run a real session. */
+  noRouter?: boolean;
 }
 
 /** In-memory job store plus station-slot bookkeeping and sandbox dirs. */
@@ -36,6 +38,7 @@ export class JobQueue {
       repoPath: spec.repoPath,
       preferredRole: spec.preferredRole,
       ...(spec.tools?.length ? { tools: spec.tools } : {}),
+      ...(spec.noRouter ? { noRouter: true } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

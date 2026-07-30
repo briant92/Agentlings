@@ -17,6 +17,7 @@ function jobById(world: WorldState | null, id: string): Job | undefined {
 function meterLine(job: Job): string | null {
   const m = job.meter;
   if (!m) return null;
+  if (m.routed) return 'answered without an agentling · free';
   const bits: string[] = [];
   if (typeof m.costUsd === 'number') {
     bits.push(m.costUsd < 0.01 ? '<$0.01' : `$${m.costUsd.toFixed(2)}`);
@@ -88,6 +89,11 @@ export function Terminal({
     await api(lvl(levelId, `/jobs/${jobId}/resolve`), postJson({ action }));
   };
 
+  /** The router answered without a session and the user disagrees. */
+  const redo = async (jobId: string) => {
+    await api(lvl(levelId, `/jobs/${jobId}/redo`), { method: 'POST' });
+  };
+
   return (
     <aside
       className="terminal"
@@ -114,6 +120,7 @@ export function Terminal({
             job={jobById(world, e.jobId)}
             onOpenReview={onOpenReview}
             onResolve={resolve}
+            onRedo={redo}
           />
         ))}
       </div>
@@ -130,11 +137,13 @@ function EventEntry({
   job,
   onOpenReview,
   onResolve,
+  onRedo,
 }: {
   event: JobEvent;
   job: Job | undefined;
   onOpenReview: (jobId: string) => void;
   onResolve: (jobId: string, action: 'promote' | 'discard') => Promise<void>;
+  onRedo: (jobId: string) => Promise<void>;
 }) {
   const time = <span className="t-time">{ts(event.at)}</span>;
   switch (event.type) {
@@ -186,6 +195,11 @@ function EventEntry({
                 <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
                   See the changes
                 </button>
+                {job.meter?.routed && (
+                  <button className="ghost" onClick={() => void onRedo(event.jobId)}>
+                    Do it properly
+                  </button>
+                )}
               </div>
             </div>
           )}

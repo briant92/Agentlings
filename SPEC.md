@@ -259,9 +259,22 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     calls back into the server so extraction, trimming and the allowlist
     have one implementation. Non-http is refused. `AGENTLINGS_MAX_COST_USD`
     stops a session mid-flight where the stream carries a running cost.
-  - **M5.3.** Deterministic router — answer from knowledge, or one-shot,
-    before entering the loop at all.
-  - **M5.4.** Memoize solved work back into the router.
+  - **M5.3 (built).** The deterministic router, `router.ts`, wrapped round
+    whichever executor is in use by `RoutedExecutor`. It claims only work
+    whose shape it recognises exactly — a question about what the level
+    already knows, answered from KNOWLEDGE.md; and a bare "read this page",
+    fetched in code. Everything else falls through to a session untouched.
+    The rule is never guess: a missed saving costs money, a wrong answer
+    costs trust. "Do it properly" re-queues with `noRouter` when the user
+    disagrees with a routed answer.
+  - **M5.4 (built).** Memoisation, `recipes.ts`. Sessions now write
+    APPROACH.md alongside LESSON.md — how to do this *kind* of job without
+    exploring — and that becomes a recipe stored per level. The next job of
+    the same shape runs as a single shot with the approach handed to it
+    rather than as an exploring loop. Recipes hold the approach, never the
+    answer: a stored answer is replayed only on an exact prompt repeat with
+    no repository and no web access, because the same words against a
+    different repo are a different question.
   - **M5.5.** Spend per level and per agentling.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings

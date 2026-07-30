@@ -10,7 +10,7 @@ import { cloneRepo, writeDiff } from '../gitwork';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { extractUrls, fetchPage } from '../web';
-import type { Executor, ExecutorResult } from './executor';
+import type { Executor, ExecutorResult, RunHint } from './executor';
 
 const SESSION_TIMEOUT_MS = 10 * 60_000;
 /**
@@ -77,6 +77,7 @@ export function buildAppend(
   knowledge: string[],
   hasRepo: boolean,
   sources: string[] = [],
+  approach?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -89,8 +90,18 @@ export function buildAppend(
         : '- There is no target repository; produce your output as files in the working directory.',
       '- When finished, write RESULT.md in the working directory: outcome first, evidence second.',
       '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
+      '- Also write APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
     ].join('\n'),
   );
+  if (approach) {
+    parts.push(
+      [
+        '## How this kind of job was done before',
+        approach,
+        'Follow this directly. Do not re-explore unless it turns out to be wrong.',
+      ].join('\n'),
+    );
+  }
   if (sources.length > 0) {
     parts.push(
       [
@@ -167,6 +178,7 @@ export class ClaudeAgentExecutor implements Executor {
     sandboxDir: string,
     onProgress?: (detail: string) => void,
     agentling?: Agentling,
+    hint?: RunHint,
   ): Promise<ExecutorResult> {
     const role = agentling ? this.registry.get(agentling.role) : undefined;
     const lessons = agentling ? this.memory.lessons(agentling.name).slice(-5) : [];
@@ -221,9 +233,10 @@ export class ClaudeAgentExecutor implements Executor {
       JSON.stringify({
         cwd: sandboxDir,
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
-        append: buildAppend(role, lessons, this.knowledge(), hasRepo, sources),
+        append: buildAppend(role, lessons, this.knowledge(), hasRepo, sources, hint?.approach),
         allowedTools,
-        maxTurns: turnsFor(role),
+        // A job the crew has done before does not need to explore it again.
+        maxTurns: hint?.oneShot ? 1 : turnsFor(role),
         skills,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         mcpServers: toMcpServers(granted, process.env),
@@ -247,9 +260,15 @@ export class ClaudeAgentExecutor implements Executor {
       ? parseLesson(readFileSync(lessonPath, 'utf8'))
       : undefined;
 
+    const approachPath = path.join(sandboxDir, 'APPROACH.md');
+    const approach = existsSync(approachPath)
+      ? readFileSync(approachPath, 'utf8').trim().slice(0, 1200) || undefined
+      : undefined;
+
     return {
       summary,
       lesson,
+      approach,
       meter: { ...meter, model: role?.model ?? process.env.AGENTLINGS_MODEL },
     };
   }

@@ -27,6 +27,7 @@ import {
   writeRoster,
   type LevelMeta,
 } from './levels';
+import { MatchIndex, suggestSetup } from './match';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
@@ -46,6 +47,13 @@ try {
 
 const registry = new RoleRegistry(ROLES_DIR);
 registry.load();
+
+/** Built once and reused; installing a template is the only thing that ages it. */
+let matchIndex: MatchIndex | null = null;
+function matcher(): MatchIndex {
+  matchIndex ??= new MatchIndex(registry.loaded(), listSkills(SKILLS_DIR));
+  return matchIndex;
+}
 
 /** API key, a Claude Code login, or an explicit AGENTLINGS_EXECUTOR override. */
 const forced = process.env.AGENTLINGS_EXECUTOR;
@@ -73,7 +81,13 @@ const levels = new Map<string, LevelRuntime>();
 function saveRoster(rt: LevelRuntime): void {
   writeRoster(
     rt.dir,
-    rt.sim.agentlings.map(({ id, name, color, role }) => ({ id, name, color, role })),
+    rt.sim.agentlings.map(({ id, name, color, role, jobDescription }) => ({
+      id,
+      name,
+      color,
+      role,
+      jobDescription,
+    })),
   );
 }
 
@@ -267,12 +281,30 @@ app.post('/api/levels/:lid/agentlings/:aid/role', async (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const agentling = rt.sim.agentlings.find((a) => a.id === c.req.param('aid'));
   if (!agentling) return c.json({ error: 'unknown agentling' }, 404);
-  const body = await c.req.json<{ role?: string }>();
+  const body = await c.req.json<{ role?: string; jobDescription?: string }>();
   const role = body.role ? registry.get(body.role) : undefined;
   if (!role) return c.json({ error: `unknown role "${body.role ?? ''}"` }, 400);
   agentling.role = role.name;
+  // The hire's own words become their first memory, so the sentence that
+  // created them is in front of every session they ever run.
+  const job = body.jobDescription?.trim();
+  if (job && job !== agentling.jobDescription) {
+    agentling.jobDescription = job;
+    rt.memory.append(agentling.name, `${new Date().toISOString().slice(0, 10)} · hired to: ${job}`);
+  }
   saveRoster(rt);
   return c.json(agentling);
+});
+
+/**
+ * Concept match: a sentence in, a proposed role and skills out. Local,
+ * deterministic and instant — no auth, no network, no LLM.
+ */
+app.post('/api/match', async (c) => {
+  const body = await c.req.json<{ text?: string }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  return c.json(suggestSetup(matcher(), registry.list(), text));
 });
 
 app.post('/api/levels/:lid/agentlings', (c) => {
@@ -306,6 +338,7 @@ app.post('/api/templates/install', async (c) => {
   try {
     const installed =
       body.kind === 'role' ? registry.install(text) : installSkill(SKILLS_DIR, text);
+    matchIndex = null; // the catalog changed; rebuild on next match
     return c.json({ kind: body.kind, name: installed.name }, 201);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);

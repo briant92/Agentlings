@@ -22,6 +22,7 @@ export interface CrewSeed {
   name: string;
   color: number;
   role: string;
+  jobDescription?: string;
 }
 
 export function stationX(slot: number): number {

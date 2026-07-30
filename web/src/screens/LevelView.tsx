@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { Agentling } from '@agentlings/shared';
 import { api, lvl } from '../api';
+import { HireModal } from '../panels/HireModal';
 import { ProfileModal } from '../panels/ProfileModal';
 import { QueueBar } from '../panels/QueueBar';
 import { ReviewModal } from '../panels/ReviewModal';
@@ -15,10 +17,17 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
   const [reviewJobId, setReviewJobId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [hired, setHired] = useState<Agentling | null>(null);
+  const arrival = useRef<number | undefined>(undefined);
   const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
 
+  useEffect(() => () => clearTimeout(arrival.current), []);
+
+  // Let them drop through the hatch and land before asking anything — the
+  // popup should read as caused by the arrival, not as a form.
   const hire = async () => {
-    await api(lvl(level.id, '/agentlings'), { method: 'POST' });
+    const agentling = await api<Agentling>(lvl(level.id, '/agentlings'), { method: 'POST' });
+    arrival.current = window.setTimeout(() => setHired(agentling), 700);
   };
 
   return (
@@ -55,6 +64,9 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
           agentlingId={profileId}
           onClose={() => setProfileId(null)}
         />
+      )}
+      {hired && (
+        <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
       )}
       {rolesOpen && <RolesModal onClose={() => setRolesOpen(false)} />}
     </div>

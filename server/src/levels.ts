@@ -21,6 +21,8 @@ export interface CrewSeed {
   name: string;
   color: number;
   role: string;
+  /** The user's own words for this agentling's job, set when they were hired. */
+  jobDescription?: string;
 }
 
 export const THEME_KEYS: ThemeKey[] = ['cave', 'chalkboard', 'household', 'marble'];

@@ -79,6 +79,11 @@ export class RoleRegistry {
     return this.roles.get(name);
   }
 
+  /** Roles with their prompt bodies — what the concept matcher indexes. */
+  loaded(): LoadedRole[] {
+    return [...this.roles.values()];
+  }
+
   /** Validates and stores a role definition; returns the loaded role. */
   install(text: string): LoadedRole {
     const role = roleFromText(text);

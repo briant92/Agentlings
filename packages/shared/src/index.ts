@@ -61,6 +61,8 @@ export interface Agentling {
   jobId?: string;
   /** Role name from roles/*.md; persisted across restarts in the roster. */
   role: string;
+  /** What the user said this agentling was hired to do, in their own words. */
+  jobDescription?: string;
   jobsDone: number;
   jobsFailed: number;
 }
@@ -77,6 +79,21 @@ export interface RoleInfo {
 export interface SkillInfo {
   name: string;
   description: string;
+}
+
+/** What the concept matcher proposes for a sentence the user typed. */
+export interface MatchSuggestion {
+  /** Best-matching role, or null when nothing was confident enough. */
+  role: string | null;
+  roleDescription: string;
+  skills: string[];
+  /** 0–1; below MIN_CONFIDENCE the UI asks instead of asserting. */
+  confidence: number;
+  /** The user's own words that drove the match — shown as the reason. */
+  matchedTerms: string[];
+  /** Words nothing in the library covers; later these drive library search. */
+  gaps: string[];
+  alternatives: { name: string; description: string }[];
 }
 
 /** GET /api/agentlings/:id — everything the profile popup shows. */

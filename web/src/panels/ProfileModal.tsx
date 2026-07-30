@@ -64,6 +64,12 @@ export function ProfileModal({
           <button onClick={onClose}>✕</button>
         </div>
         <div className="m-body">
+          {agentling.jobDescription && (
+            <>
+              <div className="sect">hired to</div>
+              <p className="hire-quote">“{agentling.jobDescription}”</p>
+            </>
+          )}
           <div className="sect">boundaries · tools</div>
           <div className="chips">
             {(role?.tools ?? []).map((t) => (

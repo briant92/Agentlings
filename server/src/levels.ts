@@ -14,6 +14,11 @@ export interface LevelMeta {
   project: string;
   theme: ThemeKey;
   createdAt: number;
+  /**
+   * Project folder jobs in this level work against. Asked once by the work
+   * intake: undefined means never asked, '' means the user declined.
+   */
+  repoPath?: string;
 }
 
 export interface CrewSeed {
@@ -45,6 +50,10 @@ export function levelDir(sandboxRoot: string, id: string): string {
 
 export function readMeta(dir: string): LevelMeta {
   return JSON.parse(readFileSync(path.join(dir, 'level.json'), 'utf8')) as LevelMeta;
+}
+
+export function writeMeta(dir: string, meta: LevelMeta): void {
+  writeFileSync(path.join(dir, 'level.json'), JSON.stringify(meta, null, 2));
 }
 
 export function readRoster(dir: string): CrewSeed[] {

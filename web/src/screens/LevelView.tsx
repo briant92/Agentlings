@@ -3,10 +3,10 @@ import type { Agentling } from '@agentlings/shared';
 import { api, lvl } from '../api';
 import { HireModal } from '../panels/HireModal';
 import { ProfileModal } from '../panels/ProfileModal';
-import { QueueBar } from '../panels/QueueBar';
 import { ReviewModal } from '../panels/ReviewModal';
 import { RolesModal } from '../panels/RolesModal';
 import { Terminal } from '../panels/Terminal';
+import { WorkBar } from '../panels/WorkBar';
 import { useWorld } from '../useWorld';
 import { WorldCanvas } from '../world/WorldCanvas';
 import type { LevelEntry } from './SelectScreen';
@@ -52,7 +52,7 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
       </header>
       <main>
         <WorldCanvas world={world} theme={level.theme} onSelect={setProfileId} />
-        <QueueBar levelId={level.id} />
+        <WorkBar levelId={level.id} />
       </main>
       <Terminal levelId={level.id} world={world} events={events} onOpenReview={setReviewJobId} />
       {reviewJob && (

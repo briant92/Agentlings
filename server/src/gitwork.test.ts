@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { applyPatch, cloneRepo, patchFile, writeDiff } from './gitwork';
+import { applyPatch, cloneRepo, patchFile, summarizePatch, writeDiff } from './gitwork';
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync('git', ['-C', cwd, ...args], { stdio: 'pipe' });
@@ -41,9 +41,25 @@ describe('gitwork', () => {
     const patch = patchFile(sandbox);
     expect(readFileSync(patch, 'utf8')).toContain('Hello');
 
+    // The same patch, read back as counts a non-expert can act on.
+    const changes = summarizePatch(readFileSync(patch, 'utf8'));
+    expect(changes.files).toBe(2);
+    expect(changes.names.sort()).toEqual(['NEW.md', 'greet.js']);
+    expect(changes.added).toBe(2);
+    expect(changes.removed).toBe(1);
+
     await applyPatch(origin, patch);
     expect(readFileSync(path.join(origin, 'greet.js'), 'utf8')).toContain('Hello');
     expect(readFileSync(path.join(origin, 'NEW.md'), 'utf8')).toContain('brand new');
+  });
+
+  it('names a deleted file from the "---" side of the patch', () => {
+    const changes = summarizePatch(
+      ['diff --git a/gone.txt b/gone.txt', '--- a/gone.txt', '+++ /dev/null', '-was here'].join('\n'),
+    );
+    expect(changes.names).toEqual(['gone.txt']);
+    expect(changes.removed).toBe(1);
+    expect(changes.added).toBe(0);
   });
 
   it('reports no diff when the agent changed nothing', async () => {

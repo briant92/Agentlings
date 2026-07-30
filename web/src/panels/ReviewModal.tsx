@@ -7,6 +7,12 @@ interface OutputFile {
   content: string;
 }
 
+/** The report first, then the file list, with the raw patch tucked underneath. */
+function order(files: OutputFile[]): OutputFile[] {
+  const rank = (name: string) => (name === 'RESULT.md' ? 0 : name === 'DIFF.patch' ? 2 : 1);
+  return [...files].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+}
+
 /** Full sandbox contents in an overlay; Esc, backdrop, or Close dismisses. */
 export function ReviewModal({
   levelId,
@@ -52,19 +58,40 @@ export function ReviewModal({
         </div>
         <div className="m-body">
           {job.error && <p className="error">{job.error}</p>}
-          {files === null && <p className="dim">Loading sandbox…</p>}
-          {files?.length === 0 && <p className="dim">Sandbox is empty.</p>}
-          {files?.map((f) => (
-            <div key={f.name}>
-              <h3>{f.name}</h3>
-              <pre>{f.content}</pre>
-            </div>
-          ))}
+          {job.summary && <p className="rv-summary">{job.summary}</p>}
+          {job.changes && job.changes.files > 0 && (
+            <>
+              <div className="sect">
+                files this would change · +{job.changes.added} −{job.changes.removed}
+              </div>
+              <ul className="rv-files">
+                {job.changes.names.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {files === null && <p className="dim">Loading…</p>}
+          {files?.length === 0 && <p className="dim">Nothing was left in the sandbox.</p>}
+          {files &&
+            order(files).map((f) =>
+              f.name === 'DIFF.patch' ? (
+                <details key={f.name} className="rv-raw">
+                  <summary>Show the raw patch</summary>
+                  <pre>{f.content}</pre>
+                </details>
+              ) : (
+                <div key={f.name}>
+                  <h3>{f.name}</h3>
+                  <pre>{f.content}</pre>
+                </div>
+              ),
+            )}
         </div>
         <div className="m-foot">
           {job.status === 'done' && (
             <>
-              <button onClick={() => void resolve('promote')}>Promote</button>
+              <button onClick={() => void resolve('promote')}>Approve</button>
               <button onClick={() => void resolve('discard')}>Discard</button>
             </>
           )}

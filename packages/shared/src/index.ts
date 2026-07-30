@@ -29,12 +29,24 @@ export type JobStatus =
   | 'promoted'
   | 'discarded';
 
+/** What a finished job actually changed, for explaining it in plain words. */
+export interface JobChanges {
+  files: number;
+  added: number;
+  removed: number;
+  names: string[];
+}
+
 export interface Job {
   id: string;
   title: string;
   prompt: string;
   /** Target repository for the real executor (ignored by SimulatedExecutor). */
   repoPath?: string;
+  /** Role the intake matched; the sim routes the job to that role first. */
+  preferredRole?: string;
+  /** Filled in when the job completes and left a patch behind. */
+  changes?: JobChanges;
   status: JobStatus;
   /** Station slot in the world; -1 while waiting for a free station or after finishing. */
   slot: number;
@@ -102,6 +114,24 @@ export interface AgentlingProfile {
   role: RoleInfo | null;
   /** Most recent memory lessons, oldest first. */
   memory: string[];
+}
+
+/** Preview of what the app will do with a sentence, before it queues anything. */
+export interface WorkPlan {
+  /** Short title derived from the sentence. */
+  title: string;
+  /** Role the matcher chose, or null when it isn't sure. */
+  role: string | null;
+  /** Who will pick it up, once the sim gets to it. */
+  agentling: { id: string; name: string; role: string } | null;
+  /** True when nobody in this level's crew holds the matched role. */
+  noOneHasRole: boolean;
+  confidence: number;
+  /** True when this level has never been asked for a project folder. */
+  needsRepo: boolean;
+  /** The level's project folder; '' means asked and declined. */
+  repoPath: string;
+  gaps: string[];
 }
 
 export interface WorldState {

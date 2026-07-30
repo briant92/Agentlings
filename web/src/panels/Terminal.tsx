@@ -13,6 +13,18 @@ function jobById(world: WorldState | null, id: string): Job | undefined {
   return world?.jobs.find((j) => j.id === id);
 }
 
+/** What approving would actually do to the project, in one line. */
+function changeLine(job: Job): string {
+  const c = job.changes;
+  if (!c || c.files === 0) {
+    return job.repoPath
+      ? 'nothing to apply — no files were changed'
+      : 'a report only — nothing to apply to a project';
+  }
+  const files = c.files === 1 ? '1 file' : `${c.files} files`;
+  return `would change ${files} · +${c.added} −${c.removed}`;
+}
+
 /** The reporting rail: one chronological feed for everything the horde does. */
 export function Terminal({
   levelId,
@@ -141,7 +153,7 @@ function EventEntry({
         <>
           <div className="t-line">
             {time}
-            <span className="ev-done">✔ delivered</span>
+            <span className="ev-done">✔ finished</span>
             <span className="t-text">
               {event.agentling} · {event.title}
             </span>
@@ -149,10 +161,13 @@ function EventEntry({
           {job?.status === 'done' && (
             <div className="t-card">
               <div className="summary">{event.detail}</div>
+              <div className="t-changes">{changeLine(job)}</div>
               <div className="actions">
-                <button onClick={() => void onResolve(event.jobId, 'promote')}>promote</button>
-                <button onClick={() => void onResolve(event.jobId, 'discard')}>discard</button>
-                <button onClick={() => onOpenReview(event.jobId)}>open</button>
+                <button onClick={() => void onResolve(event.jobId, 'promote')}>Approve</button>
+                <button onClick={() => void onResolve(event.jobId, 'discard')}>Discard</button>
+                <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
+                  See the changes
+                </button>
               </div>
             </div>
           )}

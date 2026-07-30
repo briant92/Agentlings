@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -53,8 +53,64 @@ describe('JobQueue', () => {
     expect(queue.resolve(jobs[0].id, 'discard').status).toBe('discarded');
   });
 
+  it('reads the patch into change counts when the job completes', () => {
+    const job = queue.add({ title: 'Repo job', prompt: 'x', repoPath: '/somewhere' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, 'DIFF.patch'),
+      [
+        'diff --git a/app.ts b/app.ts',
+        '--- a/app.ts',
+        '+++ b/app.ts',
+        '-old line',
+        '+new line',
+        '+another new line',
+      ].join('\n'),
+    );
+
+    queue.complete(job.id, 'did the thing');
+    const changes = queue.get(job.id)!.changes;
+    expect(changes).toEqual({ files: 1, added: 2, removed: 1, names: ['app.ts'] });
+  });
+
+  it('leaves changes unset when the job produced no patch', () => {
+    const job = queue.add({ title: 'Report only', prompt: 'x' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    queue.complete(job.id, 'wrote a report');
+    expect(queue.get(job.id)!.changes).toBeUndefined();
+  });
+
   it('rejects resolving a job that is still queued', () => {
     const job = queue.add({ title: 'Too soon', prompt: 'x' });
     expect(() => queue.resolve(job.id, 'promote')).toThrow(/not resolvable/);
+  });
+
+  describe('routing by role', () => {
+    const present = new Set(['mason', 'scribe']);
+
+    it('gives an agentling the job matched to their role first', () => {
+      queue.add({ title: 'Docs', prompt: 'x', preferredRole: 'scribe' });
+      queue.add({ title: 'Code', prompt: 'x', preferredRole: 'mason' });
+      expect(queue.nextUnassigned('mason', present)?.title).toBe('Code');
+      expect(queue.nextUnassigned('scribe', present)?.title).toBe('Docs');
+    });
+
+    it('takes unrouted work when nothing matches their role', () => {
+      queue.add({ title: 'Docs', prompt: 'x', preferredRole: 'scribe' });
+      queue.add({ title: 'Anything', prompt: 'x' });
+      expect(queue.nextUnassigned('mason', present)?.title).toBe('Anything');
+    });
+
+    it('does not strand work routed to a role nobody holds', () => {
+      queue.add({ title: 'Needs a scout', prompt: 'x', preferredRole: 'scout' });
+      expect(queue.nextUnassigned('mason', present)?.title).toBe('Needs a scout');
+    });
+
+    it('leaves another role’s work alone while someone can take it', () => {
+      queue.add({ title: 'Docs', prompt: 'x', preferredRole: 'scribe' });
+      expect(queue.nextUnassigned('mason', present)).toBeUndefined();
+    });
   });
 });

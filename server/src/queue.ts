@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Job } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
+import { patchFile, summarizePatch } from './gitwork';
 
 export interface NewJobSpec {
   title: string;
   prompt: string;
   repoPath?: string;
+  preferredRole?: string;
 }
 
 /** In-memory job store plus station-slot bookkeeping and sandbox dirs. */
@@ -30,6 +32,7 @@ export class JobQueue {
       title: spec.title,
       prompt: spec.prompt,
       repoPath: spec.repoPath,
+      preferredRole: spec.preferredRole,
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),
@@ -38,10 +41,19 @@ export class JobQueue {
     return job;
   }
 
-  /** Oldest queued job that has a station slot and no agentling yet. */
-  nextUnassigned(): Job | undefined {
-    return this.list().find(
+  /**
+   * Oldest queued job this agentling should take: one matched to their role
+   * first, then unrouted work, then work routed to a role nobody holds — so a
+   * job whose specialist was never hired still gets done rather than starving.
+   */
+  nextUnassigned(role?: string, rolesPresent?: Set<string>): Job | undefined {
+    const waiting = this.list().filter(
       (j) => j.status === 'queued' && j.slot >= 0 && !j.assignedTo,
+    );
+    return (
+      waiting.find((j) => j.preferredRole && j.preferredRole === role) ??
+      waiting.find((j) => !j.preferredRole) ??
+      waiting.find((j) => !rolesPresent || !rolesPresent.has(j.preferredRole!))
     );
   }
 
@@ -63,6 +75,8 @@ export class JobQueue {
     const job = this.mustGet(jobId);
     job.status = 'done';
     job.summary = summary;
+    const patch = patchFile(this.sandboxDir(jobId));
+    if (existsSync(patch)) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
     this.finish(job);
   }
 

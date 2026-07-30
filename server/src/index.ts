@@ -24,6 +24,7 @@ import {
   readMeta,
   readRoster,
   THEME_KEYS,
+  writeMeta,
   writeRoster,
   type LevelMeta,
 } from './levels';
@@ -32,6 +33,7 @@ import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
 import { Sim } from './sim';
+import { planWork } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -197,6 +199,49 @@ app.post('/api/levels/:lid/jobs', async (c) => {
     title: body.title.trim(),
     prompt: body.prompt.trim(),
     repoPath: body.repoPath?.trim() || undefined,
+  });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json(job, 201);
+});
+
+/** What the app would do with a sentence — shown before anything is queued. */
+app.post('/api/levels/:lid/work/plan', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ text?: string }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  return c.json(
+    planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text),
+  );
+});
+
+/**
+ * One sentence in, a queued job out. The project folder is asked for once per
+ * level and remembered; '' records that the user declined.
+ */
+app.post('/api/levels/:lid/work', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ text?: string; repoPath?: string }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+
+  if (body.repoPath !== undefined) {
+    const repoPath = body.repoPath.trim();
+    if (repoPath && !existsSync(repoPath)) {
+      return c.json({ error: `no folder at "${repoPath}"` }, 400);
+    }
+    rt.meta = { ...rt.meta, repoPath };
+    writeMeta(rt.dir, rt.meta);
+  }
+
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const job = rt.queue.add({
+    title: plan.title,
+    prompt: text,
+    repoPath: rt.meta.repoPath || undefined,
+    preferredRole: plan.role ?? undefined,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);

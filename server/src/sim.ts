@@ -114,7 +114,8 @@ export class Sim {
   }
 
   private tryPickUp(a: Agentling): void {
-    const job = this.queue.nextUnassigned();
+    const rolesPresent = new Set(this.agentlings.map((other) => other.role));
+    const job = this.queue.nextUnassigned(a.role, rolesPresent);
     if (!job) return;
     this.queue.assign(job.id, a.id);
     a.jobId = job.id;

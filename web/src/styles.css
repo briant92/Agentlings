@@ -157,32 +157,81 @@ button.ghost {
   color: #8a91a3;
 }
 
-.queue-bar {
+.work {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.work-bar {
   display: flex;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
 }
-.queue-bar input {
+.work input {
   background: #171a21;
   color: inherit;
   border: 1px solid #262b36;
   border-radius: 4px;
-  padding: 7px 9px;
+  padding: 8px 10px;
   font: inherit;
+  font-size: 13px;
+}
+.work input:focus {
+  outline: none;
+  border-color: var(--db-sky);
+}
+.work-input {
+  flex: 1;
+  min-width: 0;
+}
+.work-plan {
+  font-size: 12px;
+  margin: 0;
+  padding-left: 2px;
+  overflow-wrap: anywhere;
+}
+.work-who {
+  color: var(--db-lime-light);
+}
+.work-gaps {
+  font-size: 11px;
+  color: #5a6172;
+  margin: 0;
+  padding-left: 2px;
+}
+.work-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--db-sky);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.work-repo {
+  border: 1px solid #4d3a24;
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.work-repo label {
   font-size: 12px;
 }
-.qb-title {
-  flex: 2;
-  min-width: 140px;
+.work-repo-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
-.qb-prompt {
-  flex: 3;
-  min-width: 200px;
+.work-repo-row input {
+  flex: 1;
+  min-width: 220px;
+  font-size: 12px;
 }
-.qb-repo {
-  flex: 2;
-  min-width: 160px;
+.work-hint {
+  font-size: 11px;
+  margin: 0;
 }
 
 .terminal {
@@ -280,9 +329,15 @@ button.ghost {
   margin: 2px 0 6px;
   overflow-wrap: anywhere;
 }
+.t-changes {
+  font-size: 11px;
+  color: #8a91a3;
+  margin: 0 0 7px;
+}
 .t-card .actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 .t-card button {
   padding: 2px 8px;
@@ -965,6 +1020,30 @@ select {
   margin-left: auto;
   font-size: 11px;
 }
+.rv-summary {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+.rv-files {
+  font-size: 12px;
+  color: #d8dce6;
+  line-height: 1.7;
+  margin: 0;
+  padding-left: 18px;
+}
+.rv-raw {
+  margin-top: 14px;
+}
+.rv-raw summary {
+  font-size: 11px;
+  color: #8a91a3;
+  cursor: pointer;
+}
+.rv-raw summary:hover {
+  color: #d8dce6;
+}
+
 .hire-quote {
   font-size: 12px;
   line-height: 1.6;

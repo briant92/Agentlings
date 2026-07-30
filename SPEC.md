@@ -160,9 +160,17 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     remote index, and preview-before-install with provenance recorded.
     Installed templates are executable instructions — never auto-install,
     never silently update.
-  - **M3.5.** Work intake in one box ("What do you need done?") and results
-    explained in plain English with Approve / Discard; the diff stays one
-    click away.
+  - **M3.5 (built).** Work intake in one box: the sentence becomes the
+    prompt, `titleFrom` derives the title, the matcher picks the role, and
+    `pickAgentling` picks who takes it — all shown before anything is
+    queued. Jobs carry `preferredRole`; `nextUnassigned(role, present)`
+    routes to that role first, then unrouted work, then work routed to a
+    role nobody holds, so nothing starves. The project folder is asked once
+    per level and stored on the level (`''` records a decline), changeable
+    from the intake. Results: `queue.complete` reads DIFF.patch into
+    `job.changes`, the terminal card says what approving would change in
+    plain words with Approve / Discard / See the changes, and the review
+    modal leads with the report and file list, raw patch collapsed.
   - **M3.6.** First-run tour on an empty install.
 - **M4 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings

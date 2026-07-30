@@ -83,21 +83,33 @@ sprite to open its profile; assignments persist in
   hard wall underneath.
 - **Memory**: one lessons file per agentling in `.agentlings/memory/`;
   M0 stubs a career-log line per job.
-- M0 stores identity; **M1 enforces it** — the executor maps the role
+- M0 stored identity; **M1 enforces it** — the executor maps the role
   onto the Agent SDK session (system prompt, tool allowlist, model,
-  mounted skills) and reads/writes real memory lessons.
+  mounted skills) and reads/writes real memory lessons. A scout with
+  read-only tools genuinely cannot edit code.
 
 ## Milestones
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
   green, a queued job visibly worked and reviewable in the browser.
-- **M1 — real executor.** `ClaudeAgentExecutor` using the Claude Agent SDK
-  (`@anthropic-ai/claude-agent-sdk`, `query()` with the sandbox as cwd).
-  Clone the target repo into the sandbox (`git clone --local`), let the
-  agent work there; review becomes a diff view; promote applies the patch
-  to the real repo (`git apply`). `ANTHROPIC_API_KEY` lives in `.env`
-  (gitignored) — never in code.
+- **M1 — real executor (built).** `ClaudeAgentExecutor` runs each job as
+  one Claude Agent SDK session in a child process (`agent-runner.mjs`,
+  spawned with plain node — the SDK's huge import graph must never enter
+  the server/tsx process, and a wedged session can't take the server
+  down). The role becomes the session: system-prompt append, tool
+  allowlist via `permissionMode: dontAsk`, model, skills mounted into
+  `sandbox/.claude/skills`, memory lessons in, `LESSON.md` back out.
+  Repo jobs `git clone --local` into `sandbox/repo`; `DIFF.patch` is
+  captured after the session; promote `git apply`s it to the real repo
+  and only then marks the job promoted. Streamed tool calls surface as
+  terminal progress lines. 10-minute timeout, 60-turn cap per session.
+  Auth (any one): `ANTHROPIC_API_KEY` in `.env`, a
+  `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or a fresh Claude
+  Code login (auto-detected; `AGENTLINGS_EXECUTOR` overrides). The child
+  env is laundered of `CLAUDE*`/`ANTHROPIC_BASE_URL` so a server started
+  from inside a Claude Code terminal doesn't inherit that session's
+  endpoint or auth.
 - **M2 — durability & quality of life.** Persist jobs (JSONL or SQLite),
   survive restarts, cancel button, per-job live log stream. External-app
   access via an in-app MCP connection registry: named connections defined

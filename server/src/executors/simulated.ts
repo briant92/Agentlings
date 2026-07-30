@@ -14,6 +14,7 @@ export class SimulatedExecutor implements Executor {
     job: Job,
     sandboxDir: string,
     onProgress?: (detail: string) => void,
+    _agentling?: unknown,
   ): Promise<ExecutorResult> {
     const duration = this.minMs + Math.random() * (this.maxMs - this.minMs);
     const pause = (fraction: number) => new Promise((r) => setTimeout(r, duration * fraction));

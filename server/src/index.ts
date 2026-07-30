@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
@@ -8,7 +9,10 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type { AgentlingProfile, ServerMessage } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
 import { EventLog } from './events';
+import { ClaudeAgentExecutor } from './executors/claude';
+import type { Executor } from './executors/executor';
 import { SimulatedExecutor } from './executors/simulated';
+import { applyPatch, patchFile } from './gitwork';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
@@ -21,21 +25,45 @@ const ROLES_DIR = path.join(ROOT, 'roles');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const ROSTER_FILE = path.join(SANDBOX_ROOT, 'roster.json');
 
+try {
+  process.loadEnvFile(path.join(ROOT, '.env'));
+} catch {
+  // No .env yet — fine.
+}
+
 const registry = new RoleRegistry(ROLES_DIR);
 registry.load();
 const memory = new MemoryStore(path.join(SANDBOX_ROOT, 'memory'));
+
+/** API key, a Claude Code login, or an explicit AGENTLINGS_EXECUTOR override. */
+function pickExecutor(): { executor: Executor; name: string } {
+  const forced = process.env.AGENTLINGS_EXECUTOR;
+  const hasAuth =
+    !!process.env.ANTHROPIC_API_KEY ||
+    !!process.env.CLAUDE_CODE_OAUTH_TOKEN ||
+    existsSync(path.join(os.homedir(), '.claude', '.credentials.json'));
+  const useClaude = forced ? forced === 'claude' : hasAuth;
+  return useClaude
+    ? { executor: new ClaudeAgentExecutor(registry, memory, SKILLS_DIR), name: 'claude-agent-sdk' }
+    : {
+        executor: new SimulatedExecutor(),
+        name: 'simulated (set ANTHROPIC_API_KEY in .env or AGENTLINGS_EXECUTOR=claude)',
+      };
+}
+const picked = pickExecutor();
+console.log(`[agentlings] executor: ${picked.name}`);
 
 const queue = new JobQueue(SANDBOX_ROOT);
 const eventLog = new EventLog((event) => sendToAll({ type: 'events', events: [event] }));
 const sim = new Sim(
   queue,
-  new SimulatedExecutor(),
+  picked.executor,
   (event) => eventLog.emit(event),
-  (agentling, jobTitle, outcome, detail) => {
-    // Career-log stub; the M1 executor replaces this with real lessons.
+  (agentling, jobTitle, outcome, detail, lesson) => {
     const date = new Date().toISOString().slice(0, 10);
-    const line =
-      outcome === 'done'
+    const line = lesson
+      ? `${date} · ${lesson}`
+      : outcome === 'done'
         ? `${date} · delivered "${jobTitle}" as ${agentling.role}`
         : `${date} · failed "${jobTitle}" as ${agentling.role} — ${detail}`;
     memory.append(agentling.name, line);
@@ -140,7 +168,7 @@ app.get('/api/jobs/:id/output', (c) => {
   const dir = queue.sandboxDir(job.id);
   if (!existsSync(dir)) return c.json({ files: [] });
   const files = readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isFile())
+    .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
     .map((entry) => ({
       name: entry.name,
       content: readFileSync(path.join(dir, entry.name), 'utf8'),
@@ -153,8 +181,23 @@ app.post('/api/jobs/:id/resolve', async (c) => {
   if (body.action !== 'promote' && body.action !== 'discard') {
     return c.json({ error: 'action must be "promote" or "discard"' }, 400);
   }
+  const pending = queue.get(c.req.param('id'));
+  if (!pending) return c.json({ error: 'unknown job' }, 404);
+  // Promote replays the reviewed patch onto the real repository first;
+  // the job is only marked promoted if the patch applies cleanly.
+  if (body.action === 'promote' && pending.status === 'done' && pending.repoPath) {
+    const patch = patchFile(queue.sandboxDir(pending.id));
+    if (existsSync(patch)) {
+      try {
+        await applyPatch(pending.repoPath, patch);
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        return c.json({ error: `patch did not apply: ${detail}` }, 400);
+      }
+    }
+  }
   try {
-    const job = queue.resolve(c.req.param('id'), body.action);
+    const job = queue.resolve(pending.id, body.action);
     eventLog.emit({
       type: 'resolved',
       jobId: job.id,

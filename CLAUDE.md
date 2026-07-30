@@ -104,7 +104,8 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 
 ### Commands
 
-- Setup: `npm install`
+- Setup: `npm install`; for the real executor copy `.env.example` → `.env`
+  and set one auth option (see SPEC.md M1)
 - Run dev: `npm run dev` (web on http://localhost:5173, API/WS on :4600)
 - Test: `npm test`
 - Lint / typecheck: `npm run typecheck`
@@ -142,3 +143,8 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   formats (subagent .md in `roles/`, SKILL.md in `skills/`, installable
   from GitHub URLs), per-agentling memory files, profile popup on sprite
   click. M0 stores identity; the M1 executor enforces it. See SPEC.md.
+- 2026-07-30 — M1 built: real executor = one Claude Agent SDK session per
+  job in a child process (agent-runner.mjs, plain node) with laundered
+  env — never import the SDK into the server/tsx process (it wedges the
+  loader). Repo jobs: local clone + DIFF.patch review; promote =
+  git apply. Auth via .env (see .env.example).

@@ -9,6 +9,7 @@ export type OnOutcome = (
   jobTitle: string,
   outcome: 'done' | 'failed',
   detail: string,
+  lesson?: string,
 ) => void;
 
 const WALK_SPEED = 6; // world units per tick
@@ -114,14 +115,18 @@ export class Sim {
     const sandboxDir = this.queue.start(jobId);
     this.emit({ type: 'started', jobId, title: job.title, agentling: a.name });
     this.executor
-      .run(job, sandboxDir, (detail) =>
-        this.emit({ type: 'progress', jobId, title: job.title, agentling: a.name, detail }),
+      .run(
+        job,
+        sandboxDir,
+        (detail) =>
+          this.emit({ type: 'progress', jobId, title: job.title, agentling: a.name, detail }),
+        a,
       )
       .then((result) => {
         this.queue.complete(jobId, result.summary);
         this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
         a.jobsDone++;
-        this.onOutcome(a, job.title, 'done', result.summary);
+        this.onOutcome(a, job.title, 'done', result.summary, result.lesson);
         a.state = 'delivering';
         a.targetX = EXIT_X;
       })

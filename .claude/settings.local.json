@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(git --version)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Add v1 spec: personal coding-agent orchestrator in a Lemmings-style world *)",
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -X POST http://localhost:4600/api/jobs -H \"content-type: application/json\" -d '{\"title\":\"Write CONTRIBUTING.md\",\"prompt\":\"Draft a short contributing guide for the repo.\",\"repoPath\":\"C:/Users/MSI/OneDrive/Escritorio/Agentlings\"}')",
+      "Bash(curl -s http://localhost:4600/api/state)",
+      "Bash(curl -s http://localhost:4600/api/jobs/919519e3/output)",
+      "Bash(curl -s -X POST http://localhost:4600/api/jobs/919519e3/resolve -H \"content-type: application/json\" -d '{\"action\":\"promote\"}')",
+      "Bash(git commit -q -m 'Scaffold M0: TS monorepo with sim server and Pixi web client *)"
+    ]
+  }
+}

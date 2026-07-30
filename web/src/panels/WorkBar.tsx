@@ -12,7 +12,13 @@ const DEBOUNCE_MS = 250;
  * The project folder is the only thing it ever has to ask for, and it asks
  * once per level.
  */
-export function WorkBar({ levelId }: { levelId: string }) {
+export function WorkBar({
+  levelId,
+  onFindAbility,
+}: {
+  levelId: string;
+  onFindAbility: (text: string) => void;
+}) {
   const [text, setText] = useState('');
   const [plan, setPlan] = useState<WorkPlan | null>(null);
   const [askingRepo, setAskingRepo] = useState(false);
@@ -97,7 +103,13 @@ export function WorkBar({ levelId }: { levelId: string }) {
       )}
 
       {plan && !askingRepo && plan.gaps.length > 0 && (
-        <p className="work-gaps">nothing in the library covers: {plan.gaps.join(' · ')}</p>
+        <p className="work-gaps">
+          nothing your crew has covers: {plan.gaps.join(' · ')}
+          {' · '}
+          <button className="work-link" onClick={() => onFindAbility(text.trim())}>
+            find one
+          </button>
+        </p>
       )}
 
       {plan && !askingRepo && !plan.needsRepo && (

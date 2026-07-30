@@ -112,6 +112,10 @@ const DOMAIN: Record<string, string[]> = {
 
 const INTENT_WEIGHT = 1.5;
 const DOMAIN_WEIGHT = 0.55;
+/** How far synonyms are dialled back when the catalog is full of the word. */
+const BRIDGED = 0.45;
+/** "Full of" — appearing in this fraction of the catalog or more. */
+const COMMON = 0.15;
 
 /**
  * A concept is one word's worth of evidence however many synonyms express it.
@@ -195,9 +199,10 @@ export class MatchIndex {
 
   constructor(roles: (RoleInfo & { prompt?: string })[], skills: SkillInfo[]) {
     for (const role of roles) {
-      this.docs.push(
-        toDoc('role', role.name, role.description, [role.prompt ?? '', ...role.skills].join(' ')),
-      );
+      // Only what the role says about itself. The names of its attached
+      // abilities are configuration, and indexing them makes a role match
+      // words it never claimed — "check-your-work" answering "how it works".
+      this.docs.push(toDoc('role', role.name, role.description, role.prompt ?? ''));
     }
     for (const skill of skills) this.docs.push(toDoc('skill', skill.name, skill.description, ''));
 
@@ -216,6 +221,12 @@ export class MatchIndex {
   /** True when any installed role or skill mentions this term at all. */
   knows(term: string): boolean {
     return this.df.has(term);
+  }
+
+  /** Share of the catalog that uses this term, 0–1. */
+  private frequency(term: string): number {
+    if (this.docs.length === 0) return 0;
+    return (this.df.get(term) ?? 0) / this.docs.length;
   }
 
   /**
@@ -248,9 +259,15 @@ export class MatchIndex {
       const term = stem(word);
       weighted.set(term, Math.max(weighted.get(term) ?? 0, 1));
       const { terms, weight } = expansionsFor(word);
+      // Synonyms exist to cover vocabulary the catalog lacks. Once a word is
+      // everywhere in the catalog, its synonyms are noise — they let a common
+      // concept like "check" drown out a rare, specific term like
+      // "accessibility". A word that merely appears somewhere is still worth
+      // bridging: presence alone is too crude a signal.
+      const scale = this.frequency(term) >= COMMON ? BRIDGED : 1;
       for (const related of terms) {
         const rel = stem(related);
-        weighted.set(rel, Math.max(weighted.get(rel) ?? 0, weight));
+        weighted.set(rel, Math.max(weighted.get(rel) ?? 0, weight * scale));
       }
     }
     return weighted;

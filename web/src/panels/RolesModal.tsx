@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
-import type {
-  LibraryHit,
-  LibrarySearchResult,
-  LibraryStatus,
-  RoleInfo,
-  SkillInfo,
-} from '@agentlings/shared';
+import type { LibrarySearchResult, LibraryStatus, RoleInfo, SkillInfo } from '@agentlings/shared';
 import { api, postJson } from '../api';
+import { LibraryResults } from './LibraryResults';
 
 const DEBOUNCE_MS = 300;
 
@@ -20,26 +15,25 @@ function ago(at: number): string {
   return `${Math.round(hours / 24)} d ago`;
 }
 
-interface Preview {
-  text: string;
-  warnings: string[];
-}
-
 /**
  * The library: what this crew can already do, and how to find more. Search is
  * plain language; nothing installs until the user has had the chance to read
  * it, and everything installed is pinned to the commit it was read at.
  */
-export function RolesModal({ onClose }: { onClose: () => void }) {
+export function RolesModal({
+  onClose,
+  initialQuery = '',
+}: {
+  onClose: () => void;
+  initialQuery?: string;
+}) {
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [status, setStatus] = useState<LibraryStatus | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [result, setResult] = useState<LibrarySearchResult | null>(null);
   const [searching, setSearching] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [advanced, setAdvanced] = useState(false);
@@ -80,57 +74,12 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const read = async (hit: LibraryHit) => {
-    if (openId === hit.entry.id) {
-      setOpenId(null);
-      return;
-    }
-    setOpenId(hit.entry.id);
-    setPreview(null);
-    setError(null);
-    const { repo, path, sha } = hit.entry;
-    try {
-      setPreview(await api<Preview>('/api/library/preview', postJson({ repo, path, sha })));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const install = async (hit: LibraryHit) => {
-    setBusy(hit.entry.id);
-    setError(null);
-    setNote(null);
-    const { repo, path, sha } = hit.entry;
-    try {
-      const done = await api<{ kind: string; name: string }>(
-        '/api/library/install',
-        postJson({ repo, path, sha }),
-      );
-      setNote(`Added ${done.name}. Any agentling can use it now.`);
-      await refresh();
-      setResult((prev) =>
-        prev
-          ? {
-              ...prev,
-              hits: prev.hits.map((h) =>
-                h.entry.id === hit.entry.id ? { ...h, state: 'installed' } : h,
-              ),
-            }
-          : prev,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const resync = async () => {
-    setBusy('sync');
+    setBusy(true);
     try {
       setStatus(await api<LibraryStatus>('/api/library/refresh', { method: 'POST' }));
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -171,8 +120,8 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
               ? `${status.total} available from ${status.sources.filter((s) => s.ok).length}/${status.sources.length} sources · checked ${ago(status.fetchedAt)}`
               : 'checking sources…'}
             {' · '}
-            <button className="work-link" disabled={busy === 'sync'} onClick={() => void resync()}>
-              {busy === 'sync' ? 'checking…' : 'check again'}
+            <button className="work-link" disabled={busy} onClick={() => void resync()}>
+              {busy ? 'checking…' : 'check again'}
             </button>
           </p>
           {status?.sources
@@ -197,47 +146,15 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
               {result.gaps.length > 0 ? ` — no source covers: ${result.gaps.join(' · ')}` : ''}.
             </p>
           )}
-          {result?.hits.map((hit) => (
-            <div key={hit.entry.id} className="lib-hit">
-              <div className="lib-hit-head">
-                <span className={hit.entry.kind === 'role' ? 'badge queued' : 'chip skill'}>
-                  {hit.entry.name}
-                </span>
-                <span className="dim lib-kind">
-                  {hit.entry.kind === 'role' ? 'job' : 'ability'}
-                </span>
-                {hit.state === 'installed' && <span className="badge done">in your library</span>}
-                {hit.state === 'outdated' && <span className="badge running">update available</span>}
-                <span className="dim lib-repo">
-                  {hit.entry.repo}
-                  {hit.entry.license ? ` · ${hit.entry.license}` : ''}
-                </span>
-              </div>
-              <p className="lib-desc">{hit.entry.description}</p>
-              <div className="actions">
-                <button className="ghost" onClick={() => void read(hit)}>
-                  {openId === hit.entry.id ? 'Hide' : 'Read it first'}
-                </button>
-                <button
-                  disabled={busy === hit.entry.id || hit.state === 'installed'}
-                  onClick={() => void install(hit)}
-                >
-                  {hit.state === 'outdated' ? 'Update' : 'Add to library'}
-                </button>
-              </div>
-              {openId === hit.entry.id && (
-                <div className="lib-preview">
-                  {preview === null && <p className="dim">loading…</p>}
-                  {preview?.warnings.map((w) => (
-                    <p key={w} className="lib-warn">
-                      ⚠ {w}
-                    </p>
-                  ))}
-                  {preview && <pre>{preview.text}</pre>}
-                </div>
-              )}
-            </div>
-          ))}
+          {result && (
+            <LibraryResults
+              hits={result.hits}
+              onInstalled={(name) => {
+                setNote(`Added ${name}. Any agentling can use it now.`);
+                void refresh();
+              }}
+            />
+          )}
 
           {note && <p className="stat-done">{note}</p>}
           {error && <p className="error">{error}</p>}

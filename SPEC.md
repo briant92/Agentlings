@@ -172,6 +172,16 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     - **Known limitation:** only the single `.md` is installed. Skills that
       ship supporting scripts or reference files arrive incomplete; whole
       -folder installs are the obvious follow-up.
+    - **Starter set + fallback.** Ships 5 generalist jobs (worker, mason,
+      scout, scribe, analyst) and 6 generalist abilities, hand-written
+      against this app's contract — sandbox only, RESULT.md out — which
+      third-party agents know nothing about. Everything else is found on
+      demand: when a sentence has no confident job or names words the crew
+      can't cover, the same sentence searches the library inline and the
+      results install in place, re-matching immediately. `starter.test.ts`
+      pins the shipped set from disk; `match.test.ts` pins the algorithm
+      against a fixture, and the two drifting apart is how a regression got
+      through once.
   - **M3.5 (built).** Work intake in one box: the sentence becomes the
     prompt, `titleFrom` derives the title, the matcher picks the role, and
     `pickAgentling` picks who takes it — all shown before anything is

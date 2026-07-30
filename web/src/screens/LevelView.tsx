@@ -17,6 +17,7 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
   const [reviewJobId, setReviewJobId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const [hired, setHired] = useState<Agentling | null>(null);
   const arrival = useRef<number | undefined>(undefined);
   const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
@@ -45,14 +46,26 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
           <button className="ghost" onClick={() => void hire()}>
             + hire
           </button>
-          <button className="ghost" onClick={() => setRolesOpen(true)}>
-            roles
+          <button
+            className="ghost"
+            onClick={() => {
+              setLibraryQuery('');
+              setRolesOpen(true);
+            }}
+          >
+            library
           </button>
         </span>
       </header>
       <main>
         <WorldCanvas world={world} theme={level.theme} onSelect={setProfileId} />
-        <WorkBar levelId={level.id} />
+        <WorkBar
+          levelId={level.id}
+          onFindAbility={(text) => {
+            setLibraryQuery(text);
+            setRolesOpen(true);
+          }}
+        />
       </main>
       <Terminal levelId={level.id} world={world} events={events} onOpenReview={setReviewJobId} />
       {reviewJob && (
@@ -68,7 +81,9 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
       {hired && (
         <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
       )}
-      {rolesOpen && <RolesModal onClose={() => setRolesOpen(false)} />}
+      {rolesOpen && (
+        <RolesModal initialQuery={libraryQuery} onClose={() => setRolesOpen(false)} />
+      )}
     </div>
   );
 }

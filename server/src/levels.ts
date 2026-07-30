@@ -28,6 +28,16 @@ export interface CrewSeed {
   role: string;
   /** The user's own words for this agentling's job, set when they were hired. */
   jobDescription?: string;
+  /**
+   * Career, persisted. These used to live only in the running sim and reset
+   * on every restart, which made an agentling's record meaningless.
+   */
+  jobsDone?: number;
+  jobsFailed?: number;
+  hiredAt?: number;
+  lastWorkedAt?: number;
+  /** Resting crew keep everything but leave the world and the job queue. */
+  resting?: boolean;
 }
 
 export const THEME_KEYS: ThemeKey[] = ['cave', 'chalkboard', 'household', 'marble'];
@@ -70,6 +80,7 @@ export function newCrewSeed(existing: CrewSeed[]): CrewSeed {
   const name =
     NAME_POOL.find((n) => !used.has(n)) ?? `Ling-${existing.length + 1}`;
   return {
+    hiredAt: Date.now(),
     id: `a${existing.length + 1}-${Math.random().toString(36).slice(2, 6)}`,
     name,
     color: COLOR_POOL[existing.length % COLOR_POOL.length],

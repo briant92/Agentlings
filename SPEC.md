@@ -200,7 +200,27 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     falls back to a centred card. Runs once (`agentlings:tour` in
     localStorage), waits for the iris to finish, never opens over a modal,
     and can be replayed from Settings.
-- **M4 — deepen the metaphor (parked ideas).** Hazards mapped to real
+- **M4 — crew management.** Three ways a crew changes size without losing
+  what it learnt.
+  - **M4.0 (built).** The roster is the record, the sim holds only who is
+    awake. Career figures, `hiredAt`, `lastWorkedAt` and `resting` are
+    persisted — `jobsDone`/`jobsFailed` used to live only in the sim and
+    reset on every restart, which made an agentling's record meaningless.
+    `crew.ts` holds the pure seam (`syncRoster`, `crewMembers`,
+    `activeCrew`); `CrewSeed` is defined once, in `levels.ts`.
+  - **M4.1 (built).** Rest: out through the door (`Sim.sendOut` reuses the
+    delivering walk, removing them on arrival), off the job queue, nothing
+    lost. Waking drops them back through the hatch with career and lessons
+    intact. Blocked mid-job. The Crew panel opens from the doorway in the
+    world and from a header button.
+  - **M4.2 (built).** Letting go: roster entry removed, lessons moved to
+    `memory/archive/<name>-<date>.md` rather than deleted. The confirmation
+    states what is lost and offers resting as the alternative.
+  - **M4.3.** Merge — overlap detection over role, hire descriptions and
+    abilities, showing its evidence; survivor defaults to the stronger
+    record; careers add up, lessons merge oldest-first deduplicated, the
+    absorbed file is archived and the name returns to the pool.
+- **M5 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.
 

@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -25,6 +25,25 @@ export class MemoryStore {
       appendFileSync(file, `# ${agentlingName} — lessons\n\n`);
     }
     appendFileSync(file, `- ${lesson}\n`);
+  }
+
+  /**
+   * Letting someone go moves their lessons aside rather than shredding them.
+   * The app forgets; the file is still there if it was a mistake. Returns the
+   * archive path, or null when there was nothing to keep.
+   */
+  archive(agentlingName: string, at = new Date()): string | null {
+    const file = this.file(agentlingName);
+    if (!existsSync(file)) return null;
+    const dir = path.join(this.dir, 'archive');
+    mkdirSync(dir, { recursive: true });
+    const stamp = at.toISOString().slice(0, 10);
+    let target = path.join(dir, `${agentlingName.toLowerCase()}-${stamp}.md`);
+    for (let n = 2; existsSync(target); n++) {
+      target = path.join(dir, `${agentlingName.toLowerCase()}-${stamp}-${n}.md`);
+    }
+    renameSync(file, target);
+    return target;
   }
 
   private file(agentlingName: string): string {

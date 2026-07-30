@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { AgentlingProfile, LevelInfo, ServerMessage, SettingsInfo } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
+import { activeCrew, crewMembers, syncRoster } from './crew';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor } from './executors/claude';
 import type { Executor } from './executors/executor';
@@ -26,6 +27,7 @@ import {
   THEME_KEYS,
   writeMeta,
   writeRoster,
+  type CrewSeed,
   type LevelMeta,
 } from './levels';
 import {
@@ -116,21 +118,20 @@ interface LevelRuntime {
   sim: Sim;
   eventLog: EventLog;
   memory: MemoryStore;
+  /** Everyone ever hired here and still on the books, resting crew included. */
+  roster: CrewSeed[];
 }
 
 const levels = new Map<string, LevelRuntime>();
 
 function saveRoster(rt: LevelRuntime): void {
-  writeRoster(
-    rt.dir,
-    rt.sim.agentlings.map(({ id, name, color, role, jobDescription }) => ({
-      id,
-      name,
-      color,
-      role,
-      jobDescription,
-    })),
-  );
+  rt.roster = syncRoster(rt.roster, rt.sim.agentlings);
+  writeRoster(rt.dir, rt.roster);
+}
+
+/** Mid-job crew can't be rested, merged or let go until they finish. */
+function isBusy(rt: LevelRuntime, id: string): boolean {
+  return rt.sim.agentlings.find((a) => a.id === id)?.state === 'working';
 }
 
 function makeLevel(dir: string): LevelRuntime {
@@ -143,8 +144,9 @@ function makeLevel(dir: string): LevelRuntime {
   const executor: Executor = useClaude
     ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir))
     : simulated;
+  const roster = readRoster(dir);
   const sim = new Sim(
-    readRoster(dir),
+    activeCrew(roster),
     queue,
     executor,
     (event) => eventLog.emit(event),
@@ -160,9 +162,16 @@ function makeLevel(dir: string): LevelRuntime {
         dir,
         `${date} · ${agentling.name} (${agentling.role}) ${outcome === 'done' ? 'delivered' : 'failed'} "${jobTitle}"${lesson ? ` — ${lesson}` : ''}`,
       );
+      // Persist the career as it happens, so a restart no longer wipes it.
+      const runtime = levels.get(meta.id);
+      if (runtime) {
+        const seed = runtime.roster.find((s) => s.id === agentling.id);
+        if (seed) seed.lastWorkedAt = Date.now();
+        saveRoster(runtime);
+      }
     },
   );
-  const rt: LevelRuntime = { meta, dir, queue, sim, eventLog, memory };
+  const rt: LevelRuntime = { meta, dir, queue, sim, eventLog, memory, roster };
   levels.set(meta.id, rt);
   return rt;
 }
@@ -395,12 +404,69 @@ app.post('/api/match', async (c) => {
 app.post('/api/levels/:lid/agentlings', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const seed = newCrewSeed(
-    rt.sim.agentlings.map(({ id, name, color, role }) => ({ id, name, color, role })),
-  );
+  // Seeded from the whole roster so a resting crew member's name isn't reused.
+  const seed = newCrewSeed(rt.roster);
   const agentling = rt.sim.addAgentling(seed);
+  rt.roster.push(seed);
   saveRoster(rt);
   return c.json(agentling, 201);
+});
+
+/** The Crew panel: everyone on the books, awake or resting. */
+app.get('/api/levels/:lid/crew', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json(
+    crewMembers(rt.roster, rt.sim.agentlings, (name) => rt.memory.lessons(name).length),
+  );
+});
+
+/** Rest: out through the door, off the queue, nothing lost. */
+app.post('/api/levels/:lid/agentlings/:aid/rest', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const seed = rt.roster.find((s) => s.id === c.req.param('aid'));
+  if (!seed) return c.json({ error: 'unknown agentling' }, 404);
+  if (seed.resting) return c.json({ error: `${seed.name} is already resting` }, 400);
+  if (isBusy(rt, seed.id)) {
+    return c.json({ error: `${seed.name} is working — let them finish first` }, 409);
+  }
+  rt.sim.sendOut(seed.id);
+  seed.resting = true;
+  saveRoster(rt);
+  return c.json({ id: seed.id, resting: true });
+});
+
+/** Back in through the hatch, career and lessons intact. */
+app.post('/api/levels/:lid/agentlings/:aid/wake', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const seed = rt.roster.find((s) => s.id === c.req.param('aid'));
+  if (!seed) return c.json({ error: 'unknown agentling' }, 404);
+  if (!seed.resting) return c.json({ error: `${seed.name} is already here` }, 400);
+  seed.resting = false;
+  rt.sim.addAgentling(seed);
+  saveRoster(rt);
+  return c.json({ id: seed.id, resting: false });
+});
+
+/**
+ * Letting someone go. The roster forgets them and their lessons move to
+ * memory/archive — the app is done with them, the file is still there.
+ */
+app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const seed = rt.roster.find((s) => s.id === c.req.param('aid'));
+  if (!seed) return c.json({ error: 'unknown agentling' }, 404);
+  if (isBusy(rt, seed.id)) {
+    return c.json({ error: `${seed.name} is working — let them finish first` }, 409);
+  }
+  rt.sim.sendOut(seed.id);
+  const archived = rt.memory.archive(seed.name);
+  rt.roster = rt.roster.filter((s) => s.id !== seed.id);
+  saveRoster(rt);
+  return c.json({ id: seed.id, name: seed.name, archived: archived !== null });
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));

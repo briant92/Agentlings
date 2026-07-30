@@ -1,6 +1,7 @@
 import type { Agentling, JobEvent, WorldState } from '@agentlings/shared';
 import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import type { Executor } from './executors/executor';
+import type { CrewSeed } from './levels';
 import type { JobQueue } from './queue';
 
 export type EmitEvent = (event: Omit<JobEvent, 'id' | 'at'>) => void;
@@ -17,13 +18,8 @@ const PATROL_MIN = 48; // just clear of the left rock wall
 const PATROL_MAX = 950; // bounce at the right wall, past the arch
 const SPAWN_AT = 80; // hires drop in under the hatch
 
-export interface CrewSeed {
-  id: string;
-  name: string;
-  color: number;
-  role: string;
-  jobDescription?: string;
-}
+/** The persisted crew record; the sim materialises the awake ones. */
+export type { CrewSeed } from './levels';
 
 export function stationX(slot: number): number {
   return STATION_BASE_X + slot * STATION_SPACING;
@@ -39,6 +35,8 @@ export class Sim {
   agentlings: Agentling[];
   /** Patrol heading per agentling; 'idle' means walking the level like a lemming. */
   private dirs = new Map<string, 1 | -1>();
+  /** Walking out for good — removed when they reach the door. */
+  private leaving = new Set<string>();
 
   constructor(
     crew: CrewSeed[],
@@ -69,12 +67,27 @@ export class Sim {
       state: 'idle',
       x: SPAWN_AT,
       targetX: SPAWN_AT,
-      jobsDone: 0,
-      jobsFailed: 0,
+      jobsDone: seed.jobsDone ?? 0,
+      jobsFailed: seed.jobsFailed ?? 0,
     };
     this.agentlings.push(a);
     this.dirs.set(a.id, 1);
     return a;
+  }
+
+  /**
+   * Sends someone to the door and off the world. Resting and leaving for good
+   * look the same from here — the roster is what remembers the difference.
+   * Returns false if they are mid-job and can't be interrupted.
+   */
+  sendOut(id: string): boolean {
+    const a = this.agentlings.find((other) => other.id === id);
+    if (!a || a.state === 'working') return false;
+    a.jobId = undefined;
+    a.state = 'delivering'; // the walk-to-the-door animation, reused
+    a.targetX = EXIT_X;
+    this.leaving.add(id);
+    return true;
   }
 
   state(): WorldState {
@@ -134,6 +147,12 @@ export class Sim {
   }
 
   private arrive(a: Agentling): void {
+    if (this.leaving.has(a.id)) {
+      this.agentlings = this.agentlings.filter((other) => other.id !== a.id);
+      this.dirs.delete(a.id);
+      this.leaving.delete(a.id);
+      return;
+    }
     if (a.state === 'delivering') {
       // Result dropped at the exit; turn around and rejoin the patrol.
       a.jobId = undefined;

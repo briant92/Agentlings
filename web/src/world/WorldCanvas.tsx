@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Application, Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
@@ -274,16 +274,20 @@ export function WorldCanvas({
   world,
   theme,
   onSelect,
+  onOpenCrew,
 }: {
   world: WorldState | null;
   theme: ThemeKey;
   onSelect: (agentlingId: string) => void;
+  onOpenCrew: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<WorldState | null>(null);
   worldRef.current = world;
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const onOpenCrewRef = useRef(onOpenCrew);
+  onOpenCrewRef.current = onOpenCrew;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -336,6 +340,15 @@ export function WorldCanvas({
         const scenery = new Graphics();
         drawScenery(scenery, T);
         app.stage.addChild(scenery);
+
+        // The doorway is where crew leave and come back, so it opens the crew
+        // panel. Added below the sprites so clicking an agentling still wins.
+        const portal = new Container();
+        portal.eventMode = 'static';
+        portal.cursor = 'pointer';
+        portal.hitArea = new Rectangle(EXIT_X - 34, GROUND_Y - 58, 68, 58);
+        portal.on('pointerdown', () => onOpenCrewRef.current());
+        app.stage.addChild(portal);
 
         const dynamic = new Graphics();
         app.stage.addChild(dynamic);

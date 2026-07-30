@@ -157,6 +157,24 @@ export interface MatchSuggestion {
   alternatives: { name: string; description: string }[];
 }
 
+/** One crew member as the Crew panel sees them — resting ones included. */
+export interface CrewMember {
+  id: string;
+  name: string;
+  color: number;
+  role: string;
+  jobDescription?: string;
+  jobsDone: number;
+  jobsFailed: number;
+  hiredAt: number;
+  /** Last time they finished a job, for spotting who has gone quiet. */
+  lastWorkedAt?: number;
+  resting: boolean;
+  /** Mid-job: crew actions are blocked until they finish. */
+  busy: boolean;
+  lessons: number;
+}
+
 /** GET /api/agentlings/:id — everything the profile popup shows. */
 export interface AgentlingProfile {
   agentling: Agentling;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Agentling } from '@agentlings/shared';
 import { api, lvl } from '../api';
+import { CrewPanel } from '../panels/CrewPanel';
 import { HireModal } from '../panels/HireModal';
 import { ProfileModal } from '../panels/ProfileModal';
 import { ReviewModal } from '../panels/ReviewModal';
@@ -19,6 +20,7 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
+  const [crewOpen, setCrewOpen] = useState(false);
   const [hired, setHired] = useState<Agentling | null>(null);
   const [tour, setTour] = useState(false);
   const arrival = useRef<number | undefined>(undefined);
@@ -55,6 +57,9 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
           <button className="ghost" data-tour="hire" onClick={() => void hire()}>
             + hire
           </button>
+          <button className="ghost" data-tour="crew" onClick={() => setCrewOpen(true)}>
+            crew
+          </button>
           <button
             className="ghost"
             onClick={() => {
@@ -67,7 +72,12 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
         </span>
       </header>
       <main>
-        <WorldCanvas world={world} theme={level.theme} onSelect={setProfileId} />
+        <WorldCanvas
+          world={world}
+          theme={level.theme}
+          onSelect={setProfileId}
+          onOpenCrew={() => setCrewOpen(true)}
+        />
         <WorkBar
           levelId={level.id}
           onFindAbility={(text) => {
@@ -87,6 +97,7 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
           onClose={() => setProfileId(null)}
         />
       )}
+      {crewOpen && <CrewPanel levelId={level.id} onClose={() => setCrewOpen(false)} />}
       {hired && (
         <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
       )}

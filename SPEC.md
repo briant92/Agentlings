@@ -73,7 +73,12 @@ packages/shared               ── domain types + world constants
   to the real repo (`git apply`). `ANTHROPIC_API_KEY` lives in `.env`
   (gitignored) — never in code.
 - **M2 — durability & quality of life.** Persist jobs (JSONL or SQLite),
-  survive restarts, cancel button, per-job live log stream.
+  survive restarts, cancel button, per-job live log stream. External-app
+  access via an in-app MCP connection registry: named connections defined
+  in server config (tokens in `.env`), jobs opt in through a
+  `tools: string[]` field, and the executor passes only those MCP servers
+  into the agentling's Agent SDK session. Default remains no external
+  connections — sandbox only.
 - **M3 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.
@@ -84,6 +89,8 @@ packages/shared               ── domain types + world constants
 - No game scoring or win/lose states — the world is a status display.
 - No direct writes to real repos before you promote a result.
 - No LLM calls for world behavior (movement stays deterministic).
+- No borrowing of claude.ai / Claude Code connector auth for agentlings —
+  the app owns its own external credentials (see M2).
 
 ## Definition of done (per CLAUDE.md)
 

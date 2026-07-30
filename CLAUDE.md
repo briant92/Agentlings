@@ -135,3 +135,6 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - 2026-07-30 — Stack: TS monorepo (npm workspaces) — Vite + React + PixiJS
   web, Node + Hono + ws server, Vitest; Claude Agent SDK planned as the
   real executor (M1).
+- 2026-07-30 — External-app access for agentlings happens in-app (MCP
+  connection registry, per-job opt-in; sketch in SPEC.md M2) — never by
+  reusing claude.ai / Claude Code connectors.

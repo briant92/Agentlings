@@ -13,6 +13,20 @@ function jobById(world: WorldState | null, id: string): Job | undefined {
   return world?.jobs.find((j) => j.id === id);
 }
 
+/** What the session cost, when the executor could tell. */
+function meterLine(job: Job): string | null {
+  const m = job.meter;
+  if (!m) return null;
+  const bits: string[] = [];
+  if (typeof m.costUsd === 'number') {
+    bits.push(m.costUsd < 0.01 ? '<$0.01' : `$${m.costUsd.toFixed(2)}`);
+  }
+  if (typeof m.turns === 'number') bits.push(`${m.turns} turns`);
+  if (typeof m.durationMs === 'number') bits.push(`${Math.round(m.durationMs / 1000)}s`);
+  if (m.model) bits.push(m.model.replace(/^claude-/, '').replace(/-\d{8}$/, ''));
+  return bits.length > 0 ? bits.join(' · ') : null;
+}
+
 /** What approving would actually do to the project, in one line. */
 function changeLine(job: Job): string {
   const c = job.changes;
@@ -162,7 +176,10 @@ function EventEntry({
           {job?.status === 'done' && (
             <div className="t-card">
               <div className="summary">{event.detail}</div>
-              <div className="t-changes">{changeLine(job)}</div>
+              <div className="t-changes">
+                {changeLine(job)}
+                {meterLine(job) && <span className="t-meter"> · {meterLine(job)}</span>}
+              </div>
               <div className="actions">
                 <button onClick={() => void onResolve(event.jobId, 'promote')}>Approve</button>
                 <button onClick={() => void onResolve(event.jobId, 'discard')}>Discard</button>

@@ -334,6 +334,9 @@ button.ghost {
   color: #8a91a3;
   margin: 0 0 7px;
 }
+.t-meter {
+  color: #5a6172;
+}
 .t-card .actions {
   display: flex;
   gap: 6px;

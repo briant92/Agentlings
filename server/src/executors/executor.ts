@@ -1,9 +1,11 @@
-import type { Agentling, Job } from '@agentlings/shared';
+import type { Agentling, Job, JobMeter } from '@agentlings/shared';
 
 export interface ExecutorResult {
   summary: string;
   /** One line the agentling learned; appended to its memory file. */
   lesson?: string;
+  /** What the session cost, when the executor can tell. */
+  meter?: JobMeter;
 }
 
 /**

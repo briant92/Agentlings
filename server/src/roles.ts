@@ -101,12 +101,14 @@ function roleFromText(text: string): LoadedRole {
   const description = toText(parsed.meta.description);
   if (!NAME_RE.test(name)) throw new Error('frontmatter needs a kebab-case "name"');
   if (!description) throw new Error('frontmatter needs a "description"');
+  const turns = Number(toText(parsed.meta.maxTurns));
   return {
     name,
     description,
     tools: toList(parsed.meta.tools),
     skills: toList(parsed.meta.skills),
     model: toText(parsed.meta.model) || undefined,
+    ...(Number.isFinite(turns) && turns > 0 ? { maxTurns: turns } : {}),
     prompt: parsed.body,
   };
 }

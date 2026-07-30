@@ -186,7 +186,7 @@ export class Sim {
         a,
       )
       .then((result) => {
-        this.queue.complete(jobId, result.summary);
+        this.queue.complete(jobId, result.summary, result.meter);
         this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
         a.jobsDone++;
         this.onOutcome(a, job.title, 'done', result.summary, result.lesson);

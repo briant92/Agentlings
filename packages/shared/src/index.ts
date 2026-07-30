@@ -29,6 +29,21 @@ export type JobStatus =
   | 'promoted'
   | 'discarded';
 
+/**
+ * What one session actually cost. Recorded per job from the first run, so
+ * which workflows are expensive is a fact rather than a guess.
+ */
+export interface JobMeter {
+  costUsd?: number;
+  turns?: number;
+  durationMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  /** The model that actually ran it. */
+  model?: string;
+}
+
 /** What a finished job actually changed, for explaining it in plain words. */
 export interface JobChanges {
   files: number;
@@ -47,6 +62,8 @@ export interface Job {
   preferredRole?: string;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
+  /** What the session cost — recorded whether it succeeded or failed. */
+  meter?: JobMeter;
   status: JobStatus;
   /** Station slot in the world; -1 while waiting for a free station or after finishing. */
   slot: number;
@@ -86,6 +103,8 @@ export interface RoleInfo {
   tools: string[];
   skills: string[];
   model?: string;
+  /** Turn budget for this role's sessions; clamped by the executor. */
+  maxTurns?: number;
 }
 
 export interface SkillInfo {

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Job } from '@agentlings/shared';
+import type { Job, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
 import { patchFile, summarizePatch } from './gitwork';
 
@@ -71,10 +71,11 @@ export class JobQueue {
     return dir;
   }
 
-  complete(jobId: string, summary: string): void {
+  complete(jobId: string, summary: string, meter?: JobMeter): void {
     const job = this.mustGet(jobId);
     job.status = 'done';
     job.summary = summary;
+    if (meter) job.meter = meter;
     const patch = patchFile(this.sandboxDir(jobId));
     if (existsSync(patch)) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
     this.finish(job);

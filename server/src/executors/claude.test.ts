@@ -1,4 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import { turnsFor } from './claude';
+
+describe('turnsFor', () => {
+  it('keeps a tight default when a role says nothing', () => {
+    expect(turnsFor(undefined)).toBe(8);
+    expect(turnsFor({})).toBe(8);
+  });
+
+  it('lets a role that must explore ask for more', () => {
+    expect(turnsFor({ maxTurns: 20 })).toBe(20);
+  });
+
+  it('clamps a runaway value rather than trusting it', () => {
+    expect(turnsFor({ maxTurns: 5000 })).toBe(40);
+  });
+
+  it('ignores nonsense instead of uncapping the loop', () => {
+    expect(turnsFor({ maxTurns: 0 })).toBe(8);
+    expect(turnsFor({ maxTurns: -3 })).toBe(8);
+    expect(turnsFor({ maxTurns: Number.NaN })).toBe(8);
+  });
+});
 import { buildAppend, mapTools, parseLesson, toolLine } from './claude';
 
 describe('mapTools', () => {

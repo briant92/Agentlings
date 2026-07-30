@@ -14,6 +14,7 @@ try {
   const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
   let summary = '';
+  let meter;
   for await (const message of query({
     prompt: config.prompt,
     options: {
@@ -46,9 +47,19 @@ try {
         process.exit(1);
       }
       summary = String(message.result ?? '');
+      // The SDK hands back what the session cost. Read defensively — this is
+      // metering, and a shape change must never fail a job that succeeded.
+      meter = {
+        costUsd: typeof message.total_cost_usd === 'number' ? message.total_cost_usd : undefined,
+        turns: typeof message.num_turns === 'number' ? message.num_turns : undefined,
+        durationMs: typeof message.duration_ms === 'number' ? message.duration_ms : undefined,
+        inputTokens: message.usage?.input_tokens,
+        outputTokens: message.usage?.output_tokens,
+        cacheReadTokens: message.usage?.cache_read_input_tokens,
+      };
     }
   }
-  emit({ type: 'result', summary });
+  emit({ type: 'result', summary, meter });
   process.exit(0);
 } catch (err) {
   emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });

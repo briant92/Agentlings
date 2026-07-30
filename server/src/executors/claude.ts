@@ -3,14 +3,21 @@ import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import type { Agentling, Job } from '@agentlings/shared';
+import type { Agentling, Job, JobMeter } from '@agentlings/shared';
 import { cloneRepo, writeDiff } from '../gitwork';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import type { Executor, ExecutorResult } from './executor';
 
 const SESSION_TIMEOUT_MS = 10 * 60_000;
-const MAX_TURNS = 60;
+/**
+ * A runaway agent that keeps "investigating" is the classic cost failure
+ * mode, and turns are the multiplier. Roles that genuinely need to explore
+ * raise this themselves with `maxTurns:` in their frontmatter; the default is
+ * deliberately tight. Was 60, which was an accident rather than a decision.
+ */
+const DEFAULT_MAX_TURNS = 8;
+const TURN_CEILING = 40;
 export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
 
 /**
@@ -44,6 +51,15 @@ const TOOL_MAP: Record<string, string[]> = {
 };
 
 const DEFAULT_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
+
+/** A role's own turn budget, clamped so a typo can't uncap the loop. */
+export function turnsFor(role: { maxTurns?: number } | undefined): number {
+  const wanted = role?.maxTurns;
+  if (typeof wanted !== 'number' || !Number.isFinite(wanted) || wanted < 1) {
+    return DEFAULT_MAX_TURNS;
+  }
+  return Math.min(Math.floor(wanted), TURN_CEILING);
+}
 
 export function mapTools(roleTools: string[]): string[] {
   const mapped = roleTools.flatMap(
@@ -113,6 +129,7 @@ interface RunnerMessage {
   input?: unknown;
   summary?: string;
   message?: string;
+  meter?: unknown;
 }
 
 /**
@@ -166,13 +183,13 @@ export class ClaudeAgentExecutor implements Executor {
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
         append: buildAppend(role, lessons, this.knowledge(), hasRepo),
         allowedTools,
-        maxTurns: MAX_TURNS,
+        maxTurns: turnsFor(role),
         skills,
-        model: role?.model,
+        model: role?.model ?? process.env.AGENTLINGS_MODEL,
       }),
     );
 
-    const summary = await this.runSession(configPath, onProgress);
+    const { summary, meter } = await this.runSession(configPath, onProgress);
 
     if (hasRepo) {
       const changed = await writeDiff(sandboxDir);
@@ -184,10 +201,17 @@ export class ClaudeAgentExecutor implements Executor {
       ? parseLesson(readFileSync(lessonPath, 'utf8'))
       : undefined;
 
-    return { summary, lesson };
+    return {
+      summary,
+      lesson,
+      meter: { ...meter, model: role?.model ?? process.env.AGENTLINGS_MODEL },
+    };
   }
 
-  private runSession(configPath: string, onProgress?: (detail: string) => void): Promise<string> {
+  private runSession(
+    configPath: string,
+    onProgress?: (detail: string) => void,
+  ): Promise<{ summary: string; meter: JobMeter }> {
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [RUNNER, configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -199,6 +223,7 @@ export class ClaudeAgentExecutor implements Executor {
       }, SESSION_TIMEOUT_MS);
 
       let summary = '';
+      let meter: JobMeter = {};
       let errorMsg = '';
       let stderr = '';
       child.stderr.on('data', (chunk: Buffer) => {
@@ -216,6 +241,7 @@ export class ClaudeAgentExecutor implements Executor {
           onProgress?.(toolLine(msg.name, msg.input));
         } else if (msg.type === 'result') {
           summary = firstLine(String(msg.summary ?? ''));
+          if (msg.meter && typeof msg.meter === 'object') meter = msg.meter as JobMeter;
         } else if (msg.type === 'error') {
           errorMsg = firstLine(String(msg.message ?? 'agent session failed'));
         }
@@ -230,7 +256,7 @@ export class ClaudeAgentExecutor implements Executor {
         if (code !== 0) {
           return reject(new Error(firstLine(stderr) || `agent runner exited with code ${code}`));
         }
-        resolve(summary || 'Session ended without a final result.');
+        resolve({ summary: summary || 'Session ended without a final result.', meter });
       });
     });
   }

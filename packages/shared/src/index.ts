@@ -44,6 +44,17 @@ export interface JobMeter {
   model?: string;
 }
 
+/** A connection a job can opt into. Secret values never appear here. */
+export interface ConnectionInfo {
+  name: string;
+  label: string;
+  description: string;
+  builtin: boolean;
+  /** False when a secret it declares is missing from .env. */
+  ready: boolean;
+  missingSecrets: string[];
+}
+
 /** What a finished job actually changed, for explaining it in plain words. */
 export interface JobChanges {
   files: number;
@@ -60,6 +71,8 @@ export interface Job {
   repoPath?: string;
   /** Role the intake matched; the sim routes the job to that role first. */
   preferredRole?: string;
+  /** Connections this job opted into by name. Absent means sandbox only. */
+  tools?: string[];
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
   /** What the session cost — recorded whether it succeeded or failed. */
@@ -288,3 +301,5 @@ export const STATION_BASE_X = 240;
 export const STATION_SPACING = 130;
 export const MAX_STATIONS = 5;
 export const TICK_MS = 100;
+/** Localhost API port; the spawned runner calls back here for web fetches. */
+export const SERVER_PORT = 4600;

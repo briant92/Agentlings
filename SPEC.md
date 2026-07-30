@@ -238,7 +238,32 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     who was folded in and what they were for, the absorbed file is archived
     and the name returns to the pool. Blocked mid-job. Dismissed proposals
     are remembered per browser — a hint, not saved state.
-- **M5 — deepen the metaphor (parked ideas).** Hazards mapped to real
+- **M5 — going outside, cheaply.** The Agent SDK's default is an open-ended
+  loop; the work is constraining it, and often not entering it at all.
+  - **M5.0 (built).** Meter and cap. `maxTurns` was 60 — now 8 by default,
+    per-role in frontmatter, clamped at 40 by `turnsFor()`. The runner was
+    discarding the `usage`/`total_cost_usd` the SDK returns; both are now
+    captured on the job and shown on the terminal card. Roles carry a
+    `model:`; extraction and reading run on Haiku.
+  - **M5.1 (built).** Connection registry, `catalog/connections.json`.
+    Nothing is ambient: a job names what it wants (`Job.tools`) and gets
+    that and no more, which is the security boundary and the cost one —
+    every visible tool is definition overhead in every request of the
+    session. Secrets are referenced by env-var name, never stored or
+    returned; a connection whose secret is missing is listed as not ready.
+  - **M5.2 (built).** Browsing without the bill. `web.ts` returns readable
+    text trimmed to a budget, never a page: a Wikipedia article measured
+    573KB raw (~143k tokens) against ~3k tokens delivered. URLs the user
+    wrote are fetched *before* the session by plain code at no token cost
+    and land as files the agent reads; an in-session `fetch_page` tool
+    calls back into the server so extraction, trimming and the allowlist
+    have one implementation. Non-http is refused. `AGENTLINGS_MAX_COST_USD`
+    stops a session mid-flight where the stream carries a running cost.
+  - **M5.3.** Deterministic router — answer from knowledge, or one-shot,
+    before entering the loop at all.
+  - **M5.4.** Memoize solved work back into the router.
+  - **M5.5.** Spend per level and per agentling.
+- **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.
 

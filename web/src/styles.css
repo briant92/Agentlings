@@ -199,6 +199,23 @@ button.ghost {
   margin: 0;
   padding-left: 2px;
 }
+.work-conn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.work-conn-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #8a91a3;
+  cursor: pointer;
+}
+.work-conn-item input {
+  accent-color: var(--db-lime);
+  cursor: pointer;
+}
 .work-link {
   background: none;
   border: none;

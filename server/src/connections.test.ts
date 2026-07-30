@@ -1,0 +1,99 @@
+import { describe, expect, it } from 'vitest';
+import {
+  describe as describeConnections,
+  missingSecrets,
+  resolveForJob,
+  toMcpServers,
+  type Connection,
+} from './connections';
+
+const WEB: Connection = {
+  name: 'web',
+  label: 'Read web pages',
+  transport: 'builtin',
+  allow: [],
+  maxChars: 12000,
+};
+
+const TRACKER: Connection = {
+  name: 'tracker',
+  label: 'Issue tracker',
+  transport: 'stdio',
+  command: 'npx',
+  args: ['-y', 'some-mcp-server'],
+  secrets: { TRACKER_TOKEN: 'API token for the tracker' },
+};
+
+describe('missingSecrets', () => {
+  it('finds nothing missing for a connection that needs none', () => {
+    expect(missingSecrets(WEB, {})).toEqual([]);
+  });
+
+  it('names what is missing rather than failing silently', () => {
+    expect(missingSecrets(TRACKER, {})).toEqual(['TRACKER_TOKEN']);
+    expect(missingSecrets(TRACKER, { TRACKER_TOKEN: 'abc' })).toEqual([]);
+  });
+
+  it('treats an empty value as missing', () => {
+    expect(missingSecrets(TRACKER, { TRACKER_TOKEN: '' })).toEqual(['TRACKER_TOKEN']);
+  });
+});
+
+describe('describe', () => {
+  it('reports readiness without ever exposing a value', () => {
+    const listed = describeConnections([WEB, TRACKER], { TRACKER_TOKEN: 'super-secret' });
+    expect(listed[0]).toMatchObject({ name: 'web', builtin: true, ready: true });
+    expect(listed[1]).toMatchObject({ name: 'tracker', builtin: false, ready: true });
+    expect(JSON.stringify(listed)).not.toContain('super-secret');
+  });
+
+  it('marks a connection whose secret is absent as not ready', () => {
+    const listed = describeConnections([TRACKER], {});
+    expect(listed[0].ready).toBe(false);
+    expect(listed[0].missingSecrets).toEqual(['TRACKER_TOKEN']);
+  });
+});
+
+describe('resolveForJob', () => {
+  const all = [WEB, TRACKER];
+  const env = { TRACKER_TOKEN: 'abc' };
+
+  it('grants nothing when a job asked for nothing — sandbox is the default', () => {
+    expect(resolveForJob(undefined, all, env).granted).toEqual([]);
+    expect(resolveForJob([], all, env).granted).toEqual([]);
+  });
+
+  it('grants exactly what was asked for and no more', () => {
+    const { granted } = resolveForJob(['web'], all, env);
+    expect(granted.map((c) => c.name)).toEqual(['web']);
+  });
+
+  it('refuses an unknown connection with a reason', () => {
+    const { granted, refused } = resolveForJob(['nope'], all, env);
+    expect(granted).toEqual([]);
+    expect(refused[0]).toMatchObject({ name: 'nope', reason: 'no such connection' });
+  });
+
+  it('refuses a connection whose secret is not set, and says which', () => {
+    const { granted, refused } = resolveForJob(['tracker'], all, {});
+    expect(granted).toEqual([]);
+    expect(refused[0].reason).toContain('TRACKER_TOKEN');
+  });
+});
+
+describe('toMcpServers', () => {
+  it('passes only the declared secrets through to the server', () => {
+    const servers = toMcpServers([TRACKER], { TRACKER_TOKEN: 'abc', UNRELATED: 'leak-me' });
+    expect(servers.tracker).toMatchObject({
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', 'some-mcp-server'],
+      env: { TRACKER_TOKEN: 'abc' },
+    });
+    expect(servers.tracker.env).not.toHaveProperty('UNRELATED');
+  });
+
+  it('does not try to spawn the builtin', () => {
+    expect(toMcpServers([WEB], {})).toEqual({});
+  });
+});

@@ -15,6 +15,7 @@ import type {
   SettingsInfo,
 } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
+import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor } from './executors/claude';
@@ -58,6 +59,7 @@ import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
 import { Sim } from './sim';
+import { fetchPage } from './web';
 import { planWork } from './work';
 
 const PORT = 4600;
@@ -66,6 +68,7 @@ const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
 const ROLES_DIR = path.join(ROOT, 'roles');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
+const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
 
 try {
   process.loadEnvFile(path.join(ROOT, '.env'));
@@ -151,7 +154,9 @@ function makeLevel(dir: string): LevelRuntime {
     sendToLevel(meta.id, { type: 'events', events: [event] }),
   );
   const executor: Executor = useClaude
-    ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir))
+    ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir), () =>
+        readConnections(CONNECTIONS_FILE),
+      )
     : simulated;
   const roster = readRoster(dir);
   const sim = new Sim(
@@ -281,7 +286,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
 app.post('/api/levels/:lid/work', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ text?: string; repoPath?: string }>();
+  const body = await c.req.json<{ text?: string; repoPath?: string; tools?: string[] }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
 
@@ -300,6 +305,7 @@ app.post('/api/levels/:lid/work', async (c) => {
     prompt: text,
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: plan.role ?? undefined,
+    tools: body.tools,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
@@ -572,6 +578,22 @@ app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
   rt.roster = rt.roster.filter((s) => s.id !== seed.id);
   saveRoster(rt);
   return c.json({ id: seed.id, name: seed.name, archived: archived !== null });
+});
+
+app.get('/api/connections', (c) => c.json(describe(readConnections(CONNECTIONS_FILE), process.env)));
+
+/**
+ * Web fetches for a running session. The server owns extraction, trimming and
+ * the allowlist so there is one implementation; the spawned runner asks here
+ * rather than keeping a copy. Bound to localhost, like the rest of the API.
+ */
+app.post('/internal/fetch', async (c) => {
+  const body = await c.req.json<{ url?: string }>();
+  const url = body.url?.trim();
+  if (!url) return c.json({ error: 'url is required' }, 400);
+  const web = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web');
+  if (!web) return c.json({ error: 'web access is not configured' }, 404);
+  return c.json(await fetchPage(url, { allow: web.allow, maxChars: web.maxChars }));
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));

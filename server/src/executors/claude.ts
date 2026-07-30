@@ -1,12 +1,15 @@
 import { spawn } from 'node:child_process';
-import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { Agentling, Job, JobMeter } from '@agentlings/shared';
+import { SERVER_PORT } from '@agentlings/shared';
+import { resolveForJob, toMcpServers, type Connection } from '../connections';
 import { cloneRepo, writeDiff } from '../gitwork';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
+import { extractUrls, fetchPage } from '../web';
 import type { Executor, ExecutorResult } from './executor';
 
 const SESSION_TIMEOUT_MS = 10 * 60_000;
@@ -73,6 +76,7 @@ export function buildAppend(
   lessons: string[],
   knowledge: string[],
   hasRepo: boolean,
+  sources: string[] = [],
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -87,6 +91,16 @@ export function buildAppend(
       '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
     ].join('\n'),
   );
+  if (sources.length > 0) {
+    parts.push(
+      [
+        '## Pages already fetched for you',
+        'These were read before this session started and trimmed to the important text.',
+        'Read them from disk; do not fetch them again.',
+        ...sources.map((s) => `- ${s}`),
+      ].join('\n'),
+    );
+  }
   if (knowledge.length > 0) {
     parts.push(
       `## What this level's crew has learned\n${knowledge.map((k) => `- ${k}`).join('\n')}`,
@@ -144,6 +158,8 @@ export class ClaudeAgentExecutor implements Executor {
     private skillsDir: string,
     /** Returns the level's shared knowledge lines for this session. */
     private knowledge: () => string[] = () => [],
+    /** The connection registry, read fresh so edits don't need a restart. */
+    private connections: () => Connection[] = () => [],
   ) {}
 
   async run(
@@ -160,6 +176,30 @@ export class ClaudeAgentExecutor implements Executor {
       onProgress?.(`cloning ${job.repoPath}`);
       await cloneRepo(job.repoPath, sandboxDir);
       hasRepo = true;
+    }
+
+    const { granted, refused } = resolveForJob(job.tools, this.connections(), process.env);
+    for (const { name, reason } of refused) onProgress?.(`connection "${name}" unavailable: ${reason}`);
+    const web = granted.find((c) => c.name === 'web');
+
+    // Lever 1 and 5 together: addresses the user wrote are fetched here, by
+    // plain code, at no token cost — and land as trimmed text the session
+    // reads normally. Far cheaper than the agent deciding to go and look.
+    const sources: string[] = [];
+    if (web) {
+      for (const url of extractUrls(job.prompt)) {
+        onProgress?.(`reading ${url}`);
+        const page = await fetchPage(url, { allow: web.allow, maxChars: web.maxChars });
+        const file = path.join(sandboxDir, 'sources', `${sources.length + 1}.md`);
+        mkdirSync(path.dirname(file), { recursive: true });
+        writeFileSync(
+          file,
+          page.error
+            ? `# ${url}\n\nCould not read this: ${page.error}\n`
+            : `# ${page.title ?? url}\n\nSource: ${url}\n\n${page.text}\n`,
+        );
+        sources.push(path.relative(sandboxDir, file));
+      }
     }
 
     const skills = (role?.skills ?? []).filter((s) =>
@@ -181,11 +221,17 @@ export class ClaudeAgentExecutor implements Executor {
       JSON.stringify({
         cwd: sandboxDir,
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
-        append: buildAppend(role, lessons, this.knowledge(), hasRepo),
+        append: buildAppend(role, lessons, this.knowledge(), hasRepo, sources),
         allowedTools,
         maxTurns: turnsFor(role),
         skills,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        mcpServers: toMcpServers(granted, process.env),
+        ...(web
+          ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
+          : {}),
+        maxCostUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+        sources,
       }),
     );
 

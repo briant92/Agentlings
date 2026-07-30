@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { WorkPlan } from '@agentlings/shared';
+import type { ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 
 const DEBOUNCE_MS = 250;
@@ -25,6 +25,14 @@ export function WorkBar({
   const [repoPath, setRepoPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connections, setConnections] = useState<ConnectionInfo[]>([]);
+  const [allowed, setAllowed] = useState<string[]>([]);
+
+  useEffect(() => {
+    void api<ConnectionInfo[]>('/api/connections')
+      .then((list) => setConnections(list.filter((c) => c.ready)))
+      .catch(() => setConnections([]));
+  }, []);
 
   useEffect(() => {
     const query = text.trim();
@@ -46,7 +54,11 @@ export function WorkBar({
     try {
       await api(
         lvl(levelId, '/work'),
-        postJson({ text: text.trim(), ...(folder === undefined ? {} : { repoPath: folder }) }),
+        postJson({
+          text: text.trim(),
+          ...(folder === undefined ? {} : { repoPath: folder }),
+          ...(allowed.length > 0 ? { tools: allowed } : {}),
+        }),
       );
       setText('');
       setPlan(null);
@@ -86,6 +98,28 @@ export function WorkBar({
           Start
         </button>
       </form>
+
+      {connections.length > 0 && !askingRepo && (
+        <p className="work-gaps work-conn">
+          {connections.map((connection) => (
+            <label key={connection.name} className="work-conn-item" title={connection.description}>
+              <input
+                type="checkbox"
+                checked={allowed.includes(connection.name)}
+                onChange={(e) =>
+                  setAllowed((prev) =>
+                    e.target.checked
+                      ? [...prev, connection.name]
+                      : prev.filter((n) => n !== connection.name),
+                  )
+                }
+              />
+              {connection.label.toLowerCase()}
+            </label>
+          ))}
+          <span className="dim">· off unless you say so</span>
+        </p>
+      )}
 
       {plan && !askingRepo && (
         <p className="work-plan">

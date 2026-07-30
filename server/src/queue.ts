@@ -10,6 +10,8 @@ export interface NewJobSpec {
   prompt: string;
   repoPath?: string;
   preferredRole?: string;
+  /** Connections this job may use; absent means sandbox only. */
+  tools?: string[];
 }
 
 /** In-memory job store plus station-slot bookkeeping and sandbox dirs. */
@@ -33,6 +35,7 @@ export class JobQueue {
       prompt: spec.prompt,
       repoPath: spec.repoPath,
       preferredRole: spec.preferredRole,
+      ...(spec.tools?.length ? { tools: spec.tools } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

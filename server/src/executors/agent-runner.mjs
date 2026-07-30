@@ -11,23 +11,78 @@ function emit(obj) {
 
 try {
   const config = JSON.parse(readFileSync(process.argv[2], 'utf8'));
-  const { query } = await import('@anthropic-ai/claude-agent-sdk');
+  const { query, createSdkMcpServer, tool } = await import('@anthropic-ai/claude-agent-sdk');
+
+  const mcpServers = { ...(config.mcpServers ?? {}) };
+  const allowedTools = [...(config.allowedTools ?? [])];
+
+  // The 'web' connection is ours and runs in-process: it returns readable
+  // text trimmed to a budget, never a whole page. Lever 5 — a tool that
+  // hands back a raw dump is a tool the model pays to wade through.
+  if (config.web) {
+    const { z } = await import('zod');
+    mcpServers.web = createSdkMcpServer({
+      name: 'web',
+      version: '1.0.0',
+      tools: [
+        tool(
+          'fetch_page',
+          'Fetch a web page and return its readable text, trimmed. No JavaScript or sign-ins.',
+          { url: z.string().describe('Full http(s) address to read') },
+          async ({ url }) => {
+            // The server owns the extraction, the trimming and the allowlist;
+            // this asks it rather than keeping a second copy of that logic.
+            let text;
+            try {
+              const res = await fetch(config.web.endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ url }),
+              });
+              const page = await res.json();
+              text = page.error ? `Could not read ${url}: ${page.error}` : page.text;
+            } catch (err) {
+              text = `Could not read ${url}: ${err instanceof Error ? err.message : String(err)}`;
+            }
+            return { content: [{ type: 'text', text }] };
+          },
+        ),
+      ],
+    });
+    allowedTools.push('mcp__web__fetch_page');
+  }
 
   let summary = '';
   let meter;
+  let stoppedOverBudget = false;
+  let spent = 0;
+
   for await (const message of query({
     prompt: config.prompt,
     options: {
       cwd: config.cwd,
       permissionMode: 'dontAsk',
-      allowedTools: config.allowedTools,
+      allowedTools,
       maxTurns: config.maxTurns,
       settingSources: [],
+      ...(Object.keys(mcpServers).length ? { mcpServers } : {}),
       ...(config.skills?.length ? { skills: config.skills } : {}),
       ...(config.model ? { model: config.model } : {}),
       systemPrompt: { type: 'preset', preset: 'claude_code', append: config.append },
     },
   })) {
+    // Best-effort mid-flight ceiling. Turns and the wall-clock timeout are the
+    // guarantees; this stops a session that is burning money before it hits
+    // either, whenever the stream carries a running cost.
+    if (config.maxCostUsd) {
+      const running =
+        typeof message.total_cost_usd === 'number' ? message.total_cost_usd : undefined;
+      if (running !== undefined) spent = running;
+      if (spent > config.maxCostUsd) {
+        stoppedOverBudget = true;
+        break;
+      }
+    }
     if (message.type === 'assistant') {
       const blocks = message.blocks ?? message.message?.content ?? [];
       for (const block of blocks) {
@@ -58,6 +113,13 @@ try {
         cacheReadTokens: message.usage?.cache_read_input_tokens,
       };
     }
+  }
+  if (stoppedOverBudget) {
+    emit({
+      type: 'error',
+      message: `stopped at $${spent.toFixed(2)} — over the ${config.maxCostUsd} budget for one job`,
+    });
+    process.exit(1);
   }
   emit({ type: 'result', summary, meter });
   process.exit(0);

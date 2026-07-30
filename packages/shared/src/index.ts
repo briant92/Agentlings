@@ -175,6 +175,28 @@ export interface CrewMember {
   lessons: number;
 }
 
+/** A pair the app thinks are doing the same job, with why it thinks so. */
+export interface MergeProposal {
+  /** Agentling id kept by default — the stronger record. */
+  keep: string;
+  /** Agentling id folded in and taken off the roster. */
+  absorb: string;
+  score: number;
+  reasons: string[];
+}
+
+/** Exactly what a merge would leave behind, shown before it happens. */
+export interface MergePreview {
+  keep: CrewMember;
+  absorb: CrewMember;
+  /** Combined figures the survivor ends up with. */
+  jobsDone: number;
+  jobsFailed: number;
+  lessons: number;
+  /** True when the two hold different roles, so one job is being dropped. */
+  differentRoles: boolean;
+}
+
 /** GET /api/agentlings/:id — everything the profile popup shows. */
 export interface AgentlingProfile {
   agentling: Agentling;

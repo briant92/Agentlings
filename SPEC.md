@@ -216,10 +216,19 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
   - **M4.2 (built).** Letting go: roster entry removed, lessons moved to
     `memory/archive/<name>-<date>.md` rather than deleted. The confirmation
     states what is lost and offers resting as the alternative.
-  - **M4.3.** Merge — overlap detection over role, hire descriptions and
-    abilities, showing its evidence; survivor defaults to the stronger
-    record; careers add up, lessons merge oldest-first deduplicated, the
-    absorbed file is archived and the name returns to the pool.
+  - **M4.3 (built).** Merge, in `merge.ts`. Same role is a requirement
+    rather than a signal — the role *is* the tools and abilities, so
+    different roles are different capability, not overlap. Score comes from
+    hire-description word overlap, with two undescribed hires of one role
+    treated as redundant (nothing distinguishes them) and one-described
+    pairs held below the threshold. Every proposal carries its reasons, and
+    each agentling appears in at most one proposal per round. Survivor
+    defaults to the stronger record, then longer memory, then seniority,
+    and is swappable in the review. Execution: careers add up, memories
+    merge oldest-first with duplicates dropped, an absorption note records
+    who was folded in and what they were for, the absorbed file is archived
+    and the name returns to the pool. Blocked mid-job. Dismissed proposals
+    are remembered per browser — a hint, not saved state.
 - **M5 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

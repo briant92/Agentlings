@@ -6,7 +6,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
-import type { AgentlingProfile, LevelInfo, ServerMessage, SettingsInfo } from '@agentlings/shared';
+import type {
+  AgentlingProfile,
+  CrewMember,
+  LevelInfo,
+  MergePreview,
+  ServerMessage,
+  SettingsInfo,
+} from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { EventLog } from './events';
@@ -45,6 +52,7 @@ import {
   type LibraryIndex,
 } from './library';
 import { MatchIndex, searchEntries, suggestSetup } from './match';
+import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
@@ -416,9 +424,91 @@ app.post('/api/levels/:lid/agentlings', (c) => {
 app.get('/api/levels/:lid/crew', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  return c.json(
-    crewMembers(rt.roster, rt.sim.agentlings, (name) => rt.memory.lessons(name).length),
+  return c.json(crewOf(rt));
+});
+
+function crewOf(rt: LevelRuntime): CrewMember[] {
+  return crewMembers(rt.roster, rt.sim.agentlings, (name) => rt.memory.lessons(name).length);
+}
+
+/** Pairs who look like the same hire. Proposals only — nothing acts on them. */
+app.get('/api/levels/:lid/merge/proposals', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json(proposeMerges(crewOf(rt)));
+});
+
+/** Exactly what a merge would leave behind, before anyone commits to it. */
+app.post('/api/levels/:lid/merge/preview', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ keep?: string; absorb?: string }>();
+  const crew = crewOf(rt);
+  const keep = crew.find((m) => m.id === body.keep);
+  const absorb = crew.find((m) => m.id === body.absorb);
+  if (!keep || !absorb || keep.id === absorb.id) {
+    return c.json({ error: 'two different agentlings are required' }, 400);
+  }
+  const merged = mergeLessons(
+    rt.memory.lessons(keep.name),
+    [...rt.memory.lessons(absorb.name), ...absorptionNote(absorb)],
   );
+  return c.json({
+    keep,
+    absorb,
+    jobsDone: keep.jobsDone + absorb.jobsDone,
+    jobsFailed: keep.jobsFailed + absorb.jobsFailed,
+    lessons: merged.length,
+    differentRoles: keep.role !== absorb.role,
+  } satisfies MergePreview);
+});
+
+/**
+ * Fold one agentling into another: careers add up, memories combine oldest
+ * first, and the absorbed file is archived rather than dropped.
+ */
+app.post('/api/levels/:lid/merge', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ keep?: string; absorb?: string }>();
+  const crew = crewOf(rt);
+  const keep = crew.find((m) => m.id === body.keep);
+  const absorb = crew.find((m) => m.id === body.absorb);
+  if (!keep || !absorb || keep.id === absorb.id) {
+    return c.json({ error: 'two different agentlings are required' }, 400);
+  }
+  for (const member of [keep, absorb]) {
+    if (member.busy) {
+      return c.json({ error: `${member.name} is working — let them finish first` }, 409);
+    }
+  }
+
+  // Memory first: if this throws, nothing else has been touched yet.
+  rt.memory.write(
+    keep.name,
+    mergeLessons(rt.memory.lessons(keep.name), [
+      ...rt.memory.lessons(absorb.name),
+      ...absorptionNote(absorb),
+    ]),
+  );
+  rt.memory.archive(absorb.name);
+
+  const survivor = rt.sim.agentlings.find((a) => a.id === keep.id);
+  if (survivor) {
+    survivor.jobsDone += absorb.jobsDone;
+    survivor.jobsFailed += absorb.jobsFailed;
+  } else {
+    const seed = rt.roster.find((s) => s.id === keep.id);
+    if (seed) {
+      seed.jobsDone = keep.jobsDone + absorb.jobsDone;
+      seed.jobsFailed = keep.jobsFailed + absorb.jobsFailed;
+    }
+  }
+
+  rt.sim.sendOut(absorb.id);
+  rt.roster = rt.roster.filter((s) => s.id !== absorb.id);
+  saveRoster(rt);
+  return c.json({ keep: keep.name, absorbed: absorb.name });
 });
 
 /** Rest: out through the door, off the queue, nothing lost. */

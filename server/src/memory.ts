@@ -1,4 +1,11 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -25,6 +32,13 @@ export class MemoryStore {
       appendFileSync(file, `# ${agentlingName} — lessons\n\n`);
     }
     appendFileSync(file, `- ${lesson}\n`);
+  }
+
+  /** Replaces a whole memory — used when a merge rewrites the survivor's. */
+  write(agentlingName: string, lessons: string[]): void {
+    mkdirSync(this.dir, { recursive: true });
+    const body = lessons.map((lesson) => `- ${lesson}\n`).join('');
+    writeFileSync(this.file(agentlingName), `# ${agentlingName} — lessons\n\n${body}`);
   }
 
   /**

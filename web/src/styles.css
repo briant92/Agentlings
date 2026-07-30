@@ -1090,6 +1090,64 @@ button.danger:hover {
   padding: 3px 10px;
   font-size: 11px;
 }
+.crew-hint .actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.crew-pick {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.crew-merge {
+  border: 1px solid #2e4d3a;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.crew-merge p {
+  margin: 0 0 8px;
+}
+.crew-merge-pair {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.crew-merge-card {
+  flex: 1;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 9px 11px;
+}
+.crew-merge-card.keeps {
+  border-color: #2e4d3a;
+}
+.crew-merge-name {
+  font-size: 11px;
+  color: #d8dce6;
+  margin: 0 0 6px;
+}
+.crew-merge-card.keeps .crew-merge-name {
+  color: var(--db-lime-light);
+}
+.crew-merge .actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.crew-merge .actions button {
+  padding: 4px 12px;
+  font-size: 11px;
+}
+.crew-merge-foot {
+  margin-top: 8px;
+}
 .crew-confirm {
   border: 1px solid #4d2430;
   border-radius: 4px;

@@ -3,6 +3,7 @@ import type {
   Agentling,
   LibrarySearchResult,
   MatchSuggestion,
+  Refinement,
   RoleInfo,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
@@ -42,11 +43,14 @@ export function HireModal({
 }) {
   const [text, setText] = useState('');
   const [suggestion, setSuggestion] = useState<MatchSuggestion | null>(null);
+  const [refined, setRefined] = useState<Refinement | null>(null);
   const [library, setLibrary] = useState<LibrarySearchResult | null>(null);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [override, setOverride] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const portraitRef = useRef<HTMLCanvasElement>(null);
+  /** The sentence a refinement must still match to be worth showing. */
+  const latest = useRef('');
 
   const loadRoles = useCallback(() => api<RoleInfo[]>('/api/roles').then(setRoles), []);
 
@@ -69,8 +73,24 @@ export function HireModal({
    * so the answer is "here's what would do it" rather than "no".
    */
   const runMatch = useCallback(async (query: string) => {
+    latest.current = query;
     const match = await api<MatchSuggestion>('/api/match', postJson({ text: query }));
     setSuggestion(match);
+    setRefined(null);
+
+    // Tier 2 runs alongside, never in front: the card is already drawn, and a
+    // slow or unavailable refinement changes nothing.
+    void api<{ available: boolean; refined: Refinement | null }>(
+      '/api/match/refine',
+      postJson({ text: query }),
+    )
+      .then((result) => {
+        // Ignore a reply for a sentence the user has already moved on from.
+        if (latest.current !== query) return;
+        if (result.refined?.role) setRefined(result.refined);
+      })
+      .catch(() => setRefined(null));
+
     const thin = !match.role || match.confidence < MIN_CONFIDENCE || match.gaps.length > 0;
     if (!thin) {
       setLibrary(null);
@@ -93,12 +113,16 @@ export function HireModal({
     return () => clearTimeout(timer);
   }, [text, runMatch]);
 
-  const confident = !!suggestion && suggestion.confidence >= MIN_CONFIDENCE && !!suggestion.role;
-  const chosen = override ?? suggestion?.role ?? null;
+  // A refinement that named a job counts as confident on its own — it is the
+  // stronger reader, and it can only have named a job that is installed.
+  const confident =
+    !!refined?.role || (!!suggestion && suggestion.confidence >= MIN_CONFIDENCE && !!suggestion.role);
+  const chosen = override ?? refined?.role ?? suggestion?.role ?? null;
   const chosenRole = roles.find((r) => r.name === chosen);
-  const skills = override
-    ? (chosenRole?.skills ?? [])
+  const suggested = refined
+    ? [...new Set([...(chosenRole?.skills ?? []), ...refined.skills])]
     : (suggestion?.skills ?? chosenRole?.skills ?? []);
+  const skills = override ? (chosenRole?.skills ?? []) : suggested;
 
   const accept = async () => {
     if (!chosen) return;
@@ -165,8 +189,16 @@ export function HireModal({
                 ))}
                 {skills.length === 0 && <span className="dim">no extra abilities needed</span>}
               </div>
-              {suggestion.matchedTerms.length > 0 && !override && (
-                <p className="hire-why">matched on: {suggestion.matchedTerms.join(' · ')}</p>
+              {refined && !override ? (
+                <p className="hire-why">
+                  {refined.summary ?? `chosen for: ${text.trim()}`}
+                  <span className="hire-checked"> · checked with Claude</span>
+                </p>
+              ) : (
+                !!suggestion?.matchedTerms.length &&
+                !override && (
+                  <p className="hire-why">matched on: {suggestion.matchedTerms.join(' · ')}</p>
+                )
               )}
             </div>
           )}

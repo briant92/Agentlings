@@ -993,6 +993,9 @@ select {
   margin: 8px 0 0;
   overflow-wrap: anywhere;
 }
+.hire-checked {
+  color: var(--db-sky);
+}
 .hire-picker {
   margin-top: 6px;
 }

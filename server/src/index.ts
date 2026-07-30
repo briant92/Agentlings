@@ -55,6 +55,7 @@ import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
+import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
 import { Sim } from './sim';
 import { planWork } from './work';
@@ -407,6 +408,20 @@ app.post('/api/match', async (c) => {
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   return c.json(suggestSetup(matcher(), registry.list(), text));
+});
+
+/**
+ * Tier 2: the same sentence, checked by one short Claude call. Deliberately a
+ * separate request — /api/match stays instant and the UI has already drawn an
+ * answer by the time this lands. Returns null whenever it can't help.
+ */
+app.post('/api/match/refine', async (c) => {
+  const body = await c.req.json<{ text?: string }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  if (!useClaude) return c.json({ available: false, refined: null });
+  const refined = await refineMatch(text, registry.list(), listSkills(SKILLS_DIR));
+  return c.json({ available: true, refined });
 });
 
 app.post('/api/levels/:lid/agentlings', (c) => {

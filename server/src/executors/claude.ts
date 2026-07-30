@@ -11,7 +11,25 @@ import type { Executor, ExecutorResult } from './executor';
 
 const SESSION_TIMEOUT_MS = 10 * 60_000;
 const MAX_TURNS = 60;
-const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
+export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
+
+/**
+ * When the server itself runs inside a Claude Code terminal, inherited session
+ * vars (an ANTHROPIC_BASE_URL proxy, CLAUDE_CODE_*) would point a spawned
+ * runner's CLI at the host session's endpoint and break auth. Launder them so
+ * the child authenticates like a fresh terminal would.
+ */
+export function launderedEnv(): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) =>
+        key === 'CLAUDE_CODE_OAUTH_TOKEN' || // long-lived token from `claude setup-token`
+        (!key.startsWith('CLAUDE') &&
+          key !== 'ANTHROPIC_BASE_URL' &&
+          key !== 'ANTHROPIC_AUTH_TOKEN'),
+    ),
+  );
+}
 
 /** Role tool names (lowercase, role files) → Agent SDK tool names. */
 const TOOL_MAP: Record<string, string[]> = {
@@ -171,22 +189,9 @@ export class ClaudeAgentExecutor implements Executor {
 
   private runSession(configPath: string, onProgress?: (detail: string) => void): Promise<string> {
     return new Promise((resolve, reject) => {
-      // When the server itself runs inside a Claude Code terminal, inherited
-      // session vars (ANTHROPIC_BASE_URL proxy, CLAUDE_CODE_*) would point the
-      // runner's CLI at the host session's endpoint and break auth. Launder
-      // them so the session authenticates like a fresh terminal would.
-      const env = Object.fromEntries(
-        Object.entries(process.env).filter(
-          ([key]) =>
-            key === 'CLAUDE_CODE_OAUTH_TOKEN' || // long-lived token from `claude setup-token`
-            (!key.startsWith('CLAUDE') &&
-              key !== 'ANTHROPIC_BASE_URL' &&
-              key !== 'ANTHROPIC_AUTH_TOKEN'),
-        ),
-      );
       const child = spawn(process.execPath, [RUNNER, configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env,
+        env: launderedEnv(),
       });
       const timer = setTimeout(() => {
         child.kill();

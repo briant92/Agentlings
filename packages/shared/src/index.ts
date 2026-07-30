@@ -142,6 +142,18 @@ export interface LibrarySearchResult {
   gaps: string[];
 }
 
+/**
+ * Tier 2's answer: the same sentence checked by one short Claude call. Always
+ * optional — the local matcher answers without it.
+ */
+export interface Refinement {
+  role: string | null;
+  skills: string[];
+  /** One plain-language line about what this agentling would be for. */
+  summary?: string;
+  confidence: number;
+}
+
 /** What the concept matcher proposes for a sentence the user typed. */
 export interface MatchSuggestion {
   /** Best-matching role, or null when nothing was confident enough. */

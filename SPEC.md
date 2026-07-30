@@ -152,9 +152,18 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     <name>'s job be?". Live suggestion with the matched words shown as the
     reason, `Change` one click away, and the user's sentence stored on the
     agentling (`jobDescription`) and seeded as its first memory.
-  - **M3.3.** LLM refinement tier — a `--mode=match` single-turn call in
-    `agent-runner.mjs` (structured output, ~3s budget, cached). Refines the
-    local result and never blocks it; Tier 1 stands alone without auth.
+  - **M3.3 (built).** LLM refinement tier, `refine.ts`. No change to
+    `agent-runner.mjs` was needed — a single-turn config (no tools, one
+    turn, Haiku) through the same child process is exactly the shape, so
+    the SDK's import graph still never enters the server. `/api/match`
+    stays instant and `/api/match/refine` is a separate request the client
+    fires alongside, so nothing waits on it. The reply is fenced by the
+    installed catalogue: a role that isn't installed makes the whole reply
+    unusable rather than being passed through, invented abilities are
+    dropped, confidence is clamped. Cached by sentence + catalogue
+    signature; failures are deliberately not cached so fixing auth takes
+    effect immediately. Every failure path returns null and the local
+    answer stands.
   - **M3.4 (built).** Library sync. `catalog/sources.json` is a curated
     list of source repos; `server/src/library.ts` reads each one's tree at
     its head commit, indexes every file whose frontmatter parses, and

@@ -155,11 +155,23 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
   - **M3.3.** LLM refinement tier — a `--mode=match` single-turn call in
     `agent-runner.mjs` (structured output, ~3s budget, cached). Refines the
     local result and never blocks it; Tier 1 stands alone without auth.
-  - **M3.4.** Library sync: a curated `sources.json`, a background GitHub
-    tree sync pinned to commit SHAs, natural-language search over the
-    remote index, and preview-before-install with provenance recorded.
-    Installed templates are executable instructions — never auto-install,
-    never silently update.
+  - **M3.4 (built).** Library sync. `catalog/sources.json` is a curated
+    list of source repos; `server/src/library.ts` reads each one's tree at
+    its head commit, indexes every file whose frontmatter parses, and
+    caches to `.agentlings/catalog/index.json` (a week's TTL, refreshed in
+    the background, never on the boot path). Search reuses the concept
+    matcher against the remote index. Nothing installs unseen: preview
+    returns the full text plus warnings (broad tools, links, and the
+    declared license, because installing copies the file into the user's
+    own project). Installs fetch the exact indexed commit and record
+    provenance in `.agentlings/catalog/installed.json`, so a later sync can
+    report "update available" and never apply one. GitHub is read
+    unauthenticated unless `GITHUB_TOKEN` is set; the token is sent to the
+    API host only, never to raw file hosts. Per-source cap of 60 with the
+    overflow count shown rather than silently dropped.
+    - **Known limitation:** only the single `.md` is installed. Skills that
+      ship supporting scripts or reference files arrive incomplete; whole
+      -folder installs are the obvious follow-up.
   - **M3.5 (built).** Work intake in one box: the sentence becomes the
     prompt, `titleFrom` derives the title, the matcher picks the role, and
     `pickAgentling` picks who takes it — all shown before anything is

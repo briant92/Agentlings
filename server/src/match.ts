@@ -310,6 +310,32 @@ export class MatchIndex {
 }
 
 /**
+ * The same matcher pointed at the remote library instead of what's installed:
+ * ranked entries for a sentence, plus the words no source covers either.
+ */
+export function searchEntries<T extends { kind: 'role' | 'skill'; name: string; description: string }>(
+  entries: T[],
+  text: string,
+  limit = 6,
+): { hits: T[]; gaps: string[] } {
+  const index = new MatchIndex(
+    entries
+      .filter((e) => e.kind === 'role')
+      .map((e) => ({ name: e.name, description: e.description, tools: [], skills: [] })),
+    entries.filter((e) => e.kind === 'skill'),
+  );
+  const found = index.search(text);
+  const ranked = [...found.roles, ...found.skills].sort((a, b) => b.score - a.score);
+  const hits: T[] = [];
+  for (const scored of ranked) {
+    const entry = entries.find((e) => e.name === scored.name && !hits.includes(e));
+    if (entry) hits.push(entry);
+    if (hits.length >= limit) break;
+  }
+  return { hits, gaps: found.gaps };
+}
+
+/**
  * The whole suggestion the hire popup shows: a role, the skills that role
  * already declares plus any the sentence itself asked for, and the evidence.
  */

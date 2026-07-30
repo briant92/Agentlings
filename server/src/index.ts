@@ -28,7 +28,21 @@ import {
   writeRoster,
   type LevelMeta,
 } from './levels';
-import { MatchIndex, suggestSetup } from './match';
+import {
+  fetchTemplate,
+  installState,
+  libraryStatus,
+  loadIndex,
+  loadManifest,
+  readSources,
+  recordInstall,
+  reviewWarnings,
+  saveIndex,
+  syncSources,
+  type Http,
+  type LibraryIndex,
+} from './library';
+import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
@@ -40,6 +54,7 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
 const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
 const ROLES_DIR = path.join(ROOT, 'roles');
 const SKILLS_DIR = path.join(ROOT, 'skills');
+const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 
 try {
   process.loadEnvFile(path.join(ROOT, '.env'));
@@ -55,6 +70,31 @@ let matchIndex: MatchIndex | null = null;
 function matcher(): MatchIndex {
   matchIndex ??= new MatchIndex(registry.loaded(), listSkills(SKILLS_DIR));
   return matchIndex;
+}
+
+/** Real HTTP for the library; the sync logic itself takes this as a parameter. */
+const http: Http = (url, headers) => fetch(url, { headers });
+
+let library: LibraryIndex | null = loadIndex(SANDBOX_ROOT);
+let syncing: Promise<LibraryIndex> | null = null;
+
+/** One sync at a time; callers share the in-flight promise. */
+function syncLibrary(): Promise<LibraryIndex> {
+  syncing ??= syncSources(readSources(SOURCES_FILE), http, Date.now(), process.env.GITHUB_TOKEN)
+    .then((index) => {
+      library = index;
+      saveIndex(SANDBOX_ROOT, index);
+      const failed = index.sources.filter((s) => !s.ok);
+      console.log(
+        `[agentlings] library: ${index.entries.length} templates from ${index.sources.length - failed.length}/${index.sources.length} sources` +
+          (failed.length > 0 ? ` (${failed.map((s) => `${s.repo}: ${s.error}`).join('; ')})` : ''),
+      );
+      return index;
+    })
+    .finally(() => {
+      syncing = null;
+    });
+  return syncing;
 }
 
 /** API key, a Claude Code login, or an explicit AGENTLINGS_EXECUTOR override. */
@@ -367,6 +407,81 @@ app.get('/api/roles', (c) => c.json(registry.list()));
 
 app.get('/api/skills', (c) => c.json(listSkills(SKILLS_DIR)));
 
+function installedNames(): { roles: string[]; skills: string[] } {
+  return {
+    roles: registry.list().map((r) => r.name),
+    skills: listSkills(SKILLS_DIR).map((s) => s.name),
+  };
+}
+
+app.get('/api/library', (c) => c.json(libraryStatus(library, Date.now())));
+
+app.post('/api/library/refresh', async (c) => {
+  await syncLibrary();
+  return c.json(libraryStatus(library, Date.now()));
+});
+
+/** Plain-language search across the indexed sources. */
+app.post('/api/library/search', async (c) => {
+  const body = await c.req.json<{ text?: string }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  if (!library) await syncLibrary();
+  const { hits, gaps } = searchEntries(library?.entries ?? [], text);
+  const manifest = loadManifest(SANDBOX_ROOT);
+  const names = installedNames();
+  return c.json({
+    hits: hits.map((entry) => ({ entry, state: installState(manifest, names, entry) })),
+    gaps,
+  });
+});
+
+/**
+ * The full text, before anything is written. An installed template is
+ * instruction handed to an agent — the user reads it or it doesn't go in.
+ */
+app.post('/api/library/preview', async (c) => {
+  const body = await c.req.json<{ repo?: string; path?: string; sha?: string }>();
+  if (!body.repo || !body.path || !body.sha) {
+    return c.json({ error: 'repo, path and sha are required' }, 400);
+  }
+  const entry = library?.entries.find(
+    (e) => e.repo === body.repo && e.path === body.path && e.sha === body.sha,
+  );
+  if (!entry) return c.json({ error: 'not in the library index — refresh and try again' }, 404);
+  try {
+    const text = await fetchTemplate(http, entry.repo, entry.sha, entry.path);
+    return c.json({ text, warnings: reviewWarnings(text) });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
+  }
+});
+
+/** Installs the exact commit the index recorded, and records where it came from. */
+app.post('/api/library/install', async (c) => {
+  const body = await c.req.json<{ repo?: string; path?: string; sha?: string }>();
+  const entry = library?.entries.find(
+    (e) => e.repo === body.repo && e.path === body.path && e.sha === body.sha,
+  );
+  if (!entry) return c.json({ error: 'not in the library index — refresh and try again' }, 404);
+  try {
+    const text = await fetchTemplate(http, entry.repo, entry.sha, entry.path);
+    const installed =
+      entry.kind === 'role' ? registry.install(text) : installSkill(SKILLS_DIR, text);
+    recordInstall(SANDBOX_ROOT, entry.kind, installed.name, {
+      repo: entry.repo,
+      path: entry.path,
+      sha: entry.sha,
+      source: entry.source,
+      installedAt: Date.now(),
+    });
+    matchIndex = null; // the catalog changed; rebuild on next match
+    return c.json({ kind: entry.kind, name: installed.name }, 201);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
+  }
+});
+
 app.post('/api/templates/install', async (c) => {
   const body = await c.req.json<{ url?: string; kind?: string }>();
   if (!body.url?.trim() || (body.kind !== 'role' && body.kind !== 'skill')) {
@@ -393,6 +508,14 @@ app.post('/api/templates/install', async (c) => {
 const server = serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(`[agentlings] server on http://localhost:${info.port}`);
 });
+
+// Refresh the library in the background when the cache is old; never on the
+// boot path, and a failure here must not matter until someone searches.
+if (libraryStatus(library, Date.now()).stale) {
+  void syncLibrary().catch((err: unknown) => {
+    console.log(`[agentlings] library sync failed: ${err instanceof Error ? err.message : err}`);
+  });
+}
 
 const wss = new WebSocketServer({ server: server as HttpServer, path: '/ws' });
 const subscriptions = new Map<WebSocket, string>();

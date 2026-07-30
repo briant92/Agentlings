@@ -1,0 +1,20 @@
+{
+  "$comment": [
+    "Where the library looks for new roles and abilities. Curated on purpose:",
+    "an installed role or skill is executable instruction handed to an agent,",
+    "so the default list stays short and known-good. Add your own with the",
+    "same shape — owner/repo, a branch, and the paths worth reading.",
+    "'include' patterns support * and **/."
+  ],
+  "sources": [
+    {
+      "name": "anthropic-skills",
+      "label": "Anthropic skills",
+      "repo": "anthropics/skills",
+      "ref": "main",
+      "kind": "skill",
+      "include": ["**/SKILL.md"],
+      "trust": "official"
+    }
+  ]
+}

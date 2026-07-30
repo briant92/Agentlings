@@ -93,6 +93,52 @@ export interface SkillInfo {
   description: string;
 }
 
+/** One role or ability found in a source repo, pinned to the commit it was read at. */
+export interface CatalogEntry {
+  id: string;
+  kind: 'role' | 'skill';
+  name: string;
+  description: string;
+  repo: string;
+  path: string;
+  sha: string;
+  source: string;
+  trust: string;
+}
+
+export interface SourceStatus {
+  name: string;
+  label: string;
+  repo: string;
+  kind: 'role' | 'skill';
+  trust: string;
+  sha?: string;
+  count: number;
+  ok: boolean;
+  error?: string;
+  /** Entries beyond the per-source cap, so nothing is dropped silently. */
+  truncated?: number;
+}
+
+export interface LibraryStatus {
+  fetchedAt: number;
+  stale: boolean;
+  sources: SourceStatus[];
+  total: number;
+}
+
+/** A search hit, with whether it is already installed and from which commit. */
+export interface LibraryHit {
+  entry: CatalogEntry;
+  state: 'new' | 'installed' | 'outdated';
+}
+
+export interface LibrarySearchResult {
+  hits: LibraryHit[];
+  /** Words no source covers either — worth saying rather than showing nothing. */
+  gaps: string[];
+}
+
 /** What the concept matcher proposes for a sentence the user typed. */
 export interface MatchSuggestion {
   /** Best-matching role, or null when nothing was confident enough. */

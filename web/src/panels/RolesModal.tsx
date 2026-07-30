@@ -1,15 +1,50 @@
 import { useEffect, useState } from 'react';
-import type { RoleInfo, SkillInfo } from '@agentlings/shared';
+import type {
+  LibraryHit,
+  LibrarySearchResult,
+  LibraryStatus,
+  RoleInfo,
+  SkillInfo,
+} from '@agentlings/shared';
 import { api, postJson } from '../api';
 
-/** Roster of installed roles and skills, plus install-from-URL (GitHub etc). */
+const DEBOUNCE_MS = 300;
+
+function ago(at: number): string {
+  if (!at) return 'never';
+  const mins = Math.round((Date.now() - at) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  return `${Math.round(hours / 24)} d ago`;
+}
+
+interface Preview {
+  text: string;
+  warnings: string[];
+}
+
+/**
+ * The library: what this crew can already do, and how to find more. Search is
+ * plain language; nothing installs until the user has had the chance to read
+ * it, and everything installed is pinned to the commit it was read at.
+ */
 export function RolesModal({ onClose }: { onClose: () => void }) {
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [status, setStatus] = useState<LibraryStatus | null>(null);
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState<LibrarySearchResult | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [advanced, setAdvanced] = useState(false);
   const [url, setUrl] = useState('');
   const [kind, setKind] = useState<'role' | 'skill'>('role');
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     setRoles(await api<RoleInfo[]>('/api/roles'));
@@ -18,6 +53,7 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     void refresh();
+    void api<LibraryStatus>('/api/library').then(setStatus);
   }, []);
 
   useEffect(() => {
@@ -28,15 +64,85 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const install = async () => {
-    setStatus(null);
+  useEffect(() => {
+    const text = query.trim();
+    if (!text) {
+      setResult(null);
+      return;
+    }
+    setSearching(true);
+    const timer = window.setTimeout(() => {
+      void api<LibrarySearchResult>('/api/library/search', postJson({ text }))
+        .then(setResult)
+        .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+        .finally(() => setSearching(false));
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const read = async (hit: LibraryHit) => {
+    if (openId === hit.entry.id) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(hit.entry.id);
+    setPreview(null);
     setError(null);
+    const { repo, path, sha } = hit.entry;
     try {
-      const installed = await api<{ kind: string; name: string }>(
+      setPreview(await api<Preview>('/api/library/preview', postJson({ repo, path, sha })));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const install = async (hit: LibraryHit) => {
+    setBusy(hit.entry.id);
+    setError(null);
+    setNote(null);
+    const { repo, path, sha } = hit.entry;
+    try {
+      const done = await api<{ kind: string; name: string }>(
+        '/api/library/install',
+        postJson({ repo, path, sha }),
+      );
+      setNote(`Added ${done.name}. Any agentling can use it now.`);
+      await refresh();
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              hits: prev.hits.map((h) =>
+                h.entry.id === hit.entry.id ? { ...h, state: 'installed' } : h,
+              ),
+            }
+          : prev,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const resync = async () => {
+    setBusy('sync');
+    try {
+      setStatus(await api<LibraryStatus>('/api/library/refresh', { method: 'POST' }));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const installFromUrl = async () => {
+    setError(null);
+    setNote(null);
+    try {
+      const done = await api<{ kind: string; name: string }>(
         '/api/templates/install',
         postJson({ url, kind }),
       );
-      setStatus(`Installed ${installed.kind} "${installed.name}".`);
+      setNote(`Added ${done.name}.`);
       setUrl('');
       await refresh();
     } catch (err) {
@@ -48,49 +154,137 @@ export function RolesModal({ onClose }: { onClose: () => void }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="m-head">
-          <span className="m-title">Roles &amp; skills</span>
+          <span className="m-title">Library</span>
           <button onClick={onClose}>✕</button>
         </div>
         <div className="m-body">
-          <div className="sect">roles · {roles.length}</div>
+          <div className="sect">find something new</div>
+          <input
+            className="lib-search"
+            placeholder="What do you need it to do?"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
+          <p className="lib-status">
+            {status
+              ? `${status.total} available from ${status.sources.filter((s) => s.ok).length}/${status.sources.length} sources · checked ${ago(status.fetchedAt)}`
+              : 'checking sources…'}
+            {' · '}
+            <button className="work-link" disabled={busy === 'sync'} onClick={() => void resync()}>
+              {busy === 'sync' ? 'checking…' : 'check again'}
+            </button>
+          </p>
+          {status?.sources
+            .filter((s) => !s.ok)
+            .map((s) => (
+              <p key={s.name} className="lib-warn">
+                {s.repo}: {s.error}
+              </p>
+            ))}
+          {status?.sources
+            .filter((s) => s.truncated)
+            .map((s) => (
+              <p key={s.name} className="lib-warn">
+                {s.repo}: showing the first {s.count}, {s.truncated} more not indexed
+              </p>
+            ))}
+
+          {searching && <p className="dim">searching…</p>}
+          {result?.hits.length === 0 && (
+            <p className="dim">
+              Nothing in the sources matches that
+              {result.gaps.length > 0 ? ` — no source covers: ${result.gaps.join(' · ')}` : ''}.
+            </p>
+          )}
+          {result?.hits.map((hit) => (
+            <div key={hit.entry.id} className="lib-hit">
+              <div className="lib-hit-head">
+                <span className={hit.entry.kind === 'role' ? 'badge queued' : 'chip skill'}>
+                  {hit.entry.name}
+                </span>
+                <span className="dim lib-kind">
+                  {hit.entry.kind === 'role' ? 'job' : 'ability'}
+                </span>
+                {hit.state === 'installed' && <span className="badge done">in your library</span>}
+                {hit.state === 'outdated' && <span className="badge running">update available</span>}
+                <span className="dim lib-repo">{hit.entry.repo}</span>
+              </div>
+              <p className="lib-desc">{hit.entry.description}</p>
+              <div className="actions">
+                <button className="ghost" onClick={() => void read(hit)}>
+                  {openId === hit.entry.id ? 'Hide' : 'Read it first'}
+                </button>
+                <button
+                  disabled={busy === hit.entry.id || hit.state === 'installed'}
+                  onClick={() => void install(hit)}
+                >
+                  {hit.state === 'outdated' ? 'Update' : 'Add to library'}
+                </button>
+              </div>
+              {openId === hit.entry.id && (
+                <div className="lib-preview">
+                  {preview === null && <p className="dim">loading…</p>}
+                  {preview?.warnings.map((w) => (
+                    <p key={w} className="lib-warn">
+                      ⚠ {w}
+                    </p>
+                  ))}
+                  {preview && <pre>{preview.text}</pre>}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {note && <p className="stat-done">{note}</p>}
+          {error && <p className="error">{error}</p>}
+
+          <div className="sect">jobs your crew can hold · {roles.length}</div>
           {roles.map((r) => (
             <div key={r.name} className="role-row">
               <span className="badge queued">{r.name}</span>
               <span className="dim r-desc">{r.description}</span>
               <span className="r-meta">
                 {r.tools.join(' · ') || 'no tools'}
-                {r.skills.length > 0 && ` · skills: ${r.skills.join(', ')}`}
+                {r.skills.length > 0 && ` · abilities: ${r.skills.join(', ')}`}
               </span>
             </div>
           ))}
-          <div className="sect">skills · {skills.length}</div>
+          <div className="sect">abilities · {skills.length}</div>
           {skills.map((s) => (
             <div key={s.name} className="role-row">
               <span className="chip skill">{s.name}</span>
               <span className="dim r-desc">{s.description}</span>
             </div>
           ))}
-          <div className="sect">install from template</div>
-          <p className="dim install-hint">
-            Paste a link to a Claude subagent .md or a SKILL.md on GitHub — blob links are
-            converted to raw automatically.
-          </p>
-          <div className="install-row">
-            <select value={kind} onChange={(e) => setKind(e.target.value as 'role' | 'skill')}>
-              <option value="role">role</option>
-              <option value="skill">skill</option>
-            </select>
-            <input
-              placeholder="https://github.com/user/repo/blob/main/agents/reviewer.md"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-            <button disabled={!url.trim()} onClick={() => void install()}>
-              Install
+
+          <p className="lib-status">
+            <button className="work-link" onClick={() => setAdvanced(!advanced)}>
+              {advanced ? 'hide' : 'install from a link instead'}
             </button>
-          </div>
-          {status && <p className="stat-done">{status}</p>}
-          {error && <p className="error">{error}</p>}
+          </p>
+          {advanced && (
+            <>
+              <p className="dim install-hint">
+                A Claude subagent .md or a SKILL.md on GitHub — blob links are converted to raw
+                automatically. Links are not pinned to a commit the way library installs are.
+              </p>
+              <div className="install-row">
+                <select value={kind} onChange={(e) => setKind(e.target.value as 'role' | 'skill')}>
+                  <option value="role">job</option>
+                  <option value="skill">ability</option>
+                </select>
+                <input
+                  placeholder="https://github.com/user/repo/blob/main/agents/reviewer.md"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+                <button disabled={!url.trim()} onClick={() => void installFromUrl()}>
+                  Install
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

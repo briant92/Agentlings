@@ -42,7 +42,9 @@ export function TitleScreen({
       <div className="ts-pillar p1" />
       <div className="ts-pillar p2" />
       <div className="ts-logo">
-        <div className="ts-name">AGENTLINGS</div>
+        <div className="ts-name" data-text="AGENTLINGS">
+          AGENTLINGS
+        </div>
         <div className="ts-sub">THE HORDE WORKS FOR YOU</div>
       </div>
       <div className="ts-menu">

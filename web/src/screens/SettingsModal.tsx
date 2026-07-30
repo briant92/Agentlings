@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SettingsInfo } from '@agentlings/shared';
 import { api } from '../api';
+import { crtEnabled, setCrt } from '../ui/crt';
 
 export function SettingsModal({
   onClose,
@@ -10,6 +11,7 @@ export function SettingsModal({
   onOpenRoles: () => void;
 }) {
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
+  const [crt, setCrtState] = useState(crtEnabled());
 
   useEffect(() => {
     void api<SettingsInfo>('/api/settings').then(setSettings);
@@ -31,6 +33,18 @@ export function SettingsModal({
           <button onClick={onClose}>✕</button>
         </div>
         <div className="m-body">
+          <div className="sect">display</div>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={crt}
+              onChange={(e) => {
+                setCrt(e.target.checked);
+                setCrtState(e.target.checked);
+              }}
+            />
+            <span>CRT filter — scanlines and vignette over the whole screen.</span>
+          </label>
           <div className="sect">executor</div>
           {settings === null && <p className="dim">Loading…</p>}
           {settings?.executor === 'claude-agent-sdk' && (

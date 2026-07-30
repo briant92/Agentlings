@@ -1,11 +1,88 @@
 * {
   box-sizing: border-box;
 }
+:root {
+  /* Display face for signage; body copy stays monospace and readable. */
+  --font-pixel: 'Press Start 2P', ui-monospace, monospace;
+  /* DB32 slots reused by the chrome so it sits with the pixel world. */
+  --db-lime: #6abe30;
+  --db-lime-light: #99e550;
+  --db-yellow: #fbf236;
+  --db-orange: #df7126;
+  --db-sky: #639bff;
+  --db-ink: #222034;
+  --db-indigo: #3f3f74;
+  --db-green: #4b692f;
+  --db-steel: #9badb7;
+}
 body {
   margin: 0;
   background: #10131a;
   color: #d8dce6;
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+/* CRT filter: scanlines plus a vignette, toggled in Settings. */
+html.crt body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.28) 0px,
+      rgba(0, 0, 0, 0.28) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* Iris wipe: a black field with a shrinking circular hole punched in it. */
+.iris {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+}
+.iris::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 100vmax #000;
+}
+.iris.close::before {
+  animation: iris-close 220ms steps(9) forwards;
+}
+.iris.open::before {
+  animation: iris-open 300ms steps(9) forwards;
+}
+@keyframes iris-close {
+  from {
+    width: 250vmax;
+    height: 250vmax;
+  }
+  to {
+    width: 0;
+    height: 0;
+  }
+}
+@keyframes iris-open {
+  from {
+    width: 0;
+    height: 0;
+  }
+  to {
+    width: 250vmax;
+    height: 250vmax;
+  }
 }
 #root {
   max-width: 1400px;
@@ -25,9 +102,10 @@ header {
   gap: 12px;
 }
 h1 {
-  font-size: 20px;
-  margin: 8px 0;
-  color: #7bd88f;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  margin: 10px 0;
+  color: var(--db-lime-light);
 }
 .status.on {
   color: #7bd88f;
@@ -41,12 +119,20 @@ main {
   flex-direction: column;
   gap: 10px;
 }
-.world canvas {
-  width: 100%;
-  height: auto;
+/* Pixel-exact frame: the canvas is scaled by whole numbers in JS and the
+   leftover width shows as letterbox bars. */
+.world {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
   border: 1px solid #262b36;
   border-radius: 6px;
+  overflow: hidden;
+}
+.world canvas {
   display: block;
+  image-rendering: pixelated;
 }
 
 button {
@@ -471,7 +557,7 @@ select {
 .title-screen {
   position: relative;
   height: 520px;
-  background: #0e1038;
+  background: var(--db-ink);
   border: 1px solid #262b36;
   border-radius: 8px;
   overflow: hidden;
@@ -483,13 +569,13 @@ select {
   left: 0;
   right: 0;
   height: 34px;
-  background: #9a5a22;
+  background: #8f563b;
   clip-path: polygon(0 0, 100% 0, 100% 55%, 86% 90%, 70% 55%, 52% 95%, 36% 60%, 18% 88%, 0 65%);
 }
 .ts-vine {
   position: absolute;
   width: 2px;
-  background: #00a800;
+  background: var(--db-lime);
 }
 .ts-vine.v1 {
   top: 28px;
@@ -500,15 +586,15 @@ select {
   top: 24px;
   right: 18%;
   height: 46px;
-  background: #006e00;
+  background: var(--db-green);
 }
 .ts-pillar {
   position: absolute;
   bottom: 46px;
   width: 26px;
   height: 180px;
-  background: #c8a000;
-  opacity: 0.32;
+  background: #8a6f30;
+  opacity: 0.45;
 }
 .ts-pillar.p1 {
   left: 7%;
@@ -524,18 +610,44 @@ select {
   text-align: center;
 }
 .ts-name {
-  font-size: 52px;
-  letter-spacing: 6px;
-  color: #e8cc50;
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 38px;
+  letter-spacing: 4px;
+  color: var(--db-yellow);
   text-shadow:
-    4px 4px 0 #1e8c1e,
-    8px 8px 0 #0a0c26;
+    4px 4px 0 var(--db-green),
+    8px 8px 0 #000;
+}
+/* Specular sweep across the logotype, the way a 90s intro would sell it. */
+.ts-name::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: linear-gradient(100deg, transparent 42%, #fff 50%, transparent 58%);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: logo-shine 5s linear infinite;
+  pointer-events: none;
+}
+@keyframes logo-shine {
+  0% {
+    background-position: 150% 0;
+  }
+  45%,
+  100% {
+    background-position: -150% 0;
+  }
 }
 .ts-sub {
-  font-size: 11px;
-  letter-spacing: 8px;
-  color: #8a91a3;
-  margin-top: 10px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 6px;
+  color: var(--db-steel);
+  margin-top: 16px;
 }
 .ts-menu {
   position: absolute;
@@ -545,8 +657,9 @@ select {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  font-size: 17px;
+  gap: 16px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
 }
 .ts-item {
   color: #626a7d;
@@ -554,7 +667,7 @@ select {
   letter-spacing: 2px;
 }
 .ts-item.on {
-  color: #7bd88f;
+  color: var(--db-lime-light);
 }
 .ts-cursor {
   display: inline-block;
@@ -584,16 +697,16 @@ select {
 }
 .ts-spr div:nth-child(1) {
   height: 8px;
-  background: #35c435;
+  background: var(--db-lime);
 }
 .ts-spr div:nth-child(2) {
   height: 5px;
-  background: #f0e0d0;
+  background: #eec39a;
   margin: 0 3px;
 }
 .ts-spr div:nth-child(3) {
   height: 10px;
-  background: #4650ff;
+  background: #5b6ee1;
   margin: 0 1px;
 }
 .ts-ground {
@@ -602,8 +715,8 @@ select {
   left: 0;
   right: 0;
   height: 46px;
-  background: #9a5a22;
-  border-top: 3px solid #00a800;
+  background: #8f563b;
+  border-top: 3px solid var(--db-lime);
 }
 .ts-build {
   position: absolute;
@@ -624,9 +737,10 @@ select {
   margin-bottom: 12px;
 }
 .ss-title {
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  color: #8a91a3;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--db-steel);
 }
 .ss-head .dim {
   margin-left: auto;
@@ -651,7 +765,7 @@ select {
   cursor: pointer;
 }
 .lvl-card:hover {
-  border-color: #7bd88f;
+  border-color: var(--db-lime-light);
   background: #10131a;
 }
 .lvl-thumb {
@@ -666,7 +780,9 @@ select {
   padding: 8px 10px 2px;
 }
 .lvl-name {
-  font-size: 13px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.5;
   color: #d8dce6;
 }
 .lvl-proj {
@@ -698,8 +814,9 @@ select {
   border-color: #33415c;
 }
 .lvl-new-plus {
-  font-size: 14px;
-  color: #7bd88f;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--db-lime-light);
 }
 
 .nl-body {
@@ -740,8 +857,21 @@ select {
   border-radius: 2px;
 }
 .nl-theme.on {
-  border-color: #7bd88f;
-  color: #7bd88f;
+  border-color: var(--db-lime-light);
+  color: var(--db-lime-light);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #8a91a3;
+  cursor: pointer;
+}
+.toggle input {
+  accent-color: var(--db-lime);
+  cursor: pointer;
 }
 
 @media (max-width: 1100px) {

@@ -1,4 +1,5 @@
 import { Texture } from 'pixi.js';
+import { css, DB } from './palette';
 
 /**
  * Hand-authored pixel-art frames for the agentlings, stored as character
@@ -12,18 +13,18 @@ const W = 18;
 const H = 20;
 
 const PALETTE: Record<string, string> = {
-  k: '#14141e', // eye / outline
-  g: '#35c435', // hair
-  G: '#1e8c1e', // hair shade
-  s: '#f0e0d0', // skin / feet
-  S: '#c09878', // skin shade
-  b: '#4650ff', // gown
-  B: '#2c34b4', // gown shade
-  f: '#202030', // legs
-  p: '#d8b830', // parcel
-  P: '#a88820', // parcel shade
-  h: '#7a4a20', // pickaxe handle
-  m: '#9aa0b0', // pickaxe head
+  k: css(DB.ink), // eye / outline
+  g: css(DB.lime), // hair
+  G: css(DB.green), // hair shade
+  s: css(DB.sand), // skin / feet
+  S: css(DB.tan), // skin shade
+  b: css(DB.blue), // gown
+  B: css(DB.indigo), // gown shade
+  f: css(DB.ink), // legs
+  p: css(DB.tan), // parcel
+  P: css(DB.bronze), // parcel shade
+  h: css(DB.brownDark), // pickaxe handle
+  m: css(DB.steel), // pickaxe head
 };
 
 // Facing right; the renderer flips with a negative x-scale.

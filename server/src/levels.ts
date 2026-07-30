@@ -29,7 +29,8 @@ const NAME_POOL = [
   'Pip', 'Dot', 'Moss', 'Bea', 'Fen', 'Ivy', 'Sol', 'Tam',
   'Rue', 'Ash', 'Lux', 'Nib', 'Odd', 'Pug', 'Sky', 'Zip',
 ];
-const COLOR_POOL = [0x7bd88f, 0x6fb7ff, 0xffb86c, 0xff8fa3, 0xc8a0ff, 0x7ae0d8, 0xe8cc50, 0xd88fd8];
+// Crew name tints, drawn from the DB32 master palette the world renders in.
+const COLOR_POOL = [0x99e550, 0x639bff, 0xd9a066, 0xd95763, 0xd77bba, 0x5fcde4, 0xfbf236, 0x37946e];
 const STARTING_CREW = 2;
 
 export function levelsRoot(sandboxRoot: string): string {

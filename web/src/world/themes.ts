@@ -1,6 +1,10 @@
 import type { ThemeKey } from '@agentlings/shared';
+import { css, DB } from './palette';
 
-/** Hand-tuned palette per level theme; geometry stays identical across all. */
+/**
+ * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
+ * stays identical across all four.
+ */
 export interface Theme {
   void: number;
   rock: number;
@@ -21,72 +25,72 @@ export interface Theme {
 
 export const THEMES: Record<ThemeKey, Theme> = {
   cave: {
-    void: 0x0e1038,
-    rock: 0x9a5a22,
-    rockLight: 0xc8842e,
-    rockDark: 0x6e3a12,
-    rockEdge: 0x46220a,
-    accent: 0xc8a000,
-    accentLight: 0xe8cc50,
-    accentDark: 0x8a6e00,
-    grass: 0x00a800,
-    grassDark: 0x006e00,
-    wood: 0x8a5a28,
-    woodDark: 0x5a3a18,
-    stoneDark: 0x4a2f14,
-    flame: 0xffa030,
-    flameCore: 0xffd050,
+    void: DB.ink,
+    rock: DB.brown,
+    rockLight: DB.tan,
+    rockDark: DB.brownDark,
+    rockEdge: DB.plum,
+    accent: DB.bronze,
+    accentLight: DB.tan,
+    accentDark: DB.olive,
+    grass: DB.lime,
+    grassDark: DB.green,
+    wood: DB.brown,
+    woodDark: DB.brownDark,
+    stoneDark: DB.plum,
+    flame: DB.orange,
+    flameCore: DB.yellow,
   },
   chalkboard: {
-    void: 0x14342a,
-    rock: 0x7a3a2a,
-    rockLight: 0x9a5040,
-    rockDark: 0x56281c,
-    rockEdge: 0x351812,
-    accent: 0xe8e8e0,
-    accentLight: 0xffffff,
-    accentDark: 0xb8b8ac,
-    grass: 0x55a83a,
-    grassDark: 0x3a7828,
-    wood: 0x8a5a28,
-    woodDark: 0x5a3a18,
-    stoneDark: 0x3a2a20,
-    flame: 0xffa030,
-    flameCore: 0xffd050,
+    void: DB.slateGreen,
+    rock: DB.brownDark,
+    rockLight: DB.brown,
+    rockDark: DB.plum,
+    rockEdge: DB.ink,
+    accent: DB.paleBlue,
+    accentLight: DB.white,
+    accentDark: DB.steel,
+    grass: DB.limeLight,
+    grassDark: DB.lime,
+    wood: DB.brown,
+    woodDark: DB.brownDark,
+    stoneDark: DB.plum,
+    flame: DB.orange,
+    flameCore: DB.yellow,
   },
   household: {
-    void: 0x22303f,
-    rock: 0x8a6a4a,
-    rockLight: 0xb89a6a,
-    rockDark: 0x5e462c,
-    rockEdge: 0x3a2c1e,
-    accent: 0xe8e8e0,
-    accentLight: 0xffffff,
-    accentDark: 0xa8b0b8,
-    grass: 0x2ab89a,
-    grassDark: 0x17806b,
-    wood: 0x9a6a3a,
-    woodDark: 0x6a4622,
-    stoneDark: 0x4a3a2a,
-    flame: 0xffa030,
-    flameCore: 0xffd050,
+    void: DB.indigo,
+    rock: DB.tan,
+    rockLight: DB.sand,
+    rockDark: DB.brown,
+    rockEdge: DB.brownDark,
+    accent: DB.paleBlue,
+    accentLight: DB.white,
+    accentDark: DB.steel,
+    grass: DB.teal,
+    grassDark: DB.green,
+    wood: DB.brown,
+    woodDark: DB.brownDark,
+    stoneDark: DB.greyDeep,
+    flame: DB.orange,
+    flameCore: DB.yellow,
   },
   marble: {
-    void: 0x0c2420,
-    rock: 0x6a6e7a,
-    rockLight: 0x9a9eaa,
-    rockDark: 0x464a54,
-    rockEdge: 0x2a2c34,
-    accent: 0xc8a000,
-    accentLight: 0xe8cc50,
-    accentDark: 0x8a6e00,
-    grass: 0x1d9e75,
-    grassDark: 0x0f6e56,
-    wood: 0x6a5030,
-    woodDark: 0x46341e,
-    stoneDark: 0x34363e,
-    flame: 0xffa030,
-    flameCore: 0xffd050,
+    void: DB.black,
+    rock: DB.steel,
+    rockLight: DB.paleBlue,
+    rockDark: DB.grey,
+    rockEdge: DB.greyDeep,
+    accent: DB.bronze,
+    accentLight: DB.yellow,
+    accentDark: DB.olive,
+    grass: DB.teal,
+    grassDark: DB.green,
+    wood: DB.brownDark,
+    woodDark: DB.plum,
+    stoneDark: DB.greyDark,
+    flame: DB.orange,
+    flameCore: DB.yellow,
   },
 };
 
@@ -96,10 +100,6 @@ export const THEME_LABELS: Record<ThemeKey, string> = {
   household: 'Household',
   marble: 'Marble & gold',
 };
-
-function css(color: number): string {
-  return `#${color.toString(16).padStart(6, '0')}`;
-}
 
 const thumbCache = new Map<ThemeKey, string>();
 
@@ -129,11 +129,11 @@ export function renderThumbnail(key: ThemeKey): string {
   ctx.fillRect(0, h - 19, w, 3);
   ctx.fillStyle = css(T.grassDark);
   ctx.fillRect(0, h - 16, w, 2);
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = css(T.accent);
+  // Distant pillars: a darker palette entry rather than alpha, so the card
+  // stays strictly inside DB32.
+  ctx.fillStyle = css(T.accentDark);
   ctx.fillRect(70, 20, 10, h - 39);
   ctx.fillRect(130, 20, 10, h - 39);
-  ctx.globalAlpha = 1;
   ctx.fillStyle = css(T.stoneDark);
   ctx.fillRect(w - 34, h - 41, 22, 22);
   ctx.fillStyle = css(T.void);

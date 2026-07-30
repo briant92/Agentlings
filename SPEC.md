@@ -88,6 +88,28 @@ sprite to open its profile; assignments persist in
   mounted skills) and reads/writes real memory lessons. A scout with
   read-only tools genuinely cannot edit code.
 
+## Levels (projects as worlds)
+
+The app boots like a 90's game: **title screen** (Continue · Start ·
+Settings) → **level select** → a level. A level is a full workspace for
+one project — its own crew, job queue, event feed, sandboxes, and
+memory — stored under `.agentlings/levels/<id>/` (`level.json`,
+`roster.json`, `memory/`, `jobs/`, `KNOWLEDGE.md`).
+
+- **Creation**: name + project tag + a hand-tuned palette theme (cave,
+  chalkboard, household, marble). A fresh crew of two spawns; hire more
+  from inside the level (they drop in at the hatch). Level cards on the
+  select screen render their thumbnails live from the theme palette.
+- **Context scoping**: every finished job appends to the level's
+  `KNOWLEDGE.md`; executor sessions load their own lessons plus their
+  level's knowledge — never another level's. Levels share nothing but
+  the global roles/skills catalog.
+- **Transport**: one sim per level ticks server-side; the WebSocket
+  subscribes per level (`/ws?level=<id>`), so the client streams only
+  the world on screen.
+- The pre-level cave migrated to `levels/hq` with its crew, roles, and
+  memory intact.
+
 ## Milestones
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,

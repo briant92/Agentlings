@@ -37,6 +37,7 @@ export function mapTools(roleTools: string[]): string[] {
 export function buildAppend(
   role: LoadedRole | undefined,
   lessons: string[],
+  knowledge: string[],
   hasRepo: boolean,
 ): string {
   const parts: string[] = [];
@@ -52,8 +53,13 @@ export function buildAppend(
       '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
     ].join('\n'),
   );
+  if (knowledge.length > 0) {
+    parts.push(
+      `## What this level's crew has learned\n${knowledge.map((k) => `- ${k}`).join('\n')}`,
+    );
+  }
   if (lessons.length > 0) {
-    parts.push(`## Lessons from your past jobs\n${lessons.map((l) => `- ${l}`).join('\n')}`);
+    parts.push(`## Lessons from your own past jobs\n${lessons.map((l) => `- ${l}`).join('\n')}`);
   }
   return parts.join('\n\n');
 }
@@ -101,6 +107,8 @@ export class ClaudeAgentExecutor implements Executor {
     private registry: RoleRegistry,
     private memory: MemoryStore,
     private skillsDir: string,
+    /** Returns the level's shared knowledge lines for this session. */
+    private knowledge: () => string[] = () => [],
   ) {}
 
   async run(
@@ -138,7 +146,7 @@ export class ClaudeAgentExecutor implements Executor {
       JSON.stringify({
         cwd: sandboxDir,
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
-        append: buildAppend(role, lessons, hasRepo),
+        append: buildAppend(role, lessons, this.knowledge(), hasRepo),
         allowedTools,
         maxTurns: MAX_TURNS,
         skills,

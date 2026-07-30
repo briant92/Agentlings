@@ -1,29 +1,12 @@
 import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
 import { useEffect, useRef } from 'react';
-import type { WorldState } from '@agentlings/shared';
+import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
 import { buildAgentTextures, SPRITE_SCALE, type AgentAnim } from './sprites';
+import { THEMES, type Theme } from './themes';
 
 const VIEW_H = 320;
 const GROUND_Y = 258;
-
-// Palette in homage to the classic cave/pillar tilesets: navy void, ochre
-// rock, gold columns, grass greens, torch oranges.
-const ROCK = 0x9a5a22;
-const ROCK_LIGHT = 0xc8842e;
-const ROCK_DARK = 0x6e3a12;
-const ROCK_EDGE = 0x46220a;
-const GOLD = 0xc8a000;
-const GOLD_LIGHT = 0xe8cc50;
-const GOLD_DARK = 0x8a6e00;
-const GRASS = 0x00a800;
-const GRASS_DARK = 0x006e00;
-const WOOD = 0x8a5a28;
-const WOOD_DARK = 0x5a3a18;
-const STONE_DARK = 0x4a2f14;
-const VOID = 0x0e1038;
-const FLAME = 0xffa030;
-const FLAME_CORE = 0xffd050;
 
 /** Deterministic PRNG so the rock texture doesn't reshuffle between mounts. */
 function mulberry32(seed: number): () => number {
@@ -38,6 +21,7 @@ function mulberry32(seed: number): () => number {
 
 function speckle(
   g: Graphics,
+  T: Theme,
   rng: () => number,
   x: number,
   y: number,
@@ -49,7 +33,7 @@ function speckle(
     const sx = Math.floor(x + rng() * w);
     const sy = Math.floor(y + rng() * h);
     const size = 2 + Math.floor(rng() * 3) * 2;
-    const color = rng() < 0.5 ? ROCK_LIGHT : ROCK_DARK;
+    const color = rng() < 0.5 ? T.rockLight : T.rockDark;
     g.rect(sx, sy, size, Math.max(2, size - 2)).fill({ color, alpha: 0.6 });
   }
 }
@@ -57,6 +41,7 @@ function speckle(
 /** Short stepped cracks of dark mineral running through the rock. */
 function veins(
   g: Graphics,
+  T: Theme,
   rng: () => number,
   x: number,
   y: number,
@@ -70,38 +55,38 @@ function veins(
     const steps = 4 + Math.floor(rng() * 5);
     const down = rng() < 0.5 ? 1 : -1;
     for (let s = 0; s < steps; s++) {
-      g.rect(vx, vy, 2, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
+      g.rect(vx, vy, 2, 2).fill({ color: T.rockEdge, alpha: 0.8 });
       vx += 2;
       if (rng() < 0.6) vy += 2 * down;
     }
   }
 }
 
-function mound(g: Graphics, x: number, w: number, h: number): void {
-  g.rect(x - w / 2, GROUND_Y - h, w, h).fill(ROCK);
-  g.rect(x - w / 2 + 5, GROUND_Y - h - 4, w - 10, 4).fill(ROCK);
-  g.rect(x - w / 2 + 5, GROUND_Y - h - 6, w - 10, 2).fill(GRASS);
-  g.rect(x - w / 2, GROUND_Y - h - 2, w, 2).fill(GRASS);
-  g.rect(x - w / 2, GROUND_Y - h, w, 2).fill(GRASS_DARK);
+function mound(g: Graphics, T: Theme, x: number, w: number, h: number): void {
+  g.rect(x - w / 2, GROUND_Y - h, w, h).fill(T.rock);
+  g.rect(x - w / 2 + 5, GROUND_Y - h - 4, w - 10, 4).fill(T.rock);
+  g.rect(x - w / 2 + 5, GROUND_Y - h - 6, w - 10, 2).fill(T.grass);
+  g.rect(x - w / 2, GROUND_Y - h - 2, w, 2).fill(T.grass);
+  g.rect(x - w / 2, GROUND_Y - h, w, 2).fill(T.grassDark);
 }
 
-function drawScenery(g: Graphics): void {
+function drawScenery(g: Graphics, T: Theme): void {
   const rng = mulberry32(0xa9e27);
 
-  // Distant gold pillars: capital, banded shaft, base.
+  // Distant accent pillars: capital, banded shaft, base.
   for (const px of [310, 490, 670]) {
-    g.rect(px - 26, 100, 52, 8).fill({ color: GOLD, alpha: 0.5 });
-    g.rect(px - 22, 108, 44, 8).fill({ color: GOLD, alpha: 0.5 });
-    g.rect(px - 17, 116, 34, GROUND_Y - 116).fill({ color: GOLD, alpha: 0.45 });
-    g.rect(px - 10, 116, 8, GROUND_Y - 116).fill({ color: GOLD_LIGHT, alpha: 0.4 });
+    g.rect(px - 26, 100, 52, 8).fill({ color: T.accent, alpha: 0.5 });
+    g.rect(px - 22, 108, 44, 8).fill({ color: T.accent, alpha: 0.5 });
+    g.rect(px - 17, 116, 34, GROUND_Y - 116).fill({ color: T.accent, alpha: 0.45 });
+    g.rect(px - 10, 116, 8, GROUND_Y - 116).fill({ color: T.accentLight, alpha: 0.4 });
     for (let by = 140; by < GROUND_Y - 20; by += 26) {
-      g.rect(px - 17, by, 34, 3).fill({ color: GOLD_DARK, alpha: 0.4 });
+      g.rect(px - 17, by, 34, 3).fill({ color: T.accentDark, alpha: 0.4 });
     }
-    g.rect(px - 22, GROUND_Y - 12, 44, 12).fill({ color: GOLD, alpha: 0.5 });
+    g.rect(px - 22, GROUND_Y - 12, 44, 12).fill({ color: T.accent, alpha: 0.5 });
   }
 
   // Ceiling: rock mass with a jagged underside (flattened above the hatch),
-  // stalactites at the deep points, and moss vines.
+  // stalactites at the deep points, and hanging vines.
   const edge: [number, number][] = [];
   for (let x = 0; x <= WORLD_WIDTH; x += 60) {
     const flat = Math.abs(x - SPAWN_X) < 50;
@@ -109,85 +94,85 @@ function drawScenery(g: Graphics): void {
   }
   const ceiling: number[] = [0, 0, WORLD_WIDTH, 0];
   for (let i = edge.length - 1; i >= 0; i--) ceiling.push(edge[i][0], edge[i][1]);
-  g.poly(ceiling).fill(ROCK);
-  speckle(g, rng, 0, 0, WORLD_WIDTH, 42, 150);
-  veins(g, rng, 20, 6, WORLD_WIDTH - 40, 30, 14);
+  g.poly(ceiling).fill(T.rock);
+  speckle(g, T, rng, 0, 0, WORLD_WIDTH, 42, 150);
+  veins(g, T, rng, 20, 6, WORLD_WIDTH - 40, 30, 14);
   g.moveTo(edge[0][0], edge[0][1]);
   for (const [ex, ey] of edge) g.lineTo(ex, ey);
-  g.stroke({ width: 3, color: ROCK_EDGE });
+  g.stroke({ width: 3, color: T.rockEdge });
 
   for (const [ex, ey] of edge) {
     if (Math.abs(ex - SPAWN_X) < 60 || Math.abs(ex - EXIT_X) < 40) continue;
     const roll = rng();
     if (roll < 0.3 && ey > 66) {
-      // Stalactite: stacked shrinking blocks.
-      g.rect(ex - 6, ey - 2, 12, 6).fill(ROCK);
-      g.rect(ex - 4, ey + 4, 8, 5).fill(ROCK);
-      g.rect(ex - 2, ey + 9, 4, 5).fill(ROCK_DARK);
+      g.rect(ex - 6, ey - 2, 12, 6).fill(T.rock);
+      g.rect(ex - 4, ey + 4, 8, 5).fill(T.rock);
+      g.rect(ex - 2, ey + 9, 4, 5).fill(T.rockDark);
     } else if (roll < 0.7) {
-      // Vine with leaf nubs.
       const len = 16 + rng() * 26;
-      g.rect(ex - 1, ey, 2, len).fill({ color: GRASS_DARK, alpha: 0.95 });
-      g.rect(ex - 1, ey, 2, len * 0.4).fill({ color: GRASS, alpha: 0.95 });
+      g.rect(ex - 1, ey, 2, len).fill({ color: T.grassDark, alpha: 0.95 });
+      g.rect(ex - 1, ey, 2, len * 0.4).fill({ color: T.grass, alpha: 0.95 });
       for (let vy = ey + 6; vy < ey + len - 2; vy += 7) {
         const side = Math.floor(vy / 7) % 2 === 0 ? 1 : -3;
-        g.rect(ex + side, vy, 2, 2).fill({ color: GRASS, alpha: 0.9 });
+        g.rect(ex + side, vy, 2, 2).fill({ color: T.grass, alpha: 0.9 });
       }
     }
   }
 
   // Side walls.
-  g.rect(0, 0, 22, VIEW_H).fill(ROCK);
-  g.rect(WORLD_WIDTH - 26, 0, 26, VIEW_H).fill(ROCK);
-  speckle(g, rng, 0, 60, 20, VIEW_H - 60, 30);
-  speckle(g, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 30);
+  g.rect(0, 0, 22, VIEW_H).fill(T.rock);
+  g.rect(WORLD_WIDTH - 26, 0, 26, VIEW_H).fill(T.rock);
+  speckle(g, T, rng, 0, 60, 20, VIEW_H - 60, 30);
+  speckle(g, T, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 30);
 
   // Low grassy mounds along the back of the walkway.
-  mound(g, 185, 64, 10);
-  mound(g, 555, 44, 8);
-  mound(g, 865, 52, 12);
+  mound(g, T, 185, 64, 10);
+  mound(g, T, 555, 44, 8);
+  mound(g, T, 865, 52, 12);
 
-  // Floor slab: grass fringe, dithered shade band, mineral veins.
-  g.rect(0, GROUND_Y + 2, WORLD_WIDTH, VIEW_H - GROUND_Y - 2).fill(ROCK);
-  speckle(g, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 130);
-  veins(g, rng, 20, GROUND_Y + 10, WORLD_WIDTH - 40, VIEW_H - GROUND_Y - 20, 10);
+  // Floor slab: fringe, dithered shade band, mineral veins.
+  g.rect(0, GROUND_Y + 2, WORLD_WIDTH, VIEW_H - GROUND_Y - 2).fill(T.rock);
+  speckle(g, T, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 130);
+  veins(g, T, rng, 20, GROUND_Y + 10, WORLD_WIDTH - 40, VIEW_H - GROUND_Y - 20, 10);
   for (let row = 0; row < 3; row++) {
     for (let x = 24; x < WORLD_WIDTH - 26; x += 6) {
       g.rect(x + (row % 2) * 3, GROUND_Y + 7 + row * 3, 3, 3).fill({
-        color: ROCK_DARK,
+        color: T.rockDark,
         alpha: 0.4,
       });
     }
   }
-  g.rect(0, GROUND_Y - 3, WORLD_WIDTH, 6).fill(GRASS);
-  g.rect(0, GROUND_Y + 3, WORLD_WIDTH, 3).fill(GRASS_DARK);
+  g.rect(0, GROUND_Y - 3, WORLD_WIDTH, 6).fill(T.grass);
+  g.rect(0, GROUND_Y + 3, WORLD_WIDTH, 3).fill(T.grassDark);
   for (let n = 0; n < 90; n++) {
     const bx = Math.floor(24 + rng() * (WORLD_WIDTH - 52));
-    g.rect(bx, GROUND_Y - 6, 2, 4).fill({ color: GRASS, alpha: 0.95 });
-    if (rng() < 0.3) g.rect(bx + 3, GROUND_Y - 5, 2, 3).fill({ color: GRASS_DARK, alpha: 0.9 });
+    g.rect(bx, GROUND_Y - 6, 2, 4).fill({ color: T.grass, alpha: 0.95 });
+    if (rng() < 0.3) g.rect(bx + 3, GROUND_Y - 5, 2, 3).fill({ color: T.grassDark, alpha: 0.9 });
   }
 
   // Entrance hatch: slatted wooden box with a propped-open slatted lid.
-  g.poly([SPAWN_X - 18, 64, SPAWN_X - 36, 46, SPAWN_X - 30, 41, SPAWN_X - 12, 59]).fill(WOOD);
-  g.poly([SPAWN_X - 33, 46, SPAWN_X - 27, 40, SPAWN_X - 25, 42, SPAWN_X - 31, 48]).fill(WOOD_DARK);
-  g.rect(SPAWN_X - 18, 62, 36, 14).fill(WOOD);
-  g.rect(SPAWN_X - 18, 62, 36, 3).fill(WOOD_DARK);
+  g.poly([SPAWN_X - 18, 64, SPAWN_X - 36, 46, SPAWN_X - 30, 41, SPAWN_X - 12, 59]).fill(T.wood);
+  g.poly([SPAWN_X - 33, 46, SPAWN_X - 27, 40, SPAWN_X - 25, 42, SPAWN_X - 31, 48]).fill(
+    T.woodDark,
+  );
+  g.rect(SPAWN_X - 18, 62, 36, 14).fill(T.wood);
+  g.rect(SPAWN_X - 18, 62, 36, 3).fill(T.woodDark);
   for (const sx of [-8, 2, 12]) {
-    g.rect(SPAWN_X + sx, 65, 2, 11).fill({ color: WOOD_DARK, alpha: 0.8 });
+    g.rect(SPAWN_X + sx, 65, 2, 11).fill({ color: T.woodDark, alpha: 0.8 });
   }
-  g.rect(SPAWN_X - 13, 67, 26, 7).fill(VOID);
+  g.rect(SPAWN_X - 13, 67, 26, 7).fill(T.void);
 
   // Exit: stone arch with grout lines and torch stands (flames animate).
-  g.rect(EXIT_X - 18, GROUND_Y - 40, 36, 40).fill(STONE_DARK);
-  g.circle(EXIT_X, GROUND_Y - 38, 18).fill(STONE_DARK);
-  g.rect(EXIT_X - 18, GROUND_Y - 28, 36, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
-  g.rect(EXIT_X - 18, GROUND_Y - 14, 36, 2).fill({ color: ROCK_EDGE, alpha: 0.8 });
-  g.rect(EXIT_X - 2, GROUND_Y - 52, 4, 8).fill({ color: ROCK_EDGE, alpha: 0.8 });
-  g.rect(EXIT_X - 10, GROUND_Y - 32, 20, 32).fill(VOID);
-  g.circle(EXIT_X, GROUND_Y - 32, 10).fill(VOID);
+  g.rect(EXIT_X - 18, GROUND_Y - 40, 36, 40).fill(T.stoneDark);
+  g.circle(EXIT_X, GROUND_Y - 38, 18).fill(T.stoneDark);
+  g.rect(EXIT_X - 18, GROUND_Y - 28, 36, 2).fill({ color: T.rockEdge, alpha: 0.8 });
+  g.rect(EXIT_X - 18, GROUND_Y - 14, 36, 2).fill({ color: T.rockEdge, alpha: 0.8 });
+  g.rect(EXIT_X - 2, GROUND_Y - 52, 4, 8).fill({ color: T.rockEdge, alpha: 0.8 });
+  g.rect(EXIT_X - 10, GROUND_Y - 32, 20, 32).fill(T.void);
+  g.circle(EXIT_X, GROUND_Y - 32, 10).fill(T.void);
   for (const tx of [EXIT_X - 27, EXIT_X + 27]) {
-    g.rect(tx - 2, GROUND_Y - 26, 4, 26).fill(WOOD_DARK);
-    g.rect(tx - 4, GROUND_Y - 30, 8, 5).fill(STONE_DARK);
+    g.rect(tx - 2, GROUND_Y - 26, 4, 26).fill(T.woodDark);
+    g.rect(tx - 4, GROUND_Y - 30, 8, 5).fill(T.stoneDark);
   }
 }
 
@@ -210,15 +195,17 @@ function animFor(state: string): AgentAnim {
 const ANIM_FPS: Record<AgentAnim, number> = { walk: 12, work: 8, deliver: 10 };
 
 /**
- * Renders the side-view world. Pure presentation: positions and states come
- * from the server sim at 10 Hz; the client lerps toward the latest snapshot
- * and animates pixel-art sprite frames locally.
+ * Renders the side-view world in the level's theme. Pure presentation:
+ * positions and states come from the server sim at 10 Hz; the client lerps
+ * toward the latest snapshot and animates pixel-art sprite frames locally.
  */
 export function WorldCanvas({
   world,
+  theme,
   onSelect,
 }: {
   world: WorldState | null;
+  theme: ThemeKey;
   onSelect: (agentlingId: string) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -230,6 +217,7 @@ export function WorldCanvas({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
+    const T = THEMES[theme];
 
     let destroyed = false;
     const app = new Application();
@@ -241,7 +229,7 @@ export function WorldCanvas({
       .init({
         width: WORLD_WIDTH,
         height: VIEW_H,
-        background: VOID,
+        background: T.void,
         antialias: false,
         roundPixels: true,
       })
@@ -255,7 +243,7 @@ export function WorldCanvas({
         const agentTextures = buildAgentTextures();
 
         const scenery = new Graphics();
-        drawScenery(scenery);
+        drawScenery(scenery, T);
         app.stage.addChild(scenery);
 
         const dynamic = new Graphics();
@@ -276,23 +264,23 @@ export function WorldCanvas({
             const v = Math.floor(t * 8 + k * 1.7) % 3;
             const sway = v === 0 ? 0 : v === 1 ? -2 : 2;
             const base = GROUND_Y - 30;
-            dynamic.rect(tx - 3, base - 4, 6, 4).fill(FLAME);
-            dynamic.rect(tx - 2 + sway, base - 8, 4, 4).fill(FLAME);
-            dynamic.rect(tx - 1 + sway, base - 7, 2, 3).fill(FLAME_CORE);
-            dynamic.rect(tx - 1 - sway, base - 11, 2, 3).fill(FLAME);
+            dynamic.rect(tx - 3, base - 4, 6, 4).fill(T.flame);
+            dynamic.rect(tx - 2 + sway, base - 8, 4, 4).fill(T.flame);
+            dynamic.rect(tx - 1 + sway, base - 7, 2, 3).fill(T.flameCore);
+            dynamic.rect(tx - 1 - sway, base - 11, 2, 3).fill(T.flame);
           }
 
           // Work stations: wooden signposts with a status pennant.
           for (const job of w.jobs) {
             if (job.slot < 0 || (job.status !== 'queued' && job.status !== 'running')) continue;
             const x = STATION_BASE_X + job.slot * STATION_SPACING;
-            dynamic.rect(x - 1.5, GROUND_Y - 30, 3, 30).fill(WOOD_DARK);
-            dynamic.rect(x - 11, GROUND_Y - 40, 22, 11).fill(WOOD);
-            dynamic.rect(x - 11, GROUND_Y - 40, 22, 2).fill(WOOD_DARK);
+            dynamic.rect(x - 1.5, GROUND_Y - 30, 3, 30).fill(T.woodDark);
+            dynamic.rect(x - 11, GROUND_Y - 40, 22, 11).fill(T.wood);
+            dynamic.rect(x - 11, GROUND_Y - 40, 22, 2).fill(T.woodDark);
             const wave = Math.floor(t * 6 + job.slot) % 2 === 0 ? 0 : 2;
             dynamic
               .poly([x - 1, GROUND_Y - 52, x - 1, GROUND_Y - 41, x + 13 + wave, GROUND_Y - 46.5])
-              .fill(job.status === 'running' ? FLAME : GRASS);
+              .fill(job.status === 'running' ? T.flame : T.grass);
           }
 
           // Agentlings: smoothed positions driving pixel-art sprite frames.
@@ -357,7 +345,7 @@ export function WorldCanvas({
       destroyed = true;
       if (app.renderer) app.destroy(true, { children: true });
     };
-  }, []);
+  }, [theme]);
 
   return <div className="world" ref={hostRef} />;
 }

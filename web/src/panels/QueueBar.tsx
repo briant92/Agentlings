@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { api, postJson } from '../api';
+import { api, lvl, postJson } from '../api';
 
-/** One-row job intake under the world; repo path stays tucked away until M1 matters. */
-export function QueueBar() {
+/** One-row job intake under the world; repo path stays tucked behind a toggle. */
+export function QueueBar({ levelId }: { levelId: string }) {
   const [title, setTitle] = useState('');
   const [prompt, setPrompt] = useState('');
   const [repoPath, setRepoPath] = useState('');
@@ -13,7 +13,7 @@ export function QueueBar() {
     e.preventDefault();
     setError(null);
     try {
-      await api('/api/jobs', postJson({ title, prompt, repoPath: repoPath || undefined }));
+      await api(lvl(levelId, '/jobs'), postJson({ title, prompt, repoPath: repoPath || undefined }));
       setTitle('');
       setPrompt('');
     } catch (err) {

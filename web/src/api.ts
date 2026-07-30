@@ -1,3 +1,8 @@
+/** Level-scoped API path. */
+export function lvl(levelId: string, suffix: string): string {
+  return `/api/levels/${encodeURIComponent(levelId)}${suffix}`;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
   if (!res.ok) {

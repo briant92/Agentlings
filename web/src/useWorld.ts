@@ -3,8 +3,8 @@ import type { JobEvent, ServerMessage, WorldState } from '@agentlings/shared';
 
 const CLIENT_EVENT_CAP = 300;
 
-/** Live world state + job event feed over WebSocket, with a dumb 1s reconnect. */
-export function useWorld(): {
+/** Live world + event feed for one level over WebSocket, with a 1s reconnect. */
+export function useWorld(levelId: string): {
   world: WorldState | null;
   connected: boolean;
   events: JobEvent[];
@@ -17,10 +17,12 @@ export function useWorld(): {
     let ws: WebSocket | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
+    setWorld(null);
+    setEvents([]);
 
     const connect = () => {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      ws = new WebSocket(`${proto}://${location.host}/ws`);
+      ws = new WebSocket(`${proto}://${location.host}/ws?level=${encodeURIComponent(levelId)}`);
       ws.onopen = () => setConnected(true);
       ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data as string) as ServerMessage;
@@ -47,7 +49,7 @@ export function useWorld(): {
       if (retry) clearTimeout(retry);
       ws?.close();
     };
-  }, []);
+  }, [levelId]);
 
   return { world, connected, events };
 }

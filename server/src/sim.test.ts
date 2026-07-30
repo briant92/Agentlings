@@ -11,6 +11,11 @@ const stuckExecutor: Executor = {
   run: () => new Promise<ExecutorResult>(() => {}),
 };
 
+const CREW = [
+  { id: 'a1', name: 'Pip', color: 0x7bd88f, role: 'worker' },
+  { id: 'a2', name: 'Dot', color: 0x6fb7ff, role: 'worker' },
+];
+
 describe('Sim', () => {
   let root: string;
   let queue: JobQueue;
@@ -19,7 +24,7 @@ describe('Sim', () => {
   beforeEach(() => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-sim-'));
     queue = new JobQueue(root);
-    sim = new Sim(queue, stuckExecutor);
+    sim = new Sim(CREW, queue, stuckExecutor);
   });
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
@@ -50,5 +55,14 @@ describe('Sim', () => {
     expect(worker!.state).toBe('walking');
     expect(worker!.targetX).toBe(stationX(job.slot));
     expect(queue.get(job.id)!.assignedTo).toBe(worker!.id);
+  });
+
+  it('hires drop in at the hatch and join the patrol', () => {
+    const hired = sim.addAgentling({ id: 'a3', name: 'Fen', color: 0xffb86c, role: 'worker' });
+    expect(sim.agentlings).toHaveLength(3);
+    expect(hired.state).toBe('idle');
+    const before = hired.x;
+    sim.step();
+    expect(sim.agentlings.find((a) => a.id === 'a3')!.x).not.toBe(before);
   });
 });

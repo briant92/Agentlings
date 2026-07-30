@@ -1,38 +1,63 @@
 import { useState } from 'react';
-import { ProfileModal } from './panels/ProfileModal';
-import { QueueBar } from './panels/QueueBar';
-import { ReviewModal } from './panels/ReviewModal';
 import { RolesModal } from './panels/RolesModal';
-import { Terminal } from './panels/Terminal';
-import { useWorld } from './useWorld';
-import { WorldCanvas } from './world/WorldCanvas';
+import { LevelView } from './screens/LevelView';
+import { SelectScreen, type LevelEntry } from './screens/SelectScreen';
+import { SettingsModal } from './screens/SettingsModal';
+import { TitleScreen } from './screens/TitleScreen';
+
+type Screen = { name: 'title' } | { name: 'select' } | { name: 'level'; level: LevelEntry };
+
+const LAST_KEY = 'agentlings:last-level';
+
+function loadLast(): LevelEntry | null {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_KEY) ?? '') as LevelEntry;
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
-  const { world, connected, events } = useWorld();
-  const [reviewJobId, setReviewJobId] = useState<string | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [screen, setScreen] = useState<Screen>({ name: 'title' });
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
-  const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
+  const last = loadLast();
+
+  const enter = (level: LevelEntry) => {
+    localStorage.setItem(LAST_KEY, JSON.stringify(level));
+    setScreen({ name: 'level', level });
+  };
 
   return (
-    <div className="app">
-      <header>
-        <h1>Agentlings</h1>
-        <span className={connected ? 'status on' : 'status off'}>
-          {connected ? 'live' : 'connecting…'}
-        </span>
-        <button className="ghost h-roles" onClick={() => setRolesOpen(true)}>
-          roles
-        </button>
-      </header>
-      <main>
-        <WorldCanvas world={world} onSelect={setProfileId} />
-        <QueueBar />
-      </main>
-      <Terminal world={world} events={events} onOpenReview={setReviewJobId} />
-      {reviewJob && <ReviewModal job={reviewJob} onClose={() => setReviewJobId(null)} />}
-      {profileId && <ProfileModal agentlingId={profileId} onClose={() => setProfileId(null)} />}
+    <>
+      {screen.name === 'title' && (
+        <TitleScreen
+          hasContinue={last !== null}
+          onContinue={() => last && enter(last)}
+          onStart={() => setScreen({ name: 'select' })}
+          onSettings={() => setSettingsOpen(true)}
+        />
+      )}
+      {screen.name === 'select' && (
+        <SelectScreen onEnter={enter} onBack={() => setScreen({ name: 'title' })} />
+      )}
+      {screen.name === 'level' && (
+        <LevelView
+          key={screen.level.id}
+          level={screen.level}
+          onExit={() => setScreen({ name: 'select' })}
+        />
+      )}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          onOpenRoles={() => {
+            setSettingsOpen(false);
+            setRolesOpen(true);
+          }}
+        />
+      )}
       {rolesOpen && <RolesModal onClose={() => setRolesOpen(false)} />}
-    </div>
+    </>
   );
 }

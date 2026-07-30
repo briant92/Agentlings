@@ -15,8 +15,14 @@ export type OnOutcome = (
 const WALK_SPEED = 6; // world units per tick
 const PATROL_MIN = 48; // just clear of the left rock wall
 const PATROL_MAX = 950; // bounce at the right wall, past the arch
-const NAMES = ['Pip', 'Dot', 'Moss', 'Bea'];
-const COLORS = [0x7bd88f, 0x6fb7ff, 0xffb86c, 0xff8fa3];
+const SPAWN_AT = 80; // hires drop in under the hatch
+
+export interface CrewSeed {
+  id: string;
+  name: string;
+  color: number;
+  role: string;
+}
 
 export function stationX(slot: number): number {
   return STATION_BASE_X + slot * STATION_SPACING;
@@ -34,23 +40,40 @@ export class Sim {
   private dirs = new Map<string, 1 | -1>();
 
   constructor(
+    crew: CrewSeed[],
     private queue: JobQueue,
     private executor: Executor,
     private emit: EmitEvent = () => {},
     private onOutcome: OnOutcome = () => {},
   ) {
-    this.agentlings = NAMES.map((name, i) => ({
-      id: `a${i + 1}`,
-      name,
-      color: COLORS[i],
+    const span = PATROL_MAX - PATROL_MIN;
+    this.agentlings = crew.map((seed, i) => {
+      const x = Math.round(PATROL_MIN + ((i + 1) / (crew.length + 1)) * span);
+      return {
+        ...seed,
+        state: 'idle' as const,
+        x,
+        targetX: x,
+        jobsDone: 0,
+        jobsFailed: 0,
+      };
+    });
+    this.agentlings.forEach((a, i) => this.dirs.set(a.id, i % 2 === 0 ? 1 : -1));
+  }
+
+  /** A new hire drops in under the hatch and joins the patrol. */
+  addAgentling(seed: CrewSeed): Agentling {
+    const a: Agentling = {
+      ...seed,
       state: 'idle',
-      x: 150 + i * 180,
-      targetX: 150 + i * 180,
-      role: 'worker',
+      x: SPAWN_AT,
+      targetX: SPAWN_AT,
       jobsDone: 0,
       jobsFailed: 0,
-    }));
-    this.agentlings.forEach((a, i) => this.dirs.set(a.id, i % 2 === 0 ? 1 : -1));
+    };
+    this.agentlings.push(a);
+    this.dirs.set(a.id, 1);
+    return a;
   }
 
   state(): WorldState {

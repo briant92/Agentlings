@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Job, JobEvent, WorldState } from '@agentlings/shared';
-import { api, postJson } from '../api';
+import { api, lvl, postJson } from '../api';
 
 type Filter = 'all' | 'active' | 'results';
 const FILTERS: Filter[] = ['all', 'active', 'results'];
@@ -15,10 +15,12 @@ function jobById(world: WorldState | null, id: string): Job | undefined {
 
 /** The reporting rail: one chronological feed for everything the horde does. */
 export function Terminal({
+  levelId,
   world,
   events,
   onOpenReview,
 }: {
+  levelId: string;
   world: WorldState | null;
   events: JobEvent[];
   onOpenReview: (jobId: string) => void;
@@ -57,7 +59,7 @@ export function Terminal({
   }, [display, paused]);
 
   const resolve = async (jobId: string, action: 'promote' | 'discard') => {
-    await api(`/api/jobs/${jobId}/resolve`, postJson({ action }));
+    await api(lvl(levelId, `/jobs/${jobId}/resolve`), postJson({ action }));
   };
 
   return (

@@ -17,7 +17,7 @@ describe('mapTools', () => {
 });
 
 describe('buildAppend', () => {
-  it('includes the repo rule and past lessons', () => {
+  it('includes the repo rule, level knowledge, and past lessons', () => {
     const text = buildAppend(
       {
         name: 'scout',
@@ -27,16 +27,18 @@ describe('buildAppend', () => {
         prompt: 'You are a scout.',
       },
       ['stay curious'],
+      ['the tunnel floods on Tuesdays'],
       true,
     );
     expect(text).toContain('You are a scout.');
     expect(text).toContain('cloned at ./repo');
     expect(text).toContain('stay curious');
+    expect(text).toContain('the tunnel floods on Tuesdays');
     expect(text).toContain('LESSON.md');
   });
 
   it('falls back to a generic persona without a role', () => {
-    expect(buildAppend(undefined, [], false)).toContain('general-purpose worker');
+    expect(buildAppend(undefined, [], [], false)).toContain('general-purpose worker');
   });
 });
 

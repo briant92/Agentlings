@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentlingProfile, RoleInfo } from '@agentlings/shared';
-import { api, postJson } from '../api';
+import { api, lvl, postJson } from '../api';
 import { renderPortrait } from '../world/sprites';
 
 /** The worker's file: portrait, role, boundaries, skills, memory, career. */
 export function ProfileModal({
+  levelId,
   agentlingId,
   onClose,
 }: {
+  levelId: string;
   agentlingId: string;
   onClose: () => void;
 }) {
@@ -17,10 +19,10 @@ export function ProfileModal({
   const portraitRef = useRef<HTMLCanvasElement>(null);
 
   const refresh = useCallback(async () => {
-    const data = await api<AgentlingProfile>(`/api/agentlings/${agentlingId}`);
+    const data = await api<AgentlingProfile>(lvl(levelId, `/agentlings/${agentlingId}`));
     setProfile(data);
     setSelectedRole(data.agentling.role);
-  }, [agentlingId]);
+  }, [levelId, agentlingId]);
 
   useEffect(() => {
     void refresh();
@@ -40,7 +42,7 @@ export function ProfileModal({
   }, [onClose]);
 
   const assign = async () => {
-    await api(`/api/agentlings/${agentlingId}/role`, postJson({ role: selectedRole }));
+    await api(lvl(levelId, `/agentlings/${agentlingId}/role`), postJson({ role: selectedRole }));
     await refresh();
   };
 

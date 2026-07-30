@@ -1,5 +1,26 @@
 // Domain model shared by server (authoritative) and web (rendering).
 
+/** Visual palette a level is born with; the client owns the actual colors. */
+export type ThemeKey = 'cave' | 'chalkboard' | 'household' | 'marble';
+
+/** One card on the level-select screen. */
+export interface LevelInfo {
+  id: string;
+  name: string;
+  project: string;
+  theme: ThemeKey;
+  createdAt: number;
+  crew: number;
+  /** Crew sprite tints for the card's dots. */
+  colors: number[];
+  jobsDone: number;
+  jobsRunning: number;
+}
+
+export interface SettingsInfo {
+  executor: 'claude-agent-sdk' | 'simulated';
+}
+
 export type JobStatus =
   | 'queued'
   | 'running'

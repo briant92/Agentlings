@@ -148,3 +148,9 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   env — never import the SDK into the server/tsx process (it wedges the
   loader). Repo jobs: local clone + DIFF.patch review; promote =
   git apply. Auth via .env (see .env.example).
+- 2026-07-30 — Structural: 90's boot flow (title → level select →
+  level). Levels are independent workspaces (own crew/jobs/memory +
+  per-level KNOWLEDGE.md fed only to that level's sessions); the
+  roles/skills catalog stays global. Crews start at 2, hire in-level.
+  Themes are hand-tuned palettes; card thumbnails render from them.
+  Legacy cave migrated to levels/hq. Details in SPEC.md.

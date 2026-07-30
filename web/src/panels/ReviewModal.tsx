@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Job } from '@agentlings/shared';
-import { api, postJson } from '../api';
+import { api, lvl, postJson } from '../api';
 
 interface OutputFile {
   name: string;
@@ -8,18 +8,26 @@ interface OutputFile {
 }
 
 /** Full sandbox contents in an overlay; Esc, backdrop, or Close dismisses. */
-export function ReviewModal({ job, onClose }: { job: Job; onClose: () => void }) {
+export function ReviewModal({
+  levelId,
+  job,
+  onClose,
+}: {
+  levelId: string;
+  job: Job;
+  onClose: () => void;
+}) {
   const [files, setFiles] = useState<OutputFile[] | null>(null);
 
   useEffect(() => {
     let alive = true;
-    void api<{ files: OutputFile[] }>(`/api/jobs/${job.id}/output`).then((data) => {
+    void api<{ files: OutputFile[] }>(lvl(levelId, `/jobs/${job.id}/output`)).then((data) => {
       if (alive) setFiles(data.files);
     });
     return () => {
       alive = false;
     };
-  }, [job.id]);
+  }, [levelId, job.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -30,7 +38,7 @@ export function ReviewModal({ job, onClose }: { job: Job; onClose: () => void })
   }, [onClose]);
 
   const resolve = async (action: 'promote' | 'discard') => {
-    await api(`/api/jobs/${job.id}/resolve`, postJson({ action }));
+    await api(lvl(levelId, `/jobs/${job.id}/resolve`), postJson({ action }));
     onClose();
   };
 

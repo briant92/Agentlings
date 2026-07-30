@@ -65,6 +65,28 @@ packages/shared               ── domain types + world constants
 | `GET /api/jobs/:id/output` | Sandbox files for review |
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
 
+## Agentling identity (roles, skills, memory)
+
+Each agentling is a self-contained worker: a persistent role, a skill
+set, hard boundaries, and a memory that accumulates across jobs. Click a
+sprite to open its profile; assignments persist in
+`.agentlings/roster.json`.
+
+- **Roles** are Claude Code subagent files in `roles/*.md` — frontmatter
+  (`name`, `description`, `tools`, `skills`, optional `model`) plus the
+  system prompt as body. Built-ins: worker, scout, mason, scribe.
+- **Skills** are `SKILL.md` folders in `skills/` (built-in:
+  concise-reports). Both roles and skills install from GitHub URLs via
+  the Roles & skills modal (blob links auto-convert to raw).
+- **Boundaries**: a run may use the intersection of the role's `tools`
+  and the job's tool opt-in (see M2 registry) — the sandbox stays the
+  hard wall underneath.
+- **Memory**: one lessons file per agentling in `.agentlings/memory/`;
+  M0 stubs a career-log line per job.
+- M0 stores identity; **M1 enforces it** — the executor maps the role
+  onto the Agent SDK session (system prompt, tool allowlist, model,
+  mounted skills) and reads/writes real memory lessons.
+
 ## Milestones
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,

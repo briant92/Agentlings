@@ -138,3 +138,7 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - 2026-07-30 — External-app access for agentlings happens in-app (MCP
   connection registry, per-job opt-in; sketch in SPEC.md M2) — never by
   reusing claude.ai / Claude Code connectors.
+- 2026-07-30 — Agentling identity: per-agentling roles in Claude-native
+  formats (subagent .md in `roles/`, SKILL.md in `skills/`, installable
+  from GitHub URLs), per-agentling memory files, profile popup on sprite
+  click. M0 stores identity; the M1 executor enforces it. See SPEC.md.

@@ -322,6 +322,135 @@ pre {
   font-size: 12px;
 }
 
+.h-roles {
+  margin-left: auto;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+.modal.profile {
+  width: min(430px, 92vw);
+}
+.portrait {
+  image-rendering: pixelated;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  background: #0e1038;
+  flex-shrink: 0;
+}
+.p-id {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.p-name {
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.p-desc {
+  font-size: 11px;
+}
+.sect {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a91a3;
+  margin: 12px 0 6px;
+}
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  color: #d8dce6;
+}
+.chip.skill {
+  background: #24402e;
+  border-color: #2e4d3a;
+  color: #7bd88f;
+}
+.lessons {
+  font-size: 11px;
+  color: #8a91a3;
+  line-height: 1.7;
+  margin: 0;
+  padding-left: 16px;
+}
+.career {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  border-top: 1px solid #262b36;
+  margin-top: 12px;
+  padding-top: 9px;
+}
+.stat-done {
+  color: #7bd88f;
+  font-size: 12px;
+}
+.stat-failed {
+  color: #ff8fa3;
+  font-size: 12px;
+}
+select {
+  background: #171a21;
+  color: inherit;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12px;
+}
+.p-foot {
+  align-items: center;
+  justify-content: flex-start;
+}
+.p-foot button:last-child {
+  margin-left: auto;
+}
+.role-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.r-desc {
+  font-size: 11px;
+}
+.r-meta {
+  font-size: 10px;
+  color: #5a6172;
+  width: 100%;
+  padding-left: 2px;
+}
+.install-hint {
+  font-size: 11px;
+  margin: 0 0 6px;
+}
+.install-row {
+  display: flex;
+  gap: 6px;
+}
+.install-row input {
+  flex: 1;
+  background: #171a21;
+  color: inherit;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 11px;
+}
+
 @media (max-width: 1100px) {
   .app {
     grid-template-columns: 1fr;

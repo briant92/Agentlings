@@ -38,6 +38,32 @@ export interface Agentling {
   x: number;
   targetX: number;
   jobId?: string;
+  /** Role name from roles/*.md; persisted across restarts in the roster. */
+  role: string;
+  jobsDone: number;
+  jobsFailed: number;
+}
+
+/** Parsed role definition (Claude subagent frontmatter format, roles/*.md). */
+export interface RoleInfo {
+  name: string;
+  description: string;
+  tools: string[];
+  skills: string[];
+  model?: string;
+}
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+}
+
+/** GET /api/agentlings/:id — everything the profile popup shows. */
+export interface AgentlingProfile {
+  agentling: Agentling;
+  role: RoleInfo | null;
+  /** Most recent memory lessons, oldest first. */
+  memory: string[];
 }
 
 export interface WorldState {

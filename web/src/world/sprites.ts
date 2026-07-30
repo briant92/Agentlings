@@ -110,6 +110,22 @@ function makeTexture(rows: string[]): Texture {
   return texture;
 }
 
+/** Paints the idle frame big and crisp onto a plain canvas (profile portrait). */
+export function renderPortrait(canvas: HTMLCanvasElement, scale = 4): void {
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  IDLE.forEach((row, y) => {
+    for (let x = 0; x < W; x++) {
+      const color = PALETTE[row[x]];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  });
+}
+
 export type AgentAnim = 'idle' | 'walk' | 'work' | 'deliver';
 
 export function buildAgentTextures(): Record<AgentAnim, Texture[]> {

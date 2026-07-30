@@ -149,10 +149,18 @@ function animFor(state: string): AgentAnim {
  * from the server sim at 10 Hz; the client lerps toward the latest snapshot
  * and animates pixel-art sprite frames locally.
  */
-export function WorldCanvas({ world }: { world: WorldState | null }) {
+export function WorldCanvas({
+  world,
+  onSelect,
+}: {
+  world: WorldState | null;
+  onSelect: (agentlingId: string) => void;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<WorldState | null>(null);
   worldRef.current = world;
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -240,6 +248,10 @@ export function WorldCanvas({ world }: { world: WorldState | null }) {
             if (!sprite) {
               sprite = new Sprite(seq[frame]);
               sprite.anchor.set(0.5, 1);
+              sprite.eventMode = 'static';
+              sprite.cursor = 'pointer';
+              const id = a.id;
+              sprite.on('pointerdown', () => onSelectRef.current(id));
               spriteLayer.addChild(sprite);
               sprites.set(a.id, sprite);
             }

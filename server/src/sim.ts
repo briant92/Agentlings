@@ -4,6 +4,12 @@ import type { Executor } from './executors/executor';
 import type { JobQueue } from './queue';
 
 export type EmitEvent = (event: Omit<JobEvent, 'id' | 'at'>) => void;
+export type OnOutcome = (
+  agentling: Agentling,
+  jobTitle: string,
+  outcome: 'done' | 'failed',
+  detail: string,
+) => void;
 
 const WALK_SPEED = 6; // world units per tick
 const NAMES = ['Pip', 'Dot', 'Moss', 'Bea'];
@@ -26,6 +32,7 @@ export class Sim {
     private queue: JobQueue,
     private executor: Executor,
     private emit: EmitEvent = () => {},
+    private onOutcome: OnOutcome = () => {},
   ) {
     this.agentlings = NAMES.map((name, i) => ({
       id: `a${i + 1}`,
@@ -34,6 +41,9 @@ export class Sim {
       state: 'idle',
       x: SPAWN_X + i * 26,
       targetX: SPAWN_X + i * 26,
+      role: 'worker',
+      jobsDone: 0,
+      jobsFailed: 0,
     }));
   }
 
@@ -110,6 +120,8 @@ export class Sim {
       .then((result) => {
         this.queue.complete(jobId, result.summary);
         this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
+        a.jobsDone++;
+        this.onOutcome(a, job.title, 'done', result.summary);
         a.state = 'delivering';
         a.targetX = EXIT_X;
       })
@@ -117,6 +129,8 @@ export class Sim {
         const message = err instanceof Error ? err.message : String(err);
         this.queue.fail(jobId, message);
         this.emit({ type: 'failed', jobId, title: job.title, agentling: a.name, detail: message });
+        a.jobsFailed++;
+        this.onOutcome(a, job.title, 'failed', message);
         a.jobId = undefined;
         a.state = 'walking';
         a.targetX = this.homeX();

@@ -26,7 +26,7 @@ source of truth. Update it when scope changes.
 1. Queue a job (title + prompt + target repo path).
 2. The job claims a station slot in the world (max 5 visible; extras wait).
 3. An idle agentling walks to the station and works — the actual execution
-   runs in `.agentlings/jobs/<id>/` (the job's sandbox).
+   runs in `.agentlings/levels/<level>/jobs/<id>/` (the job's sandbox).
 4. On success the agentling carries the result to the exit; on failure it
    walks home and the job is marked failed.
 5. You review the sandbox output in the panel and promote or discard it.
@@ -58,12 +58,18 @@ packages/shared               ── domain types + world constants
 
 ### REST API
 
+Routes below are the M0 shapes; everything job-facing is scoped per level
+(`/api/levels/:lid/...`) since levels landed.
+
 | Route | Purpose |
 |---|---|
 | `GET /api/state` | Current `WorldState` snapshot |
 | `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}` |
 | `GET /api/jobs/:id/output` | Sandbox files for review |
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
+| `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |
+| `POST /api/levels/:lid/tools/promote` | Compile a proven recipe into a tool |
+| `GET /api/spend` | Cost, chargeable price and what was absorbed, by level and tier |
 
 ## Agentling identity (roles, skills, memory)
 
@@ -258,7 +264,10 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     and land as files the agent reads; an in-session `fetch_page` tool
     calls back into the server so extraction, trimming and the allowlist
     have one implementation. Non-http is refused. `AGENTLINGS_MAX_COST_USD`
-    stops a session mid-flight where the stream carries a running cost.
+    is the absolute ceiling on what one job may be quoted; it cannot stop a
+    session mid-flight, because the stream carries no running cost — measured,
+    the only `total_cost_usd` in a 35-message session arrives on the last one.
+    Turns are the only budget that binds before the money is spent (M5.5).
   - **M5.3 (built).** The deterministic router, `router.ts`, wrapped round
     whichever executor is in use by `RoutedExecutor`. It claims only work
     whose shape it recognises exactly — a question about what the level
@@ -267,7 +276,22 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     The rule is never guess: a missed saving costs money, a wrong answer
     costs trust. "Do it properly" re-queues with `noRouter` when the user
     disagrees with a routed answer.
-  - **M5.4 (built).** Memoisation, `recipes.ts`. Sessions now write
+
+    The ladder it sorts work onto, cheapest first, is the spine of M5:
+
+    | Tier | Fires when | Cost |
+    |---|---|---|
+    | `answer` | recall from KNOWLEDGE.md, or an exact repeat with a stored answer | free |
+    | `fetch` | a bare "read this page" | free |
+    | `tool` | a compiled tool matches the job's words *and* shape (M5.6) | free |
+    | `oneshot` | a recipe matches strongly — the method, on a 3-turn leash | ~11c |
+    | `agent` | everything else; a weak recipe match still lends its method | ~44c |
+
+    A session receives what the level knows **about this job** — the eight
+    most relevant notes, chosen by the same term overlap the recall tier uses.
+    Feeding it the twelve most recent instead showed a job about billing
+    whatever happened to be done yesterday.
+  - **M5.4 (built).** Memoisation, `recipes.ts`. A finished job leaves
     APPROACH.md alongside LESSON.md — how to do this *kind* of job without
     exploring — and that becomes a recipe stored per level. The next job of
     the same shape runs as a single shot with the approach handed to it
@@ -275,17 +299,121 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     answer: a stored answer is replayed only on an exact prompt repeat with
     no repository and no web access, because the same words against a
     different repo are a different question.
+
+    **The write-up is not the session's job.** It used to be, and it competed
+    with the work for turns, so it was cut first and the tier built to be cheap
+    became the one tier that could never teach anything — 13 of 13 recipe runs
+    died before writing either file. A separate close-out pass runs afterwards
+    on a cheap model with two turns, handed the run's own RESULT.md and the
+    *names* of the files it changed, never the patch. It runs after every job
+    that left anything behind, including the ones that died, which are most of
+    them. Measured at 2.1c: about 4% of a repo job, and the price of the crew
+    learning at all.
+
+    **Two bars, because the two mistakes cost different amounts.** A strong
+    match (0.65) shortens the run to three turns; a weak one (0.3) hands over
+    the method and leaves the leash alone. A wrong method given to a
+    full-length session wastes a turn it can ignore; the same method with the
+    leash cut wastes the whole run. Words are stemmed and weighted by rarity —
+    same-shape jobs used to score 0.33 against a 0.65 bar, so the crew never
+    recognised its own work.
+
+    A recipe's `terms` are recomputed from its key on read rather than trusted
+    from disk, so changing how words are stemmed can never strand the recipes
+    written before it.
   - **M5.5 (built).** The billing spine, designed for pass-through even
     though use is personal. `ledger.jsonl` is append-only and records
     observed cost and chargeable price as separate numbers from the first
     entry, because a ledger cannot be reconstructed retroactively.
     `estimate.ts` quotes before the work by asking the router what it would
     do and looking up what that tier and class have actually cost — a
-    lookup, not a model, so it tightens as recipes accumulate. The quote is
-    a ceiling and it is enforced: `min(quote, global cap)` is passed to the
-    session, and `priceFor` never charges above it. Failed work is recorded
-    and charged nothing — the app absorbs it. `/api/spend` totals by level
-    and tier.
+    lookup, not a model, so it tightens as recipes accumulate. `/api/spend`
+    totals by level and tier.
+
+    **The quote reads every run that spent money**, not only the ones that
+    landed. The runs that break a quote are exactly the ones that exhaust
+    their turns and file failed or partial, so a done-only average is blind to
+    its own worst cases by construction: it once saw four scribe runs at a
+    mean of 15c while five runs had really cost money, at 24c. That nobody is
+    billed for a failure is a *billing* decision, and `priceFor` makes it; a
+    quote is a bound on spending, and spent money is spent.
+
+    **Two ceilings, not one.** `DEFAULT_CEILING_USD` (50c) is what ignorance
+    quotes; `MAX_CEILING_USD` ($2, overridden by `AGENTLINGS_MAX_COST_USD`)
+    exists only so one freak run cannot set every later quote for its class.
+    They were the same constant until that made the quote promise *less* than
+    the history it was reading — it held evidence of a 59c run and promised
+    50c.
+
+    **Turns are the enforcement, and a turn is priced by the shape of the
+    work.** The quote divided by observed cost-per-turn sets `maxTurns`, and
+    it only ever tightens: a rich quote must not let a job run longer than its
+    role allows. The rate counts only runs of the same shape, because a repo
+    run costs 4.4–10× a turn of the same role without one — the clone puts
+    hundreds of thousands of cached tokens in front of every turn, and a rate
+    pooled across both predicts neither. A turn is priced per turn *granted*,
+    never per turn the SDK reports: a cap of 4 can come back as 6.
+
+    **What the ledger records about a job is what actually happened to it.**
+    The job class is the role that *ran* the work, not the role the matcher
+    named — a job routed to a role nobody holds is picked up by whoever is
+    free and runs as their role. `closeOutUsd` is part of `costUsd` but kept
+    separate, so the per-turn rate prices the session rather than the session
+    plus a fixed errand. `hasRepo` records the shape the rate depends on.
+
+    **Nothing is billed above its quote, and some things below it.** Failed
+    work is charged nothing. So is a job quoted free because a compiled tool
+    was going to do it, when the tool then could not — a promise of free that
+    arrives as a bill is the one thing the quote exists to prevent.
+  - **M5.6 (built).** Compiled tools — the fourth tier, and the only one that
+    makes a cost per task actually fall. A recipe makes repeat work cheaper by
+    saving the exploring, and still pays a model to read it. A tool removes the
+    model: the agent stops being the thing that does the job and becomes the
+    thing that once wrote down how. **Interpretation compiled.**
+
+    This also settles when to call the API at all: pay for judgement that has
+    not been compiled yet, and nothing else. And it sets the honest ceiling —
+    "add tests for module X" never compiles, because the assertions depend on
+    the module; "list the modules with no test file" does. Tools take the
+    scaffolding, sessions keep the judgement.
+
+    A tool is a directory holding a manifest and two plain-node ES modules,
+    `run.mjs` and `verify.mjs` — no shell, no dependencies, no network, so it
+    neither cares about the platform nor reaches anywhere it should not. The
+    ledger gives it a `tool` tier kept apart from `routed`: routed work was
+    never paid for, whereas a tool is work that *used* to be, and only the
+    second says the crew is getting cheaper.
+
+    Nothing about a tool is trusted:
+
+    - It matches on the **strong** bar only, and on shape as well as words. A
+      script written against a clone is simply wrong where there is no clone,
+      and the two jobs can be worded identically.
+    - It must **prove its own output**, checked in a second process because a
+      run that crashed cannot be trusted to report that it crashed. Work it
+      cannot prove is discarded — the files as well as the result, since the
+      files *are* the work — and the job is paid for properly. A free wrong
+      answer is the one outcome worse than a right answer that cost money.
+    - Two failures in a row **retire** it; a hang is killed at a timeout, since
+      a compiled tool that hangs has stopped being cheaper than the session it
+      replaced.
+
+    Promotion is a **request**, never automatic: it spends money, and a
+    promotion nobody asked for is a charge nobody quoted. It refuses a recipe
+    that has not landed three times, then queues one session whose only job is
+    to write the script and the check — and whose brief insists on the check
+    harder than on the script, because without one the tier is only a faster
+    way to be wrong. The scripts land in that session's sandbox and are
+    installed only when it is **reviewed and promoted**, exactly like a library
+    install: a generated tool is executable instruction. Its clone is scratch
+    and is never applied to the repository.
+
+    Whether a fourth tier is worth having at all is a question the app answers
+    by counting rather than guessing: a job matching a recipe with three
+    successes appends to `tool-candidates.jsonl` and nothing else happens.
+    Promotion pays back somewhere around the third to fifth reuse, and this
+    machine has seen one repeat in 36 jobs — so the machinery exists ahead of
+    the demand, deliberately and with that known.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

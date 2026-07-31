@@ -722,6 +722,40 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   compile by about a third — the same shape as the `hasRepo` split, a
   population hiding its expensive cases. Worth doing only when a compile's cost
   needs to be predicted, which at a cap of 10 it currently does not.
+- 2026-07-31 — The one-shot quote could never find its own history, found by
+  noticing a recipe with three successes quoting "first time doing this". Two
+  readers wanted different things from one field and only one of them was ever
+  written: the ledger always records `jobClass: agentling.role` (the runner
+  fix), while the quote asks for `decision.recipeKey` on the oneshot tier. They
+  cannot match. Measured across all 20 one-shot rows, **not one** matched, so
+  every one-shot quote fell through to the tier average — permanently, on the
+  twentieth run as on the first — and a worker one-shot was quoted 56c against
+  its own 22c history. Nobody was over-billed (`priceFor` still caps), but the
+  quote could not *tighten*, which is the entire promise of pricing from a
+  ledger rather than a model.
+  The fix is to stop making one field answer two questions. `jobClass` stays
+  the role that ran, because what a **turn** costs is set by the role's prompt,
+  tools and cap; `recipeKey` is added, because a **quote** asks "have we done
+  this job before" and a role cannot answer that. `quoteClass()` chooses in one
+  place — recipe when there is one, else role — and `costPerTurn` is untouched.
+  Only a one-shot is stamped: marking a full session with a recipe would take
+  that row out of its role's history, which is what prices a session.
+  Backfilled without guessing, which mattered — a recipe key *is*
+  `normalise(prompt)`, so a row is stamped only when the prompt on its own job
+  record normalises to a key that exists today. That is an identification, not
+  a similarity match, and it covered **20 of 20**; anything ambiguous would
+  have been left unshaped, since guessing is the mislabelling this change
+  exists to undo. Without the backfill the fix would have been correct and
+  inert, the same trap as the `hasRepo` split.
+  Measured after: the favicon recipe moved from "Up to 56c — first time doing
+  this" to "About 14c — done this 3 times before", high certainty; tool and
+  session quotes unchanged. The ceiling landed at 42c rather than the 27c its
+  history implies, because the **quote floor** binds — 5 leash turns at the
+  scribe repo rate is ~41c, and a quote may not come in under the turns it has
+  decided to grant. Worth noting the floor prices that leash at the *session*
+  rate (`costPerTurn(..., 'session', ...)`), which is conservative rather than
+  wrong: a one-shot turn is cheaper than a session's, so the floor overshoots.
+  Left alone deliberately.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

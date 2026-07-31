@@ -274,6 +274,32 @@ describe('JobQueue', () => {
       expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
     });
 
+    // A compile's deliverable is never a diff — its output is the two scripts,
+    // and promote deliberately does not apply its patch — so asking only about
+    // a patch called every compile a failure. Measured on job 760e0bf6: two
+    // working programs on disk, verified by hand, filed `failed`.
+    it('calls a compile that left both halves partial, not failed', () => {
+      const job = queue.add({ title: 'Compile a recipe', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, 'run.mjs'), '// does the job\n');
+      writeFileSync(path.join(dir, 'verify.mjs'), '// checks the job\n');
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+
+      const partial = queue.get(job.id)!;
+      expect(partial.status).toBe('partial');
+      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+    });
+
+    // Half a tool is not a delivery: installTool refuses it, so the status
+    // must not claim there is something to review.
+    it('is a plain failure when a compile produced only half a tool', () => {
+      const job = queue.add({ title: 'Compile a recipe', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, 'run.mjs'), '// does the job\n');
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+      expect(queue.get(job.id)!.status).toBe('failed');
+    });
+
     it('is still a plain failure when nothing was produced', () => {
       const job = queue.add({ title: 'Nothing at all', prompt: 'x' });
       queue.start(job.id);

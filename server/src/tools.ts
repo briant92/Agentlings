@@ -97,6 +97,17 @@ export function isComplete(levelDir: string, manifest: ToolManifest): boolean {
 }
 
 /**
+ * Whether a compiling run left a tool behind in its sandbox.
+ *
+ * One notion of "the compile delivered", used both by `installTool` — which
+ * refuses half a tool — and by the queue, which must not call a run that
+ * produced both halves a failure merely because a compile leaves no diff.
+ */
+export function deliveredTool(sandboxDir: string): boolean {
+  return [RUN_SCRIPT, VERIFY_SCRIPT].every((s) => existsSync(path.join(sandboxDir, s)));
+}
+
+/**
  * The tool for this job, if one has earned it.
  *
  * Deliberately stricter than recipe matching, and only ever the strong bar. A
@@ -228,12 +239,11 @@ export function installTool(
   manifest: ToolManifest,
   sandboxDir: string,
 ): boolean {
-  const scripts = [RUN_SCRIPT, VERIFY_SCRIPT];
-  if (!scripts.every((s) => existsSync(path.join(sandboxDir, s)))) return false;
+  if (!deliveredTool(sandboxDir)) return false;
 
   const dir = toolDir(levelDir, manifest.name);
   mkdirSync(dir, { recursive: true });
-  for (const script of scripts) {
+  for (const script of [RUN_SCRIPT, VERIFY_SCRIPT]) {
     copyFileSync(path.join(sandboxDir, script), path.join(dir, script));
   }
   const { pendingJobId: _installed, ...ready } = manifest;

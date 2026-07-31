@@ -188,22 +188,27 @@ describe('quoteFor, against what the run may actually spend', () => {
     expect(quoteFor('tool', 'tidy', costing(0.4), { floorUsd: 2 }).ceilingUsd).toBe(0);
   });
 
-  // The compile's own version of the same failure, and what picked its number:
-  // a cap the quote cannot fund is handed straight back by the turn budget, so
-  // the constant arrives inert. Checked at both rates the two real compiles
-  // burnt, the worse of which is what makes 15 the largest honest cap — 16 is
-  // cut back to 15 there, because MAX_CEILING_USD stops the floor.
+  // The compile's own version of the same failure: a cap the quote cannot fund
+  // is handed straight back by the turn budget, so the constant would arrive
+  // inert. Checked at all three rates real compiles have burnt — 8.8c, 9.4c
+  // and 12.6c a turn — since the floor has to hold at the dearest of them.
   it('funds every turn a compile is about to be granted', () => {
-    for (const usd of [0.094, 0.126]) {
+    for (const usd of [0.088, 0.094, 0.126]) {
       const rate = { samples: 2, usd };
       const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), {
         floorUsd: COMPILE_TURNS * usd,
       });
       expect(turnsForBudget(quote.ceilingUsd, rate, COMPILE_TURNS)).toBe(COMPILE_TURNS);
     }
+  });
+
+  // Why the cap is not simply raised when a compile runs out: past about 15
+  // turns MAX_CEILING_USD stops the floor, so the extra turns are quietly not
+  // granted at the very rate that made them look necessary.
+  it('stops funding turns once the runaway cap bites', () => {
     const dear = { samples: 2, usd: 0.126 };
     const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), { floorUsd: 16 * 0.126 });
-    expect(turnsForBudget(quote.ceilingUsd, dear, 16)).toBe(COMPILE_TURNS);
+    expect(turnsForBudget(quote.ceilingUsd, dear, 16)).toBe(15);
   });
 });
 

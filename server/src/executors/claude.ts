@@ -66,21 +66,25 @@ export const RECIPE_TURNS = 5;
  * failed exactly there: it listed a multi-line `export async function`
  * correctly and its own checker rejected it, one line in 124.
  *
- * Both compiles on record broke a cap of 10, so 10 is known to be too few and
- * the ledger cannot say what would be enough: a cut-off run reports
- * `turnsAllowed + 1` whatever it wanted, so the reported count carries no
- * information about what it wanted. The number is therefore set from the side
- * that *is* knowable — what the money can honour, since a cap the quote cannot
- * fund is handed straight back by `turnsForBudget` and arrives inert the way
- * RECIPE_TURNS = 5 did.
+ * The number is 10 — the same as the default, and stated rather than inherited
+ * so that a role raising its own `maxTurns:` does not silently change what a
+ * compile gets. The compile's needs are the compile's.
  *
- * Priced at the two compiles' real 9.4c and 12.6c a turn, MAX_CEILING_USD
- * funds 15 turns at the worse of them and 16 at the better. So 15 is the
- * largest cap granted in full at every observed rate, and 16 would be cut back
- * to 15 exactly where the run is most expensive — buying nothing, while
- * promising turns the ceiling cannot pay for.
+ * It was briefly 15, on the reasoning that all three compiles on record had
+ * run out of turns. Measured, that was the wrong inference. Attempt 3 at 15
+ * ran out *as well* (16 reported of 15) and cost $1.32, against attempt 2's
+ * $0.94 at a cap of 10 — 40% more money for the same outcome, and comparing
+ * the two generated `verify.mjs` files afterwards, attempt 2's was if anything
+ * the more thorough. What actually fixed the compile was telling it how the
+ * previous one failed, not lengthening the leash.
+ *
+ * The real error was reading "ran out of turns" as "needed more turns".
+ * Running out is a compile's *ordinary* ending, exactly as it is the
+ * close-out's: it writes both programs and dies reporting that it did. The
+ * status now says so, so the next person reads delivery off the label instead
+ * of inferring a shortage from it.
  */
-export const COMPILE_TURNS = 15;
+export const COMPILE_TURNS = 10;
 /**
  * The write-up runs on its own, after the work, on the cheapest model going.
  *

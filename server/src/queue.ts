@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Job, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
+import { deliveredTool } from './tools';
 
 export interface NewJobSpec {
   title: string;
@@ -181,12 +182,21 @@ export class JobQueue {
     const job = this.mustGet(jobId);
     job.error = error;
     if (meter) job.meter = meter;
-    const patch = patchFile(this.sandboxDir(jobId));
+    const sandbox = this.sandboxDir(jobId);
+    const patch = patchFile(sandbox);
     const hasPatch = existsSync(patch);
     if (hasPatch) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
-    // A run that died with a diff on disk did the work and lost the write-up.
-    // Calling that a failure hides changes that are ready to review.
-    job.status = hasPatch ? 'partial' : 'failed';
+    // A run that died holding its deliverable did the work and lost the
+    // write-up. Calling that a failure hides work that is ready to review.
+    //
+    // For most jobs the deliverable is a diff. For a compile it is never a
+    // diff — its output is the two scripts, and `promote` deliberately does
+    // not apply its patch — so asking only about a patch called every compile
+    // a failure, including the one that wrote two working programs and ran out
+    // saying so. Measured on job 760e0bf6: delivered, verified by hand, filed
+    // `failed`. Running out is a compile's ordinary ending, the same way it is
+    // the close-out's.
+    job.status = hasPatch || deliveredTool(sandbox) ? 'partial' : 'failed';
     this.finish(job);
   }
 

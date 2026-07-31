@@ -46,8 +46,8 @@ describe('turnCapFor', () => {
   // need belongs to the job rather than the worker — otherwise every role
   // would have to raise its everyday budget to accommodate one errand.
   it('lets a job that states its own need outrank the role', () => {
-    expect(turnCapFor(undefined, undefined, COMPILE_TURNS)).toBe(15);
-    expect(turnCapFor({ maxTurns: 10 }, undefined, COMPILE_TURNS)).toBe(15);
+    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS)).toBe(COMPILE_TURNS);
+    expect(turnCapFor({ maxTurns: 2 }, undefined, COMPILE_TURNS)).toBe(COMPILE_TURNS);
     expect(turnCapFor({ maxTurns: 20 }, undefined, 12)).toBe(12);
   });
 
@@ -64,10 +64,12 @@ describe('turnCapFor', () => {
     expect(turnCapFor(undefined, undefined, 5000)).toBe(40);
   });
 
-  // Both compiles on record broke a cap of 10 — the number is only useful if
-  // it is meaningfully above the one that failed.
-  it('gives a compile more room than the cap both compiles broke', () => {
-    expect(COMPILE_TURNS).toBeGreaterThan(turnsFor(undefined));
+  // Measured rather than assumed: a compile at 15 ran out too and cost 40%
+  // more than the one at 10 for the same outcome. The point of the constant is
+  // that a compile states its own budget instead of inheriting whatever the
+  // role that owns the recipe happens to ask for.
+  it('pins a compile to its own budget rather than the role’s', () => {
+    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS)).not.toBe(turnsFor({ maxTurns: 30 }));
   });
 });
 

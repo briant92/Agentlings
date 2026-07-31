@@ -681,27 +681,47 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   their daily budget for one errand — so `maxTurns` is now a job field and wins
   over the role's, while the recipe leash still wins over both (a job the crew
   has done before is one it has done before, whatever it claims to need).
-  The interesting part is the number. The ledger **cannot** say how many turns
-  a compile wants: a cut-off run reports `turnsAllowed + 1` whatever it wanted,
-  so the reported count is a marker that it ran out and nothing more. So the
-  number was set from the side that is knowable — what the quote can fund —
-  because a cap the money cannot honour is handed straight back by
-  `turnsForBudget` and arrives inert, which is precisely how `RECIPE_TURNS = 5`
-  landed. Priced at the two compiles' real 9.4c and 12.6c a turn,
-  `MAX_CEILING_USD` funds 16 turns at the better rate and 15 at the worse, so
-  **15** is the largest cap granted in full at every observed rate; 16 would be
-  cut back to 15 exactly where the run is most expensive, buying nothing while
-  promising turns the ceiling cannot pay for. I proposed 16 and the test I
-  wrote to prove it refuted it — worth recording because the check was cheap
-  and ran before any money moved. `compileQuote`'s floor moved to the same
+  The number went 16 → 15 → **10**, and only the last step came from running
+  the thing. The ledger cannot say how many turns a compile wants: a cut-off
+  run reports `turnsAllowed + 1` whatever it wanted, so the reported count is a
+  marker that it ran out and nothing more. So 15 was set from the side that
+  *is* knowable — what the quote can fund, since a cap the money cannot honour
+  is handed straight back by `turnsForBudget` and arrives inert, exactly how
+  `RECIPE_TURNS = 5` landed. (I proposed 16; the test written to prove it
+  refuted it, at the dearest observed rate `MAX_CEILING_USD` funds 15. Cheap,
+  and before any money moved.) `compileQuote`'s floor moved to the same
   constant, since a quote funding fewer turns than it grants is the bug
   `e2a53c8` already fixed once.
-  Not built, and now the next thing: the rate this is all priced off is
-  `scribe/session/hasRepo` at 8.2c, which **pools compiles with ordinary repo
-  sessions** and so understates a compile by about a third. That is the same
-  shape as the `hasRepo` split — a population hiding its expensive cases — and
-  it means the ceiling still has no guarantee here. Unmeasured until a compile
-  runs at 15.
+  **Then it was measured, and 15 was wrong.** Attempt 3 at a cap of 15 ran out
+  *as well* — 16 reported of 15 — and cost **$1.32** against attempt 2's
+  **$0.94** at a cap of 10: 40% more money for the same outcome, and comparing
+  the two generated `verify.mjs` files afterwards, attempt 2's was if anything
+  the more thorough of the two. The tool attempt 3 produced was good (125
+  entries, both halves exit 0, independently cross-checked, and it lists
+  `web.ts :: fetchPage` — the entry that killed attempt 1), so nothing was
+  wasted; it simply was not *better*. What fixed the compile was `4f7a561`,
+  telling it how the last one failed. The cap was never the binding constraint.
+  So the error worth naming is the inference, not the number: **"ran out of
+  turns" was read as "needed more turns"**. Running out is a compile's ordinary
+  ending, precisely as it is the close-out's — it writes both programs and dies
+  reporting that it did. The cap is back to 10, still stated rather than
+  inherited so a role raising its own `maxTurns:` cannot silently change what a
+  compile gets.
+  The quote held throughout: quoted $1.5168 (predicted $1.52 before spending),
+  spent $1.32, **charged $0**. That is the third hold against two breaches.
+  And the mislabel this exposed is the **sixth** instance of the project's
+  recurring bug, in the place it was hardest to see: `queue.fail` decided
+  `partial` from a diff on disk, but a compile's deliverable is never a diff —
+  its output is the two scripts and promote deliberately does not apply its
+  patch — so *every* compile filed `failed`, including one holding two working
+  programs. `deliveredTool()` in tools.ts is now the single notion of a compile
+  having delivered, used by `installTool` (which already refused half a tool)
+  and by the queue. Half a tool is still a failure.
+  Still open: the rate all of this is priced off is `scribe/session/hasRepo` at
+  8.2c, which **pools compiles with ordinary repo sessions** and understates a
+  compile by about a third — the same shape as the `hasRepo` split, a
+  population hiding its expensive cases. Worth doing only when a compile's cost
+  needs to be predicted, which at a cap of 10 it currently does not.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

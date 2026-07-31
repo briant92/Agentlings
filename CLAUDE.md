@@ -576,6 +576,28 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   ambiguous, whereas the default rests on n=2 repo runs since the close-out,
   which by this project's own small-n rule is an estimate rather than a
   finding.
+  **Raising the leash was not enough, and checking before spending caught it.**
+  The oneshot tier quotes from its own history; that history was the thirteen
+  runs that died at three turns costing ~11c, so it quoted 22c, which funds
+  three turns — the leash that was failing. `RECIPE_TURNS = 5` was inert on
+  arrival. This is the same bug a third time, one level up: a mechanism reading
+  a population its own brokenness produced, and it cannot escape by itself. Fix
+  is a rule that ought to have been there from the start: **a quote may never
+  come in under the turns it has already decided to grant**, since that is
+  quoting for work it will not permit. `quoteFor` takes `floorUsd` and
+  index.ts computes it exactly as the executor will — leash × the rate for that
+  role in that shape. The absolute cap still wins over the floor, because a
+  leash nobody can afford should shorten rather than overturn the ceiling.
+  Note `scribe/session` cleared its own leash by **$0.004**: not strangled
+  today, one rate-drift from it.
+  Then measured live, and it lands: `done` at **5 of 5 turns** for 13c against
+  a 35c quote — the first `oneshot` run ever to finish, against thirteen that
+  did not, and the first `successes: 1` any recipe has banked. Two more and it
+  is promotable to a tool without anybody seeding it, which is the compilation
+  path working end to end for the first time. Worth recording that it used
+  *every* turn of the five: it landed with zero headroom, so 5 is the floor
+  rather than a comfortable choice, and at 3 it would certainly have died like
+  the others.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

@@ -381,11 +381,11 @@ under [State on disk](#state-on-disk)).
     | `answer` | recall from KNOWLEDGE.md, or an exact repeat with a stored answer | free |
     | `fetch` | a bare "read this page" | free |
     | `tool` | a compiled tool matches the job's words *and* shape (M5.6) | free |
-    | `oneshot` | a recipe matches strongly — the method, on a 5-turn leash | ~20c |
+    | `oneshot` | a recipe matches strongly — the method, on a 5-turn leash | ~13c |
     | `agent` | everything else; a weak recipe match still lends its method | ~50c |
 
-    Those two prices are projections from the leashes being raised, not
-    measurements: 11c and 44c were what the 3- and 8-turn caps really cost.
+    The oneshot price is measured at the 5-turn leash; the agent one is still a
+    projection from raising the cap to 10, where 44c was what 8 turns cost.
 
     A session receives what the level knows **about this job** — the eight
     most relevant notes, chosen by the same term overlap the recall tier uses.

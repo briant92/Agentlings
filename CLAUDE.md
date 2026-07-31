@@ -629,6 +629,29 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   reported count.
   Cost of learning this: **$2.38 across five runs**, of which $0.71 was
   chargeable and $1.67 absorbed — the billing rules held throughout.
+- 2026-07-31 — The first tool compiled without seeding was **bad**, and that is
+  the most reassuring result of the day. Promoting the EXPORTS recipe produced
+  406 lines of careful work — `run.mjs` refuses the export shapes it cannot
+  parse rather than omitting them silently, which is the router's own
+  never-guess rule applied by generated code to itself — and yet the two halves
+  disagreed: `verify.mjs` rejects a multi-line `export async function` that
+  `run.mjs` correctly lists, one line in 124. So the tool produced the *right*
+  answer and its own checker refused it. Every guard fired in order: output
+  discarded, job done properly by a session, `toolFellBack` → **charged zero**,
+  one strike recorded. The failure mode is worth naming precisely, because it
+  is not the one the design was braced for: a false negative costs money and
+  not trust, which is the direction the tier was built to fail in.
+  Two gaps it exposed. The compile session was **unquoted** — the only job in
+  the app without a ceiling, unbounded because nobody had thought to bound it
+  rather than by decision, and it spent $1.26 and still ran out of turns.
+  Promotion now quotes as a plain session on the recipe's role, directly rather
+  than through the router, since the compile sets `noRouter`. And there is no
+  way to retire a tool short of letting it fail twice: this one is provably
+  broken and self-retiring would have cost another absorbed session, so it was
+  retired by hand. A `POST .../tools/:name/retire` is the obvious missing verb.
+  A judgement worth recording for next time: a compile is worth more turns than
+  an ordinary job. It has to write two programs that agree with each other, and
+  the halves disagreeing is exactly what running out of turns produces.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

@@ -598,6 +598,20 @@ app.get('/api/levels/:lid/crew', (c) => {
 });
 
 /**
+ * What compiling a recipe should cost: a plain session on the recipe's role,
+ * quoted directly because the compile sets `noRouter` and so will not be
+ * routed anywhere.
+ */
+function compileQuote(rt: LevelRuntime, role: string): Quote {
+  const ledger = readLedger(SANDBOX_ROOT);
+  const rate = costPerTurn(ledger, role, 'session', Boolean(rt.meta.repoPath));
+  return quoteFor('session', role, ledger, {
+    maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    ...(rate.samples > 0 ? { floorUsd: turnsFor(registry.get(role)) * rate.usd } : {}),
+  });
+}
+
+/**
  * What a request would cost, worked out by asking the router what it would do
  * with it and looking up what that kind of work has cost before.
  */
@@ -814,13 +828,21 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   }
 
   const name = toolNameFor(key);
+  const prompt = promotionPrompt(recipe);
   const job = rt.queue.add({
     title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
-    prompt: promotionPrompt(recipe),
+    prompt,
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: recipe.role,
     // The compiler must not be handed its own half-written tool as a shortcut.
     noRouter: true,
+    // Quoted like any other work. It was the one job in the app that ran
+    // without a ceiling, which went unnoticed until a compile spent $1.26 and
+    // still ran out of turns — unbounded because nobody had thought to bound
+    // it, not because anyone decided it should be. Quoted as a session
+    // outright rather than through the router, since `noRouter` above means
+    // that is what it will be.
+    quotedUsd: compileQuote(rt, recipe.role).ceilingUsd || undefined,
   });
   writeTool(rt.dir, {
     name,

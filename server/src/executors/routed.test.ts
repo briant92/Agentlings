@@ -12,7 +12,7 @@ import {
   type Recipe,
 } from '../recipes';
 import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from '../tools';
-import { SessionFailure } from './claude';
+import { CANCELLED, SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 import { RoutedExecutor } from './routed';
 
@@ -641,6 +641,34 @@ describe('RoutedExecutor', () => {
       stored(TOOL_CANDIDATE_RUNS - 1);
       await run(build(new FakeSession()), job({ prompt: 'add a test for the estimate module' }), PIP);
       expect(candidates()).toHaveLength(0);
+    });
+
+    // Work stopped on purpose is not demand for a compiled version of it. The
+    // note used to be written before the session ran, so a job cancelled two
+    // seconds in counted exactly like one that was wanted.
+    it('does not count work that was cancelled', async () => {
+      stored(TOOL_CANDIDATE_RUNS);
+      await run(
+        build(new DyingSession(new SessionFailure(CANCELLED))),
+        job({ prompt: 'add a test for the estimate module' }),
+        PIP,
+      ).catch(() => undefined);
+
+      expect(candidates()).toHaveLength(0);
+    });
+
+    // …but a run that merely *failed* still counts. It was asked for and
+    // attempted, and on a short leash that is how most runs end — counting
+    // only clean exits is the mistake this project keeps paying for.
+    it('counts a run that was attempted and failed', async () => {
+      stored(TOOL_CANDIDATE_RUNS);
+      await run(
+        build(new DyingSession(new SessionFailure('ran out of turns'))),
+        job({ prompt: 'add a test for the estimate module' }),
+        PIP,
+      ).catch(() => undefined);
+
+      expect(candidates()).toHaveLength(1);
     });
   });
 });

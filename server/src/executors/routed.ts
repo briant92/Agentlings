@@ -23,7 +23,7 @@ import {
   usableTools,
 } from '../tools';
 import { fetchPage } from '../web';
-import { SessionFailure } from './claude';
+import { CANCELLED, SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
 /**
@@ -191,7 +191,25 @@ export class RoutedExecutor implements Executor {
     }
     // Whichever way the method arrived, the recipe was used.
     const usedKey = decision.kind === 'tool' ? undefined : decision.recipeKey;
-    if (usedKey) {
+
+    let result: ExecutorResult | undefined;
+    let failure: unknown;
+    try {
+      result = await this.fallback.run(job, sandboxDir, onProgress, agentling, hint);
+    } catch (err) {
+      failure = err;
+    }
+
+    // Counted after the run rather than before it, so it can know whether the
+    // run happened. Work stopped on purpose is not evidence that anybody wants
+    // it compiled — the same reasoning that keeps a cancelled job `failed`
+    // even when it left a diff behind. Found by reading the file: a job
+    // cancelled two seconds in had logged a candidate exactly like a real one.
+    //
+    // A run that *failed* still counts. It was asked for and attempted, and
+    // most runs on a short leash end that way — gating this on a clean exit is
+    // the mistake this project has already paid for five times over.
+    if (usedKey && !(failure instanceof SessionFailure && failure.message === CANCELLED)) {
       const used = recipes.find((r) => r.key === usedKey);
       if (used && (used.successes ?? 0) >= TOOL_CANDIDATE_RUNS) {
         // Not acted on: this only counts how often a compiled tool could have
@@ -205,14 +223,6 @@ export class RoutedExecutor implements Executor {
           successes: used.successes ?? 0,
         });
       }
-    }
-
-    let result: ExecutorResult | undefined;
-    let failure: unknown;
-    try {
-      result = await this.fallback.run(job, sandboxDir, onProgress, agentling, hint);
-    } catch (err) {
-      failure = err;
     }
 
     // Bank what the run earned whether or not it finished. A run that died

@@ -143,6 +143,13 @@ const DEFAULT_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
  * the lesson and the diff — a job that dies on its last turn should not throw
  * away everything the turns before it earned.
  */
+/**
+ * What a run killed on purpose fails with. Shared rather than written out at
+ * each end: a thrower saying one word and a reader watching for another is a
+ * check that silently never fires.
+ */
+export const CANCELLED = 'cancelled';
+
 export class SessionFailure extends Error {
   constructor(
     message: string,
@@ -739,7 +746,7 @@ export class ClaudeAgentExecutor implements Executor {
           // way, and the SDK only reports cost on a result message that will
           // now never arrive — so the spend is marked unknown, not zero.
           return reject(
-            new SessionFailure('cancelled', {
+            new SessionFailure(CANCELLED, {
               ...meter,
               ...(meter.costUsd === undefined ? { costUnknown: true } : {}),
             }),

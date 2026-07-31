@@ -63,8 +63,11 @@ export function quoteFor(
     };
   }
 
-  // Nothing for this exact job, but the tier as a whole may have a track record.
-  const sameTier = ledger.filter((e) => e.tier === tier && e.outcome === 'done' && e.costUsd > 0);
+  // Nothing for this exact job, but the tier as a whole may have a track
+  // record. Same population as history(): what the tier has spent, not what it
+  // spent successfully — this branch catches jobs matched to a role nobody
+  // holds, which is where a blind average does the most damage.
+  const sameTier = ledger.filter((e) => e.tier === tier && e.costUsd > 0);
   if (sameTier.length > 0) {
     const mean = sameTier.reduce((sum, e) => sum + e.costUsd, 0) / sameTier.length;
     const max = Math.max(...sameTier.map((e) => e.costUsd));

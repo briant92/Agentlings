@@ -73,14 +73,18 @@ describe('totals', () => {
 });
 
 describe('history', () => {
-  it('reports only successful runs of that exact kind of job', () => {
+  it('counts every run of that kind that spent money, landed or not', () => {
     const entries = [
       entry({ jobClass: 'analyst', costUsd: 0.1 }),
       entry({ jobClass: 'analyst', costUsd: 0.3 }),
       entry({ jobClass: 'analyst', costUsd: 9, outcome: 'failed' }),
       entry({ jobClass: 'mason', costUsd: 5 }),
     ];
-    expect(history(entries, 'analyst')).toEqual({ samples: 2, mean: 0.2, max: 0.3 });
+    // Nobody was billed for the $9 run, and it is the only one that says what
+    // this work can cost: a quote blind to it keeps making the same promise.
+    const own = history(entries, 'analyst');
+    expect({ samples: own.samples, max: own.max }).toEqual({ samples: 3, max: 9 });
+    expect(own.mean).toBeCloseTo(3.1333);
   });
 
   it('says nothing rather than guessing when there is no history', () => {

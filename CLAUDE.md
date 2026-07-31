@@ -269,6 +269,33 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   user was
   never over-billed: `priceFor` already caps charges at the quote. What
   was unbounded was the app's absorbed cost.
+- 2026-07-31 — The quote's feedback loop was open, found by running it end
+  to end: quote a job, run it, compare. A job quoted at 30c — "about 15c,
+  done this 4 times before", *high* confidence — cost **59c**, ran out of
+  turns and filed `partial` holding a good diff. Billing held (`priceFor`
+  charged zero, the app absorbed all of it), but re-running the estimator
+  afterwards showed the quote for the identical next job had not moved a
+  cent. `history()` read `done` rows only, and the runs that break a quote
+  are exactly the ones that exhaust their turns and file failed or partial,
+  so the average could not see its own worst cases: it saw 4 scribe runs at
+  a mean of 15c while 5 runs had really cost money, at 24c — $0.59 invisible,
+  and the same hole hid $0.60 of worker spend. Fixed by counting every run
+  that spent money, in `history()` and in quoteFor's tier fallback alike.
+  That nobody is billed for a failure is a *billing* decision and `priceFor`
+  makes it; a quote bounds spending, and spent money is spent whatever the
+  outcome. The scribe quote moved to "about 24c", ceiling 50c. Three things
+  stay open **deliberately**, and all three are the same shape — a mechanism
+  that is correct but currently inert. The turn budget still never binds:
+  quote ÷ rate came to 17 turns against a role cap of 8, before and after, so
+  the ceiling from `b3be508` does nothing wherever the cap is the smaller
+  number. `DEFAULT_CEILING_USD` clamps the learned ceiling at 50c, so a
+  repeat of that same job would still breach by ~19%. And the job class is
+  the *matched* role, so wording that matched `mason` — a role nobody holds —
+  quoted off the tier average instead, moving the same work from "about 15c,
+  high confidence" to "up to 50c, first time". Cost per turn is not a
+  property of a role either: this run burnt 7.4c/turn against a class rate of
+  1.8c, driven by 280k cache-read tokens on a repo job, which the class key
+  does not record. Across the whole history, 3 of 6 quoted runs breached.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

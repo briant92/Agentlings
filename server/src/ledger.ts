@@ -118,13 +118,6 @@ export function totalsBy<K extends keyof LedgerEntry>(
 }
 
 /**
- * What this kind of job has cost before, on this tier — the basis of a quote.
- *
- * Tier matters: the same class of work routed for free and run as a session
- * are different prices, and letting free runs into the average would quote a
- * ceiling of zero for a session that genuinely needs to spend.
- */
-/**
  * What one *allowed* turn of this kind of work has cost.
  *
  * The unit matters. The SDK's reported `turns` is not the limit it was given:
@@ -138,9 +131,9 @@ export function totalsBy<K extends keyof LedgerEntry>(
  * unit-correct sample is worth more than a larger mixed one, and with none at
  * all the role's own budget stands, which is the safe direction.
  *
- * Failures count here, unlike history(): a session that died still burnt its
- * turns at a real rate, and the question is the burn rate, not whether the
- * work landed.
+ * Failures count here, as they do in history(): a session that died still
+ * burnt its turns at a real rate, and the question is the burn rate, not
+ * whether the work landed.
  */
 export function costPerTurn(
   entries: LedgerEntry[],
@@ -161,15 +154,32 @@ export function costPerTurn(
   return { samples: useful.length, usd: cost / turns };
 }
 
+/**
+ * What this kind of job has cost before, on this tier — the basis of a quote.
+ *
+ * Every run that spent money counts, not only the ones that landed. Measured
+ * 2026-07-31: a job quoted at 30c cost 59c, ran out of turns and filed as
+ * failed — and the quote for the identical next job did not move a cent,
+ * because it read successes only. The runs that break a quote are exactly the
+ * ones that exhaust their turns and file failed or partial, so a done-only
+ * average cannot see its own worst cases. On that same history the quote saw
+ * 4 scribe runs at a mean of 15c while 5 runs had really cost money, at 24c.
+ *
+ * That nobody is billed for a failure is a separate decision, and priceFor
+ * makes it. A quote is a bound on spending, and spent money is spent whatever
+ * the outcome.
+ *
+ * Tier matters: the same class of work routed for free and run as a session
+ * are different prices, and letting free runs into the average would quote a
+ * ceiling of zero for a session that genuinely needs to spend.
+ */
 export function history(
   entries: LedgerEntry[],
   jobClass: string,
   tier?: Tier,
 ): { samples: number; mean: number; max: number } {
   const costs = entries
-    .filter(
-      (e) => e.jobClass === jobClass && e.outcome === 'done' && (tier ? e.tier === tier : true),
-    )
+    .filter((e) => e.jobClass === jobClass && e.costUsd > 0 && (tier ? e.tier === tier : true))
     .map((e) => e.costUsd);
   if (costs.length === 0) return { samples: 0, mean: 0, max: 0 };
   const sum = costs.reduce((a, b) => a + b, 0);

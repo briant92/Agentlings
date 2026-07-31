@@ -113,4 +113,48 @@ describe('JobQueue', () => {
       expect(queue.nextUnassigned('mason', present)).toBeUndefined();
     });
   });
+
+  // A session can run out of turns after finishing the work. Dropping its
+  // meter hides money we actually spent, and dropping its diff throws away
+  // work that is sitting on disk, reviewable.
+  describe('a failure that still produced something', () => {
+    it('records what the failed run spent', () => {
+      const job = queue.add({ title: 'Ran out of turns', prompt: 'x' });
+      queue.start(job.id);
+      queue.fail(job.id, 'agent session failed (error_max_turns)', { costUsd: 0.42, turns: 8 });
+
+      const failed = queue.get(job.id)!;
+      expect(failed.status).toBe('failed');
+      expect(failed.meter?.costUsd).toBe(0.42);
+      expect(failed.meter?.turns).toBe(8);
+    });
+
+    it('shows the diff a failed run left behind', () => {
+      const job = queue.add({ title: 'Died on the last turn', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(
+        path.join(dir, 'DIFF.patch'),
+        [
+          'diff --git a/slugify.js b/slugify.js',
+          '--- a/slugify.js',
+          '+++ b/slugify.js',
+          '@@ -1,1 +1,2 @@',
+          '-old',
+          '+new',
+          '+newer',
+          '',
+        ].join('\n'),
+      );
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+
+      expect(queue.get(job.id)!.changes).toBeDefined();
+    });
+
+    it('still reports no changes when the run touched nothing', () => {
+      const job = queue.add({ title: 'Nothing to show', prompt: 'x' });
+      queue.start(job.id);
+      queue.fail(job.id, 'session timed out');
+      expect(queue.get(job.id)!.changes).toBeUndefined();
+    });
+  });
 });

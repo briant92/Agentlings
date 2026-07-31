@@ -1,5 +1,6 @@
 import type { Agentling, Job, JobEvent, WorldState } from '@agentlings/shared';
 import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
+import { SessionFailure } from './executors/claude';
 import type { Executor } from './executors/executor';
 import type { CrewSeed } from './levels';
 import type { JobQueue } from './queue';
@@ -196,10 +197,11 @@ export class Sim {
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
-        this.queue.fail(jobId, message);
+        const salvaged = err instanceof SessionFailure ? err : undefined;
+        this.queue.fail(jobId, message, salvaged?.meter);
         this.emit({ type: 'failed', jobId, title: job.title, agentling: a.name, detail: message });
         a.jobsFailed++;
-        this.onOutcome(a, this.queue.get(jobId) ?? job, 'failed', message);
+        this.onOutcome(a, this.queue.get(jobId) ?? job, 'failed', message, salvaged?.lesson);
         a.jobId = undefined;
         a.state = 'idle'; // shake it off, back on patrol
       });

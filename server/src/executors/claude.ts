@@ -55,6 +55,24 @@ const TOOL_MAP: Record<string, string[]> = {
 
 const DEFAULT_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 
+/**
+ * A session that failed after spending money, and possibly after doing the
+ * work. Carries what the run produced so the caller can still bank the cost,
+ * the lesson and the diff — a job that dies on its last turn should not throw
+ * away everything the turns before it earned.
+ */
+export class SessionFailure extends Error {
+  constructor(
+    message: string,
+    readonly meter: JobMeter = {},
+    readonly lesson?: string,
+    readonly approach?: string,
+  ) {
+    super(message);
+    this.name = 'SessionFailure';
+  }
+}
+
 /** A role's own turn budget, clamped so a typo can't uncap the loop. */
 export function turnsFor(role: { maxTurns?: number } | undefined): number {
   const wanted = role?.maxTurns;
@@ -252,8 +270,49 @@ export class ClaudeAgentExecutor implements Executor {
       }),
     );
 
-    const { summary, meter } = await this.runSession(configPath, onProgress);
+    let summary: string;
+    let meter: JobMeter;
+    try {
+      ({ summary, meter } = await this.runSession(configPath, onProgress));
+    } catch (err) {
+      // The session died, but the turns before it may have finished the work.
+      // Harvest first, then rethrow carrying everything the run did earn.
+      const salvage = await this.harvest(sandboxDir, hasRepo, onProgress);
+      if (err instanceof SessionFailure) {
+        throw new SessionFailure(err.message, err.meter, salvage.lesson, salvage.approach);
+      }
+      throw new SessionFailure(
+        err instanceof Error ? err.message : String(err),
+        {},
+        salvage.lesson,
+        salvage.approach,
+      );
+    }
 
+    const { lesson, approach } = await this.harvest(sandboxDir, hasRepo, onProgress);
+
+    return {
+      summary,
+      lesson,
+      approach,
+      meter: {
+        ...meter,
+        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        ...(hint?.oneShot ? { oneShot: true } : {}),
+      },
+    };
+  }
+
+  /**
+   * Everything a run leaves on disk: the diff against the clone, the lesson
+   * and the approach. Runs however the session ended, so a failure is still
+   * reviewable and still teaches the crew something.
+   */
+  private async harvest(
+    sandboxDir: string,
+    hasRepo: boolean,
+    onProgress?: (detail: string) => void,
+  ): Promise<{ lesson?: string; approach?: string }> {
     if (hasRepo) {
       const changed = await writeDiff(sandboxDir);
       onProgress?.(changed ? 'DIFF.patch written for review' : 'no repository changes');
@@ -269,16 +328,7 @@ export class ClaudeAgentExecutor implements Executor {
       ? readFileSync(approachPath, 'utf8').trim().slice(0, 1200) || undefined
       : undefined;
 
-    return {
-      summary,
-      lesson,
-      approach,
-      meter: {
-        ...meter,
-        model: role?.model ?? process.env.AGENTLINGS_MODEL,
-        ...(hint?.oneShot ? { oneShot: true } : {}),
-      },
-    };
+    return { lesson, approach };
   }
 
   private runSession(
@@ -317,6 +367,7 @@ export class ClaudeAgentExecutor implements Executor {
           if (msg.meter && typeof msg.meter === 'object') meter = msg.meter as JobMeter;
         } else if (msg.type === 'error') {
           errorMsg = firstLine(String(msg.message ?? 'agent session failed'));
+          if (msg.meter && typeof msg.meter === 'object') meter = msg.meter as JobMeter;
         }
       });
       child.on('error', (err) => {
@@ -325,9 +376,11 @@ export class ClaudeAgentExecutor implements Executor {
       });
       child.on('close', (code) => {
         clearTimeout(timer);
-        if (errorMsg) return reject(new Error(errorMsg));
+        if (errorMsg) return reject(new SessionFailure(errorMsg, meter));
         if (code !== 0) {
-          return reject(new Error(firstLine(stderr) || `agent runner exited with code ${code}`));
+          return reject(
+            new SessionFailure(firstLine(stderr) || `agent runner exited with code ${code}`, meter),
+          );
         }
         resolve({ summary: summary || 'Session ended without a final result.', meter });
       });

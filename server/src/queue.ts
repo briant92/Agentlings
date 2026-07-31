@@ -90,10 +90,18 @@ export class JobQueue {
     this.finish(job);
   }
 
-  fail(jobId: string, error: string): void {
+  /**
+   * A failure still records what it spent, and still shows any diff the run
+   * managed to produce — otherwise absorbed cost is invisible and finished
+   * work is thrown away because the last turn was cut.
+   */
+  fail(jobId: string, error: string, meter?: JobMeter): void {
     const job = this.mustGet(jobId);
     job.status = 'failed';
     job.error = error;
+    if (meter) job.meter = meter;
+    const patch = patchFile(this.sandboxDir(jobId));
+    if (existsSync(patch)) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
     this.finish(job);
   }
 

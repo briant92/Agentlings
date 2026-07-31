@@ -91,17 +91,6 @@ try {
         }
       }
     } else if (message.type === 'result') {
-      if (message.is_error) {
-        emit({
-          type: 'error',
-          message:
-            typeof message.result === 'string'
-              ? message.result
-              : `agent session failed (${message.subtype ?? 'error'})`,
-        });
-        process.exit(1);
-      }
-      summary = String(message.result ?? '');
       // The SDK hands back what the session cost. Read defensively — this is
       // metering, and a shape change must never fail a job that succeeded.
       meter = {
@@ -112,12 +101,27 @@ try {
         outputTokens: message.usage?.output_tokens,
         cacheReadTokens: message.usage?.cache_read_input_tokens,
       };
+      if (message.is_error) {
+        // A session that ran out of turns still spent money and may still have
+        // done the work. Send the meter with the error so neither is lost.
+        emit({
+          type: 'error',
+          message:
+            typeof message.result === 'string'
+              ? message.result
+              : `agent session failed (${message.subtype ?? 'error'})`,
+          meter,
+        });
+        process.exit(1);
+      }
+      summary = String(message.result ?? '');
     }
   }
   if (stoppedOverBudget) {
     emit({
       type: 'error',
       message: `stopped at $${spent.toFixed(2)} — over the ${config.maxCostUsd} budget for one job`,
+      meter: { ...meter, costUsd: spent },
     });
     process.exit(1);
   }

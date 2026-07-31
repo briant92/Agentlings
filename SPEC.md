@@ -343,7 +343,7 @@ under [State on disk](#state-on-disk)).
     are remembered per browser — a hint, not saved state.
 - **M5 — going outside, cheaply.** The Agent SDK's default is an open-ended
   loop; the work is constraining it, and often not entering it at all.
-  - **M5.0 (built).** Meter and cap. `maxTurns` was 60 — now 8 by default,
+  - **M5.0 (built).** Meter and cap. `maxTurns` was 60 — now 10 by default,
     per-role in frontmatter, clamped at 40 by `turnsFor()`. The runner was
     discarding the `usage`/`total_cost_usd` the SDK returns; both are now
     captured on the job and shown on the terminal card. Roles carry a
@@ -381,8 +381,11 @@ under [State on disk](#state-on-disk)).
     | `answer` | recall from KNOWLEDGE.md, or an exact repeat with a stored answer | free |
     | `fetch` | a bare "read this page" | free |
     | `tool` | a compiled tool matches the job's words *and* shape (M5.6) | free |
-    | `oneshot` | a recipe matches strongly — the method, on a 3-turn leash | ~11c |
-    | `agent` | everything else; a weak recipe match still lends its method | ~44c |
+    | `oneshot` | a recipe matches strongly — the method, on a 5-turn leash | ~20c |
+    | `agent` | everything else; a weak recipe match still lends its method | ~50c |
+
+    Those two prices are projections from the leashes being raised, not
+    measurements: 11c and 44c were what the 3- and 8-turn caps really cost.
 
     A session receives what the level knows **about this job** — the eight
     most relevant notes, chosen by the same term overlap the recall tier uses.
@@ -391,7 +394,7 @@ under [State on disk](#state-on-disk)).
   - **M5.4 (built).** Memoisation, `recipes.ts`. A finished job leaves
     APPROACH.md alongside LESSON.md — how to do this *kind* of job without
     exploring — and that becomes a recipe stored per level. The next job of
-    the same shape runs as a single shot with the approach handed to it
+    the same shape runs on a short leash with the approach handed to it
     rather than as an exploring loop. Recipes hold the approach, never the
     answer: a stored answer is replayed only on an exact prompt repeat with
     no repository and no web access, because the same words against a
@@ -408,7 +411,7 @@ under [State on disk](#state-on-disk)).
     learning at all.
 
     **Two bars, because the two mistakes cost different amounts.** A strong
-    match (0.65) shortens the run to three turns; a weak one (0.3) hands over
+    match (0.65) shortens the run to five turns; a weak one (0.3) hands over
     the method and leaves the leash alone. A wrong method given to a
     full-length session wastes a turn it can ignore; the same method with the
     leash cut wastes the whole run. Words are stemmed and weighted by rarity —

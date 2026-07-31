@@ -28,8 +28,16 @@ const SESSION_TIMEOUT_MS = 10 * 60_000;
  * mode, and turns are the multiplier. Roles that genuinely need to explore
  * raise this themselves with `maxTurns:` in their frontmatter; the default is
  * deliberately tight. Was 60, which was an accident rather than a decision.
+ *
+ * Then 8, which was right while the session also had to write its own notes
+ * and is one turn short now that it does not: of the repo jobs measured after
+ * the close-out moved out, the substantial one used 7 of 8. A wasted turn
+ * costs about 7c. A run that hits the cap costs a `partial`, and a partial
+ * never counts toward the successes a tool is promoted on — so the cap
+ * stalling is not a slower loop, it is a loop that never reaches its last
+ * stage. Cheap to be generous, expensive to be tight.
  */
-const DEFAULT_MAX_TURNS = 8;
+const DEFAULT_MAX_TURNS = 10;
 const TURN_CEILING = 40;
 /**
  * What a job runs on when the crew has a recipe for it. Was 1, which sounds
@@ -40,8 +48,16 @@ const TURN_CEILING = 40;
  * paid for the system prompt with no cache to read from.
  *
  * A recipe means explore less, not work blind.
+ *
+ * Then 3, and every one of the thirteen recipe runs on record ran out — not
+ * occasionally, all of them. That is worse than it sounds, because `successes`
+ * only counts runs that finish and a tool is promoted on three of them: a
+ * recipe on a leash it always breaks can be used forever and never become
+ * compilable, which makes the fourth tier unreachable by the ordinary path.
+ * At 5 it still explores less than a cold run — those finished at 4 and 7
+ * turns with no method handed to them — and it can now actually land.
  */
-const RECIPE_TURNS = 3;
+const RECIPE_TURNS = 5;
 /**
  * The write-up runs on its own, after the work, on the cheapest model going.
  *

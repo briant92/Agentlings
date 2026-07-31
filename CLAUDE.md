@@ -548,6 +548,34 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   ordinary session instead of "free". Both faults were invisible to 444 passing
   tests and to the mutation test of the very branch they were in, because both
   live in what the *next* step sees rather than in the branch's own logic.
+- 2026-07-31 — The turn caps, set by asking what actually gates the loop.
+  `DEFAULT_MAX_TURNS` 8 → **10**, `RECIPE_TURNS` 3 → **5**. The reason is not
+  that runs felt cramped; it is that **`successes` only counts runs that
+  finish, and a tool is promoted on three of them**. A leash a run always
+  breaks therefore does not merely slow the loop down, it severs its last
+  stage: a recipe can be used forever and never become compilable. All
+  thirteen recipe runs on record ran out at 3, so the fourth tier was
+  unreachable by the ordinary path — the end-to-end test only worked because
+  the successes were seeded by hand, which was disclosed at the time but
+  mattered more than it looked. Cold repo runs that finished used 4 and 7
+  turns *with no method handed to them*, so 5 still explores less while being
+  able to land. For the default, moving the write-up off the session bought
+  back the turns it used to cost — measured, 8 of 11 runs ran out before the
+  close-out and 0 of 3 after — and the one substantial repo job since used 7
+  of 8. A wasted turn costs about 7c; a capped run costs a `partial` that
+  contributes nothing to promotion. Cheap to be generous, expensive to be
+  tight. Both remain ceilings: the quote's turn budget still tightens below
+  them when the money is short.
+  One measurement correction fell out. A cut-off run reports exactly
+  `turnsAllowed + 1` — 9/8, 7/6, 4/3 eleven times — so the reported `turns` on
+  a cut-off run is a *marker* that it ran out, carrying no information about
+  how many turns it wanted. The log's earlier "a cap of 4 came back as 6" is
+  not what the data shows now. The conclusion it supported is unchanged and
+  in fact stronger: price a turn by `turnsAllowed`, never by the reported
+  count. Confidence is asymmetric and worth recording — 13/13 is not
+  ambiguous, whereas the default rests on n=2 repo runs since the close-out,
+  which by this project's own small-n rule is an estimate rather than a
+  finding.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

@@ -9,17 +9,24 @@ describe('turnCapFor', () => {
   // tool result, so a job that must read before it writes never even starts.
   // Measured at 1 turn it produced no files and cost more than the full
   // session it replaced.
-  it('gives a recipe job a short leash rather than a single turn', () => {
-    expect(turnCapFor(undefined, { oneShot: true })).toBe(3);
+  // Was 3, and all thirteen recipe runs on record ran out of it. A run that
+  // runs out never counts toward the successes a tool is promoted on, so a
+  // leash that always breaks leaves the fourth tier unreachable.
+  it('gives a recipe job a leash it can actually finish on', () => {
+    expect(turnCapFor(undefined, { oneShot: true })).toBe(5);
   });
 
+  // Still shorter than a cold run, which is the entire point of the tier.
   it('keeps the leash short even for a role that asks to explore', () => {
-    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBe(3);
+    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBe(5);
+    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBeLessThan(
+      turnCapFor({ maxTurns: 20 }, undefined),
+    );
   });
 
   it('leaves work without a recipe on the role’s own budget', () => {
-    expect(turnCapFor(undefined, {})).toBe(8);
-    expect(turnCapFor(undefined, undefined)).toBe(8);
+    expect(turnCapFor(undefined, {})).toBe(10);
+    expect(turnCapFor(undefined, undefined)).toBe(10);
     expect(turnCapFor({ maxTurns: 20 }, undefined)).toBe(20);
   });
 
@@ -70,9 +77,11 @@ describe('turnsForBudget', () => {
 });
 
 describe('turnsFor', () => {
+  // Tight, but not tighter than the work: 8 was right while the session also
+  // wrote its own notes, and one short once the close-out took that over.
   it('keeps a tight default when a role says nothing', () => {
-    expect(turnsFor(undefined)).toBe(8);
-    expect(turnsFor({})).toBe(8);
+    expect(turnsFor(undefined)).toBe(10);
+    expect(turnsFor({})).toBe(10);
   });
 
   it('lets a role that must explore ask for more', () => {
@@ -84,9 +93,9 @@ describe('turnsFor', () => {
   });
 
   it('ignores nonsense instead of uncapping the loop', () => {
-    expect(turnsFor({ maxTurns: 0 })).toBe(8);
-    expect(turnsFor({ maxTurns: -3 })).toBe(8);
-    expect(turnsFor({ maxTurns: Number.NaN })).toBe(8);
+    expect(turnsFor({ maxTurns: 0 })).toBe(10);
+    expect(turnsFor({ maxTurns: -3 })).toBe(10);
+    expect(turnsFor({ maxTurns: Number.NaN })).toBe(10);
   });
 });
 import { buildAppend, mapTools, parseLesson, toolLine } from './claude';

@@ -15,7 +15,7 @@ import type { Agentling, Job, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { resolveForJob, toMcpServers, type Connection } from '../connections';
 import { cloneRepo, writeDiff } from '../gitwork';
-import { costPerTurn, type LedgerEntry } from '../ledger';
+import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
@@ -461,8 +461,16 @@ export class ClaudeAgentExecutor implements Executor {
       job.quotedUsd,
       // Priced on the role about to run it, which is the role whose prompt,
       // tools and turn cap decide what a turn costs — not the one the matcher
-      // named, who may not be on the crew at all.
-      costPerTurn(this.ledger(), agentling?.role ?? job.preferredRole ?? '', 'session', hasRepo),
+      // named, who may not be on the crew at all. And on the tier it will run
+      // as, since a leashed turn costs appreciably less than a session's; this
+      // has to match what the quote assumed or the two disagree about how many
+      // turns the same money buys.
+      rateFor(
+        this.ledger(),
+        agentling?.role ?? job.preferredRole ?? '',
+        hint?.oneShot ? 'oneshot' : 'session',
+        hasRepo,
+      ),
       turnCapFor(role, hint, job.maxTurns),
     );
 

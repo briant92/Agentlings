@@ -8,10 +8,12 @@ import {
   costPerTurn,
   history,
   priceFor,
+  rateFor,
   readLedger,
   totals,
   totalsBy,
   type LedgerEntry,
+  type Tier,
 } from './ledger';
 
 function entry(over: Partial<LedgerEntry> = {}): LedgerEntry {
@@ -134,6 +136,42 @@ describe('history', () => {
     ];
     expect(costPerTurn(entries, 'worker', 'oneshot').samples).toBe(1);
     expect(costPerTurn(entries, 'tidy the notes', 'oneshot').samples).toBe(0);
+  });
+});
+
+describe('rateFor', () => {
+  const repo = (tier: Tier, costUsd: number, turnsAllowed: number) =>
+    entry({ jobClass: 'worker', tier, costUsd, turnsAllowed, hasRepo: true });
+
+  // Measured on the real ledger: a one-shot turn is 60–70% of a session turn
+  // for the same role and shape, because a short leash explores less per turn.
+  // Pricing a leash at the session rate inflated the quote floor by half again.
+  it('prices a one-shot turn on one-shot history, not on sessions', () => {
+    const entries = [repo('oneshot', 0.2, 5), repo('session', 0.9, 10)];
+    expect(rateFor(entries, 'worker', 'oneshot', true).usd).toBeCloseTo(0.04);
+    expect(rateFor(entries, 'worker', 'session', true).usd).toBeCloseTo(0.09);
+  });
+
+  // Overshooting is the safe direction: the floor stops a quote coming in
+  // under the turns it has already granted, so losing it would restore the
+  // bug it was written for. There is no one-shot history at all for non-repo
+  // work on the real ledger, so this branch is live, not theoretical.
+  it('falls back to the session rate when a one-shot has no history', () => {
+    const entries = [repo('session', 0.9, 10)];
+    const rate = rateFor(entries, 'worker', 'oneshot', true);
+    expect(rate.samples).toBe(1);
+    expect(rate.usd).toBeCloseTo(0.09);
+  });
+
+  // A session with no history stays unpriced rather than borrowing a cheaper
+  // tier's rate, which would quote below what the turns will really cost.
+  it('does not invent a session rate from one-shot runs', () => {
+    expect(rateFor([repo('oneshot', 0.2, 5)], 'worker', 'session', true).samples).toBe(0);
+  });
+
+  it('keeps the shapes apart, as costPerTurn does', () => {
+    const entries = [repo('oneshot', 0.2, 5)];
+    expect(rateFor(entries, 'worker', 'oneshot', false).samples).toBe(0);
   });
 });
 

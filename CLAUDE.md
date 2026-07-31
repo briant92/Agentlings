@@ -752,10 +752,23 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   session quotes unchanged. The ceiling landed at 42c rather than the 27c its
   history implies, because the **quote floor** binds — 5 leash turns at the
   scribe repo rate is ~41c, and a quote may not come in under the turns it has
-  decided to grant. Worth noting the floor prices that leash at the *session*
-  rate (`costPerTurn(..., 'session', ...)`), which is conservative rather than
-  wrong: a one-shot turn is cheaper than a session's, so the floor overshoots.
-  Left alone deliberately.
+  decided to grant.
+  **That floor was then found to be priced on the wrong tier, and fixed.** It
+  converted the leash at `costPerTurn(..., 'session', ...)` — the session rate
+  — for a run that was never going to be a session. Measured, a one-shot turn
+  costs 60–70% of a session turn for the same role and shape (scribe with a
+  repo, 5.7c against 8.3c; worker, 3.6c against 5.9c), because a short leash
+  explores less per turn. Since the floor is a *lower* bound on the quote, the
+  error ran one way only: the user was quoted more than the work costs. The
+  same hard-coded `'session'` sat in the executor's `turnsForBudget` call, so
+  fixing only the quote would have left the two disagreeing about how many
+  turns the same money buys; `rateFor()` is now the one place that decides, and
+  both call it. A one-shot with no history of its own falls back to the session
+  rate rather than to nothing — overshooting is the safe direction, and
+  dropping the floor would restore the bug it was written for. That branch is
+  live rather than theoretical: there is no one-shot history at all for
+  non-repo work. Favicon quote 42c → **29c**, predicted to the cent before
+  measuring; tool and session quotes unchanged.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

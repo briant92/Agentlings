@@ -194,6 +194,34 @@ export function costPerTurn(
 }
 
 /**
+ * What a turn of the run about to happen will cost — priced on the tier it
+ * will actually run as, not on `session` for everything.
+ *
+ * Measured 2026-07-31: a one-shot turn costs 60–70% of a session turn for the
+ * same role and shape (scribe with a repo, 5.7c against 8.3c; worker, 3.6c
+ * against 5.9c), because a short leash does less exploring per turn. Pricing
+ * a five-turn leash at the session rate therefore inflated the quote floor by
+ * about half again, and the floor is a *lower* bound on the quote — so the
+ * user was quoted more than the work costs.
+ *
+ * A one-shot with no history of its own falls back to the session rate rather
+ * than to no rate at all. That overshoots, which is the safe direction: the
+ * floor exists so a quote cannot come in under the turns it has already
+ * decided to grant, and dropping it would restore exactly the bug it was
+ * written for.
+ */
+export function rateFor(
+  entries: LedgerEntry[],
+  jobClass: string,
+  tier: 'oneshot' | 'session',
+  hasRepo: boolean,
+): { samples: number; usd: number } {
+  const own = costPerTurn(entries, jobClass, tier, hasRepo);
+  if (own.samples > 0 || tier === 'session') return own;
+  return costPerTurn(entries, jobClass, 'session', hasRepo);
+}
+
+/**
  * The class a row is *quoted* under: the recipe when there is one, else the
  * role. Deliberately not the class it is *priced per turn* under, which is
  * always the role — a turn costs what the role's prompt and tools make it

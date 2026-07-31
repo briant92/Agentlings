@@ -151,6 +151,7 @@ Routes below are the M0 shapes; everything job-facing is scoped per level
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
 | `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |
 | `POST /api/levels/:lid/tools/promote` | Compile a proven recipe into a tool |
+| `POST /api/levels/:lid/tools/:name/retire` | Take a tool out of service, with the reason |
 | `GET /api/spend` | Cost, chargeable price and what was absorbed, by level and tier |
 
 ## Agentling identity (roles, skills, memory)

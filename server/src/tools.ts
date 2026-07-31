@@ -135,6 +135,22 @@ export function toolNameFor(recipeKey: string): string {
 }
 
 /**
+ * A name no tool already holds.
+ *
+ * `toolNameFor` is deterministic, so compiling a recipe a second time would
+ * otherwise write straight over the first attempt — destroying the retired
+ * scripts and the reason they were retired at exactly the moment they become
+ * worth reading, which is while diagnosing why the second attempt is needed.
+ */
+export function freeToolName(levelDir: string, base: string): string {
+  if (!existsSync(toolDir(levelDir, base))) return base;
+  for (let n = 2; n < 100; n++) {
+    if (!existsSync(toolDir(levelDir, `${base}-${n}`))) return `${base}-${n}`;
+  }
+  return `${base}-${Date.now()}`;
+}
+
+/**
  * What the promotion session is asked to write.
  *
  * It gets the method the crew already proved and is told to turn that into a

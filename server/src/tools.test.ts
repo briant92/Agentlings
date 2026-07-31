@@ -8,6 +8,7 @@ import {
   STRIKES_ALLOWED,
   VERIFY_SCRIPT,
   findTool,
+  freeToolName,
   isComplete,
   promotionPrompt,
   readTools,
@@ -139,6 +140,38 @@ describe('promotion', () => {
 
   it('falls back to a name rather than an empty one', () => {
     expect(toolNameFor('the a of')).toBe('tool');
+  });
+
+  // Compiling the same recipe twice used to write straight over the first
+  // attempt, destroying the retired scripts and the reason they were retired
+  // at exactly the moment they become worth reading.
+  describe('naming a second attempt', () => {
+    let levelDir: string;
+    beforeEach(() => {
+      levelDir = mkdtempSync(path.join(tmpdir(), 'agentlings-names-'));
+    });
+    afterEach(() => rmSync(levelDir, { recursive: true, force: true }));
+
+    it('keeps the plain name while it is free', () => {
+      expect(freeToolName(levelDir, 'tidy-invoice')).toBe('tidy-invoice');
+    });
+
+    it('steps aside for every attempt already on disk', () => {
+      writeTool(levelDir, manifest({ name: 'tidy-invoice' }));
+      expect(freeToolName(levelDir, 'tidy-invoice')).toBe('tidy-invoice-2');
+
+      writeTool(levelDir, manifest({ name: 'tidy-invoice-2' }));
+      expect(freeToolName(levelDir, 'tidy-invoice')).toBe('tidy-invoice-3');
+    });
+
+    it('leaves the earlier attempt exactly where it was', () => {
+      writeTool(levelDir, manifest({ name: 'tidy-invoice', retiredReason: 'halves disagreed' }));
+      writeTool(levelDir, manifest({ name: freeToolName(levelDir, 'tidy-invoice') }));
+
+      const all = readTools(levelDir);
+      expect(all.map((t) => t.name).sort()).toEqual(['tidy-invoice', 'tidy-invoice-2']);
+      expect(all.find((t) => t.name === 'tidy-invoice')?.retiredReason).toBe('halves disagreed');
+    });
   });
 
   // The check is the whole safety argument for the tier, so the brief has to

@@ -78,6 +78,7 @@ import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes'
 import {
   RUN_SCRIPT,
   VERIFY_SCRIPT,
+  freeToolName,
   installTool,
   isComplete,
   promotionPrompt,
@@ -798,6 +799,40 @@ app.get('/api/levels/:lid/tools', (c) => {
 });
 
 /**
+ * Takes a tool out of service by hand.
+ *
+ * Retirement already exists — two failures in a row set the same field — but
+ * until now the only way to retire a tool you *know* is broken was to let it
+ * fail twice, at the price of a fallback session each time. The reason is
+ * required because the one thing worth keeping is why: "its verify rejects a
+ * multi-line export its run correctly lists" is the whole value of the record.
+ *
+ * One-way on purpose. The scripts stay on disk unchanged, so un-retiring would
+ * re-arm the same broken code; the way back is to compile again, which writes
+ * new scripts and goes through review like any other executable instruction.
+ * Nothing is deleted either — a retired tool is how the next person works out
+ * what went wrong.
+ */
+app.post('/api/levels/:lid/tools/:name/retire', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ reason?: string }>().catch(() => ({}) as { reason?: string });
+  const reason = body.reason?.trim();
+  if (!reason) return c.json({ error: 'reason is required' }, 400);
+
+  const name = c.req.param('name');
+  const tool = readTools(rt.dir).find((t) => t.name === name);
+  if (!tool) return c.json({ error: `no tool called "${name}"` }, 404);
+  if (tool.retiredReason) {
+    return c.json({ error: `already retired — ${tool.retiredReason}` }, 400);
+  }
+
+  const retired = { ...tool, retiredReason: reason };
+  writeTool(rt.dir, retired);
+  return c.json(retired);
+});
+
+/**
  * Compiles a proven recipe into a tool: one paid session whose only job is to
  * write the script and the check.
  *
@@ -827,7 +862,10 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     return c.json({ error: 'a tool for that recipe already exists' }, 400);
   }
 
-  const name = toolNameFor(key);
+  // A recipe compiled before and retired is a second attempt, not a first.
+  // Say so, and take a fresh name so the earlier one survives to be read.
+  const previous = readTools(rt.dir).filter((t) => t.recipeKey === key && t.retiredReason);
+  const name = freeToolName(rt.dir, toolNameFor(key));
   const prompt = promotionPrompt(recipe);
   const job = rt.queue.add({
     title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
@@ -857,7 +895,22 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     pendingJobId: job.id,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
-  return c.json({ tool: name, job }, 201);
+  return c.json(
+    {
+      tool: name,
+      job,
+      // Why a second compile might go the same way as the first.
+      ...(previous.length > 0
+        ? {
+            previouslyRetired: previous.map((t) => ({
+              name: t.name,
+              reason: t.retiredReason,
+            })),
+          }
+        : {}),
+    },
+    201,
+  );
 });
 
 /** Spend so far: what it cost us, what is chargeable, what we absorbed. */

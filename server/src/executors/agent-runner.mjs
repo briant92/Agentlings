@@ -54,8 +54,6 @@ try {
 
   let summary = '';
   let meter;
-  let stoppedOverBudget = false;
-  let spent = 0;
 
   for await (const message of query({
     prompt: config.prompt,
@@ -71,18 +69,6 @@ try {
       systemPrompt: { type: 'preset', preset: 'claude_code', append: config.append },
     },
   })) {
-    // Best-effort mid-flight ceiling. Turns and the wall-clock timeout are the
-    // guarantees; this stops a session that is burning money before it hits
-    // either, whenever the stream carries a running cost.
-    if (config.maxCostUsd) {
-      const running =
-        typeof message.total_cost_usd === 'number' ? message.total_cost_usd : undefined;
-      if (running !== undefined) spent = running;
-      if (spent > config.maxCostUsd) {
-        stoppedOverBudget = true;
-        break;
-      }
-    }
     if (message.type === 'assistant') {
       const blocks = message.blocks ?? message.message?.content ?? [];
       for (const block of blocks) {
@@ -116,14 +102,6 @@ try {
       }
       summary = String(message.result ?? '');
     }
-  }
-  if (stoppedOverBudget) {
-    emit({
-      type: 'error',
-      message: `stopped at $${spent.toFixed(2)} — over the ${config.maxCostUsd} budget for one job`,
-      meter: { ...meter, costUsd: spent },
-    });
-    process.exit(1);
   }
   emit({ type: 'result', summary, meter });
   process.exit(0);

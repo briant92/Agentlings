@@ -39,6 +39,12 @@ export type JobStatus =
 export interface JobMeter {
   costUsd?: number;
   turns?: number;
+  /**
+   * The turn limit this session was given. Not the same quantity as `turns`,
+   * which the SDK reports higher — a cap of 4 can come back as 6. Pricing a
+   * budget needs the number we control, not the one it reports.
+   */
+  turnsAllowed?: number;
   durationMs?: number;
   inputTokens?: number;
   outputTokens?: number;

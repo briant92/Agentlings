@@ -7,6 +7,7 @@ import type { Agentling, Job, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { resolveForJob, toMcpServers, type Connection } from '../connections';
 import { cloneRepo, writeDiff } from '../gitwork';
+import { costPerTurn, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { extractUrls, fetchPage } from '../web';
@@ -80,6 +81,33 @@ export function turnsFor(role: { maxTurns?: number } | undefined): number {
     return DEFAULT_MAX_TURNS;
   }
   return Math.min(Math.floor(wanted), TURN_CEILING);
+}
+
+/**
+ * A money ceiling the SDK can actually enforce.
+ *
+ * The session stream carries no running cost — measured, not assumed: the
+ * only total_cost_usd in a 35-message session arrives on the final message,
+ * and per-message usage is partial (52 output tokens reported against a true
+ * 568). So a mid-flight dollar check cannot stop an overspend, it can only
+ * notice one after the money is gone.
+ *
+ * Turns are the lever that exists *before* the spending, so the ceiling is
+ * converted into turns at what a turn of this work has really cost. It only
+ * ever tightens: a generous ceiling must not let a job run longer than its
+ * role allows, and with no history the role's budget simply stands.
+ */
+export function turnsForBudget(
+  ceilingUsd: number | undefined,
+  perTurn: { samples: number; usd: number },
+  roleTurns: number,
+): number {
+  if (!ceilingUsd || ceilingUsd <= 0 || perTurn.samples === 0 || perTurn.usd <= 0) {
+    return roleTurns;
+  }
+  // At least one turn: a budget too small for a single turn should fail on
+  // its own terms, not be silently turned into a session that cannot think.
+  return Math.max(1, Math.min(roleTurns, Math.floor(ceilingUsd / perTurn.usd)));
 }
 
 export function mapTools(roleTools: string[]): string[] {
@@ -189,6 +217,8 @@ export class ClaudeAgentExecutor implements Executor {
     private knowledge: () => string[] = () => [],
     /** The connection registry, read fresh so edits don't need a restart. */
     private connections: () => Connection[] = () => [],
+    /** History, for turning a money ceiling into a turn budget. */
+    private ledger: () => LedgerEntry[] = () => [],
   ) {}
 
   async run(
@@ -245,6 +275,17 @@ export class ClaudeAgentExecutor implements Executor {
     const allowedTools = mapped.length > 0 ? mapped : [...DEFAULT_TOOLS];
     if (skills.length > 0) allowedTools.push('Skill');
 
+    // A job the crew has done before does not need to explore it again;
+    // otherwise the quote decides how long it may think, since turns are the
+    // only budget that binds before the money is spent.
+    const turnBudget = hint?.oneShot
+      ? 1
+      : turnsForBudget(
+          job.quotedUsd,
+          costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session'),
+          turnsFor(role),
+        );
+
     const configPath = path.join(sandboxDir, '.session.json');
     writeFileSync(
       configPath,
@@ -253,19 +294,13 @@ export class ClaudeAgentExecutor implements Executor {
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
         append: buildAppend(role, lessons, this.knowledge(), hasRepo, sources, hint?.approach),
         allowedTools,
-        // A job the crew has done before does not need to explore it again.
-        maxTurns: hint?.oneShot ? 1 : turnsFor(role),
+        maxTurns: turnBudget,
         skills,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         mcpServers: toMcpServers(granted, process.env),
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
           : {}),
-        // Never spend more than was quoted, and never more than the global cap.
-        maxCostUsd:
-          [job.quotedUsd, Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined]
-            .filter((v): v is number => typeof v === 'number' && v > 0)
-            .sort((a, b) => a - b)[0],
         sources,
       }),
     );
@@ -279,11 +314,16 @@ export class ClaudeAgentExecutor implements Executor {
       // Harvest first, then rethrow carrying everything the run did earn.
       const salvage = await this.harvest(sandboxDir, hasRepo, onProgress);
       if (err instanceof SessionFailure) {
-        throw new SessionFailure(err.message, err.meter, salvage.lesson, salvage.approach);
+        throw new SessionFailure(
+          err.message,
+          { ...err.meter, turnsAllowed: turnBudget },
+          salvage.lesson,
+          salvage.approach,
+        );
       }
       throw new SessionFailure(
         err instanceof Error ? err.message : String(err),
-        {},
+        { turnsAllowed: turnBudget },
         salvage.lesson,
         salvage.approach,
       );
@@ -297,6 +337,7 @@ export class ClaudeAgentExecutor implements Executor {
       approach,
       meter: {
         ...meter,
+        turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
       },

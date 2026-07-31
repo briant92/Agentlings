@@ -197,6 +197,21 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   Observed cost comes from the SDK's total_cost_usd — no price table to
   maintain. Reselling model access has terms implications Brian should
   confirm with Anthropic before billing anyone.
+- 2026-07-31 — Cost ceiling, corrected by measurement. The mid-flight
+  dollar check could never work: the session stream carries no running
+  cost. Measured — the only `total_cost_usd` in a 35-message session
+  arrives on the last one, and per-message usage is partial (52 output
+  tokens reported against a true 568). So the check only ever fired after
+  the money was spent, and its sole effect was to relabel a finished
+  session as failed. Replaced with the budget that binds *before* the
+  spending: the quote is divided by observed cost-per-turn to set
+  `maxTurns`. It only ever tightens — a rich quote must not let a job run
+  longer than its role allows — and with no history the role's budget
+  stands. Priced per turn *granted*, not per turn the SDK reports: those
+  are different quantities (a cap of 4 came back as 6), and pricing
+  against the reported number left budgets ~1.5× loose. Note the user was
+  never over-billed: `priceFor` already caps charges at the quote. What
+  was unbounded was the app's absorbed cost.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

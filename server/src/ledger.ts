@@ -27,6 +27,8 @@ export interface LedgerEntry {
   /** The ceiling quoted before the work, when there was one. */
   quotedUsd?: number;
   turns?: number;
+  /** The turn limit the session was given — the unit a budget is priced in. */
+  turnsAllowed?: number;
   model?: string;
 }
 
@@ -109,6 +111,39 @@ export function totalsBy<K extends keyof LedgerEntry>(
  * are different prices, and letting free runs into the average would quote a
  * ceiling of zero for a session that genuinely needs to spend.
  */
+/**
+ * What one *allowed* turn of this kind of work has cost.
+ *
+ * The unit matters and was got wrong once: the SDK's reported `turns` runs
+ * higher than the limit it was given (a cap of 4 came back as 6), so pricing
+ * against it and then using the result to set the cap understates the budget
+ * and lets cost overshoot the quote. The rate is therefore cost per turn we
+ * granted — the number we control — falling back to reported turns only for
+ * older entries that predate the distinction.
+ *
+ * Failures count here, unlike history(): a session that died still burnt its
+ * turns at a real rate, and the question is the burn rate, not whether the
+ * work landed.
+ */
+export function costPerTurn(
+  entries: LedgerEntry[],
+  jobClass: string,
+  tier?: Tier,
+): { samples: number; usd: number } {
+  const granted = (e: LedgerEntry): number => e.turnsAllowed ?? e.turns ?? 0;
+  const useful = entries.filter(
+    (e) =>
+      e.jobClass === jobClass &&
+      (tier ? e.tier === tier : true) &&
+      e.costUsd > 0 &&
+      granted(e) > 0,
+  );
+  if (useful.length === 0) return { samples: 0, usd: 0 };
+  const cost = useful.reduce((sum, e) => sum + e.costUsd, 0);
+  const turns = useful.reduce((sum, e) => sum + granted(e), 0);
+  return { samples: useful.length, usd: cost / turns };
+}
+
 export function history(
   entries: LedgerEntry[],
   jobClass: string,

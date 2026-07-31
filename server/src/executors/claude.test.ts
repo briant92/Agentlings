@@ -1,5 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { turnsFor } from './claude';
+import { turnsFor, turnsForBudget } from './claude';
+
+describe('turnsForBudget', () => {
+  const roleTurns = 8;
+
+  it('spends the ceiling at the observed rate', () => {
+    // 20c at 2c a turn is ten turns, but the role only allows eight.
+    expect(turnsForBudget(0.2, { samples: 3, usd: 0.02 }, roleTurns)).toBe(8);
+    expect(turnsForBudget(0.2, { samples: 3, usd: 0.02 }, 20)).toBe(10);
+  });
+
+  it('tightens the loop when the money is short', () => {
+    expect(turnsForBudget(0.1, { samples: 3, usd: 0.03 }, roleTurns)).toBe(3);
+  });
+
+  // The ceiling is a cap, not a licence: a rich quote must not let a job
+  // think for longer than its role says it may.
+  it('never buys more turns than the role allows', () => {
+    expect(turnsForBudget(100, { samples: 5, usd: 0.001 }, roleTurns)).toBe(roleTurns);
+  });
+
+  it('leaves the role in charge when there is no history to price a turn', () => {
+    expect(turnsForBudget(0.2, { samples: 0, usd: 0 }, roleTurns)).toBe(roleTurns);
+    expect(turnsForBudget(undefined, { samples: 3, usd: 0.02 }, roleTurns)).toBe(roleTurns);
+  });
+
+  it('still allows one turn when the budget cannot even buy that', () => {
+    // Better to run once and fail on its own terms than to start a session
+    // that is forbidden to think at all.
+    expect(turnsForBudget(0.001, { samples: 3, usd: 0.5 }, roleTurns)).toBe(1);
+  });
+});
 
 describe('turnsFor', () => {
   it('keeps a tight default when a role says nothing', () => {

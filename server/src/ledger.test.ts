@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { quoteFor, formatUsd, DEFAULT_CEILING_USD } from './estimate';
 import {
   append,
+  costPerTurn,
   history,
   priceFor,
   readLedger,
@@ -176,5 +177,54 @@ describe('quoteFor', () => {
     const entries = [entry({ jobClass: 'pricey', costUsd: 50 })];
     const quote = quoteFor('session', 'pricey', entries, { defaultCeilingUsd: 1 });
     expect(quote.ceilingUsd).toBe(1);
+  });
+});
+
+describe('costPerTurn', () => {
+  it('divides total cost by total turns, not by job', () => {
+    // 0.30 over 10 turns and 0.10 over 10 turns is 2c a turn, not the 2.5c a
+    // per-job average would give: long jobs must weigh more than short ones.
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0.3, turnsAllowed: 10 }),
+      entry({ jobClass: 'mason', costUsd: 0.1, turnsAllowed: 10 }),
+    ];
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.02, 6);
+  });
+
+  // Found live: a cap of 4 came back reporting 6 turns, so pricing against
+  // the reported number set budgets ~1.5x looser than the quote allowed.
+  it('prices against the turns granted, not the turns reported', () => {
+    const entries = [entry({ jobClass: 'mason', costUsd: 0.12, turns: 6, turnsAllowed: 4 })];
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.03, 6);
+  });
+
+  it('falls back to reported turns for entries written before the split', () => {
+    const entries = [entry({ jobClass: 'mason', costUsd: 0.2, turns: 8 })];
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.025, 6);
+  });
+
+  it('counts failures — a session that died still burnt turns', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0.2, turns: 8, outcome: 'failed', priceUsd: 0 }),
+    ];
+    expect(costPerTurn(entries, 'mason').samples).toBe(1);
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.025, 6);
+  });
+
+  it('ignores entries that cannot give a rate', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0, turns: 5 }), // free: no rate
+      entry({ jobClass: 'mason', costUsd: 0.5 }), // no turns recorded
+      entry({ jobClass: 'other', costUsd: 0.5, turns: 5 }), // another job class
+    ];
+    expect(costPerTurn(entries, 'mason')).toEqual({ samples: 0, usd: 0 });
+  });
+
+  it('keeps tiers apart, since a routed run is not a session', () => {
+    const entries = [
+      entry({ jobClass: 'mason', tier: 'oneshot', costUsd: 0.1, turns: 1 }),
+      entry({ jobClass: 'mason', tier: 'session', costUsd: 0.4, turns: 8 }),
+    ];
+    expect(costPerTurn(entries, 'mason', 'session').usd).toBeCloseTo(0.05, 6);
   });
 });

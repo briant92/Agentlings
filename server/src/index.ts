@@ -174,8 +174,13 @@ function makeLevel(dir: string): LevelRuntime {
     () => readKnowledge(dir),
     () => readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web') ?? null,
     useClaude
-      ? new ClaudeAgentExecutor(registry, memory, SKILLS_DIR, () => readKnowledge(dir), () =>
-          readConnections(CONNECTIONS_FILE),
+      ? new ClaudeAgentExecutor(
+          registry,
+          memory,
+          SKILLS_DIR,
+          () => readKnowledge(dir),
+          () => readConnections(CONNECTIONS_FILE),
+          () => readLedger(SANDBOX_ROOT),
         )
       : simulated,
   );
@@ -213,6 +218,9 @@ function makeLevel(dir: string): LevelRuntime {
         priceUsd: priceFor(outcome, costUsd, job.quotedUsd),
         ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
         ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
+        ...(job.meter?.turnsAllowed !== undefined
+          ? { turnsAllowed: job.meter.turnsAllowed }
+          : {}),
         ...(job.meter?.model ? { model: job.meter.model } : {}),
       });
       // Persist the career as it happens, so a restart no longer wipes it.
@@ -345,7 +353,8 @@ app.post('/api/levels/:lid/work', async (c) => {
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: plan.role ?? undefined,
     tools: body.tools,
-    // The quote is a promise: the session is stopped rather than exceeding it.
+    // The quote binds the session by deciding how many turns it may take —
+    // the only budget that can be enforced before the money is spent.
     quotedUsd: quote.ceilingUsd || undefined,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { SIMILAR_ENOUGH, normalise, similarity, terms } from './recipes';
 
@@ -36,6 +43,13 @@ export interface ToolManifest {
   failures: number;
   /** Set once retired, so it is visible why rather than merely gone. */
   retiredReason?: string;
+  /**
+   * The compiling job, while it is still being reviewed. A generated tool is
+   * executable instruction, so it goes through the same review as any other
+   * output rather than installing itself: the scripts sit in that job's sandbox
+   * until it is promoted.
+   */
+  pendingJobId?: string;
 }
 
 /** Two strikes. One is noise; three is a habit the user paid for twice. */
@@ -129,17 +143,14 @@ export function toolNameFor(recipeKey: string): string {
  * script: without a way to prove the output, the tier is just a faster way to
  * be wrong, so a tool with no verify never runs.
  */
-export function promotionPrompt(
-  recipe: { key: string; approach: string; role: string },
-  dir: string,
-): string {
+export function promotionPrompt(recipe: { key: string; approach: string; role: string }): string {
   return [
     `The crew has done this job enough times to stop paying for it: "${recipe.key}".`,
     '',
     'This is the method that worked:',
     recipe.approach,
     '',
-    `Write two plain-node ES module scripts into ${dir}, and change nothing else:`,
+    'Write two plain-node ES module scripts in your working directory, and change nothing else:',
     `- ${RUN_SCRIPT} — does the job, exactly as the method describes. It runs with the sandbox as its working directory, the same place a session would work. A repository, when there is one, is at ./repo.`,
     `- ${VERIFY_SCRIPT} — checks that ${RUN_SCRIPT} did the job. Exit 0 when the work is right and non-zero when it is not.`,
     '',
@@ -171,6 +182,32 @@ export function recordToolRun(
   };
   writeTool(levelDir, updated);
   return updated;
+}
+
+/**
+ * Installs a reviewed tool: the two scripts move from the sandbox the
+ * compiling session wrote them in, into the tool's own directory.
+ *
+ * Returns false when either script is missing, which leaves the tool
+ * incomplete and therefore unusable — a compiling run that produced only half
+ * a tool must not leave something the router will reach for.
+ */
+export function installTool(
+  levelDir: string,
+  manifest: ToolManifest,
+  sandboxDir: string,
+): boolean {
+  const scripts = [RUN_SCRIPT, VERIFY_SCRIPT];
+  if (!scripts.every((s) => existsSync(path.join(sandboxDir, s)))) return false;
+
+  const dir = toolDir(levelDir, manifest.name);
+  mkdirSync(dir, { recursive: true });
+  for (const script of scripts) {
+    copyFileSync(path.join(sandboxDir, script), path.join(dir, script));
+  }
+  const { pendingJobId: _installed, ...ready } = manifest;
+  writeTool(levelDir, ready);
+  return true;
 }
 
 /**

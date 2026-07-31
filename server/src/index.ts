@@ -75,10 +75,12 @@ import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
 import {
+  RUN_SCRIPT,
+  VERIFY_SCRIPT,
+  installTool,
   isComplete,
   promotionPrompt,
   readTools,
-  toolDir,
   toolNameFor,
   usableTools,
   writeTool,
@@ -475,6 +477,18 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       }
     }
   }
+  // A compiled tool is executable instruction, so it installs on the same
+  // approval as any other output rather than the moment it is written.
+  if (body.action === 'promote' && promotable) {
+    const waiting = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
+    if (waiting && !installTool(rt.dir, waiting, rt.queue.sandboxDir(pending.id))) {
+      return c.json(
+        { error: `the compiling run did not leave both ${RUN_SCRIPT} and ${VERIFY_SCRIPT}` },
+        400,
+      );
+    }
+  }
+
   try {
     const job = rt.queue.resolve(pending.id, body.action);
     rt.eventLog.emit({
@@ -783,6 +797,14 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   }
 
   const name = toolNameFor(key);
+  const job = rt.queue.add({
+    title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
+    prompt: promotionPrompt(recipe),
+    repoPath: rt.meta.repoPath || undefined,
+    preferredRole: recipe.role,
+    // The compiler must not be handed its own half-written tool as a shortcut.
+    noRouter: true,
+  });
   writeTool(rt.dir, {
     name,
     recipeKey: key,
@@ -792,15 +814,8 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     learnedAt: Date.now(),
     runs: 0,
     failures: 0,
-  });
-
-  const job = rt.queue.add({
-    title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
-    prompt: promotionPrompt(recipe, toolDir(rt.dir, name)),
-    repoPath: rt.meta.repoPath || undefined,
-    preferredRole: recipe.role,
-    // The compiler must not be handed its own half-written tool as a shortcut.
-    noRouter: true,
+    // Nothing is installed until this job is reviewed and promoted.
+    pendingJobId: job.id,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json({ tool: name, job }, 201);

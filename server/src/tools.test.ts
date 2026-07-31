@@ -146,7 +146,6 @@ describe('promotion', () => {
   it('asks for the check as firmly as the script', () => {
     const prompt = promotionPrompt(
       { key: 'total the invoices', approach: 'sum column D', role: 'analyst' },
-      '/tools/x',
     );
     expect(prompt).toContain(RUN_SCRIPT);
     expect(prompt).toContain(VERIFY_SCRIPT);

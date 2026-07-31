@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Agentling, RoleInfo } from '@agentlings/shared';
 import { MatchIndex } from './match';
-import { planWork, pickAgentling, titleFrom } from './work';
+import { planWork, pickAgentling, runnerRole, titleFrom } from './work';
 
 const ROLES: RoleInfo[] = [
   {
@@ -126,5 +126,39 @@ describe('planWork', () => {
     expect(plan.role).toBeNull();
     expect(plan.agentling).not.toBeNull();
     expect(plan.gaps).toContain('pdfs');
+  });
+});
+
+describe('runnerRole', () => {
+  const team = crew(['Pip', 'mason', 'idle'], ['Dot', 'scribe', 'idle']);
+
+  it('is the matched role when somebody actually holds it', () => {
+    const plan = planWork(index, ROLES, team, '/repo', 'write the documentation for my project');
+    expect(plan.role).toBe('scribe');
+    expect(runnerRole(plan)).toBe('scribe');
+  });
+
+  // The latent bug: a job matched to a role nobody holds is taken by whoever
+  // is free and runs as their role, but was priced and filed as the absent
+  // specialist — building a history for work that never happened while robbing
+  // the role that really did it.
+  it('is the role that will take the work when nobody holds the match', () => {
+    const masonsOnly = crew(['Pip', 'mason', 'idle']);
+    const plan = planWork(index, ROLES, masonsOnly, '/repo', 'write the documentation');
+    expect(plan.noOneHasRole).toBe(true);
+    expect(plan.role).toBe('scribe');
+    expect(runnerRole(plan)).toBe('mason'); // Pip is who actually does it
+  });
+
+  it('keeps the matched role when there is no crew to take it', () => {
+    const plan = planWork(index, ROLES, [], '/repo', 'write the documentation');
+    expect(plan.agentling).toBeNull();
+    expect(runnerRole(plan)).toBe('scribe');
+  });
+
+  it('stays null for work nothing matched, rather than inventing a class', () => {
+    const plan = planWork(index, ROLES, team, '/repo', 'pull the numbers out of my PDFs');
+    expect(plan.role).toBeNull();
+    expect(runnerRole(plan)).toBeNull();
   });
 });

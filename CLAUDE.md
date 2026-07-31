@@ -330,6 +330,24 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   The budget stays live as the backstop and fires the moment a ceiling is
   genuinely tight: measured across caps, $0.40 gives 5 turns and $0.25 gives
   3, every one of them inside its quote.
+  **The third was a mislabelling, not a pricing bug.** The class was
+  `job.preferredRole`, the role the *matcher* named — but `nextUnassigned`
+  deliberately lets any free agentling pick up work routed to a role nobody
+  holds, and the session then runs as *their* role: their prompt, their tools,
+  their turn cap. A mason job done by a worker was therefore filed as a mason
+  job, building a history for work that never happened while robbing the role
+  that really did it, and the rate lookup then found no mason history and fell
+  back to the role cap. Latent rather than realised — 0 of 23 checkable rows
+  were mislabelled, since every job so far happened to be taken by a matching
+  agentling — so nothing needed backfilling. Now the ledger records the role
+  that ran, the rate prices by the role about to run, and `runnerRole()` in
+  work.ts predicts it for the quote. Measured on the phrasings that exposed
+  it: "add tests for formatUsd" matches `mason`, which nobody holds, and
+  quoted "up to 50c — first time doing this" off 0 samples; it now quotes
+  "about 17c — done this 9 times before" off Pip's worker history, because Pip
+  is who actually does it. The instability is reduced, not removed, and what
+  remains is honest: the same sentence can still land on a scribe (28c) or a
+  worker (17c), and those really are different costs.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

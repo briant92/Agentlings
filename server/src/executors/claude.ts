@@ -362,7 +362,10 @@ export class ClaudeAgentExecutor implements Executor {
     // the only budget that binds before the money is spent.
     const turnBudget = turnsForBudget(
       job.quotedUsd,
-      costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session', hasRepo),
+      // Priced on the role about to run it, which is the role whose prompt,
+      // tools and turn cap decide what a turn costs — not the one the matcher
+      // named, who may not be on the crew at all.
+      costPerTurn(this.ledger(), agentling?.role ?? job.preferredRole ?? '', 'session', hasRepo),
       turnCapFor(role, hint),
     );
 

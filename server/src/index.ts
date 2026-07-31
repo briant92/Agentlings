@@ -76,7 +76,7 @@ import { Sim } from './sim';
 import { readRecipes } from './recipes';
 import { decide } from './router';
 import { fetchPage } from './web';
-import { planWork } from './work';
+import { planWork, runnerRole } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -213,7 +213,12 @@ function makeLevel(dir: string): LevelRuntime {
         at: Date.now(),
         jobId: job.id,
         levelId: meta.id,
-        jobClass: job.preferredRole ?? agentling.role,
+        // The role that did the work, not the one the matcher asked for. A job
+        // routed to a role nobody holds is picked up by whoever is free, and
+        // the session runs as *their* role — filing it under the absent
+        // specialist would build a history for work that never happened, and
+        // rob the role that really did it of its own.
+        jobClass: agentling.role,
         tier: job.meter?.routed ? 'routed' : job.meter?.oneShot ? 'oneshot' : 'session',
         outcome,
         costUsd,
@@ -338,7 +343,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  return c.json({ ...plan, quote: quoteFor_(rt, text, body.tools, plan.role) });
+  return c.json({ ...plan, quote: quoteFor_(rt, text, body.tools, runnerRole(plan)) });
 });
 
 /**
@@ -362,7 +367,7 @@ app.post('/api/levels/:lid/work', async (c) => {
   }
 
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  const quote = quoteFor_(rt, text, body.tools, plan.role);
+  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan));
   const job = rt.queue.add({
     title: plan.title,
     prompt: text,

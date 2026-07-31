@@ -73,3 +73,20 @@ export function planWork(
     gaps: match.gaps,
   };
 }
+
+/**
+ * The role that will actually do the work, which is not always the one the
+ * matcher named.
+ *
+ * A job routed to a role nobody holds is picked up by whoever is free (see
+ * Queue.nextUnassigned), and the session then runs as *their* role — their
+ * prompt, their tools, their turn cap. Pricing it as the absent specialist
+ * quotes for work that will not happen, off a history that will never exist.
+ * Measured 2026-07-31: two phrasings of one job matched `scribe` and `mason`,
+ * and since nobody is a mason that quote fell through to a tier average,
+ * swinging the same work between "about 15c, high confidence" and "up to 50c,
+ * first time".
+ */
+export function runnerRole(plan: WorkPlan): string | null {
+  return plan.noOneHasRole ? (plan.agentling?.role ?? plan.role) : plan.role;
+}

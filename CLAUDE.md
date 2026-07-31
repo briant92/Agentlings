@@ -824,6 +824,31 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   `changes` straight off the state object, so it needs a new endpoint and a
   loading state in the one flow least worth breaking — and after the revision
   change it would be optimising a message that rarely sends.
+- 2026-07-31 — The compile rate split, measured and then **not** done. The
+  standing note said the quote understated a compile by about a third, so
+  splitting the rate was the last item with real evidence behind it. Measuring
+  first took the evidence away: compiles run at **9.0c a turn against the 8.3c
+  pooled rate** the quote uses — **8%, not a third**. The old figure came from
+  comparing the single worst compile (12.6c) against the pool instead of
+  comparing the compile population against it, which is the error this log has
+  a rule against.
+  What the split would actually have done: raised every compile quote from
+  **$1.58 to $2.00** — `MAX_CEILING_USD`, so straight to the runaway cap — off
+  **n=3**, while changing no turn budget at all, since `COMPILE_TURNS` is the
+  binding cap in both cases. And it would have been guarding against a breach
+  that has never occurred: both quoted compiles held ($0.94 and $1.32 against
+  $1.52), and the one that looks worst ($1.26) was the *unquoted* one that
+  `ab6c354` already fixed.
+  So the resolution is to **record the field and not read it**. That is not
+  fence-sitting, it is the asymmetry: a rate can be computed from a ledger
+  whenever there is finally enough of it, and a ledger cannot be given a field
+  it never wrote — the same reason cost and price were separate numbers from
+  the first entry. The marker is an explicit job flag rather than a title
+  sniffed at read time, and the backfill stamps a row only when its own job
+  record still carries the exact title the promote route writes (4 of 4; 12
+  older rows from deleted levels left alone). Verified after: the session quote
+  is still $1.58 and the one-shot still "About 14c — done this 4 times before",
+  so nothing became less accurate in exchange for the option.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

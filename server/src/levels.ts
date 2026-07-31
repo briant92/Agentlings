@@ -140,13 +140,22 @@ export function readKnowledge(dir: string, max = 400): string[] {
     .slice(-max);
 }
 
-/** Legacy crew from before levels existed, in original colors. */
-const LEGACY = [
-  { id: 'a1', name: 'Pip', color: 0x7bd88f },
-  { id: 'a2', name: 'Dot', color: 0x6fb7ff },
-  { id: 'a3', name: 'Moss', color: 0xffb86c },
-  { id: 'a4', name: 'Bea', color: 0xff8fa3 },
-];
+/**
+ * Legacy crew from before levels existed.
+ *
+ * Their colours used to be hand-written and predate the ramp, which stopped
+ * being cosmetic once the sprite itself is painted in them: a tint is snapped
+ * onto DB32, and Pip's mint green landed 1% closer to `steel` than to
+ * `limeLight`, so a green agentling was drawn grey while their name label
+ * stayed green. Taking the tints from the same pool every other hire draws
+ * from makes that unrepresentable rather than merely fixed — there is now one
+ * list of crew colours in this file, and it is already on the palette.
+ */
+const LEGACY = ['Pip', 'Dot', 'Moss', 'Bea'].map((name, i) => ({
+  id: `a${i + 1}`,
+  name,
+  color: COLOR_POOL[i],
+}));
 
 /** One-time move of the pre-level cave into levels/hq. */
 export function migrateLegacy(sandboxRoot: string): void {

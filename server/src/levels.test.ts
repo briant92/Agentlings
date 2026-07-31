@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DB } from '@agentlings/shared';
 import {
   appendKnowledge,
   createLevelFiles,
@@ -13,6 +14,38 @@ import {
   readMeta,
   readRoster,
 } from './levels';
+
+const PALETTE = new Set<number>(Object.values(DB));
+
+/**
+ * A crew tint is not decoration any more — the sprite is painted in it, and a
+ * tint off the ramp gets snapped to the nearest entry, which is how a green
+ * agentling came to be drawn grey while their name label stayed green.
+ */
+describe('crew colours are on the palette', () => {
+  it('for a fresh hire, at every position in the rotation', () => {
+    let crew = [] as ReturnType<typeof newCrewSeed>[];
+    for (let i = 0; i < 16; i++) {
+      const seed = newCrewSeed(crew);
+      expect(PALETTE.has(seed.color)).toBe(true);
+      crew = [...crew, seed];
+    }
+  });
+
+  it('for the legacy crew the migration writes', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-legacy-'));
+    try {
+      // The migration only fires when there is a pre-level cave to move.
+      writeFileSync(path.join(root, 'roster.json'), JSON.stringify({ a1: 'worker' }));
+      migrateLegacy(root);
+      const crew = readRoster(levelDir(root, 'hq'));
+      expect(crew).toHaveLength(4);
+      for (const member of crew) expect(PALETTE.has(member.color)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('levels', () => {
   let root: string;

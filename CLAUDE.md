@@ -942,6 +942,27 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   both — the same resolution as the compile flag, and for the same asymmetry: a
   rate can be computed from a ledger later, and a ledger cannot be given a field
   it never wrote.
+  **Pip's colour, fixed the next day, and the interesting part is where the bug
+  actually was.** A crew tint used to be a label colour and nothing else, so
+  being off the ramp cost nothing; painting the sprite in it made that a defect
+  retroactively. Checking before changing anything showed the seeding path was
+  already correct — a scratch level created today hands Pip `#99e550` and Dot
+  `#639bff`, both exact DB32 — so this was never an ongoing bug, only two rows
+  of historical data plus a stale constant. `LEGACY` now takes its tints from
+  `COLOR_POOL` rather than listing its own, which leaves **one** list of crew
+  colours in the file and makes the bug unrepresentable instead of merely
+  fixed. The seed change alone would have been correct and **inert** — hq
+  migrated long ago and the value is on disk — the same trap as the `hasRepo`
+  and `recipeKey` backfills, so `scripts/backfill-roster-palette.mjs` rewrites a
+  row only when it still holds the exact colour the old seed wrote. That is an
+  identification rather than a guess: a tint changed on purpose is left alone
+  and a second run does nothing. Two rows moved (hq and home-chores both have a
+  Pip), verified after: label and gown both `#99e550`. Moss and Bea are
+  deliberately **not** moved — they snap within their own hue, so rewriting
+  them would change how they look in order to fix nothing; `--all` does it if
+  that judgement ever changes. A test now asserts every tint the app can hand
+  out is on the palette, for a fresh hire at all sixteen positions and for the
+  legacy migration, which is the guard that would have caught this.
   One fact learned by getting it wrong, worth recording because it is easy to
   assume: **a question with no repository is not free.** The `answer` tier
   replays a *stored* answer, and the first run of a novel prompt is what

@@ -59,6 +59,29 @@ const TURN_CEILING = 40;
  */
 export const RECIPE_TURNS = 5;
 /**
+ * What compiling a recipe into a tool runs on, which is not what an ordinary
+ * job runs on. A compile has to write two programs that agree with each other
+ * — `run.mjs` and the `verify.mjs` that refuses its output — and the halves
+ * disagreeing is precisely what running out of turns produces. Attempt one
+ * failed exactly there: it listed a multi-line `export async function`
+ * correctly and its own checker rejected it, one line in 124.
+ *
+ * Both compiles on record broke a cap of 10, so 10 is known to be too few and
+ * the ledger cannot say what would be enough: a cut-off run reports
+ * `turnsAllowed + 1` whatever it wanted, so the reported count carries no
+ * information about what it wanted. The number is therefore set from the side
+ * that *is* knowable — what the money can honour, since a cap the quote cannot
+ * fund is handed straight back by `turnsForBudget` and arrives inert the way
+ * RECIPE_TURNS = 5 did.
+ *
+ * Priced at the two compiles' real 9.4c and 12.6c a turn, MAX_CEILING_USD
+ * funds 15 turns at the worse of them and 16 at the better. So 15 is the
+ * largest cap granted in full at every observed rate, and 16 would be cut back
+ * to 15 exactly where the run is most expensive — buying nothing, while
+ * promising turns the ceiling cannot pay for.
+ */
+export const COMPILE_TURNS = 15;
+/**
  * The write-up runs on its own, after the work, on the cheapest model going.
  *
  * It used to be part of the session, which meant it competed with the work for
@@ -139,13 +162,25 @@ export function turnsFor(role: { maxTurns?: number } | undefined): number {
 
 /**
  * The most turns this run may take before the quote is applied: a recipe
- * buys a short leash, anything else gets the role's own budget.
+ * buys a short leash, a job that states its own need gets that, and anything
+ * else gets the role's own budget.
+ *
+ * A job's own cap wins over the role's because the work, not the worker,
+ * is what makes a compile long — it is handed to whichever role owns the
+ * recipe, and none of them should have to raise their everyday budget to
+ * accommodate it. The leash still wins over both: a job the crew has a recipe
+ * for is one it has done before, whatever it claims to need.
  */
 export function turnCapFor(
   role: { maxTurns?: number } | undefined,
   hint?: { oneShot?: boolean },
+  jobTurns?: number,
 ): number {
-  return hint?.oneShot ? RECIPE_TURNS : turnsFor(role);
+  if (hint?.oneShot) return RECIPE_TURNS;
+  if (typeof jobTurns === 'number' && Number.isFinite(jobTurns) && jobTurns >= 1) {
+    return Math.min(Math.floor(jobTurns), TURN_CEILING);
+  }
+  return turnsFor(role);
 }
 
 /**
@@ -424,7 +459,7 @@ export class ClaudeAgentExecutor implements Executor {
       // tools and turn cap decide what a turn costs — not the one the matcher
       // named, who may not be on the crew at all.
       costPerTurn(this.ledger(), agentling?.role ?? job.preferredRole ?? '', 'session', hasRepo),
-      turnCapFor(role, hint),
+      turnCapFor(role, hint, job.maxTurns),
     );
 
     const configPath = path.join(sandboxDir, '.session.json');

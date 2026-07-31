@@ -21,7 +21,7 @@ import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { ClaudeAgentExecutor, RECIPE_TURNS, turnsFor } from './executors/claude';
+import { ClaudeAgentExecutor, COMPILE_TURNS, RECIPE_TURNS, turnsFor } from './executors/claude';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -608,7 +608,11 @@ function compileQuote(rt: LevelRuntime, role: string): Quote {
   const rate = costPerTurn(ledger, role, 'session', Boolean(rt.meta.repoPath));
   return quoteFor('session', role, ledger, {
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
-    ...(rate.samples > 0 ? { floorUsd: turnsFor(registry.get(role)) * rate.usd } : {}),
+    // Floored on COMPILE_TURNS, the same cap the job is about to be given,
+    // rather than on the role's — a quote that funds fewer turns than it has
+    // decided to grant hands the smaller number straight back through the turn
+    // budget, which is how RECIPE_TURNS = 5 arrived inert.
+    ...(rate.samples > 0 ? { floorUsd: COMPILE_TURNS * rate.usd } : {}),
   });
 }
 
@@ -877,6 +881,9 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     preferredRole: recipe.role,
     // The compiler must not be handed its own half-written tool as a shortcut.
     noRouter: true,
+    // A compile is longer work than the role that owns the recipe does day to
+    // day, and both compiles on record ran out at the role's cap of 10.
+    maxTurns: COMPILE_TURNS,
     // Quoted like any other work. It was the one job in the app that ran
     // without a ceiling, which went unnoticed until a compile spent $1.26 and
     // still ran out of turns — unbounded because nobody had thought to bound

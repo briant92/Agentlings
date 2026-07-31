@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { closeOutEvidence, repoListing, turnCapFor, turnsFor, turnsForBudget } from './claude';
+import {
+  closeOutEvidence,
+  COMPILE_TURNS,
+  repoListing,
+  turnCapFor,
+  turnsFor,
+  turnsForBudget,
+} from './claude';
 
 describe('turnCapFor', () => {
   // Was 1, which cannot work: a single turn ends before the model sees any
@@ -33,6 +40,34 @@ describe('turnCapFor', () => {
   it('still lets the quote tighten a recipe run further', () => {
     const cap = turnCapFor(undefined, { oneShot: true });
     expect(turnsForBudget(0.05, { samples: 3, usd: 0.025 }, cap)).toBe(2);
+  });
+
+  // A compile is long work handed to whichever role owns the recipe, so the
+  // need belongs to the job rather than the worker — otherwise every role
+  // would have to raise its everyday budget to accommodate one errand.
+  it('lets a job that states its own need outrank the role', () => {
+    expect(turnCapFor(undefined, undefined, COMPILE_TURNS)).toBe(15);
+    expect(turnCapFor({ maxTurns: 10 }, undefined, COMPILE_TURNS)).toBe(15);
+    expect(turnCapFor({ maxTurns: 20 }, undefined, 12)).toBe(12);
+  });
+
+  // A job the crew has a recipe for is one it has done before, whatever the
+  // job claims to need — otherwise a compile's cap would leak into a repeat.
+  it('keeps the recipe leash above a job’s own claim', () => {
+    expect(turnCapFor({ maxTurns: 10 }, { oneShot: true }, COMPILE_TURNS)).toBe(5);
+  });
+
+  it('ignores a nonsense job cap rather than uncapping the loop', () => {
+    expect(turnCapFor(undefined, undefined, 0)).toBe(10);
+    expect(turnCapFor(undefined, undefined, -3)).toBe(10);
+    expect(turnCapFor(undefined, undefined, Number.NaN)).toBe(10);
+    expect(turnCapFor(undefined, undefined, 5000)).toBe(40);
+  });
+
+  // Both compiles on record broke a cap of 10 — the number is only useful if
+  // it is meaningfully above the one that failed.
+  it('gives a compile more room than the cap both compiles broke', () => {
+    expect(COMPILE_TURNS).toBeGreaterThan(turnsFor(undefined));
   });
 });
 

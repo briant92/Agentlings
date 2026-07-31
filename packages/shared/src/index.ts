@@ -119,6 +119,8 @@ export interface Job {
   tools?: string[];
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
+  /** A turn cap this job needs in its own right, overriding the role's. */
+  maxTurns?: number;
   /** The ceiling quoted before the work; enforced, and never billed above. */
   quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */

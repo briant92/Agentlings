@@ -670,6 +670,38 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   changed is that the work it *did* finish was better aimed. Worth noting the
   quote floor did its job here — it guaranteed the compile all ten turns
   rather than strangling it, which is exactly the failure it was written for.
+- 2026-07-31 — A compile gets its own turn cap, and the number came from the
+  money rather than from the work. Both compiles on record broke a cap of 10 —
+  the role's everyday budget, borrowed by default rather than chosen. A compile
+  is not an ordinary job: it writes two programs that must agree with each
+  other, and the halves disagreeing is exactly what running out of turns
+  produces, which is how attempt one shipped a `verify.mjs` that rejected its
+  own correct output. The cap belongs to the **job**, not the role — a compile
+  is handed to whichever role owns the recipe, and none of them should raise
+  their daily budget for one errand — so `maxTurns` is now a job field and wins
+  over the role's, while the recipe leash still wins over both (a job the crew
+  has done before is one it has done before, whatever it claims to need).
+  The interesting part is the number. The ledger **cannot** say how many turns
+  a compile wants: a cut-off run reports `turnsAllowed + 1` whatever it wanted,
+  so the reported count is a marker that it ran out and nothing more. So the
+  number was set from the side that is knowable — what the quote can fund —
+  because a cap the money cannot honour is handed straight back by
+  `turnsForBudget` and arrives inert, which is precisely how `RECIPE_TURNS = 5`
+  landed. Priced at the two compiles' real 9.4c and 12.6c a turn,
+  `MAX_CEILING_USD` funds 16 turns at the better rate and 15 at the worse, so
+  **15** is the largest cap granted in full at every observed rate; 16 would be
+  cut back to 15 exactly where the run is most expensive, buying nothing while
+  promising turns the ceiling cannot pay for. I proposed 16 and the test I
+  wrote to prove it refuted it — worth recording because the check was cheap
+  and ran before any money moved. `compileQuote`'s floor moved to the same
+  constant, since a quote funding fewer turns than it grants is the bug
+  `e2a53c8` already fixed once.
+  Not built, and now the next thing: the rate this is all priced off is
+  `scribe/session/hasRepo` at 8.2c, which **pools compiles with ordinary repo
+  sessions** and so understates a compile by about a third. That is the same
+  shape as the `hasRepo` split — a population hiding its expensive cases — and
+  it means the ceiling still has no guarantee here. Unmeasured until a compile
+  runs at 15.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

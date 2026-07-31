@@ -14,6 +14,8 @@ export interface NewJobSpec {
   tools?: string[];
   /** Skip the deterministic router and run a real session. */
   noRouter?: boolean;
+  /** A turn cap this job needs in its own right, overriding the role's. */
+  maxTurns?: number;
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -117,6 +119,7 @@ export class JobQueue {
       preferredRole: spec.preferredRole,
       ...(spec.tools?.length ? { tools: spec.tools } : {}),
       ...(spec.noRouter ? { noRouter: true } : {}),
+      ...(spec.maxTurns ? { maxTurns: spec.maxTurns } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

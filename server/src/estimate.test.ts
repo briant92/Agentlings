@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { COMPILE_TURNS, turnsForBudget } from './executors/claude';
 import {
   DEFAULT_CEILING_USD,
   MAX_CEILING_USD,
@@ -185,6 +186,24 @@ describe('quoteFor, against what the run may actually spend', () => {
   it('keeps free work free, whatever the floor says', () => {
     expect(quoteFor('routed', 'tidy', costing(0.4), { floorUsd: 2 }).ceilingUsd).toBe(0);
     expect(quoteFor('tool', 'tidy', costing(0.4), { floorUsd: 2 }).ceilingUsd).toBe(0);
+  });
+
+  // The compile's own version of the same failure, and what picked its number:
+  // a cap the quote cannot fund is handed straight back by the turn budget, so
+  // the constant arrives inert. Checked at both rates the two real compiles
+  // burnt, the worse of which is what makes 15 the largest honest cap — 16 is
+  // cut back to 15 there, because MAX_CEILING_USD stops the floor.
+  it('funds every turn a compile is about to be granted', () => {
+    for (const usd of [0.094, 0.126]) {
+      const rate = { samples: 2, usd };
+      const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), {
+        floorUsd: COMPILE_TURNS * usd,
+      });
+      expect(turnsForBudget(quote.ceilingUsd, rate, COMPILE_TURNS)).toBe(COMPILE_TURNS);
+    }
+    const dear = { samples: 2, usd: 0.126 };
+    const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), { floorUsd: 16 * 0.126 });
+    expect(turnsForBudget(quote.ceilingUsd, dear, 16)).toBe(COMPILE_TURNS);
   });
 });
 

@@ -340,6 +340,19 @@ button.ghost {
 .ev-partial {
   color: #ffb86c;
 }
+/* Quiet until wanted: stopping your own job is ordinary, not an alarm. */
+.t-stop {
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 10px;
+  color: #8a91a3;
+  background: transparent;
+  border: 1px solid #262b36;
+}
+.t-stop:hover {
+  color: #ff8fa3;
+  border-color: #ff8fa3;
+}
 .ev-resolved {
   color: #a8f0c0;
 }

@@ -94,6 +94,11 @@ export function Terminal({
     await api(lvl(levelId, `/jobs/${jobId}/redo`), { method: 'POST' });
   };
 
+  /** Stop work that is no longer wanted; the session is killed, not abandoned. */
+  const cancel = async (jobId: string) => {
+    await api(lvl(levelId, `/jobs/${jobId}/cancel`), { method: 'POST' });
+  };
+
   return (
     <aside
       className="terminal"
@@ -121,6 +126,7 @@ export function Terminal({
             onOpenReview={onOpenReview}
             onResolve={resolve}
             onRedo={redo}
+            onCancel={cancel}
           />
         ))}
       </div>
@@ -138,13 +144,25 @@ function EventEntry({
   onOpenReview,
   onResolve,
   onRedo,
+  onCancel,
 }: {
   event: JobEvent;
   job: Job | undefined;
   onOpenReview: (jobId: string) => void;
   onResolve: (jobId: string, action: 'promote' | 'discard') => Promise<void>;
   onRedo: (jobId: string) => Promise<void>;
+  onCancel: (jobId: string) => Promise<void>;
 }) {
+  // Driven by the job's live status rather than the event's, so it vanishes
+  // the moment the work ends. Each line offers it only for its own phase:
+  // a started job still has a "queued" line above, and two stop buttons for
+  // one job would be a puzzle rather than a control.
+  const stop = (status: Job['status']) =>
+    job?.status === status ? (
+      <button className="t-stop" onClick={() => void onCancel(event.jobId)}>
+        stop
+      </button>
+    ) : null;
   const time = <span className="t-time">{ts(event.at)}</span>;
   switch (event.type) {
     case 'queued':
@@ -153,6 +171,7 @@ function EventEntry({
           {time}
           <span className="ev-queued">▸ queued</span>
           <span className="t-text">{event.title}</span>
+          {stop('queued')}
         </div>
       );
     case 'started':
@@ -163,6 +182,7 @@ function EventEntry({
           <span className="t-text">
             {event.agentling} · {event.title}
           </span>
+          {stop('running')}
         </div>
       );
     case 'progress':

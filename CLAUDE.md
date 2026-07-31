@@ -769,6 +769,30 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   live rather than theoretical: there is no one-shot history at all for
   non-repo work. Favicon quote 42c → **29c**, predicted to the cent before
   measuring; tool and session quotes unchanged.
+- 2026-07-31 — The unquoted way in, found by tripping over it. `POST
+  /api/levels/:lid/jobs` queued work with `quotedUsd` left undefined, so
+  `turnsForBudget` never bound and the run silently fell back to the role's
+  cap. Nothing in the web client used it — but SPEC documents it, and an
+  unquoted route into a system whose whole cost story is "the quote binds
+  before the money moves" is a hole in the story rather than a shortcut. It now
+  quotes exactly as `/work` does, and settles the **role** while it is there:
+  quoting on one role while another runs the session is the mislabelling this
+  log has already recorded twice. `quoteFor_` takes `repoPath` explicitly
+  instead of reading it off the level, since the shape decides both the route
+  and the rate.
+  What it deliberately does **not** do is inherit the level's repository. That
+  was in the first draft and taken back out: `/work` inherits, this route never
+  has, and quietly handing every caller a clone is a different change wearing
+  this one's clothes. The quote is priced on whatever the job will really run
+  with, which is the only property that had to hold.
+  Verified live on both shapes, cancelled before either spent anything: with a
+  repository, 27.8c — to the cent what `/work/plan` says for the same sentence,
+  which is the coherence that was missing. Without one, `quotedUsd` is
+  undefined because that prompt routes to `answer` and is *free* — not
+  unquoted. Those two are indistinguishable in the field and it is worth
+  knowing why they are safe to conflate: `quoteFor` returns a zero ceiling only
+  for `routed` and `tool`, and every paying tier passes through a bound with a
+  1c floor. So a job that costs money now always carries a ceiling.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

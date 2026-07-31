@@ -352,10 +352,29 @@ app.post('/api/levels/:lid/jobs', async (c) => {
   if (!body.title?.trim() || !body.prompt?.trim()) {
     return c.json({ error: 'title and prompt are required' }, 400);
   }
+  const prompt = body.prompt.trim();
+  // Only what the caller passed. This route does not inherit the level's
+  // repository — that is `/work`'s behaviour and changing it here would hand
+  // every job a clone it never used to get. The quote below is priced on this
+  // same value, so it describes the run that will actually happen.
+  const repoPath = body.repoPath?.trim() || undefined;
+  // Quoted like anything else. This path used to queue work with no ceiling at
+  // all: `quotedUsd` stayed undefined, so `turnsForBudget` never bound and the
+  // run fell back to the role's cap. An unquoted route into a system whose
+  // whole cost story is "the quote binds before the money moves" is a hole in
+  // that story, not a shortcut.
+  //
+  // The role is settled here rather than left to chance for the same reason the
+  // ledger records the role that ran: a quote priced on one role and a session
+  // run by another is the mislabelling this project has already paid for twice.
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, repoPath, prompt);
+  const quote = quoteFor_(rt, prompt, undefined, runnerRole(plan), repoPath);
   const job = rt.queue.add({
     title: body.title.trim(),
-    prompt: body.prompt.trim(),
-    repoPath: body.repoPath?.trim() || undefined,
+    prompt,
+    repoPath,
+    preferredRole: plan.role ?? undefined,
+    quotedUsd: quote.ceilingUsd || undefined,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
@@ -369,7 +388,10 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  return c.json({ ...plan, quote: quoteFor_(rt, text, body.tools, runnerRole(plan)) });
+  return c.json({
+    ...plan,
+    quote: quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined),
+  });
 });
 
 /**
@@ -393,7 +415,7 @@ app.post('/api/levels/:lid/work', async (c) => {
   }
 
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan));
+  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined);
   const job = rt.queue.add({
     title: plan.title,
     prompt: text,
@@ -624,8 +646,18 @@ function compileQuote(rt: LevelRuntime, role: string): Quote {
 /**
  * What a request would cost, worked out by asking the router what it would do
  * with it and looking up what that kind of work has cost before.
+ *
+ * `repoPath` is passed rather than read off the level because a job may carry
+ * its own, and the shape decides both the route and the rate — quoting a repo
+ * job at the level's empty path would price it as work of a different kind.
  */
-function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, role: string | null): Quote {
+function quoteFor_(
+  rt: LevelRuntime,
+  text: string,
+  tools: string[] | undefined,
+  role: string | null,
+  repoPath: string | undefined,
+): Quote {
   const probe: Job = {
     id: '',
     title: '',
@@ -633,7 +665,7 @@ function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, 
     status: 'queued',
     slot: -1,
     createdAt: 0,
-    ...(rt.meta.repoPath ? { repoPath: rt.meta.repoPath } : {}),
+    ...(repoPath ? { repoPath } : {}),
     ...(tools?.length ? { tools } : {}),
   };
   const decision = decide(probe, {
@@ -662,7 +694,7 @@ function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, 
     ledger,
     role ?? '',
     decision.kind === 'oneshot' ? 'oneshot' : 'session',
-    Boolean(rt.meta.repoPath),
+    Boolean(repoPath),
   );
   return quoteFor(tier, jobClass, ledger, {
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,

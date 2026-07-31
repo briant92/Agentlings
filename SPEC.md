@@ -146,7 +146,7 @@ Routes below are the M0 shapes; everything job-facing is scoped per level
 | Route | Purpose |
 |---|---|
 | `GET /api/state` | Current `WorldState` snapshot |
-| `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}` |
+| `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}`; quoted and role-matched like `/work`, but keeps the caller's title and takes no repository unless given one |
 | `GET /api/jobs/:id/output` | Sandbox files for review |
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
 | `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |

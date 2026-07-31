@@ -197,6 +197,22 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   Observed cost comes from the SDK's total_cost_usd — no price table to
   maintain. Reselling model access has terms implications Brian should
   confirm with Anthropic before billing anyone.
+- 2026-07-31 — One-shot became a short leash (3 turns), measured. At one
+  turn the tier could not work: a turn ends before the model sees any tool
+  result, so anything that must read before it writes — every repo job — is
+  impossible. Run live it failed on max_turns having written no files at
+  all, and cost **more** than the full session it replaced ($0.17 vs
+  $0.14), since it paid for the system prompt with no cache to read. At 3
+  turns the same job produces a correct, promotable diff for ~$0.11 against
+  ~$0.27–0.44 for the 8-turn run. A recipe means explore less, not work
+  blind. Two bugs fell out and are fixed: promote refused to apply a failed
+  job's patch while still stamping it "promoted" (silent no-op — the worst
+  outcome), and a failed run was filed as tier `session`, polluting the
+  history the quote reads. Still open: a short-leash run ends `failed`
+  because the RESULT/LESSON/APPROACH write-up does not fit in 3 turns, so
+  the diff is promotable but the card reads as a failure. Recipe matching
+  left strict deliberately (same-shape jobs score 0.33 against a 0.65 bar)
+  — revisit with evidence, not intuition.
 - 2026-07-31 — Cost ceiling, corrected by measurement. The mid-flight
   dollar check could never work: the session stream carries no running
   cost. Measured — the only `total_cost_usd` in a 35-message session

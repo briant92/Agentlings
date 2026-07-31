@@ -22,6 +22,17 @@ const SESSION_TIMEOUT_MS = 10 * 60_000;
  */
 const DEFAULT_MAX_TURNS = 8;
 const TURN_CEILING = 40;
+/**
+ * What a job runs on when the crew has a recipe for it. Was 1, which sounds
+ * like the ideal saving and cannot work: a single turn ends before the model
+ * sees any tool result, so anything that must read before it writes — every
+ * repo job — is impossible. Measured, it failed on max_turns having produced
+ * no files at all, and cost more than the full session it replaced, since it
+ * paid for the system prompt with no cache to read from.
+ *
+ * A recipe means explore less, not work blind.
+ */
+const RECIPE_TURNS = 3;
 export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
 
 /**
@@ -81,6 +92,17 @@ export function turnsFor(role: { maxTurns?: number } | undefined): number {
     return DEFAULT_MAX_TURNS;
   }
   return Math.min(Math.floor(wanted), TURN_CEILING);
+}
+
+/**
+ * The most turns this run may take before the quote is applied: a recipe
+ * buys a short leash, anything else gets the role's own budget.
+ */
+export function turnCapFor(
+  role: { maxTurns?: number } | undefined,
+  hint?: { oneShot?: boolean },
+): number {
+  return hint?.oneShot ? RECIPE_TURNS : turnsFor(role);
 }
 
 /**
@@ -280,16 +302,14 @@ export class ClaudeAgentExecutor implements Executor {
     const allowedTools = mapped.length > 0 ? mapped : [...DEFAULT_TOOLS];
     if (skills.length > 0) allowedTools.push('Skill');
 
-    // A job the crew has done before does not need to explore it again;
-    // otherwise the quote decides how long it may think, since turns are the
-    // only budget that binds before the money is spent.
-    const turnBudget = hint?.oneShot
-      ? 1
-      : turnsForBudget(
-          job.quotedUsd,
-          costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session'),
-          turnsFor(role),
-        );
+    // A job the crew has done before gets a short leash rather than the full
+    // budget; either way the quote can tighten it further, since turns are
+    // the only budget that binds before the money is spent.
+    const turnBudget = turnsForBudget(
+      job.quotedUsd,
+      costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session'),
+      turnCapFor(role, hint),
+    );
 
     const configPath = path.join(sandboxDir, '.session.json');
     writeFileSync(
@@ -318,17 +338,24 @@ export class ClaudeAgentExecutor implements Executor {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
       const salvage = await this.harvest(sandboxDir, hasRepo, onProgress);
+      // The same shape the success path records. A failed run that is still
+      // filed as a full session pollutes the very history the quote reads.
+      const failedMeter: JobMeter = {
+        turnsAllowed: turnBudget,
+        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        ...(hint?.oneShot ? { oneShot: true } : {}),
+      };
       if (err instanceof SessionFailure) {
         throw new SessionFailure(
           err.message,
-          { ...err.meter, turnsAllowed: turnBudget },
+          { ...err.meter, ...failedMeter },
           salvage.lesson,
           salvage.approach,
         );
       }
       throw new SessionFailure(
         err instanceof Error ? err.message : String(err),
-        { turnsAllowed: turnBudget },
+        failedMeter,
         salvage.lesson,
         salvage.approach,
       );

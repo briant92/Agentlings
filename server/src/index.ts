@@ -424,7 +424,13 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   if (!pending) return c.json({ error: 'unknown job' }, 404);
   // Promote replays the reviewed patch onto the real repository first;
   // the job is only marked promoted if the patch applies cleanly.
-  if (body.action === 'promote' && pending.status === 'done' && pending.repoPath) {
+  //
+  // A failed job counts. Since a session that dies still keeps its diff, a
+  // run that did the work and ran out of turns writing it up leaves a patch
+  // worth having — and refusing to apply it while still stamping the job
+  // "promoted" is the one outcome worse than refusing outright.
+  const promotable = pending.status === 'done' || pending.status === 'failed';
+  if (body.action === 'promote' && promotable && pending.repoPath) {
     const patch = patchFile(rt.queue.sandboxDir(pending.id));
     if (existsSync(patch)) {
       try {

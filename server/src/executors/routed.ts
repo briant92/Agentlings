@@ -81,7 +81,7 @@ export class RoutedExecutor implements Executor {
     let hint: RunHint | undefined;
     if (decision.kind === 'oneshot') {
       hint = { oneShot: true, approach: decision.approach };
-      onProgress?.(`done before — running it in one step (${decision.reason})`);
+      onProgress?.(`done before — running it with less exploring (${decision.reason})`);
     }
 
     const result = await this.fallback.run(job, sandboxDir, onProgress, agentling, hint);

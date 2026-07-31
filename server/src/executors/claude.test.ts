@@ -1,5 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { turnsFor, turnsForBudget } from './claude';
+import { turnCapFor, turnsFor, turnsForBudget } from './claude';
+
+describe('turnCapFor', () => {
+  // Was 1, which cannot work: a single turn ends before the model sees any
+  // tool result, so a job that must read before it writes never even starts.
+  // Measured at 1 turn it produced no files and cost more than the full
+  // session it replaced.
+  it('gives a recipe job a short leash rather than a single turn', () => {
+    expect(turnCapFor(undefined, { oneShot: true })).toBe(3);
+  });
+
+  it('keeps the leash short even for a role that asks to explore', () => {
+    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBe(3);
+  });
+
+  it('leaves work without a recipe on the role’s own budget', () => {
+    expect(turnCapFor(undefined, {})).toBe(8);
+    expect(turnCapFor(undefined, undefined)).toBe(8);
+    expect(turnCapFor({ maxTurns: 20 }, undefined)).toBe(20);
+  });
+
+  it('still lets the quote tighten a recipe run further', () => {
+    const cap = turnCapFor(undefined, { oneShot: true });
+    expect(turnsForBudget(0.05, { samples: 3, usd: 0.025 }, cap)).toBe(2);
+  });
+});
 
 describe('turnsForBudget', () => {
   const roleTurns = 8;

@@ -183,22 +183,33 @@ sprite to open its profile; assignments persist in
 ## Levels (projects as worlds)
 
 The app boots like a 90's game: **title screen** (Continue · Start ·
-Settings) → **level select** → a level. A level is a full workspace for
-one project — its own crew, job queue, event feed, sandboxes, and
-memory — stored under `.agentlings/levels/<id>/` (`level.json`,
-`roster.json`, `memory/`, `jobs/`, `KNOWLEDGE.md`).
+Settings) → **level select** → a level. A level is a full workspace for one
+project — its own crew, job queue, event feed, sandboxes, memory and
+everything it has learned — stored under `.agentlings/levels/<id>/` (laid out
+under [State on disk](#state-on-disk)).
 
 - **Creation**: name + project tag + a hand-tuned palette theme (cave,
   chalkboard, household, marble). A fresh crew of two spawns; hire more
   from inside the level (they drop in at the hatch). Level cards on the
   select screen render their thumbnails live from the theme palette.
 - **Context scoping**: every finished job appends to the level's
-  `KNOWLEDGE.md`; executor sessions load their own lessons plus their
-  level's knowledge — never another level's. Levels share nothing but
-  the global roles/skills catalog.
+  `KNOWLEDGE.md`, and a session is given the notes from it that are relevant
+  to *its own job* — never another level's, and never simply the most recent.
+- **Capability is per level, and that is the point.** Recipes, compiled tools
+  and the tool-candidate log all live in the level that earned them. A method
+  that works against one repository is not a method that works against
+  another, which is the same reason a recipe stores an approach and not an
+  answer: the same words about different work are a different question. So a
+  level gets better at its own project rather than at projects in general, and
+  a new level starts honest.
+- **Spend is not scoped that way.** One `ledger.jsonl` covers everything, with
+  each row tagged by level, because capability belongs to a project while the
+  bill is one bill. `/api/spend` totals by level and by tier.
 - **Transport**: one sim per level ticks server-side; the WebSocket
   subscribes per level (`/ws?level=<id>`), so the client streams only
   the world on screen.
+- Levels share nothing else but the global roles and skills catalog — the
+  definitions are common, the crews that hold them are not.
 - The pre-level cave migrated to `levels/hq` with its crew, roles, and
   memory intact.
 

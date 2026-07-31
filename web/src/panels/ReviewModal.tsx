@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { Job } from '@agentlings/shared';
+import type { Job, JobOutputFile } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 
-interface OutputFile {
-  name: string;
-  content: string;
+type OutputFile = JobOutputFile;
+
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} bytes`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** The report first, then the file list, with the raw patch tucked underneath. */
@@ -75,7 +78,19 @@ export function ReviewModal({
           {files?.length === 0 && <p className="dim">Nothing was left in the sandbox.</p>}
           {files &&
             order(files).map((f) =>
-              f.name === 'DIFF.patch' ? (
+              f.binary ? (
+                // A document is not something to print into a <pre>. It is
+                // named, sized and offered as itself.
+                <div key={f.name} className="rv-file">
+                  <h3>{f.name}</h3>
+                  <p className="dim">
+                    {size(f.bytes)} ·{' '}
+                    <a href={lvl(levelId, `/jobs/${job.id}/output/${encodeURIComponent(f.name)}`)}>
+                      download
+                    </a>
+                  </p>
+                </div>
+              ) : f.name === 'DIFF.patch' ? (
                 <details key={f.name} className="rv-raw">
                   <summary>Show the raw patch</summary>
                   <pre>{f.content}</pre>

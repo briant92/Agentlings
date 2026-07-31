@@ -258,6 +258,22 @@ export function repoListing(root: string, limit = 40): string[] {
   return out.sort();
 }
 
+/**
+ * What the session is actually asked to do.
+ *
+ * Answers the user gave up front ride here rather than in `job.prompt`,
+ * because a recipe is keyed on the prompt: folding them in would give a
+ * clarified job a different key from the same job asked plainly, and the crew
+ * would stop recognising work it had already done.
+ */
+export function sessionPrompt(job: Job): string {
+  const base = `Job: ${job.title}\n\n${job.prompt}`;
+  if (!job.clarifications?.length) return base;
+  return `${base}\n\nThe user has already settled these:\n${job.clarifications
+    .map((line) => `- ${line}`)
+    .join('\n')}`;
+}
+
 export function buildAppend(
   role: LoadedRole | undefined,
   lessons: string[],
@@ -486,7 +502,7 @@ export class ClaudeAgentExecutor implements Executor {
       configPath,
       JSON.stringify({
         cwd: sandboxDir,
-        prompt: `Job: ${job.title}\n\n${job.prompt}`,
+        prompt: sessionPrompt(job),
         append: buildAppend(
           role,
           lessons,

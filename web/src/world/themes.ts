@@ -33,6 +33,14 @@ export interface Theme {
   stoneDark: number;
   flame: number;
   flameCore: number;
+  /**
+   * The hover outline on anything clickable. Its own slot rather than a reuse
+   * of `accentLight`, which is drawn from the same family as the rock in every
+   * theme — cave's is DB.tan against DB.tan walls, so the outline half
+   * vanished into the scenery it was meant to lift a sprite off. Chosen per
+   * theme for contrast against that theme's rock.
+   */
+  hover: number;
 }
 
 export const THEMES: Record<ThemeKey, Theme> = {
@@ -52,6 +60,7 @@ export const THEMES: Record<ThemeKey, Theme> = {
     stoneDark: DB.plum,
     flame: DB.orange,
     flameCore: DB.yellow,
+    hover: DB.white, // against brown rock
   },
   chalkboard: {
     void: DB.slateGreen,
@@ -69,6 +78,7 @@ export const THEMES: Record<ThemeKey, Theme> = {
     stoneDark: DB.plum,
     flame: DB.orange,
     flameCore: DB.yellow,
+    hover: DB.yellow, // white is already this theme's accent
   },
   household: {
     void: DB.indigo,
@@ -86,6 +96,7 @@ export const THEMES: Record<ThemeKey, Theme> = {
     stoneDark: DB.greyDeep,
     flame: DB.orange,
     flameCore: DB.yellow,
+    hover: DB.rose, // the walls here are pale, so white would sink into them
   },
   marble: {
     void: DB.black,
@@ -103,6 +114,7 @@ export const THEMES: Record<ThemeKey, Theme> = {
     stoneDark: DB.greyDark,
     flame: DB.orange,
     flameCore: DB.yellow,
+    hover: DB.yellow, // against steel and pale blue
   },
 };
 

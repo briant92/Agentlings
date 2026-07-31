@@ -101,6 +101,21 @@ export interface ConnectionInfo {
   missingSecrets: string[];
 }
 
+/**
+ * One file a job left in its sandbox.
+ *
+ * `content` is present only for text. A job that produces a document — a PDF,
+ * a spreadsheet — used to be read as UTF-8 like everything else and arrived as
+ * mojibake, so the file is announced here and fetched on its own instead.
+ */
+export interface JobOutputFile {
+  name: string;
+  bytes: number;
+  binary: boolean;
+  /** The file itself, for text only. */
+  content?: string;
+}
+
 /** What a finished job actually changed, for explaining it in plain words. */
 export interface JobChanges {
   files: number;
@@ -123,6 +138,16 @@ export interface Job {
   noRouter?: boolean;
   /** A turn cap this job needs in its own right, overriding the role's. */
   maxTurns?: number;
+  /**
+   * Answers the user gave before the run, handed to the session on top of the
+   * prompt.
+   *
+   * Kept out of `prompt` deliberately: a recipe is keyed on the prompt, so
+   * folding these in would give a clarified job a different key from the same
+   * job asked plainly, and the crew would stop recognising work it has already
+   * done.
+   */
+  clarifications?: string[];
   /**
    * This job compiles a recipe into a tool. Recorded rather than acted on: a
    * compile is its own kind of work — it writes two programs that must agree —
@@ -335,6 +360,25 @@ export interface SpendTotals {
   free: number;
 }
 
+/**
+ * One thing worth settling before a job runs.
+ *
+ * Answering is always optional. These narrow the work so the run explores
+ * less; a question that blocked the intake would cost more than the turn it
+ * saved.
+ */
+export interface ClarifyQuestion {
+  /** Stable across recomputation, since the rules are deterministic. */
+  id: string;
+  ask: string;
+  /** Why it is being asked, when that is not obvious. */
+  hint?: string;
+  /** Suggested answers; `answer` is what the session is actually told. */
+  options: { label: string; answer: string }[];
+  /** The user may type something instead of picking. */
+  freeText?: boolean;
+}
+
 /** Preview of what the app will do with a sentence, before it queues anything. */
 export interface WorkPlan {
   /** Short title derived from the sentence. */
@@ -353,6 +397,8 @@ export interface WorkPlan {
   /** What this will cost, before it runs. */
   quote: Quote;
   gaps: string[];
+  /** Worth settling before it runs; always optional to answer. */
+  questions: ClarifyQuestion[];
 }
 
 export interface WorldState {

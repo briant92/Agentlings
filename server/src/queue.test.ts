@@ -102,6 +102,26 @@ describe('JobQueue', () => {
     expect(queue.get(job.id)!.maxTurns).toBeUndefined();
   });
 
+  // Answers given before the run have to reach the session, and must not be
+  // folded into the prompt: a recipe is keyed on the prompt, so a clarified
+  // job would otherwise stop matching the same job asked plainly.
+  it('carries clarifications across a restart and leaves the prompt alone', () => {
+    const job = queue.add({
+      title: 'Tidy',
+      prompt: 'tighten up the error handling',
+      clarifications: ['Which file? server/src/ledger.ts'],
+    });
+    expect(new JobQueue(root).get(job.id)).toMatchObject({
+      prompt: 'tighten up the error handling',
+      clarifications: ['Which file? server/src/ledger.ts'],
+    });
+  });
+
+  it('writes no clarifications field when none were given', () => {
+    const job = queue.add({ title: 'Plain', prompt: 'x', clarifications: [] });
+    expect(queue.get(job.id)!.clarifications).toBeUndefined();
+  });
+
   describe('revision', () => {
     // The socket sends the job list only when this moves. If a mutation ever
     // slips past persist(), a watcher silently stops seeing job updates --

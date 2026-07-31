@@ -135,7 +135,7 @@ describe('turnsFor', () => {
     expect(turnsFor({ maxTurns: Number.NaN })).toBe(10);
   });
 });
-import { buildAppend, mapTools, parseLesson, toolLine } from './claude';
+import { buildAppend, mapTools, parseLesson, sessionPrompt, toolLine } from './claude';
 
 describe('mapTools', () => {
   it('maps role tool names onto SDK tool names and dedupes', () => {
@@ -186,6 +186,35 @@ describe('repoListing', () => {
 
   it('returns nothing for a directory that is not there', () => {
     expect(repoListing(path.join(root, 'missing'))).toEqual([]);
+  });
+});
+
+describe('sessionPrompt', () => {
+  const base = {
+    id: 'j1',
+    title: 'Tidy the errors',
+    prompt: 'tighten up the error handling',
+    status: 'queued' as const,
+    slot: 0,
+    createdAt: 0,
+  };
+
+  it('is the title and the prompt when nothing was settled up front', () => {
+    expect(sessionPrompt(base)).toBe('Job: Tidy the errors\n\ntighten up the error handling');
+  });
+
+  it('adds what the user settled, without touching the prompt itself', () => {
+    const text = sessionPrompt({
+      ...base,
+      clarifications: ['Which file? server/src/ledger.ts', 'How far? Do the clearest cases.'],
+    });
+    expect(text).toContain('tighten up the error handling');
+    expect(text).toContain('- Which file? server/src/ledger.ts');
+    expect(text).toContain('- How far? Do the clearest cases.');
+  });
+
+  it('adds nothing at all for an empty list, so the prompt is byte-identical', () => {
+    expect(sessionPrompt({ ...base, clarifications: [] })).toBe(sessionPrompt(base));
   });
 });
 

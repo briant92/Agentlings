@@ -55,9 +55,9 @@ export function HireModal({
   const loadRoles = useCallback(() => api<RoleInfo[]>('/api/roles').then(setRoles), []);
 
   useEffect(() => {
-    if (portraitRef.current) renderPortrait(portraitRef.current, 3);
+    if (portraitRef.current) renderPortrait(portraitRef.current, 3, agentling.color);
     void loadRoles();
-  }, [loadRoles]);
+  }, [loadRoles, agentling.color]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

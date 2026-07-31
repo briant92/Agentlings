@@ -1,13 +1,27 @@
-import { Application, Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
+import { Application, Container, Graphics, Rectangle, Sprite, Text, type Texture } from 'pixi.js';
 import { useEffect, useRef } from 'react';
-import type { ThemeKey, WorldState } from '@agentlings/shared';
-import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
-import { loadAtlasTextures } from './atlas';
+import type { Job, ThemeKey, WorldState } from '@agentlings/shared';
+import {
+  EXIT_X,
+  MAX_STATIONS,
+  SPAWN_X,
+  STATION_BASE_X,
+  STATION_SPACING,
+  WORLD_WIDTH,
+} from '@agentlings/shared';
+import { type Frames, loadAtlasArt } from './atlas';
+import { type Box, doorBox, type HoverTarget, OUTLINE_OFFSETS, stationBox } from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
 import { type Anchors, drawScene, pixiSurface } from './scene';
 import { SCENES } from './scenes';
-import { buildAgentTextures, SPRITE_HEIGHT, SPRITE_SCALE, type AgentAnim } from './sprites';
+import {
+  buildAgentTextures,
+  buildSilhouetteTextures,
+  SPRITE_HEIGHT,
+  SPRITE_SCALE,
+  type AgentAnim,
+} from './sprites';
 import { THEMES, type Theme } from './themes';
 
 const VIEW_H = 320;
@@ -110,6 +124,55 @@ function animFor(state: string): AgentAnim {
 
 const ANIM_FPS: Record<AgentAnim, number> = { walk: 12, work: 8, deliver: 10 };
 
+/** The job a signpost is standing for, or none when the slot is empty. */
+function jobAtSlot(world: WorldState | null, slot: number): Job | undefined {
+  return world?.jobs.find(
+    (j) => j.slot === slot && (j.status === 'queued' || j.status === 'running'),
+  );
+}
+
+/**
+ * Where the art comes from. The frames built into the app answer immediately;
+ * the spritesheet replaces them once it has loaded. Both can hand back the
+ * same frames in an agentling's colour, or as flat shapes for the outline.
+ */
+interface ArtSource {
+  base: Frames;
+  scale: number;
+  tinted(color: number): Promise<Frames | null>;
+  silhouette(color: number): Promise<Frames | null>;
+}
+
+/** A ring drawn around a prop that has no sprite to take a silhouette from. */
+function outlineBox(g: Graphics, box: Box, color: number, t = 2): void {
+  g.rect(box.x - t, box.y - t, box.w + 2 * t, t).fill(color);
+  g.rect(box.x - t, box.y + box.h, box.w + 2 * t, t).fill(color);
+  g.rect(box.x - t, box.y, t, box.h).fill(color);
+  g.rect(box.x + box.w, box.y, t, box.h).fill(color);
+}
+
+/**
+ * The signpost. Being drawn from primitives rather than from a texture, it can
+ * take a real silhouette like the sprites do — the same shapes, offset, in one
+ * flat colour — instead of settling for a box around it.
+ */
+function drawSign(
+  g: Graphics,
+  T: Theme,
+  x: number,
+  y: number,
+  running: boolean,
+  wave: number,
+  flat?: number,
+): void {
+  g.rect(x - 1.5, y - 30, 3, 30).fill(flat ?? T.woodDark);
+  g.rect(x - 11, y - 40, 22, 11).fill(flat ?? T.wood);
+  g.rect(x - 11, y - 40, 22, 2).fill(flat ?? T.woodDark);
+  g.poly([x - 1, y - 52, x - 1, y - 41, x + 13 + wave, y - 46.5]).fill(
+    flat ?? (running ? T.flame : T.grass),
+  );
+}
+
 /**
  * Renders the side-view world in the level's theme. Pure presentation:
  * positions and states come from the server sim at 10 Hz; the client lerps
@@ -120,11 +183,20 @@ export function WorldCanvas({
   theme,
   onSelect,
   onOpenCrew,
+  onOpenReview,
+  onHover,
+  hoveredId,
 }: {
   world: WorldState | null;
   theme: ThemeKey;
   onSelect: (agentlingId: string) => void;
   onOpenCrew: () => void;
+  /** A signpost was clicked — show that job's work. */
+  onOpenReview: (jobId: string) => void;
+  /** Who the pointer is over, so the crew rail can light up the same one. */
+  onHover: (agentlingId: string | null) => void;
+  /** Who the crew rail is pointing at, highlighted here in return. */
+  hoveredId: string | null;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<WorldState | null>(null);
@@ -133,6 +205,12 @@ export function WorldCanvas({
   onSelectRef.current = onSelect;
   const onOpenCrewRef = useRef(onOpenCrew);
   onOpenCrewRef.current = onOpenCrew;
+  const onOpenReviewRef = useRef(onOpenReview);
+  onOpenReviewRef.current = onOpenReview;
+  const onHoverRef = useRef(onHover);
+  onHoverRef.current = onHover;
+  const hoveredIdRef = useRef(hoveredId);
+  hoveredIdRef.current = hoveredId;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -181,32 +259,114 @@ export function WorldCanvas({
         observer.observe(host);
 
         // Art is data: prefer the spritesheet, fall back to what is built in.
-        let agentTextures = buildAgentTextures();
-        let spriteScale = SPRITE_SCALE;
-        void loadAtlasTextures().then((fromSheet) => {
-          if (!fromSheet || destroyed) return;
-          agentTextures = fromSheet;
+        let art: ArtSource = {
+          base: buildAgentTextures(),
+          scale: SPRITE_SCALE,
+          tinted: (color) => Promise.resolve(buildAgentTextures(color)),
+          silhouette: (color) => Promise.resolve(buildSilhouetteTextures(color)),
+        };
+        // One set of frames per crew colour, built the first time it is seen.
+        // Until it is ready the untinted frames stand in, so a new hire never
+        // pops into an empty space waiting for a repaint.
+        const tinted = new Map<number, Frames>();
+        const asked = new Set<number>();
+        let outline: Frames | null = null;
+
+        const useArt = (next: ArtSource) => {
+          art = next;
+          tinted.clear();
+          asked.clear();
+          outline = null;
+          void art.silhouette(T.hover).then((frames) => {
+            if (!destroyed) outline = frames;
+          });
+        };
+        const framesFor = (color: number): Frames => {
+          const ready = tinted.get(color);
+          if (ready) return ready;
+          if (!asked.has(color)) {
+            asked.add(color);
+            void art.tinted(color).then((frames) => {
+              if (frames && !destroyed) tinted.set(color, frames);
+            });
+          }
+          return art.base;
+        };
+        useArt(art);
+
+        void loadAtlasArt().then((sheet) => {
+          if (!sheet || destroyed) return;
           // A pack may be drawn at any resolution; hold the on-screen height
           // steady so a finer pack reads as more detail, not as a giant.
-          const frameHeight = fromSheet.walk[0]?.height ?? SPRITE_HEIGHT;
-          spriteScale = (SPRITE_SCALE * SPRITE_HEIGHT) / frameHeight;
+          const height = sheet.frameHeight || SPRITE_HEIGHT;
+          useArt({
+            base: sheet.base,
+            scale: (SPRITE_SCALE * SPRITE_HEIGHT) / height,
+            tinted: (color) => sheet.tinted(color),
+            silhouette: (color) => sheet.silhouette(color),
+          });
         });
 
         const scenery = new Graphics();
         drawScene(pixiSurface(scenery), SCENES[theme], T, ANCHORS);
         app.stage.addChild(scenery);
 
+        // What the pointer is over. Held here rather than in React state so
+        // the ticker can read it without the effect being torn down and the
+        // whole world rebuilt on every hover.
+        let hover: HoverTarget = null;
+        const setHover = (next: HoverTarget) => {
+          hover = next;
+          onHoverRef.current(next?.kind === 'agentling' ? next.id : null);
+        };
+        const clearHover = (match: (target: NonNullable<HoverTarget>) => boolean) => {
+          if (hover && match(hover)) setHover(null);
+        };
+
         // The doorway is where crew leave and come back, so it opens the crew
         // panel. Added below the sprites so clicking an agentling still wins.
+        const door = doorBox(GROUND_Y);
         const portal = new Container();
         portal.eventMode = 'static';
         portal.cursor = 'pointer';
-        portal.hitArea = new Rectangle(EXIT_X - 34, GROUND_Y - 58, 68, 58);
+        portal.hitArea = new Rectangle(door.x, door.y, door.w, door.h);
         portal.on('pointerdown', () => onOpenCrewRef.current());
+        portal.on('pointerover', () => setHover({ kind: 'door' }));
+        portal.on('pointerout', () => clearHover((t) => t.kind === 'door'));
         app.stage.addChild(portal);
+
+        // Signposts stand at fixed slots, so their hit areas are built once
+        // and only switched on while a slot actually holds a job.
+        const zones: Container[] = [];
+        for (let slot = 0; slot < MAX_STATIONS; slot++) {
+          const box = stationBox(slot, GROUND_Y);
+          const zone = new Container();
+          zone.eventMode = 'none';
+          zone.cursor = 'pointer';
+          zone.hitArea = new Rectangle(box.x, box.y, box.w, box.h);
+          zone.on('pointerover', () => setHover({ kind: 'station', slot }));
+          zone.on('pointerout', () => clearHover((t) => t.kind === 'station' && t.slot === slot));
+          zone.on('pointerdown', () => {
+            const job = jobAtSlot(worldRef.current, slot);
+            if (job) onOpenReviewRef.current(job.id);
+          });
+          zones.push(zone);
+          app.stage.addChild(zone);
+        }
 
         const dynamic = new Graphics();
         app.stage.addChild(dynamic);
+        // Below the sprites, so an agentling stands in front of its own ring.
+        const ghostLayer = new Container();
+        app.stage.addChild(ghostLayer);
+        const ghosts = OUTLINE_OFFSETS.map(() => {
+          const ghost = new Sprite();
+          ghost.anchor.set(0.5, 1);
+          ghost.visible = false;
+          ghost.eventMode = 'none';
+          ghostLayer.addChild(ghost);
+          return ghost;
+        });
         const spriteLayer = new Container();
         app.stage.addChild(spriteLayer);
         const fxLayer = new Graphics();
@@ -218,9 +378,14 @@ export function WorldCanvas({
           const w = worldRef.current;
           dynamic.clear();
           fxLayer.clear();
+          for (const ghost of ghosts) ghost.visible = false;
           if (!w) return;
           const t = performance.now() / 1000;
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
+
+          // The rail and the world point at the same crew, so hovering either
+          // one lights up both.
+          const lit = hover?.kind === 'agentling' ? hover.id : hoveredIdRef.current;
 
           emberClock -= dt;
           if (emberClock <= 0) {
@@ -239,6 +404,10 @@ export function WorldCanvas({
             if (prev && prev !== 'promoted' && job.status === 'promoted') confetti(fx, T);
           }
 
+          // The doorway is scenery drawn from the level's own data, so there
+          // is no shape here to take a silhouette from — it gets a ring.
+          if (hover?.kind === 'door') outlineBox(dynamic, door, T.hover);
+
           // Pixel flames flanking the exit, three flicker frames.
           for (const [k, tx] of [EXIT_X - 27, EXIT_X + 27].entries()) {
             const v = Math.floor(t * 8 + k * 1.7) % 3;
@@ -251,16 +420,23 @@ export function WorldCanvas({
           }
 
           // Work stations: wooden signposts with a status pennant.
-          for (const job of w.jobs) {
-            if (job.slot < 0 || (job.status !== 'queued' && job.status !== 'running')) continue;
-            const x = STATION_BASE_X + job.slot * STATION_SPACING;
-            dynamic.rect(x - 1.5, GROUND_Y - 30, 3, 30).fill(T.woodDark);
-            dynamic.rect(x - 11, GROUND_Y - 40, 22, 11).fill(T.wood);
-            dynamic.rect(x - 11, GROUND_Y - 40, 22, 2).fill(T.woodDark);
-            const wave = Math.floor(t * 6 + job.slot) % 2 === 0 ? 0 : 2;
-            dynamic
-              .poly([x - 1, GROUND_Y - 52, x - 1, GROUND_Y - 41, x + 13 + wave, GROUND_Y - 46.5])
-              .fill(job.status === 'running' ? T.flame : T.grass);
+          for (let slot = 0; slot < MAX_STATIONS; slot++) {
+            const job = jobAtSlot(w, slot);
+            const mode = job ? 'static' : 'none';
+            if (zones[slot].eventMode !== mode) zones[slot].eventMode = mode;
+            if (!job) {
+              clearHover((target) => target.kind === 'station' && target.slot === slot);
+              continue;
+            }
+            const x = STATION_BASE_X + slot * STATION_SPACING;
+            const running = job.status === 'running';
+            const wave = Math.floor(t * 6 + slot) % 2 === 0 ? 0 : 2;
+            if (hover?.kind === 'station' && hover.slot === slot) {
+              for (const [dx, dy] of OUTLINE_OFFSETS) {
+                drawSign(dynamic, T, x + dx * 2, GROUND_Y + dy * 2, running, wave, T.hover);
+              }
+            }
+            drawSign(dynamic, T, x, GROUND_Y, running, wave);
           }
 
           // Agentlings: smoothed positions driving pixel-art sprite frames.
@@ -279,7 +455,7 @@ export function WorldCanvas({
             const rx = Math.round(m.x);
             if (puff && a.state === 'working') digDust(fx, T, rx, m.face);
             const anim = animFor(a.state);
-            const seq = agentTextures[anim];
+            const seq = framesFor(a.color)[anim];
             const frame = Math.floor(t * ANIM_FPS[anim] + i * 1.7) % seq.length;
 
             let sprite = sprites.get(a.id);
@@ -290,20 +466,31 @@ export function WorldCanvas({
               sprite.cursor = 'pointer';
               const id = a.id;
               sprite.on('pointerdown', () => onSelectRef.current(id));
-              sprite.on('pointerover', () => {
-                const label = labels.get(id);
-                if (label) label.visible = true;
-              });
-              sprite.on('pointerout', () => {
-                const label = labels.get(id);
-                if (label) label.visible = false;
-              });
+              sprite.on('pointerover', () => setHover({ kind: 'agentling', id }));
+              sprite.on('pointerout', () =>
+                clearHover((target) => target.kind === 'agentling' && target.id === id),
+              );
               spriteLayer.addChild(sprite);
               sprites.set(a.id, sprite);
             }
             sprite.texture = seq[frame];
-            sprite.scale.set(spriteScale * m.face, spriteScale);
+            sprite.scale.set(art.scale * m.face, art.scale);
             sprite.position.set(rx, GROUND_Y + 2);
+
+            // The ring: the same frame as a flat shape, drawn once per
+            // neighbouring pixel behind the sprite itself.
+            if (a.id === lit && outline) {
+              const flat: Texture | undefined = outline[anim][frame % outline[anim].length];
+              if (flat) {
+                ghosts.forEach((ghost, g) => {
+                  const [ox, oy] = OUTLINE_OFFSETS[g];
+                  ghost.texture = flat;
+                  ghost.visible = true;
+                  ghost.scale.set(art.scale * m.face, art.scale);
+                  ghost.position.set(rx + ox * art.scale, GROUND_Y + 2 + oy * art.scale);
+                });
+              }
+            }
 
             let label = labels.get(a.id);
             if (!label) {
@@ -313,10 +500,12 @@ export function WorldCanvas({
               });
               label.anchor.set(0.5);
               label.alpha = 0.9;
-              label.visible = false; // hover-only, like a proper diorama
               labelLayer.addChild(label);
               labels.set(a.id, label);
             }
+            // Named only while pointed at, like a proper diorama — and driven
+            // by the same hover the ring is, so the two cannot disagree.
+            label.visible = a.id === lit;
             label.position.set(rx, GROUND_Y - 48);
           }
 
@@ -340,6 +529,7 @@ export function WorldCanvas({
               sprites.delete(id);
               labels.delete(id);
               motion.delete(id);
+              clearHover((target) => target.kind === 'agentling' && target.id === id);
             }
           }
 

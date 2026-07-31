@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Agentling } from '@agentlings/shared';
 import { api, lvl } from '../api';
 import { CrewPanel } from '../panels/CrewPanel';
+import { CrewRail } from '../panels/CrewRail';
 import { HireModal } from '../panels/HireModal';
 import { ProfileModal } from '../panels/ProfileModal';
 import { ReviewModal } from '../panels/ReviewModal';
@@ -32,6 +33,9 @@ export function LevelView({
   const [crewOpen, setCrewOpen] = useState(false);
   const [hired, setHired] = useState<Agentling | null>(null);
   const [tour, setTour] = useState(false);
+  // Pointing at someone in the rail lights them up in the world and the other
+  // way about, so the two halves of the panel are talking about the same crew.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const arrival = useRef<number | undefined>(undefined);
   const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
 
@@ -91,6 +95,9 @@ export function LevelView({
           theme={level.theme}
           onSelect={setProfileId}
           onOpenCrew={() => setCrewOpen(true)}
+          onOpenReview={setReviewJobId}
+          onHover={setHoveredId}
+          hoveredId={hoveredId}
         />
         <WorkBar
           levelId={level.id}
@@ -100,7 +107,16 @@ export function LevelView({
           }}
         />
       </main>
-      <Terminal levelId={level.id} world={world} events={events} onOpenReview={setReviewJobId} />
+      <aside className="side">
+        <CrewRail
+          world={world}
+          events={events}
+          hoveredId={hoveredId}
+          onSelect={setProfileId}
+          onHover={setHoveredId}
+        />
+        <Terminal levelId={level.id} world={world} events={events} onOpenReview={setReviewJobId} />
+      </aside>
       {reviewJob && (
         <ReviewModal levelId={level.id} job={reviewJob} onClose={() => setReviewJobId(null)} />
       )}
@@ -111,7 +127,14 @@ export function LevelView({
           onClose={() => setProfileId(null)}
         />
       )}
-      {crewOpen && <CrewPanel levelId={level.id} onClose={() => setCrewOpen(false)} />}
+      {crewOpen && (
+        <CrewPanel
+          levelId={level.id}
+          jobs={world?.jobs ?? []}
+          onOpenReview={setReviewJobId}
+          onClose={() => setCrewOpen(false)}
+        />
+      )}
       {hired && (
         <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
       )}

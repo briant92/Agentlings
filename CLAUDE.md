@@ -849,6 +849,105 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   older rows from deleted levels left alone). Verified after: the session quote
   is still $1.58 and the one-shot still "About 14c — done this 4 times before",
   so nothing became less accurate in exchange for the option.
+- 2026-07-31 — A UI/UX pass, four changes, and the arithmetic decided more of
+  it than taste did.
+  **Agentlings are now their own colour.** They were drawn identically and only
+  the hover label carried the tint, so telling five apart meant hovering each in
+  turn. The gown is the identity channel — the largest flat area, so it still
+  reads in a 27px portrait, and leaving hair and skin alone keeps the crew
+  looking like one crew. One definition in `tint.ts` serves both art paths: the
+  built-in frames swap palette entries by key, the baked sheet swaps pixels by
+  value. That symmetry is the point — a sprite tinted one way in the world and
+  another in the rail is worse than no tint, since the whole idea is
+  recognising someone at a glance. Matching on the two *exact* source colours
+  is what makes it safe on any sheet: ours is generated from the same frame
+  definitions, and an outside pack that doesn't use them is left alone rather
+  than having its highlights eaten. Measured live: 390 gown pixels swapped in
+  the real PNG, 5 distinct gowns, every one on DB32. One casualty worth
+  recording — **Pip's mint green snaps to steel grey.** The three original HQ
+  crew hold colours that predate the ramp, and mint sits almost exactly between
+  `limeLight` and `steel` under the perceptual weighting (14383 against 14244);
+  grey wins by 1%. Their name label stays mint while the gown goes grey. New
+  hires are unaffected — `COLOR_POOL` is already DB32 — so the fix is one line
+  in the legacy seed, deliberately not taken because it is a migration on a live
+  roster.
+  **The hover outline is a flat copy, not a tint.** Pixi's tint multiplies, so
+  offset copies of the ordinary frames keep their dark pixels dark and read as a
+  smeared ghost; `flatten` throws the detail away and eight offsets then read as
+  a one-pixel ring. Verified on the real sheet: 10 colours to 1, transparency
+  intact. Four offsets was tried and rejected — it leaves gaps on every diagonal
+  of this art. The colour needed its own theme slot: `accentLight` is drawn from
+  the same family as the rock in every theme, so cave's outline was DB.tan
+  against DB.tan walls and half vanished into the scenery it existed to lift a
+  sprite off. Signposts get a *real* silhouette because they are drawn from
+  primitives and can simply be drawn again offset; the door gets a ring, because
+  it is scenery painted from the level's own scene data and there is no shape
+  there to take. That asymmetry is honest and the shared colour is what makes it
+  read as one idea. Geometry lives in `hover.ts` because each box is used twice
+  — to draw and to catch the pointer — and the two drifting apart gives you a
+  prop that lights up somewhere other than where it is clickable.
+  **The terminal split was decided by a measurement, not a preference.** The
+  literal left/right split asked for costs the world its pixel-exactness:
+  1400 − 24 padding − 340 rail − 16 gap leaves 1020, and `fitCanvas` needs ≥1000
+  for a whole-number scale, so widening the rail to 460 drops the world to 900
+  and the canvas gets a non-integer CSS width. So the rail is stacked by default
+  and goes side by side only at ≥1560, where 1560 − 24 − 480 − 16 leaves 1040.
+  Confirmed in the browser at both widths: canvas CSS width exactly 1000px.
+  Every activity line is read off state the app already holds — the sim's state,
+  the job title, the last progress line. Nothing is invented, and the one
+  example that could not be honoured ("waiting until 5pm to report out") was
+  refused rather than faked, because there is no scheduler and a made-up status
+  cannot be acted on.
+  **The backoffice exists because the terminal is a feed, not an archive.** Its
+  events are numbered per server run and held in memory, so everything it ever
+  said is gone after a restart; the jobs persist, which makes them the only
+  durable account of what the crew has done. No new endpoint — the socket
+  already sends the whole queue whenever it changes, so the history is on the
+  client before the panel opens. Two things fell out of building it. The output
+  route read *every* file as UTF-8 and inlined it, so a job that produced a real
+  document produced mojibake; binary is now sniffed for a NUL byte the way git
+  does, rather than guessed from an extension list, because the interesting
+  files are the ones nobody anticipated. Proven end to end with a real PNG:
+  listed as binary, downloaded byte-identical, traversal refused. And the
+  panel's total read "$12.22 spent" against the ledger's $13.81 — both correct,
+  since the panel can only see jobs still in the queue file — but **two numbers
+  labelled "spent" is a defect regardless of how well it can be explained.** It
+  now says "$12.22 on these" and names the gap: "4 stopped mid-run, cost
+  unknown", which matches the ledger's `unmeasured` exactly. Folding those in as
+  zero is how a total comes to understate itself, which this log records twice
+  already.
+  **Clarification is pre-flight, and deliberately not mid-run.** A session is a
+  one-shot child process by design, so pausing one to ask a question means a
+  `waiting` status, a runner holding stdin, and a timeout policy for a user who
+  went to bed — against the grain of a cost model whose whole premise is
+  bounding a run *before* it starts. Asking first is also the only point where a
+  question can reduce spend rather than add to it. Three rules keep it from
+  becoming the form the one-box intake was built not to be: never on free work,
+  never more than three, never required. The free gate is proven live — a
+  sentence containing "improve everything" asks nothing when it lands on the
+  `tool` tier. The answers are kept **out of `job.prompt`**, which is the
+  non-obvious part: a recipe is keyed on `normalise(prompt)` and the one-shot
+  quote looks up `recipeKey`, so folding them in would give a clarified job a
+  different key from the same job asked plainly and the crew would stop
+  recognising work it had already done. The server also recomputes the questions
+  from the sentence rather than trusting what the client sends back — possible
+  only because the rules are deterministic, and it means the only instructions
+  that can reach a session are ones the user was shown.
+  **The measurement is deferred on purpose.** Whether clarifying actually saves
+  turns needs 4+ paired runs at ~40c each, and this log's own small-n rule says
+  n=2 is an estimate rather than a finding, so buying a weak answer for $1.60 is
+  the error this project keeps catching. Instead the job record now carries
+  `clarifications` and the ledger already carries turns and cost, so the
+  comparison is computable from ordinary traffic whenever there is enough of
+  both — the same resolution as the compile flag, and for the same asymmetry: a
+  rate can be computed from a ledger later, and a ledger cannot be given a field
+  it never wrote.
+  One fact learned by getting it wrong, worth recording because it is easy to
+  assume: **a question with no repository is not free.** The `answer` tier
+  replays a *stored* answer, and the first run of a novel prompt is what
+  produces it — so that run is a full session. Queued one expecting zero, it
+  quoted $1.58; cancelled at 12.7s, filed `failed` with `costUnknown`, charged
+  $0. The billing rules held exactly as designed; the assumption did not.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

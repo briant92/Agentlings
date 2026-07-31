@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,7 @@ import type {
 import { SOCKET_LEVEL_GONE, TICK_MS } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { describe, readConnections } from './connections';
+import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
@@ -71,6 +72,7 @@ import {
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
+import { contentTypeFor, listOutputs, safeOutputPath } from './outputs';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
@@ -380,10 +382,14 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   const body = await c.req.json<{ text?: string; tools?: string[] }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const draft = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  // The quote decides whether asking is worth it at all, and the quote needs
+  // the role the draft settles — so the questions are filled in last.
+  const quote = quoteFor_(rt, text, body.tools, runnerRole(draft), rt.meta.repoPath || undefined);
   return c.json({
-    ...plan,
-    quote: quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined),
+    ...draft,
+    quote,
+    questions: questionsFor(text, { hasRepo: !!rt.meta.repoPath, tier: quote.tier }),
   });
 });
 
@@ -394,7 +400,12 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
 app.post('/api/levels/:lid/work', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ text?: string; repoPath?: string; tools?: string[] }>();
+  const body = await c.req.json<{
+    text?: string;
+    repoPath?: string;
+    tools?: string[];
+    answers?: Record<string, string>;
+  }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
 
@@ -411,6 +422,7 @@ app.post('/api/levels/:lid/work', async (c) => {
   // else about how a job is specced — the ceiling that binds it, the role that
   // will run it — is shared with the other way in, so the two cannot drift.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined);
   const job = rt.queue.add(
     queuedJobSpec({
       title: plan.title,
@@ -418,7 +430,15 @@ app.post('/api/levels/:lid/work', async (c) => {
       repoPath: rt.meta.repoPath || undefined,
       tools: body.tools,
       plan,
-      quote: quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined),
+      quote,
+      // Recomputed from the same sentence rather than trusted from the caller,
+      // so the only instructions that can reach a session are ones the user
+      // was actually shown.
+      clarifications: clarificationLines(
+        text,
+        { hasRepo: !!rt.meta.repoPath, tier: quote.tier },
+        body.answers,
+      ),
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
@@ -463,15 +483,25 @@ app.get('/api/levels/:lid/jobs/:id/output', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const job = rt.queue.get(c.req.param('id'));
   if (!job) return c.json({ error: 'unknown job' }, 404);
-  const dir = rt.queue.sandboxDir(job.id);
-  if (!existsSync(dir)) return c.json({ files: [] });
-  const files = readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
-    .map((entry) => ({
-      name: entry.name,
-      content: readFileSync(path.join(dir, entry.name), 'utf8'),
-    }));
-  return c.json({ files });
+  return c.json({ files: listOutputs(rt.queue.sandboxDir(job.id)) });
+});
+
+/**
+ * One file, as bytes. The listing withholds anything binary, so a document a
+ * job produced is downloaded from here rather than mangled into JSON.
+ */
+app.get('/api/levels/:lid/jobs/:id/output/:name', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const job = rt.queue.get(c.req.param('id'));
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  const name = c.req.param('name');
+  const file = safeOutputPath(rt.queue.sandboxDir(job.id), name);
+  if (!file) return c.json({ error: 'unknown file' }, 404);
+  return c.body(new Uint8Array(readFileSync(file)), 200, {
+    'Content-Type': contentTypeFor(name),
+    'Content-Disposition': `attachment; filename="${name.replace(/"/g, '')}"`,
+  });
 });
 
 app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {

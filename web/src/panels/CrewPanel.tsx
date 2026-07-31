@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CrewMember, MergePreview, MergeProposal } from '@agentlings/shared';
+import type { CrewMember, Job, MergePreview, MergeProposal } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { Backoffice } from './Backoffice';
 
 const DAY = 24 * 60 * 60 * 1000;
 /** After this long without finishing anything, resting is worth suggesting. */
@@ -48,7 +49,19 @@ interface Pair {
  * redundant, and the two ways someone leaves. Merging and resting keep what
  * was learnt; letting go does not, and the confirmation says so.
  */
-export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () => void }) {
+export function CrewPanel({
+  levelId,
+  jobs,
+  onOpenReview,
+  onClose,
+}: {
+  levelId: string;
+  /** The level's whole job list — the crew's work record lives in it. */
+  jobs: Job[];
+  onOpenReview: (jobId: string) => void;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<'crew' | 'backoffice'>('crew');
   const [crew, setCrew] = useState<CrewMember[] | null>(null);
   const [proposals, setProposals] = useState<MergeProposal[]>([]);
   const [dismissed, setDismissed] = useState<string[]>(() => readDismissed(levelId));
@@ -135,6 +148,7 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
     localStorage.setItem(dismissKey(levelId), JSON.stringify(next));
   };
 
+  const onCrew = tab === 'crew';
   const byId = (id: string) => (crew ?? []).find((m) => m.id === id);
   const working = (crew ?? []).filter((m) => !m.resting);
   const resting = (crew ?? []).filter((m) => m.resting);
@@ -176,7 +190,18 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
       <div className="modal crew" onClick={(e) => e.stopPropagation()}>
         <div className="m-head">
           <span className="m-title">Crew</span>
-          {crew && (
+          <span className="t-filters crew-tabs">
+            <button className={tab === 'crew' ? 'on' : ''} onClick={() => setTab('crew')}>
+              crew
+            </button>
+            <button
+              className={tab === 'backoffice' ? 'on' : ''}
+              onClick={() => setTab('backoffice')}
+            >
+              backoffice
+            </button>
+          </span>
+          {crew && tab === 'crew' && (
             <span className="dim crew-count">
               {working.length} working · {resting.length} resting
             </span>
@@ -185,9 +210,23 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
         </div>
 
         <div className="m-body">
-          {crew === null && <p className="dim">Loading…</p>}
+          {tab === 'backoffice' && (
+            <Backoffice
+              jobs={jobs}
+              crew={crew ?? []}
+              onOpenReview={(jobId) => {
+                // One overlay at a time: the review takes the screen rather
+                // than stacking a second backdrop over this one.
+                onClose();
+                onOpenReview(jobId);
+              }}
+            />
+          )}
 
-          {!merging &&
+          {tab === 'crew' && crew === null && <p className="dim">Loading…</p>}
+
+          {onCrew &&
+            !merging &&
             !picking &&
             live.map((proposal) => {
               const keep = byId(proposal.keep);
@@ -209,7 +248,7 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
               );
             })}
 
-          {picking && (
+          {onCrew && picking && (
             <div className="crew-hint">
               <p className="crew-hint-title">Merge {picking.name} with…</p>
               <p className="dim">
@@ -242,7 +281,7 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
             </div>
           )}
 
-          {merging && (
+          {onCrew && merging && (
             <div className="crew-merge">
               <p className="crew-hint-title">
                 Merge {merging.absorb.name} into {merging.keep.name}
@@ -303,7 +342,7 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
             </div>
           )}
 
-          {!merging && !picking && (
+          {onCrew && !merging && !picking && (
             <>
               {quiet.map((member) => (
                 <div key={member.id} className="crew-hint">
@@ -332,10 +371,10 @@ export function CrewPanel({ levelId, onClose }: { levelId: string; onClose: () =
             </>
           )}
 
-          {note && <p className="stat-done">{note}</p>}
-          {error && <p className="error">{error}</p>}
+          {onCrew && note && <p className="stat-done">{note}</p>}
+          {onCrew && error && <p className="error">{error}</p>}
 
-          {confirming && (
+          {onCrew && confirming && (
             <div className="crew-confirm">
               <p className="crew-confirm-title">Let {confirming.name} go?</p>
               <p className="dim">

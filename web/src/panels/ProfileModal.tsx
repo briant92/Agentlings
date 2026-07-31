@@ -30,8 +30,8 @@ export function ProfileModal({
   }, [refresh]);
 
   useEffect(() => {
-    if (portraitRef.current) renderPortrait(portraitRef.current, 3);
-  }, [profile === null]);
+    if (portraitRef.current) renderPortrait(portraitRef.current, 3, profile?.agentling.color);
+  }, [profile === null, profile?.agentling.color]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

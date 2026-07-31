@@ -1,4 +1,5 @@
 import type { Agentling, Quote, RoleInfo, WorkPlan } from '@agentlings/shared';
+import { questionsFor } from './clarify';
 import { MatchIndex, suggestSetup } from './match';
 
 /** Used by tests that are about routing rather than pricing. */
@@ -71,6 +72,9 @@ export function planWork(
     repoPath: levelRepoPath ?? '',
     quote,
     gaps: match.gaps,
+    // Priced first, then asked: whether a question is worth the user's time
+    // depends on whether the run costs anything, which only the quote knows.
+    questions: questionsFor(text, { hasRepo: !!levelRepoPath, tier: quote.tier }),
   };
 }
 
@@ -113,6 +117,7 @@ export function queuedJobSpec(args: {
   tools?: string[];
   plan: WorkPlan;
   quote: Quote;
+  clarifications?: string[];
 }): {
   title: string;
   prompt: string;
@@ -120,12 +125,14 @@ export function queuedJobSpec(args: {
   tools?: string[];
   preferredRole?: string;
   quotedUsd?: number;
+  clarifications?: string[];
 } {
   return {
     title: args.title,
     prompt: args.prompt,
     repoPath: args.repoPath,
     ...(args.tools?.length ? { tools: args.tools } : {}),
+    ...(args.clarifications?.length ? { clarifications: args.clarifications } : {}),
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never

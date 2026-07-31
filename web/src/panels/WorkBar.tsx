@@ -21,6 +21,8 @@ export function WorkBar({
 }) {
   const [text, setText] = useState('');
   const [plan, setPlan] = useState<WorkPlan | null>(null);
+  /** Answers by question id. Empty is always a valid state — Start never waits. */
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [askingRepo, setAskingRepo] = useState(false);
   const [repoPath, setRepoPath] = useState('');
   const [busy, setBusy] = useState(false);
@@ -58,10 +60,12 @@ export function WorkBar({
           text: text.trim(),
           ...(folder === undefined ? {} : { repoPath: folder }),
           ...(allowed.length > 0 ? { tools: allowed } : {}),
+          ...(Object.keys(answers).length > 0 ? { answers } : {}),
         }),
       );
       setText('');
       setPlan(null);
+      setAnswers({});
       setAskingRepo(false);
       setRepoPath('');
     } catch (err) {
@@ -139,6 +143,51 @@ export function WorkBar({
             <span className="dim">Nobody works here yet — hire someone first.</span>
           )}
         </p>
+      )}
+
+      {plan && !askingRepo && plan.questions.length > 0 && (
+        <div className="work-ask">
+          {plan.questions.map((q) => (
+            <div key={q.id} className="work-q">
+              <span className="work-q-ask">
+                {q.ask}
+                {q.hint && <span className="dim work-q-hint"> {q.hint}</span>}
+              </span>
+              <span className="work-q-answers">
+                {q.options.map((o) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    className={answers[q.id] === o.label ? 'work-chip on' : 'work-chip'}
+                    onClick={() =>
+                      setAnswers((prev) => {
+                        const next = { ...prev };
+                        // Clicking the chosen one again takes it back — every
+                        // question has to be un-answerable.
+                        if (next[q.id] === o.label) delete next[q.id];
+                        else next[q.id] = o.label;
+                        return next;
+                      })
+                    }
+                  >
+                    {o.label}
+                  </button>
+                ))}
+                {q.freeText && (
+                  <input
+                    className="work-q-text"
+                    placeholder="or say which"
+                    value={q.options.some((o) => o.label === answers[q.id]) ? '' : (answers[q.id] ?? '')}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                    }
+                  />
+                )}
+              </span>
+            </div>
+          ))}
+          <p className="dim work-hint">Optional — Start works either way.</p>
+        </div>
       )}
 
       {plan && !askingRepo && plan.gaps.length > 0 && (

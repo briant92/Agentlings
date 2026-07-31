@@ -306,6 +306,101 @@ export function reviewWarnings(text: string): string[] {
   return warnings;
 }
 
+/**
+ * A skill is a folder, not a file. SKILL.md is the instructions; the scripts
+ * and data it tells the agent to run live beside it, and fetching only the
+ * markdown installs something that reads correctly and cannot work.
+ *
+ * Bounded on purpose: a skill needs its helpers, not a whole repository.
+ */
+/**
+ * Generous, because a half-installed skill is the bug being fixed: measured
+ * against anthropics/skills, `docx` alone carries 60 files and ~500KB of XML
+ * schemas, and a 256KB budget silently left it with half its scripts. What a
+ * bound protects here is disk and sync time, not safety — whether executable
+ * helpers should arrive at all is the preview's question, and it asks it.
+ */
+export const MAX_COMPANIONS = 200;
+export const MAX_COMPANION_BYTES = 2 * 1024 * 1024;
+
+export interface Companion {
+  path: string;
+  size: number;
+}
+
+/**
+ * A path from a remote tree is untrusted input that is about to become a
+ * filename. Anything that could climb out of the folder it is written into,
+ * or that names a drive, is refused rather than sanitised — there is no
+ * legitimate skill that needs it.
+ */
+export function isSafeRelative(rel: string): boolean {
+  if (!rel || rel.startsWith('/') || rel.startsWith('\\')) return false;
+  if (/^[a-zA-Z]:/.test(rel)) return false;
+  if (rel.includes('\\')) return false; // a backslash is a separator on Windows
+  return !rel.split('/').some((seg) => seg === '' || seg === '.' || seg === '..');
+}
+
+/** The folder a skill lives in, given the path of its SKILL.md. */
+export function skillFolder(skillPath: string): string {
+  const cut = skillPath.lastIndexOf('/');
+  return cut === -1 ? '' : skillPath.slice(0, cut + 1);
+}
+
+/** Everything beside a SKILL.md that should travel with it. */
+export function companionPaths(paths: string[], skillPath: string): string[] {
+  const dir = skillFolder(skillPath);
+  // A SKILL.md at the repo root would claim the entire repository.
+  if (!dir) return [];
+  return paths.filter(
+    (p) => p !== skillPath && p.startsWith(dir) && isSafeRelative(p.slice(dir.length)),
+  );
+}
+
+/**
+ * What else would arrive with this skill, at the pinned commit. Read before
+ * installing so the user is told, and again while installing so the same
+ * commit is used both times.
+ */
+export async function listCompanions(
+  http: Http,
+  repo: string,
+  sha: string,
+  skillPath: string,
+  token?: string,
+): Promise<{ files: Companion[]; truncated: number; error?: string }> {
+  if (!skillFolder(skillPath)) return { files: [], truncated: 0 };
+  const headers: Record<string, string> = {
+    accept: 'application/vnd.github+json',
+    'user-agent': 'agentlings',
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
+  };
+  try {
+    const tree = await http(`${API}/repos/${repo}/git/trees/${sha}?recursive=1`, headers);
+    if (!tree.ok) return { files: [], truncated: 0, error: ghError(tree.status) };
+    const listed = (JSON.parse(await tree.text()) as { tree?: (TreeEntry & { size?: number })[] })
+      .tree ?? [];
+    const blobs = new Map(listed.filter((t) => t.type === 'blob').map((t) => [t.path, t.size ?? 0]));
+    const wanted = companionPaths([...blobs.keys()], skillPath);
+
+    const files: Companion[] = [];
+    let bytes = 0;
+    let truncated = 0;
+    for (const p of wanted) {
+      const size = blobs.get(p) ?? 0;
+      if (files.length >= MAX_COMPANIONS || bytes + size > MAX_COMPANION_BYTES) {
+        truncated++;
+        continue;
+      }
+      files.push({ path: p, size });
+      bytes += size;
+    }
+    return { files, truncated };
+  } catch (err) {
+    return { files: [], truncated: 0, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /** Fetches one template at the exact commit the index recorded. */
 export async function fetchTemplate(
   http: Http,

@@ -144,6 +144,30 @@ export function installSkill(skillsDir: string, text: string): SkillInfo {
   return { name, description };
 }
 
+/**
+ * Writes one file that travels with a skill, under the skill's own folder.
+ *
+ * The relative path came from a remote repository, so it is checked again
+ * here rather than trusted from the caller: this is the line where a string
+ * becomes a filename, and a resolved path outside the skill folder is
+ * refused. Two checks for one risk is the right number when the cost of
+ * being wrong is writing anywhere on disk.
+ */
+export function writeSkillFile(
+  skillsDir: string,
+  name: string,
+  relative: string,
+  text: string,
+): string {
+  const dir = path.resolve(skillsDir, name);
+  const target = path.resolve(dir, relative);
+  const inside = target === dir || target.startsWith(dir + path.sep);
+  if (!inside) throw new Error(`refused a path outside the skill folder: ${relative}`);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, text);
+  return target;
+}
+
 /** GitHub blob links become raw links so pasted URLs just work. */
 export function toRawUrl(url: string): string {
   return url

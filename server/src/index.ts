@@ -46,12 +46,14 @@ import {
   fetchTemplate,
   installState,
   libraryStatus,
+  listCompanions,
   loadIndex,
   loadManifest,
   readSources,
   recordInstall,
   reviewWarnings,
   saveIndex,
+  skillFolder,
   syncSources,
   type Http,
   type LibraryIndex,
@@ -69,7 +71,7 @@ import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
-import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
+import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
 import { Sim } from './sim';
 import { readRecipes } from './recipes';
 import { decide } from './router';
@@ -779,7 +781,28 @@ app.post('/api/library/preview', async (c) => {
   if (!entry) return c.json({ error: 'not in the library index — refresh and try again' }, 404);
   try {
     const text = await fetchTemplate(http, entry.repo, entry.sha, entry.path);
-    return c.json({ text, warnings: reviewWarnings(text) });
+    // A skill brings its folder. Say so before anything is written, or the
+    // "nothing arrives unread" rule only covers the part that is markdown.
+    const companions =
+      entry.kind === 'skill'
+        ? await listCompanions(
+            http,
+            entry.repo,
+            entry.sha,
+            entry.path,
+            process.env.GITHUB_TOKEN,
+          )
+        : { files: [], truncated: 0 };
+    const warnings = reviewWarnings(text);
+    if (companions.files.length > 0) {
+      warnings.push(
+        `brings ${companions.files.length} more file${companions.files.length === 1 ? '' : 's'} from its folder — scripts it can run`,
+      );
+    }
+    if (companions.truncated > 0) {
+      warnings.push(`${companions.truncated} further file(s) are too many or too large to install`);
+    }
+    return c.json({ text, warnings, companions: companions.files });
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
   }
@@ -796,6 +819,34 @@ app.post('/api/library/install', async (c) => {
     const text = await fetchTemplate(http, entry.repo, entry.sha, entry.path);
     const installed =
       entry.kind === 'role' ? registry.install(text) : installSkill(SKILLS_DIR, text);
+
+    // The rest of the skill's folder, read at the same commit as its
+    // SKILL.md so the instructions and the scripts cannot disagree.
+    let brought = 0;
+    let missing = 0;
+    if (entry.kind === 'skill') {
+      const { files, truncated } = await listCompanions(
+        http,
+        entry.repo,
+        entry.sha,
+        entry.path,
+        process.env.GITHUB_TOKEN,
+      );
+      missing = truncated;
+      const dir = skillFolder(entry.path);
+      for (const file of files) {
+        try {
+          const body = await fetchTemplate(http, entry.repo, entry.sha, file.path);
+          writeSkillFile(SKILLS_DIR, installed.name, file.path.slice(dir.length), body);
+          brought++;
+        } catch (err) {
+          // One unreadable helper must not undo an otherwise good install;
+          // the counts returned tell the user it came in short.
+          missing++;
+          console.warn(`[agentlings] skipped ${file.path}: ${String(err)}`);
+        }
+      }
+    }
     recordInstall(SANDBOX_ROOT, entry.kind, installed.name, {
       repo: entry.repo,
       path: entry.path,
@@ -804,7 +855,12 @@ app.post('/api/library/install', async (c) => {
       installedAt: Date.now(),
     });
     matchIndex = null; // the catalog changed; rebuild on next match
-    return c.json({ kind: entry.kind, name: installed.name }, 201);
+    // `missing` is not an error, but a skill that arrived short will fail at
+    // run time with no clue why, so it is reported rather than swallowed.
+    return c.json(
+      { kind: entry.kind, name: installed.name, files: brought, ...(missing ? { missing } : {}) },
+      201,
+    );
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
   }

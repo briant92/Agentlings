@@ -4,12 +4,15 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CatalogEntry } from '@agentlings/shared';
 import {
+  companionPaths,
   dedupe,
   globToRegExp,
   installState,
+  isSafeRelative,
   libraryStatus,
   loadManifest,
   recordInstall,
+  skillFolder,
   reviewWarnings,
   STALE_MS,
   syncSources,
@@ -271,5 +274,70 @@ describe('libraryStatus', () => {
     const index = { fetchedAt: 1000, sources: [], entries: [] };
     expect(libraryStatus(index, 1000 + STALE_MS - 1).stale).toBe(false);
     expect(libraryStatus(index, 1000 + STALE_MS + 1).stale).toBe(true);
+  });
+});
+
+// A skill is a folder. Fetching only its SKILL.md installs something that
+// reads correctly and cannot work, because the scripts it names are missing.
+describe('isSafeRelative', () => {
+  it('accepts the ordinary shapes a skill uses', () => {
+    expect(isSafeRelative('run.py')).toBe(true);
+    expect(isSafeRelative('scripts/run.py')).toBe(true);
+    expect(isSafeRelative('references/a/b.json')).toBe(true);
+  });
+
+  // These come from a remote repository and are about to become filenames.
+  it('refuses anything that could climb out of the folder', () => {
+    expect(isSafeRelative('../escape.md')).toBe(false);
+    expect(isSafeRelative('scripts/../../escape.md')).toBe(false);
+    expect(isSafeRelative('./run.py')).toBe(false);
+    expect(isSafeRelative('a//b.py')).toBe(false);
+  });
+
+  it('refuses absolute and drive-qualified paths', () => {
+    expect(isSafeRelative('/etc/passwd')).toBe(false);
+    expect(isSafeRelative('C:/Windows/system32')).toBe(false);
+    expect(isSafeRelative('\\\\server\\share')).toBe(false);
+  });
+
+  it('refuses backslashes, which separate directories on Windows', () => {
+    expect(isSafeRelative('scripts\\run.py')).toBe(false);
+  });
+
+  it('refuses nothing at all', () => {
+    expect(isSafeRelative('')).toBe(false);
+  });
+});
+
+describe('companionPaths', () => {
+  const tree = [
+    'skills/pdf/SKILL.md',
+    'skills/pdf/scripts/fill.py',
+    'skills/pdf/references/forms.md',
+    'skills/other/SKILL.md',
+    'README.md',
+  ];
+
+  it('takes the whole folder beside the SKILL.md', () => {
+    expect(companionPaths(tree, 'skills/pdf/SKILL.md')).toEqual([
+      'skills/pdf/scripts/fill.py',
+      'skills/pdf/references/forms.md',
+    ]);
+  });
+
+  it('leaves other skills and the rest of the repo alone', () => {
+    const taken = companionPaths(tree, 'skills/pdf/SKILL.md');
+    expect(taken).not.toContain('skills/other/SKILL.md');
+    expect(taken).not.toContain('README.md');
+  });
+
+  // Otherwise a template published at the repo root claims the repository.
+  it('takes nothing when the SKILL.md sits at the root', () => {
+    expect(companionPaths(tree, 'SKILL.md')).toEqual([]);
+  });
+
+  it('reports the folder a skill lives in', () => {
+    expect(skillFolder('skills/pdf/SKILL.md')).toBe('skills/pdf/');
+    expect(skillFolder('SKILL.md')).toBe('');
   });
 });

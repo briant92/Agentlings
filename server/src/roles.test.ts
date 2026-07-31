@@ -1,9 +1,16 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStore } from './memory';
-import { installSkill, listSkills, parseFrontmatter, RoleRegistry, toRawUrl } from './roles';
+import {
+  installSkill,
+  listSkills,
+  parseFrontmatter,
+  RoleRegistry,
+  toRawUrl,
+  writeSkillFile,
+} from './roles';
 
 const SCOUT = `---
 name: scout
@@ -91,6 +98,33 @@ describe('skills and memory', () => {
     memory.append('Pip', 'delivered "Test job"');
     memory.append('Pip', 'failed "Other job"');
     expect(memory.lessons('Pip')).toEqual(['delivered "Test job"', 'failed "Other job"']);
+  });
+});
+
+describe('writeSkillFile', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'agentlings-skillfiles-'));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('puts a helper inside the skill, making folders as needed', () => {
+    const written = writeSkillFile(dir, 'pdf', 'scripts/fill.py', 'print("hi")\n');
+    expect(written).toBe(path.join(dir, 'pdf', 'scripts', 'fill.py'));
+    expect(readFileSync(written, 'utf8')).toContain('print');
+  });
+
+  // The path came from a remote repo. This is where a string becomes a
+  // filename, so it is checked here even though the caller filtered already.
+  it('refuses a path that escapes the skill folder', () => {
+    expect(() => writeSkillFile(dir, 'pdf', '../../escaped.md', 'x')).toThrow(/outside/);
+    expect(existsSync(path.join(dir, 'escaped.md'))).toBe(false);
+  });
+
+  it('refuses an absolute path', () => {
+    const absolute = process.platform === 'win32' ? 'C:/temp/x.md' : '/tmp/x.md';
+    expect(() => writeSkillFile(dir, 'pdf', absolute, 'x')).toThrow(/outside/);
   });
 });
 

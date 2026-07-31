@@ -368,8 +368,24 @@ export interface JobEvent {
   detail?: string;
 }
 
+/**
+ * One tick on the wire.
+ *
+ * Agentlings move every tick; the job list changes a few times an hour, and
+ * re-sending it ten times a second to say so was 98% of the traffic — 42KB a
+ * frame at 54 jobs. So `jobs` rides along only when the queue's revision has
+ * moved, and a client keeps the last list it was given. The first frame a
+ * socket receives always carries one, so there is nothing to miss.
+ */
+export interface WorldFrame {
+  tick: number;
+  agentlings: Agentling[];
+  /** Present only when the queue changed since this client was last told. */
+  jobs?: Job[];
+}
+
 export type ServerMessage =
-  | { type: 'world'; state: WorldState }
+  | { type: 'world'; state: WorldFrame }
   | { type: 'events'; events: JobEvent[] };
 
 // World geometry, in logical units the client scales to its canvas.

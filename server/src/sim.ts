@@ -1,4 +1,4 @@
-import type { Agentling, Job, JobEvent, WorldState } from '@agentlings/shared';
+import type { Agentling, Job, JobEvent, WorldFrame, WorldState } from '@agentlings/shared';
 import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import { SessionFailure } from './executors/claude';
 import type { Executor } from './executors/executor';
@@ -94,6 +94,19 @@ export class Sim {
 
   state(): WorldState {
     return { tick: this.tick, agentlings: this.agentlings, jobs: this.queue.list() };
+  }
+
+  /**
+   * What goes on the wire for one tick. The job list is the expensive part —
+   * a copy and a sort of every job ever queued — so it is only built when the
+   * caller knows the watcher's copy is stale.
+   */
+  frame(withJobs: boolean): WorldFrame {
+    return {
+      tick: this.tick,
+      agentlings: this.agentlings,
+      ...(withJobs ? { jobs: this.queue.list() } : {}),
+    };
   }
 
   step(): void {

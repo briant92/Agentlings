@@ -88,6 +88,41 @@ describe('JobQueue', () => {
     expect(() => queue.resolve(job.id, 'promote')).toThrow(/not resolvable/);
   });
 
+  describe('revision', () => {
+    // The socket sends the job list only when this moves. If a mutation ever
+    // slips past persist(), a watcher silently stops seeing job updates --
+    // so this is really a test that persist() is still the single funnel.
+    it('moves when a job is added', () => {
+      const before = queue.revision();
+      queue.add({ title: 'Test job', prompt: 'x' });
+      expect(queue.revision()).toBeGreaterThan(before);
+    });
+
+    it('moves through the whole life of a job', () => {
+      const job = queue.add({ title: 'Test job', prompt: 'x' });
+      const seen = [queue.revision()];
+      queue.assign(job.id, 'a1');
+      seen.push(queue.revision());
+      queue.start(job.id);
+      seen.push(queue.revision());
+      queue.complete(job.id, 'done');
+      seen.push(queue.revision());
+      queue.resolve(job.id, 'promote');
+      seen.push(queue.revision());
+      // Strictly increasing: every step is something a watcher must be told.
+      expect(seen).toEqual([...seen].sort((a, b) => a - b));
+      expect(new Set(seen).size).toBe(seen.length);
+    });
+
+    it('stands still when nothing happens', () => {
+      queue.add({ title: 'Test job', prompt: 'x' });
+      const settled = queue.revision();
+      queue.list();
+      queue.nextUnassigned();
+      expect(queue.revision()).toBe(settled);
+    });
+  });
+
   describe('routing by role', () => {
     const present = new Set(['mason', 'scribe']);
 

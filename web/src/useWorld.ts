@@ -27,7 +27,15 @@ export function useWorld(levelId: string): {
       ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data as string) as ServerMessage;
         if (msg.type === 'world') {
-          setWorld(msg.state);
+          // A frame carries the job list only when it changed, so keep the
+          // last one otherwise. Consumers still see a whole WorldState and
+          // never have to know the difference.
+          const frame = msg.state;
+          setWorld((prev) => ({
+            tick: frame.tick,
+            agentlings: frame.agentlings,
+            jobs: frame.jobs ?? prev?.jobs ?? [],
+          }));
         } else if (msg.type === 'events') {
           setEvents((prev) => {
             // Replays overlap with what we already have; dedupe by id.

@@ -1188,6 +1188,9 @@ wss.on('connection', (socket, req) => {
   );
 });
 
+/** The queue revision every watcher of a level has already been sent. */
+const sentJobsRev = new Map<string, number>();
+
 setInterval(() => {
   for (const rt of levels.values()) {
     // The sim steps whether or not anyone is watching — jobs run, agentlings
@@ -1195,8 +1198,17 @@ setInterval(() => {
     // spreads and sorts every job in the level, and at 54 jobs that was 42KB
     // built and serialised ten times a second for an empty room.
     rt.sim.step();
-    if (watching(rt.meta.id)) {
-      sendToLevel(rt.meta.id, { type: 'world', state: rt.sim.state() });
+    if (!watching(rt.meta.id)) {
+      // Nobody has been told anything, so nobody is up to date. Whoever
+      // connects next gets a full state, which re-syncs them.
+      sentJobsRev.delete(rt.meta.id);
+      continue;
     }
+    // Agentlings move every tick and the job list does not. Send it only when
+    // it has actually changed; a client keeps the last one it was given.
+    const rev = rt.queue.revision();
+    const withJobs = sentJobsRev.get(rt.meta.id) !== rev;
+    sendToLevel(rt.meta.id, { type: 'world', state: rt.sim.frame(withJobs) });
+    if (withJobs) sentJobsRev.set(rt.meta.id, rev);
   }
 }, TICK_MS);

@@ -38,6 +38,7 @@ export const INTERRUPTED = 'interrupted — the app restarted while this was run
  */
 export class JobQueue {
   private jobs = new Map<string, Job>();
+  private rev = 0;
 
   constructor(private sandboxRoot: string) {
     this.restore();
@@ -98,7 +99,17 @@ export class JobQueue {
     return harvested;
   }
 
+  /**
+   * Bumped on every change to the queue, so a watcher can be told the job list
+   * again only when there is something new in it. Every mutator funnels
+   * through `persist`, which is what makes one counter here trustworthy.
+   */
+  revision(): number {
+    return this.rev;
+  }
+
   private persist(): void {
+    this.rev++;
     mkdirSync(this.sandboxRoot, { recursive: true });
     writeFileSync(jobsFile(this.sandboxRoot), `${JSON.stringify(this.list(), null, 2)}\n`);
   }

@@ -1,6 +1,7 @@
+import type { ThemeKey } from '@agentlings/shared';
 import { describe, expect, it } from 'vitest';
 import { CAVE } from './scenes/cave';
-import { HOUSEHOLD } from './scenes/household';
+import { SCENES } from './scenes';
 import { drawScene, resolveCoord, type Anchors, type Scene, type Surface } from './scene';
 import { THEMES } from './themes';
 
@@ -166,28 +167,57 @@ describe('drawing a scene', () => {
 });
 
 describe('the shipped scenes', () => {
-  it('draw the cave without a single unknown anchor or colour', () => {
-    expect(() => render(CAVE)).not.toThrow();
-    expect(render(CAVE).length).toBeGreaterThan(500);
+  const keys = Object.keys(SCENES) as ThemeKey[];
+
+  it('gives every theme a scene of its own', () => {
+    expect(keys).toEqual(expect.arrayContaining(['cave', 'household', 'chalkboard', 'marble']));
+    const names = keys.map((k) => SCENES[k].name);
+    expect(new Set(names).size).toBe(keys.length);
   });
 
-  it('draw the household room, and it is not the cave', () => {
-    expect(() => render(HOUSEHOLD, THEMES.household)).not.toThrow();
-    expect(render(HOUSEHOLD, THEMES.household)).not.toEqual(render(CAVE, THEMES.household));
+  it('draws each one without a single unknown anchor or colour', () => {
+    for (const key of keys) {
+      expect(() => render(SCENES[key], THEMES[key]), key).not.toThrow();
+      expect(render(SCENES[key], THEMES[key]).length, key).toBeGreaterThan(100);
+    }
   });
 
-  // The point of the whole exercise: a level about chores has no stalactites.
-  it('hangs nothing from the household ceiling', () => {
-    const ceiling = HOUSEHOLD.ops.find((op) => op.op === 'ceiling');
-    expect(ceiling).toBeDefined();
-    expect(ceiling && 'hang' in ceiling ? ceiling.hang : undefined).toBeUndefined();
+  // The fault this format exists to fix: four themes, one picture.
+  it('draws a different picture for every theme', () => {
+    const shapes = keys.map((key) =>
+      JSON.stringify(render(SCENES[key], THEMES.cave).map((d) => [d.kind, d.args])),
+    );
+    expect(new Set(shapes).size).toBe(keys.length);
   });
 
-  it('keeps every scene inside the world it is drawn in', () => {
-    for (const scene of [CAVE, HOUSEHOLD]) {
-      for (const d of render(scene)) {
-        for (const value of d.args) expect(Number.isFinite(value)).toBe(true);
+  it('hangs nothing from a ceiling that is indoors', () => {
+    for (const key of ['household', 'chalkboard', 'marble'] as ThemeKey[]) {
+      const ceiling = SCENES[key].ops.find((op) => op.op === 'ceiling');
+      expect(ceiling, key).toBeDefined();
+      expect(ceiling && 'hang' in ceiling ? ceiling.hang : undefined, key).toBeUndefined();
+    }
+  });
+
+  it('keeps the cave hanging things, since that is what a cave is', () => {
+    const ceiling = CAVE.ops.find((op) => op.op === 'ceiling');
+    expect(ceiling && 'hang' in ceiling ? ceiling.hang : undefined).toBeDefined();
+  });
+
+  it('produces only real numbers, whatever the seed does', () => {
+    for (const key of keys) {
+      for (const d of render(SCENES[key], THEMES[key])) {
+        for (const value of d.args) expect(Number.isFinite(value), key).toBe(true);
       }
+    }
+  });
+
+  it('reaches the floor and the walls in every scene', () => {
+    for (const key of keys) {
+      const drawn = render(SCENES[key], THEMES[key]);
+      const widest = Math.max(...drawn.map((d) => (d.kind === 'rect' ? d.args[2] : 0)));
+      expect(widest, key).toBeGreaterThanOrEqual(ANCHORS.worldWidth);
+      const lowest = Math.max(...drawn.map((d) => (d.kind === 'rect' ? d.args[1] : 0)));
+      expect(lowest, key).toBeGreaterThanOrEqual(ANCHORS.groundY);
     }
   });
 });

@@ -652,6 +652,24 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   A judgement worth recording for next time: a compile is worth more turns than
   an ordinary job. It has to write two programs that agree with each other, and
   the halves disagreeing is exactly what running out of turns produces.
+  **Recompiled, and the second attempt is good.** The retire verb plus a fresh
+  name (`write-export-repo-root-2`, the first left intact) made a second try
+  possible; what made it *succeed* was telling the compiling session how the
+  first failed. The promote response already reported the retired reason to the
+  caller, but nothing reached the session doing the work — so a second attempt
+  was an identical first try at the same price. Handed the fault and the general
+  form of it (the two halves disagreeing about the same input), the new
+  `verify.mjs` imports the shared definition from `run.mjs` so they cannot
+  disagree, *and* keeps an independent crude count so importing does not quietly
+  turn the check into a rubber stamp. That second half is the part worth
+  admiring: it answers the obvious objection to its own fix. It lists
+  `web.ts :: fetchPage` — the entry that killed attempt one — and both halves
+  exit 0. Run live: `tier: tool`, `costUsd: 0`, runs 1, failures 0.
+  The compile still ran out of turns at 10 and cost 94c, inside its $1.52
+  quote and charged nothing. So the turn shortage is real and unfixed; what
+  changed is that the work it *did* finish was better aimed. Worth noting the
+  quote floor did its job here — it guaranteed the compile all ten turns
+  rather than strangling it, which is exactly the failure it was written for.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

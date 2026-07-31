@@ -159,7 +159,21 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   so the two can never drift. Anything loaded is snapped onto DB32, which
   is a no-op for our own art and is what makes an outside pack belong.
   The palette moved to `packages/shared` — it is a product decision, not a
-  rendering one. Phase 3 (art source) still open.
+  rendering one.
+- 2026-07-30 — Visuals phase 3 (art source), resolved: **keep the built-in
+  art**. It is original, coherent and already DB32; now that phase 2 makes
+  swapping it a file copy, the decision is reversible and does not have to
+  be made under pressure. What is not deferred is the contract — a pack
+  must supply walk/work/deliver by name, uniform frame size, facing right,
+  feet on the bottom edge, transparency not a matte; `npm run art:check`
+  enforces it and `art/PACK.md` is the brief. Any resolution is allowed:
+  the world scales to frame height. A pack's licence lands in this repo,
+  so terms get recorded before installing — free rarely means
+  unconditional, and committing a pack here is redistribution.
+  Deferred: making `drawScenery` data-driven, which every external-terrain
+  route needs. It is a large rewrite whose whole point is how it looks, so
+  it waits for a Browser pane that is actually displayed — the hidden pane
+  freezes the render loop and it would be reshaped blind.
 - 2026-07-30 — M3 direction (user-friendliness for a non-expert): every
   setup step becomes a plain-language sentence. The concept matcher is
   local, deterministic and required to work with no auth and no network;

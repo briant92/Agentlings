@@ -429,7 +429,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   // run that did the work and ran out of turns writing it up leaves a patch
   // worth having — and refusing to apply it while still stamping the job
   // "promoted" is the one outcome worse than refusing outright.
-  const promotable = pending.status === 'done' || pending.status === 'failed';
+  const promotable =
+    pending.status === 'done' || pending.status === 'partial' || pending.status === 'failed';
   if (body.action === 'promote' && promotable && pending.repoPath) {
     const patch = patchFile(rt.queue.sandboxDir(pending.id));
     if (existsSync(patch)) {

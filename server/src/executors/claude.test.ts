@@ -118,6 +118,33 @@ describe('buildAppend', () => {
   it('falls back to a generic persona without a role', () => {
     expect(buildAppend(undefined, [], [], false)).toContain('general-purpose worker');
   });
+
+  // A recipe run has three turns. Spending one of them writing down the
+  // method it was just handed is the difference between finishing and not.
+  describe('a run that came from a recipe', () => {
+    const fromRecipe = () => buildAppend(undefined, [], [], true, [], 'read it, then edit it');
+
+    it('still has to report what it did', () => {
+      expect(fromRecipe()).toContain('RESULT.md');
+    });
+
+    it('is not asked to write down the method it was just given', () => {
+      expect(fromRecipe()).not.toContain('APPROACH.md');
+      expect(fromRecipe()).not.toContain('LESSON.md');
+    });
+
+    it('is handed the method to follow', () => {
+      expect(fromRecipe()).toContain('read it, then edit it');
+      expect(fromRecipe()).toContain('Do not re-explore');
+    });
+
+    it('leaves a cold job asked for all three, so the crew still learns', () => {
+      const cold = buildAppend(undefined, [], [], true);
+      expect(cold).toContain('RESULT.md');
+      expect(cold).toContain('LESSON.md');
+      expect(cold).toContain('APPROACH.md');
+    });
+  });
 });
 
 describe('parseLesson', () => {

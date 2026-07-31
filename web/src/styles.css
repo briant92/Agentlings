@@ -336,6 +336,10 @@ button.ghost {
 .ev-failed {
   color: #ff8fa3;
 }
+/* Neither finished nor failed: work to look at, not an error to explain. */
+.ev-partial {
+  color: #ffb86c;
+}
 .ev-resolved {
   color: #a8f0c0;
 }

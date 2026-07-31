@@ -206,6 +206,37 @@ function EventEntry({
         </>
       );
     case 'failed':
+      // A run that left a diff is partial, not failed — it did the work and
+      // lost only the write-up, so it gets the same review actions.
+      if (job?.status === 'partial') {
+        return (
+          <>
+            <div className="t-line">
+              {time}
+              <span className="ev-partial">◐ partial</span>
+              <span className="t-text">
+                {event.agentling} · {event.title}
+              </span>
+            </div>
+            <div className="t-card">
+              <div className="summary">
+                Ran out of turns before writing up, but the changes are ready to review.
+              </div>
+              <div className="t-changes">
+                {changeLine(job)}
+                {meterLine(job) && <span className="t-meter"> · {meterLine(job)}</span>}
+              </div>
+              <div className="actions">
+                <button onClick={() => void onResolve(event.jobId, 'promote')}>Approve</button>
+                <button onClick={() => void onResolve(event.jobId, 'discard')}>Discard</button>
+                <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
+                  See the changes
+                </button>
+              </div>
+            </div>
+          </>
+        );
+      }
       return (
         <div className="t-line">
           {time}

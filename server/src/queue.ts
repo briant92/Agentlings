@@ -147,17 +147,20 @@ export class JobQueue {
    */
   fail(jobId: string, error: string, meter?: JobMeter): void {
     const job = this.mustGet(jobId);
-    job.status = 'failed';
     job.error = error;
     if (meter) job.meter = meter;
     const patch = patchFile(this.sandboxDir(jobId));
-    if (existsSync(patch)) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
+    const hasPatch = existsSync(patch);
+    if (hasPatch) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
+    // A run that died with a diff on disk did the work and lost the write-up.
+    // Calling that a failure hides changes that are ready to review.
+    job.status = hasPatch ? 'partial' : 'failed';
     this.finish(job);
   }
 
   resolve(jobId: string, action: 'promote' | 'discard'): Job {
     const job = this.mustGet(jobId);
-    if (job.status !== 'done' && job.status !== 'failed') {
+    if (job.status !== 'done' && job.status !== 'failed' && job.status !== 'partial') {
       throw new Error(`job ${jobId} is ${job.status}, not resolvable`);
     }
     job.status = action === 'promote' ? 'promoted' : 'discarded';
@@ -175,6 +178,8 @@ export class JobQueue {
     if (job.status !== 'queued' && job.status !== 'running') {
       throw new Error(`job ${jobId} is ${job.status}, not running`);
     }
+    // Stays 'failed' even with a diff: you stopped this on purpose, and
+    // presenting it as partial delivery would argue with that.
     job.status = 'failed';
     job.error = 'cancelled';
     if (meter) job.meter = meter;

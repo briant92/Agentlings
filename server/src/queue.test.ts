@@ -204,6 +204,29 @@ describe('JobQueue', () => {
       expect(failed.meter?.turns).toBe(8);
     });
 
+    it('calls a run that left a diff partial, not failed', () => {
+      const job = queue.add({ title: 'Out of turns', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(
+        path.join(dir, 'DIFF.patch'),
+        'diff --git a/x.js b/x.js\n--- a/x.js\n+++ b/x.js\n@@ -1 +1 @@\n-a\n+b\n',
+      );
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+
+      const partial = queue.get(job.id)!;
+      expect(partial.status).toBe('partial');
+      expect(partial.changes).toBeDefined();
+      // …and is reviewable exactly like finished work.
+      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+    });
+
+    it('is still a plain failure when nothing was produced', () => {
+      const job = queue.add({ title: 'Nothing at all', prompt: 'x' });
+      queue.start(job.id);
+      queue.fail(job.id, 'session timed out');
+      expect(queue.get(job.id)!.status).toBe('failed');
+    });
+
     it('shows the diff a failed run left behind', () => {
       const job = queue.add({ title: 'Died on the last turn', prompt: 'x' });
       const dir = queue.start(job.id);

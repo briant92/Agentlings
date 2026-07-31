@@ -37,6 +37,12 @@ export type JobStatus =
   | 'queued'
   | 'running'
   | 'done'
+  /**
+   * Ran out of turns, but left a diff worth reviewing. Its own outcome, not a
+   * failure: a short-leash run trades the write-up for a much cheaper run, and
+   * calling the result a failure hides work that is ready to promote.
+   */
+  | 'partial'
   | 'failed'
   | 'promoted'
   | 'discarded';

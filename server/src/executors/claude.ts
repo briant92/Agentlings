@@ -157,8 +157,15 @@ export function buildAppend(
         ? '- The target repository is cloned at ./repo — make all code changes there.'
         : '- There is no target repository; produce your output as files in the working directory.',
       '- When finished, write RESULT.md in the working directory: outcome first, evidence second.',
-      '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
-      '- Also write APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
+      // A run that came from a recipe already has the method it would be
+      // writing down, and its short leash is spent on the work rather than
+      // on teaching the crew something it just told us.
+      ...(approach
+        ? []
+        : [
+            '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
+            '- Also write APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
+          ]),
     ].join('\n'),
   );
   if (approach) {

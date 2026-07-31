@@ -210,7 +210,15 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   outcome), and a failed run was filed as tier `session`, polluting the
   history the quote reads. Still open: a short-leash run ends `failed`
   because the RESULT/LESSON/APPROACH write-up does not fit in 3 turns, so
-  the diff is promotable but the card reads as a failure. Recipe matching
+  the diff is promotable but the card reads as a failure. **Resolved the
+  same day**: a run that dies holding a diff is now `partial`, its own
+  status, reviewable exactly like finished work — the output was good, only
+  the label was wrong. Cancelling stays `failed` even with a diff, since you
+  stopped it on purpose. Measured across eight runs the leash yields a
+  usable diff roughly two times in three, for ~$0.11 against ~$0.44; the
+  prompt trim (a recipe run is not asked to re-write the method it was just
+  handed) is principled but its effect was within noise at this sample size.
+  Recipe matching
   left strict deliberately (same-shape jobs score 0.33 against a 0.65 bar)
   — revisit with evidence, not intuition.
 - 2026-07-31 — Cost ceiling, corrected by measurement. The mid-flight

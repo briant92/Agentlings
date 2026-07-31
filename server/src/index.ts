@@ -1164,6 +1164,14 @@ function sendToLevel(levelId: string, msg: ServerMessage): void {
   }
 }
 
+/** Whether anyone is actually looking at this level. */
+function watching(levelId: string): boolean {
+  for (const [socket, subscribed] of subscriptions) {
+    if (subscribed === levelId && socket.readyState === WebSocket.OPEN) return true;
+  }
+  return false;
+}
+
 wss.on('connection', (socket, req) => {
   const url = new URL(req.url ?? '/ws', 'http://localhost');
   const levelId = url.searchParams.get('level') ?? '';
@@ -1182,7 +1190,13 @@ wss.on('connection', (socket, req) => {
 
 setInterval(() => {
   for (const rt of levels.values()) {
+    // The sim steps whether or not anyone is watching — jobs run, agentlings
+    // walk, work finishes. What is skipped is *describing* it: `sim.state()`
+    // spreads and sorts every job in the level, and at 54 jobs that was 42KB
+    // built and serialised ten times a second for an empty room.
     rt.sim.step();
-    sendToLevel(rt.meta.id, { type: 'world', state: rt.sim.state() });
+    if (watching(rt.meta.id)) {
+      sendToLevel(rt.meta.id, { type: 'world', state: rt.sim.state() });
+    }
   }
 }, TICK_MS);

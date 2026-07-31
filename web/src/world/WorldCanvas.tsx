@@ -4,6 +4,7 @@ import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
 import { loadAtlasTextures } from './atlas';
 import { DB } from './palette';
+import { departedIds } from './roster';
 import { type Anchors, drawScene, pixiSurface } from './scene';
 import { SCENES } from './scenes';
 import { buildAgentTextures, SPRITE_HEIGHT, SPRITE_SCALE, type AgentAnim } from './sprites';
@@ -317,6 +318,29 @@ export function WorldCanvas({
               labels.set(a.id, label);
             }
             label.position.set(rx, GROUND_Y - 48);
+          }
+
+          // An agentling that left takes its sprite with it. The maps are
+          // filled lazily above and used to be filled only — so a merged one
+          // stood in the world until a reload, still clickable, still bound to
+          // an id the server now 404s. Guarded on the count so an ordinary
+          // frame does no work at all.
+          if (sprites.size !== w.agentlings.length) {
+            for (const id of departedIds(sprites.keys(), w.agentlings)) {
+              const sprite = sprites.get(id);
+              if (sprite) {
+                spriteLayer.removeChild(sprite);
+                sprite.destroy();
+              }
+              const label = labels.get(id);
+              if (label) {
+                labelLayer.removeChild(label);
+                label.destroy();
+              }
+              sprites.delete(id);
+              labels.delete(id);
+              motion.delete(id);
+            }
           }
 
           // Particles: integrate, retire, and draw as hard pixel squares.

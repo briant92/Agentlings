@@ -70,6 +70,8 @@ export interface JobMeter {
   routed?: boolean;
   /** True when a recipe let it run as a single call instead of a loop. */
   oneShot?: boolean;
+  /** Which recipe it was a repeat of, when `oneShot`. Reaches the ledger. */
+  recipeKey?: string;
   /** True when a compiled tool did the whole job, with no model involved. */
   tooled?: boolean;
   /**

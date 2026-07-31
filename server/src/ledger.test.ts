@@ -99,6 +99,42 @@ describe('history', () => {
     expect(history(entries, 'scribe', 'session')).toEqual({ samples: 1, mean: 0.2, max: 0.2 });
     expect(history(entries, 'scribe', 'routed').mean).toBe(0);
   });
+
+  // The defect this closes: a one-shot's quote asks for a recipe key, and the
+  // ledger only ever wrote roles, so it matched nothing on all 20 real rows
+  // and said "first time doing this" forever.
+  it('looks a one-shot up by its recipe, not by who ran it', () => {
+    const entries = [
+      entry({ jobClass: 'worker', recipeKey: 'tidy the notes', tier: 'oneshot', costUsd: 0.1 }),
+      entry({ jobClass: 'scribe', recipeKey: 'tidy the notes', tier: 'oneshot', costUsd: 0.2 }),
+      entry({ jobClass: 'worker', recipeKey: 'something else', tier: 'oneshot', costUsd: 9 }),
+    ];
+    // Two runs of the same job, by different roles, are the same history…
+    expect(history(entries, 'tidy the notes', 'oneshot').samples).toBe(2);
+    expect(history(entries, 'tidy the notes', 'oneshot').mean).toBeCloseTo(0.15);
+    // …and the role is no longer the class, so it finds nothing under it.
+    expect(history(entries, 'worker', 'oneshot').samples).toBe(0);
+  });
+
+  // A session is quoted by role: it has no recipe, and the role is the finest
+  // class there is. Stamping one would take the row out of its role's history.
+  it('still looks a session up by role', () => {
+    const entries = [
+      entry({ jobClass: 'scribe', tier: 'session', costUsd: 0.4 }),
+      entry({ jobClass: 'scribe', recipeKey: 'a repeat', tier: 'oneshot', costUsd: 0.1 }),
+    ];
+    expect(history(entries, 'scribe', 'session').samples).toBe(1);
+  });
+
+  // The rate is priced by the role that ran it, deliberately unchanged: what a
+  // turn costs is set by the role's prompt, tools and cap, not by the recipe.
+  it('keeps pricing a turn by the role even on a one-shot row', () => {
+    const entries = [
+      entry({ jobClass: 'worker', recipeKey: 'tidy the notes', tier: 'oneshot', costUsd: 0.2, turnsAllowed: 4 }),
+    ];
+    expect(costPerTurn(entries, 'worker', 'oneshot').samples).toBe(1);
+    expect(costPerTurn(entries, 'tidy the notes', 'oneshot').samples).toBe(0);
+  });
 });
 
 describe('persistence', () => {

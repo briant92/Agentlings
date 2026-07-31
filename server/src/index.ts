@@ -232,6 +232,10 @@ function makeLevel(dir: string): LevelRuntime {
         // specialist would build a history for work that never happened, and
         // rob the role that really did it of its own.
         jobClass: agentling.role,
+        // Which recipe this repeated, when it repeated one. Priced per turn by
+        // the role above; quoted by this. A one-shot's quote asks "have we done
+        // this job before", and the role cannot answer that.
+        ...(job.meter?.recipeKey ? { recipeKey: job.meter.recipeKey } : {}),
         tier: job.meter?.tooled
           ? 'tool'
           : job.meter?.routed

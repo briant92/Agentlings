@@ -509,6 +509,7 @@ export class ClaudeAgentExecutor implements Executor {
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
+        ...(hint?.oneShot && hint.recipeKey ? { recipeKey: hint.recipeKey } : {}),
         ...(salvage.closeOutUsd ? { closeOutUsd: salvage.closeOutUsd } : {}),
       };
       if (err instanceof SessionFailure) {
@@ -549,6 +550,7 @@ export class ClaudeAgentExecutor implements Executor {
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
+        ...(hint?.oneShot && hint.recipeKey ? { recipeKey: hint.recipeKey } : {}),
       },
     };
   }

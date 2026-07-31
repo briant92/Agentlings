@@ -227,6 +227,9 @@ describe('RoutedExecutor', () => {
       expect(session.runs[0].hint).toEqual({
         oneShot: true,
         approach: 'read the module, then write the test beside it',
+        // Carried so the ledger can file the run under the recipe it repeated,
+        // which is what a one-shot's quote is looked up by.
+        recipeKey: 'add a test for formatusd',
       });
       expect(progress[0]).toContain('less exploring');
     });

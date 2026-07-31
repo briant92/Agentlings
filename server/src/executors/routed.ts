@@ -183,7 +183,7 @@ export class RoutedExecutor implements Executor {
 
     let hint: RunHint | undefined;
     if (decision.kind === 'oneshot') {
-      hint = { oneShot: true, approach: decision.approach };
+      hint = { oneShot: true, approach: decision.approach, recipeKey: decision.recipeKey };
       onProgress?.(`done before — running it with less exploring (${decision.reason})`);
     } else if (decision.kind === 'agent' && decision.approach) {
       hint = { approach: decision.approach };

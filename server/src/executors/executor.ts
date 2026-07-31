@@ -16,6 +16,14 @@ export interface RunHint {
   oneShot?: boolean;
   /** What worked last time, handed to the session so it need not rediscover it. */
   approach?: string;
+  /**
+   * The recipe this run is a repeat of, carried through to the ledger so the
+   * quote can price it against its own history. Set only for a one-shot: it is
+   * the tier whose quote is keyed by recipe, and marking a full session with it
+   * would take that row out of its role's history, which is what prices a
+   * session.
+   */
+  recipeKey?: string;
 }
 
 /**

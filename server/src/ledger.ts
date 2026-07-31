@@ -21,8 +21,24 @@ export interface LedgerEntry {
   at: number;
   jobId: string;
   levelId: string;
-  /** Stable key for "this kind of job" — a recipe key, or the role. */
+  /**
+   * The role that actually ran the work. What a *turn* is priced by, since
+   * the prompt, tools and cap that decide a turn's cost are the role's.
+   *
+   * Was documented as "a recipe key, or the role" and has only ever held the
+   * role — the two diverged when this was fixed to record the runner rather
+   * than the role the matcher named. `recipeKey` below closes the gap that
+   * left.
+   */
   jobClass: string;
+  /**
+   * The recipe a one-shot was a repeat of. What a *quote* is looked up by on
+   * that tier, because "done this 7 times before" means this job, not this
+   * role.
+   *
+   * Absent on every other tier, where the role is the finest class there is.
+   */
+  recipeKey?: string;
   tier: Tier;
   outcome: 'done' | 'failed';
   /** What it actually cost us, from the SDK. */
@@ -178,6 +194,23 @@ export function costPerTurn(
 }
 
 /**
+ * The class a row is *quoted* under: the recipe when there is one, else the
+ * role. Deliberately not the class it is *priced per turn* under, which is
+ * always the role — a turn costs what the role's prompt and tools make it
+ * cost, while a quote answers "have we done this job before".
+ *
+ * The two were one field, and a quote for a one-shot looked up a recipe key
+ * the ledger only ever wrote roles into. Measured on 20 one-shot rows: not one
+ * matched, so every one-shot quote fell through to the tier average and said
+ * "first time doing this" forever — a worker one-shot quoted 56c against its
+ * own 22c history. A quote that cannot find its history cannot tighten, which
+ * was the whole promise of pricing from a ledger.
+ */
+function quoteClass(entry: LedgerEntry): string {
+  return entry.recipeKey ?? entry.jobClass;
+}
+
+/**
  * What this kind of job has cost before, on this tier — the basis of a quote.
  *
  * Every run that spent money counts, not only the ones that landed. Measured
@@ -202,7 +235,7 @@ export function history(
   tier?: Tier,
 ): { samples: number; mean: number; max: number } {
   const costs = entries
-    .filter((e) => e.jobClass === jobClass && e.costUsd > 0 && (tier ? e.tier === tier : true))
+    .filter((e) => quoteClass(e) === jobClass && e.costUsd > 0 && (tier ? e.tier === tier : true))
     .map((e) => e.costUsd);
   if (costs.length === 0) return { samples: 0, mean: 0, max: 0 };
   const sum = costs.reduce((a, b) => a + b, 0);

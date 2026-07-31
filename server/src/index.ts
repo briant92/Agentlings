@@ -582,7 +582,7 @@ function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, 
         : 'session';
   const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
   return quoteFor(tier, jobClass, readLedger(SANDBOX_ROOT), {
-    defaultCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
   });
 }
 

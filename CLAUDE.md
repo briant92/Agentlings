@@ -313,6 +313,23 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   without it the fix would have been correct and inert. The quote is
   deliberately *not* segmented the same way: it stays the promise to the user,
   and the budget is how the promise is kept.
+  **The second resolved the same day too.** `DEFAULT_CEILING_USD` was one
+  constant doing two jobs: what a quote says in ignorance, and the most a
+  quote may ever say. Conflating them made the quote promise *less* than the
+  history it was reading — it held evidence of a 59c run and promised 50c, so
+  it broke a promise it had the evidence to keep. Split into
+  `DEFAULT_CEILING_USD` (ignorance, still 50c) and `MAX_CEILING_USD` (runaways
+  only, $2), with `AGENTLINGS_MAX_COST_USD` now an absolute cap rather than a
+  default. Scribe's ceiling becomes 71c and that run is covered. The
+  consequence is worth stating plainly rather than discovering later: an
+  honest ceiling **un-binds** the turn budget, because the budget was only
+  biting while the quote was artificially low — 8 turns at 7.5c is 60c, inside
+  71c. That is not one fix undoing the other; they are alternative routes to
+  the same guarantee. Make the promise true, or make the spending fit a
+  smaller promise — both prevent a breach, only the second shortens the run.
+  The budget stays live as the backstop and fires the moment a ceiling is
+  genuinely tight: measured across caps, $0.40 gives 5 turns and $0.25 gives
+  3, every one of them inside its quote.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

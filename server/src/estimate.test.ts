@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CEILING_USD, ONESHOT_CEILING_USD, formatUsd, quoteFor } from './estimate';
+import {
+  DEFAULT_CEILING_USD,
+  MAX_CEILING_USD,
+  ONESHOT_CEILING_USD,
+  formatUsd,
+  quoteFor,
+} from './estimate';
 import type { LedgerEntry, Tier } from './ledger';
 
 /** A done session entry; override only what the case is about. */
@@ -66,19 +72,28 @@ describe('quoteFor, with history for this job', () => {
 
   it('lets one expensive run set the ceiling instead of the average', () => {
     // mean 0.275 doubled is 0.55, but the 0.5 outlier plus 20% is more.
-    const quote = quoteFor('session', 'tidy', costing(0.05, 0.5), { defaultCeilingUsd: 2 });
+    const quote = quoteFor('session', 'tidy', costing(0.05, 0.5), { maxCeilingUsd: 2 });
     expect(quote.ceilingUsd).toBeCloseTo(0.6);
   });
 
-  it('never quotes above the default ceiling, however costly the history', () => {
-    const quote = quoteFor('session', 'tidy', costing(1));
-    expect(quote.ceilingUsd).toBe(DEFAULT_CEILING_USD);
-    expect(quote.expectedUsd).toBe(1); // honest about the average it cannot promise
+  it('lets measured history quote above the cautious default', () => {
+    // 50c is what ignorance quotes. A job measured at 60c is not ignorance,
+    // and clamping it back to 50c is how a quote comes to promise less than
+    // the evidence it is holding — which is how a real one got breached.
+    const quote = quoteFor('session', 'tidy', costing(0.6));
+    expect(quote.ceilingUsd).toBeCloseTo(1.2);
+    expect(quote.ceilingUsd).toBeGreaterThan(DEFAULT_CEILING_USD);
+  });
+
+  it('stops at the runaway cap however costly the history', () => {
+    const quote = quoteFor('session', 'tidy', costing(5));
+    expect(quote.ceilingUsd).toBe(MAX_CEILING_USD);
+    expect(quote.expectedUsd).toBe(5); // honest about the average it will not promise
   });
 
   it('never quotes zero, even asked for a ceiling of zero', () => {
     // A ceiling of zero would stop the session before its first turn.
-    expect(quoteFor('session', 'tidy', costing(0.2), { defaultCeilingUsd: 0 }).ceilingUsd).toBe(
+    expect(quoteFor('session', 'tidy', costing(0.2), { maxCeilingUsd: 0 }).ceilingUsd).toBe(
       0.01,
     );
   });
@@ -149,7 +164,7 @@ describe('quoteFor, with nothing to go on', () => {
 
   it('takes the stingier of the tier floor and the caller ceiling', () => {
     for (const tier of ['oneshot', 'session'] satisfies Tier[]) {
-      expect(quoteFor(tier, 'paint', [], { defaultCeilingUsd: 0.05 }).ceilingUsd).toBe(0.05);
+      expect(quoteFor(tier, 'paint', [], { maxCeilingUsd: 0.05 }).ceilingUsd).toBe(0.05);
     }
   });
 });

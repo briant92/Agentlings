@@ -180,7 +180,7 @@ describe('quoteFor', () => {
 
   it('never quotes above the configured cap', () => {
     const entries = [entry({ jobClass: 'pricey', costUsd: 50 })];
-    const quote = quoteFor('session', 'pricey', entries, { defaultCeilingUsd: 1 });
+    const quote = quoteFor('session', 'pricey', entries, { maxCeilingUsd: 1 });
     expect(quote.ceilingUsd).toBe(1);
   });
 });

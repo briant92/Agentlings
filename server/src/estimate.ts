@@ -15,6 +15,23 @@ import { history, type LedgerEntry, type Tier } from './ledger';
 export const DEFAULT_CEILING_USD = 0.5;
 /** A one-shot is one call; it cannot run away the way a loop can. */
 export const ONESHOT_CEILING_USD = 0.1;
+/**
+ * The most this app will quote for one job, whatever its history says.
+ *
+ * A separate number from DEFAULT_CEILING_USD, and the two were the same one
+ * until it caused a breach. What ignorance quotes and what knowledge is
+ * allowed to say are different questions: 50c is a fair guess about a job
+ * nobody has run, and a terrible bound on a job measured at 59c. Clamping the
+ * learned ceiling to the cautious default made the quote promise less than
+ * the history it was reading — so it broke its promise while holding the
+ * evidence that it would.
+ *
+ * This one exists for runaways only: a single freak run would otherwise set
+ * every later quote for that class. Observed max is 59c and learned ceilings
+ * sit near 71c, so $2 clips nothing real. `AGENTLINGS_MAX_COST_USD` overrides
+ * it, and lowering it is how you get a hard spending limit back.
+ */
+export const MAX_CEILING_USD = 2;
 
 export function formatUsd(amount: number): string {
   if (amount === 0) return 'free';
@@ -32,9 +49,9 @@ export function quoteFor(
   tier: Tier,
   jobClass: string,
   ledger: LedgerEntry[],
-  options: { defaultCeilingUsd?: number } = {},
+  options: { maxCeilingUsd?: number } = {},
 ): Quote {
-  const fallbackCeiling = options.defaultCeilingUsd ?? DEFAULT_CEILING_USD;
+  const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
 
   if (tier === 'routed') {
     return {
@@ -47,12 +64,13 @@ export function quoteFor(
     };
   }
 
-  const floor = tier === 'oneshot' ? ONESHOT_CEILING_USD : fallbackCeiling;
   const own = history(ledger, jobClass, tier);
   if (own.samples > 0 && own.max > 0) {
-    // Never quote below the tier's floor: a ceiling of zero would kill the
-    // session instantly, which is worse than quoting generously.
-    const ceiling = Math.max(Math.min(ceilingFrom(own.mean, own.max), fallbackCeiling), 0.01);
+    // Bounded by the runaway cap, not by the cautious default: once there is
+    // history, the history is the better evidence and the quote should say so.
+    // Never zero either — a ceiling of zero would kill the session instantly,
+    // which is worse than quoting generously.
+    const ceiling = Math.max(Math.min(ceilingFrom(own.mean, own.max), cap), 0.01);
     return {
       tier,
       ceilingUsd: ceiling,
@@ -71,7 +89,7 @@ export function quoteFor(
   if (sameTier.length > 0) {
     const mean = sameTier.reduce((sum, e) => sum + e.costUsd, 0) / sameTier.length;
     const max = Math.max(...sameTier.map((e) => e.costUsd));
-    const ceiling = Math.min(ceilingFrom(mean, max), fallbackCeiling);
+    const ceiling = Math.min(ceilingFrom(mean, max), cap);
     return {
       tier,
       ceilingUsd: ceiling,
@@ -82,7 +100,12 @@ export function quoteFor(
     };
   }
 
-  const unseenCeiling = Math.min(floor, fallbackCeiling);
+  // Nothing at all to go on, so this is where the cautious default belongs —
+  // and the cap still applies, since lowering it must tighten every quote.
+  const unseenCeiling = Math.min(
+    tier === 'oneshot' ? ONESHOT_CEILING_USD : DEFAULT_CEILING_USD,
+    cap,
+  );
   return {
     tier,
     ceilingUsd: unseenCeiling,

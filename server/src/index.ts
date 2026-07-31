@@ -21,7 +21,7 @@ import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { ClaudeAgentExecutor } from './executors/claude';
+import { ClaudeAgentExecutor, RECIPE_TURNS, turnsFor } from './executors/claude';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -60,6 +60,7 @@ import {
 } from './library';
 import {
   append as appendLedger,
+  costPerTurn,
   priceFor,
   readLedger,
   totals,
@@ -626,8 +627,16 @@ function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, 
           ? 'oneshot'
           : 'session';
   const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
-  return quoteFor(tier, jobClass, readLedger(SANDBOX_ROOT), {
+  const ledger = readLedger(SANDBOX_ROOT);
+  // What this run is about to be allowed to spend, worked out exactly as the
+  // executor will: the leash it will be given, priced at what a turn of this
+  // role's work in this shape has really cost. The quote may not come in under
+  // that, or it would be quoting for turns it has already decided to grant.
+  const leash = decision.kind === 'oneshot' ? RECIPE_TURNS : turnsFor(role ? registry.get(role) : undefined);
+  const rate = costPerTurn(ledger, role ?? '', 'session', Boolean(rt.meta.repoPath));
+  return quoteFor(tier, jobClass, ledger, {
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),
   });
 }
 

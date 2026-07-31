@@ -147,6 +147,47 @@ describe('quoteFor, with history for the tier but not the job', () => {
   });
 });
 
+describe('quoteFor, against what the run may actually spend', () => {
+  // The failure this exists for: the recipe tier's history was thirteen runs
+  // that died on a three-turn leash, so it quoted 22c, which funded three
+  // turns, which is the leash that was failing. A tier calibrated on its own
+  // failures cannot escape them unless the quote can outvote the history.
+  it('never quotes below the turns it is about to grant', () => {
+    const cheapHistory = costing(0.1, 0.11, 0.1);
+    expect(quoteFor('oneshot', 'tidy', cheapHistory).ceilingUsd).toBeLessThan(0.35);
+    expect(
+      quoteFor('oneshot', 'tidy', cheapHistory, { floorUsd: 0.354 }).ceilingUsd,
+    ).toBeCloseTo(0.354);
+  });
+
+  it('leaves a quote alone when history already covers the leash', () => {
+    const quote = quoteFor('session', 'tidy', costing(0.5), { floorUsd: 0.2 });
+    expect(quote.ceilingUsd).toBeCloseTo(1); // twice the mean, not the floor
+  });
+
+  it('applies the floor to work it has never seen either', () => {
+    expect(quoteFor('session', 'brand-new', [], { floorUsd: 0.9 }).ceilingUsd).toBeCloseTo(0.9);
+  });
+
+  // A leash nobody can afford should shorten, not overturn the ceiling.
+  it('still lets the runaway cap win over the floor', () => {
+    const quote = quoteFor('session', 'tidy', costing(0.1), {
+      floorUsd: 5,
+      maxCeilingUsd: 1,
+    });
+    expect(quote.ceilingUsd).toBe(1);
+  });
+
+  it('never lets a floor of nothing quote zero', () => {
+    expect(quoteFor('session', 'tidy', costing(0.2), { floorUsd: 0 }).ceilingUsd).toBeGreaterThan(0);
+  });
+
+  it('keeps free work free, whatever the floor says', () => {
+    expect(quoteFor('routed', 'tidy', costing(0.4), { floorUsd: 2 }).ceilingUsd).toBe(0);
+    expect(quoteFor('tool', 'tidy', costing(0.4), { floorUsd: 2 }).ceilingUsd).toBe(0);
+  });
+});
+
 describe('quoteFor, with nothing to go on', () => {
   it('quotes a one-shot low, because one call cannot run away', () => {
     expect(quoteFor('oneshot', 'paint', []).ceilingUsd).toBe(ONESHOT_CEILING_USD);

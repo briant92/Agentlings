@@ -49,9 +49,25 @@ export function quoteFor(
   tier: Tier,
   jobClass: string,
   ledger: LedgerEntry[],
-  options: { maxCeilingUsd?: number } = {},
+  options: { maxCeilingUsd?: number; floorUsd?: number } = {},
 ): Quote {
   const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
+  const floor = options.floorUsd ?? 0;
+  /**
+   * Bounded above by the runaway cap and below by what the run is about to be
+   * allowed to spend. The floor exists because a quote lower than the turns it
+   * has already decided to grant is incoherent — it quotes for work it will not
+   * permit, and the turn budget then hands back the smaller number. Measured:
+   * the recipe tier's own history was thirteen runs that died on a three-turn
+   * leash, so it quoted 22c, which funded three turns, which is the leash that
+   * was failing. A tier calibrated on its own failures cannot escape them.
+   *
+   * The absolute cap still wins — a leash nobody can afford should shorten,
+   * not overturn the ceiling — and 0.01 still wins over both, since a quote of
+   * zero kills a session before its first turn.
+   */
+  const bounded = (usd: number): number =>
+    Math.max(Math.min(Math.max(usd, floor), cap), 0.01);
 
   if (tier === 'routed' || tier === 'tool') {
     return {
@@ -71,9 +87,7 @@ export function quoteFor(
   if (own.samples > 0 && own.max > 0) {
     // Bounded by the runaway cap, not by the cautious default: once there is
     // history, the history is the better evidence and the quote should say so.
-    // Never zero either — a ceiling of zero would kill the session instantly,
-    // which is worse than quoting generously.
-    const ceiling = Math.max(Math.min(ceilingFrom(own.mean, own.max), cap), 0.01);
+    const ceiling = bounded(ceilingFrom(own.mean, own.max));
     return {
       tier,
       ceilingUsd: ceiling,
@@ -92,7 +106,7 @@ export function quoteFor(
   if (sameTier.length > 0) {
     const mean = sameTier.reduce((sum, e) => sum + e.costUsd, 0) / sameTier.length;
     const max = Math.max(...sameTier.map((e) => e.costUsd));
-    const ceiling = Math.min(ceilingFrom(mean, max), cap);
+    const ceiling = bounded(ceilingFrom(mean, max));
     return {
       tier,
       ceilingUsd: ceiling,
@@ -105,10 +119,7 @@ export function quoteFor(
 
   // Nothing at all to go on, so this is where the cautious default belongs —
   // and the cap still applies, since lowering it must tighten every quote.
-  const unseenCeiling = Math.min(
-    tier === 'oneshot' ? ONESHOT_CEILING_USD : DEFAULT_CEILING_USD,
-    cap,
-  );
+  const unseenCeiling = bounded(tier === 'oneshot' ? ONESHOT_CEILING_USD : DEFAULT_CEILING_USD);
   return {
     tier,
     ceilingUsd: unseenCeiling,

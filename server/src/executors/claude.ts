@@ -57,7 +57,7 @@ const TURN_CEILING = 40;
  * At 5 it still explores less than a cold run — those finished at 4 and 7
  * turns with no method handed to them — and it can now actually land.
  */
-const RECIPE_TURNS = 5;
+export const RECIPE_TURNS = 5;
 /**
  * The write-up runs on its own, after the work, on the cheapest model going.
  *

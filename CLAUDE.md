@@ -366,7 +366,17 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   nobody is ever over-billed — `priceFor` capped the charge and this run, like
   every failure, was absorbed at zero. The 391-line diff also did not work
   (24 of 25 tests passing), the first of the three measurement runs to produce
-  something unpromotable, so it was discarded. Note also that three of the
+  something unpromotable, so it was discarded. **The failing case was the
+  test's fault, not the code's** — worth recording because it is the failure
+  mode to expect from generated tests. It ran one prompt twice and expected
+  the second run to update the recipe, but a first run with no repository and
+  no web stores an *answer*, so the repeat is replayed by the router and no
+  second session ever happens (verified: `decide()` returns `answer` without a
+  repo and `oneshot` with one). The same file asserts that answer is stored,
+  three cases earlier — it contradicted itself. `rememberRecipe` updates in
+  place correctly and recipes.test.ts already covers it. The reachable version
+  of that test needs a `repoPath`, which is the one shape where an exact repeat
+  really does run again. Note also that three of the
   last four runs ended `partial` on max_turns: the role cap of 8 is now the
   binding constraint on whether work finishes, not the money.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →

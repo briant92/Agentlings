@@ -379,6 +379,31 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   really does run again. Note also that three of the
   last four runs ended `partial` on max_turns: the role cap of 8 is now the
   binding constraint on whether work finishes, not the money.
+- 2026-07-31 — The crew was not learning, and it is the same bug a third
+  time. Asked whether a successful job is banked permanently, the honest
+  answer came from the data: 36 jobs, **1** of them free, 8 recipes stored and
+  **every one with `hits: 0`** — not one had ever been reused. Two causes. The
+  match bar is 0.65 while real same-shape jobs score 0.33, which was left
+  strict deliberately. The other was a defect: `RoutedExecutor` credited and
+  remembered only after `fallback.run` *returned*, so a session that threw
+  skipped the lot — and **all 13 recipe runs failed**, because three turns
+  usually go on the work rather than the write-up. The tier built to be cheap
+  was the one tier that could never teach anything. `SessionFailure` already
+  carried the approach for precisely this ("so the caller can still bank the
+  cost, the lesson and the diff"); this caller dropped it. Now both happen
+  whether or not the run finished. One thing deliberately does **not**: the
+  *answer* is still only ever taken from a run that returned, because an
+  answer is replayed to the user word for word and a failed run's summary is
+  its error message — banking one would serve "ran out of turns" as the answer
+  for ever. Worth naming the pattern, since this is its third appearance after
+  the quote history and the ledger's job class: **anything that learns only
+  from clean successes goes blind exactly where the short-leash tier puts most
+  of its runs.** Look for that shape before looking for anything else.
+  Still open and now the interesting question: recipes make repeat work
+  *cheaper*, never free, because notes still have to be read by a paid model.
+  The only route to actually free is the crew turning a repeated job into a
+  script the router can run in code — a fourth shortcut tier that does not
+  exist yet.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

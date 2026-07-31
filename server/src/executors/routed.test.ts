@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Agentling, Job } from '@agentlings/shared';
 import { readRecipes, writeRecipes, type Recipe } from '../recipes';
+import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 import { RoutedExecutor } from './routed';
 
@@ -68,6 +69,18 @@ class FakeSession implements Executor {
     if (this.cancelResult === null) throw new Error('this fake has no cancel');
     this.cancelled.push(jobId);
     return this.cancelResult;
+  }
+}
+
+/** A session that spent its turns and died still holding what it wrote down. */
+class DyingSession implements Executor {
+  runs: Job[] = [];
+
+  constructor(private failure: SessionFailure) {}
+
+  async run(j: Job): Promise<ExecutorResult> {
+    this.runs.push(j);
+    throw this.failure;
   }
 }
 
@@ -301,6 +314,75 @@ describe('RoutedExecutor', () => {
       const recipes = readRecipes(levelDir);
       expect(recipes).toHaveLength(1);
       expect(recipes[0].approach).toBe('the better way');
+    });
+  });
+
+  // A three-turn recipe run usually spends its last turn on the work rather
+  // than the write-up, so dying is its normal ending, not an edge case: all 13
+  // real recipe runs ended this way. If the crew only learns from clean
+  // successes it never learns from the tier built to be cheap.
+  describe('learning from a session that died', () => {
+    function stored(): void {
+      writeRecipes(levelDir, [
+        {
+          key: 'add a test for formatusd',
+          terms: ['add', 'test', 'formatusd'],
+          role: 'worker',
+          approach: 'the old way',
+          hits: 0,
+          learnedAt: 1,
+        },
+      ]);
+    }
+
+    const dying = (approach?: string) =>
+      new DyingSession(new SessionFailure('ran out of turns', {}, undefined, approach));
+
+    it('still credits the recipe it used', async () => {
+      stored();
+      const session = dying();
+      await expect(
+        run(build(session), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow('ran out of turns');
+
+      expect(session.runs).toHaveLength(1);
+      expect(readRecipes(levelDir)[0].hits).toBe(1);
+    });
+
+    it('writes down how it worked, from the notes it did manage', async () => {
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'Name three colours' }), PIP),
+      ).rejects.toThrow();
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.approach).toBe('the way that worked');
+    });
+
+    it('improves the recipe it was handed rather than leaving it stale', async () => {
+      stored();
+      await expect(
+        run(build(dying('the better way')), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow();
+
+      const recipes = readRecipes(levelDir);
+      expect(recipes).toHaveLength(1);
+      expect(recipes[0].approach).toBe('the better way');
+    });
+
+    // The sharp edge. An answer is replayed to the user word for word, and a
+    // failed run's summary is its error message — banking one would serve
+    // "ran out of turns" as the answer to this question for ever.
+    it('never banks an answer from a run that failed', async () => {
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'Name three colours' }), PIP),
+      ).rejects.toThrow();
+
+      expect(readRecipes(levelDir)[0].answer).toBeUndefined();
+    });
+
+    it('records nothing when it died before writing anything down', async () => {
+      await expect(run(build(dying()), job(), PIP)).rejects.toThrow();
+      expect(existsSync(path.join(levelDir, 'recipes.json'))).toBe(false);
     });
   });
 

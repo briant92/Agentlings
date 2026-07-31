@@ -4,6 +4,7 @@ import type { Agentling, Job } from '@agentlings/shared';
 import { creditRecipe, readRecipes, rememberRecipe, writeRecipes } from '../recipes';
 import { decide } from '../router';
 import { fetchPage } from '../web';
+import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
 /**
@@ -84,22 +85,39 @@ export class RoutedExecutor implements Executor {
       onProgress?.(`done before — running it with less exploring (${decision.reason})`);
     }
 
-    const result = await this.fallback.run(job, sandboxDir, onProgress, agentling, hint);
+    let result: ExecutorResult | undefined;
+    let failure: unknown;
+    try {
+      result = await this.fallback.run(job, sandboxDir, onProgress, agentling, hint);
+    } catch (err) {
+      failure = err;
+    }
+
+    // Bank what the run earned whether or not it finished. A run that died
+    // still used its recipe, and SessionFailure carries the approach it wrote
+    // down before it ran out — the contract already says the caller should
+    // bank that, and this caller used to drop it on the floor. Measured: all
+    // 13 recipe runs on this machine failed, so in 36 jobs no recipe was ever
+    // credited or improved. Learning only from clean successes goes blind
+    // exactly where a short leash puts most of its runs.
+    const approach =
+      result?.approach ?? (failure instanceof SessionFailure ? failure.approach : undefined);
+    // The answer is only ever a finished run's, and only when nothing outside
+    // the sandbox fed into it. A failed run's summary is its error message,
+    // and an answer is replayed to the user word for word.
+    const answer =
+      result && !job.repoPath && !job.tools?.length ? result.summary : undefined;
 
     let updated = recipes;
     if (decision.kind === 'oneshot') {
       updated = creditRecipe(updated, decision.recipeKey, Date.now());
     }
-    // Remember the approach, and the answer only when nothing outside the
-    // sandbox fed into it — otherwise the same words could mean something
-    // different next time.
-    if (result.approach && agentling) {
-      const reusable = !job.repoPath && !job.tools?.length;
+    if (approach && agentling) {
       updated = rememberRecipe(updated, {
         prompt: job.prompt,
         role: agentling.role,
-        approach: result.approach,
-        ...(reusable ? { answer: result.summary } : {}),
+        approach,
+        ...(answer !== undefined ? { answer } : {}),
         at: Date.now(),
       });
       onProgress?.('noted how to do this next time');
@@ -107,6 +125,8 @@ export class RoutedExecutor implements Executor {
     if (updated !== recipes || decision.kind === 'oneshot') {
       writeRecipes(this.levelDir, updated);
     }
+
+    if (!result) throw failure;
     return result;
   }
 }

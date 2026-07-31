@@ -510,6 +510,28 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   destroyed an hour of uncommitted work in that file, because the mutation
   trick is only safe on a file that is already committed. Mutation-test after
   committing, not before.
+  **Run end to end with a real repo tool, and it found two design faults that
+  no unit test could.** First, the promotion brief told the session to write
+  into `.agentlings`, which every session is simultaneously forbidden to do —
+  the job rules say work only inside the sandbox. The fix is the better shape
+  anyway: a generated tool is executable instruction, which is why library
+  installs are preview-first, so the compiling session writes `run.mjs` and
+  `verify.mjs` into its own sandbox like any other output and they are copied
+  into the tool directory only on promote. Second, and only visible by looking
+  at the working tree afterwards: the compiling session sensibly ran its own
+  script to check it worked, which left the output file inside its clone, and
+  promoting the compile carried that stray file into the real repository. A
+  compiling run's deliverable is the tool, never the clone it tried the tool
+  out in, so promote no longer applies its patch. Both faults were invisible
+  to 444 passing tests and obvious within one live run.
+  The measurement: compiling cost **34c** and 7 turns; the tool then did the
+  same job in **1.06 seconds for nothing**, against ~110s and ~34c for the
+  session it replaced, and the ledger shows it under its own `tool` tier. The
+  generated `verify.mjs` is the part worth reading — it recomputes the answer
+  from the file system independently and diffs it both ways, checking sorting,
+  duplicates and malformed lines, rather than the file-exists check the brief
+  was written to forbid. Not yet exercised live: the fall-through when a tool
+  cannot prove its work, which is unit- and mutation-tested only.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

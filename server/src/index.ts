@@ -466,7 +466,24 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   // "promoted" is the one outcome worse than refusing outright.
   const promotable =
     pending.status === 'done' || pending.status === 'partial' || pending.status === 'failed';
-  if (body.action === 'promote' && promotable && pending.repoPath) {
+  // A compiled tool is executable instruction, so it installs on the same
+  // approval as any other output rather than the moment it is written.
+  const waitingTool =
+    body.action === 'promote' && promotable
+      ? readTools(rt.dir).find((t) => t.pendingJobId === pending.id)
+      : undefined;
+  if (waitingTool && !installTool(rt.dir, waitingTool, rt.queue.sandboxDir(pending.id))) {
+    return c.json(
+      { error: `the compiling run did not leave both ${RUN_SCRIPT} and ${VERIFY_SCRIPT}` },
+      400,
+    );
+  }
+  // A compiling run's deliverable is the tool, never the clone it tried the
+  // tool out in. Found the hard way: the session sensibly ran its own script
+  // to check it worked, which left the output file in its clone, and promoting
+  // the compile carried that stray file into the real repository. Its brief
+  // says to change nothing else, so nothing else is what gets applied.
+  if (body.action === 'promote' && promotable && pending.repoPath && !waitingTool) {
     const patch = patchFile(rt.queue.sandboxDir(pending.id));
     if (existsSync(patch)) {
       try {
@@ -475,17 +492,6 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         const detail = err instanceof Error ? err.message : String(err);
         return c.json({ error: `patch did not apply: ${detail}` }, 400);
       }
-    }
-  }
-  // A compiled tool is executable instruction, so it installs on the same
-  // approval as any other output rather than the moment it is written.
-  if (body.action === 'promote' && promotable) {
-    const waiting = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
-    if (waiting && !installTool(rt.dir, waiting, rt.queue.sandboxDir(pending.id))) {
-      return c.json(
-        { error: `the compiling run did not leave both ${RUN_SCRIPT} and ${VERIFY_SCRIPT}` },
-        400,
-      );
     }
   }
 

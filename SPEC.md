@@ -38,23 +38,105 @@ the client renders it. Nothing in the world may block or corrupt a job.
 
 ```
 web  (Vite + React + PixiJS)  ── WebSocket /ws (world 10 Hz + job events)
-                              ── REST /api    (queue, review, resolve)
+                              ── REST /api    (levels, queue, review, spend)
 server (Node + Hono + ws)     ── sim tick, job queue, sandboxes, executors
-packages/shared               ── domain types + world constants
+packages/shared               ── domain types + world constants + palette
 ```
 
-- `server/src/sim.ts` — agentling state machine (idle → walking → working →
-  delivering), advanced every `TICK_MS`.
-- `server/src/queue.ts` — in-memory job store, station slots, sandbox dirs.
-  No persistence in M0; a restart clears the world (job sandboxes remain on
-  disk under `.agentlings/`).
-- `server/src/executors/` — `Executor` interface. M0 ships
-  `SimulatedExecutor` (writes `RESULT.md` after a fake delay) so the whole
-  loop runs end to end without an API key.
-- `server/src/events.ts` — typed job events (queued / started / progress /
-  done / failed / resolved) broadcast on the WS with a 200-entry replay
-  buffer; the terminal rail in the UI renders them. Movement is never an
-  event — the world tells that story.
+One job passes through a chain, and the point of the chain is that most jobs
+should stop before the end of it:
+
+```
+Sim picks up a queued job
+  └─ RoutedExecutor      does it in code for nothing where it can (M5.3–M5.6)
+       └─ ClaudeAgentExecutor   one SDK session, in a child process (M1)
+            └─ agent-runner.mjs      plain node; the SDK never enters the server
+```
+
+`SimulatedExecutor` stands in for the whole tail when there is no API key, so
+the loop runs end to end without one.
+
+**The world** — presentation state the server owns outright.
+
+- `sim.ts` — agentling state machine (idle → walking → working → delivering),
+  advanced every `TICK_MS`.
+- `queue.ts` — job store, station slots, sandbox dirs. Persisted per level
+  since M2: a restart resumes rather than forgetting.
+- `events.ts` — typed job events (queued / started / progress / done / failed
+  / resolved) broadcast on the WS with a replay buffer; the terminal rail
+  renders them. Movement is never an event — the world tells that story.
+
+**Levels** — independent workspaces, each with its own crew and memory.
+
+- `levels.ts` — level directories, `level.json`, KNOWLEDGE.md, roster files.
+- `crew.ts` — the roster on disk against the agentlings alive in the sim.
+- `memory.ts` — per-agentling lesson files.
+- `merge.ts` — proposing and executing the folding of redundant hires.
+
+**Doing the work.**
+
+- `executors/executor.ts` — the `Executor` interface both real and simulated
+  implement, plus `RunHint` (how the router shapes a run).
+- `executors/routed.ts` — the deterministic layer wrapped round whichever
+  executor is in use; also where a run's learning is banked.
+- `executors/claude.ts` — role → session: system-prompt append, tool
+  allowlist, model, skills, memory, turn budget, and the close-out pass.
+- `executors/agent-runner.mjs` — the child process. Plain JS, spawned with
+  plain node, with a laundered env.
+- `gitwork.ts` — clone, diff, apply. Repo work never touches the real
+  repository until you promote it.
+
+**Spending less** — the M5 spine, cheapest tier first.
+
+- `router.ts` — which tier a job lands on, and the rule that governs all of
+  them: never guess.
+- `recipes.ts` — remembered approaches, how alike two jobs are, and the
+  counter that says whether a tool would have paid off.
+- `tools.ts` — compiled tools: manifest, matching, verification, retirement.
+- `estimate.ts` — the quote, as a lookup over history rather than a model.
+- `ledger.ts` — what work cost and what it may be charged; the per-turn rate
+  the turn budget is derived from.
+- `web.ts` — pages as trimmed text, never a raw dump.
+- `connections.ts` — what a job may reach outside its sandbox. Nothing is
+  ambient.
+
+**Understanding the request.**
+
+- `match.ts` — the local, deterministic concept matcher. Works with no auth
+  and no network, always.
+- `work.ts` — turning a sentence into a plan: title, role, who will run it.
+- `refine.ts` — the optional one-call LLM tier that only ever refines the
+  local answer.
+- `roles.ts` / `library.ts` — role and skill definitions, and the catalog
+  they can be installed from (preview-first, SHA-pinned).
+
+**Plumbing.**
+
+- `index.ts` — HTTP routes, the WebSocket, and the wiring that assembles a
+  level's runtime.
+- `auth.ts` — which credentials are in play and whether they still work, said
+  once at startup rather than one failed agentling at a time.
+
+### State on disk
+
+Everything the app knows lives under `.agentlings/`, which is gitignored —
+the app's memory is not the repository's.
+
+```
+.agentlings/
+  ledger.jsonl              every job: what it cost, what it may be charged
+  catalog/                  the role/skill library index and what is installed
+  levels/<level>/
+    level.json              name, project, theme, repo path
+    roster.json             everyone hired here, resting crew included
+    jobs.json               the queue, so a restart resumes
+    KNOWLEDGE.md            what this level's crew has learned
+    recipes.json            approaches worth reusing, and how often they land
+    tool-candidates.jsonl   jobs a compiled tool could have served
+    memory/<name>.md        one agentling's lessons
+    tools/<name>/           tool.json + run.mjs + verify.mjs
+    jobs/<id>/              one job's sandbox: repo clone, RESULT.md, DIFF.patch
+```
 
 ### REST API
 
@@ -76,19 +158,23 @@ Routes below are the M0 shapes; everything job-facing is scoped per level
 Each agentling is a self-contained worker: a persistent role, a skill
 set, hard boundaries, and a memory that accumulates across jobs. Click a
 sprite to open its profile; assignments persist in
-`.agentlings/roster.json`.
+`.agentlings/levels/<level>/roster.json`.
 
 - **Roles** are Claude Code subagent files in `roles/*.md` — frontmatter
-  (`name`, `description`, `tools`, `skills`, optional `model`) plus the
-  system prompt as body. Built-ins: worker, scout, mason, scribe.
-- **Skills** are `SKILL.md` folders in `skills/` (built-in:
-  concise-reports). Both roles and skills install from GitHub URLs via
-  the Roles & skills modal (blob links auto-convert to raw).
+  (`name`, `description`, `tools`, `skills`, optional `model`, optional
+  `maxTurns`) plus the system prompt as body. Built-ins: worker, scout,
+  mason, scribe, analyst. The catalog is global; the crews are per level.
+- **Skills** are `SKILL.md` folders in `skills/` — built-in:
+  check-your-work, cite-sources, concise-reports, plain-language,
+  small-diffs, tables-and-numbers. Both roles and skills install from
+  GitHub URLs via the Roles & skills modal (blob links auto-convert to raw).
 - **Boundaries**: a run may use the intersection of the role's `tools`
   and the job's tool opt-in (see M2 registry) — the sandbox stays the
   hard wall underneath.
-- **Memory**: one lessons file per agentling in `.agentlings/memory/`;
-  M0 stubs a career-log line per job.
+- **Memory**: one lessons file per agentling in
+  `.agentlings/levels/<level>/memory/`. A lesson is written by the close-out
+  pass after every job that left anything behind, including the ones that
+  died (M5.4).
 - M0 stored identity; **M1 enforces it** — the executor maps the role
   onto the Agent SDK session (system prompt, tool allowlist, model,
   mounted skills) and reads/writes real memory lessons. A scout with

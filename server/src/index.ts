@@ -90,7 +90,7 @@ import {
 } from './tools';
 import { decide } from './router';
 import { fetchPage } from './web';
-import { planWork, runnerRole } from './work';
+import { planWork, queuedJobSpec, runnerRole } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -355,27 +355,19 @@ app.post('/api/levels/:lid/jobs', async (c) => {
   const prompt = body.prompt.trim();
   // Only what the caller passed. This route does not inherit the level's
   // repository — that is `/work`'s behaviour and changing it here would hand
-  // every job a clone it never used to get. The quote below is priced on this
-  // same value, so it describes the run that will actually happen.
+  // every job a clone it never used to get. The quote is priced on this same
+  // value, so it describes the run that will actually happen.
   const repoPath = body.repoPath?.trim() || undefined;
-  // Quoted like anything else. This path used to queue work with no ceiling at
-  // all: `quotedUsd` stayed undefined, so `turnsForBudget` never bound and the
-  // run fell back to the role's cap. An unquoted route into a system whose
-  // whole cost story is "the quote binds before the money moves" is a hole in
-  // that story, not a shortcut.
-  //
-  // The role is settled here rather than left to chance for the same reason the
-  // ledger records the role that ran: a quote priced on one role and a session
-  // run by another is the mislabelling this project has already paid for twice.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, repoPath, prompt);
-  const quote = quoteFor_(rt, prompt, undefined, runnerRole(plan), repoPath);
-  const job = rt.queue.add({
-    title: body.title.trim(),
-    prompt,
-    repoPath,
-    preferredRole: plan.role ?? undefined,
-    quotedUsd: quote.ceilingUsd || undefined,
-  });
+  const job = rt.queue.add(
+    queuedJobSpec({
+      title: body.title.trim(),
+      prompt,
+      repoPath,
+      plan,
+      quote: quoteFor_(rt, prompt, undefined, runnerRole(plan), repoPath),
+    }),
+  );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });
@@ -414,18 +406,20 @@ app.post('/api/levels/:lid/work', async (c) => {
     writeMeta(rt.dir, rt.meta);
   }
 
+  // The title is derived here and the repository is the level's; everything
+  // else about how a job is specced — the ceiling that binds it, the role that
+  // will run it — is shared with the other way in, so the two cannot drift.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined);
-  const job = rt.queue.add({
-    title: plan.title,
-    prompt: text,
-    repoPath: rt.meta.repoPath || undefined,
-    preferredRole: plan.role ?? undefined,
-    tools: body.tools,
-    // The quote binds the session by deciding how many turns it may take —
-    // the only budget that can be enforced before the money is spent.
-    quotedUsd: quote.ceilingUsd || undefined,
-  });
+  const job = rt.queue.add(
+    queuedJobSpec({
+      title: plan.title,
+      prompt: text,
+      repoPath: rt.meta.repoPath || undefined,
+      tools: body.tools,
+      plan,
+      quote: quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined),
+    }),
+  );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });

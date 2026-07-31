@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Agentling, RoleInfo } from '@agentlings/shared';
+import type { Agentling, Quote, RoleInfo } from '@agentlings/shared';
 import { MatchIndex } from './match';
-import { planWork, pickAgentling, runnerRole, titleFrom } from './work';
+import { planWork, pickAgentling, queuedJobSpec, runnerRole, titleFrom } from './work';
 
 const ROLES: RoleInfo[] = [
   {
@@ -160,5 +160,89 @@ describe('runnerRole', () => {
     const plan = planWork(index, ROLES, team, '/repo', 'pull the numbers out of my PDFs');
     expect(plan.role).toBeNull();
     expect(runnerRole(plan)).toBeNull();
+  });
+});
+
+describe('queuedJobSpec', () => {
+  const team = crew(['Pip', 'mason', 'idle'], ['Nib', 'scribe', 'idle']);
+  const planFor = (text: string, repoPath?: string) =>
+    planWork(index, ROLES, team, repoPath, text);
+  const quote = (ceilingUsd: number): Quote => ({
+    tier: 'session',
+    ceilingUsd,
+    samples: 0,
+    certainty: 'estimated',
+    wording: '',
+  });
+
+  // The bug this exists for: POST /jobs queued work with quotedUsd undefined,
+  // so turnsForBudget never bound and the run fell back to the role's cap —
+  // an unquoted way into a system whose cost story is that the quote binds
+  // before the money moves.
+  it('always carries the ceiling it was quoted', () => {
+    const spec = queuedJobSpec({
+      title: 'Write it up',
+      prompt: 'write the documentation',
+      plan: planFor('write the documentation'),
+      quote: quote(0.42),
+    });
+    expect(spec.quotedUsd).toBe(0.42);
+  });
+
+  // Not the same as carrying none by accident: quoteFor returns a zero ceiling
+  // only for the tiers that never spend, and every paying tier is bounded
+  // below at a cent.
+  it('carries no ceiling for work that is free', () => {
+    const spec = queuedJobSpec({
+      title: 'Say hi',
+      prompt: 'say hi',
+      plan: planFor('say hi'),
+      quote: quote(0),
+    });
+    expect(spec.quotedUsd).toBeUndefined();
+  });
+
+  it('settles the role rather than leaving it to whoever is free', () => {
+    const spec = queuedJobSpec({
+      title: 'Write it up',
+      prompt: 'write the documentation',
+      plan: planFor('write the documentation'),
+      quote: quote(0.1),
+    });
+    expect(spec.preferredRole).toBe('scribe');
+  });
+
+  it('leaves the role unset when nothing matched, rather than inventing one', () => {
+    const spec = queuedJobSpec({
+      title: 'Numbers',
+      prompt: 'pull the numbers out of my PDFs',
+      plan: planFor('pull the numbers out of my PDFs'),
+      quote: quote(0.1),
+    });
+    expect(spec.preferredRole).toBeUndefined();
+  });
+
+  // The caller's repository, never the plan's. POST /jobs takes none unless
+  // given one, and a spec that quietly substituted the level's would hand
+  // every job a clone it never used to get.
+  it('takes the repository it was handed, not the one the plan saw', () => {
+    const plan = planFor('write the documentation', '/level/repo');
+    expect(queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1) }).repoPath)
+      .toBeUndefined();
+    expect(
+      queuedJobSpec({ title: 't', prompt: 'p', repoPath: '/mine', plan, quote: quote(0.1) })
+        .repoPath,
+    ).toBe('/mine');
+  });
+
+  it('keeps the title it was given, and passes tools through only when there are some', () => {
+    const plan = planFor('write the documentation');
+    expect(queuedJobSpec({ title: 'Exactly this', prompt: 'p', plan, quote: quote(0.1) }).title)
+      .toBe('Exactly this');
+    expect(queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1) }).tools)
+      .toBeUndefined();
+    expect(
+      queuedJobSpec({ title: 't', prompt: 'p', tools: ['web'], plan, quote: quote(0.1) }).tools,
+    ).toEqual(['web']);
   });
 });

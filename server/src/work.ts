@@ -90,3 +90,47 @@ export function planWork(
 export function runnerRole(plan: WorkPlan): string | null {
   return plan.noOneHasRole ? (plan.agentling?.role ?? plan.role) : plan.role;
 }
+
+/**
+ * How a queued job is specced, wherever it was queued from.
+ *
+ * The two routes in differ only in what they are handed — `/work` derives the
+ * title and uses the level's repository, `POST /jobs` keeps the caller's title
+ * and takes no repository unless given one — and they must not differ in
+ * anything else. They did: `/jobs` queued work with no `quotedUsd` at all, so
+ * `turnsForBudget` never bound and the run silently fell back to the role's
+ * cap, which is an unquoted way into a system whose whole cost story is that
+ * the quote binds before the money moves.
+ *
+ * So the parts that must never drift live here rather than at each call site:
+ * a ceiling is always carried, and the role is always settled — quoting on one
+ * role while another runs the session is its own recorded bug.
+ */
+export function queuedJobSpec(args: {
+  title: string;
+  prompt: string;
+  repoPath?: string;
+  tools?: string[];
+  plan: WorkPlan;
+  quote: Quote;
+}): {
+  title: string;
+  prompt: string;
+  repoPath?: string;
+  tools?: string[];
+  preferredRole?: string;
+  quotedUsd?: number;
+} {
+  return {
+    title: args.title,
+    prompt: args.prompt,
+    repoPath: args.repoPath,
+    ...(args.tools?.length ? { tools: args.tools } : {}),
+    ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
+    // Free work carries no ceiling, which is not the same as carrying none by
+    // accident: `quoteFor` returns a zero ceiling only for the tiers that never
+    // spend, and every paying tier is bounded below at a cent. So a job that
+    // costs money always has one.
+    ...(args.quote.ceilingUsd ? { quotedUsd: args.quote.ceilingUsd } : {}),
+  };
+}

@@ -218,7 +218,14 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   usable diff roughly two times in three, for ~$0.11 against ~$0.44; the
   prompt trim (a recipe run is not asked to re-write the method it was just
   handed) is principled but its effect was within noise at this sample size.
-  Recipe matching
+  **Reliability fixed by measurement, not tuning** (2026-07-31): watching
+  the tool calls live showed every repo run opening with `ls` or
+  `Get-ChildItem` before it could do anything — one of three turns spent
+  discovering a layout the server already knew. The clone's file listing now
+  goes into the prompt, and the orientation call disappeared from every
+  trace: 4/4 runs produced an identical diff, against 3/5 before. The lesson
+  generalises — when a run is short of turns, look at what it spends them on
+  before spending more of them. Recipe matching
   left strict deliberately (same-shape jobs score 0.33 against a 0.65 bar)
   — revisit with evidence, not intuition.
 - 2026-07-31 — Cost ceiling, corrected by measurement. The mid-flight

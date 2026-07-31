@@ -1,5 +1,13 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  type Dirent,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -139,6 +147,36 @@ export function mapTools(roleTools: string[]): string[] {
   return [...new Set(mapped)];
 }
 
+/**
+ * What is in the clone, so the first turn is not spent finding out.
+ *
+ * Watched live, every repo run opened with `ls` or `Get-ChildItem` before it
+ * could do anything — on a short leash that orientation turn was the
+ * difference between landing the edit and running out. A directory listing
+ * costs nothing here and buys back a turn there.
+ */
+export function repoListing(root: string, limit = 40): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    if (out.length >= limit) return;
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (out.length >= limit) return;
+      if (entry.name === '.git' || entry.name === 'node_modules') continue;
+      const rel = `${prefix}${entry.name}`;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name), `${rel}/`);
+      else out.push(rel);
+    }
+  };
+  walk(root, '');
+  return out.sort();
+}
+
 export function buildAppend(
   role: LoadedRole | undefined,
   lessons: string[],
@@ -146,6 +184,7 @@ export function buildAppend(
   hasRepo: boolean,
   sources: string[] = [],
   approach?: string,
+  repoFiles: string[] = [],
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -168,6 +207,15 @@ export function buildAppend(
           ]),
     ].join('\n'),
   );
+  if (repoFiles.length > 0) {
+    parts.push(
+      [
+        `## What is in ./repo (${repoFiles.length} file${repoFiles.length === 1 ? '' : 's'})`,
+        ...repoFiles.map((f) => `- repo/${f}`),
+        'This is the whole listing. Open what you need; do not list the directory.',
+      ].join('\n'),
+    );
+  }
   if (approach) {
     parts.push(
       [
@@ -324,7 +372,15 @@ export class ClaudeAgentExecutor implements Executor {
       JSON.stringify({
         cwd: sandboxDir,
         prompt: `Job: ${job.title}\n\n${job.prompt}`,
-        append: buildAppend(role, lessons, this.knowledge(), hasRepo, sources, hint?.approach),
+        append: buildAppend(
+          role,
+          lessons,
+          this.knowledge(),
+          hasRepo,
+          sources,
+          hint?.approach,
+          hasRepo ? repoListing(path.join(sandboxDir, 'repo')) : [],
+        ),
         allowedTools,
         maxTurns: turnBudget,
         skills,

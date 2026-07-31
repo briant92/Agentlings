@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { turnCapFor, turnsFor, turnsForBudget } from './claude';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { repoListing, turnCapFor, turnsFor, turnsForBudget } from './claude';
 
 describe('turnCapFor', () => {
   // Was 1, which cannot work: a single turn ends before the model sees any
@@ -94,6 +97,43 @@ describe('mapTools', () => {
   });
 });
 
+// Watched live, every repo run opened with `ls` before doing anything. On a
+// three-turn leash that orientation turn was the difference between landing
+// the edit and running out of turns.
+describe('repoListing', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-listing-'));
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  it('lists files, nested ones included, with repo-relative paths', () => {
+    mkdirSync(path.join(root, 'src'), { recursive: true });
+    writeFileSync(path.join(root, 'a.js'), '');
+    writeFileSync(path.join(root, 'src', 'b.js'), '');
+    expect(repoListing(root)).toEqual(['a.js', 'src/b.js']);
+  });
+
+  it('skips the noise that would fill the listing', () => {
+    mkdirSync(path.join(root, '.git'), { recursive: true });
+    mkdirSync(path.join(root, 'node_modules', 'x'), { recursive: true });
+    writeFileSync(path.join(root, '.git', 'HEAD'), '');
+    writeFileSync(path.join(root, 'node_modules', 'x', 'index.js'), '');
+    writeFileSync(path.join(root, 'real.js'), '');
+    expect(repoListing(root)).toEqual(['real.js']);
+  });
+
+  it('stops at the limit rather than pasting a whole repository', () => {
+    for (let i = 0; i < 10; i++) writeFileSync(path.join(root, `f${i}.js`), '');
+    expect(repoListing(root, 4)).toHaveLength(4);
+  });
+
+  it('returns nothing for a directory that is not there', () => {
+    expect(repoListing(path.join(root, 'missing'))).toEqual([]);
+  });
+});
+
 describe('buildAppend', () => {
   it('includes the repo rule, level knowledge, and past lessons', () => {
     const text = buildAppend(
@@ -117,6 +157,17 @@ describe('buildAppend', () => {
 
   it('falls back to a generic persona without a role', () => {
     expect(buildAppend(undefined, [], [], false)).toContain('general-purpose worker');
+  });
+
+  it('hands over the repo listing so the run need not go looking', () => {
+    const text = buildAppend(undefined, [], [], true, [], undefined, ['a.js', 'src/b.js']);
+    expect(text).toContain('repo/a.js');
+    expect(text).toContain('repo/src/b.js');
+    expect(text).toContain('do not list the directory');
+  });
+
+  it('says nothing about a listing when there is no repository', () => {
+    expect(buildAppend(undefined, [], [], false)).not.toContain('What is in ./repo');
   });
 
   // A recipe run has three turns. Spending one of them writing down the

@@ -243,7 +243,11 @@ export class ClaudeAgentExecutor implements Executor {
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
           : {}),
-        maxCostUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+        // Never spend more than was quoted, and never more than the global cap.
+        maxCostUsd:
+          [job.quotedUsd, Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined]
+            .filter((v): v is number => typeof v === 'number' && v > 0)
+            .sort((a, b) => a - b)[0],
         sources,
       }),
     );
@@ -269,7 +273,11 @@ export class ClaudeAgentExecutor implements Executor {
       summary,
       lesson,
       approach,
-      meter: { ...meter, model: role?.model ?? process.env.AGENTLINGS_MODEL },
+      meter: {
+        ...meter,
+        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        ...(hint?.oneShot ? { oneShot: true } : {}),
+      },
     };
   }
 

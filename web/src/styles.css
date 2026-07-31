@@ -199,6 +199,12 @@ button.ghost {
   margin: 0;
   padding-left: 2px;
 }
+.quote-free {
+  color: var(--db-lime-light);
+}
+.quote-cost {
+  color: var(--db-sky);
+}
 .work-conn {
   display: flex;
   align-items: center;

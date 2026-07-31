@@ -44,6 +44,8 @@ export interface JobMeter {
   model?: string;
   /** True when code answered it and no session ran at all. */
   routed?: boolean;
+  /** True when a recipe let it run as a single call instead of a loop. */
+  oneShot?: boolean;
 }
 
 /** A connection a job can opt into. Secret values never appear here. */
@@ -77,6 +79,8 @@ export interface Job {
   tools?: string[];
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
+  /** The ceiling quoted before the work; enforced, and never billed above. */
+  quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
   /** What the session cost — recorded whether it succeeded or failed. */
@@ -253,6 +257,31 @@ export interface AgentlingProfile {
   memory: string[];
 }
 
+/** What a job will cost, quoted before it runs. The ceiling is enforced. */
+export interface Quote {
+  tier: 'routed' | 'oneshot' | 'session';
+  /** The most it can be charged; the session is stopped at this. */
+  ceilingUsd: number;
+  /** What it has typically cost, when there is history. */
+  expectedUsd?: number;
+  /** How many times this exact kind of job has been done. */
+  samples: number;
+  certainty: 'certain' | 'high' | 'estimated';
+  /** Plain-language line: money, with the confidence stated. */
+  wording: string;
+}
+
+/** Spend for a level or the whole app. Cost is ours; price is chargeable. */
+export interface SpendTotals {
+  jobs: number;
+  costUsd: number;
+  priceUsd: number;
+  /** Cost of failed work, absorbed rather than charged. */
+  absorbedUsd: number;
+  /** Jobs answered without a session at all. */
+  free: number;
+}
+
 /** Preview of what the app will do with a sentence, before it queues anything. */
 export interface WorkPlan {
   /** Short title derived from the sentence. */
@@ -268,6 +297,8 @@ export interface WorkPlan {
   needsRepo: boolean;
   /** The level's project folder; '' means asked and declined. */
   repoPath: string;
+  /** What this will cost, before it runs. */
+  quote: Quote;
   gaps: string[];
 }
 

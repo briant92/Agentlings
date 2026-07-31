@@ -9,14 +9,17 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type {
   AgentlingProfile,
   CrewMember,
+  Job,
   LevelInfo,
   MergePreview,
+  Quote,
   ServerMessage,
   SettingsInfo,
 } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
 import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
+import { quoteFor } from './estimate';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor } from './executors/claude';
 import type { Executor } from './executors/executor';
@@ -53,6 +56,14 @@ import {
   type Http,
   type LibraryIndex,
 } from './library';
+import {
+  append as appendLedger,
+  priceFor,
+  readLedger,
+  totals,
+  totalsBy,
+  type Tier,
+} from './ledger';
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
@@ -60,6 +71,8 @@ import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl } from './roles';
 import { Sim } from './sim';
+import { readRecipes } from './recipes';
+import { decide } from './router';
 import { fetchPage } from './web';
 import { planWork } from './work';
 
@@ -172,8 +185,9 @@ function makeLevel(dir: string): LevelRuntime {
     queue,
     executor,
     (event) => eventLog.emit(event),
-    (agentling, jobTitle, outcome, detail, lesson) => {
+    (agentling, job, outcome, detail, lesson) => {
       const date = new Date().toISOString().slice(0, 10);
+      const jobTitle = job.title;
       const line = lesson
         ? `${date} · ${lesson}`
         : outcome === 'done'
@@ -184,6 +198,23 @@ function makeLevel(dir: string): LevelRuntime {
         dir,
         `${date} · ${agentling.name} (${agentling.role}) ${outcome === 'done' ? 'delivered' : 'failed'} "${jobTitle}"${lesson ? ` — ${lesson}` : ''}`,
       );
+
+      // Every job goes in the ledger, including the ones we absorb — the
+      // difference between cost and price is only visible if both are kept.
+      const costUsd = job.meter?.costUsd ?? 0;
+      appendLedger(SANDBOX_ROOT, {
+        at: Date.now(),
+        jobId: job.id,
+        levelId: meta.id,
+        jobClass: job.preferredRole ?? agentling.role,
+        tier: job.meter?.routed ? 'routed' : job.meter?.oneShot ? 'oneshot' : 'session',
+        outcome,
+        costUsd,
+        priceUsd: priceFor(outcome, costUsd, job.quotedUsd),
+        ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
+        ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
+        ...(job.meter?.model ? { model: job.meter.model } : {}),
+      });
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
       if (runtime) {
@@ -279,12 +310,11 @@ app.post('/api/levels/:lid/jobs', async (c) => {
 app.post('/api/levels/:lid/work/plan', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ text?: string }>();
+  const body = await c.req.json<{ text?: string; tools?: string[] }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  return c.json(
-    planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text),
-  );
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  return c.json({ ...plan, quote: quoteFor_(rt, text, body.tools, plan.role) });
 });
 
 /**
@@ -308,12 +338,15 @@ app.post('/api/levels/:lid/work', async (c) => {
   }
 
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const quote = quoteFor_(rt, text, body.tools, plan.role);
   const job = rt.queue.add({
     title: plan.title,
     prompt: text,
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: plan.role ?? undefined,
     tools: body.tools,
+    // The quote is a promise: the session is stopped rather than exceeding it.
+    quotedUsd: quote.ceilingUsd || undefined,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
@@ -477,6 +510,38 @@ app.get('/api/levels/:lid/crew', (c) => {
   return c.json(crewOf(rt));
 });
 
+/**
+ * What a request would cost, worked out by asking the router what it would do
+ * with it and looking up what that kind of work has cost before.
+ */
+function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, role: string | null): Quote {
+  const probe: Job = {
+    id: '',
+    title: '',
+    prompt: text,
+    status: 'queued',
+    slot: -1,
+    createdAt: 0,
+    ...(rt.meta.repoPath ? { repoPath: rt.meta.repoPath } : {}),
+    ...(tools?.length ? { tools } : {}),
+  };
+  const decision = decide(probe, {
+    knowledge: readKnowledge(rt.dir),
+    recipes: readRecipes(rt.dir),
+    canFetch: tools?.includes('web') === true,
+  });
+  const tier: Tier =
+    decision.kind === 'answer' || decision.kind === 'fetch'
+      ? 'routed'
+      : decision.kind === 'oneshot'
+        ? 'oneshot'
+        : 'session';
+  const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
+  return quoteFor(tier, jobClass, readLedger(SANDBOX_ROOT), {
+    defaultCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+  });
+}
+
 function crewOf(rt: LevelRuntime): CrewMember[] {
   return crewMembers(rt.roster, rt.sim.agentlings, (name) => rt.memory.lessons(name).length);
 }
@@ -607,6 +672,16 @@ app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
   rt.roster = rt.roster.filter((s) => s.id !== seed.id);
   saveRoster(rt);
   return c.json({ id: seed.id, name: seed.name, archived: archived !== null });
+});
+
+/** Spend so far: what it cost us, what is chargeable, what we absorbed. */
+app.get('/api/spend', (c) => {
+  const entries = readLedger(SANDBOX_ROOT);
+  return c.json({
+    overall: totals(entries),
+    byLevel: totalsBy(entries, 'levelId'),
+    byTier: totalsBy(entries, 'tier'),
+  });
 });
 
 app.get('/api/connections', (c) => c.json(describe(readConnections(CONNECTIONS_FILE), process.env)));

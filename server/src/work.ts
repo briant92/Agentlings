@@ -1,5 +1,14 @@
-import type { Agentling, RoleInfo, WorkPlan } from '@agentlings/shared';
+import type { Agentling, Quote, RoleInfo, WorkPlan } from '@agentlings/shared';
 import { MatchIndex, suggestSetup } from './match';
+
+/** Used by tests that are about routing rather than pricing. */
+const NO_QUOTE: Quote = {
+  tier: 'session',
+  ceilingUsd: 0,
+  samples: 0,
+  certainty: 'estimated',
+  wording: '',
+};
 
 /**
  * Work intake: one sentence in, a queued job out. The user names an outcome
@@ -47,6 +56,7 @@ export function planWork(
   crew: Agentling[],
   levelRepoPath: string | undefined,
   text: string,
+  quote: Quote = NO_QUOTE,
 ): WorkPlan {
   const match = suggestSetup(index, roles, text);
   const taker = pickAgentling(crew, match.role);
@@ -59,6 +69,7 @@ export function planWork(
     // Asked once per level: undefined means never asked, '' means declined.
     needsRepo: levelRepoPath === undefined,
     repoPath: levelRepoPath ?? '',
+    quote,
     gaps: match.gaps,
   };
 }

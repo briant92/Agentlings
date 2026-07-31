@@ -161,6 +161,21 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   drive library search. Library installs stay preview-first and
   SHA-pinned — an installed role or skill is executable instruction, and
   the user is not an expert. See SPEC.md M3.
+- 2026-07-30 — Cost model (designed for pass-through billing, even though
+  use is personal today). Estimating and measuring are two halves of one
+  loop, not alternatives: the router already sorts work into three tiers
+  with genuinely different cost behaviour (routed = certain zero, recipe
+  hit = narrow band from observed history, cold job = bounded by maxTurns
+  × model), so a quote is a lookup over history rather than a model, and
+  it tightens as recipes accumulate. Decisions: quote a ceiling and
+  enforce it, so the user is never billed above the quote; the app absorbs
+  jobs that cost money and fail, which puts the incentive on failing fast;
+  the ledger records observed cost and chargeable price as separate
+  numbers from day one, because a ledger cannot be reconstructed
+  retroactively; quotes are shown in money with the certainty stated.
+  Observed cost comes from the SDK's total_cost_usd — no price table to
+  maintain. Reselling model access has terms implications Brian should
+  confirm with Anthropic before billing anyone.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

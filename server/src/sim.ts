@@ -1,4 +1,4 @@
-import type { Agentling, JobEvent, WorldState } from '@agentlings/shared';
+import type { Agentling, Job, JobEvent, WorldState } from '@agentlings/shared';
 import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import type { Executor } from './executors/executor';
 import type { CrewSeed } from './levels';
@@ -7,7 +7,8 @@ import type { JobQueue } from './queue';
 export type EmitEvent = (event: Omit<JobEvent, 'id' | 'at'>) => void;
 export type OnOutcome = (
   agentling: Agentling,
-  jobTitle: string,
+  /** The job itself, so callers can read its meter and quote. */
+  job: Job,
   outcome: 'done' | 'failed',
   detail: string,
   lesson?: string,
@@ -189,7 +190,7 @@ export class Sim {
         this.queue.complete(jobId, result.summary, result.meter);
         this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
         a.jobsDone++;
-        this.onOutcome(a, job.title, 'done', result.summary, result.lesson);
+        this.onOutcome(a, this.queue.get(jobId) ?? job, 'done', result.summary, result.lesson);
         a.state = 'delivering';
         a.targetX = EXIT_X;
       })
@@ -198,7 +199,7 @@ export class Sim {
         this.queue.fail(jobId, message);
         this.emit({ type: 'failed', jobId, title: job.title, agentling: a.name, detail: message });
         a.jobsFailed++;
-        this.onOutcome(a, job.title, 'failed', message);
+        this.onOutcome(a, this.queue.get(jobId) ?? job, 'failed', message);
         a.jobId = undefined;
         a.state = 'idle'; // shake it off, back on patrol
       });

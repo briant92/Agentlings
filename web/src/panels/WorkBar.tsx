@@ -41,12 +41,12 @@ export function WorkBar({
       return;
     }
     const timer = window.setTimeout(() => {
-      void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query }))
+      void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query, tools: allowed }))
         .then(setPlan)
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId]);
+  }, [text, levelId, allowed]);
 
   const queue = async (folder?: string) => {
     setBusy(true);
@@ -130,6 +130,10 @@ export function WorkBar({
                 ? ` — nobody here is a ${plan.role}, so it goes to your ${plan.agentling.role}`
                 : ''}
               <span className="dim"> · saved as “{plan.title}”</span>
+              <span className={plan.quote.ceilingUsd === 0 ? ' quote-free' : ' quote-cost'}>
+                {' · '}
+                {plan.quote.wording}
+              </span>
             </>
           ) : (
             <span className="dim">Nobody works here yet — hire someone first.</span>

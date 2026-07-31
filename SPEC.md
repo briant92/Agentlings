@@ -275,7 +275,17 @@ memory — stored under `.agentlings/levels/<id>/` (`level.json`,
     answer: a stored answer is replayed only on an exact prompt repeat with
     no repository and no web access, because the same words against a
     different repo are a different question.
-  - **M5.5.** Spend per level and per agentling.
+  - **M5.5 (built).** The billing spine, designed for pass-through even
+    though use is personal. `ledger.jsonl` is append-only and records
+    observed cost and chargeable price as separate numbers from the first
+    entry, because a ledger cannot be reconstructed retroactively.
+    `estimate.ts` quotes before the work by asking the router what it would
+    do and looking up what that tier and class have actually cost — a
+    lookup, not a model, so it tightens as recipes accumulate. The quote is
+    a ceiling and it is enforced: `min(quote, global cap)` is passed to the
+    session, and `priceFor` never charges above it. Failed work is recorded
+    and charged nothing — the app absorbs it. `/api/spend` totals by level
+    and tier.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

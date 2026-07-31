@@ -14,6 +14,8 @@ export interface NewJobSpec {
   tools?: string[];
   /** Skip the deterministic router and run a real session. */
   noRouter?: boolean;
+  /** Ceiling quoted before the work. */
+  quotedUsd?: number;
 }
 
 /** In-memory job store plus station-slot bookkeeping and sandbox dirs. */
@@ -39,6 +41,7 @@ export class JobQueue {
       preferredRole: spec.preferredRole,
       ...(spec.tools?.length ? { tools: spec.tools } : {}),
       ...(spec.noRouter ? { noRouter: true } : {}),
+      ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

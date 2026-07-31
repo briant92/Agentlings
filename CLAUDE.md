@@ -530,8 +530,24 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   generated `verify.mjs` is the part worth reading — it recomputes the answer
   from the file system independently and diffs it both ways, checking sorting,
   duplicates and malformed lines, rather than the file-exists check the brief
-  was written to forbid. Not yet exercised live: the fall-through when a tool
-  cannot prove its work, which is unit- and mutation-tested only.
+  was written to forbid.
+  **The fall-through, tested live by injecting a fault, found two more.** The
+  bug injected into the installed `run.mjs` was that it stopped recursing, so
+  its output was plausible and quietly incomplete — one entry where there were
+  three — which `verify.mjs` caught exactly as designed. The fall-through then
+  **crashed the job outright**: `runTool` clones the repository, and the
+  fallback session cloned into the same path and died on `destination path
+  already exists`. Discarding a tool's *result* was never enough, because the
+  tool's files are the work; the sandbox is emptied now. Second, the job had
+  been quoted **free** on the strength of that tool and then cost 28c. A
+  promise of free arriving as a bill is precisely what the quote exists to
+  prevent, so a run that falls back from a tool is absorbed: `toolFellBack`
+  reaches the ledger as `priceUsd: 0`. Proven live afterwards — job done, cost
+  28c, **charged nothing**, the tool struck twice and retired itself with
+  `failed 2 runs in a row`, and the same sentence then quoted "up to 22c" as an
+  ordinary session instead of "free". Both faults were invisible to 444 passing
+  tests and to the mutation test of the very branch they were in, because both
+  live in what the *next* step sees rather than in the branch's own logic.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

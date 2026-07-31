@@ -72,6 +72,12 @@ export interface JobMeter {
   oneShot?: boolean;
   /** True when a compiled tool did the whole job, with no model involved. */
   tooled?: boolean;
+  /**
+   * A tool claimed the job, could not prove its work, and a session had to do
+   * it after all. The user was quoted nothing on the strength of that tool, so
+   * the run is absorbed rather than billed.
+   */
+  toolFellBack?: boolean;
   /** The run spent money that could not be measured — see LedgerEntry. */
   costUnknown?: boolean;
   /**

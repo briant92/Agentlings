@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Agentling, Job } from '@agentlings/shared';
 import { cloneRepo, writeDiff } from '../gitwork';
@@ -101,6 +101,13 @@ export class RoutedExecutor implements Executor {
 
     const after = recordToolRun(this.levelDir, manifest, proved);
     if (!proved) {
+      // Discarding the *result* is not enough: the tool's files are the work.
+      // Found live — a half-finished clone left behind collided with the one
+      // the fallback session then tried to make, and the job died on the
+      // collision instead of quietly being done properly. The sandbox is ours
+      // alone until the session starts, so emptying it is exactly right.
+      rmSync(sandboxDir, { recursive: true, force: true });
+      mkdirSync(sandboxDir, { recursive: true });
       if (after.retiredReason) onProgress?.(`${name} retired — ${after.retiredReason}`);
       return null;
     }
@@ -163,9 +170,11 @@ export class RoutedExecutor implements Executor {
       };
     }
 
+    let toolFellBack = false;
     if (decision.kind === 'tool') {
       const done = await this.runTool(decision.toolName, job, sandboxDir, onProgress);
       if (done) return done;
+      toolFellBack = true;
       // It could not prove its own output, so nothing it produced is kept and
       // the job carries on as if no tool existed. A free wrong answer is the
       // one outcome worse than paying for a right one.
@@ -240,6 +249,9 @@ export class RoutedExecutor implements Executor {
     }
 
     if (!result) throw failure;
-    return result;
+    // The user was quoted nothing, because a tool was going to do it. The tool
+    // did not, and a promise of free that arrives as a bill is the one thing
+    // the quote exists to prevent — so this one is on the app.
+    return toolFellBack ? { ...result, meter: { ...result.meter, toolFellBack } } : result;
   }
 }

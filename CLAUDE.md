@@ -459,6 +459,24 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   recomputed from the key on read rather than trusted from disk, so the next
   change to stemming strands nothing and that migration never has to be
   written.
+  **Confirmed live, after the close-out failed twice for reasons worth
+  keeping.** First it wrote its config and produced nothing, because the catch
+  that stops a missing note from costing the user their work also hides why
+  there is no note — a silent failure by design, and the diagnosis needed a
+  probe that spawns the runner with the same laundered env the server uses.
+  Run from a plain shell it 401s instead, which is a different bug and a
+  waste of an hour if believed. Then, properly reproduced: at one turn it
+  spent that turn calling `Read` on the file it had just been told about and
+  died on max_turns having written nothing — the same orientation turn repo
+  runs used to waste, and the same reason a one-shot cannot work at a single
+  turn. Fixed by telling it not to go looking and giving it two turns for when
+  it does anyway. End to end on a real job: `closeOutUsd` **2.1c** on the
+  meter, LESSON.md and APPROACH.md written, a recipe stored with a method, and
+  the agentling's own memory file one line longer. So the crew is measurably
+  different after a job, which is the thing that was broken. Note the cost
+  estimate was optimistic — "about a cent" measured 2.1–2.3c, about 4% of a
+  50c repo job but nearer 17% of a cheap one, so the write-up is close to free
+  on the work that matters and merely cheap on the work that does not.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

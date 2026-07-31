@@ -51,7 +51,15 @@ const RECIPE_TURNS = 3;
  * one turn: it is handed what the run left behind and asked to describe it.
  */
 const CLOSEOUT_MODEL = 'claude-haiku-4-5-20251001';
-const CLOSEOUT_TURNS = 1;
+/**
+ * Two, not one, and measured rather than assumed. At one turn the pass read
+ * the file it had just been told about and died on max_turns having written
+ * nothing — the same orientation turn that repo runs used to waste, and the
+ * same reason a one-shot cannot work at a single turn: a turn ends before the
+ * model sees any tool result. The prompt now tells it not to go looking, and
+ * the second turn is there for when it does anyway.
+ */
+const CLOSEOUT_TURNS = 2;
 export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
 
 /**
@@ -568,6 +576,9 @@ export class ClaudeAgentExecutor implements Executor {
         prompt: `A job has just finished. Write down what it teaches.\n\nThe job was: ${job.prompt}\n\n${evidence}`,
         append: [
           'You are writing the crew notes for a job that has already run. Do not do the job.',
+          // Measured: without this it opened the file it had just been told
+          // about and ran out of turns having written nothing.
+          'Do not read, open or search any files. Everything you need is in this message.',
           'Write exactly two files in the working directory, then stop:',
           '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
           '- APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',

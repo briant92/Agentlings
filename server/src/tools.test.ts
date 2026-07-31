@@ -186,4 +186,20 @@ describe('promotion', () => {
     expect(prompt).toMatch(/exit 0/i);
     expect(prompt).toContain('not merely check a file exists');
   });
+
+  // A second attempt that is not told how the first failed is an identical
+  // first try, and costs the same to discover that.
+  it('says nothing about earlier attempts when there were none', () => {
+    const prompt = promotionPrompt({ key: 'x', approach: 'y', role: 'analyst' });
+    expect(prompt).not.toMatch(/retired/i);
+  });
+
+  it('hands a repeat compile the faults it must not reproduce', () => {
+    const prompt = promotionPrompt({ key: 'x', approach: 'y', role: 'analyst' }, [
+      'its verify rejects a multi-line export its run correctly lists',
+    ]);
+    expect(prompt).toContain('compiled before and the result was retired');
+    expect(prompt).toContain('multi-line export');
+    expect(prompt).toContain('disagreeing about the same input');
+  });
 });

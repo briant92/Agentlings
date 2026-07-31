@@ -159,13 +159,28 @@ export function freeToolName(levelDir: string, base: string): string {
  * script: without a way to prove the output, the tier is just a faster way to
  * be wrong, so a tool with no verify never runs.
  */
-export function promotionPrompt(recipe: { key: string; approach: string; role: string }): string {
+export function promotionPrompt(
+  recipe: { key: string; approach: string; role: string },
+  /** Why earlier attempts were retired. A second try that is not told how the
+   * first failed is an identical first try, and costs the same to find out. */
+  retired: string[] = [],
+): string {
   return [
     `The crew has done this job enough times to stop paying for it: "${recipe.key}".`,
     '',
     'This is the method that worked:',
     recipe.approach,
     '',
+    ...(retired.length > 0
+      ? [
+          'This job has been compiled before and the result was retired. Do not',
+          'reproduce these faults:',
+          ...retired.map((reason) => `- ${reason}`),
+          '',
+          `The commonest of them: ${RUN_SCRIPT} and ${VERIFY_SCRIPT} disagreeing about the same input. They must agree exactly, so write them against one shared definition rather than parsing twice from memory.`,
+          '',
+        ]
+      : []),
     'Write two plain-node ES module scripts in your working directory, and change nothing else:',
     `- ${RUN_SCRIPT} — does the job, exactly as the method describes. It runs with the sandbox as its working directory, the same place a session would work. A repository, when there is one, is at ./repo.`,
     `- ${VERIFY_SCRIPT} — checks that ${RUN_SCRIPT} did the job. Exit 0 when the work is right and non-zero when it is not.`,

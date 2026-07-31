@@ -866,7 +866,10 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   // Say so, and take a fresh name so the earlier one survives to be read.
   const previous = readTools(rt.dir).filter((t) => t.recipeKey === key && t.retiredReason);
   const name = freeToolName(rt.dir, toolNameFor(key));
-  const prompt = promotionPrompt(recipe);
+  const prompt = promotionPrompt(
+    recipe,
+    previous.flatMap((t) => (t.retiredReason ? [t.retiredReason] : [])),
+  );
   const job = rt.queue.add({
     title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
     prompt,

@@ -1,0 +1,212 @@
+{
+  "frames": {
+    "stand": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "walk-contact": {
+      "frame": {
+        "x": 18,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "walk-down": {
+      "frame": {
+        "x": 36,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "walk-high": {
+      "frame": {
+        "x": 54,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "work-raised": {
+      "frame": {
+        "x": 72,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "work-mid": {
+      "frame": {
+        "x": 90,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "work-struck": {
+      "frame": {
+        "x": 108,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "deliver-a": {
+      "frame": {
+        "x": 126,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    },
+    "deliver-b": {
+      "frame": {
+        "x": 144,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 20
+      }
+    }
+  },
+  "animations": {
+    "walk": [
+      "walk-contact",
+      "walk-down",
+      "stand",
+      "walk-high"
+    ],
+    "work": [
+      "work-raised",
+      "work-mid",
+      "work-struck",
+      "work-mid"
+    ],
+    "deliver": [
+      "deliver-a",
+      "deliver-b"
+    ]
+  },
+  "meta": {
+    "app": "agentlings/bake-sprites",
+    "image": "agentling.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 162,
+      "h": 20
+    },
+    "scale": "1"
+  }
+}

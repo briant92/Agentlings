@@ -1,5 +1,7 @@
 // Domain model shared by server (authoritative) and web (rendering).
 
+export * from './palette';
+
 /** Visual palette a level is born with; the client owns the actual colors. */
 export type ThemeKey = 'cave' | 'chalkboard' | 'household' | 'marble';
 

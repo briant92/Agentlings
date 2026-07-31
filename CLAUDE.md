@@ -151,8 +151,15 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - 2026-07-30 — Visuals phase 1: one master palette (DB32) drives every
   theme, sprite and thumbnail; canvas scales by whole numbers with
   letterbox; optional CRT filter; iris-wipe transitions; particles;
-  Press Start 2P (OFL) for signage only. Phases 2 (spritesheet pipeline)
-  and 3 (art source) still open.
+  Press Start 2P (OFL) for signage only.
+- 2026-07-30 — Visuals phase 2: art is data. `npm run art` bakes the
+  hand-authored frames into `web/public/art/agentling.png` plus an
+  Aseprite-shaped atlas (cycles name their frames, since ours reuse them);
+  the runtime prefers that sheet and falls back to the same frames as JSON,
+  so the two can never drift. Anything loaded is snapped onto DB32, which
+  is a no-op for our own art and is what makes an outside pack belong.
+  The palette moved to `packages/shared` — it is a product decision, not a
+  rendering one. Phase 3 (art source) still open.
 - 2026-07-30 — M3 direction (user-friendliness for a non-expert): every
   setup step becomes a plain-language sentence. The concept matcher is
   local, deterministic and required to work with no auth and no network;

@@ -2,6 +2,7 @@ import { Application, Container, Graphics, Rectangle, Sprite, Text } from 'pixi.
 import { useEffect, useRef } from 'react';
 import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
+import { loadAtlasTextures } from './atlas';
 import { DB } from './palette';
 import { buildAgentTextures, SPRITE_SCALE, type AgentAnim } from './sprites';
 import { THEMES, type Theme } from './themes';
@@ -335,7 +336,11 @@ export function WorldCanvas({
         fitCanvas();
         observer.observe(host);
 
-        const agentTextures = buildAgentTextures();
+        // Art is data: prefer the spritesheet, fall back to what is built in.
+        let agentTextures = buildAgentTextures();
+        void loadAtlasTextures().then((fromSheet) => {
+          if (fromSheet && !destroyed) agentTextures = fromSheet;
+        });
 
         const scenery = new Graphics();
         drawScenery(scenery, T);

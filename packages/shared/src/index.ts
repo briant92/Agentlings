@@ -72,6 +72,12 @@ export interface JobMeter {
   oneShot?: boolean;
   /** The run spent money that could not be measured — see LedgerEntry. */
   costUnknown?: boolean;
+  /**
+   * Part of `costUsd`, spent by the close-out pass rather than by the session.
+   * Kept separate so the per-turn rate prices the session alone: the write-up
+   * is a fixed errand, not something the turn budget can buy more or less of.
+   */
+  closeOutUsd?: number;
 }
 
 /** A connection a job can opt into. Secret values never appear here. */

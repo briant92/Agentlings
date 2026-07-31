@@ -17,7 +17,8 @@ export type Decision =
   | { kind: 'answer'; summary: string; body: string; reason: string; recipeKey?: string }
   | { kind: 'fetch'; urls: string[]; reason: string }
   | { kind: 'oneshot'; approach: string; reason: string; recipeKey: string }
-  | { kind: 'agent' };
+  /** A full session, optionally started from a method that half-fits. */
+  | { kind: 'agent'; approach?: string; recipeKey?: string };
 
 export interface RouterContext {
   knowledge: string[];
@@ -126,12 +127,18 @@ export function decide(job: Job, context: RouterContext): Decision {
       };
     }
     // Otherwise the saving is skipping the exploring, not the thinking.
-    return {
-      kind: 'oneshot',
-      approach: found.recipe.approach,
-      reason: 'the crew has done this kind of job before',
-      recipeKey: found.recipe.key,
-    };
+    if (found.strong) {
+      return {
+        kind: 'oneshot',
+        approach: found.recipe.approach,
+        reason: 'the crew has done this kind of job before',
+        recipeKey: found.recipe.key,
+      };
+    }
+    // A half-match is worth the method and nothing else. Handing it over costs
+    // a paragraph of prompt the session can ignore; shortening the run on the
+    // strength of it would cost the whole run when the guess is wrong.
+    return { kind: 'agent', approach: found.recipe.approach, recipeKey: found.recipe.key };
   }
 
   return { kind: 'agent' };

@@ -125,7 +125,12 @@ export function appendKnowledge(dir: string, line: string): void {
   appendFileSync(file, `- ${line}\n`);
 }
 
-export function readKnowledge(dir: string, max = 12): string[] {
+/**
+ * The level's notes. `max` is a sanity bound, not a selection: both callers
+ * pick what they need by relevance, and handing them only the newest twelve
+ * meant a job about billing was shown whatever happened to be done yesterday.
+ */
+export function readKnowledge(dir: string, max = 400): string[] {
   const file = path.join(dir, 'KNOWLEDGE.md');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8')

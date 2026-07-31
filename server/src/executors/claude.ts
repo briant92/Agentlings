@@ -18,6 +18,7 @@ import { cloneRepo, writeDiff } from '../gitwork';
 import { costPerTurn, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
 import type { LoadedRole, RoleRegistry } from '../roles';
+import { relevantLines } from '../router';
 import { extractUrls, fetchPage } from '../web';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
@@ -41,6 +42,16 @@ const TURN_CEILING = 40;
  * A recipe means explore less, not work blind.
  */
 const RECIPE_TURNS = 3;
+/**
+ * The write-up runs on its own, after the work, on the cheapest model going.
+ *
+ * It used to be part of the session, which meant it competed with the work for
+ * turns — so it lost, every time, and the crew learned nothing from the tier
+ * built to be cheap. Off the session it needs no repository, no exploring and
+ * one turn: it is handed what the run left behind and asked to describe it.
+ */
+const CLOSEOUT_MODEL = 'claude-haiku-4-5-20251001';
+const CLOSEOUT_TURNS = 1;
 export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
 
 /**
@@ -196,15 +207,11 @@ export function buildAppend(
         ? '- The target repository is cloned at ./repo — make all code changes there.'
         : '- There is no target repository; produce your output as files in the working directory.',
       '- When finished, write RESULT.md in the working directory: outcome first, evidence second.',
-      // A run that came from a recipe already has the method it would be
-      // writing down, and its short leash is spent on the work rather than
-      // on teaching the crew something it just told us.
-      ...(approach
-        ? []
-        : [
-            '- Also write LESSON.md: a single line starting with "- " holding one lesson your future self should remember about this kind of job.',
-            '- Also write APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
-          ]),
+      // Nothing here asks for LESSON.md or APPROACH.md any more. They used to
+      // compete with the work for turns, so they were cut first and the crew
+      // learned nothing: 13 of 13 recipe runs died before writing either.
+      // A separate close-out pass writes them afterwards, off a cheap model,
+      // from what the run actually left behind rather than what it predicted.
     ].join('\n'),
   );
   if (repoFiles.length > 0) {
@@ -244,6 +251,33 @@ export function buildAppend(
     parts.push(`## Lessons from your own past jobs\n${lessons.map((l) => `- ${l}`).join('\n')}`);
   }
   return parts.join('\n\n');
+}
+
+/**
+ * What the run left behind, small enough to hand to a one-turn model: its own
+ * write-up and the names of the files it changed. Never the diff itself — the
+ * point is a write-up that costs about a cent, and a patch is what makes a
+ * turn expensive. Null when the run left nothing worth describing.
+ */
+export function closeOutEvidence(sandboxDir: string): string | null {
+  const parts: string[] = [];
+
+  const resultPath = path.join(sandboxDir, 'RESULT.md');
+  if (existsSync(resultPath)) {
+    const text = readFileSync(resultPath, 'utf8').trim();
+    if (text) parts.push(`What the run reported:\n${text.slice(0, 1500)}`);
+  }
+
+  const patchPath = path.join(sandboxDir, 'DIFF.patch');
+  if (existsSync(patchPath)) {
+    const patch = readFileSync(patchPath, 'utf8');
+    const files = [...patch.matchAll(/^diff --git a\/(.+?) b\//gm)].map((m) => m[1]);
+    if (files.length > 0) {
+      parts.push(`Files it changed:\n${files.map((f) => `- ${f}`).join('\n')}`);
+    }
+  }
+
+  return parts.length > 0 ? parts.join('\n\n') : null;
 }
 
 /** First "- " line of LESSON.md, if the agent wrote one. */
@@ -378,7 +412,9 @@ export class ClaudeAgentExecutor implements Executor {
         append: buildAppend(
           role,
           lessons,
-          this.knowledge(),
+          // What this level knows *about this job*, not what it did most
+          // recently. Same selection the recall tier uses.
+          relevantLines(this.knowledge(), job.prompt, 8),
           hasRepo,
           sources,
           hint?.approach,
@@ -403,13 +439,14 @@ export class ClaudeAgentExecutor implements Executor {
     } catch (err) {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
-      const salvage = await this.harvest(sandboxDir, hasRepo, onProgress);
+      const salvage = await this.harvestAndCloseOut(sandboxDir, hasRepo, job, onProgress);
       // The same shape the success path records. A failed run that is still
       // filed as a full session pollutes the very history the quote reads.
       const failedMeter: JobMeter = {
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
+        ...(salvage.closeOutUsd ? { closeOutUsd: salvage.closeOutUsd } : {}),
       };
       if (err instanceof SessionFailure) {
         throw new SessionFailure(
@@ -427,7 +464,12 @@ export class ClaudeAgentExecutor implements Executor {
       );
     }
 
-    const { lesson, approach } = await this.harvest(sandboxDir, hasRepo, onProgress);
+    const { lesson, approach, closeOutUsd } = await this.harvestAndCloseOut(
+      sandboxDir,
+      hasRepo,
+      job,
+      onProgress,
+    );
 
     return {
       summary,
@@ -435,10 +477,41 @@ export class ClaudeAgentExecutor implements Executor {
       approach,
       meter: {
         ...meter,
+        // The write-up is spending too. Recording it separately keeps the
+        // per-turn rate honest — it prices the session, not the session plus
+        // an errand — while the total still counts every cent.
+        ...(closeOutUsd
+          ? { costUsd: (meter.costUsd ?? 0) + closeOutUsd, closeOutUsd }
+          : {}),
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
       },
+    };
+  }
+
+  /**
+   * Everything the run earned, plus the write-up it did not have turns for.
+   * The close-out only runs when the first harvest came back missing one, so a
+   * session that did write its own notes costs nothing extra.
+   */
+  private async harvestAndCloseOut(
+    sandboxDir: string,
+    hasRepo: boolean,
+    job: Job,
+    onProgress?: (detail: string) => void,
+  ): Promise<{ lesson?: string; approach?: string; closeOutUsd?: number }> {
+    const first = await this.harvest(sandboxDir, hasRepo, onProgress);
+    if (first.lesson && first.approach) return first;
+
+    const meter = await this.closeOut(sandboxDir, job, job.id, onProgress);
+    if (!meter) return first;
+
+    const after = await this.harvest(sandboxDir, hasRepo);
+    return {
+      lesson: after.lesson ?? first.lesson,
+      approach: after.approach ?? first.approach,
+      ...(meter.costUsd ? { closeOutUsd: meter.costUsd } : {}),
     };
   }
 
@@ -468,6 +541,51 @@ export class ClaudeAgentExecutor implements Executor {
       : undefined;
 
     return { lesson, approach };
+  }
+
+  /**
+   * Asks a cheap model to write down what the run did, from what it left on
+   * disk. Runs after every job that produced anything at all — including the
+   * ones that died, which are most of them on a short leash.
+   *
+   * Its own failure is never the job's: a missing write-up costs the crew a
+   * lesson, and throwing here would cost the user their work.
+   */
+  private async closeOut(
+    sandboxDir: string,
+    job: Job,
+    jobId: string,
+    onProgress?: (detail: string) => void,
+  ): Promise<JobMeter | undefined> {
+    const evidence = closeOutEvidence(sandboxDir);
+    if (!evidence) return undefined;
+
+    const configPath = path.join(sandboxDir, '.closeout.json');
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        cwd: sandboxDir,
+        prompt: `A job has just finished. Write down what it teaches.\n\nThe job was: ${job.prompt}\n\n${evidence}`,
+        append: [
+          'You are writing the crew notes for a job that has already run. Do not do the job.',
+          'Write exactly two files in the working directory, then stop:',
+          '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
+          '- APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
+          'If the run failed, say what to do differently — a run that died still teaches something.',
+        ].join('\n'),
+        allowedTools: ['Write'],
+        maxTurns: CLOSEOUT_TURNS,
+        model: process.env.AGENTLINGS_CLOSEOUT_MODEL || CLOSEOUT_MODEL,
+      }),
+    );
+
+    try {
+      const { meter } = await this.runSession(configPath, jobId, undefined);
+      onProgress?.('wrote up what this job teaches');
+      return meter;
+    } catch {
+      return undefined;
+    }
   }
 
   /**

@@ -1,8 +1,15 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Agentling, Job } from '@agentlings/shared';
-import { creditRecipe, readRecipes, rememberRecipe, writeRecipes } from '../recipes';
-import { decide } from '../router';
+import {
+  TOOL_CANDIDATE_RUNS,
+  creditRecipe,
+  noteToolCandidate,
+  readRecipes,
+  rememberRecipe,
+  writeRecipes,
+} from '../recipes';
+import { type Decision, decide } from '../router';
 import { fetchPage } from '../web';
 import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
@@ -36,8 +43,8 @@ export class RoutedExecutor implements Executor {
     agentling?: Agentling,
   ): Promise<ExecutorResult> {
     const recipes = readRecipes(this.levelDir);
-    const decision = job.noRouter
-      ? ({ kind: 'agent' } as const)
+    const decision: Decision = job.noRouter
+      ? { kind: 'agent' }
       : decide(job, {
           knowledge: this.knowledge(),
           recipes,
@@ -83,6 +90,26 @@ export class RoutedExecutor implements Executor {
     if (decision.kind === 'oneshot') {
       hint = { oneShot: true, approach: decision.approach };
       onProgress?.(`done before — running it with less exploring (${decision.reason})`);
+    } else if (decision.kind === 'agent' && decision.approach) {
+      hint = { approach: decision.approach };
+      onProgress?.('something like this was done before — starting from that method');
+    }
+    // Whichever way the method arrived, the recipe was used.
+    const usedKey = decision.recipeKey;
+    if (usedKey) {
+      const used = recipes.find((r) => r.key === usedKey);
+      if (used && (used.successes ?? 0) >= TOOL_CANDIDATE_RUNS) {
+        // Not acted on: this only counts how often a compiled tool could have
+        // served the job for nothing, so the fourth tier gets built on evidence
+        // that the repeat work exists rather than on the hope that it does.
+        noteToolCandidate(this.levelDir, {
+          at: Date.now(),
+          jobId: job.id,
+          prompt: job.prompt,
+          recipeKey: usedKey,
+          successes: used.successes ?? 0,
+        });
+      }
     }
 
     let result: ExecutorResult | undefined;
@@ -109,8 +136,8 @@ export class RoutedExecutor implements Executor {
       result && !job.repoPath && !job.tools?.length ? result.summary : undefined;
 
     let updated = recipes;
-    if (decision.kind === 'oneshot') {
-      updated = creditRecipe(updated, decision.recipeKey, Date.now());
+    if (usedKey) {
+      updated = creditRecipe(updated, usedKey, Date.now(), result !== undefined);
     }
     if (approach && agentling) {
       updated = rememberRecipe(updated, {
@@ -122,7 +149,7 @@ export class RoutedExecutor implements Executor {
       });
       onProgress?.('noted how to do this next time');
     }
-    if (updated !== recipes || decision.kind === 'oneshot') {
+    if (updated !== recipes || usedKey) {
       writeRecipes(this.levelDir, updated);
     }
 

@@ -4,7 +4,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Agentling, Job } from '@agentlings/shared';
-import { readRecipes, writeRecipes, type Recipe } from '../recipes';
+import {
+  TOOL_CANDIDATE_RUNS,
+  readRecipes,
+  readToolCandidates,
+  writeRecipes,
+  type Recipe,
+} from '../recipes';
 import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 import { RoutedExecutor } from './routed';
@@ -474,6 +480,73 @@ describe('RoutedExecutor', () => {
     it('reports nothing stopped when the executor cannot cancel', () => {
       const noCancel: Executor = { run: async () => ({ summary: 'x' }) };
       expect(build(noCancel).cancel('j1')).toBe(false);
+    });
+  });
+
+  describe('a recipe that only half fits', () => {
+    function stored(): void {
+      writeRecipes(levelDir, [
+        {
+          key: 'add a test for the estimate module',
+          terms: ['add', 'test', 'estimate', 'module'],
+          role: 'worker',
+          approach: 'read the module, then write the test beside it',
+          hits: 0,
+          successes: 0,
+          learnedAt: 1,
+        },
+      ]);
+    }
+
+    it('hands the method over without cutting the leash', async () => {
+      stored();
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: 'write tests for the estimate module' }), PIP);
+
+      expect(session.runs[0].hint).toEqual({ approach: 'read the module, then write the test beside it' });
+      expect(session.runs[0].hint?.oneShot).toBeUndefined();
+      expect(progress[0]).toContain('starting from that method');
+    });
+
+    it('credits the recipe it borrowed from', async () => {
+      stored();
+      await run(build(new FakeSession()), job({ prompt: 'write tests for the estimate module' }), PIP);
+      expect(readRecipes(levelDir)[0].hits).toBe(1);
+    });
+  });
+
+  describe('counting what a compiled tool could have done', () => {
+    function stored(successes: number): void {
+      writeRecipes(levelDir, [
+        {
+          key: 'add a test for the estimate module',
+          terms: ['add', 'test', 'estimate', 'module'],
+          role: 'worker',
+          approach: 'read the module, then write the test beside it',
+          hits: successes,
+          successes,
+          learnedAt: 1,
+        },
+      ]);
+    }
+
+    const candidates = () => readToolCandidates(levelDir);
+
+    // Nothing acts on this yet, deliberately. It answers "would a fourth tier
+    // have earned its keep" by counting, so the decision to build one rests on
+    // evidence that the repeat work exists rather than on hoping it does.
+    it('notes a job a proven recipe could have served', async () => {
+      stored(TOOL_CANDIDATE_RUNS);
+      await run(build(new FakeSession()), job({ prompt: 'add a test for the estimate module' }), PIP);
+
+      expect(candidates()).toHaveLength(1);
+      expect(candidates()[0]).toMatchObject({ recipeKey: 'add a test for the estimate module' });
+    });
+
+    it('stays quiet while the recipe has not proven itself', async () => {
+      stored(TOOL_CANDIDATE_RUNS - 1);
+      await run(build(new FakeSession()), job({ prompt: 'add a test for the estimate module' }), PIP);
+      expect(candidates()).toHaveLength(0);
     });
   });
 });

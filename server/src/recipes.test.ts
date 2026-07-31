@@ -19,12 +19,16 @@ describe('normalise and terms', () => {
     expect(normalise('  Total  The Invoices ')).toBe('total the invoices');
   });
 
-  it('keeps only the words that carry meaning', () => {
+  it('keeps only the words that carry meaning, stemmed so plurals still match', () => {
+    // The plural and the singular have to land on the same word, or the same
+    // job looks like a different one — which is what they measured at 0.33.
     expect(terms('Please total the invoices in the spreadsheet')).toEqual([
       'total',
-      'invoices',
+      'invoice',
       'spreadsheet',
     ]);
+    expect(terms('total the invoice')).toContain('invoice');
+    expect(terms('add tests for it')).toEqual(terms('add a test for it'));
   });
 });
 
@@ -44,7 +48,7 @@ describe('findRecipe', () => {
   const recipes: Recipe[] = [
     {
       key: 'total the invoices',
-      terms: ['total', 'invoices'],
+      terms: terms('total the invoices'),
       role: 'analyst',
       approach: 'sum column D',
       hits: 0,
@@ -139,5 +143,70 @@ describe('persistence', () => {
 
   it('starts empty rather than throwing when there is nothing yet', () => {
     expect(readRecipes(dir)).toEqual([]);
+  });
+});
+
+describe('matching strength', () => {
+  const recipes: Recipe[] = [
+    {
+      key: 'add a test for the estimate module',
+      terms: terms('add a test for the estimate module'),
+      role: 'worker',
+      approach: 'read the module, then write the test beside it',
+      hits: 0,
+      learnedAt: 1,
+    },
+  ];
+
+  // The pair that started this: measured at 0.33 against a 0.65 bar, so the
+  // crew never recognised its own work. It still is not a strong match, and
+  // that is the point — it is now good enough to be worth the method.
+  it('calls a differently-worded version of the same job worth a hint', () => {
+    const found = findRecipe(recipes, 'write tests for the estimate module');
+    expect(found).not.toBeNull();
+    expect(found?.strong).toBe(false);
+    expect(found?.recipe.approach).toContain('read the module');
+  });
+
+  it('still calls an exact repeat strong', () => {
+    expect(findRecipe(recipes, 'Add a test for the estimate module')?.strong).toBe(true);
+  });
+
+  it('finds nothing at all for unrelated work', () => {
+    expect(findRecipe(recipes, 'book a table for dinner')).toBeNull();
+  });
+});
+
+describe('similarity weighting', () => {
+  const corpus = (n: number): string[][] =>
+    Array.from({ length: n }, () => ['file', 'module']);
+
+  // Rarity is only a claim worth making once there is something to compare
+  // against. With one recipe on file every word it uses looks maximally
+  // common, which weighs down the shared words — the entire signal.
+  it('ignores rarity until the corpus is big enough to have any', () => {
+    const small = similarity(['file', 'module'], ['file', 'module'], corpus(2));
+    expect(small).toBe(1);
+  });
+
+  it('counts a rare word for more than a common one', () => {
+    const common = similarity(['file'], ['file', 'estimate'], corpus(6));
+    const rare = similarity(['estimate'], ['file', 'estimate'], corpus(6));
+    expect(rare).toBeGreaterThan(common);
+  });
+});
+
+describe('successes, kept apart from uses', () => {
+  const one = () => rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 });
+
+  it('does not count a run that died as a success', () => {
+    const credited = creditRecipe(one(), 'x', 99);
+    expect(credited[0].hits).toBe(1);
+    expect(credited[0].successes ?? 0).toBe(0);
+  });
+
+  it('counts one that landed', () => {
+    const credited = creditRecipe(one(), 'x', 99, true);
+    expect(credited[0]).toMatchObject({ hits: 1, successes: 1 });
   });
 });

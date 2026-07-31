@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Job } from '@agentlings/shared';
-import type { Recipe } from './recipes';
+import { terms, type Recipe } from './recipes';
 import { decide, isFetchOnly, relevantLines, type RouterContext } from './router';
 
 function job(over: Partial<Job> = {}): Job {
@@ -87,7 +87,7 @@ describe('decide', () => {
 
   const recipe: Recipe = {
     key: 'total the invoices in the spreadsheet',
-    terms: ['total', 'invoices', 'spreadsheet'],
+    terms: terms('total the invoices in the spreadsheet'),
     role: 'analyst',
     approach: 'Open the sheet, sum column D, ignore blank rows.',
     answer: 'The invoices total £48,201.',
@@ -135,5 +135,44 @@ describe('decide', () => {
     // this asserts the decision that would otherwise have been taken.
     const decision = decide(job({ prompt: 'what did we learn about login?' }), context());
     expect(decision.kind).toBe('answer');
+  });
+});
+
+describe('a recipe that only half fits', () => {
+  const recipe: Recipe = {
+    key: 'add a test for the estimate module',
+    terms: terms('add a test for the estimate module'),
+    role: 'worker',
+    approach: 'read the module, then write the test beside it',
+    hits: 0,
+    learnedAt: 1,
+  };
+
+  // Two bars, because the two mistakes cost different amounts. A wrong method
+  // handed to a full-length session wastes a turn it can ignore; the same
+  // wrong method with the leash cut to three turns wastes the whole run.
+  it('hands over the method without shortening the run', () => {
+    const decision = decide(
+      job({ prompt: 'write tests for the estimate module' }),
+      context({ recipes: [recipe] }),
+    );
+    expect(decision.kind).toBe('agent');
+    if (decision.kind === 'agent') {
+      expect(decision.approach).toContain('read the module');
+      expect(decision.recipeKey).toBe(recipe.key);
+    }
+  });
+
+  it('shortens the run only when the job really is the same one', () => {
+    const decision = decide(
+      job({ prompt: 'Add a test for the estimate module' }),
+      context({ recipes: [recipe] }),
+    );
+    expect(decision.kind).toBe('oneshot');
+  });
+
+  it('says nothing at all about unrelated work', () => {
+    const decision = decide(job({ prompt: 'book a table for dinner' }), context({ recipes: [recipe] }));
+    expect(decision).toEqual({ kind: 'agent' });
   });
 });

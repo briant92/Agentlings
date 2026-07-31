@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { repoListing, turnCapFor, turnsFor, turnsForBudget } from './claude';
+import { closeOutEvidence, repoListing, turnCapFor, turnsFor, turnsForBudget } from './claude';
 
 describe('turnCapFor', () => {
   // Was 1, which cannot work: a single turn ends before the model sees any
@@ -161,7 +161,7 @@ describe('buildAppend', () => {
     expect(text).toContain('cloned at ./repo');
     expect(text).toContain('stay curious');
     expect(text).toContain('the tunnel floods on Tuesdays');
-    expect(text).toContain('LESSON.md');
+    expect(text).toContain('RESULT.md');
   });
 
   it('falls back to a generic persona without a role', () => {
@@ -198,11 +198,15 @@ describe('buildAppend', () => {
       expect(fromRecipe()).toContain('Do not re-explore');
     });
 
-    it('leaves a cold job asked for all three, so the crew still learns', () => {
+    // Nor is a cold job. The write-up used to compete with the work for turns
+    // and lost every time — 13 of 13 recipe runs died before writing it — so
+    // it moved out to a close-out pass that runs after the session, off a
+    // cheap model, on what the run actually left behind.
+    it('asks no job for the write-up, since that is the close-out pass now', () => {
       const cold = buildAppend(undefined, [], [], true);
       expect(cold).toContain('RESULT.md');
-      expect(cold).toContain('LESSON.md');
-      expect(cold).toContain('APPROACH.md');
+      expect(cold).not.toContain('LESSON.md');
+      expect(cold).not.toContain('APPROACH.md');
     });
   });
 });
@@ -224,5 +228,41 @@ describe('toolLine', () => {
     expect(toolLine('Read', { file_path: 'repo/src/index.ts' })).toBe('Read repo/src/index.ts');
     expect(toolLine('Glob', {})).toBe('Glob');
     expect(toolLine('Bash', { command: 'x'.repeat(200) })).toHaveLength(78);
+  });
+});
+
+describe('closeOutEvidence', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'agentlings-closeout-'));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('says nothing when the run left nothing behind', () => {
+    expect(closeOutEvidence(dir)).toBeNull();
+  });
+
+  it('carries the run’s own report', () => {
+    writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n\nAdded the tests.');
+    expect(closeOutEvidence(dir)).toContain('Added the tests.');
+  });
+
+  // The names, never the patch. The whole point of a separate pass is that it
+  // costs about a cent, and a diff is what makes a turn expensive.
+  it('names the files it changed without quoting the diff', () => {
+    writeFileSync(
+      path.join(dir, 'DIFF.patch'),
+      [
+        'diff --git a/server/src/estimate.ts b/server/src/estimate.ts',
+        '--- a/server/src/estimate.ts',
+        '+++ b/server/src/estimate.ts',
+        '@@ -1 +1 @@',
+        '-const SECRET_SAUCE = 1;',
+        '+const SECRET_SAUCE = 2;',
+      ].join('\n'),
+    );
+    const evidence = closeOutEvidence(dir);
+    expect(evidence).toContain('server/src/estimate.ts');
+    expect(evidence).not.toContain('SECRET_SAUCE');
   });
 });

@@ -404,6 +404,61 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   The only route to actually free is the crew turning a repeated job into a
   script the router can run in code — a fourth shortcut tier that does not
   exist yet.
+- 2026-07-31 — Learning sweep: the write-up moves out of the session, the
+  matcher gets two bars, and the fourth tier is counted before it is built.
+  Framing first, because it decides everything else: none of this is
+  reinforcement learning and calling it that leads to bad choices. No weights
+  change; a stateless model re-reads notes every time. What can actually be
+  built is a **compiler** — the agent *interprets* a task, a tool is that task
+  *compiled*, and learning is moving work down the ladder from one to the
+  other. That also fixes the criterion for calling the API: pay for judgement
+  that has not been compiled yet, and nothing else. It sets the ceiling too —
+  "add tests for module X" never compiles, because the assertions depend on the
+  module; "generate the skeleton for <file>" does. Tools take the scaffolding,
+  sessions keep the judgement.
+  **The write-up moved out.** It used to compete with the work for turns, so it
+  was cut first — a recipe run was explicitly told not to write LESSON.md or
+  APPROACH.md — and the tier built to be cheap became the one tier that could
+  never teach anything. Now no job is asked for them at all. A close-out pass
+  runs afterwards on a cheap model with one turn, handed the run's own RESULT.md
+  and the *names* of the files it changed, never the patch — the point is a
+  write-up costing about a cent, and a diff is what makes a turn expensive. It
+  runs after every job that left anything behind, including the ones that died,
+  which are most of them. Its cost is recorded as `closeOutUsd` inside
+  `costUsd`: counted in the total, kept out of the per-turn rate, because the
+  write-up is a fixed errand rather than something the turn budget can buy more
+  or less of. Its own failure is swallowed — a missing lesson costs the crew a
+  note, and throwing would cost the user their work.
+  **Two bars, not one.** Same-shape jobs scored 0.33 against a 0.65 bar, so the
+  crew never recognised its own work. Fixed by stemming, by weighting rare
+  words above common ones, and by splitting the threshold: a strong match still
+  shortens the run to three turns, while a weak one (0.3) hands over the method
+  and leaves the leash alone. The asymmetry is the whole argument — a wrong
+  method given to a full-length session wastes a turn it can ignore, and the
+  same wrong method with the leash cut wastes the entire run.
+  **The fourth tier is counted, not built.** A recipe now tracks `successes`
+  apart from `hits`, since a recipe used ten times and never once successful is
+  a candidate for nothing. A job matching a recipe with three successes appends
+  to `tool-candidates.jsonl` and *nothing else happens*. Promotion would cost
+  about a session and save a fraction of one per reuse, so it pays back around
+  the third to fifth use — and this machine has seen one repeat in 36 jobs. The
+  counter answers whether there is anything to compile before a compiler gets
+  written.
+  Three of my own claims were wrong on the way and the corrections are the
+  useful part. `KNOWLEDGE.md` is **not** fed whole and does not grow without
+  bound — `readKnowledge` already capped it at the last twelve lines, so the
+  defect was never cost, it was that twelve *recent* notes are not twelve
+  *relevant* ones; sessions now get the top eight by relevance, through the
+  same `relevantLines` the recall tier uses. Rarity weighting made matching
+  **worse** at first: with one recipe on file every word it uses appears in
+  every document, so the shared words — the entire signal — got weighed to
+  nothing and a job stopped matching itself; it is off below five recipes. And
+  the first stemmer turned "invoices" into "invoic" while leaving "invoice"
+  whole, breaking the exact pair it existed to fix; stripping a single "s" and
+  never "es" is worse linguistics and better matching. Recipe `terms` are now
+  recomputed from the key on read rather than trusted from disk, so the next
+  change to stemming strands nothing and that migration never has to be
+  written.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

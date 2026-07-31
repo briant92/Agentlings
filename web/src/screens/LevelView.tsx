@@ -14,8 +14,17 @@ import { WorldCanvas } from '../world/WorldCanvas';
 import type { LevelEntry } from './SelectScreen';
 
 /** One level's world: the diorama, queue bar, and terminal, fully scoped. */
-export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => void }) {
-  const { world, connected, events } = useWorld(level.id);
+export function LevelView({
+  level,
+  onExit,
+  onMissing,
+}: {
+  level: LevelEntry;
+  onExit: () => void;
+  /** The level no longer exists — go somewhere that does, and stop offering it. */
+  onMissing: () => void;
+}) {
+  const { world, connected, events, gone } = useWorld(level.id);
   const [reviewJobId, setReviewJobId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
@@ -27,6 +36,11 @@ export function LevelView({ level, onExit }: { level: LevelEntry; onExit: () => 
   const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
 
   useEffect(() => () => clearTimeout(arrival.current), []);
+
+  // Nothing here can work without the level, and there is no reconnect coming.
+  useEffect(() => {
+    if (gone) onMissing();
+  }, [gone, onMissing]);
 
   // Let the iris finish and the world draw before pointing at anything.
   useEffect(() => {

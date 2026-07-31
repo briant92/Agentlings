@@ -15,7 +15,7 @@ import type {
   ServerMessage,
   SettingsInfo,
 } from '@agentlings/shared';
-import { TICK_MS } from '@agentlings/shared';
+import { SOCKET_LEVEL_GONE, TICK_MS } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
@@ -1177,7 +1177,7 @@ wss.on('connection', (socket, req) => {
   const levelId = url.searchParams.get('level') ?? '';
   const rt = levels.get(levelId);
   if (!rt) {
-    socket.close(4004, 'unknown level');
+    socket.close(SOCKET_LEVEL_GONE, 'unknown level');
     return;
   }
   subscriptions.set(socket, levelId);

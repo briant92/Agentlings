@@ -396,5 +396,13 @@ export const STATION_BASE_X = 240;
 export const STATION_SPACING = 130;
 export const MAX_STATIONS = 5;
 export const TICK_MS = 100;
+/**
+ * Close code for "that level does not exist". A socket closed with it must not
+ * be retried — the client used to reconnect every second forever, sitting on
+ * "connecting…" for a level that was never coming back. Shared so the two ends
+ * cannot drift: a server that closes with one number and a client that watches
+ * for another is the same hang with more steps.
+ */
+export const SOCKET_LEVEL_GONE = 4004;
 /** Localhost API port; the spawned runner calls back here for web fetches. */
 export const SERVER_PORT = 4600;

@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react';
+import { SOCKET_LEVEL_GONE } from '@agentlings/shared';
 import type { JobEvent, ServerMessage, WorldState } from '@agentlings/shared';
 
 const CLIENT_EVENT_CAP = 300;
 
-/** Live world + event feed for one level over WebSocket, with a 1s reconnect. */
+/**
+ * Live world + event feed for one level over WebSocket, with a 1s reconnect.
+ *
+ * The retry exists for the ordinary case — a dev-server restart drops every
+ * socket and they all come back. It is deliberately not used when the server
+ * says the level is gone: retrying that forever is how a deleted level left
+ * the screen stuck on "connecting…" with no way out but the back button.
+ */
 export function useWorld(levelId: string): {
   world: WorldState | null;
   connected: boolean;
   events: JobEvent[];
+  gone: boolean;
 } {
   const [world, setWorld] = useState<WorldState | null>(null);
   const [connected, setConnected] = useState(false);
   const [events, setEvents] = useState<JobEvent[]>([]);
+  const [gone, setGone] = useState(false);
 
   useEffect(() => {
     let ws: WebSocket | null = null;
@@ -19,6 +29,7 @@ export function useWorld(levelId: string): {
     let closed = false;
     setWorld(null);
     setEvents([]);
+    setGone(false);
 
     const connect = () => {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -45,8 +56,12 @@ export function useWorld(levelId: string): {
           });
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         setConnected(false);
+        if (ev.code === SOCKET_LEVEL_GONE) {
+          setGone(true);
+          return;
+        }
         if (!closed) retry = setTimeout(connect, 1000);
       };
     };
@@ -59,5 +74,5 @@ export function useWorld(levelId: string): {
     };
   }, [levelId]);
 
-  return { world, connected, events };
+  return { world, connected, events, gone };
 }

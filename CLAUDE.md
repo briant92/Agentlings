@@ -477,6 +477,39 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   estimate was optimistic — "about a cent" measured 2.1–2.3c, about 4% of a
   50c repo job but nearer 17% of a cheap one, so the write-up is close to free
   on the work that matters and merely cheap on the work that does not.
+- 2026-07-31 — The fourth tier, built on request rather than on evidence. The
+  standing recommendation was to wait for the candidate counter to show repeat
+  work, and it still shows one repeat in 36 jobs — so this is machinery for a
+  demand that has not appeared yet, built deliberately with that known. What
+  makes it worth having anyway is that the design question is interesting and
+  the answer is reusable: **a tool is a job compiled**. A recipe saves the
+  exploring and still pays a model to read it; a tool removes the model, which
+  is the only way a cost per task actually falls. A tool is a directory with a
+  manifest and two plain-node scripts, `run.mjs` and `verify.mjs` — no shell,
+  no dependencies, no network, so it neither cares about the platform nor
+  reaches anywhere it should not. The ledger gets a `tool` tier kept apart from
+  `routed`, because routed work was never paid for while a tool is work that
+  used to be: only the second says the crew is getting cheaper.
+  Every design decision here is a refusal to trust the thing. It matches on the
+  **strong** bar only and on shape as well as words, since a script written
+  against a clone is wrong where there is no clone and the two jobs read
+  identically. It must **prove its own output**, checked in a second process
+  because a run that crashed cannot be trusted to report that it crashed; work
+  it cannot prove is discarded and the job is paid for properly. Two failures
+  in a row retire it, and a hang is killed at a timeout — a compiled tool that
+  hangs has stopped being cheaper than the session it replaced. The promotion
+  brief insists on the check harder than on the script, because without one the
+  tier is only a faster way to be wrong.
+  Promotion is a **request**, never automatic: it spends money, and a promotion
+  nobody asked for is a charge nobody quoted. It refuses a recipe that has not
+  landed three times. The manifest is written before the compiling session
+  runs, so a half-written tool exists for a while — `usableTools` filters it out
+  rather than letting it win a job away from the recipe hint that would
+  otherwise have helped.
+  One process note worth keeping: reverting a mutation with `git checkout <file>`
+  destroyed an hour of uncommitted work in that file, because the mutation
+  trick is only safe on a file that is already committed. Mutation-test after
+  committing, not before.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

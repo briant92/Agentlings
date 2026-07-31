@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import {
   writeRecipes,
   type Recipe,
 } from '../recipes';
+import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from '../tools';
 import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 import { RoutedExecutor } from './routed';
@@ -512,6 +513,70 @@ describe('RoutedExecutor', () => {
       stored();
       await run(build(new FakeSession()), job({ prompt: 'write tests for the estimate module' }), PIP);
       expect(readRecipes(levelDir)[0].hits).toBe(1);
+    });
+  });
+
+  describe('a job the crew has compiled into a tool', () => {
+    const PROMPT = 'total the invoices in the spreadsheet';
+    const WROTE = "import {writeFileSync} from 'node:fs'; writeFileSync('RESULT.md','the tool did it');";
+    const CHECKS = "import {existsSync} from 'node:fs'; process.exit(existsSync('RESULT.md') ? 0 : 1);";
+
+    function tool(runScript: string, verifyScript: string): void {
+      const name = 'tidy-invoice';
+      writeTool(levelDir, {
+        name,
+        recipeKey: PROMPT,
+        terms: ['total', 'invoice', 'spreadsheet'],
+        hasRepo: false,
+        description: 'compiled',
+        learnedAt: 1,
+        runs: 0,
+        failures: 0,
+      });
+      writeFileSync(path.join(toolDir(levelDir, name), RUN_SCRIPT), runScript);
+      writeFileSync(path.join(toolDir(levelDir, name), VERIFY_SCRIPT), verifyScript);
+    }
+
+    it('does the job with no session and no cost', async () => {
+      tool(WROTE, CHECKS);
+      const session = new FakeSession();
+      const out = await run(build(session), job({ prompt: PROMPT }), PIP);
+
+      expect(session.runs).toHaveLength(0);
+      expect(result()).toContain('the tool did it');
+      expect(out.meter).toMatchObject({ costUsd: 0, tooled: true });
+    });
+
+    // The safety argument for the entire tier. Work a tool cannot prove is
+    // thrown away and the job is paid for properly — a free wrong answer is
+    // the one outcome worse than a right answer that cost money.
+    it('throws away work it cannot prove, and pays for the job instead', async () => {
+      tool(WROTE, 'process.exit(1)');
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: PROMPT }), PIP);
+
+      expect(session.runs).toHaveLength(1);
+      expect(progress.some((p) => p.includes('could not prove'))).toBe(true);
+    });
+
+    it('falls through when the script itself crashes', async () => {
+      tool('throw new Error("nope")', CHECKS);
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: PROMPT }), PIP);
+      expect(session.runs).toHaveLength(1);
+    });
+
+    it('retires itself after two failures and stops claiming the job', async () => {
+      tool(WROTE, 'process.exit(1)');
+      await run(build(new FakeSession()), job({ prompt: PROMPT }), PIP);
+      await run(build(new FakeSession()), job({ prompt: PROMPT }), PIP);
+      expect(readTools(levelDir)[0].retiredReason).toContain('in a row');
+
+      progress = [];
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: PROMPT }), PIP);
+      expect(session.runs).toHaveLength(1);
+      expect(progress.some((p) => p.includes('no session needed'))).toBe(false);
     });
   });
 

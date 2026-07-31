@@ -53,14 +53,17 @@ export function quoteFor(
 ): Quote {
   const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
 
-  if (tier === 'routed') {
+  if (tier === 'routed' || tier === 'tool') {
     return {
       tier,
       ceilingUsd: 0,
       expectedUsd: 0,
       samples: 0,
       certainty: 'certain',
-      wording: 'Free — we already know this',
+      wording:
+        tier === 'tool'
+          ? 'Free — the crew wrote a tool for this'
+          : 'Free — we already know this',
     };
   }
 

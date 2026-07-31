@@ -1,6 +1,8 @@
+import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Agentling, Job } from '@agentlings/shared';
+import { cloneRepo, writeDiff } from '../gitwork';
 import {
   TOOL_CANDIDATE_RUNS,
   creditRecipe,
@@ -10,9 +12,42 @@ import {
   writeRecipes,
 } from '../recipes';
 import { type Decision, decide } from '../router';
+import {
+  RUN_SCRIPT,
+  TOOL_TIMEOUT_MS,
+  VERIFY_SCRIPT,
+  isComplete,
+  readTools,
+  recordToolRun,
+  toolDir,
+  usableTools,
+} from '../tools';
 import { fetchPage } from '../web';
 import { SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
+
+/**
+ * Runs one plain-node script in the sandbox and says whether it succeeded.
+ * Killed at the timeout, because a compiled tool that hangs has stopped being
+ * cheaper than the session it replaced.
+ */
+function runNode(script: string, cwd: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [script], { cwd, stdio: 'ignore' });
+    const timer = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, TOOL_TIMEOUT_MS);
+    child.on('error', () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve(code === 0);
+    });
+  });
+}
 
 /**
  * Wraps the real executor with the deterministic layer. Work the router
@@ -21,7 +56,9 @@ import type { Executor, ExecutorResult, RunHint } from './executor';
  *
  * On the way back it does the other half: when a session explains how it
  * solved something, that becomes a recipe, so the next job of the same shape
- * skips the exploring and runs as a single shot.
+ * skips the exploring and runs as a single shot — and once a recipe has proved
+ * itself often enough, a compiled tool can take the job away from the model
+ * altogether.
  */
 export class RoutedExecutor implements Executor {
   constructor(
@@ -36,6 +73,45 @@ export class RoutedExecutor implements Executor {
     return this.fallback.cancel?.(jobId) ?? false;
   }
 
+  /**
+   * Runs a compiled tool, and keeps its work only if the tool can prove it.
+   *
+   * Both scripts are plain node, so nothing here needs a shell or cares which
+   * platform it is on. Returns null when the tool did not run or did not
+   * convince, which sends the job back down the ordinary path.
+   */
+  private async runTool(
+    name: string,
+    job: Job,
+    sandboxDir: string,
+    onProgress?: (detail: string) => void,
+  ): Promise<ExecutorResult | null> {
+    const manifest = readTools(this.levelDir).find((t) => t.name === name);
+    if (!manifest || !isComplete(this.levelDir, manifest)) return null;
+
+    const dir = toolDir(this.levelDir, name);
+    onProgress?.(`running the ${name} tool — no session needed`);
+
+    if (job.repoPath) await cloneRepo(job.repoPath, sandboxDir);
+
+    const ran = await runNode(path.join(dir, RUN_SCRIPT), sandboxDir);
+    // Checked in a second process on purpose: a run that crashed cannot be
+    // trusted to report that it crashed.
+    const proved = ran && (await runNode(path.join(dir, VERIFY_SCRIPT), sandboxDir));
+
+    const after = recordToolRun(this.levelDir, manifest, proved);
+    if (!proved) {
+      if (after.retiredReason) onProgress?.(`${name} retired — ${after.retiredReason}`);
+      return null;
+    }
+
+    if (job.repoPath) await writeDiff(sandboxDir);
+    return {
+      summary: `Done by the ${name} tool, which the crew wrote after doing this by hand. No session, no cost.`,
+      meter: { costUsd: 0, turns: 0, routed: true, tooled: true },
+    };
+  }
+
   async run(
     job: Job,
     sandboxDir: string,
@@ -48,6 +124,7 @@ export class RoutedExecutor implements Executor {
       : decide(job, {
           knowledge: this.knowledge(),
           recipes,
+          tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,
         });
 
@@ -86,6 +163,15 @@ export class RoutedExecutor implements Executor {
       };
     }
 
+    if (decision.kind === 'tool') {
+      const done = await this.runTool(decision.toolName, job, sandboxDir, onProgress);
+      if (done) return done;
+      // It could not prove its own output, so nothing it produced is kept and
+      // the job carries on as if no tool existed. A free wrong answer is the
+      // one outcome worse than paying for a right one.
+      onProgress?.('the tool could not prove its work — doing it properly instead');
+    }
+
     let hint: RunHint | undefined;
     if (decision.kind === 'oneshot') {
       hint = { oneShot: true, approach: decision.approach };
@@ -95,7 +181,7 @@ export class RoutedExecutor implements Executor {
       onProgress?.('something like this was done before — starting from that method');
     }
     // Whichever way the method arrived, the recipe was used.
-    const usedKey = decision.recipeKey;
+    const usedKey = decision.kind === 'tool' ? undefined : decision.recipeKey;
     if (usedKey) {
       const used = recipes.find((r) => r.key === usedKey);
       if (used && (used.successes ?? 0) >= TOOL_CANDIDATE_RUNS) {

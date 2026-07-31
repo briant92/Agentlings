@@ -70,6 +70,8 @@ export interface JobMeter {
   routed?: boolean;
   /** True when a recipe let it run as a single call instead of a loop. */
   oneShot?: boolean;
+  /** True when a compiled tool did the whole job, with no model involved. */
+  tooled?: boolean;
   /** The run spent money that could not be measured — see LedgerEntry. */
   costUnknown?: boolean;
   /**
@@ -291,7 +293,7 @@ export interface AgentlingProfile {
 
 /** What a job will cost, quoted before it runs. The ceiling is enforced. */
 export interface Quote {
-  tier: 'routed' | 'oneshot' | 'session';
+  tier: 'routed' | 'tool' | 'oneshot' | 'session';
   /** The most it can be charged; the session is stopped at this. */
   ceilingUsd: number;
   /** What it has typically cost, when there is history. */

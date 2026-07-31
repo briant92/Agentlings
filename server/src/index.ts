@@ -73,7 +73,16 @@ import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
 import { Sim } from './sim';
-import { readRecipes } from './recipes';
+import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
+import {
+  isComplete,
+  promotionPrompt,
+  readTools,
+  toolDir,
+  toolNameFor,
+  usableTools,
+  writeTool,
+} from './tools';
 import { decide } from './router';
 import { fetchPage } from './web';
 import { planWork, runnerRole } from './work';
@@ -219,7 +228,13 @@ function makeLevel(dir: string): LevelRuntime {
         // specialist would build a history for work that never happened, and
         // rob the role that really did it of its own.
         jobClass: agentling.role,
-        tier: job.meter?.routed ? 'routed' : job.meter?.oneShot ? 'oneshot' : 'session',
+        tier: job.meter?.tooled
+          ? 'tool'
+          : job.meter?.routed
+            ? 'routed'
+            : job.meter?.oneShot
+              ? 'oneshot'
+              : 'session',
         outcome,
         costUsd,
         priceUsd: priceFor(outcome, costUsd, job.quotedUsd),
@@ -577,14 +592,17 @@ function quoteFor_(rt: LevelRuntime, text: string, tools: string[] | undefined, 
   const decision = decide(probe, {
     knowledge: readKnowledge(rt.dir),
     recipes: readRecipes(rt.dir),
+    tools: usableTools(rt.dir),
     canFetch: tools?.includes('web') === true,
   });
   const tier: Tier =
     decision.kind === 'answer' || decision.kind === 'fetch'
       ? 'routed'
-      : decision.kind === 'oneshot'
-        ? 'oneshot'
-        : 'session';
+      : decision.kind === 'tool'
+        ? 'tool'
+        : decision.kind === 'oneshot'
+          ? 'oneshot'
+          : 'session';
   const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
   return quoteFor(tier, jobClass, readLedger(SANDBOX_ROOT), {
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
@@ -721,6 +739,71 @@ app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
   rt.roster = rt.roster.filter((s) => s.id !== seed.id);
   saveRoster(rt);
   return c.json({ id: seed.id, name: seed.name, archived: archived !== null });
+});
+
+/** The compiled tools this level has earned, and what they have done. */
+app.get('/api/levels/:lid/tools', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json({
+    tools: readTools(rt.dir).map((t) => ({ ...t, complete: isComplete(rt.dir, t) })),
+    // What could be compiled next, and how often it would have paid off.
+    candidates: readToolCandidates(rt.dir),
+  });
+});
+
+/**
+ * Compiles a proven recipe into a tool: one paid session whose only job is to
+ * write the script and the check.
+ *
+ * Deliberately a request rather than something that happens by itself. It
+ * spends money, and a promotion nobody asked for is a charge nobody quoted —
+ * the candidate log exists so the decision has evidence behind it, not so the
+ * app can make the decision alone.
+ */
+app.post('/api/levels/:lid/tools/promote', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ recipeKey?: string }>();
+  const key = body.recipeKey?.trim();
+  if (!key) return c.json({ error: 'recipeKey is required' }, 400);
+
+  const recipe = readRecipes(rt.dir).find((r) => r.key === key);
+  if (!recipe) return c.json({ error: `no recipe for "${key}"` }, 404);
+  if ((recipe.successes ?? 0) < TOOL_CANDIDATE_RUNS) {
+    return c.json(
+      {
+        error: `that recipe has landed ${recipe.successes ?? 0} times; a tool is worth writing after ${TOOL_CANDIDATE_RUNS}`,
+      },
+      400,
+    );
+  }
+  if (readTools(rt.dir).some((t) => t.recipeKey === key && !t.retiredReason)) {
+    return c.json({ error: 'a tool for that recipe already exists' }, 400);
+  }
+
+  const name = toolNameFor(key);
+  writeTool(rt.dir, {
+    name,
+    recipeKey: key,
+    terms: recipe.terms,
+    hasRepo: Boolean(rt.meta.repoPath),
+    description: `Compiled from a recipe the crew landed ${recipe.successes} times.`,
+    learnedAt: Date.now(),
+    runs: 0,
+    failures: 0,
+  });
+
+  const job = rt.queue.add({
+    title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
+    prompt: promotionPrompt(recipe, toolDir(rt.dir, name)),
+    repoPath: rt.meta.repoPath || undefined,
+    preferredRole: recipe.role,
+    // The compiler must not be handed its own half-written tool as a shortcut.
+    noRouter: true,
+  });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json({ tool: name, job }, 201);
 });
 
 /** Spend so far: what it cost us, what is chargeable, what we absorbed. */

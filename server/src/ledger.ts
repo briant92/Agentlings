@@ -10,7 +10,12 @@ import path from 'node:path';
  * first entry or the history is worthless.
  */
 
-export type Tier = 'routed' | 'oneshot' | 'session';
+/**
+ * `tool` is free like `routed`, but kept apart from it: routed work was never
+ * paid for, whereas a tool is work that *used* to be paid for and no longer
+ * is. Only the second one says the crew is getting cheaper.
+ */
+export type Tier = 'routed' | 'tool' | 'oneshot' | 'session';
 
 export interface LedgerEntry {
   at: number;

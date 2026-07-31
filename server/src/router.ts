@@ -1,5 +1,6 @@
 import type { Job } from '@agentlings/shared';
 import { findRecipe, terms, type Recipe } from './recipes';
+import { findTool, type ToolManifest } from './tools';
 import { extractUrls } from './web';
 
 /**
@@ -17,12 +18,16 @@ export type Decision =
   | { kind: 'answer'; summary: string; body: string; reason: string; recipeKey?: string }
   | { kind: 'fetch'; urls: string[]; reason: string }
   | { kind: 'oneshot'; approach: string; reason: string; recipeKey: string }
+  /** Work compiled into a script; runs in code, for nothing. */
+  | { kind: 'tool'; toolName: string; reason: string }
   /** A full session, optionally started from a method that half-fits. */
   | { kind: 'agent'; approach?: string; recipeKey?: string };
 
 export interface RouterContext {
   knowledge: string[];
   recipes: Recipe[];
+  /** Compiled tools this level has earned. Empty until one is promoted. */
+  tools?: ToolManifest[];
   /** Set when the job opted into web access. */
   canFetch: boolean;
 }
@@ -111,6 +116,19 @@ export function decide(job: Job, context: RouterContext): Decision {
   const urls = extractUrls(prompt, 5);
   if (context.canFetch && isFetchOnly(prompt, urls)) {
     return { kind: 'fetch', urls, reason: 'just fetching pages' };
+  }
+
+  // Ahead of every recipe tier: if this job has been compiled, run the
+  // compilation. The shape has to match as well as the words — a tool written
+  // against a clone is simply wrong where there is no clone, and the two jobs
+  // can be worded identically.
+  const tool = findTool(context.tools ?? [], prompt, Boolean(job.repoPath));
+  if (tool) {
+    return {
+      kind: 'tool',
+      toolName: tool.name,
+      reason: 'the crew has done this often enough to have written a tool for it',
+    };
   }
 
   const found = findRecipe(context.recipes, prompt);

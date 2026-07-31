@@ -598,6 +598,37 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   *every* turn of the five: it landed with zero headroom, so 5 is the floor
   rather than a comfortable choice, and at 3 it would certainly have died like
   the others.
+- 2026-07-31 — The promotion gate was selecting for the wrong work, which is
+  the same bug a **fifth** time and the worst-placed instance of it.
+  `successes` decides whether a job is ever compiled into a tool, and it
+  counted only runs that exited cleanly. Measured on a real mechanical repo
+  job (write EXPORTS.md, 123 exported functions): three runs, **two of which
+  wrote a correct 129-line file**, scored zero. The consequence is an
+  inversion, not merely a delay. A big mechanical job is exactly what a script
+  is for and exactly what cannot finish on a five-turn leash, while a short
+  note explaining what a favicon is lands three times easily and *is*
+  promotable — despite being prose no script can write. So the gate promoted
+  what a tool cannot do and excluded what it could. `landed` now means the run
+  **delivered**, tested the way `partial` already is: a diff on disk. One
+  notion of a run that did the work, used in both places. Proven live
+  immediately: a `partial` run credited a success and took the recipe to
+  promotable, which under the old rule was unreachable for that job forever.
+  Two things fell out of the same run. The close-out writes two files and then
+  has to say so, a third turn it does not have — so **running out is its
+  ordinary ending, with both files already on disk** — and its output was
+  being thrown away on the exit code, which is why that recipe did not exist
+  and had to be rebuilt from the APPROACH.md the run really wrote. Fixed by
+  keeping what is on disk and taking the cost off the failure; `closeOutUsd`
+  of 4.6c and 4.8c now appear where before the notes *and* the money vanished.
+  And the cut-off heuristic used the day before is wrong: reported `turns` can
+  exceed `turnsAllowed` on a run that **succeeded** (12 of 10, twice), so it
+  agreed with the real outcome on only 29 of 31 rows and the earlier "8 of 11
+  ran out" was one too many. The claim that survives unqualified is the one
+  about shape: every repo job at the old caps failed, and repo jobs after the
+  close-out finish. Price by `turnsAllowed`; never read anything into the
+  reported count.
+  Cost of learning this: **$2.38 across five runs**, of which $0.71 was
+  chargeable and $1.67 absorbed — the billing rules held throughout.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

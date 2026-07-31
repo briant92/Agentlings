@@ -36,6 +36,14 @@ export interface LedgerEntry {
   turns?: number;
   /** The turn limit the session was given — the unit a budget is priced in. */
   turnsAllowed?: number;
+  /**
+   * Whether the run had a repository to work in. Not bookkeeping: measured
+   * 2026-07-31, it is the largest single thing driving what a turn costs — a
+   * repo run burnt 7.4c/turn against 1.8c for the same role without one,
+   * because the clone puts hundreds of thousands of cached tokens in front of
+   * every turn. A rate averaged across both shapes predicts neither.
+   */
+  hasRepo?: boolean;
   model?: string;
 }
 
@@ -134,17 +142,27 @@ export function totalsBy<K extends keyof LedgerEntry>(
  * Failures count here, as they do in history(): a session that died still
  * burnt its turns at a real rate, and the question is the burn rate, not
  * whether the work landed.
+ *
+ * `hasRepo` narrows the rate to runs of the same shape, and it is what makes
+ * the budget bite at all. Measured 2026-07-31: a rate pooled across both
+ * shapes came out at 1.8c/turn for a run that really burnt 7.4c, so the
+ * budget worked out to 17 turns against a role cap of 8 and the cap always
+ * won — a ceiling that could never bind on anything. Rows with no recorded
+ * shape are left out of a narrowed rate rather than assumed: mixing them back
+ * in is the very averaging that hid the overrun.
  */
 export function costPerTurn(
   entries: LedgerEntry[],
   jobClass: string,
   tier?: Tier,
+  hasRepo?: boolean,
 ): { samples: number; usd: number } {
   const granted = (e: LedgerEntry): number => e.turnsAllowed ?? 0;
   const useful = entries.filter(
     (e) =>
       e.jobClass === jobClass &&
       (tier ? e.tier === tier : true) &&
+      (hasRepo === undefined || e.hasRepo === hasRepo) &&
       e.costUsd > 0 &&
       granted(e) > 0,
   );

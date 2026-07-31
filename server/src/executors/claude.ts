@@ -362,7 +362,7 @@ export class ClaudeAgentExecutor implements Executor {
     // the only budget that binds before the money is spent.
     const turnBudget = turnsForBudget(
       job.quotedUsd,
-      costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session'),
+      costPerTurn(this.ledger(), job.preferredRole ?? agentling?.role ?? '', 'session', hasRepo),
       turnCapFor(role, hint),
     );
 

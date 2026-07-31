@@ -223,6 +223,7 @@ function makeLevel(dir: string): LevelRuntime {
         ...(job.meter?.turnsAllowed !== undefined
           ? { turnsAllowed: job.meter.turnsAllowed }
           : {}),
+        hasRepo: Boolean(job.repoPath),
         ...(job.meter?.costUnknown ? { costUnknown: true } : {}),
         ...(job.meter?.model ? { model: job.meter.model } : {}),
       });

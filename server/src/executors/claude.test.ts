@@ -53,6 +53,15 @@ describe('turnsForBudget', () => {
     expect(turnsForBudget(undefined, { samples: 3, usd: 0.02 }, roleTurns)).toBe(roleTurns);
   });
 
+  // The run that exposed all this: quoted 30c, priced off a rate pooled
+  // across repo and non-repo work at 1.8c a turn, so the budget came out at
+  // 17 turns, the role cap of 8 won, and it spent 59c. Priced at what its own
+  // shape really costs, the ceiling bites first and the cap never applies.
+  it('binds before the role cap once the rate reflects the work', () => {
+    expect(turnsForBudget(0.5, { samples: 3, usd: 0.0177 }, roleTurns)).toBe(8);
+    expect(turnsForBudget(0.5, { samples: 1, usd: 0.0742 }, roleTurns)).toBe(6);
+  });
+
   it('still allows one turn when the budget cannot even buy that', () => {
     // Better to run once and fail on its own terms than to start a session
     // that is forbidden to think at all.

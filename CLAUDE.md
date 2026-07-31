@@ -296,6 +296,23 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   property of a role either: this run burnt 7.4c/turn against a class rate of
   1.8c, driven by 280k cache-read tokens on a repo job, which the class key
   does not record. Across the whole history, 3 of 6 quoted runs breached.
+  **The first of the three resolved the same day**, and the fix was the last
+  sentence rather than the first: the clamp was never the problem. A ceiling
+  binds exactly when the rate exceeds ceiling ÷ role cap — 50c ÷ 8 = 6.25c a
+  turn — and the work really burnt 7.4c, so it *should* have bound and only
+  failed to because the rate was pooled across repo and non-repo runs. So the
+  ledger now records `hasRepo` and `costPerTurn` narrows to runs of the same
+  shape. The separation is not marginal: per turn, repo runs cost 4.4× a
+  scribe's non-repo runs and 10× a worker's. On the real ledger the measured
+  job now budgets 6 turns for a predicted 44c under its 50c ceiling, where it
+  took 8 and spent 59c; worker-with-repo correctly stays at 8, since 8 turns
+  at its rate still fits. Rows written before the field are left unshaped
+  rather than assumed — mixing them back in is the averaging that caused
+  this — so a one-off `scripts/backfill-ledger-shape.mjs` reads the shape back
+  off the job records still on disk, which is where repoPath always lived;
+  without it the fix would have been correct and inert. The quote is
+  deliberately *not* segmented the same way: it stays the promise to the user,
+  and the budget is how the promise is kept.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

@@ -246,6 +246,26 @@ describe('costPerTurn', () => {
     expect(costPerTurn(entries, 'mason', 'session').usd).toBeCloseTo(0.05, 6);
   });
 
+  // The measured cause of a ceiling that never bound: a repo run burnt
+  // 7.4c a turn while the same role without one burnt 1.8c, and the pooled
+  // average predicted neither of them.
+  it('prices a shape of work on the runs that shared its shape', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0.6, turnsAllowed: 8, hasRepo: true }),
+      entry({ jobClass: 'mason', costUsd: 0.14, turnsAllowed: 8, hasRepo: false }),
+    ];
+    expect(costPerTurn(entries, 'mason', undefined, true).usd).toBeCloseTo(0.075, 6);
+    expect(costPerTurn(entries, 'mason', undefined, false).usd).toBeCloseTo(0.0175, 6);
+    // Pooled it is neither of them, which is exactly what let an overrun past.
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.04625, 6);
+  });
+
+  it('leaves a row of unrecorded shape out rather than assuming one', () => {
+    const entries = [entry({ jobClass: 'mason', costUsd: 0.6, turnsAllowed: 8 })];
+    expect(costPerTurn(entries, 'mason', undefined, true)).toEqual({ samples: 0, usd: 0 });
+    expect(costPerTurn(entries, 'mason').samples).toBe(1);
+  });
+
   it('reports spend it could not measure rather than counting it as nothing', () => {
     const result = totals([
       entry({ costUsd: 0.2, priceUsd: 0.2 }),

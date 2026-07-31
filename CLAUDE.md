@@ -348,6 +348,27 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   is who actually does it. The instability is reduced, not removed, and what
   remains is honest: the same sentence can still land on a scribe (28c) or a
   worker (17c), and those really are different costs.
+- 2026-07-31 — Confirming the four fixes live, and the ceiling breached
+  again. Job `d618e774`, matched to `mason` which nobody holds: the class fix
+  is proven — the row reads `jobClass: worker`, the role that actually ran it
+  (Pip), where the old code would have written `mason`. The learning loop is
+  proven too: quoted 52c, cost 81c, and the *next* quote for the same sentence
+  moved to 97c immediately, because a failed row is no longer invisible.
+  But the quote was **breached 1.55×**, and the prediction that produced it was
+  mine: I forecast 46c from a 3-sample rate of 5.7c a turn, and the run burnt
+  10.1c a turn. So `hasRepo` is necessary and **not sufficient** — within repo
+  jobs the per-turn cost still varies about twofold, driven by how much the
+  job writes (391 lines, 11.8k output tokens, 288k cache read here), which is
+  not knowable before it runs. The honest position: the turn budget can never
+  bound cost more tightly than its rate estimate is accurate, and across the
+  two live runs the ceiling held once (45c under 50c) and broke once (81c over
+  52c). It is not established that it holds. What *is* established is that
+  nobody is ever over-billed — `priceFor` capped the charge and this run, like
+  every failure, was absorbed at zero. The 391-line diff also did not work
+  (24 of 25 tests passing), the first of the three measurement runs to produce
+  something unpromotable, so it was discarded. Note also that three of the
+  last four runs ended `partial` on max_turns: the role cap of 8 is now the
+  binding constraint on whether work finishes, not the money.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

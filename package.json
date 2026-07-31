@@ -16,7 +16,8 @@
     "test": "npm run test -w server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build -w web",
-    "art": "node scripts/bake-sprites.mjs"
+    "art": "node scripts/bake-sprites.mjs",
+    "art:check": "tsx scripts/check-pack.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

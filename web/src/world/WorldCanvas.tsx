@@ -4,7 +4,7 @@ import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
 import { loadAtlasTextures } from './atlas';
 import { DB } from './palette';
-import { buildAgentTextures, SPRITE_SCALE, type AgentAnim } from './sprites';
+import { buildAgentTextures, SPRITE_HEIGHT, SPRITE_SCALE, type AgentAnim } from './sprites';
 import { THEMES, type Theme } from './themes';
 
 const VIEW_H = 320;
@@ -338,8 +338,14 @@ export function WorldCanvas({
 
         // Art is data: prefer the spritesheet, fall back to what is built in.
         let agentTextures = buildAgentTextures();
+        let spriteScale = SPRITE_SCALE;
         void loadAtlasTextures().then((fromSheet) => {
-          if (fromSheet && !destroyed) agentTextures = fromSheet;
+          if (!fromSheet || destroyed) return;
+          agentTextures = fromSheet;
+          // A pack may be drawn at any resolution; hold the on-screen height
+          // steady so a finer pack reads as more detail, not as a giant.
+          const frameHeight = fromSheet.walk[0]?.height ?? SPRITE_HEIGHT;
+          spriteScale = (SPRITE_SCALE * SPRITE_HEIGHT) / frameHeight;
         });
 
         const scenery = new Graphics();
@@ -452,7 +458,7 @@ export function WorldCanvas({
               sprites.set(a.id, sprite);
             }
             sprite.texture = seq[frame];
-            sprite.scale.set(SPRITE_SCALE * m.face, SPRITE_SCALE);
+            sprite.scale.set(spriteScale * m.face, spriteScale);
             sprite.position.set(rx, GROUND_Y + 2);
 
             let label = labels.get(a.id);

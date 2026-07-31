@@ -11,6 +11,8 @@ import source from './agentling.source.json';
  * bare stepping feet.
  */
 export const SPRITE_SCALE = 2;
+/** Frame height the built-in art is drawn at; packs scale to match on screen. */
+export const SPRITE_HEIGHT = 20;
 
 export type AgentAnim = 'walk' | 'work' | 'deliver';
 

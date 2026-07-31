@@ -114,6 +114,81 @@ describe('JobQueue', () => {
     });
   });
 
+  // Losing the queue on restart cost a verification run once: a server
+  // reload dropped a job mid-flight and it simply vanished.
+  describe('surviving a restart', () => {
+    it('still has the queue after the process goes away', () => {
+      const a = queue.add({ title: 'Still here', prompt: 'x' });
+      queue.add({ title: 'Also here', prompt: 'y' });
+
+      const reopened = new JobQueue(root);
+      expect(reopened.list().map((j) => j.title)).toEqual(['Still here', 'Also here']);
+      expect(reopened.get(a.id)?.prompt).toBe('x');
+    });
+
+    it('fails a job that was running, since its session died with the process', () => {
+      const job = queue.add({ title: 'Interrupted', prompt: 'x' });
+      queue.start(job.id);
+
+      const reopened = new JobQueue(root);
+      const restored = reopened.get(job.id)!;
+      expect(restored.status).toBe('failed');
+      expect(restored.error).toContain('restarted');
+      expect(restored.slot).toBe(-1);
+    });
+
+    it('frees a queued job from the agentling that is no longer holding it', () => {
+      const job = queue.add({ title: 'Was claimed', prompt: 'x' });
+      queue.assign(job.id, 'a1');
+
+      const reopened = new JobQueue(root);
+      expect(reopened.get(job.id)?.assignedTo).toBeUndefined();
+      // …and is therefore pickable again, rather than stranded forever.
+      expect(reopened.nextUnassigned()?.id).toBe(job.id);
+    });
+
+    it('keeps finished work exactly as it was', () => {
+      const job = queue.add({ title: 'Done already', prompt: 'x' });
+      queue.start(job.id);
+      queue.complete(job.id, 'all good', { costUsd: 0.25, turns: 3 });
+
+      const restored = new JobQueue(root).get(job.id)!;
+      expect(restored.status).toBe('done');
+      expect(restored.summary).toBe('all good');
+      expect(restored.meter?.costUsd).toBe(0.25);
+    });
+
+    it('opens the level anyway when the stored file is torn', () => {
+      queue.add({ title: 'x', prompt: 'y' });
+      writeFileSync(path.join(root, 'jobs.json'), '[{"id": "half');
+      expect(() => new JobQueue(root)).not.toThrow();
+      expect(new JobQueue(root).list()).toEqual([]);
+    });
+  });
+
+  describe('cancelling', () => {
+    it('closes out work that never started', () => {
+      const job = queue.add({ title: 'Never mind', prompt: 'x' });
+      const cancelled = queue.cancel(job.id);
+      expect(cancelled.status).toBe('failed');
+      expect(cancelled.error).toBe('cancelled');
+      expect(cancelled.slot).toBe(-1);
+    });
+
+    it('keeps what a cancelled session already spent', () => {
+      const job = queue.add({ title: 'Stopped midway', prompt: 'x' });
+      queue.start(job.id);
+      expect(queue.cancel(job.id, { costUsd: 0.08 }).meter?.costUsd).toBe(0.08);
+    });
+
+    it('refuses to cancel work that has already finished', () => {
+      const job = queue.add({ title: 'Finished', prompt: 'x' });
+      queue.start(job.id);
+      queue.complete(job.id, 'done');
+      expect(() => queue.cancel(job.id)).toThrow(/not running/);
+    });
+  });
+
   // A session can run out of turns after finishing the work. Dropping its
   // meter hides money we actually spent, and dropping its diff throws away
   // work that is sitting on disk, reviewable.

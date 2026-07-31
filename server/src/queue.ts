@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Job, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
@@ -18,11 +18,58 @@ export interface NewJobSpec {
   quotedUsd?: number;
 }
 
-/** In-memory job store plus station-slot bookkeeping and sandbox dirs. */
+export function jobsFile(sandboxRoot: string): string {
+  return path.join(sandboxRoot, 'jobs.json');
+}
+
+/**
+ * Job store plus station-slot bookkeeping and sandbox dirs, persisted to
+ * disk so a restart no longer loses the queue.
+ *
+ * A job that was running when the process stopped cannot be resumed — its
+ * session was a child process that died with it — so restoring marks it
+ * failed rather than leaving a job that looks alive and never moves. Its
+ * sandbox survives, so whatever it produced is still there to review.
+ */
 export class JobQueue {
   private jobs = new Map<string, Job>();
 
-  constructor(private sandboxRoot: string) {}
+  constructor(private sandboxRoot: string) {
+    this.restore();
+  }
+
+  private restore(): void {
+    const file = jobsFile(this.sandboxRoot);
+    if (!existsSync(file)) return;
+    let stored: Job[];
+    try {
+      stored = JSON.parse(readFileSync(file, 'utf8')) as Job[];
+    } catch {
+      return; // a torn file must not stop the level from opening
+    }
+    if (!Array.isArray(stored)) return;
+
+    for (const job of stored) {
+      if (!job?.id) continue;
+      if (job.status === 'running') {
+        job.status = 'failed';
+        job.error = 'interrupted — the app restarted while this was running';
+        job.finishedAt = job.finishedAt ?? Date.now();
+        job.slot = -1;
+      }
+      // An assignment from the previous run is stale: that agentling is not
+      // carrying this job any more, and leaving it set strands the job,
+      // since only unassigned work is ever picked up.
+      if (job.status === 'queued') job.assignedTo = undefined;
+      this.jobs.set(job.id, job);
+    }
+    this.persist();
+  }
+
+  private persist(): void {
+    mkdirSync(this.sandboxRoot, { recursive: true });
+    writeFileSync(jobsFile(this.sandboxRoot), `${JSON.stringify(this.list(), null, 2)}\n`);
+  }
 
   list(): Job[] {
     return [...this.jobs.values()].sort((a, b) => a.createdAt - b.createdAt);
@@ -47,6 +94,7 @@ export class JobQueue {
       createdAt: Date.now(),
     };
     this.jobs.set(job.id, job);
+    this.persist();
     return job;
   }
 
@@ -68,6 +116,7 @@ export class JobQueue {
 
   assign(jobId: string, agentlingId: string): void {
     this.mustGet(jobId).assignedTo = agentlingId;
+    this.persist();
   }
 
   /** Marks the job running and returns its (created) sandbox directory. */
@@ -77,6 +126,7 @@ export class JobQueue {
     job.startedAt = Date.now();
     const dir = this.sandboxDir(jobId);
     mkdirSync(dir, { recursive: true });
+    this.persist();
     return dir;
   }
 
@@ -111,6 +161,26 @@ export class JobQueue {
       throw new Error(`job ${jobId} is ${job.status}, not resolvable`);
     }
     job.status = action === 'promote' ? 'promoted' : 'discarded';
+    this.persist();
+    return job;
+  }
+
+  /**
+   * Stop a job on purpose. A queued job simply never starts; a running one
+   * needs its session killed by the executor first, which is the caller's
+   * job — this only records the outcome.
+   */
+  cancel(jobId: string, meter?: JobMeter): Job {
+    const job = this.mustGet(jobId);
+    if (job.status !== 'queued' && job.status !== 'running') {
+      throw new Error(`job ${jobId} is ${job.status}, not running`);
+    }
+    job.status = 'failed';
+    job.error = 'cancelled';
+    if (meter) job.meter = meter;
+    const patch = patchFile(this.sandboxDir(jobId));
+    if (existsSync(patch)) job.changes = summarizePatch(readFileSync(patch, 'utf8'));
+    this.finish(job);
     return job;
   }
 
@@ -124,6 +194,7 @@ export class JobQueue {
     // Hand the freed slot to the oldest job still waiting without one.
     const waiting = this.list().find((j) => j.status === 'queued' && j.slot < 0);
     if (waiting) waiting.slot = this.freeSlot();
+    this.persist();
   }
 
   private freeSlot(): number {

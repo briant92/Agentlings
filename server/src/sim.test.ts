@@ -57,6 +57,53 @@ describe('Sim', () => {
     expect(queue.get(job.id)!.assignedTo).toBe(worker!.id);
   });
 
+  describe('cancelling', () => {
+    it('kills the session and lets its own failure path record the outcome', () => {
+      const killed: string[] = [];
+      const killable: Executor = {
+        run: () => new Promise<ExecutorResult>(() => {}),
+        cancel: (id) => {
+          killed.push(id);
+          return true;
+        },
+      };
+      const s = new Sim(CREW, queue, killable);
+      const job = queue.add({ title: 'T', prompt: 'p' });
+      // Walk it all the way to its station so the session is actually running.
+      for (let i = 0; i < 200 && queue.get(job.id)!.status !== 'running'; i++) s.step();
+      expect(queue.get(job.id)!.status).toBe('running');
+
+      expect(s.cancelJob(job.id)).toBe(true);
+      expect(killed).toEqual([job.id]);
+      // Deliberately still 'running': the kill makes the run reject, and the
+      // catch there resolves it — doing it here too would resolve it twice.
+      expect(queue.get(job.id)!.status).toBe('running');
+    });
+
+    it('closes out queued work itself, since there is no session to kill', () => {
+      const job = queue.add({ title: 'T', prompt: 'p' });
+      expect(sim.cancelJob(job.id)).toBe(true);
+      expect(queue.get(job.id)!.status).toBe('failed');
+      expect(queue.get(job.id)!.error).toBe('cancelled');
+    });
+
+    it('frees the agentling that was holding it', () => {
+      const job = queue.add({ title: 'T', prompt: 'p' });
+      sim.step();
+      const holder = sim.agentlings.find((a) => a.jobId === job.id)!;
+      sim.cancelJob(job.id);
+      expect(holder.jobId).toBeUndefined();
+      expect(holder.state).toBe('idle');
+    });
+
+    it('will not cancel work that already finished', () => {
+      const job = queue.add({ title: 'T', prompt: 'p' });
+      queue.start(job.id);
+      queue.complete(job.id, 'done');
+      expect(sim.cancelJob(job.id)).toBe(false);
+    });
+  });
+
   it('hires drop in at the hatch and join the patrol', () => {
     const hired = sim.addAgentling({ id: 'a3', name: 'Fen', color: 0xffb86c, role: 'worker' });
     expect(sim.agentlings).toHaveLength(3);

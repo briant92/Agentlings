@@ -385,6 +385,18 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
   return c.json(job, 201);
 });
 
+app.post('/api/levels/:lid/jobs/:id/cancel', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const id = c.req.param('id');
+  const job = rt.queue.get(id);
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  if (!rt.sim.cancelJob(id)) {
+    return c.json({ error: `job ${id} is ${job.status}, not running` }, 400);
+  }
+  return c.json(rt.queue.get(id));
+});
+
 app.get('/api/levels/:lid/jobs/:id/output', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);

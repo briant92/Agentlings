@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
@@ -221,6 +221,11 @@ export class ClaudeAgentExecutor implements Executor {
     private ledger: () => LedgerEntry[] = () => [],
   ) {}
 
+  /** Live sessions by job id, so one can be stopped on request. */
+  private running = new Map<string, ChildProcess>();
+  /** Jobs killed deliberately, so the death can be reported as intent. */
+  private cancelled = new Set<string>();
+
   async run(
     job: Job,
     sandboxDir: string,
@@ -308,7 +313,7 @@ export class ClaudeAgentExecutor implements Executor {
     let summary: string;
     let meter: JobMeter;
     try {
-      ({ summary, meter } = await this.runSession(configPath, onProgress));
+      ({ summary, meter } = await this.runSession(configPath, job.id, onProgress));
     } catch (err) {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
@@ -372,8 +377,22 @@ export class ClaudeAgentExecutor implements Executor {
     return { lesson, approach };
   }
 
+  /**
+   * Kills the session running this job, if one is. The child is the whole
+   * session — stopping it is what makes cancel mean anything, since an
+   * abandoned session keeps thinking and keeps spending.
+   */
+  cancel(jobId: string): boolean {
+    const child = this.running.get(jobId);
+    if (!child) return false;
+    this.cancelled.add(jobId);
+    child.kill();
+    return true;
+  }
+
   private runSession(
     configPath: string,
+    jobId: string,
     onProgress?: (detail: string) => void,
   ): Promise<{ summary: string; meter: JobMeter }> {
     return new Promise((resolve, reject) => {
@@ -381,6 +400,7 @@ export class ClaudeAgentExecutor implements Executor {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: launderedEnv(),
       });
+      this.running.set(jobId, child);
       const timer = setTimeout(() => {
         child.kill();
         reject(new Error(`session timed out after ${SESSION_TIMEOUT_MS / 60_000} minutes`));
@@ -413,10 +433,18 @@ export class ClaudeAgentExecutor implements Executor {
       });
       child.on('error', (err) => {
         clearTimeout(timer);
+        this.running.delete(jobId);
+        this.cancelled.delete(jobId);
         reject(err);
       });
       child.on('close', (code) => {
         clearTimeout(timer);
+        this.running.delete(jobId);
+        if (this.cancelled.delete(jobId)) {
+          // Killed on purpose: say so, rather than reporting whatever the
+          // dying process happened to leave on stderr.
+          return reject(new SessionFailure('cancelled', meter));
+        }
         if (errorMsg) return reject(new SessionFailure(errorMsg, meter));
         if (code !== 0) {
           return reject(

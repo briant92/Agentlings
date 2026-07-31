@@ -23,6 +23,11 @@ export class RoutedExecutor implements Executor {
     private fallback: Executor,
   ) {}
 
+  /** Work the router answered itself has no session to stop. */
+  cancel(jobId: string): boolean {
+    return this.fallback.cancel?.(jobId) ?? false;
+  }
+
   async run(
     job: Job,
     sandboxDir: string,

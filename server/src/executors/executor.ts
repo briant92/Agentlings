@@ -31,4 +31,10 @@ export interface Executor {
     agentling?: Agentling,
     hint?: RunHint,
   ): Promise<ExecutorResult>;
+
+  /**
+   * Stop the work for this job, returning whether anything was stopped.
+   * Optional: an executor with nothing to kill simply does not have it.
+   */
+  cancel?(jobId: string): boolean;
 }

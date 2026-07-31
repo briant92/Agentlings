@@ -169,6 +169,37 @@ export class Sim {
     this.beginWork(a, a.jobId);
   }
 
+  /**
+   * Stop a job on request. A running session is killed and its own failure
+   * path records the outcome, so the diff and the cost it already earned are
+   * still harvested. Work that never started has nothing to kill and is
+   * simply closed out here.
+   */
+  cancelJob(jobId: string): boolean {
+    const job = this.queue.get(jobId);
+    if (!job) return false;
+    if (job.status !== 'queued' && job.status !== 'running') return false;
+
+    // The kill makes the run reject, and the catch in beginWork does the
+    // rest — recording it here as well would resolve the job twice.
+    if (job.status === 'running' && this.executor.cancel?.(jobId)) return true;
+
+    this.queue.cancel(jobId);
+    const holder = this.agentlings.find((a) => a.jobId === jobId);
+    if (holder) {
+      holder.jobId = undefined;
+      holder.state = 'idle';
+    }
+    this.emit({
+      type: 'failed',
+      jobId,
+      title: job.title,
+      ...(holder ? { agentling: holder.name } : {}),
+      detail: 'cancelled',
+    });
+    return true;
+  }
+
   private beginWork(a: Agentling, jobId: string): void {
     const job = this.queue.get(jobId);
     if (!job) {

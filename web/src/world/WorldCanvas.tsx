@@ -4,6 +4,8 @@ import type { ThemeKey, WorldState } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, STATION_BASE_X, STATION_SPACING, WORLD_WIDTH } from '@agentlings/shared';
 import { loadAtlasTextures } from './atlas';
 import { DB } from './palette';
+import { type Anchors, drawScene, pixiSurface } from './scene';
+import { SCENES } from './scenes';
 import { buildAgentTextures, SPRITE_HEIGHT, SPRITE_SCALE, type AgentAnim } from './sprites';
 import { THEMES, type Theme } from './themes';
 
@@ -11,173 +13,14 @@ const VIEW_H = 320;
 const GROUND_Y = 258;
 const MAX_PARTICLES = 400;
 
-/** Deterministic PRNG so the rock texture doesn't reshuffle between mounts. */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function speckle(
-  g: Graphics,
-  T: Theme,
-  rng: () => number,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  count: number,
-): void {
-  for (let n = 0; n < count; n++) {
-    const sx = Math.floor(x + rng() * w);
-    const sy = Math.floor(y + rng() * h);
-    const size = 2 + Math.floor(rng() * 3) * 2;
-    const color = rng() < 0.5 ? T.rockLight : T.rockDark;
-    g.rect(sx, sy, size, Math.max(2, size - 2)).fill({ color, alpha: 0.6 });
-  }
-}
-
-/** Short stepped cracks of dark mineral running through the rock. */
-function veins(
-  g: Graphics,
-  T: Theme,
-  rng: () => number,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  count: number,
-): void {
-  for (let n = 0; n < count; n++) {
-    let vx = Math.floor(x + rng() * w);
-    let vy = Math.floor(y + rng() * h);
-    const steps = 4 + Math.floor(rng() * 5);
-    const down = rng() < 0.5 ? 1 : -1;
-    for (let s = 0; s < steps; s++) {
-      g.rect(vx, vy, 2, 2).fill({ color: T.rockEdge, alpha: 0.8 });
-      vx += 2;
-      if (rng() < 0.6) vy += 2 * down;
-    }
-  }
-}
-
-function mound(g: Graphics, T: Theme, x: number, w: number, h: number): void {
-  g.rect(x - w / 2, GROUND_Y - h, w, h).fill(T.rock);
-  g.rect(x - w / 2 + 5, GROUND_Y - h - 4, w - 10, 4).fill(T.rock);
-  g.rect(x - w / 2 + 5, GROUND_Y - h - 6, w - 10, 2).fill(T.grass);
-  g.rect(x - w / 2, GROUND_Y - h - 2, w, 2).fill(T.grass);
-  g.rect(x - w / 2, GROUND_Y - h, w, 2).fill(T.grassDark);
-}
-
-function drawScenery(g: Graphics, T: Theme): void {
-  const rng = mulberry32(0xa9e27);
-
-  // Distant accent pillars: capital, banded shaft, base.
-  for (const px of [310, 490, 670]) {
-    g.rect(px - 26, 100, 52, 8).fill({ color: T.accent, alpha: 0.5 });
-    g.rect(px - 22, 108, 44, 8).fill({ color: T.accent, alpha: 0.5 });
-    g.rect(px - 17, 116, 34, GROUND_Y - 116).fill({ color: T.accent, alpha: 0.45 });
-    g.rect(px - 10, 116, 8, GROUND_Y - 116).fill({ color: T.accentLight, alpha: 0.4 });
-    for (let by = 140; by < GROUND_Y - 20; by += 26) {
-      g.rect(px - 17, by, 34, 3).fill({ color: T.accentDark, alpha: 0.4 });
-    }
-    g.rect(px - 22, GROUND_Y - 12, 44, 12).fill({ color: T.accent, alpha: 0.5 });
-  }
-
-  // Ceiling: rock mass with a jagged underside (flattened above the hatch),
-  // stalactites at the deep points, and hanging vines.
-  const edge: [number, number][] = [];
-  for (let x = 0; x <= WORLD_WIDTH; x += 60) {
-    const flat = Math.abs(x - SPAWN_X) < 50;
-    edge.push([x, flat ? 62 : 50 + rng() * 34]);
-  }
-  const ceiling: number[] = [0, 0, WORLD_WIDTH, 0];
-  for (let i = edge.length - 1; i >= 0; i--) ceiling.push(edge[i][0], edge[i][1]);
-  g.poly(ceiling).fill(T.rock);
-  speckle(g, T, rng, 0, 0, WORLD_WIDTH, 42, 150);
-  veins(g, T, rng, 20, 6, WORLD_WIDTH - 40, 30, 14);
-  g.moveTo(edge[0][0], edge[0][1]);
-  for (const [ex, ey] of edge) g.lineTo(ex, ey);
-  g.stroke({ width: 3, color: T.rockEdge });
-
-  for (const [ex, ey] of edge) {
-    if (Math.abs(ex - SPAWN_X) < 60 || Math.abs(ex - EXIT_X) < 40) continue;
-    const roll = rng();
-    if (roll < 0.3 && ey > 66) {
-      g.rect(ex - 6, ey - 2, 12, 6).fill(T.rock);
-      g.rect(ex - 4, ey + 4, 8, 5).fill(T.rock);
-      g.rect(ex - 2, ey + 9, 4, 5).fill(T.rockDark);
-    } else if (roll < 0.7) {
-      const len = 16 + rng() * 26;
-      g.rect(ex - 1, ey, 2, len).fill({ color: T.grassDark, alpha: 0.95 });
-      g.rect(ex - 1, ey, 2, len * 0.4).fill({ color: T.grass, alpha: 0.95 });
-      for (let vy = ey + 6; vy < ey + len - 2; vy += 7) {
-        const side = Math.floor(vy / 7) % 2 === 0 ? 1 : -3;
-        g.rect(ex + side, vy, 2, 2).fill({ color: T.grass, alpha: 0.9 });
-      }
-    }
-  }
-
-  // Side walls.
-  g.rect(0, 0, 22, VIEW_H).fill(T.rock);
-  g.rect(WORLD_WIDTH - 26, 0, 26, VIEW_H).fill(T.rock);
-  speckle(g, T, rng, 0, 60, 20, VIEW_H - 60, 30);
-  speckle(g, T, rng, WORLD_WIDTH - 24, 60, 22, VIEW_H - 60, 30);
-
-  // Low grassy mounds along the back of the walkway.
-  mound(g, T, 185, 64, 10);
-  mound(g, T, 555, 44, 8);
-  mound(g, T, 865, 52, 12);
-
-  // Floor slab: fringe, dithered shade band, mineral veins.
-  g.rect(0, GROUND_Y + 2, WORLD_WIDTH, VIEW_H - GROUND_Y - 2).fill(T.rock);
-  speckle(g, T, rng, 0, GROUND_Y + 8, WORLD_WIDTH, VIEW_H - GROUND_Y - 10, 130);
-  veins(g, T, rng, 20, GROUND_Y + 10, WORLD_WIDTH - 40, VIEW_H - GROUND_Y - 20, 10);
-  for (let row = 0; row < 3; row++) {
-    for (let x = 24; x < WORLD_WIDTH - 26; x += 6) {
-      g.rect(x + (row % 2) * 3, GROUND_Y + 7 + row * 3, 3, 3).fill({
-        color: T.rockDark,
-        alpha: 0.4,
-      });
-    }
-  }
-  g.rect(0, GROUND_Y - 3, WORLD_WIDTH, 6).fill(T.grass);
-  g.rect(0, GROUND_Y + 3, WORLD_WIDTH, 3).fill(T.grassDark);
-  for (let n = 0; n < 90; n++) {
-    const bx = Math.floor(24 + rng() * (WORLD_WIDTH - 52));
-    g.rect(bx, GROUND_Y - 6, 2, 4).fill({ color: T.grass, alpha: 0.95 });
-    if (rng() < 0.3) g.rect(bx + 3, GROUND_Y - 5, 2, 3).fill({ color: T.grassDark, alpha: 0.9 });
-  }
-
-  // Entrance hatch: slatted wooden box with a propped-open slatted lid.
-  g.poly([SPAWN_X - 18, 64, SPAWN_X - 36, 46, SPAWN_X - 30, 41, SPAWN_X - 12, 59]).fill(T.wood);
-  g.poly([SPAWN_X - 33, 46, SPAWN_X - 27, 40, SPAWN_X - 25, 42, SPAWN_X - 31, 48]).fill(
-    T.woodDark,
-  );
-  g.rect(SPAWN_X - 18, 62, 36, 14).fill(T.wood);
-  g.rect(SPAWN_X - 18, 62, 36, 3).fill(T.woodDark);
-  for (const sx of [-8, 2, 12]) {
-    g.rect(SPAWN_X + sx, 65, 2, 11).fill({ color: T.woodDark, alpha: 0.8 });
-  }
-  g.rect(SPAWN_X - 13, 67, 26, 7).fill(T.void);
-
-  // Exit: stone arch with grout lines and torch stands (flames animate).
-  g.rect(EXIT_X - 18, GROUND_Y - 40, 36, 40).fill(T.stoneDark);
-  g.circle(EXIT_X, GROUND_Y - 38, 18).fill(T.stoneDark);
-  g.rect(EXIT_X - 18, GROUND_Y - 28, 36, 2).fill({ color: T.rockEdge, alpha: 0.8 });
-  g.rect(EXIT_X - 18, GROUND_Y - 14, 36, 2).fill({ color: T.rockEdge, alpha: 0.8 });
-  g.rect(EXIT_X - 2, GROUND_Y - 52, 4, 8).fill({ color: T.rockEdge, alpha: 0.8 });
-  g.rect(EXIT_X - 10, GROUND_Y - 32, 20, 32).fill(T.void);
-  g.circle(EXIT_X, GROUND_Y - 32, 10).fill(T.void);
-  for (const tx of [EXIT_X - 27, EXIT_X + 27]) {
-    g.rect(tx - 2, GROUND_Y - 26, 4, 26).fill(T.woodDark);
-    g.rect(tx - 4, GROUND_Y - 30, 8, 5).fill(T.stoneDark);
-  }
-}
+/** The fixed points a scene hangs its coordinates on. */
+const ANCHORS: Anchors = {
+  worldWidth: WORLD_WIDTH,
+  viewH: VIEW_H,
+  groundY: GROUND_Y,
+  spawnX: SPAWN_X,
+  exitX: EXIT_X,
+};
 
 interface Motion {
   x: number;
@@ -349,7 +192,7 @@ export function WorldCanvas({
         });
 
         const scenery = new Graphics();
-        drawScenery(scenery, T);
+        drawScene(pixiSurface(scenery), SCENES[theme], T, ANCHORS);
         app.stage.addChild(scenery);
 
         // The doorway is where crew leave and come back, so it opens the crew

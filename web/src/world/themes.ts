@@ -1,5 +1,17 @@
 import type { ThemeKey } from '@agentlings/shared';
+import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import { css, DB } from './palette';
+import { type Anchors, canvasSurface, drawScene } from './scene';
+import { SCENES } from './scenes';
+
+/** The world the cards depict, so a thumbnail is the level shrunk, not a sketch. */
+const THUMB_ANCHORS: Anchors = {
+  worldWidth: WORLD_WIDTH,
+  viewH: 320,
+  groundY: 258,
+  spawnX: SPAWN_X,
+  exitX: EXIT_X,
+};
 
 /**
  * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
@@ -115,32 +127,18 @@ export function renderThumbnail(key: ThemeKey): string {
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
+  // The card is the level's own scene, drawn small. It used to be a second,
+  // hand-drawn cave that showed the same picture for every theme — a preview
+  // that could disagree with the thing it was previewing.
   ctx.fillStyle = css(T.void);
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = css(T.rock);
-  ctx.fillRect(0, 0, w, 12);
-  ctx.fillRect(0, h - 16, w, 16);
-  ctx.fillStyle = css(T.rockDark);
-  for (let x = 8; x < w; x += 22) {
-    ctx.fillRect(x, 8, 6, 4); // jagged ceiling nubs
-    ctx.fillRect(x + 10, h - 8, 5, 3); // floor speckle
-  }
-  ctx.fillStyle = css(T.grass);
-  ctx.fillRect(0, h - 19, w, 3);
-  ctx.fillStyle = css(T.grassDark);
-  ctx.fillRect(0, h - 16, w, 2);
-  // Distant pillars: a darker palette entry rather than alpha, so the card
-  // stays strictly inside DB32.
-  ctx.fillStyle = css(T.accentDark);
-  ctx.fillRect(70, 20, 10, h - 39);
-  ctx.fillRect(130, 20, 10, h - 39);
-  ctx.fillStyle = css(T.stoneDark);
-  ctx.fillRect(w - 34, h - 41, 22, 22);
-  ctx.fillStyle = css(T.void);
-  ctx.fillRect(w - 29, h - 33, 12, 14);
-  ctx.fillStyle = css(T.flame);
-  ctx.fillRect(w - 40, h - 36, 3, 5);
-  ctx.fillRect(w - 9, h - 36, 3, 5);
+  drawScene(
+    canvasSurface(ctx, w / THUMB_ANCHORS.worldWidth, h / THUMB_ANCHORS.viewH, css),
+    SCENES[key],
+    T,
+    THUMB_ANCHORS,
+  );
+  ctx.globalAlpha = 1;
 
   const url = canvas.toDataURL();
   thumbCache.set(key, url);

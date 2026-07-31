@@ -197,6 +197,27 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   Observed cost comes from the SDK's total_cost_usd — no price table to
   maintain. Reselling model access has terms implications Brian should
   confirm with Anthropic before billing anyone.
+- 2026-07-31 — Terrain is data, closing the phase-3 deferral. A theme used
+  to be fifteen colours and nothing else while `drawScenery` drew a cave
+  regardless, so Home Chores rendered stalactites and hanging vines in
+  beige. Scenes are now data (`world/scene.ts` + `world/scenes/*`), and a
+  theme names a place as well as a palette. The design decision worth
+  keeping is what the format is **not**: not a drawing language. Composing
+  seeded speckle, mineral veins and a jagged ceiling out of primitives ends
+  in a small unauthorable programming language, so the vocabulary is
+  parameterised *idioms* — ceiling, speckle, veins, tufts, repeat, band —
+  plus three primitives. Coordinates are `"groundY-40"`, one regex, not an
+  expression evaluator; colours are theme slot names, so a scene never
+  hard-codes a palette. Each top-level op draws from its own seed, because
+  a format where inserting an op repaints everything after it is one nobody
+  can author in. The interpreter targets a `Surface`, so the same data
+  paints the world, the level cards (previously a second hand-drawn cave
+  that could disagree with the level it previewed) and a recorder in tests.
+  The cave is transcribed op for op — the built-in art is kept, as phase 3
+  decided; only its noise falls differently. chalkboard and marble point at
+  the cave until someone writes them, which is now a data file rather than
+  a rewrite. External terrain packs are unblocked but deliberately not
+  built: no loader ships until there is a pack worth loading.
 - 2026-07-31 — One-shot became a short leash (3 turns), measured. At one
   turn the tier could not work: a turn ends before the model sees any tool
   result, so anything that must read before it writes — every repo job — is

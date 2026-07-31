@@ -20,8 +20,17 @@ export interface LevelInfo {
   jobsRunning: number;
 }
 
+/** Where a session's credentials come from, and whether they still work. */
+export interface AuthStatus {
+  ok: boolean;
+  source: 'api-key' | 'oauth-token' | 'stored-login' | 'none';
+  /** Plain language, only when something needs fixing. */
+  problem?: string;
+}
+
 export interface SettingsInfo {
   executor: 'claude-agent-sdk' | 'simulated';
+  auth: AuthStatus;
 }
 
 export type JobStatus =

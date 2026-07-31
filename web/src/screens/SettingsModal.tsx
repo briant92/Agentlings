@@ -66,8 +66,12 @@ export function SettingsModal({
           </p>
           <div className="sect">executor</div>
           {settings === null && <p className="dim">Loading…</p>}
-          {settings?.executor === 'claude-agent-sdk' && (
+          {settings?.executor === 'claude-agent-sdk' && !settings.auth.problem && (
             <p className="stat-done">claude-agent-sdk — jobs run real Claude sessions.</p>
+          )}
+          {/* Said here rather than discovered one failed agentling at a time. */}
+          {settings?.executor === 'claude-agent-sdk' && settings.auth.problem && (
+            <p className="stat-failed">{settings.auth.problem}</p>
           )}
           {settings?.executor === 'simulated' && (
             <>

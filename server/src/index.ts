@@ -1,7 +1,6 @@
 import { serve } from '@hono/node-server';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
@@ -17,6 +16,7 @@ import type {
   SettingsInfo,
 } from '@agentlings/shared';
 import { TICK_MS } from '@agentlings/shared';
+import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { describe, readConnections } from './connections';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
@@ -127,15 +127,15 @@ function syncLibrary(): Promise<LibraryIndex> {
 
 /** API key, a Claude Code login, or an explicit AGENTLINGS_EXECUTOR override. */
 const forced = process.env.AGENTLINGS_EXECUTOR;
-const hasAuth =
-  !!process.env.ANTHROPIC_API_KEY ||
-  !!process.env.CLAUDE_CODE_OAUTH_TOKEN ||
-  existsSync(path.join(os.homedir(), '.claude', '.credentials.json'));
-const useClaude = forced ? forced === 'claude' : hasAuth;
+const auth = describeAuth(process.env, readStoredLogin(), Date.now());
+const useClaude = forced ? forced === 'claude' : shouldRunRealSessions(auth);
 const simulated = new SimulatedExecutor();
 console.log(
   `[agentlings] executor: ${useClaude ? 'claude-agent-sdk' : 'simulated (set ANTHROPIC_API_KEY in .env or AGENTLINGS_EXECUTOR=claude)'}`,
 );
+// Say it once, at startup, instead of letting the user find out one failed
+// agentling at a time.
+if (useClaude && auth.problem) console.warn(`[agentlings] ${auth.problem}`);
 
 interface LevelRuntime {
   meta: LevelMeta;
@@ -262,7 +262,10 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
 const app = new Hono();
 
 app.get('/api/settings', (c) =>
-  c.json({ executor: useClaude ? 'claude-agent-sdk' : 'simulated' } satisfies SettingsInfo),
+  c.json({
+    executor: useClaude ? 'claude-agent-sdk' : 'simulated',
+    auth,
+  } satisfies SettingsInfo),
 );
 
 app.get('/api/levels', (c) =>

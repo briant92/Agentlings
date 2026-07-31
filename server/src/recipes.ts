@@ -245,8 +245,14 @@ export function rememberRecipe(
 
 /**
  * Marks a recipe as used, so it is visible which ones are earning their keep.
- * `landed` separates the uses that produced something from the ones that died
- * on the leash — only the former say a job is repeatable enough to compile.
+ *
+ * `landed` means the run *delivered*, not that it exited cleanly — a run that
+ * wrote a correct diff and then ran out of turns describing it has proved the
+ * job is repeatable, which is the only thing this count is asked to decide.
+ * Counting clean exits instead scored two correct 129-line files as zero, and
+ * did so in the worst possible direction: small jobs finish easily and get
+ * promoted though a script cannot do them, while the big mechanical jobs a
+ * script is *for* never finish on the leash and are never compiled.
  */
 export function creditRecipe(
   recipes: Recipe[],

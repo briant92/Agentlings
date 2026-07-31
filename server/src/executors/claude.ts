@@ -610,8 +610,14 @@ export class ClaudeAgentExecutor implements Executor {
       const { meter } = await this.runSession(configPath, jobId, undefined);
       onProgress?.('wrote up what this job teaches');
       return meter;
-    } catch {
-      return undefined;
+    } catch (err) {
+      // It writes two files and then has to say so, which is a third turn it
+      // does not have — so running out is its *ordinary* ending, with both
+      // files already on disk. Measured: a run whose notes were written and
+      // then thrown away, because this returned nothing and the caller took
+      // that as "no notes". The files are the work; the exit code is not.
+      // Its cost is real either way and comes back on the failure.
+      return err instanceof SessionFailure ? err.meter : {};
     }
   }
 

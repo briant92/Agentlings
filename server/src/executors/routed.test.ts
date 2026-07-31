@@ -387,6 +387,32 @@ describe('RoutedExecutor', () => {
       expect(readRecipes(levelDir)[0].answer).toBeUndefined();
     });
 
+    // The counter decides whether a job is ever compiled into a tool, and it
+    // was asking the wrong question. A big mechanical job is exactly what a
+    // script is for, and exactly what cannot finish on a short leash — so
+    // counting clean exits promoted the small jobs a script cannot do and
+    // excluded the ones it could.
+    it('counts a run that delivered, even though it never finished', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'DIFF.patch'), 'diff --git a/x b/x\n+work\n');
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow();
+
+      expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
+    });
+
+    it('counts nothing when the run left no work behind either', async () => {
+      stored();
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow();
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.hits).toBe(1);
+      expect(recipe.successes ?? 0).toBe(0);
+    });
+
     it('records nothing when it died before writing anything down', async () => {
       await expect(run(build(dying()), job(), PIP)).rejects.toThrow();
       expect(existsSync(path.join(levelDir, 'recipes.json'))).toBe(false);

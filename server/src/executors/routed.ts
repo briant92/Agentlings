@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Agentling, Job } from '@agentlings/shared';
-import { cloneRepo, writeDiff } from '../gitwork';
+import { cloneRepo, patchFile, writeDiff } from '../gitwork';
 import {
   TOOL_CANDIDATE_RUNS,
   creditRecipe,
@@ -232,7 +232,17 @@ export class RoutedExecutor implements Executor {
 
     let updated = recipes;
     if (usedKey) {
-      updated = creditRecipe(updated, usedKey, Date.now(), result !== undefined);
+      // Did the work, not exited cleanly — the same test `partial` uses, so
+      // the app has one notion of a run that delivered. A run that produced a
+      // correct diff and then ran out of turns writing it up has proved the
+      // job is repeatable, which is the only question the counter is asking.
+      //
+      // Measured: three runs of a mechanical repo job, two of which wrote a
+      // correct 129-line file, scored zero. Counting clean exits promotes
+      // small jobs a script cannot do and excludes the big mechanical ones it
+      // could — exactly backwards.
+      const delivered = result !== undefined || existsSync(patchFile(sandboxDir));
+      updated = creditRecipe(updated, usedKey, Date.now(), delivered);
     }
     if (approach && agentling) {
       updated = rememberRecipe(updated, {

@@ -476,8 +476,15 @@ export class ClaudeAgentExecutor implements Executor {
         this.running.delete(jobId);
         if (this.cancelled.delete(jobId)) {
           // Killed on purpose: say so, rather than reporting whatever the
-          // dying process happened to leave on stderr.
-          return reject(new SessionFailure('cancelled', meter));
+          // dying process happened to leave on stderr. It spent money on the
+          // way, and the SDK only reports cost on a result message that will
+          // now never arrive — so the spend is marked unknown, not zero.
+          return reject(
+            new SessionFailure('cancelled', {
+              ...meter,
+              ...(meter.costUsd === undefined ? { costUnknown: true } : {}),
+            }),
+          );
         }
         if (errorMsg) return reject(new SessionFailure(errorMsg, meter));
         if (code !== 0) {

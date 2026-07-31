@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Job, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
-import { patchFile, summarizePatch } from './gitwork';
+import { patchFile, summarizePatch, writeDiff } from './gitwork';
 
 export interface NewJobSpec {
   title: string;
@@ -21,6 +21,8 @@ export interface NewJobSpec {
 export function jobsFile(sandboxRoot: string): string {
   return path.join(sandboxRoot, 'jobs.json');
 }
+
+export const INTERRUPTED = 'interrupted — the app restarted while this was running';
 
 /**
  * Job store plus station-slot bookkeeping and sandbox dirs, persisted to
@@ -53,7 +55,7 @@ export class JobQueue {
       if (!job?.id) continue;
       if (job.status === 'running') {
         job.status = 'failed';
-        job.error = 'interrupted — the app restarted while this was running';
+        job.error = INTERRUPTED;
         job.finishedAt = job.finishedAt ?? Date.now();
         job.slot = -1;
       }
@@ -64,6 +66,33 @@ export class JobQueue {
       this.jobs.set(job.id, job);
     }
     this.persist();
+  }
+
+  /**
+   * Writes the diff for jobs the last run was killed in the middle of.
+   *
+   * Their sandbox clone survived with the work in it, but the diff is written
+   * after a session returns and there was nothing to return to — so the
+   * changes existed on disk with no way to see or promote them. Async, and
+   * therefore separate from restore(): opening a level must not wait on git.
+   */
+  async harvestInterrupted(): Promise<number> {
+    let harvested = 0;
+    for (const job of this.list()) {
+      if (job.error !== INTERRUPTED || job.changes) continue;
+      const dir = this.sandboxDir(job.id);
+      if (!existsSync(path.join(dir, 'repo'))) continue;
+      try {
+        if (!(await writeDiff(dir))) continue;
+        job.changes = summarizePatch(readFileSync(patchFile(dir), 'utf8'));
+        job.status = 'partial';
+        harvested++;
+      } catch {
+        // A sandbox we can no longer read is not worth failing a startup for.
+      }
+    }
+    if (harvested > 0) this.persist();
+    return harvested;
   }
 
   private persist(): void {

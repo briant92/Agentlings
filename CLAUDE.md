@@ -233,7 +233,12 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   longer than its role allows — and with no history the role's budget
   stands. Priced per turn *granted*, not per turn the SDK reports: those
   are different quantities (a cap of 4 came back as 6), and pricing
-  against the reported number left budgets ~1.5× loose. Note the user was
+  against the reported number left budgets ~1.5× loose *for capped runs*;
+  measured later across real history the distortion runs both ways, since a
+  run that finishes early reports fewer turns than it was granted, so the
+  fallback was noise rather than a one-way bias (corrected 2026-07-31, and
+  the fallback is now gone: only `turnsAllowed` rows price a turn). Note the
+  user was
   never over-billed: `priceFor` already caps charges at the quote. What
   was unbounded was the app's absorbed cost.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →

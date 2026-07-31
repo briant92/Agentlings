@@ -61,6 +61,7 @@ describe('totals', () => {
       priceUsd: 0.2,
       absorbedUsd: 0.3,
       free: 1,
+      unmeasured: 0,
     });
   });
 
@@ -191,21 +192,34 @@ describe('costPerTurn', () => {
     expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.02, 6);
   });
 
-  // Found live: a cap of 4 came back reporting 6 turns, so pricing against
-  // the reported number set budgets ~1.5x looser than the quote allowed.
+  // Found live: a cap of 4 came back reporting 6 turns. Reported turns run
+  // over the cap when a run is cut off and under it when it finishes early,
+  // so pricing against them is noise in both directions, not one.
   it('prices against the turns granted, not the turns reported', () => {
     const entries = [entry({ jobClass: 'mason', costUsd: 0.12, turns: 6, turnsAllowed: 4 })];
     expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.03, 6);
   });
 
-  it('falls back to reported turns for entries written before the split', () => {
+  // Falling back to reported turns kept the wrong unit alive in the average,
+  // so the budget could never fully tighten. A smaller unit-correct sample
+  // beats a larger mixed one; with none, the role's own budget stands.
+  it('ignores entries written before turnsAllowed existed', () => {
     const entries = [entry({ jobClass: 'mason', costUsd: 0.2, turns: 8 })];
+    expect(costPerTurn(entries, 'mason')).toEqual({ samples: 0, usd: 0 });
+  });
+
+  it('uses only the unit-correct rows when history is mixed', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 9, turns: 8 }), // old row, ignored
+      entry({ jobClass: 'mason', costUsd: 0.2, turnsAllowed: 8 }),
+    ];
+    expect(costPerTurn(entries, 'mason').samples).toBe(1);
     expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.025, 6);
   });
 
   it('counts failures — a session that died still burnt turns', () => {
     const entries = [
-      entry({ jobClass: 'mason', costUsd: 0.2, turns: 8, outcome: 'failed', priceUsd: 0 }),
+      entry({ jobClass: 'mason', costUsd: 0.2, turnsAllowed: 8, outcome: 'failed', priceUsd: 0 }),
     ];
     expect(costPerTurn(entries, 'mason').samples).toBe(1);
     expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.025, 6);
@@ -222,9 +236,18 @@ describe('costPerTurn', () => {
 
   it('keeps tiers apart, since a routed run is not a session', () => {
     const entries = [
-      entry({ jobClass: 'mason', tier: 'oneshot', costUsd: 0.1, turns: 1 }),
-      entry({ jobClass: 'mason', tier: 'session', costUsd: 0.4, turns: 8 }),
+      entry({ jobClass: 'mason', tier: 'oneshot', costUsd: 0.1, turnsAllowed: 1 }),
+      entry({ jobClass: 'mason', tier: 'session', costUsd: 0.4, turnsAllowed: 8 }),
     ];
     expect(costPerTurn(entries, 'mason', 'session').usd).toBeCloseTo(0.05, 6);
+  });
+
+  it('reports spend it could not measure rather than counting it as nothing', () => {
+    const result = totals([
+      entry({ costUsd: 0.2, priceUsd: 0.2 }),
+      entry({ outcome: 'failed', costUsd: 0, priceUsd: 0, costUnknown: true }),
+    ]);
+    expect(result.costUsd).toBe(0.2);
+    expect(result.unmeasured).toBe(1);
   });
 });

@@ -223,6 +223,7 @@ function makeLevel(dir: string): LevelRuntime {
         ...(job.meter?.turnsAllowed !== undefined
           ? { turnsAllowed: job.meter.turnsAllowed }
           : {}),
+        ...(job.meter?.costUnknown ? { costUnknown: true } : {}),
         ...(job.meter?.model ? { model: job.meter.model } : {}),
       });
       // Persist the career as it happens, so a restart no longer wipes it.
@@ -248,6 +249,15 @@ if (levels.size === 0) {
     theme: 'cave',
   });
   makeLevel(levelDir(SANDBOX_ROOT, meta.id));
+}
+
+// Recover the diffs of runs the last process was killed in the middle of.
+// Not awaited: the server should come up now, and a job that has been waiting
+// since a crash can wait another second for its patch.
+for (const rt of levels.values()) {
+  void rt.queue.harvestInterrupted().then((n) => {
+    if (n > 0) console.log(`[agentlings] recovered changes from ${n} interrupted job(s)`);
+  });
 }
 
 function levelInfo(rt: LevelRuntime): LevelInfo {

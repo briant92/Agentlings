@@ -70,6 +70,8 @@ export interface JobMeter {
   routed?: boolean;
   /** True when a recipe let it run as a single call instead of a loop. */
   oneShot?: boolean;
+  /** The run spent money that could not be measured — see LedgerEntry. */
+  costUnknown?: boolean;
 }
 
 /** A connection a job can opt into. Secret values never appear here. */

@@ -22,6 +22,13 @@ export interface LedgerEntry {
   outcome: 'done' | 'failed';
   /** What it actually cost us, from the SDK. */
   costUsd: number;
+  /**
+   * The run spent money we could not measure. A killed session never reaches
+   * the result message the SDK reports cost on, so its spend is real and
+   * unknowable — recorded as a gap rather than as a zero, which would quietly
+   * understate the ledger.
+   */
+  costUnknown?: boolean;
   /** What the user would be charged. Zero for failures: the app absorbs those. */
   priceUsd: number;
   /** The ceiling quoted before the work, when there was one. */
@@ -77,6 +84,11 @@ export interface Totals {
   /** Cost of work that failed, and was therefore not charged for. */
   absorbedUsd: number;
   free: number;
+  /**
+   * Runs that spent money none of these numbers include. Reported so the
+   * totals can be read as "at least this much" rather than as complete.
+   */
+  unmeasured: number;
 }
 
 export function totals(entries: LedgerEntry[]): Totals {
@@ -87,8 +99,9 @@ export function totals(entries: LedgerEntry[]): Totals {
       priceUsd: acc.priceUsd + entry.priceUsd,
       absorbedUsd: acc.absorbedUsd + (entry.outcome === 'failed' ? entry.costUsd : 0),
       free: acc.free + (entry.tier === 'routed' ? 1 : 0),
+      unmeasured: acc.unmeasured + (entry.costUnknown ? 1 : 0),
     }),
-    { jobs: 0, costUsd: 0, priceUsd: 0, absorbedUsd: 0, free: 0 },
+    { jobs: 0, costUsd: 0, priceUsd: 0, absorbedUsd: 0, free: 0, unmeasured: 0 },
   );
 }
 
@@ -114,12 +127,16 @@ export function totalsBy<K extends keyof LedgerEntry>(
 /**
  * What one *allowed* turn of this kind of work has cost.
  *
- * The unit matters and was got wrong once: the SDK's reported `turns` runs
- * higher than the limit it was given (a cap of 4 came back as 6), so pricing
- * against it and then using the result to set the cap understates the budget
- * and lets cost overshoot the quote. The rate is therefore cost per turn we
- * granted — the number we control — falling back to reported turns only for
- * older entries that predate the distinction.
+ * The unit matters. The SDK's reported `turns` is not the limit it was given:
+ * higher when the run was cut off (a cap of 4 came back as 6), lower when it
+ * finished early. So pricing against it and then using the result to set a
+ * cap is noise in both directions rather than a bias in one — measured on
+ * real history it left one job class unchanged and moved another by 15%.
+ *
+ * Only entries carrying `turnsAllowed` count. Falling back to reported turns
+ * for older rows kept the wrong unit alive in the average; a smaller,
+ * unit-correct sample is worth more than a larger mixed one, and with none at
+ * all the role's own budget stands, which is the safe direction.
  *
  * Failures count here, unlike history(): a session that died still burnt its
  * turns at a real rate, and the question is the burn rate, not whether the
@@ -130,7 +147,7 @@ export function costPerTurn(
   jobClass: string,
   tier?: Tier,
 ): { samples: number; usd: number } {
-  const granted = (e: LedgerEntry): number => e.turnsAllowed ?? e.turns ?? 0;
+  const granted = (e: LedgerEntry): number => e.turnsAllowed ?? 0;
   const useful = entries.filter(
     (e) =>
       e.jobClass === jobClass &&

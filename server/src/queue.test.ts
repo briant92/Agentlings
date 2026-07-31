@@ -1,4 +1,5 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -163,6 +164,59 @@ describe('JobQueue', () => {
       writeFileSync(path.join(root, 'jobs.json'), '[{"id": "half');
       expect(() => new JobQueue(root)).not.toThrow();
       expect(new JobQueue(root).list()).toEqual([]);
+    });
+  });
+
+  // A killed process leaves the work in the clone but never writes the diff,
+  // because that happens after a session returns and there was nothing to
+  // return to. The changes were on disk with no way to see or promote them.
+  describe('recovering an interrupted job', () => {
+    function repoWithEdit(dir: string): void {
+      const repo = path.join(dir, 'repo');
+      mkdirSync(repo, { recursive: true });
+      const git = (...args: string[]) =>
+        execFileSync('git', ['-C', repo, ...args], { stdio: 'pipe' });
+      execFileSync('git', ['init', '-q', repo], { stdio: 'pipe' });
+      git('config', 'user.name', 'Test');
+      git('config', 'user.email', 'test@example.com');
+      writeFileSync(path.join(repo, 'a.js'), 'const a = 1;\n');
+      git('add', '.');
+      git('commit', '-q', '-m', 'init');
+      writeFileSync(path.join(repo, 'a.js'), 'const a = 2;\n'); // the lost work
+    }
+
+    it('writes the diff the killed run never got to write', async () => {
+      const job = queue.add({ title: 'Killed mid-flight', prompt: 'x' });
+      const dir = queue.start(job.id);
+      repoWithEdit(dir);
+
+      const reopened = new JobQueue(root);
+      expect(reopened.get(job.id)!.status).toBe('failed');
+      expect(await reopened.harvestInterrupted()).toBe(1);
+
+      const recovered = reopened.get(job.id)!;
+      expect(recovered.status).toBe('partial');
+      expect(recovered.changes?.files).toBe(1);
+      expect(existsSync(path.join(dir, 'DIFF.patch'))).toBe(true);
+    });
+
+    it('leaves an interrupted job alone when it changed nothing', async () => {
+      const job = queue.add({ title: 'Killed early', prompt: 'x' });
+      const dir = queue.start(job.id);
+      const repo = path.join(dir, 'repo');
+      mkdirSync(repo, { recursive: true });
+      execFileSync('git', ['init', '-q', repo], { stdio: 'pipe' });
+
+      const reopened = new JobQueue(root);
+      expect(await reopened.harvestInterrupted()).toBe(0);
+      expect(reopened.get(job.id)!.status).toBe('failed');
+    });
+
+    it('does nothing for a job that had no repository', async () => {
+      const job = queue.add({ title: 'No repo', prompt: 'x' });
+      queue.start(job.id);
+      const reopened = new JobQueue(root);
+      expect(await reopened.harvestInterrupted()).toBe(0);
     });
   });
 

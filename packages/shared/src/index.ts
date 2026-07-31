@@ -123,6 +123,15 @@ export interface Job {
   noRouter?: boolean;
   /** A turn cap this job needs in its own right, overriding the role's. */
   maxTurns?: number;
+  /**
+   * This job compiles a recipe into a tool. Recorded rather than acted on: a
+   * compile is its own kind of work — it writes two programs that must agree —
+   * and a ledger cannot be reconstructed after the fact, so the shape is kept
+   * from now on even though the quote still prices compiles with ordinary
+   * sessions. Measured 2026-07-31, the difference is 8% over four runs, which
+   * is too little and too few to price on yet.
+   */
+  compile?: boolean;
   /** The ceiling quoted before the work; enforced, and never billed above. */
   quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */

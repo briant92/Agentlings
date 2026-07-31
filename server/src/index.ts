@@ -237,6 +237,7 @@ function makeLevel(dir: string): LevelRuntime {
         // the role above; quoted by this. A one-shot's quote asks "have we done
         // this job before", and the role cannot answer that.
         ...(job.meter?.recipeKey ? { recipeKey: job.meter.recipeKey } : {}),
+        ...(job.compile ? { compile: true } : {}),
         tier: job.meter?.tooled
           ? 'tool'
           : job.meter?.routed
@@ -921,6 +922,9 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     // A compile is longer work than the role that owns the recipe does day to
     // day, and both compiles on record ran out at the role's cap of 10.
     maxTurns: COMPILE_TURNS,
+    // Reaches the ledger so compiles can one day be priced as their own kind
+    // of work. Nothing reads it yet — see LedgerEntry.compile for why.
+    compile: true,
     // Quoted like any other work. It was the one job in the app that ran
     // without a ceiling, which went unnoticed until a compile spent $1.26 and
     // still ran out of turns — unbounded because nobody had thought to bound

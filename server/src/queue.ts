@@ -17,6 +17,8 @@ export interface NewJobSpec {
   noRouter?: boolean;
   /** A turn cap this job needs in its own right, overriding the role's. */
   maxTurns?: number;
+  /** This job compiles a recipe into a tool; recorded for the ledger's sake. */
+  compile?: boolean;
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -132,6 +134,7 @@ export class JobQueue {
       ...(spec.tools?.length ? { tools: spec.tools } : {}),
       ...(spec.noRouter ? { noRouter: true } : {}),
       ...(spec.maxTurns ? { maxTurns: spec.maxTurns } : {}),
+      ...(spec.compile ? { compile: true } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

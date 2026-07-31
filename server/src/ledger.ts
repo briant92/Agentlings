@@ -39,6 +39,23 @@ export interface LedgerEntry {
    * Absent on every other tier, where the role is the finest class there is.
    */
   recipeKey?: string;
+  /**
+   * The run compiled a recipe into a tool.
+   *
+   * Recorded, and deliberately not yet read. A compile is its own kind of work
+   * and plausibly its own price, but measured across four of them the rate is
+   * 9.0c a turn against the 8.3c pooled scribe-with-a-repo rate the quote
+   * actually uses — 8%, on four samples, with the turn budget capped by
+   * `COMPILE_TURNS` either way and no compile having ever breached its quote.
+   * Pricing on that would be tuning on noise, and an earlier claim that the
+   * gap was a third came from comparing one bad compile against the pool
+   * rather than the compiles against it.
+   *
+   * It is kept anyway because the two directions are not symmetrical: a rate
+   * can be computed from a ledger whenever there is finally enough of it, and
+   * a ledger cannot be given a field it never wrote.
+   */
+  compile?: boolean;
   tier: Tier;
   outcome: 'done' | 'failed';
   /** What it actually cost us, from the SDK. */

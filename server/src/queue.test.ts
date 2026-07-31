@@ -88,6 +88,20 @@ describe('JobQueue', () => {
     expect(() => queue.resolve(job.id, 'promote')).toThrow(/not resolvable/);
   });
 
+  // Flags the ledger later reads off the job. Nothing derives them by sniffing
+  // the title at read time, so they have to survive being queued and restored.
+  it('carries the shaping flags a job was queued with', () => {
+    const job = queue.add({ title: 'Compile', prompt: 'x', maxTurns: 10, compile: true });
+    expect(queue.get(job.id)).toMatchObject({ maxTurns: 10, compile: true });
+    expect(new JobQueue(root).get(job.id)).toMatchObject({ maxTurns: 10, compile: true });
+  });
+
+  it('leaves them off an ordinary job rather than writing false', () => {
+    const job = queue.add({ title: 'Ordinary', prompt: 'x' });
+    expect(queue.get(job.id)!.compile).toBeUndefined();
+    expect(queue.get(job.id)!.maxTurns).toBeUndefined();
+  });
+
   describe('revision', () => {
     // The socket sends the job list only when this moves. If a mutation ever
     // slips past persist(), a watcher silently stops seeing job updates --

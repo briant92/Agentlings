@@ -793,6 +793,37 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   knowing why they are safe to conflate: `quoteFor` returns a zero ceiling only
   for `routed` and `tool`, and every paying tier passes through a bound with a
   1c floor. So a job that costs money now always carries a ceiling.
+- 2026-07-31 — The socket was describing a world that had not changed, found
+  by scoping a leak that turned out not to exist. `seenStatus` was flagged as
+  unbounded; it is not — every key comes from `w.jobs`, and nothing ever
+  removes a job from the queue, so the map is bounded by data the client
+  already holds. Measuring instead of fixing found the real cost: `TICK_MS` is
+  100, the state payload was **41.8KB of which jobs were 98%**, and it went out
+  **ten times a second per viewer** — ~386 KB/s to say nothing had happened.
+  The measurement also killed the obvious fix. Of 54 jobs, **0 were active and
+  43 were awaiting review**, so "active plus the last N resolved" would have
+  hidden work the user still had to act on. **Recency is the wrong axis**, and
+  that is what intuition would have built.
+  Two changes instead. First, do not describe a world nobody is looking at: the
+  tick built and serialised every level's state regardless of viewers, and
+  `sendToLevel` stringified *before* checking for subscribers, so an empty
+  level paid the full 42KB. The sim still steps unwatched — jobs run whether or
+  not anyone is watching — only the describing is skipped. Second, send the job
+  list only when it changes. `JobQueue` counts a revision in `persist()`, which
+  every mutator already funnels through, so the counter is trustworthy exactly
+  as long as that stays true and there are tests pinning it. A frame carries
+  `jobs` only when the revision moved; the client keeps the last list and still
+  hands consumers a whole `WorldState`, so no UI knows the difference.
+  Measured over 12s on a live socket: 110 movement frames of **999 bytes** and
+  one 41.9KB list, **12.4 KB/s against 386 KB/s — a 96.8% cut**, approaching
+  97.6% over a longer session. The one list per viewing session is by design: a
+  level nobody watches forgets what it sent, so the next viewer re-syncs.
+  Deliberately **not** done: trimming fields from the live job (prompt is 34%,
+  meter 15%, repoPath 11%, none of which the canvas reads). It would be ~70%
+  on its own, but `ReviewModal` reads `title`, `status`, `error`, `summary` and
+  `changes` straight off the state object, so it needs a new endpoint and a
+  loading state in the one flow least worth breaking — and after the revision
+  change it would be optimising a message that rarely sends.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

@@ -416,27 +416,20 @@ tried, measured and rejected is in `DECISIONS.md`:
     no repository and no web access, because the same words against a
     different repo are a different question.
 
-    **The write-up is not the session's job.** It used to be, and it competed
-    with the work for turns, so it was cut first and the tier built to be cheap
-    became the one tier that could never teach anything — 13 of 13 recipe runs
-    died before writing either file. A separate close-out pass runs afterwards
-    on a cheap model with two turns, handed the run's own RESULT.md and the
-    *names* of the files it changed, never the patch. It runs after every job
-    that left anything behind, including the ones that died, which are most of
-    them. Measured at 2.1c: about 4% of a repo job, and the price of the crew
-    learning at all.
+    **The write-up is not the session's job.** A separate close-out pass runs
+    afterwards on a cheap model with two turns, handed the run's own RESULT.md
+    and the *names* of the files it changed, never the patch. It runs after
+    every job that left anything behind, including the ones that died, which
+    are most of them. (D-020)
 
     **Two bars, because the two mistakes cost different amounts.** A strong
     match (0.65) shortens the run to five turns; a weak one (0.3) hands over
-    the method and leaves the leash alone. A wrong method given to a
-    full-length session wastes a turn it can ignore; the same method with the
-    leash cut wastes the whole run. Words are stemmed and weighted by rarity —
-    same-shape jobs used to score 0.33 against a 0.65 bar, so the crew never
-    recognised its own work.
-
+    the method and leaves the leash alone — a wrong method given to a
+    full-length session wastes a turn it can ignore, the same method with the
+    leash cut wastes the whole run. Words are stemmed and weighted by rarity.
     A recipe's `terms` are recomputed from its key on read rather than trusted
     from disk, so changing how words are stemmed can never strand the recipes
-    written before it.
+    written before it. (D-019, D-023)
   - **M5.5 (built).** The billing spine, designed for pass-through even
     though use is personal. `ledger.jsonl` is append-only and records
     observed cost and chargeable price as separate numbers from the first
@@ -447,28 +440,23 @@ tried, measured and rejected is in `DECISIONS.md`:
     totals by level and tier.
 
     **The quote reads every run that spent money**, not only the ones that
-    landed. The runs that break a quote are exactly the ones that exhaust
-    their turns and file failed or partial, so a done-only average is blind to
-    its own worst cases by construction: it once saw four scribe runs at a
-    mean of 15c while five runs had really cost money, at 24c. That nobody is
-    billed for a failure is a *billing* decision, and `priceFor` makes it; a
-    quote is a bound on spending, and spent money is spent.
+    landed: the runs that break a quote are exactly the ones that exhaust
+    their turns, so a done-only average is blind to its own worst cases by
+    construction. That nobody is billed for a failure is a *billing* decision,
+    and `priceFor` makes it; a quote is a bound on spending, and spent money
+    is spent. (D-017)
 
     **Two ceilings, not one.** `DEFAULT_CEILING_USD` (50c) is what ignorance
     quotes; `MAX_CEILING_USD` ($2, overridden by `AGENTLINGS_MAX_COST_USD`)
     exists only so one freak run cannot set every later quote for its class.
-    They were the same constant until that made the quote promise *less* than
-    the history it was reading — it held evidence of a 59c run and promised
-    50c.
+    (D-016)
 
     **Turns are the enforcement, and a turn is priced by the shape of the
     work.** The quote divided by observed cost-per-turn sets `maxTurns`, and
     it only ever tightens: a rich quote must not let a job run longer than its
-    role allows. The rate counts only runs of the same shape, because a repo
-    run costs 4.4–10× a turn of the same role without one — the clone puts
-    hundreds of thousands of cached tokens in front of every turn, and a rate
-    pooled across both predicts neither. A turn is priced per turn *granted*,
-    never per turn the SDK reports: a cap of 4 can come back as 6.
+    role allows. The rate counts only runs of the same shape, since a repo run
+    costs several times a turn of the same role without one, and it prices a
+    turn *granted*, never a turn the SDK reports. (D-016, D-018)
 
     **What the ledger records about a job is what actually happened to it.**
     The job class is the role that *ran* the work, not the role the matcher
@@ -476,6 +464,7 @@ tried, measured and rejected is in `DECISIONS.md`:
     free and runs as their role. `closeOutUsd` is part of `costUsd` but kept
     separate, so the per-turn rate prices the session rather than the session
     plus a fixed errand. `hasRepo` records the shape the rate depends on.
+    (D-026, D-029)
 
     **Nothing is billed above its quote, and some things below it.** Failed
     work is charged nothing. So is a job quoted free because a compiled tool
@@ -491,7 +480,7 @@ tried, measured and rejected is in `DECISIONS.md`:
     not been compiled yet, and nothing else. And it sets the honest ceiling —
     "add tests for module X" never compiles, because the assertions depend on
     the module; "list the modules with no test file" does. Tools take the
-    scaffolding, sessions keep the judgement.
+    scaffolding, sessions keep the judgement. (D-021)
 
     A tool is a directory holding a manifest and two plain-node ES modules,
     `run.mjs` and `verify.mjs` — no shell, no dependencies, no network, so it
@@ -522,14 +511,14 @@ tried, measured and rejected is in `DECISIONS.md`:
     way to be wrong. The scripts land in that session's sandbox and are
     installed only when it is **reviewed and promoted**, exactly like a library
     install: a generated tool is executable instruction. Its clone is scratch
-    and is never applied to the repository.
+    and is never applied to the repository. A compile is quoted like any other
+    session, gets its own turn cap rather than the role's, and is told how the
+    last attempt failed if there was one. (D-024, D-025)
 
     Whether a fourth tier is worth having at all is a question the app answers
     by counting rather than guessing: a job matching a recipe with three
-    successes appends to `tool-candidates.jsonl` and nothing else happens.
-    Promotion pays back somewhere around the third to fifth reuse, and this
-    machine has seen one repeat in 36 jobs — so the machinery exists ahead of
-    the demand, deliberately and with that known.
+    successes appends to `tool-candidates.jsonl` and nothing else happens. The
+    machinery exists ahead of the demand, deliberately and with that known.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

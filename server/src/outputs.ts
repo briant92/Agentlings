@@ -86,7 +86,7 @@ export function safeOutputPath(dir: string, name: string): string | null {
 }
 
 /** The files a job left behind, ignoring its own config and the clone. */
-function outputNames(dir: string): string[] {
+export function outputNames(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))

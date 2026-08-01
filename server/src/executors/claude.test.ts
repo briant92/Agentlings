@@ -340,4 +340,33 @@ describe('closeOutEvidence', () => {
     expect(evidence).toContain('server/src/estimate.ts');
     expect(evidence).not.toContain('SECRET_SAUCE');
   });
+
+  // Found live on job 2ff16bf2: a run with no repository wrote a working PDF
+  // and spent its last turn doing it, so there was no RESULT.md and no diff —
+  // and the crew banked nothing at all from a job that had delivered.
+  it('names what a run produced when there is no repository', () => {
+    writeFileSync(path.join(dir, 'hello-world.pdf'), '%PDF-1.4\n');
+    writeFileSync(path.join(dir, 'make-pdf.cjs'), 'console.log(1)\n');
+    const evidence = closeOutEvidence(dir);
+    expect(evidence).toContain('hello-world.pdf');
+    expect(evidence).toContain('make-pdf.cjs');
+  });
+
+  it('describes the deliverable without quoting it', () => {
+    writeFileSync(path.join(dir, 'answer.md'), 'The secret is 42.');
+    const evidence = closeOutEvidence(dir);
+    expect(evidence).toContain('answer.md');
+    expect(evidence).not.toContain('42');
+  });
+
+  it('ignores the session config every run leaves behind', () => {
+    writeFileSync(path.join(dir, '.session.json'), '{}');
+    expect(closeOutEvidence(dir)).toBeNull();
+  });
+
+  it('does not list the report and the diff twice', () => {
+    writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
+    writeFileSync(path.join(dir, 'DIFF.patch'), 'diff --git a/x.ts b/x.ts\n');
+    expect(closeOutEvidence(dir)).not.toContain('Files it produced');
+  });
 });

@@ -17,6 +17,7 @@ import { resolveForJob, toMcpServers, type Connection } from '../connections';
 import { cloneRepo, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
+import { outputNames } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { extractUrls, fetchPage } from '../web';
@@ -361,6 +362,19 @@ export function closeOutEvidence(sandboxDir: string): string | null {
     if (files.length > 0) {
       parts.push(`Files it changed:\n${files.map((f) => `- ${f}`).join('\n')}`);
     }
+  }
+
+  // What it made, for work that changes no repository. Without this the crew
+  // learned nothing from a job with no clone: evidence was a write-up or a
+  // diff, and a run that spends its last turn producing the deliverable has
+  // neither. Measured on job 2ff16bf2 — a valid PDF written from scratch, no
+  // lesson, no recipe, nothing banked. Names only, never contents: the brief
+  // is to describe the method, and a file's contents are the answer.
+  const produced = outputNames(sandboxDir).filter(
+    (name) => name !== 'RESULT.md' && name !== 'DIFF.patch',
+  );
+  if (produced.length > 0) {
+    parts.push(`Files it produced:\n${produced.map((f) => `- ${f}`).join('\n')}`);
   }
 
   return parts.length > 0 ? parts.join('\n\n') : null;

@@ -80,6 +80,41 @@ describe('questionsFor: the shape of the answer', () => {
   });
 });
 
+// Found by test drive, not by a unit test: the rules only knew about fetching
+// verbs, so the vaguest brief the box can take was asked nothing at all.
+describe('questionsFor: a brief that says what to make but not what to say', () => {
+  it('asks what goes in it, repo or not', () => {
+    expect(ids('Produce a PDF')).toContain('about');
+    expect(ids('Produce a PDF', NO_REPO)).toContain('about');
+    expect(ids('write a report', NO_REPO)).toContain('about');
+    expect(ids('make a spreadsheet', NO_REPO)).toContain('about');
+  });
+
+  it('stays quiet once the brief says what it is about', () => {
+    expect(ids('Produce a PDF of last week jobs', NO_REPO)).not.toContain('about');
+    expect(ids('write a summary about the socket work', NO_REPO)).not.toContain('about');
+    expect(ids('make a list of every exported function', NO_REPO)).not.toContain('about');
+  });
+
+  it('stays quiet when a target names the subject', () => {
+    expect(ids('write a note in NOTES.md')).not.toContain('about');
+    expect(ids('write EXPORTS.md')).not.toContain('about');
+  });
+
+  it('does not ask the format when the brief already named one', () => {
+    expect(ids('Produce a PDF', NO_REPO)).not.toContain('shape');
+    expect(ids('make a spreadsheet', NO_REPO)).not.toContain('shape');
+  });
+
+  it('does ask the format when the brief named none', () => {
+    expect(ids('write a report', NO_REPO)).toContain('shape');
+  });
+
+  it('leaves repo work alone — its output is a change to the code', () => {
+    expect(ids('write a report')).not.toContain('shape');
+  });
+});
+
 describe('questionsFor: unbounded scope', () => {
   it('asks how far, on the words that name no bound', () => {
     for (const text of [

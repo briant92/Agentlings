@@ -14,7 +14,7 @@ import type { JobOutputFile } from '@agentlings/shared';
  */
 
 /** How much of a file to sniff before deciding it is not text. */
-const SNIFF_BYTES = 8000;
+export const SNIFF_BYTES = 8000;
 
 const CONTENT_TYPES: Record<string, string> = {
   '.pdf': 'application/pdf',
@@ -37,13 +37,36 @@ export function contentTypeFor(name: string): string {
 }
 
 /**
- * Whether a file is binary, decided the way git decides it: a NUL byte near
- * the start. Sniffing beats an extension list because the interesting files
- * here are the ones nobody predicted — an agent writes what it was asked for,
- * not what a lookup table anticipated.
+ * Whether a file is binary — meaning: would inlining it as text damage it?
+ *
+ * A NUL byte is git's test and catches most things, but not everything that
+ * matters here. Found by test drive: an agentling asked for a PDF wrote one by
+ * hand with uncompressed streams, so it held no NUL anywhere and was declared
+ * text — while its `%âãÏÓ` marker is Latin-1 and not valid UTF-8, so inlining
+ * it corrupted precisely the bytes this function exists to protect. The unit
+ * fixture had a NUL in it by construction, so it proved the heuristic rather
+ * than the requirement.
+ *
+ * So the question asked is the one actually being decided: text is what
+ * survives a round trip through UTF-8. Anything else is served as bytes.
  */
 export function isBinary(buffer: Buffer): boolean {
-  return buffer.subarray(0, SNIFF_BYTES).includes(0);
+  const head = buffer.subarray(0, SNIFF_BYTES);
+  if (head.includes(0)) return true;
+  // Only a window that actually cut the file short gets slack: a multi-byte
+  // character straddling the end is truncation, not binary, and UTF-8 needs at
+  // most three bytes of it. Where the whole file fits, an invalid sequence is
+  // simply invalid.
+  const slack = head.length < buffer.length ? 3 : 0;
+  for (let trim = 0; trim <= slack; trim++) {
+    try {
+      new TextDecoder('utf8', { fatal: true }).decode(head.subarray(0, head.length - trim));
+      return false;
+    } catch {
+      // Fall through and try one byte further back.
+    }
+  }
+  return true;
 }
 
 /**

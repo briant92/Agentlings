@@ -27,6 +27,25 @@ const UNBOUNDED =
 /** Verbs that go and get something, where the shape of the answer is the job. */
 const GATHERING = /\b(find|research|look up|compare|gather|search|price|prices|cost of)\b/i;
 
+/**
+ * Verbs that make something. Found by test drive: the rules only knew about
+ * *fetching*, so "Produce a PDF" — the vaguest brief the box can take — was
+ * asked nothing at all, while a paying session went off to guess what should
+ * be in it. Making something is the case where the brief matters most.
+ */
+const PRODUCING = /\b(produce|write|make|create|draft|generate|prepare|build|design|publish)\b/i;
+
+/** A named output format, so there is no point asking what shape to use. */
+const FORMAT_NAMED =
+  /\b(pdf|docx?|word|spreadsheet|xlsx?|csv|markdown|md|table|list|note|email|slide|deck|readme)\b/i;
+
+/**
+ * Something that says what the thing is *about*. A brief with one of these has
+ * a subject, however terse — "a PDF of the ledger" needs no further asking.
+ */
+const SUBJECT_MATTER =
+  /\b(about|of|for|from|with|covering|listing|explaining|summari[sz]ing|comparing|on)\b/i;
+
 /** Something that looks like a file, a path, or a name worth starting from. */
 const NAMED_TARGET = /[\w-]+\.[a-z]{1,5}\b|[\w-]+[/\\][\w-]+|`[^`]+`|\b[a-z]+[A-Z]\w*/;
 
@@ -50,6 +69,24 @@ function dangling(text: string): boolean {
   return words.length <= 8 && PRONOUN.test(text) && !NAMED_TARGET.test(text);
 }
 
+/**
+ * Says what to make, but not what to put in it — "Produce a PDF".
+ *
+ * Length is the guard rather than grammar: a brief long enough to carry a
+ * subject usually does, and one that names a file or says what it is *about*
+ * has already answered this. Being wrong here costs a question nobody needed,
+ * which is why it only ever asks and never blocks.
+ */
+function contentless(text: string): boolean {
+  const words = text.trim().split(/\s+/);
+  return (
+    words.length <= 8 &&
+    PRODUCING.test(text) &&
+    !SUBJECT_MATTER.test(text) &&
+    !NAMED_TARGET.test(text)
+  );
+}
+
 export function questionsFor(
   text: string,
   { hasRepo, tier }: { hasRepo: boolean; tier: Quote['tier'] },
@@ -62,6 +99,18 @@ export function questionsFor(
       id: 'subject',
       ask: 'What should they work on?',
       hint: 'This asks for something in particular, but not what.',
+      options: [],
+      freeText: true,
+    });
+  }
+
+  // A brief that says what to make but not what to put in it. Asked before
+  // the starting point, because what the thing *is* outranks where to look.
+  if (contentless(text)) {
+    asked.push({
+      id: 'about',
+      ask: 'What should go in it?',
+      hint: 'Otherwise they have to invent the contents.',
       options: [],
       freeText: true,
     });
@@ -80,7 +129,9 @@ export function questionsFor(
     });
   }
 
-  if (!hasRepo && GATHERING.test(text)) {
+  // Only where there is no repository: a job that lands in a project already
+  // knows what its output is — a change to the code.
+  if (!hasRepo && (GATHERING.test(text) || PRODUCING.test(text)) && !FORMAT_NAMED.test(text)) {
     asked.push({
       id: 'shape',
       ask: 'What should come back?',

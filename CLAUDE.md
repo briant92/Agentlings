@@ -963,6 +963,38 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   that judgement ever changes. A test now asserts every tint the app can hand
   out is on the palette, for a fresh hire at all sixteen positions and for the
   legacy migration, which is the guard that would have caught this.
+  **Test drive: "Produce a PDF", and it found three things no test could.**
+  Run as the vaguest brief the box can take, on a scratch level with no
+  repository. First, the clarifier was **silent on it** — `shape` only fired on
+  *gathering* verbs (find, research, compare), so a job whose entire content
+  was unspecified got no question at all while a paying session went off to
+  guess. The rules knew about fetching and not about *making*, which is the
+  case where the brief matters most; `PRODUCING` and an `about` question fixed
+  it, and "Produce a PDF" now asks "What should go in it?" before anything else.
+  Second, **the agentling can write a PDF** — the capability was assumed absent
+  because the sandbox has no libraries, and it simply wrote a 4KB dependency-free
+  Node script and ran it. Valid `%PDF-1.4`, correct objects and xref, the right
+  date, and a paragraph explaining it was assembled by hand. Worth remembering
+  before scoping out a capability: no library is not the same as no route.
+  Third, and the reason a live run beats a fixture: **the PDF was not detected
+  as binary.** It has uncompressed streams, so no NUL byte anywhere — and the
+  NUL sniff is git's test, which answers "is this source code" rather than the
+  question actually being decided, "would inlining this damage it". Its
+  Latin-1 `%âãÏÓ` marker is not valid UTF-8, so it was inlined as mojibake:
+  exactly the defect the binary path was written to prevent, surviving because
+  the unit fixture had a NUL in it by construction and so proved the heuristic
+  instead of the requirement. `isBinary` now asks whether the bytes round-trip
+  through UTF-8, with slack only where the sniff window truncated the file.
+  The download route was never affected — it reads raw bytes, and the hash
+  matched disk exactly throughout.
+  Costs and labels behaved: $0.364 against a $1.58 quote, `priceUsd` 0, the
+  failure absorbed. **Still open and deliberately not fixed here:** the run
+  delivered a PDF and is filed `failed`, because `partial` is defined as a diff
+  on disk — a repo-shaped notion of delivery. A job with no repository can
+  therefore never be `partial` however much it produced, so its work is
+  reachable only through the backoffice, which is the one surface that shows it
+  at all. That the backoffice rescued a job the terminal had written off is
+  the strongest argument yet for having built it.
   One fact learned by getting it wrong, worth recording because it is easy to
   assume: **a question with no repository is not free.** The `answer` tier
   replays a *stored* answer, and the first run of a novel prompt is what

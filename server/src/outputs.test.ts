@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { contentTypeFor, isBinary, listOutputs, safeOutputPath } from './outputs';
+import { contentTypeFor, isBinary, listOutputs, safeOutputPath, SNIFF_BYTES } from './outputs';
 
 let dir: string;
 
@@ -16,6 +16,20 @@ afterEach(() => {
 /** The first bytes of a real PDF, NUL included — the shape that used to break. */
 const PDF = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x00, 0x0a, 0xff, 0xfe]);
 
+/**
+ * The opening of a PDF written by hand with uncompressed streams — no NUL
+ * anywhere, and a Latin-1 binary marker that is not valid UTF-8.
+ *
+ * Taken from one an agentling actually produced. The fixture above has a NUL
+ * in it by construction, so it only ever proved the heuristic; this is the
+ * shape that got through and was inlined as mojibake.
+ */
+const HANDWRITTEN_PDF = Buffer.concat([
+  Buffer.from('%PDF-1.4\n%', 'latin1'),
+  Buffer.from([0xe2, 0xe3, 0xcf, 0xd3]),
+  Buffer.from('\n1 0 obj\n<< /Type /Catalog >>\nendobj\n', 'latin1'),
+]);
+
 describe('isBinary', () => {
   it('accepts text, including accents and emoji', () => {
     expect(isBinary(Buffer.from('# Result\n\nDone — café 🎉\n', 'utf8'))).toBe(false);
@@ -23,6 +37,21 @@ describe('isBinary', () => {
 
   it('spots a NUL byte', () => {
     expect(isBinary(PDF)).toBe(true);
+  });
+
+  it('spots a NUL-free PDF by its invalid UTF-8', () => {
+    expect(HANDWRITTEN_PDF.includes(0)).toBe(false); // the reason the old test passed
+    expect(isBinary(HANDWRITTEN_PDF)).toBe(true);
+  });
+
+  it('does not mistake a multi-byte character straddling the sniff window', () => {
+    // Filler up to the window, then an em dash split across the boundary.
+    const long = Buffer.concat([
+      Buffer.from('a'.repeat(SNIFF_BYTES - 1), 'utf8'),
+      Buffer.from('—', 'utf8'),
+      Buffer.from('tail', 'utf8'),
+    ]);
+    expect(isBinary(long)).toBe(false);
   });
 
   it('treats an empty file as text', () => {

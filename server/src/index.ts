@@ -349,8 +349,8 @@ const LIBRARIES = (() => {
  * The single place that decides what counts as a capability, so the router,
  * the recipe it banks and the one it matches against can never disagree.
  */
-function surfaceFor(job: Job, agentling?: Agentling): string[] {
-  const role = agentling ? registry.get(agentling.role) : undefined;
+function surfaceFor(job: Job, roleName?: string | null): string[] {
+  const role = roleName ? registry.get(roleName) : undefined;
   return capabilityTokens({
     connections: job.tools,
     tools: mapTools(role?.tools ?? []),
@@ -889,6 +889,9 @@ function quoteFor_(
     recipes: readRecipes(rt.dir),
     tools: usableTools(rt.dir),
     canFetch: tools?.includes('web') === true,
+    // The same surface the run will have. Without it the quote demotes every
+    // recipe the executor would honour, and prices a session for a one-shot.
+    capabilities: surfaceFor(probe, role),
   });
   const tier: Tier =
     decision.kind === 'answer' || decision.kind === 'fetch'

@@ -72,7 +72,7 @@ export class RoutedExecutor implements Executor {
      * rather than worked out here, because this class knows the level and the
      * job and nothing about roles, and one place should decide what counts.
      */
-    private capabilities: (job: Job, agentling?: Agentling) => string[],
+    private capabilities: (job: Job, role?: string | null) => string[],
     private fallback: Executor,
   ) {}
 
@@ -141,7 +141,7 @@ export class RoutedExecutor implements Executor {
           recipes,
           tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,
-          capabilities: this.capabilities(job, agentling),
+          capabilities: this.capabilities(job, agentling?.role),
         });
 
     if (decision.kind === 'answer') {
@@ -299,7 +299,7 @@ export class RoutedExecutor implements Executor {
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
         at: Date.now(),
-        capabilities: this.capabilities(job, agentling),
+        capabilities: this.capabilities(job, agentling?.role),
       });
       onProgress?.('noted how to do this next time');
     }

@@ -37,6 +37,21 @@ export function contentTypeFor(name: string): string {
 }
 
 /**
+ * Whether a browser will show this rather than save it.
+ *
+ * Only PDF: browsers render one natively, so previewing it costs no library
+ * and no bundle weight. Office formats have no native viewer and are left as
+ * downloads — which is where they were going anyway, since you open those in
+ * the application that owns them.
+ *
+ * It decides the Content-Disposition, and that is the whole trick: served as
+ * an attachment, a PDF downloads instead of appearing in the frame.
+ */
+export function opensInBrowser(name: string): boolean {
+  return contentTypeFor(name) === 'application/pdf';
+}
+
+/**
  * Whether a file is binary — meaning: would inlining it as text damage it?
  *
  * A NUL byte is git's test and catches most things, but not everything that

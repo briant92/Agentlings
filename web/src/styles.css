@@ -1525,6 +1525,14 @@ button.danger:hover {
 .rv-file {
   margin-bottom: 10px;
 }
+/* Rendered by the browser itself — no viewer library, no bundle weight. */
+.rv-pdf {
+  width: 100%;
+  height: 460px;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  background: #11151f;
+}
 
 /* The reporting column: who is on the floor, above what has happened. */
 .side {

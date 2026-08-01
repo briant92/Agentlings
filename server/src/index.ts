@@ -72,7 +72,7 @@ import {
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
-import { contentTypeFor, listOutputs, safeOutputPath } from './outputs';
+import { contentTypeFor, listOutputs, opensInBrowser, safeOutputPath } from './outputs';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
@@ -498,9 +498,13 @@ app.get('/api/levels/:lid/jobs/:id/output/:name', (c) => {
   const name = c.req.param('name');
   const file = safeOutputPath(rt.queue.sandboxDir(job.id), name);
   if (!file) return c.json({ error: 'unknown file' }, 404);
+  // Inline for what a browser can actually show, so the review panel can put
+  // it in a frame; an attachment would download instead of rendering. The
+  // download link asks for a save explicitly, so nothing is lost either way.
+  const disposition = opensInBrowser(name) ? 'inline' : 'attachment';
   return c.body(new Uint8Array(readFileSync(file)), 200, {
     'Content-Type': contentTypeFor(name),
-    'Content-Disposition': `attachment; filename="${name.replace(/"/g, '')}"`,
+    'Content-Disposition': `${disposition}; filename="${name.replace(/"/g, '')}"`,
   });
 });
 

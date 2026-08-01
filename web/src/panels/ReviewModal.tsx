@@ -4,6 +4,15 @@ import { api, lvl, postJson } from '../api';
 
 type OutputFile = JobOutputFile;
 
+function fileUrl(levelId: string, jobId: string, name: string): string {
+  return lvl(levelId, `/jobs/${jobId}/output/${encodeURIComponent(name)}`);
+}
+
+/** Browsers render these natively, so a frame needs no library at all. */
+function isPdf(name: string): boolean {
+  return name.toLowerCase().endsWith('.pdf');
+}
+
 function size(bytes: number): string {
   if (bytes < 1024) return `${bytes} bytes`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -80,15 +89,24 @@ export function ReviewModal({
             order(files).map((f) =>
               f.binary ? (
                 // A document is not something to print into a <pre>. It is
-                // named, sized and offered as itself.
+                // named, sized and offered as itself — and shown, where the
+                // browser can do that without help. A PDF it can; the Office
+                // formats it cannot, and those stay downloads.
                 <div key={f.name} className="rv-file">
                   <h3>{f.name}</h3>
                   <p className="dim">
                     {size(f.bytes)} ·{' '}
-                    <a href={lvl(levelId, `/jobs/${job.id}/output/${encodeURIComponent(f.name)}`)}>
+                    <a href={fileUrl(levelId, job.id, f.name)} download={f.name}>
                       download
                     </a>
                   </p>
+                  {isPdf(f.name) && (
+                    <iframe
+                      className="rv-pdf"
+                      src={fileUrl(levelId, job.id, f.name)}
+                      title={f.name}
+                    />
+                  )}
                 </div>
               ) : f.name === 'DIFF.patch' ? (
                 <details key={f.name} className="rv-raw">

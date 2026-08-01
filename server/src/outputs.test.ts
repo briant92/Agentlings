@@ -6,6 +6,7 @@ import {
   contentTypeFor,
   isBinary,
   listOutputs,
+  opensInBrowser,
   producedArtefacts,
   safeOutputPath,
   SNIFF_BYTES,
@@ -162,5 +163,20 @@ describe('contentTypeFor', () => {
   it('falls back to a download rather than guessing', () => {
     expect(contentTypeFor('DIFF.patch')).toBe('application/octet-stream');
     expect(contentTypeFor('noextension')).toBe('application/octet-stream');
+  });
+});
+
+// Decides the Content-Disposition, and that is the whole trick: served as an
+// attachment a PDF downloads instead of appearing in the review panel's frame.
+describe('opensInBrowser', () => {
+  it('is true for a PDF, whatever the case of the name', () => {
+    expect(opensInBrowser('hello-world.pdf')).toBe(true);
+    expect(opensInBrowser('Report.PDF')).toBe(true);
+  });
+
+  it('is false for the Office formats, which have no native viewer', () => {
+    for (const name of ['notes.docx', 'sheet.xlsx', 'deck.pptx', 'DIFF.patch', 'archive.zip']) {
+      expect(opensInBrowser(name)).toBe(false);
+    }
   });
 });

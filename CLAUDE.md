@@ -126,12 +126,12 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 ### Decision log
 
 Every resolved question, with the evidence that settled it, lives in
-`DECISIONS.md` — 34 entries, newest last. Read it before reopening anything
+`DECISIONS.md` — 35 entries, newest last. Read it before reopening anything
 settled, and cite the entry ID (`D-017`) rather than a title or a line number.
 Do not `@`-import it; it is meant to be opened on demand, not loaded on every
 turn.
 
-- D-001–D-007, D-032, D-034 — concept, stack, outside access, identity, executor
+- D-001–D-007, D-032, D-034–D-035 — concept, stack, outside access, identity, executor
 - D-008–D-010, D-014 — visuals and terrain: palette, art-as-data, art source, scenes-as-data
 - D-011, D-013 — levels as workspaces, and the non-expert setup path
 - D-012, D-016–D-018, D-026–D-027, D-029 — cost: quotes, ceilings, turn budgets, rates, billing
@@ -147,7 +147,7 @@ Distilled from the entries above; each points at the account it came from.
 These are here because an archive changes no behaviour.
 
 - Measure before tuning. A figure in these notes is not evidence — recompute
-  it. (D-016, D-029)
+  it, including when the note is a premise you argued for. (D-016, D-029, D-035)
 - Anything that learns only from clean successes goes blind exactly where most
   runs land. Check the population before the logic. (D-017, D-019, D-023, D-030)
 - "It delivered" keeps being re-derived locally, and every local copy silently

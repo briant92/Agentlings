@@ -44,6 +44,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-032 — 2026-08-01 — Reading the web is on by default, and Settings owns the switch](#d-032--2026-08-01--reading-the-web-is-on-by-default-and-settings-owns-the-switch)
 - [D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go](#d-033--2026-08-01--the-ellipsis-the-model-believed-and-the-answer-with-nowhere-to-go)
 - [D-034 — 2026-08-01 — A browser that reads and cannot act](#d-034--2026-08-01--a-browser-that-reads-and-cannot-act)
+- [D-035 — 2026-08-01 — The browser measured, and the case for it is weaker than the case made for it](#d-035--2026-08-01--the-browser-measured-and-the-case-for-it-is-weaker-than-the-case-made-for-it)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1318,3 +1319,61 @@ where there is a guardrail. And no acting tools until there is measured cost
 data — the documented failure mode is context growth, since each navigation
 returns a fresh snapshot and a long session carries pages it already left,
 which is a rate unlike anything in the ledger.
+
+## D-035 — 2026-08-01 — The browser measured, and the case for it is weaker than the case made for it
+
+Phase 3 of the browser scope: run it and find out. Three live runs, **$0.61**,
+and the useful results are the negative ones.
+
+**The premise was overstated, and mine.** I argued the crew could not read
+modern sites because `fetchPage` is one GET with no JavaScript. Measured
+against real pages, that is mostly false: react.dev, vercel.com,
+anthropic.com, playwright.dev and news.ycombinator.com all return 3–8KB of
+readable text, because marketing and docs sites are server-rendered. Where it
+genuinely fails is narrower than claimed — Google search (93 characters),
+reddit's www host (0), PDFs (refused as not a readable document) and sites
+that block a non-browser agent (Bloomberg, 403).
+
+**And the crew routes around it without help.** Asked to read
+`www.reddit.com/r/programming/`, which `fetch_page` returns nothing for, both
+runs found `old.reddit.com` — server-rendered — by themselves and produced
+correct titles. The browser was granted, wired and spawned in run B, and never
+called once. A capability is not needed merely because a tool fails; the
+question is whether the model can get the answer another way, and here it
+could.
+
+**Forced onto a page with no workaround, it works and is cheap.** With web
+switched off, a scout reached a Google search page through
+`mcp__browser__browser_navigate` — 5 turns of 12, **$0.0327, about 0.65c per
+turn granted, against 8.3c for a repo session.** Accessibility snapshots really
+are small. But it did not get the answer: Google served 429 and a CAPTCHA. That
+is a real limit and not one to engineer around — a browser is not an anti-bot
+tool, and building toward defeating bot protection is out of scope by choice.
+
+**`gateOutside` proven live, and it fires exactly as designed.** The scout's
+`allowedTools` came out `["Read","Grep","Glob","Skill"]` with `WebFetch`
+removed and the web shim absent. The trace then shows the model *asking* for
+`WebFetch`, being refused, and going to find the browser tools instead. A
+denied request still appears as a tool call in the progress stream, which is
+worth knowing before reading a trace as evidence of a leak — it looks identical
+to one.
+
+**The learning loop suppressed the new capability, which is the finding with
+teeth.** Run A solved the job with `fetch_page` and banked a recipe. Run B,
+with the browser newly available, matched that recipe, was leashed to five
+turns and told the method — so it never explored, never tried the browser, and
+the comparison measured nothing. Every mechanism here is working as designed
+and the emergent behaviour is that **a crew which has learned a method will not
+discover a better one.** Recipes make repeat work cheaper and make capability
+changes invisible. Nothing is done about it yet; naming it is the point.
+
+So acting tools stay unbuilt, and now for a measured reason rather than a
+cautious one: the browser has been genuinely used once, on a page that blocked
+it. The tier that would justify click and type has not yet demonstrated value
+in the tier that only reads.
+
+One process note. The first measurement script polled for 300s and reported
+"TIMED OUT" for two jobs that were still running and later finished fine — the
+harness gave up, not the app. The runs cost real money and produced real
+output while the experiment recorded nothing, which is a reminder that an
+instrument shorter than the thing it measures manufactures its own result.

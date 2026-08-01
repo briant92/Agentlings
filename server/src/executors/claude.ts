@@ -293,6 +293,29 @@ export function repoListing(root: string, limit = 40): string[] {
  * clarified job a different key from the same job asked plainly, and the crew
  * would stop recognising work it had already done.
  */
+/**
+ * Marks a failed run's spend unknown when nothing measured it.
+ *
+ * The SDK reports cost on a result message, so any death before that one
+ * arrives leaves real money with no number against it. Recording that as zero
+ * is worse than recording nothing: the ledger reads as though the run were
+ * free, and the runs that die this way are the *expensive* ones — a session
+ * killed by the ten-minute timeout is by definition the longest there is.
+ *
+ * Measured on job a7b277d3: ten full minutes filed as `costUsd: 0`. The cancel
+ * path had always done this correctly; the timeout path rejected with a plain
+ * Error and skipped it. Applied here, where every failure meter is assembled,
+ * rather than in the branch that happened to be noticed — a spawn failure or
+ * anything else that dies early has exactly the same hole.
+ *
+ * `closeOutUsd` alone is not a cost: the write-up runs after the session and
+ * knowing what it spent says nothing about what the session did.
+ */
+export function withCostKnown(meter: JobMeter): JobMeter {
+  if (meter.costUsd !== undefined) return meter;
+  return { ...meter, costUnknown: true };
+}
+
 export function sessionPrompt(job: Job): string {
   const base = `Job: ${job.title}\n\n${job.prompt}`;
   if (!job.clarifications?.length) return base;
@@ -596,17 +619,10 @@ export class ClaudeAgentExecutor implements Executor {
         ...(hint?.oneShot && hint.recipeKey ? { recipeKey: hint.recipeKey } : {}),
         ...(salvage.closeOutUsd ? { closeOutUsd: salvage.closeOutUsd } : {}),
       };
-      if (err instanceof SessionFailure) {
-        throw new SessionFailure(
-          err.message,
-          { ...err.meter, ...failedMeter },
-          salvage.lesson,
-          salvage.approach,
-        );
-      }
+      const spent = err instanceof SessionFailure ? { ...err.meter, ...failedMeter } : failedMeter;
       throw new SessionFailure(
         err instanceof Error ? err.message : String(err),
-        failedMeter,
+        withCostKnown(spent),
         salvage.lesson,
         salvage.approach,
       );

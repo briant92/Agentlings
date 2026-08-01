@@ -9,6 +9,7 @@ import {
   turnCapFor,
   turnsFor,
   turnsForBudget,
+  withCostKnown,
 } from './claude';
 
 describe('turnCapFor', () => {
@@ -186,6 +187,34 @@ describe('repoListing', () => {
 
   it('returns nothing for a directory that is not there', () => {
     expect(repoListing(path.join(root, 'missing'))).toEqual([]);
+  });
+});
+
+// A death before the SDK's result message leaves real money with no number
+// against it. Recorded as zero, the ledger reads as though the run were free —
+// and the runs that die this way are the longest ones there are.
+describe('withCostKnown', () => {
+  it('marks a measured run alone', () => {
+    expect(withCostKnown({ costUsd: 0.42, turns: 6 })).toEqual({ costUsd: 0.42, turns: 6 });
+  });
+
+  it('flags a run nothing measured', () => {
+    expect(withCostKnown({ turnsAllowed: 10 })).toEqual({
+      turnsAllowed: 10,
+      costUnknown: true,
+    });
+  });
+
+  // Measured on job a7b277d3: ten minutes of turns, filed as costing nothing,
+  // because the close-out's own spend was the only number present.
+  it('is not fooled by the write-up having a cost of its own', () => {
+    expect(withCostKnown({ turnsAllowed: 10, closeOutUsd: 0.02 })).toMatchObject({
+      costUnknown: true,
+    });
+  });
+
+  it('treats a genuine zero as measured, not missing', () => {
+    expect(withCostKnown({ costUsd: 0 }).costUnknown).toBeUndefined();
   });
 });
 

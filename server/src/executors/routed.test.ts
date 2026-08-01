@@ -405,18 +405,24 @@ describe('RoutedExecutor', () => {
       expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
     });
 
-    // Same question, asked of work that has no repository to leave a diff in.
-    // Measured on job c567c2a3: a PDF, a generator and a verifier on disk,
-    // filed `partial`, credited nothing — so its recipe could never reach the
-    // three successes a tool is compiled on.
-    it('counts a run that delivered files, with no repository at all', async () => {
+    // Narrower than `partial` on purpose, and the difference is the point.
+    // `partial` asks whether there is something worth reviewing; this asks
+    // whether the recipe gets the job done, because three of these compile it
+    // into a tool that runs with no model at all.
+    //
+    // Measured on job 2711da49: a run wrote a working PDF generator, ran out
+    // of turns before executing it, and produced no PDF. Reviewable — but not
+    // evidence the job is repeatable.
+    it('does not count a run that left files but never finished the job', async () => {
       stored();
-      writeFileSync(path.join(sandboxDir, 'hello.pdf'), '%PDF-1.7\n');
+      writeFileSync(path.join(sandboxDir, 'make-pdf.mjs'), '// writes a PDF when run\n');
       await expect(
         run(build(dying('the way that worked')), job({ prompt: 'add a test for formatUsd' }), PIP),
       ).rejects.toThrow();
 
-      expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.hits).toBe(1);
+      expect(recipe.successes ?? 0).toBe(0);
     });
 
     it('counts nothing when the run left no work behind either', async () => {

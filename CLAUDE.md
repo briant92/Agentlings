@@ -1039,6 +1039,26 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   function**, and every local copy silently assumes a repository. There are now
   three shared notions in `outputs.ts` — `deliveredFiles`, `producedArtefacts`,
   `outputNames` — and the next thing that asks the question should call one.
+  **Run 5 caught the over-correction, an hour old.** The recipe hit again
+  (`hits` 3) and banked its first ever `success` — and produced **no PDF**. It
+  wrote a working generator, ran out of turns before executing it, and the
+  files-on-disk test counted that as the job being done. Three of those would
+  compile a tool from a method that never finishes, and the fall-through would
+  absorb the cost each time it failed. So `successes` is narrowed back to a
+  clean finish or a diff, while `partial` stays wide — and the two are **not**
+  the same question however alike they read: `partial` asks whether there is
+  something worth the user's attention, and a half-finished generator is;
+  `successes` asks whether the recipe gets the job **done**, because that is
+  what compiles it into a script that runs with no model at all. The comment
+  claiming they used one test is what carried the mistake, so it now states the
+  divergence instead. The stored `successes: 1` was corrected to 0 by hand —
+  one value on a scratch level, and leaving it would have made the fix inert on
+  the very recipe that exposed it.
+  Worth naming the shape, since it is the mirror of the bug that dominates this
+  log: unifying two notions is as dangerous as duplicating one. The nine
+  earlier instances all came from a definition copied and left to drift; this
+  one came from collapsing two definitions that only *sounded* alike, on the
+  same day, to fix the drift.
   One fact learned by getting it wrong, worth recording because it is easy to
   assume: **a question with no repository is not free.** The `answer` tier
   replays a *stored* answer, and the first run of a novel prompt is what

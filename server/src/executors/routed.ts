@@ -11,7 +11,7 @@ import {
   rememberRecipe,
   writeRecipes,
 } from '../recipes';
-import { deliveredFiles, producedArtefacts } from '../outputs';
+import { producedArtefacts } from '../outputs';
 import { type Decision, decide } from '../router';
 import {
   RUN_SCRIPT,
@@ -253,15 +253,20 @@ export class RoutedExecutor implements Executor {
       // small jobs a script cannot do and excludes the big mechanical ones it
       // could — exactly backwards.
       //
-      // `deliveredFiles` rather than a patch, and for the third time in one
-      // day: a job with no clone produces no diff, so this counted zero for
-      // every non-repo run however much it made. Measured on job c567c2a3 — a
-      // working PDF, a generator and a verifier on disk, filed `partial`, and
-      // credited nothing. A recipe that can never bank a success can never be
-      // compiled into a tool, so the tier stays out of reach for exactly the
-      // mechanical work it exists for. A patch is one of the files this finds,
-      // so nothing repo-shaped is lost.
-      const delivered = result !== undefined || deliveredFiles(sandboxDir);
+      // Deliberately *narrower* than `partial`, and the two questions are not
+      // the same however alike they look. `partial` asks whether there is
+      // something here worth the user's attention — a half-finished generator
+      // is. This asks whether the recipe reliably gets the job done, because
+      // three of these compile it into a tool that runs with no model at all.
+      //
+      // Measured on job 2711da49: a run wrote a working PDF generator, ran out
+      // of turns before executing it, produced no PDF — and under a files-on-
+      // disk test banked a success. Three of those would compile a tool from a
+      // method that never finishes, and the fall-through would absorb the cost
+      // every time it failed. Widening this alongside `partial` was one change
+      // too many, made the same day, on the strength of the two sounding
+      // similar.
+      const delivered = result !== undefined || existsSync(patchFile(sandboxDir));
       updated = creditRecipe(updated, usedKey, Date.now(), delivered);
     }
     if (approach && agentling) {

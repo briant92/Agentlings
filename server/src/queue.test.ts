@@ -348,7 +348,7 @@ describe('JobQueue', () => {
     // a patch called every compile a failure. Measured on job 760e0bf6: two
     // working programs on disk, verified by hand, filed `failed`.
     it('calls a compile that left both halves partial, not failed', () => {
-      const job = queue.add({ title: 'Compile a recipe', prompt: 'x' });
+      const job = queue.add({ title: 'Compile a recipe', prompt: 'x', compile: true });
       const dir = queue.start(job.id);
       writeFileSync(path.join(dir, 'run.mjs'), '// does the job\n');
       writeFileSync(path.join(dir, 'verify.mjs'), '// checks the job\n');
@@ -359,10 +359,42 @@ describe('JobQueue', () => {
       expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
     });
 
+    // Found live on job 2ff16bf2: "Produce a PDF" on a level with no
+    // repository wrote a valid PDF and was filed `failed`, because delivery
+    // was judged by a diff — which a job with no clone can never have.
+    it('calls a run that left files partial, even with no repository', () => {
+      const job = queue.add({ title: 'Produce a PDF', prompt: 'Produce a PDF' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, 'hello-world.pdf'), '%PDF-1.4\n');
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+
+      const partial = queue.get(job.id)!;
+      expect(partial.status).toBe('partial');
+      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+    });
+
+    it('ignores the session config a run always leaves behind', () => {
+      const job = queue.add({ title: 'Produced nothing', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, '.session.json'), '{}');
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+      expect(queue.get(job.id)!.status).toBe('failed');
+    });
+
+    // Stopping work on purpose is not delivery, whatever is on disk. A killed
+    // session rejects through fail(), not cancel(), so the guard lives there.
+    it('stays a plain failure when the user cancelled it, files or not', () => {
+      const job = queue.add({ title: 'Changed my mind', prompt: 'x' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, 'half-written.md'), 'partial work\n');
+      queue.fail(job.id, 'cancelled');
+      expect(queue.get(job.id)!.status).toBe('failed');
+    });
+
     // Half a tool is not a delivery: installTool refuses it, so the status
     // must not claim there is something to review.
     it('is a plain failure when a compile produced only half a tool', () => {
-      const job = queue.add({ title: 'Compile a recipe', prompt: 'x' });
+      const job = queue.add({ title: 'Compile a recipe', prompt: 'x', compile: true });
       const dir = queue.start(job.id);
       writeFileSync(path.join(dir, 'run.mjs'), '// does the job\n');
       queue.fail(job.id, 'agent session failed (error_max_turns)');

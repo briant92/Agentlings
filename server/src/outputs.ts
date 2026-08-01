@@ -85,6 +85,25 @@ export function safeOutputPath(dir: string, name: string): string | null {
   return full;
 }
 
+/** The files a job left behind, ignoring its own config and the clone. */
+function outputNames(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name);
+}
+
+/**
+ * Whether the run left anything for the user at all.
+ *
+ * The one notion of "it delivered" for work that is not a repository change.
+ * A job with no clone produces no diff, so judging delivery by a patch called
+ * every such run a failure — including one that wrote a working PDF.
+ */
+export function deliveredFiles(dir: string): boolean {
+  return outputNames(dir).length > 0;
+}
+
 /**
  * The sandbox's top-level files. Text comes back inline, because that is what
  * the review panel reads; anything binary is announced and left on disk to be

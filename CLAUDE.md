@@ -988,13 +988,26 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   The download route was never affected — it reads raw bytes, and the hash
   matched disk exactly throughout.
   Costs and labels behaved: $0.364 against a $1.58 quote, `priceUsd` 0, the
-  failure absorbed. **Still open and deliberately not fixed here:** the run
-  delivered a PDF and is filed `failed`, because `partial` is defined as a diff
-  on disk — a repo-shaped notion of delivery. A job with no repository can
-  therefore never be `partial` however much it produced, so its work is
-  reachable only through the backoffice, which is the one surface that shows it
-  at all. That the backoffice rescued a job the terminal had written off is
-  the strongest argument yet for having built it.
+  failure absorbed. And the backoffice rescued a job the terminal had written
+  off — the PDF was reachable and downloadable from it while the feed showed
+  only a failure, which is the strongest argument yet for having built it.
+  **Which exposed the fourth thing, and it is this log's recurring bug for the
+  seventh time.** The run delivered a PDF and was filed `failed`, because
+  `partial` was defined as a diff on disk — a *repo-shaped* notion of delivery.
+  A job with no repository can never have a diff, so no such job could ever be
+  `partial` however much it produced: not reviewable, not creditable to a
+  recipe, filed under "closed" in the very panel that was showing its output.
+  The same shape as the promotion gate, which was fixed for exactly this reason
+  and then re-introduced one level down. Delivery now means **the run left
+  something for the user**, of which a diff is one shape. Two exceptions kept,
+  both already decided: a compile is judged only on `deliveredTool`, since half
+  a tool is not a delivery and its working files must not be mistaken for
+  output; and cancelling stays `failed` whatever is on disk, because you
+  stopped it on purpose. That second guard belongs in `fail()` rather than in
+  the caller — a killed session rejects through that path, not through
+  `cancel()` — and it was latent before this: a cancelled run holding a diff
+  would already have been mislabelled `partial`. Job 2ff16bf2 keeps its
+  historical `failed`; statuses are not recomputed retroactively.
   One fact learned by getting it wrong, worth recording because it is easy to
   assume: **a question with no repository is not free.** The `answer` tier
   replays a *stored* answer, and the first run of a novel prompt is what

@@ -3,7 +3,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Job, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
+import { CANCELLED } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
+import { deliveredFiles } from './outputs';
 import { deliveredTool } from './tools';
 
 export interface NewJobSpec {
@@ -213,7 +215,24 @@ export class JobQueue {
     // saying so. Measured on job 760e0bf6: delivered, verified by hand, filed
     // `failed`. Running out is a compile's ordinary ending, the same way it is
     // the close-out's.
-    job.status = hasPatch || deliveredTool(sandbox) ? 'partial' : 'failed';
+    //
+    // For a job with no repository there is no diff to find, so asking only
+    // about a patch called every such run a failure however much it produced.
+    // Measured 2026-07-31 on job 2ff16bf2: a valid PDF written from scratch,
+    // filed `failed`, reachable only through the backoffice. Delivery is
+    // "it left something for the user", and a diff is one shape of that.
+    //
+    // Cancelling is the exception, and stays an exception: you stopped it on
+    // purpose, and presenting the result as delivery would argue with that.
+    // The guard belongs here rather than in the caller because a killed
+    // session rejects through this path, not through `cancel`.
+    // A compile is judged only on its tool: half of one is not a delivery,
+    // `installTool` refuses it, and its stray working files must not be
+    // mistaken for output.
+    const delivered = job.compile
+      ? deliveredTool(sandbox)
+      : hasPatch || deliveredFiles(sandbox);
+    job.status = delivered && error !== CANCELLED ? 'partial' : 'failed';
     this.finish(job);
   }
 

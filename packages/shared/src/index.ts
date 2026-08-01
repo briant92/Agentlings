@@ -160,6 +160,11 @@ export interface Job {
   tools?: string[];
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
+  /**
+   * The job this one answers. Its sandbox is carried forward, so a reply picks
+   * up where that run stopped instead of paying to redo it.
+   */
+  continues?: string;
   /** A turn cap this job needs in its own right, overriding the role's. */
   maxTurns?: number;
   /**

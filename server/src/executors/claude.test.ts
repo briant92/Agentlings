@@ -245,6 +245,28 @@ describe('sessionPrompt', () => {
   it('adds nothing at all for an empty list, so the prompt is byte-identical', () => {
     expect(sessionPrompt({ ...base, clarifications: [] })).toBe(sessionPrompt(base));
   });
+
+  // Job ca5db1b4: the card's ellipsis reached the session, the model read it
+  // as a truncated message and asked the user to repeat themselves. One turn,
+  // 1.4c, no work.
+  it('never shows the session a title that trails off', () => {
+    const job = {
+      ...base,
+      title: 'I need someone to look up Buydepa and summarize…',
+      prompt: 'I need someone to look up Buydepa and summarize what the company does',
+    };
+    expect(sessionPrompt(job)).toBe(job.prompt);
+    expect(sessionPrompt(job)).not.toContain('…');
+  });
+
+  it('drops a title that only repeats the opening of the prompt', () => {
+    const job = { ...base, title: 'Tighten up the error handling', prompt: base.prompt };
+    expect(sessionPrompt(job)).toBe(base.prompt);
+  });
+
+  it('keeps a title someone wrote separately, which says something the prompt does not', () => {
+    expect(sessionPrompt(base)).toBe('Job: Tidy the errors\n\ntighten up the error handling');
+  });
 });
 
 describe('buildAppend', () => {

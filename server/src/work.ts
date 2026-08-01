@@ -119,6 +119,8 @@ export function queuedJobSpec(args: {
   quote: Quote;
   clarifications?: string[];
   attachments?: { name: string; data: Buffer }[];
+  /** The job this one answers, whose sandbox it carries forward. */
+  continues?: string;
 }): {
   title: string;
   prompt: string;
@@ -128,6 +130,7 @@ export function queuedJobSpec(args: {
   quotedUsd?: number;
   clarifications?: string[];
   attachments?: { name: string; data: Buffer }[];
+  continues?: string;
 } {
   return {
     title: args.title,
@@ -137,6 +140,7 @@ export function queuedJobSpec(args: {
     ...(args.clarifications?.length ? { clarifications: args.clarifications } : {}),
     ...(args.attachments?.length ? { attachments: args.attachments } : {}),
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
+    ...(args.continues ? { continues: args.continues } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never
     // spend, and every paying tier is bounded below at a cent. So a job that

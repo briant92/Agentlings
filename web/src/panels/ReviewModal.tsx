@@ -122,7 +122,10 @@ export function ReviewModal({
             )}
         </div>
         <div className="m-foot">
-          {job.status === 'done' && (
+          {/* `partial` gets the same actions the terminal card offers it:
+              without this, "See the changes" on the status that most needs
+              reviewing opened a modal whose only button was Close. */}
+          {(job.status === 'done' || job.status === 'partial') && (
             <>
               <button onClick={() => void resolve('promote')}>Approve</button>
               <button onClick={() => void resolve('discard')}>Discard</button>

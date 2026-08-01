@@ -211,6 +211,32 @@ button.ghost {
   gap: 12px;
   flex-wrap: wrap;
 }
+/* Answering an agentling, on the card that asked. */
+.t-reply {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.t-reply input {
+  flex: 1;
+  min-width: 0;
+  background: #181c26;
+  border: 1px solid #2b3040;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #d8dce6;
+  font-family: inherit;
+  font-size: 11px;
+}
+.t-reply input:focus {
+  outline: none;
+  border-color: var(--db-sky);
+}
+.t-reply button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* Stated, not offered: the switch is in Settings, so this reads as status. */
 .work-conn-on {
   color: var(--db-lime-light);

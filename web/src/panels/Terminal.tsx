@@ -40,6 +40,52 @@ function changeLine(job: Job): string {
   return `would change ${files} · +${c.added} −${c.removed}`;
 }
 
+/**
+ * Say something back.
+ *
+ * An agentling that asks a question used to be a dead end: the card offered
+ * approve or discard, so the only way to answer was to retype the whole
+ * request and pay for the work again. Sending queues a follow-up that carries
+ * this run's sandbox forward, so the answer continues the work rather than
+ * restarting it.
+ */
+function ReplyBox({
+  jobId,
+  onReply,
+}: {
+  jobId: string;
+  onReply: (jobId: string, text: string) => Promise<void>;
+}) {
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    const answer = text.trim();
+    if (!answer || busy) return;
+    setBusy(true);
+    try {
+      await onReply(jobId, answer);
+      setText('');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="t-reply">
+      <input
+        value={text}
+        placeholder="Answer, or say what to do next…"
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') void send();
+        }}
+      />
+      <button disabled={busy || !text.trim()} onClick={() => void send()}>
+        {busy ? 'sending…' : 'Send'}
+      </button>
+    </div>
+  );
+}
+
 /** The reporting rail: one chronological feed for everything the horde does. */
 export function Terminal({
   levelId,
@@ -99,6 +145,11 @@ export function Terminal({
     await api(lvl(levelId, `/jobs/${jobId}/cancel`), { method: 'POST' });
   };
 
+  /** Answer the agentling: a new job that carries this one's sandbox forward. */
+  const reply = async (jobId: string, text: string) => {
+    await api(lvl(levelId, `/jobs/${jobId}/reply`), postJson({ text }));
+  };
+
   return (
     <aside
       className="terminal"
@@ -126,6 +177,7 @@ export function Terminal({
             onOpenReview={onOpenReview}
             onResolve={resolve}
             onRedo={redo}
+            onReply={reply}
             onCancel={cancel}
           />
         ))}
@@ -144,6 +196,7 @@ function EventEntry({
   onOpenReview,
   onResolve,
   onRedo,
+  onReply,
   onCancel,
 }: {
   event: JobEvent;
@@ -151,6 +204,7 @@ function EventEntry({
   onOpenReview: (jobId: string) => void;
   onResolve: (jobId: string, action: 'promote' | 'discard') => Promise<void>;
   onRedo: (jobId: string) => Promise<void>;
+  onReply: (jobId: string, text: string) => Promise<void>;
   onCancel: (jobId: string) => Promise<void>;
 }) {
   // Driven by the job's live status rather than the event's, so it vanishes
@@ -221,6 +275,7 @@ function EventEntry({
                   </button>
                 )}
               </div>
+              <ReplyBox jobId={event.jobId} onReply={onReply} />
             </div>
           )}
         </>
@@ -253,6 +308,7 @@ function EventEntry({
                   See the changes
                 </button>
               </div>
+              <ReplyBox jobId={event.jobId} onReply={onReply} />
             </div>
           </>
         );

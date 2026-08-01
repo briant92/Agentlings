@@ -42,6 +42,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-030 — 2026-07-31 — A UI/UX pass, where the arithmetic decided more than taste](#d-030--2026-07-31--a-uiux-pass-where-the-arithmetic-decided-more-than-taste)
 - [D-031 — 2026-07-31 — Document capability: Node libraries at the project root](#d-031--2026-07-31--document-capability-node-libraries-at-the-project-root)
 - [D-032 — 2026-08-01 — Reading the web is on by default, and Settings owns the switch](#d-032--2026-08-01--reading-the-web-is-on-by-default-and-settings-owns-the-switch)
+- [D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go](#d-033--2026-08-01--the-ellipsis-the-model-believed-and-the-answer-with-nowhere-to-go)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1166,3 +1167,50 @@ this log records nine times. And this widens what every session can reach: the
 posture moved from "ambient nothing" to "ambient reading". That is the change
 asked for, but it is a reversal rather than drift, which is why it is written
 down here and in three places in SPEC.md that asserted the opposite.
+
+## D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go
+
+Brian reported that a run came back saying his message was cut short and the
+only options were approve, discard and see-the-changes. Two separate faults,
+and the one he reported was the smaller.
+
+**The app told the model the prompt was truncated.** `sessionPrompt` opened
+with `Job: ${job.title}`, and `titleFrom` marks a shortened title with an
+ellipsis — right for a card, wrong for a prompt. Job `ca5db1b4` was handed
+`Job: I need someone to look up Buydepa and summarize…` above that same
+sentence in full, and Haiku did the reasonable thing: read the ellipsis as a
+cut-off message and asked the user to repeat themselves. One turn of twelve,
+1.4c, no work, and a question the UI could not answer. For a prompt-derived
+title that line was never anything but a shortened duplicate of the sentence
+beneath it, so it is dropped when the title is a prefix of the prompt and kept
+when someone wrote it separately, as `/jobs` allows. A display concern had
+leaked into a prompt and the model believed it.
+
+**And an agentling that asks a question had nowhere to be answered.** The card
+offered approve or discard, so the only way to respond was to retype the whole
+request and pay for the work again. The fix is a reply box that queues a
+follow-up — and the reason that is allowed is worth stating, because D-030
+refused exactly this: what it refused was *mid-run* clarification, which needs
+a `waiting` status and a runner holding stdin. A reply arrives after the run
+has ended, which is simply a new job. The architectural line is not "never ask
+the user", it is "never pause a session".
+
+A follow-up carries `continues`, and `carryForward` starts its sandbox where
+the last one stopped: the earlier patch applied to the fresh clone, anything
+produced copied across. Without that, answering a question would re-do and
+re-bill work already paid for. Its paperwork is deliberately left behind — an
+inherited RESULT.md would make "did this deliver" true before the session had
+done anything, which is the delivery-test bug this log records repeatedly.
+
+**Two faults were invisible to 636 passing tests and showed up on the first
+live call.** `continues` never reached the job, because `JobQueue.add` builds
+its `Job` field by field and simply did not copy it — a field can be threaded
+through a type, a spec and a route and still be dropped by the one function
+that constructs the thing. And a `.filter(Boolean)` meant to drop an absent
+summary also ate the blank line separating the original request from the note,
+running two paragraphs together. Neither is subtle; neither was reachable
+without calling the route.
+
+One dead end fixed while in there: `ReviewModal` showed its actions only for
+`done`, so "See the changes" on a `partial` opened a modal whose only button
+was Close — no actions on precisely the status that most needs reviewing.

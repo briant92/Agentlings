@@ -126,7 +126,7 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 ### Decision log
 
 Every resolved question, with the evidence that settled it, lives in
-`DECISIONS.md` — 32 entries, newest last. Read it before reopening anything
+`DECISIONS.md` — 33 entries, newest last. Read it before reopening anything
 settled, and cite the entry ID (`D-017`) rather than a title or a line number.
 Do not `@`-import it; it is meant to be opened on demand, not loaded on every
 turn.
@@ -136,7 +136,7 @@ turn.
 - D-011, D-013 — levels as workspaces, and the non-expert setup path
 - D-012, D-016–D-018, D-026–D-027, D-029 — cost: quotes, ceilings, turn budgets, rates, billing
 - D-015, D-019–D-025 — learning: recipes, close-out, compiled tools, the promotion gate
-- D-028, D-030–D-031 — socket payload, the UI/UX pass, document libraries
+- D-028, D-030–D-031, D-033 — socket payload, UI/UX, documents, answering a run
 
 New entries append to `DECISIONS.md` with the next ID. An entry is a decision
 plus what proved it — length is whatever the evidence takes, not one line.
@@ -154,6 +154,8 @@ These are here because an archive changes no behaviour.
   assumes a repository. Call the shared function. (D-030)
 - Collapsing two notions that only sound alike is as dangerous as duplicating
   one. (D-030)
+- A field can be threaded through a type, a spec and a route and still be
+  dropped by the one function that builds the object. (D-033)
 - A correct fix can ship inert. Ask what existing data it needs to reach, and
   backfill by identification — never by guess. (D-026, D-030)
 - Price a turn by `turnsAllowed`. A cut-off run reports `turnsAllowed + 1` and
@@ -166,8 +168,8 @@ These are here because an archive changes no behaviour.
   more. (D-015, D-025)
 - The user is never billed above the quote, and work that cost money and failed
   is absorbed. (D-012, D-021)
-- Run it live before believing it. Faults invisible to 444 passing tests were
-  obvious within one real run. (D-021, D-024, D-030)
+- Run it live before believing it. Faults invisible to 636 passing tests were
+  obvious on the first real call. (D-021, D-024, D-030, D-033)
 - Generated instruction is executable: preview before installing, and make a
   tool prove its own output. (D-011, D-021)
 - Mutation-test after committing — `git checkout <file>` destroyed an hour of

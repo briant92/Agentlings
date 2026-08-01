@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import type { Agentling, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { resolveForJob, toMcpServers, type Connection } from '../connections';
-import { cloneRepo, writeDiff } from '../gitwork';
+import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
 import { outputNames } from '../outputs';
@@ -316,8 +316,59 @@ export function withCostKnown(meter: JobMeter): JobMeter {
   return { ...meter, costUnknown: true };
 }
 
+/**
+ * True when the title says something the prompt does not.
+ *
+ * `titleFrom` shortens a long prompt and marks the cut with an ellipsis, which
+ * is right for a card and wrong for a prompt: a model handed
+ * "Job: look up Buydepa and summarise…" above that same sentence reads the
+ * ellipsis as a truncated message and asks the user to say it again. Measured
+ * on job ca5db1b4 — one turn, 1.4c, no work done, and a question the UI had no
+ * way to answer. A title earns its line only when someone wrote it separately
+ * from the prompt, as the `/jobs` route allows.
+ */
+/**
+ * Start a follow-up where the run it answers stopped.
+ *
+ * A reply is a new job — a session is a one-shot child process and pausing one
+ * mid-run was refused for good reasons (D-030) — so the continuity has to be
+ * put back by hand: the earlier patch is applied to the fresh clone and
+ * anything that run produced is copied across. Without this, answering a
+ * question would re-do and re-bill work already paid for.
+ *
+ * Its own paperwork is deliberately left behind. The new run writes its own
+ * RESULT.md, and inheriting the old one would make "did this deliver" true
+ * before the session had done anything.
+ */
+export async function carryForward(
+  previousId: string,
+  sandboxDir: string,
+  hasRepo: boolean,
+  onProgress?: (detail: string) => void,
+): Promise<void> {
+  const previous = path.join(path.dirname(sandboxDir), previousId);
+  if (!existsSync(previous)) return;
+  const patch = patchFile(previous);
+  if (hasRepo && existsSync(patch)) {
+    onProgress?.('carrying forward the earlier changes');
+    await applyPatch(repoDir(sandboxDir), patch);
+  }
+  for (const name of outputNames(previous)) {
+    if (PAPERWORK_FORWARD.has(name)) continue;
+    cpSync(path.join(previous, name), path.join(sandboxDir, name));
+  }
+}
+
+const PAPERWORK_FORWARD = new Set(['RESULT.md', 'DIFF.patch', 'LESSON.md', 'APPROACH.md']);
+
+export function titleAddsSomething(job: Job): boolean {
+  const title = job.title.replace(/…+$/, '').trim();
+  if (!title) return false;
+  return !job.prompt.trim().toLowerCase().startsWith(title.toLowerCase());
+}
+
 export function sessionPrompt(job: Job): string {
-  const base = `Job: ${job.title}\n\n${job.prompt}`;
+  const base = titleAddsSomething(job) ? `Job: ${job.title}\n\n${job.prompt}` : job.prompt;
   if (!job.clarifications?.length) return base;
   return `${base}\n\nThe user has already settled these:\n${job.clarifications
     .map((line) => `- ${line}`)
@@ -514,6 +565,7 @@ export class ClaudeAgentExecutor implements Executor {
       await cloneRepo(job.repoPath, sandboxDir);
       hasRepo = true;
     }
+    if (job.continues) await carryForward(job.continues, sandboxDir, hasRepo, onProgress);
 
     const { granted, refused } = resolveForJob(job.tools, this.connections(), process.env);
     for (const { name, reason } of refused) onProgress?.(`connection "${name}" unavailable: ${reason}`);

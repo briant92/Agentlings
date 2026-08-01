@@ -555,6 +555,50 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
   return c.json(job, 201);
 });
 
+/**
+ * Answer an agentling. The run has ended — a session is a one-shot child
+ * process and pausing one mid-flight was refused on purpose (D-030) — so a
+ * reply is a new job that carries the old sandbox forward and says what
+ * changed. Quoted and billed like any other session, because it is one.
+ */
+app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const previous = rt.queue.get(c.req.param('id'));
+  if (!previous) return c.json({ error: 'unknown job' }, 404);
+  const body = await c.req.json<{ text?: string }>();
+  const reply = body.text?.trim();
+  if (!reply) return c.json({ error: 'text is required' }, 400);
+
+  const carried = previous.repoPath
+    ? 'the clone already carries the changes you made, so continue from them'
+    : 'anything you produced is already here, so continue from it';
+  const prompt = [
+    previous.prompt,
+    `You have already worked on this — ${carried}.`,
+    ...(previous.summary ? [`You said: ${previous.summary.trim()}`] : []),
+    `The user replied: ${reply}`,
+  ].join('\n\n');
+
+  // The reply keeps the role that asked the question — the answer is to them,
+  // and handing it to a different specialist loses what they had in mind.
+  const tools = granted(previous.tools);
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
+  const job = rt.queue.add(
+    queuedJobSpec({
+      title: previous.title,
+      prompt,
+      repoPath: previous.repoPath,
+      tools,
+      plan: { ...plan, role: previous.preferredRole ?? plan.role },
+      quote: quoteFor_(rt, prompt, tools, previous.preferredRole ?? runnerRole(plan), previous.repoPath),
+      continues: previous.id,
+    }),
+  );
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json(job, 201);
+});
+
 app.post('/api/levels/:lid/jobs/:id/cancel', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);

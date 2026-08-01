@@ -25,6 +25,8 @@ export interface NewJobSpec {
   attachments?: { name: string; data: Buffer }[];
   /** This job compiles a recipe into a tool; recorded for the ledger's sake. */
   compile?: boolean;
+  /** The job this one answers, whose sandbox it carries forward. */
+  continues?: string;
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -142,6 +144,7 @@ export class JobQueue {
       ...(spec.maxTurns ? { maxTurns: spec.maxTurns } : {}),
       ...(spec.clarifications?.length ? { clarifications: spec.clarifications } : {}),
       ...(spec.compile ? { compile: true } : {}),
+      ...(spec.continues ? { continues: spec.continues } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

@@ -243,6 +243,27 @@ describe('buildAppend', () => {
     expect(buildAppend(undefined, [], [], false)).toContain('general-purpose worker');
   });
 
+  // A library nobody is told about is not a capability. Watched live, an
+  // agentling asked for a PDF hand-assembled the bytes over several turns
+  // because it had no idea pdf-lib was installed — and it worked, which is
+  // what made it expensive rather than obviously wrong.
+  it('tells every job which document libraries are already there', () => {
+    const text = buildAppend(undefined, [], [], false);
+    for (const lib of ['docx', 'mammoth', 'exceljs', 'pptxgenjs', 'pdf-lib', 'pdf-parse']) {
+      expect(text).toContain(lib);
+    }
+    expect(text).toContain('never npm install');
+  });
+
+  // Guessing a call shape costs a turn, and pdf-parse reads like the function
+  // it used to be while now being a class.
+  it('gives the call shape, not just the name', () => {
+    const text = buildAppend(undefined, [], [], false);
+    expect(text).toContain('Packer.toBuffer');
+    expect(text).toContain('new PDFParse(');
+    expect(text).toContain('PDFDocument.load');
+  });
+
   it('hands over the repo listing so the run need not go looking', () => {
     const text = buildAppend(undefined, [], [], true, [], undefined, ['a.js', 'src/b.js']);
     expect(text).toContain('repo/a.js');

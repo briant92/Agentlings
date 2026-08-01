@@ -21,5 +21,13 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.0"
+  },
+  "dependencies": {
+    "docx": "^9.7.1",
+    "exceljs": "^4.4.0",
+    "mammoth": "^1.12.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
+    "pptxgenjs": "^4.0.1"
   }
 }

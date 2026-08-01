@@ -1065,6 +1065,41 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   produces it — so that run is a full session. Queued one expecting zero, it
   quoted $1.58; cancelled at 12.7s, filed `failed` with `costUnknown`, charged
   $0. The billing rules held exactly as designed; the assumption did not.
+- 2026-07-31 — Document capability: **Node libraries at the project root**.
+  `docx`, `mammoth`, `exceljs`, `pptxgenjs`, `pdf-lib`, `pdf-parse` — six pure
+  JS packages, no native builds, which matters on Windows. The mechanism is the
+  interesting part and it was measured before choosing: a sandbox lives at
+  `.agentlings/levels/<id>/jobs/<id>`, *inside* the project, so Node walks up
+  and resolves the root's `node_modules`. Installing once at the root therefore
+  reaches every job with no per-job install, no network and no npm in the
+  sandbox — verified by writing and reading back a real .xlsx, .docx, .pptx and
+  .pdf from a sandbox path, including `pdf-lib` reopening its own file and
+  adding a page, which is in-place editing rather than rewriting.
+  The alternative was a Python toolchain — `python-docx`, `openpyxl`,
+  `python-pptx`, `pypdf`, the stack Anthropic's own document skills are built
+  on, and clearly better at format-preserving edits to .docx and .pptx. Turned
+  down for now on three counts: Python is not installed on this machine at all
+  (`python`, `python3`, `py` all miss), it puts a second runtime inside a
+  single-runtime TypeScript project, and this log already records most
+  `anthropics/skills` entries as **Proprietary** while `skills/` is committed,
+  so adopting them is redistribution and needs terms read first. The accepted
+  cost is that .docx and .pptx can be read and written but not revised with
+  their formatting intact; .xlsx and .pdf round-trip properly.
+  **Installing them was half the job.** A library nobody is told about is not a
+  capability — measured the same evening, an agentling asked for a PDF
+  hand-assembled the bytes across several turns because it did not know
+  `pdf-lib` was there, and it *worked*, which is what made it expensive rather
+  than obviously wrong. So `buildAppend` now names each library and its call
+  shape on every job. The shapes are there because guessing one costs a turn:
+  `pdf-parse` reads exactly like the function it used to be and is now a class,
+  so the obvious `pdfParse(buffer)` fails.
+  Two things this deliberately does **not** solve. There is still **no way for
+  a file to reach a sandbox** — a job gets a repo clone or nothing, and the
+  work bar takes a sentence, a folder and connections but no upload. So reading
+  and editing are unblocked in principle and unreachable in practice until an
+  ingest path exists; writing works today. And the compiled-tool contract is
+  "plain node, no dependencies, no network", so the fourth tier cannot import
+  any of these without that contract being reopened on purpose.
 - 2026-07-30 — Structural: 90's boot flow (title → level select →
   level). Levels are independent workspaces (own crew/jobs/memory +
   per-level KNOWLEDGE.md fed only to that level's sessions); the

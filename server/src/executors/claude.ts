@@ -139,6 +139,32 @@ const TOOL_MAP: Record<string, string[]> = {
 const DEFAULT_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 
 /**
+ * The document libraries, and how to call them.
+ *
+ * A sandbox sits inside the project, so Node walks up and resolves the root's
+ * `node_modules` — nothing is installed per job and nothing is fetched. But a
+ * library nobody is told about is not a capability: watched live, an agentling
+ * asked for a PDF hand-assembled the bytes over several turns because it had
+ * no idea `pdf-lib` was there. It worked, which is the part that makes it
+ * expensive rather than obviously wrong.
+ *
+ * The call shapes are here because guessing them costs a turn. `pdf-parse` in
+ * particular reads like its old function form and is now a class, so an agent
+ * that reaches for the obvious `pdfParse(buffer)` fails and retries.
+ */
+const DOCUMENT_LIBRARIES = [
+  '## Document libraries (already installed — never npm install)',
+  'Import them directly; they resolve from the project root.',
+  '- .docx write: `const {Document,Packer,Paragraph}=await import("docx")` → `writeFileSync(f, await Packer.toBuffer(doc))`',
+  '- .docx read: `(await import("mammoth")).default.extractRawText({path})` → `.value`',
+  '- .xlsx read/write/edit: `new (await import("exceljs")).default.Workbook()`, `await wb.xlsx.writeFile(f)` / `readFile(f)`',
+  '- .pptx write: `new (await import("pptxgenjs")).default()`, `await pres.writeFile({fileName})`',
+  '- .pdf write/edit: `const {PDFDocument,StandardFonts}=await import("pdf-lib")`; `PDFDocument.load(bytes)` opens an existing one',
+  '- .pdf text: `const {PDFParse}=await import("pdf-parse")`; `await new PDFParse({data}).getText()` → `.text`',
+  'Use these rather than assembling a file format by hand.',
+].join('\n');
+
+/**
  * A session that failed after spending money, and possibly after doing the
  * work. Carries what the run produced so the caller can still bank the cost,
  * the lesson and the diff — a job that dies on its last turn should not throw
@@ -301,6 +327,7 @@ export function buildAppend(
       // from what the run actually left behind rather than what it predicted.
     ].join('\n'),
   );
+  parts.push(DOCUMENT_LIBRARIES);
   if (repoFiles.length > 0) {
     parts.push(
       [

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   describe as describeConnections,
+  expandArgs,
   mcpToolNames,
   missingSecrets,
   resolveForJob,
@@ -121,6 +122,33 @@ describe('mcpToolNames', () => {
     const a = { ...WEB, tools: ['fetch_page'] };
     const b = { ...TRACKER, tools: ['search'] };
     expect(mcpToolNames([a, b])).toEqual(['mcp__web__fetch_page', 'mcp__tracker__search']);
+  });
+});
+
+describe('expandArgs', () => {
+  it('fills a variable that is set', () => {
+    expect(expandArgs(['--storage-state=${STATE}'], { STATE: '/tmp/s.json' })).toEqual([
+      '--storage-state=/tmp/s.json',
+    ]);
+  });
+
+  // Dropping rather than passing it empty is what makes signing in optional:
+  // --storage-state= with no path is an error, absent is a signed-out browser.
+  it('drops the whole argument when the variable is unset', () => {
+    expect(expandArgs(['--headless', '--storage-state=${STATE}'], {})).toEqual(['--headless']);
+    expect(expandArgs(['--storage-state=${STATE}'], { STATE: '' })).toEqual([]);
+  });
+
+  it('leaves ordinary arguments alone', () => {
+    const plain = ['-y', '@playwright/mcp@latest', '--isolated'];
+    expect(expandArgs(plain, {})).toEqual(plain);
+  });
+
+  // The value is a Windows path in practice, and a replacement that ate a
+  // backslash would break every real one.
+  it('keeps a path intact', () => {
+    const p = String.raw`C:\Users\MSI\browser-state.json`;
+    expect(expandArgs(['--storage-state=${S}'], { S: p })).toEqual([`--storage-state=${p}`]);
   });
 });
 

@@ -43,6 +43,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-031 — 2026-07-31 — Document capability: Node libraries at the project root](#d-031--2026-07-31--document-capability-node-libraries-at-the-project-root)
 - [D-032 — 2026-08-01 — Reading the web is on by default, and Settings owns the switch](#d-032--2026-08-01--reading-the-web-is-on-by-default-and-settings-owns-the-switch)
 - [D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go](#d-033--2026-08-01--the-ellipsis-the-model-believed-and-the-answer-with-nowhere-to-go)
+- [D-034 — 2026-08-01 — A browser that reads and cannot act](#d-034--2026-08-01--a-browser-that-reads-and-cannot-act)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1259,3 +1260,61 @@ without calling the route.
 One dead end fixed while in there: `ReviewModal` showed its actions only for
 `done`, so "See the changes" on a `partial` opened a modal whose only button
 was Close — no actions on precisely the status that most needs reviewing.
+
+## D-034 — 2026-08-01 — A browser that reads and cannot act
+
+Scoped from the capability audit, which found the crew has no hands: no
+clicking, no forms, no logins, and `fetchPage` is one HTTP GET with no
+JavaScript, so most modern sites return an empty shell. The gap is the biggest
+single limit on delegating real work.
+
+**The hard part is not MCP, it is that a browser breaks the safety model.**
+Every guarantee this app makes rests on one shape — work in a sandbox, review,
+promote. A diff can be inspected before it touches anything real. `browser_click`
+on "Confirm order" happens on the live internet the instant the model decides
+to, and there is no promote step for a submitted form. The obvious mitigation is
+ruled out by D-030: pausing a run to ask needs a `waiting` status and a runner
+holding stdin, which was refused for good reasons.
+
+So the first version **reads and cannot act**. Of the 24 tools Playwright MCP
+offers — enumerated by speaking JSON-RPC to it rather than trusting a README,
+because a wrong name grants nothing silently — eight are granted, and twelve
+that act are deliberately absent, including `browser_evaluate`,
+`browser_run_code_unsafe` and `browser_network_request`, which issues an
+arbitrary HTTP request. That removes the real limitation today without adding a
+new risk class: nothing changes on the far end, so the sandbox-then-review model
+holds exactly. It also produces the cost data needed to price an acting version
+honestly. `catalog.test.ts` asserts the absent names against the shipped
+catalog, so the boundary is a test rather than a description of one.
+
+**Signing in without the app seeing a password.** `--storage-state` restores a
+session file the user makes themselves by logging in once in a real browser.
+Nothing is stored, transmitted or typed by the app. The path differs per
+machine so it cannot live in a committed catalog, which is what `expandArgs`
+is for: `${VAR}` is filled from the environment and the whole argument is
+*dropped* when the variable is unset — that is what makes signing in optional,
+since `--storage-state=` with no path is an error while absent is a signed-out
+browser. The file is a bearer token for every site in it, so it is gitignored.
+
+Licence is clean: Apache-2.0, Microsoft, fetched by `npx`, so nothing is
+redistributed into this repo and D-010's rule about terms landing here does not
+bite. Chromium was already installed.
+
+**And it corrected a rule I had got backwards the same day.** `grantedTools`
+let a caller add any ready connection the user had not explicitly switched off
+— reading D-005's "per-job opt-in" as a job being able to grant itself
+something. With one built-in web connection that looked defensible. Adding a
+browser made it plainly wrong: Settings reports a connection as disabled and a
+job reaching it anyway makes the switch a lie, which is D-032's defect one level
+up. **Never switched on is not the same as not switched off.** Naming a
+connection now only ever *narrows*, which is the honest reading of per-job
+opt-in anyway — a job that does not need the browser should not carry its tool
+definitions, since every visible tool is overhead in every request. The test
+that caught it was written for the browser and failed on the web.
+
+Deliberately not done: `--allowed-origins`, which Microsoft's own help calls
+"*does not* serve as a security boundary", so shipping it would suggest a fence
+where there is a guardrail. And no acting tools until there is measured cost
+data — the documented failure mode is context growth, since each navigation
+returns a fresh snapshot and a long session carries pages it already left,
+which is a rate unlike anything in the ledger.

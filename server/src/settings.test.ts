@@ -57,24 +57,30 @@ describe('grantedTools', () => {
   const all = [WEB, TRACKER];
   const env = { TRACKER_TOKEN: 'abc' };
 
-  it('hands a job the defaults without being asked', () => {
+  it('hands a job everything that is on, without being asked', () => {
     expect(grantedTools(undefined, all, {}, env)).toEqual(['web']);
   });
 
-  it('adds what the caller named on top of the defaults', () => {
-    expect(grantedTools(['tracker'], all, {}, env)).toEqual(['web', 'tracker']);
+  // Naming one narrows; it can never widen. A job that reached a connection
+  // Settings reports as off would make the switch a lie.
+  it('cannot grant itself something that is off', () => {
+    expect(grantedTools(['tracker'], all, {}, env)).toEqual([]);
+    expect(grantedTools(['web', 'tracker'], all, {}, env)).toEqual(['web']);
   });
 
-  it('does not let a job ask its way past a switch the user turned off', () => {
+  it('cannot ask its way past a switch the user turned off', () => {
     expect(grantedTools(['web'], all, { connections: { web: false } }, env)).toEqual([]);
   });
 
-  it('drops a name nobody has heard of', () => {
-    expect(grantedTools(['nope'], all, {}, env)).toEqual(['web']);
+  it('narrows to what it named, so unused tools are not carried', () => {
+    const both = { connections: { tracker: true } };
+    expect(grantedTools(undefined, all, both, env)).toEqual(['web', 'tracker']);
+    expect(grantedTools(['tracker'], all, both, env)).toEqual(['tracker']);
   });
 
-  it('does not repeat a default the caller also asked for', () => {
-    expect(grantedTools(['web'], all, {}, env)).toEqual(['web']);
+  it('drops a name nobody has heard of', () => {
+    expect(grantedTools(['nope'], all, {}, env)).toEqual([]);
+    expect(grantedTools(['web', 'nope'], all, {}, env)).toEqual(['web']);
   });
 });
 

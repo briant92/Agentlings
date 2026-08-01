@@ -73,14 +73,20 @@ export function enabledNames(
 }
 
 /**
- * What a job may reach: everything on by default, plus anything the caller
- * named. The two halves answer different questions and both are needed — a
- * default is the platform's posture, while naming one is a job saying it needs
- * a credentialed connection that deliberately ships off (D-005's per-job
- * opt-in, which this change keeps for everything except the web).
+ * What a job may reach: the connections that are on, narrowed to those the
+ * caller named if it named any.
  *
- * Switching a connection off in Settings is authoritative over both: it is the
- * user overruling the platform, so no job can ask its way past it.
+ * Naming one can only ever *narrow*. That is a correction: this once let a
+ * caller add any ready connection the user had not explicitly switched off,
+ * reading D-005's "per-job opt-in" as a job being able to grant itself
+ * something. Adding a browser is what made that plainly wrong — Settings
+ * reports a connection as disabled, so a job reaching it anyway makes the
+ * switch a lie, which is the D-032 defect one level up. Never switched on is
+ * not the same as not switched off.
+ *
+ * Narrowing is still worth having, and is the honest reading of per-job
+ * opt-in: a job that does not need the browser should not carry its tool
+ * definitions, since every visible tool is overhead in every request.
  */
 export function grantedTools(
   requested: string[] | undefined,
@@ -88,10 +94,7 @@ export function grantedTools(
   settings: StoredSettings,
   env: Record<string, string | undefined>,
 ): string[] {
-  const asked = (requested ?? []).filter((name) => {
-    const found = connections.find((c) => c.name === name);
-    if (!found || missingSecrets(found, env).length > 0) return false;
-    return settings.connections?.[name] !== false;
-  });
-  return [...new Set([...enabledNames(connections, settings, env), ...asked])];
+  const on = enabledNames(connections, settings, env);
+  if (!requested?.length) return on;
+  return on.filter((name) => requested.includes(name));
 }

@@ -6,3 +6,6 @@ dist/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
+
+# A saved browser session is a bearer token for every site in it.
+browser-state*.json

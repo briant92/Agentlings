@@ -19,6 +19,21 @@
     "refused by the allowlist. It also makes this file say what a connection",
     "can do without anyone having to run it.",
     "",
+    "'browser' is Playwright MCP (Apache-2.0, Microsoft), fetched by npx so no",
+    "code lands in this repo. It is deliberately READ-ONLY: of the 24 tools it",
+    "offers, the eight named below read a page and none of them act. Left out",
+    "on purpose are click, type, fill_form, press_key, select_option, drag,",
+    "drop, file_upload, handle_dialog, evaluate, run_code_unsafe and",
+    "network_request — because this app's safety model is a sandbox reviewed",
+    "before anything is promoted, and a submitted form cannot be reviewed",
+    "afterwards. Adding an acting tool is a decision about that model, not a",
+    "line in a list.",
+    "",
+    "It signs in by re-using a session you created yourself: log in once in a",
+    "real browser, save the storage state, and point AGENTLINGS_BROWSER_STATE",
+    "at the file. The app never sees a password — and with the variable unset",
+    "the argument is dropped and browsing works signed out.",
+    "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
     "They ship off by default — they carry credentials and act on the user's",
@@ -37,6 +52,30 @@
       "tools": ["fetch_page"],
       "allow": [],
       "maxChars": 12000
+    },
+    {
+      "name": "browser",
+      "label": "Use a web browser",
+      "description": "Opens pages in a real browser and reads what they show, including sites that need JavaScript. Reads only — it cannot click, type or submit anything.",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--isolated",
+        "--storage-state=${AGENTLINGS_BROWSER_STATE}"
+      ],
+      "tools": [
+        "browser_navigate",
+        "browser_navigate_back",
+        "browser_snapshot",
+        "browser_find",
+        "browser_wait_for",
+        "browser_take_screenshot",
+        "browser_console_messages",
+        "browser_network_requests"
+      ]
     }
   ]
 }

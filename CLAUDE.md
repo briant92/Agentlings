@@ -126,12 +126,12 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 ### Decision log
 
 Every resolved question, with the evidence that settled it, lives in
-`DECISIONS.md` — 33 entries, newest last. Read it before reopening anything
+`DECISIONS.md` — 34 entries, newest last. Read it before reopening anything
 settled, and cite the entry ID (`D-017`) rather than a title or a line number.
 Do not `@`-import it; it is meant to be opened on demand, not loaded on every
 turn.
 
-- D-001–D-007, D-032 — concept, stack, outside access, identity, the M1 executor
+- D-001–D-007, D-032, D-034 — concept, stack, outside access, identity, executor
 - D-008–D-010, D-014 — visuals and terrain: palette, art-as-data, art source, scenes-as-data
 - D-011, D-013 — levels as workspaces, and the non-expert setup path
 - D-012, D-016–D-018, D-026–D-027, D-029 — cost: quotes, ceilings, turn budgets, rates, billing

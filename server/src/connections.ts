@@ -127,6 +127,26 @@ export function mcpToolNames(granted: Connection[]): string[] {
   return granted.flatMap((c) => (c.tools ?? []).map((tool) => `mcp__${c.name}__${tool}`));
 }
 
+/**
+ * Fills `${VAR}` in an argument from the environment, and drops the whole
+ * argument when the variable is unset.
+ *
+ * For configuration that is optional and cannot be written down: a browser's
+ * saved sign-in lives at a path that differs by machine and by person, so it
+ * can never go in a committed catalog. Dropping the argument rather than
+ * passing it empty is what makes it optional — the browser works signed out,
+ * and gains the session the moment the variable exists.
+ */
+export function expandArgs(args: string[], env: Record<string, string | undefined>): string[] {
+  const out: string[] = [];
+  for (const arg of args) {
+    const wanted = [...arg.matchAll(/\$\{(\w+)\}/g)].map((m) => m[1]);
+    if (wanted.some((name) => !env[name])) continue;
+    out.push(arg.replace(/\$\{(\w+)\}/g, (_, name: string) => env[name] ?? ''));
+  }
+  return out;
+}
+
 /** MCP server config for the granted stdio connections, secrets filled in. */
 export function toMcpServers(
   granted: Connection[],
@@ -146,7 +166,7 @@ export function toMcpServers(
     servers[connection.name] = {
       type: 'stdio',
       command: connection.command,
-      args: connection.args ?? [],
+      args: expandArgs(connection.args ?? [], env),
       env: secrets,
     };
   }

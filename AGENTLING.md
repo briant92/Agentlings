@@ -29,7 +29,8 @@ Written 2026-08-01 against `e5c80c9`.
 | **Where it works** | `.agentlings/levels/<level>/jobs/<id>/` — a directory it may never leave |
 | **What it starts with** | A name, a colour, a role, an empty memory file, and whatever its level already knows |
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
-| **What it can never touch** | Anything outside its sandbox; your real repository before you approve; any credential value |
+| **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
+| **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §9 |
 | **What one job costs** | Free (three of five tiers), ~13c on a leash, ~50c for a full session — quoted before it runs and never billed above the quote |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
@@ -474,12 +475,34 @@ whatever happened to be done yesterday.
 
 ---
 
-## 9. Boundaries — Live
+## 9. Boundaries
+
+### The sandbox — Partial, and this is the one to read carefully
+
+The sandbox is the session's working directory plus a rule in its system
+prompt: *work only inside the sandbox; never read or write paths outside it.*
+It is **not an OS jail**. `Bash` runs with your own permissions, and
+`permissionMode: 'dontAsk'` means there is no interactive gate to catch a stray
+command. A session that decided to walk up a directory could.
+
+What actually holds, and what the app's guarantees really rest on:
+
+- **Your repository is a clone.** Nothing a session does reaches the real tree
+  until you press Approve, at which point a *reviewed* patch is replayed. That
+  is enforced by the shape of the flow, not by trust.
+- **The tool allowlist is enforced.** A role without `write` has no `Write`
+  tool at all. A connection you switched off contributes no tools.
+- **The session inherits nothing.** `settingSources: []` — your own Claude Code
+  settings, project rules and skills do not leak into an agentling's session.
+
+Treat the sandbox as a strong convention that has held in practice, and the
+clone-plus-review as the actual guarantee. Do not point a level at a repository
+you would not let a shell near.
+
+### The rest — Live
 
 | Boundary | Enforcement |
 |---|---|
-| The sandbox is the hard wall | The job rules state it, and every path outside is off the working directory the session is given |
-| Your repository is never touched before you approve | Work happens in a `--local` clone; promote replays the reviewed patch onto the real tree, and only then is the job marked promoted |
 | Tools are the intersection of the role and what you allowed | `allowedTools` is a strict allowlist; `permissionMode: dontAsk` means there is no prompt to talk past |
 | The SDK never enters the server | Sessions run in `agent-runner.mjs`, plain JS spawned with plain node — its import graph stays out, and a wedged session cannot take the server down |
 | A server started inside a Claude Code terminal cannot inherit that session | The child environment is laundered of `CLAUDE*`, `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` |
@@ -550,6 +573,8 @@ What is **not built**, and should not be assumed:
 - **No per-level or per-job data boundary beyond the sandbox directory.**
   Levels do not share sandboxes, but nothing stops you pointing two levels at
   the same repository.
+- **No filesystem isolation.** The sandbox is a working directory and an
+  instruction, not a jail — see §9. A session with `Bash` runs as you do.
 
 The honest one-line summary: **privacy here is the sandbox, the localhost
 boundary and the absence of any credential the app holds itself — not a data

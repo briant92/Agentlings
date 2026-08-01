@@ -211,16 +211,12 @@ button.ghost {
   gap: 12px;
   flex-wrap: wrap;
 }
-.work-conn-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #8a91a3;
-  cursor: pointer;
+/* Stated, not offered: the switch is in Settings, so this reads as status. */
+.work-conn-on {
+  color: var(--db-lime-light);
 }
-.work-conn-item input {
-  accent-color: var(--db-lime);
-  cursor: pointer;
+.work-conn-off {
+  color: var(--db-orange);
 }
 .work-link {
   background: none;
@@ -1398,6 +1394,15 @@ button.danger:hover {
 .toggle input {
   accent-color: var(--db-lime);
   cursor: pointer;
+}
+.toggle-blocked,
+.toggle-blocked input {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.conn-note {
+  margin: 2px 0 8px 20px;
+  font-size: 11px;
 }
 
 /* Documents dropped on the intake. They land in the job's sandbox and go no

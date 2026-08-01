@@ -1,17 +1,24 @@
 {
   "$comment": [
-    "What agentlings may reach outside their sandbox. Nothing here is on by",
-    "default: a job opts in by name, and a job that opts into nothing cannot",
-    "reach anything. Secrets are named, never written here — put the value in",
-    ".env under that name and the server passes it to the connection only.",
+    "What agentlings may reach outside their sandbox. A connection declares its",
+    "own default with 'defaultOn'; the user's departures from those defaults are",
+    "recorded in .agentlings/settings.json, never here. Secrets are named, never",
+    "written here — put the value in .env under that name and the server passes",
+    "it to the connection only. A connection whose secrets are missing is never",
+    "live, whatever its default says.",
     "",
-    "'web' is built in: our own fetch, which returns readable text trimmed to",
-    "maxChars rather than a whole page. Add hosts to 'allow' to narrow it.",
+    "'web' is built in and defaultOn: this is an outreach platform, so reaching",
+    "a page is what the crew is for rather than something to be asked for job by",
+    "job. Switch it off in Settings. It is our own fetch, which returns readable",
+    "text trimmed to maxChars rather than a whole page. Add hosts to 'allow' to",
+    "narrow it.",
     "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, optional secrets {ENV_NAME: 'why it is needed'}, and",
-    "maxOutputTokens. Keep results small by design — every token a tool",
-    "returns is a token the model pays to read."
+    "maxOutputTokens. They ship off by default — they carry credentials and act",
+    "on the user's behalf, which is a different decision from reading a page.",
+    "Keep results small by design — every token a tool returns is a token the",
+    "model pays to read."
   ],
   "connections": [
     {
@@ -19,6 +26,7 @@
       "label": "Read web pages",
       "description": "Fetches a page and returns its readable text, trimmed. No JavaScript, no sign-ins.",
       "transport": "builtin",
+      "defaultOn": true,
       "allow": [],
       "maxChars": 12000
     }

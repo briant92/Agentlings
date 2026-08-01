@@ -13,6 +13,7 @@ import type {
   MergePreview,
   Quote,
   ServerMessage,
+  ConnectionInfo,
   SettingsInfo,
 } from '@agentlings/shared';
 import {
@@ -23,6 +24,13 @@ import {
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { describe, readConnections } from './connections';
+import {
+  enabledNames,
+  grantedTools,
+  readSettings,
+  setConnection,
+  writeSettings,
+} from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
@@ -313,12 +321,39 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
 
 const app = new Hono();
 
+/** The registry as the UI sees it, qualified by what the user has switched. */
+function connectionList(): ConnectionInfo[] {
+  const connections = readConnections(CONNECTIONS_FILE);
+  const settings = readSettings(SANDBOX_ROOT);
+  return describe(
+    connections,
+    process.env,
+    new Set(enabledNames(connections, settings, process.env)),
+  );
+}
+
 app.get('/api/settings', (c) =>
   c.json({
     executor: useClaude ? 'claude-agent-sdk' : 'simulated',
     auth,
+    connections: connectionList(),
   } satisfies SettingsInfo),
 );
+
+/**
+ * Turn a connection on or off for every level. Global on purpose: the registry
+ * is global, and what the crew may reach is a property of the crew rather than
+ * of one world they happen to be working in.
+ */
+app.patch('/api/settings/connections/:name', async (c) => {
+  const name = c.req.param('name');
+  const known = readConnections(CONNECTIONS_FILE).some((conn) => conn.name === name);
+  if (!known) return c.json({ error: 'no such connection' }, 404);
+  const body = await c.req.json<{ enabled?: boolean }>();
+  if (typeof body.enabled !== 'boolean') return c.json({ error: 'enabled must be a boolean' }, 400);
+  writeSettings(SANDBOX_ROOT, setConnection(readSettings(SANDBOX_ROOT), name, body.enabled));
+  return c.json(connectionList());
+});
 
 app.get('/api/levels', (c) =>
   c.json(
@@ -367,13 +402,15 @@ app.post('/api/levels/:lid/jobs', async (c) => {
   // value, so it describes the run that will actually happen.
   const repoPath = body.repoPath?.trim() || undefined;
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, repoPath, prompt);
+  const tools = granted(undefined);
   const job = rt.queue.add(
     queuedJobSpec({
       title: body.title.trim(),
       prompt,
       repoPath,
+      tools,
       plan,
-      quote: quoteFor_(rt, prompt, undefined, runnerRole(plan), repoPath),
+      quote: quoteFor_(rt, prompt, tools, runnerRole(plan), repoPath),
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
@@ -390,7 +427,13 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   const draft = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
   // The quote decides whether asking is worth it at all, and the quote needs
   // the role the draft settles — so the questions are filled in last.
-  const quote = quoteFor_(rt, text, body.tools, runnerRole(draft), rt.meta.repoPath || undefined);
+  const quote = quoteFor_(
+    rt,
+    text,
+    granted(body.tools),
+    runnerRole(draft),
+    rt.meta.repoPath || undefined,
+  );
   return c.json({
     ...draft,
     quote,
@@ -466,13 +509,14 @@ app.post('/api/levels/:lid/work', async (c) => {
   // else about how a job is specced — the ceiling that binds it, the role that
   // will run it — is shared with the other way in, so the two cannot drift.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  const quote = quoteFor_(rt, text, body.tools, runnerRole(plan), rt.meta.repoPath || undefined);
+  const tools = granted(body.tools);
+  const quote = quoteFor_(rt, text, tools, runnerRole(plan), rt.meta.repoPath || undefined);
   const job = rt.queue.add(
     queuedJobSpec({
       title: plan.title,
       prompt: text,
       repoPath: rt.meta.repoPath || undefined,
-      tools: body.tools,
+      tools,
       plan,
       quote,
       // Recomputed from the same sentence rather than trusted from the caller,
@@ -725,6 +769,22 @@ function compileQuote(rt: LevelRuntime, role: string): Quote {
  * its own, and the shape decides both the route and the rate — quoting a repo
  * job at the level's empty path would price it as work of a different kind.
  */
+/**
+ * What a job may reach outside its sandbox: the connections that are on, plus
+ * anything the caller named. Resolved once per request and handed to both the
+ * quote and the queued job, never recomputed downstream — web access decides
+ * whether the router can use its free `fetch` tier, so a quote that answered
+ * this differently from the run would be pricing a different job.
+ */
+function granted(requested: string[] | undefined): string[] {
+  return grantedTools(
+    requested,
+    readConnections(CONNECTIONS_FILE),
+    readSettings(SANDBOX_ROOT),
+    process.env,
+  );
+}
+
 function quoteFor_(
   rt: LevelRuntime,
   text: string,
@@ -1053,7 +1113,7 @@ app.get('/api/spend', (c) => {
   });
 });
 
-app.get('/api/connections', (c) => c.json(describe(readConnections(CONNECTIONS_FILE), process.env)));
+app.get('/api/connections', (c) => c.json(connectionList()));
 
 /**
  * Web fetches for a running session. The server owns extraction, trimming and

@@ -31,6 +31,8 @@ export interface AuthStatus {
 export interface SettingsInfo {
   executor: 'claude-agent-sdk' | 'simulated';
   auth: AuthStatus;
+  /** What the crew can reach outside the sandbox, and whether it is on. */
+  connections: ConnectionInfo[];
 }
 
 export type JobStatus =
@@ -99,6 +101,10 @@ export interface ConnectionInfo {
   /** False when a secret it declares is missing from .env. */
   ready: boolean;
   missingSecrets: string[];
+  /** What it is before anyone changes it. */
+  defaultOn: boolean;
+  /** Whether jobs can reach it right now — the default unless Settings says otherwise. */
+  enabled: boolean;
 }
 
 /**

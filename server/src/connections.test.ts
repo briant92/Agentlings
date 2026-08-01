@@ -52,6 +52,14 @@ describe('describe', () => {
     expect(listed[0].ready).toBe(false);
     expect(listed[0].missingSecrets).toEqual(['TRACKER_TOKEN']);
   });
+
+  it('reports what is on now as well as what ships on', () => {
+    const web = { ...WEB, defaultOn: true };
+    const on = describeConnections([web], {}, new Set(['web']))[0];
+    expect(on).toMatchObject({ defaultOn: true, enabled: true });
+    const off = describeConnections([web], {})[0];
+    expect(off).toMatchObject({ defaultOn: true, enabled: false });
+  });
 });
 
 describe('resolveForJob', () => {

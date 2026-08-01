@@ -19,6 +19,15 @@ export function SettingsModal({
     void api<SettingsInfo>('/api/settings').then(setSettings);
   }, []);
 
+  /** The server is what makes it true, so the reply is what we render. */
+  const toggle = async (name: string, enabled: boolean) => {
+    const connections = await api<SettingsInfo['connections']>(
+      `/api/settings/connections/${name}`,
+      { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled }) },
+    );
+    setSettings((prev) => (prev ? { ...prev, connections } : prev));
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -82,6 +91,33 @@ export function SettingsModal({
               </p>
             </>
           )}
+          {/* The crew reaches outside by default — this is where you take that
+              back, once, rather than deciding it again for every job. */}
+          <div className="sect">outside world</div>
+          {settings?.connections.map((connection) => (
+            <div key={connection.name}>
+              <label className={`toggle${connection.ready ? '' : ' toggle-blocked'}`}>
+                <input
+                  type="checkbox"
+                  checked={connection.enabled}
+                  disabled={!connection.ready}
+                  onChange={(e) => void toggle(connection.name, e.target.checked)}
+                />
+                <span>
+                  {connection.label} — {connection.description}
+                </span>
+              </label>
+              {!connection.ready && (
+                <p className="dim conn-note">Needs {connection.missingSecrets.join(', ')} in .env.</p>
+              )}
+              {connection.ready && connection.defaultOn && !connection.enabled && (
+                <p className="dim conn-note">
+                  Off — the crew works from what you give them. Jobs that would have
+                  fetched a page now cost a session instead.
+                </p>
+              )}
+            </div>
+          ))}
           <div className="sect">catalog</div>
           <p className="dim">Roles and skills are a global library shared by every level.</p>
           <button onClick={onOpenRoles}>Open roles &amp; skills</button>

@@ -56,7 +56,7 @@ export function WorkBar({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connections, setConnections] = useState<ConnectionInfo[]>([]);
-  const [allowed, setAllowed] = useState<string[]>([]);
+  const live = connections.filter((c) => c.enabled);
 
   useEffect(() => {
     void api<ConnectionInfo[]>('/api/connections')
@@ -71,12 +71,12 @@ export function WorkBar({
       return;
     }
     const timer = window.setTimeout(() => {
-      void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query, tools: allowed }))
+      void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query }))
         .then(setPlan)
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId, allowed]);
+  }, [text, levelId]);
 
   const queue = async (folder?: string) => {
     setBusy(true);
@@ -87,7 +87,6 @@ export function WorkBar({
         postJson({
           text: text.trim(),
           ...(folder === undefined ? {} : { repoPath: folder }),
-          ...(allowed.length > 0 ? { tools: allowed } : {}),
           ...(Object.keys(answers).length > 0 ? { answers } : {}),
           ...(files.length > 0
             ? { files: files.map((f) => ({ name: f.name, data: f.data })) }
@@ -212,25 +211,19 @@ export function WorkBar({
         </p>
       )}
 
+      {/* What the crew can reach, stated rather than asked. It is not a control
+          — the switch lives in Settings — but a job that cannot reach the web
+          should say so here, where the work is queued, and not in its result. */}
       {connections.length > 0 && !askingRepo && (
         <p className="work-gaps work-conn">
-          {connections.map((connection) => (
-            <label key={connection.name} className="work-conn-item" title={connection.description}>
-              <input
-                type="checkbox"
-                checked={allowed.includes(connection.name)}
-                onChange={(e) =>
-                  setAllowed((prev) =>
-                    e.target.checked
-                      ? [...prev, connection.name]
-                      : prev.filter((n) => n !== connection.name),
-                  )
-                }
-              />
-              {connection.label.toLowerCase()}
-            </label>
-          ))}
-          <span className="dim">· off unless you say so</span>
+          {live.length > 0 ? (
+            <span className="work-conn-on" title={live.map((c) => c.description).join(' · ')}>
+              the crew can {live.map((c) => c.label.toLowerCase()).join(', ')}
+            </span>
+          ) : (
+            <span className="work-conn-off">the crew is working offline</span>
+          )}
+          <span className="dim">· change in settings</span>
         </p>
       )}
 

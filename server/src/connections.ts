@@ -17,6 +17,8 @@ export interface Connection {
   label: string;
   description?: string;
   transport: 'builtin' | 'stdio';
+  /** On for every job unless the user turns it off in Settings. */
+  defaultOn?: boolean;
   /** builtin 'web' only. */
   allow?: string[];
   maxChars?: number;
@@ -46,10 +48,17 @@ export function missingSecrets(
   return Object.keys(connection.secrets ?? {}).filter((name) => !env[name]);
 }
 
-/** What the UI lists: never the secret values, only whether they are present. */
+/**
+ * What the UI lists: never the secret values, only whether they are present.
+ *
+ * Which connections are live is decided in settings.ts and passed in, rather
+ * than worked out again here — one rule, and no import cycle between the
+ * registry and the preferences that qualify it.
+ */
 export function describe(
   connections: Connection[],
   env: Record<string, string | undefined>,
+  enabled: Set<string> = new Set(),
 ): ConnectionInfo[] {
   return connections.map((c) => {
     const missing = missingSecrets(c, env);
@@ -60,6 +69,8 @@ export function describe(
       builtin: c.transport === 'builtin',
       ready: missing.length === 0,
       missingSecrets: missing,
+      defaultOn: c.defaultOn === true,
+      enabled: enabled.has(c.name),
     };
   });
 }

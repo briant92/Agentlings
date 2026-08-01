@@ -103,8 +103,9 @@ the loop runs end to end without one.
 - `ledger.ts` — what work cost and what it may be charged; the per-turn rate
   the turn budget is derived from.
 - `web.ts` — pages as trimmed text, never a raw dump.
-- `connections.ts` — what a job may reach outside its sandbox. Nothing is
-  ambient.
+- `connections.ts` — what a job may reach outside its sandbox; `settings.ts`
+  decides which of those are live. Reading the web is on by default, everything
+  credentialed is not.
 
 **Understanding the request.**
 
@@ -256,8 +257,8 @@ tried, measured and rejected is in `DECISIONS.md`:
   access via an in-app MCP connection registry: named connections defined
   in server config (tokens in `.env`), jobs opt in through a
   `tools: string[]` field, and the executor passes only those MCP servers
-  into the agentling's Agent SDK session. Default remains no external
-  connections — sandbox only.
+  into the agentling's Agent SDK session. Credentialed connections stay
+  opt-in; reading the web does not (D-032).
 - **M3 — say what you need (in progress).** The app is for a non-expert:
   every setup step becomes a sentence in plain language.
   - **M3.1 (built).** Concept matcher, `server/src/match.ts`: BM25 over the
@@ -365,11 +366,23 @@ tried, measured and rejected is in `DECISIONS.md`:
     captured on the job and shown on the terminal card. Roles carry a
     `model:`; extraction and reading run on Haiku.
   - **M5.1 (built).** Connection registry, `catalog/connections.json`.
-    Nothing is ambient: a job names what it wants (`Job.tools`) and gets
-    that and no more, which is the security boundary and the cost one —
-    every visible tool is definition overhead in every request of the
-    session. Secrets are referenced by env-var name, never stored or
-    returned; a connection whose secret is missing is listed as not ready.
+    A job gets what the platform has on plus what it names (`Job.tools`) and
+    nothing else, which is the security boundary and the cost one — every
+    visible tool is definition overhead in every request of the session.
+    Secrets are referenced by env-var name, never stored or returned; a
+    connection whose secret is missing is listed as not ready and can never
+    be switched on.
+
+    **A connection declares its own default** with `defaultOn`, and the user's
+    departures live in `.agentlings/settings.json` — never in the catalog, so a
+    shipped default can change without migrating anyone's settings. Reading the
+    web is `defaultOn`: this is an outreach platform, so reaching a page is what
+    the crew is for rather than something to ask for job by job. Everything
+    credentialed ships off. Settings is authoritative over both — a job cannot
+    name its way past a switch the user turned off. One resolver answers the
+    question for the quote, the router and the executor alike, because web
+    access decides the free `fetch` tier and two answers would be dollars
+    apart. (D-032)
   - **M5.2 (built).** Browsing without the bill. `web.ts` returns readable
     text trimmed to a budget, never a page: a Wikipedia article measured
     573KB raw (~143k tokens) against ~3k tokens delivered. URLs the user

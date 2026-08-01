@@ -41,6 +41,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-029 — 2026-07-31 — The compile rate split, measured and then not done](#d-029--2026-07-31--the-compile-rate-split-measured-and-then-not-done)
 - [D-030 — 2026-07-31 — A UI/UX pass, where the arithmetic decided more than taste](#d-030--2026-07-31--a-uiux-pass-where-the-arithmetic-decided-more-than-taste)
 - [D-031 — 2026-07-31 — Document capability: Node libraries at the project root](#d-031--2026-07-31--document-capability-node-libraries-at-the-project-root)
+- [D-032 — 2026-08-01 — Reading the web is on by default, and Settings owns the switch](#d-032--2026-08-01--reading-the-web-is-on-by-default-and-settings-owns-the-switch)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1114,3 +1115,54 @@ and editing are unblocked in principle and unreachable in practice until an
 ingest path exists; writing works today. And the compiled-tool contract is
 "plain node, no dependencies, no network", so the fourth tier cannot import
 any of these without that contract being reopened on purpose.
+
+## D-032 — 2026-08-01 — Reading the web is on by default, and Settings owns the switch
+
+Reversing D-005's per-job opt-in for one connection, deliberately and only for
+that one. The framing that decides it: Agentlings is an outbound platform, so
+reaching a page is what the crew is *for*, not a permission to be granted job
+by job. A checkbox under the intake asked the same question every time and
+answered it "no" by default, which is the wrong default for the product.
+
+**The default had to live on the server, and that is the whole change.** Making
+the client's `allowed` state start as `['web']` would have looked identical and
+been worth nothing: `resolveForJob` grants exactly what the request carried, so
+anything posting to `/work` without that field — the `/jobs` route, a script, a
+replayed job — would silently get nothing. The rule is now one line in
+`settings.ts`: the user's answer if they gave one, else the catalog's
+`defaultOn`, and never when a secret it needs is missing, since a connection
+that cannot work is not a preference.
+
+**One resolver, three readers.** `granted()` is called once per request and
+handed to both the quote and the queued job; the executor then reads the job's
+stored `tools`. This is not tidiness — web access decides whether the router
+can use its free `fetch` tier, so a quote that answered it differently from the
+run would price a different job. Measured live on the same sentence: web on
+quotes `routed` / "Free — we already know this", web off quotes `session` /
+"Up to $1.58". Same prompt, one switch, and the quote follows the run.
+
+**Defaults are additive; an explicit "off" is authoritative.** A test written
+to assert the obvious thing failed and was right to: a caller naming a ready
+connection that ships off should still get it, because that is D-005's opt-in
+for credentialed connections and this change was never meant to remove it. So
+`grantedTools` unions the defaults with what was asked, and only a deliberate
+user "off" blocks both. Off means off; unset means the catalog decides.
+
+The store records departures only, so a shipped default can change later
+without migrating anyone's settings — the same reason the ledger records cost
+and price separately. It is global rather than per level: the registry is
+global, and what the crew may reach is a property of the crew.
+
+The checkbox is replaced by a statement, not by silence. `the crew can read web
+pages · change in settings` in lime, or `the crew is working offline` in
+orange — because a job that cannot reach the web should say so where the work
+is queued rather than in its result. Verified in the browser: the line reads
+`#99e550`, on the palette.
+
+Two things worth naming. `describe()` takes the enabled set rather than reading
+settings itself, which breaks an import cycle *and* keeps one readiness rule —
+the first draft inlined a second copy of `missingSecrets`, which is the drift
+this log records nine times. And this widens what every session can reach: the
+posture moved from "ambient nothing" to "ambient reading". That is the change
+asked for, but it is a reversal rather than drift, which is why it is written
+down here and in three places in SPEC.md that asserted the opposite.

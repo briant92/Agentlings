@@ -405,6 +405,20 @@ describe('RoutedExecutor', () => {
       expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
     });
 
+    // Same question, asked of work that has no repository to leave a diff in.
+    // Measured on job c567c2a3: a PDF, a generator and a verifier on disk,
+    // filed `partial`, credited nothing — so its recipe could never reach the
+    // three successes a tool is compiled on.
+    it('counts a run that delivered files, with no repository at all', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'hello.pdf'), '%PDF-1.7\n');
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow();
+
+      expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
+    });
+
     it('counts nothing when the run left no work behind either', async () => {
       stored();
       await expect(

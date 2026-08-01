@@ -1008,6 +1008,37 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
   `cancel()` — and it was latent before this: a cancelled run holding a diff
   would already have been mislabelled `partial`. Job 2ff16bf2 keeps its
   historical `failed`; statuses are not recomputed retroactively.
+  **Four runs of one sentence, and the recurring bug three more times.** Run 2,
+  with the close-out fixed, came back `done`: PDF, generator, an unprompted
+  *verifier*, notes, and a recipe banked under the key `produce a pdf` — clean,
+  because the clarification answers are kept out of `job.prompt`. Run 3 then
+  hit the recipe and was answered **free, in zero turns, with a lie**: the
+  banked answer said "hello-world.pdf (1,380 bytes) is a valid one-page PDF",
+  and the sandbox held that sentence and no PDF. An answer is replayed word for
+  word, which is right when the words *were* the deliverable and false when
+  they merely described one — so a run that **made** something now banks only
+  its method, and a repeat re-runs cheaply and truthfully instead of being
+  answered freely and falsely. The stored answers had to be dropped too or the
+  fix was inert; `scripts/backfill-recipe-answers.ts` identifies them off job
+  records still on disk (3 of 7, including one on `home-chores`, which has no
+  repository and so was genuinely live). Four are left alone: `say hi` is a
+  real answer, and three `write a short note in X.md` recipes lost their
+  sandboxes, so they cannot be identified rather than guessed — inert while hq
+  has a repository, since the answer tier never fires there.
+  Run 4 proved both halves at once: tier `oneshot` rather than `routed`, quote
+  56c, spent 47c, **charged nothing**, and filed **`partial`** — the first live
+  sighting of that fix, on a run that produced a valid PDF and ran out of turns
+  saying so. And it exposed the ninth instance: `creditRecipe` still tested
+  delivery as `result || a patch on disk`, directly under a comment claiming it
+  used "the same test `partial` uses". It had drifted apart from `partial`
+  within hours of that being widened, so a non-repo run credited **zero
+  successes** however much it made — and a recipe that can never bank a success
+  can never be compiled into a tool, which is the promotion-gate inversion
+  again, one level down. The lesson is not "check this call site": it is that
+  **"it delivered" keeps being re-derived locally instead of being one
+  function**, and every local copy silently assumes a repository. There are now
+  three shared notions in `outputs.ts` — `deliveredFiles`, `producedArtefacts`,
+  `outputNames` — and the next thing that asks the question should call one.
   One fact learned by getting it wrong, worth recording because it is easy to
   assume: **a question with no repository is not free.** The `answer` tier
   replays a *stored* answer, and the first run of a novel prompt is what

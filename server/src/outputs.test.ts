@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { contentTypeFor, isBinary, listOutputs, safeOutputPath, SNIFF_BYTES } from './outputs';
+import {
+  contentTypeFor,
+  isBinary,
+  listOutputs,
+  producedArtefacts,
+  safeOutputPath,
+  SNIFF_BYTES,
+} from './outputs';
 
 let dir: string;
 
@@ -86,6 +93,32 @@ describe('listOutputs', () => {
     writeFileSync(path.join(dir, '.hidden'), 'x');
     writeFileSync(path.join(dir, 'RESULT.md'), 'y');
     expect(listOutputs(dir).map((f) => f.name)).toEqual(['RESULT.md']);
+  });
+});
+
+// Decides whether a repeat may be answered from memory. Words can be replayed;
+// a file cannot, and describing it again produces nothing.
+describe('producedArtefacts', () => {
+  it('is false for a run that only reported', () => {
+    writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
+    writeFileSync(path.join(dir, 'LESSON.md'), '- something\n');
+    writeFileSync(path.join(dir, 'APPROACH.md'), 'do this\n');
+    expect(producedArtefacts(dir)).toBe(false);
+  });
+
+  it('is true once the run made something', () => {
+    writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
+    writeFileSync(path.join(dir, 'hello-world.pdf'), '%PDF-1.7\n');
+    expect(producedArtefacts(dir)).toBe(true);
+  });
+
+  it('counts a diff as something made', () => {
+    writeFileSync(path.join(dir, 'DIFF.patch'), 'diff --git a/x b/x\n');
+    expect(producedArtefacts(dir)).toBe(true);
+  });
+
+  it('is false for an empty sandbox', () => {
+    expect(producedArtefacts(dir)).toBe(false);
   });
 });
 

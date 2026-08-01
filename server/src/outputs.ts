@@ -94,6 +94,24 @@ export function outputNames(dir: string): string[] {
 }
 
 /**
+ * The crew's own paperwork: the report it writes about the work, and the notes
+ * the close-out writes about the run. Everything else in a sandbox is the
+ * thing the user actually asked for.
+ */
+const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md']);
+
+/**
+ * Whether the run made something, rather than merely reporting something.
+ *
+ * The distinction decides whether a repeat can be answered from memory. Words
+ * can be replayed; a file cannot — describing it again produces nothing. A
+ * diff counts as made, since it is a deliverable that lives on disk too.
+ */
+export function producedArtefacts(dir: string): boolean {
+  return outputNames(dir).some((name) => !PAPERWORK.has(name));
+}
+
+/**
  * Whether the run left anything for the user at all.
  *
  * The one notion of "it delivered" for work that is not a repository change.

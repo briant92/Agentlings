@@ -11,6 +11,7 @@ import {
   rememberRecipe,
   writeRecipes,
 } from '../recipes';
+import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide } from '../router';
 import {
   RUN_SCRIPT,
@@ -251,15 +252,35 @@ export class RoutedExecutor implements Executor {
       // correct 129-line file, scored zero. Counting clean exits promotes
       // small jobs a script cannot do and excludes the big mechanical ones it
       // could — exactly backwards.
-      const delivered = result !== undefined || existsSync(patchFile(sandboxDir));
+      //
+      // `deliveredFiles` rather than a patch, and for the third time in one
+      // day: a job with no clone produces no diff, so this counted zero for
+      // every non-repo run however much it made. Measured on job c567c2a3 — a
+      // working PDF, a generator and a verifier on disk, filed `partial`, and
+      // credited nothing. A recipe that can never bank a success can never be
+      // compiled into a tool, so the tier stays out of reach for exactly the
+      // mechanical work it exists for. A patch is one of the files this finds,
+      // so nothing repo-shaped is lost.
+      const delivered = result !== undefined || deliveredFiles(sandboxDir);
       updated = creditRecipe(updated, usedKey, Date.now(), delivered);
     }
     if (approach && agentling) {
+      // An answer is replayed to the user word for word, which is right when
+      // the words *were* the deliverable and a lie when they only described
+      // one. Measured on job 57bbff81: a run that had written a PDF banked its
+      // own summary, and the next identical request was answered for free with
+      // "hello-world.pdf (1,380 bytes) is a valid one-page PDF" — and no PDF.
+      // The user asked for a file, was told its size, and got nothing.
+      //
+      // So a run that made something banks only its method. A repeat then runs
+      // as a short one-shot that rebuilds the artefact, which is cheap and
+      // true, rather than free and false.
+      const madeSomething = producedArtefacts(sandboxDir);
       updated = rememberRecipe(updated, {
         prompt: job.prompt,
         role: agentling.role,
         approach,
-        ...(answer !== undefined ? { answer } : {}),
+        ...(answer !== undefined && !madeSomething ? { answer } : {}),
         at: Date.now(),
       });
       onProgress?.('noted how to do this next time');

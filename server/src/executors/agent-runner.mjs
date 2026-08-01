@@ -49,7 +49,13 @@ try {
         ),
       ],
     });
-    allowedTools.push('mcp__web__fetch_page');
+  }
+
+  // Every granted connection's tools, named by the catalog. Was a single
+  // hardcoded 'mcp__web__fetch_page', which meant an stdio connection could be
+  // configured and then have all of its tools refused by the allowlist.
+  for (const name of config.mcpTools ?? []) {
+    if (!allowedTools.includes(name)) allowedTools.push(name);
   }
 
   let summary = '';

@@ -22,12 +22,24 @@ export interface Connection {
   /** builtin 'web' only. */
   allow?: string[];
   maxChars?: number;
+  /**
+   * The tools a job may call on this connection, without the `mcp__name__`
+   * prefix. Required rather than optional: granting a connection used to mean
+   * granting everything it exposes, so a server offering both reading and
+   * acting could not be adopted for reading alone. Listing them here also
+   * makes the catalog say what a connection can do without running it.
+   */
+  tools?: string[];
   /** stdio only. */
   command?: string;
   args?: string[];
   /** Environment variable name → why it is needed. */
   secrets?: Record<string, string>;
-  maxOutputTokens?: number;
+  // `maxOutputTokens` used to be declared here and was read by nothing. It is
+  // gone rather than wired, because it cannot be honoured: the SDK talks to a
+  // stdio server directly, so there is no point of ours in between to trim at.
+  // A config field that promises enforcement it cannot deliver is worse than
+  // its absence — the budget for a stdio server is that server's own flags.
 }
 
 export function readConnections(file: string): Connection[] {
@@ -97,6 +109,22 @@ export function resolveForJob(
     granted.push(found);
   }
   return { granted, refused };
+}
+
+/**
+ * The tool names a job may actually call, fully qualified.
+ *
+ * `allowedTools` is a strict allowlist, and the only MCP name that ever
+ * reached it was a hardcoded `mcp__web__fetch_page` — so the registry's stdio
+ * path could configure a server whose tools were then all refused. It was
+ * never noticed because no stdio connection has ever been installed.
+ *
+ * A connection that lists no tools contributes none. That is deliberate: the
+ * alternative is asking the SDK for everything a server offers, which is the
+ * "grant a connection, grant all of it" behaviour this exists to end.
+ */
+export function mcpToolNames(granted: Connection[]): string[] {
+  return granted.flatMap((c) => (c.tools ?? []).map((tool) => `mcp__${c.name}__${tool}`));
 }
 
 /** MCP server config for the granted stdio connections, secrets filled in. */

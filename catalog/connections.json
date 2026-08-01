@@ -13,12 +13,19 @@
     "text trimmed to maxChars rather than a whole page. Add hosts to 'allow' to",
     "narrow it.",
     "",
+    "Every connection lists the 'tools' a job may call on it. The list is the",
+    "grant: a server offering both reading and acting can be adopted for",
+    "reading alone by naming only its reading tools, and anything not named is",
+    "refused by the allowlist. It also makes this file say what a connection",
+    "can do without anyone having to run it.",
+    "",
     "External MCP servers take: name, label, description, transport 'stdio',",
-    "command, args, optional secrets {ENV_NAME: 'why it is needed'}, and",
-    "maxOutputTokens. They ship off by default — they carry credentials and act",
-    "on the user's behalf, which is a different decision from reading a page.",
-    "Keep results small by design — every token a tool returns is a token the",
-    "model pays to read."
+    "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
+    "They ship off by default — they carry credentials and act on the user's",
+    "behalf, which is a different decision from reading a page. Keep results",
+    "small by design — every token a tool returns is a token the model pays to",
+    "read, and for a stdio server that budget is the server's own flags, not",
+    "ours: the SDK talks to it directly, so nothing of ours sits in between."
   ],
   "connections": [
     {
@@ -27,6 +34,7 @@
       "description": "Fetches a page and returns its readable text, trimmed. No JavaScript, no sign-ins.",
       "transport": "builtin",
       "defaultOn": true,
+      "tools": ["fetch_page"],
       "allow": [],
       "maxChars": 12000
     }

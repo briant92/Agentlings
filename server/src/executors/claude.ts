@@ -13,7 +13,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { Agentling, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
-import { resolveForJob, toMcpServers, type Connection } from '../connections';
+import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
@@ -680,6 +680,9 @@ export class ClaudeAgentExecutor implements Executor {
           job.attachments ?? [],
         ),
         allowedTools,
+        // Named here rather than assembled in the runner, so what a connection
+        // may do is decided from the catalog in one place.
+        mcpTools: mcpToolNames(granted),
         maxTurns: turnBudget,
         skills,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,

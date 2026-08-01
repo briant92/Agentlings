@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   describe as describeConnections,
+  mcpToolNames,
   missingSecrets,
   resolveForJob,
   toMcpServers,
@@ -86,6 +87,40 @@ describe('resolveForJob', () => {
     const { granted, refused } = resolveForJob(['tracker'], all, {});
     expect(granted).toEqual([]);
     expect(refused[0].reason).toContain('TRACKER_TOKEN');
+  });
+});
+
+// allowedTools is a strict allowlist and the only MCP name that ever reached
+// it was hardcoded, so an stdio connection could be configured and then have
+// every one of its tools refused. Never noticed: none has been installed.
+describe('mcpToolNames', () => {
+  it('qualifies each named tool with its connection', () => {
+    expect(mcpToolNames([{ ...WEB, tools: ['fetch_page'] }])).toEqual(['mcp__web__fetch_page']);
+  });
+
+  it('is the grant, so a server can be adopted for part of what it offers', () => {
+    const browser: Connection = {
+      name: 'browser',
+      label: 'Browse',
+      transport: 'stdio',
+      command: 'npx',
+      tools: ['browser_navigate', 'browser_snapshot'],
+    };
+    expect(mcpToolNames([browser])).toEqual([
+      'mcp__browser__browser_navigate',
+      'mcp__browser__browser_snapshot',
+    ]);
+    expect(mcpToolNames([browser])).not.toContain('mcp__browser__browser_click');
+  });
+
+  it('contributes nothing for a connection that names no tools', () => {
+    expect(mcpToolNames([WEB])).toEqual([]);
+  });
+
+  it('covers every granted connection at once', () => {
+    const a = { ...WEB, tools: ['fetch_page'] };
+    const b = { ...TRACKER, tools: ['search'] };
+    expect(mcpToolNames([a, b])).toEqual(['mcp__web__fetch_page', 'mcp__tracker__search']);
   });
 });
 

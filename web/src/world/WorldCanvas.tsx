@@ -234,8 +234,12 @@ export function WorldCanvas({
      * back to fitting the width.
      */
     const fitCanvas = () => {
-      const scale = Math.max(1, Math.floor(host.clientWidth / WORLD_WIDTH));
-      const w = Math.min(host.clientWidth, WORLD_WIDTH * scale);
+      // Measured on the parent, not the frame. The frame shrink-wraps the
+      // canvas so the level looks deliberate at widths between the scale
+      // steps, which makes its own width the answer rather than the question.
+      const available = host.parentElement?.clientWidth ?? host.clientWidth;
+      const scale = Math.max(1, Math.floor(available / WORLD_WIDTH));
+      const w = Math.min(available, WORLD_WIDTH * scale);
       app.canvas.style.width = `${w}px`;
       app.canvas.style.height = `${Math.round((w / WORLD_WIDTH) * VIEW_H)}px`;
     };
@@ -256,7 +260,8 @@ export function WorldCanvas({
         }
         host.appendChild(app.canvas);
         fitCanvas();
-        observer.observe(host);
+        // Watch what decides the size, not what the size decides.
+        observer.observe(host.parentElement ?? host);
 
         // Art is data: prefer the spritesheet, fall back to what is built in.
         let art: ArtSource = {

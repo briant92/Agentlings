@@ -93,10 +93,16 @@ html.crt body::after {
   margin: 0 auto;
   padding: 12px;
 }
-/* One column: the level gets the full width, and the panels sit under it. */
+/* One column: the level gets the full width, and the panels sit under it.
+   The rows are header, level, panels — and the panels take whatever height is
+   left rather than a fixed slice, so a tall window fills with terminal instead
+   of with nothing. They keep a floor, since the level above is sized in whole
+   scales and a short window must not squeeze them to a sliver. */
 .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(240px, 1fr);
+  min-height: calc(100vh - 24px);
   gap: 16px;
   align-items: stretch;
 }
@@ -124,12 +130,18 @@ main {
   flex-direction: column;
   gap: 10px;
 }
-/* Pixel-exact frame: the canvas is scaled by whole numbers in JS and the
-   leftover width shows as letterbox bars. */
+/* Pixel-exact frame: the canvas is scaled by whole numbers in JS, and the
+   frame shrink-wraps it rather than stretching. Between the scale steps the
+   leftover would otherwise show as a wide black bar either side — 338px of it
+   at a 1705 window — which reads as a fault rather than as a letterbox.
+   fitCanvas measures the parent for exactly this reason. */
 .world {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   background: #000;
   border: 1px solid #262b36;
   border-radius: 6px;
@@ -1623,15 +1635,13 @@ button.danger:hover {
 
 /* The reporting row, under the level: who is on the floor, beside what has
    happened. A third and two thirds — the crew rail lists short names and the
-   terminal holds sentences, so they do not want the same width. Its own height
-   rather than the leftovers, since the level above is sized in whole scales
-   and would otherwise decide how much text fits here. */
+   terminal holds sentences, so they do not want the same width. The height
+   comes from the row it sits in, which takes whatever the level leaves. */
 .side {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 16px;
   min-height: 0;
-  height: 340px;
 }
 .rail {
   background: #0b0d14;
@@ -1732,9 +1742,12 @@ button.danger:hover {
 /* A third of a narrow window is too thin to read a name in, so below this the
    two panels stack instead of splitting. */
 @media (max-width: 900px) {
+  .app {
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+  }
   .side {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
   }
   .rail {
     max-height: 180px;

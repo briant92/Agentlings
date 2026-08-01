@@ -136,7 +136,14 @@ describe('turnsFor', () => {
     expect(turnsFor({ maxTurns: Number.NaN })).toBe(10);
   });
 });
-import { buildAppend, mapTools, parseLesson, sessionPrompt, toolLine } from './claude';
+import {
+  buildAppend,
+  gateOutside,
+  mapTools,
+  parseLesson,
+  sessionPrompt,
+  toolLine,
+} from './claude';
 
 describe('mapTools', () => {
   it('maps role tool names onto SDK tool names and dedupes', () => {
@@ -150,6 +157,38 @@ describe('mapTools', () => {
 
   it('capitalizes unknown tool names as a fallback', () => {
     expect(mapTools(['task'])).toEqual(['Task']);
+  });
+});
+
+// The registry is meant to be the only door outside. It was not: allowedTools
+// came from the role alone, so scout's `web_fetch` reached the network through
+// the SDK's own tool whatever Settings said.
+describe('gateOutside', () => {
+  it('keeps the web tools when the connection was granted', () => {
+    expect(gateOutside(['Read', 'WebFetch', 'WebSearch'], ['web'])).toEqual([
+      'Read',
+      'WebFetch',
+      'WebSearch',
+    ]);
+  });
+
+  it('drops them when it was not', () => {
+    expect(gateOutside(['Read', 'WebFetch', 'WebSearch'], [])).toEqual(['Read']);
+  });
+
+  it('never touches a tool that stays inside the sandbox', () => {
+    const inside = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob', 'Skill'];
+    expect(gateOutside(inside, [])).toEqual(inside);
+  });
+
+  // Correct rather than a fault: it cannot reach anything, which is the answer.
+  it('leaves a role with nothing but outside tools holding none', () => {
+    expect(gateOutside(mapTools(['web_fetch']), [])).toEqual([]);
+  });
+
+  it('gates the real scout role, which is where this was found', () => {
+    expect(gateOutside(mapTools(['read', 'grep', 'web_fetch']), ['web'])).toContain('WebFetch');
+    expect(gateOutside(mapTools(['read', 'grep', 'web_fetch']), [])).not.toContain('WebFetch');
   });
 });
 

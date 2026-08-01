@@ -1168,6 +1168,51 @@ posture moved from "ambient nothing" to "ambient reading". That is the change
 asked for, but it is a reversal rather than drift, which is why it is written
 down here and in three places in SPEC.md that asserted the opposite.
 
+**The switch had a second door, found by auditing capabilities rather than by
+testing the switch.**  is built from the role alone, so scout —
+which declares  — was handed the SDK's own  whatever
+Settings said. Turning web off removed the app's  tool and the
+pre-fetch of typed URLs, and left the network reachable through a tool the
+registry never sees. The tests written for the switch all passed, because they
+tested the resolver rather than what reached the session.
+
+Fixed by : a map of the SDK tools that leave the sandbox to the
+connection that authorises them, applied after the role's list and after the
+default, since the question is not what the role wants but what the user has
+allowed. A role left holding only outside tools correctly ends with none.
+Proven against the real role files and the real registry — scout goes
+ to , and analyst, mason, scribe
+and worker are byte-identical either way. The run also says so out loud rather
+than letting a scout spend turns discovering it.
+
+The general lesson is about where a boundary is enforced, not about the web: a
+permission checked in the place that *resolves* it is not checked in the place
+that *uses* it, and  was assembled from a different source
+entirely. Anything added to  is a tool that must be asked for.
+
+**The switch had a second door, found by auditing capabilities rather than by
+testing the switch.** `allowedTools` is built from the role alone, so scout —
+which declares `web_fetch` — was handed the SDK's own `WebFetch` whatever
+Settings said. Turning web off removed the app's `fetch_page` tool and the
+pre-fetch of typed URLs, and left the network reachable through a tool the
+registry never sees. Every test written for the switch passed, because they
+tested the resolver rather than what actually reached the session.
+
+Fixed by `gateOutside`: a map of the SDK tools that leave the sandbox to the
+connection that authorises them, applied after the role's list and after the
+default, since the question is not what the role wants but what the user has
+allowed. A role left holding only outside tools correctly ends with none — it
+cannot reach anything, which is the answer rather than a fault. Proven against
+the real role files and the real registry: scout goes `Read, Grep, Glob,
+WebFetch` to `Read, Grep, Glob`, while analyst, mason, scribe and worker are
+identical either way. The run says so out loud rather than letting a scout
+spend turns discovering it.
+
+The general lesson is about where a boundary is enforced, not about the web: a
+permission checked where it is *resolved* is not checked where it is *used*,
+and `allowedTools` was assembled from a different source entirely. Anything
+added to `OUTSIDE_TOOLS` is a tool that must be asked for.
+
 ## D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go
 
 Brian reported that a run came back saying his message was cut short and the

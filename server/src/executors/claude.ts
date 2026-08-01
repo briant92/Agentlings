@@ -139,6 +139,35 @@ const TOOL_MAP: Record<string, string[]> = {
 const DEFAULT_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 
 /**
+ * SDK tools that leave the sandbox, and the connection that authorises them.
+ *
+ * The registry is meant to be the only door outside. It was not: `allowedTools`
+ * is built from the role alone, so a role naming `web_fetch` got the SDK's own
+ * `WebFetch` whatever the user had switched off in Settings — the app's own
+ * fetch tool and the pre-fetch of typed URLs were gated, and this second door
+ * was not. Anything added to this map is a tool that must be asked for.
+ */
+const OUTSIDE_TOOLS: Record<string, string> = {
+  WebFetch: 'web',
+  WebSearch: 'web',
+};
+
+/**
+ * Drops the tools whose connection this job was not granted.
+ *
+ * Applied after the role's list and after the default, because the question is
+ * not what the role would like — it is what the user has allowed. A role left
+ * with nothing but outside tools correctly ends up with none: it cannot reach
+ * anything, which is the answer, not a fault.
+ */
+export function gateOutside(tools: string[], grantedNames: string[]): string[] {
+  return tools.filter((tool) => {
+    const needs = OUTSIDE_TOOLS[tool];
+    return needs === undefined || grantedNames.includes(needs);
+  });
+}
+
+/**
  * The document libraries, and how to call them.
  *
  * A sandbox sits inside the project, so Node walks up and resolves the root's
@@ -601,8 +630,16 @@ export class ClaudeAgentExecutor implements Executor {
     }
 
     const mapped = mapTools(role?.tools ?? []);
-    const allowedTools = mapped.length > 0 ? mapped : [...DEFAULT_TOOLS];
+    const allowedTools = gateOutside(
+      mapped.length > 0 ? mapped : [...DEFAULT_TOOLS],
+      granted.map((c) => c.name),
+    );
     if (skills.length > 0) allowedTools.push('Skill');
+    // Said out loud: a scout with no way to reach a page will otherwise spend
+    // turns discovering that, and its report should say why rather than guess.
+    if (mapped.includes('WebFetch') && !allowedTools.includes('WebFetch')) {
+      onProgress?.('web access is off in settings — working from what is here');
+    }
 
     // A job the crew has done before gets a short leash rather than the full
     // budget; either way the quote can tighten it further, since turns are

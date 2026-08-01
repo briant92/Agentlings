@@ -85,14 +85,19 @@ html.crt body::after {
   }
 }
 #root {
-  max-width: 1400px;
+  /* 2048 − 24 padding leaves 2024, which is the first width where the world
+     gets a whole-number scale of 2 (2000 × 640). Scale 3 would be 960px tall
+     and would not leave room for the panels below on a 1440 screen, so this
+     is the practical ceiling however wide the monitor is. */
+  max-width: 2048px;
   margin: 0 auto;
   padding: 12px;
 }
+/* One column: the level gets the full width, and the panels sit under it. */
 .app {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 0 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   align-items: stretch;
 }
 header {
@@ -1616,12 +1621,17 @@ button.danger:hover {
   background: #11151f;
 }
 
-/* The reporting column: who is on the floor, above what has happened. */
+/* The reporting row, under the level: who is on the floor, beside what has
+   happened. A third and two thirds — the crew rail lists short names and the
+   terminal holds sentences, so they do not want the same width. Its own height
+   rather than the leftovers, since the level above is sized in whole scales
+   and would otherwise decide how much text fits here. */
 .side {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
   min-height: 0;
+  height: 340px;
 }
 .rail {
   background: #0b0d14;
@@ -1642,10 +1652,14 @@ button.danger:hover {
   margin-left: auto;
   font-size: 11px;
 }
+/* Flows into columns once the rail is wide enough for two, so a crew of six
+   is read at a glance rather than scrolled. A row wants about 200px before
+   the name and what they are doing start truncating. */
 .rail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  align-content: start;
+  gap: 2px 8px;
   padding: 6px;
   overflow-y: auto;
   min-height: 0;
@@ -1715,28 +1729,15 @@ button.danger:hover {
   color: #626a7d;
 }
 
-/* Side by side only where the rail can have real width without squeezing the
-   world below 1000px, which is what it needs for a whole-number scale.
-   1560 − 24 padding − 480 column − 16 gap leaves it 1040. */
-@media (min-width: 1560px) {
-  #root {
-    max-width: 1560px;
-  }
-  .app {
-    grid-template-columns: minmax(0, 1fr) 480px;
-  }
+/* A third of a narrow window is too thin to read a name in, so below this the
+   two panels stack instead of splitting. */
+@media (max-width: 900px) {
   .side {
-    grid-template-rows: none;
-    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
   }
-}
-
-@media (max-width: 1100px) {
-  .app {
-    grid-template-columns: 1fr;
-  }
-  .side {
-    margin-top: 16px;
+  .rail {
+    max-height: 180px;
   }
   .terminal {
     height: 320px;

@@ -102,6 +102,24 @@ export interface ConnectionInfo {
 }
 
 /**
+ * A file the user attached to a job.
+ *
+ * It lands in `input/` inside the sandbox rather than at its root, which is
+ * how the repo clone and fetched pages already work — and it matters here
+ * beyond tidiness: everything that asks "did this run deliver anything"
+ * looks at top-level files, so an input sitting at the root would be counted
+ * as output the job never produced.
+ */
+export interface JobAttachment {
+  name: string;
+  bytes: number;
+}
+
+/** As many as one job may carry, and how large each may be. */
+export const MAX_ATTACHMENTS = 5;
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+/**
  * One file a job left in its sandbox.
  *
  * `content` is present only for text. A job that produces a document — a PDF,
@@ -148,6 +166,8 @@ export interface Job {
    * done.
    */
   clarifications?: string[];
+  /** Files the user attached, waiting in `input/` inside the sandbox. */
+  attachments?: JobAttachment[];
   /**
    * This job compiles a recipe into a tool. Recorded rather than acted on: a
    * compile is its own kind of work — it writes two programs that must agree —

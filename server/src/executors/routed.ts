@@ -280,7 +280,11 @@ export class RoutedExecutor implements Executor {
       // So a run that made something banks only its method. A repeat then runs
       // as a short one-shot that rebuilds the artefact, which is cheap and
       // true, rather than free and false.
-      const madeSomething = producedArtefacts(sandboxDir);
+      // An attachment makes an answer unrepeatable even when the run produced
+      // nothing: the recipe key is the prompt, so "summarise the attached
+      // contract" would replay contract A's summary for contract B. The words
+      // were true once, about a file this job has never seen.
+      const madeSomething = producedArtefacts(sandboxDir) || !!job.attachments?.length;
       updated = rememberRecipe(updated, {
         prompt: job.prompt,
         role: agentling.role,

@@ -1,8 +1,33 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { ConnectionInfo, WorkPlan } from '@agentlings/shared';
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 
 const DEBOUNCE_MS = 250;
+
+/** A file waiting to go with the next job, already read into memory. */
+interface Attached {
+  name: string;
+  bytes: number;
+  /** Base64, because it rides in the same JSON as the sentence it belongs to. */
+  data: string;
+}
+
+function readAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    // The result is a data: URL; everything after the comma is the payload.
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(new Error(`could not read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 /**
  * Work intake: one box, one sentence. The app derives the title, matches the
@@ -23,6 +48,9 @@ export function WorkBar({
   const [plan, setPlan] = useState<WorkPlan | null>(null);
   /** Answers by question id. Empty is always a valid state — Start never waits. */
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  /** Files dropped on the box, read once and sent with the job that uses them. */
+  const [files, setFiles] = useState<Attached[]>([]);
+  const [dragging, setDragging] = useState(false);
   const [askingRepo, setAskingRepo] = useState(false);
   const [repoPath, setRepoPath] = useState('');
   const [busy, setBusy] = useState(false);
@@ -61,11 +89,15 @@ export function WorkBar({
           ...(folder === undefined ? {} : { repoPath: folder }),
           ...(allowed.length > 0 ? { tools: allowed } : {}),
           ...(Object.keys(answers).length > 0 ? { answers } : {}),
+          ...(files.length > 0
+            ? { files: files.map((f) => ({ name: f.name, data: f.data })) }
+            : {}),
         }),
       );
       setText('');
       setPlan(null);
       setAnswers({});
+      setFiles([]);
       setAskingRepo(false);
       setRepoPath('');
     } catch (err) {
@@ -88,8 +120,56 @@ export function WorkBar({
     setAskingRepo(true);
   };
 
+  /**
+   * Reads dropped files into memory. Refused here as well as on the server —
+   * the server is what makes it true, but finding out before you have typed
+   * the sentence is the difference between a hint and a rejection.
+   */
+  const attach = async (incoming: FileList | null) => {
+    if (!incoming?.length) return;
+    setError(null);
+    const room = MAX_ATTACHMENTS - files.length;
+    if (room <= 0) {
+      setError(`${MAX_ATTACHMENTS} files at most`);
+      return;
+    }
+    const taking = [...incoming].slice(0, room);
+    if (taking.length < incoming.length) setError(`${MAX_ATTACHMENTS} files at most`);
+    for (const file of taking) {
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setError(`${file.name} is larger than ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB`);
+        continue;
+      }
+      try {
+        const data = await readAsBase64(file);
+        setFiles((prev) => [...prev, { name: file.name, bytes: file.size, data }]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    }
+  };
+
   return (
-    <div className="work">
+    <div
+      className={dragging ? 'work dropping' : 'work'}
+      onDragOver={(e) => {
+        // Only take over the drop when it is actually a file; dragging text
+        // around the page should behave as it always did.
+        if (!e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setDragging(false);
+      }}
+      onDrop={(e) => {
+        if (!e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        setDragging(false);
+        void attach(e.dataTransfer.files);
+      }}
+    >
       <form className="work-bar" onSubmit={submit}>
         <input
           className="work-input"
@@ -98,10 +178,39 @@ export function WorkBar({
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
+        <label className="work-clip" title="Attach a document">
+          <input
+            type="file"
+            multiple
+            onChange={(e) => {
+              void attach(e.target.files);
+              e.target.value = ''; // so the same file can be picked twice
+            }}
+          />
+          📎
+        </label>
         <button type="submit" disabled={!text.trim() || busy}>
           Start
         </button>
       </form>
+
+      {files.length > 0 && (
+        <p className="work-files">
+          {files.map((f) => (
+            <span key={f.name} className="work-file">
+              {f.name} <span className="dim">{fileSize(f.bytes)}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${f.name}`}
+                onClick={() => setFiles((prev) => prev.filter((x) => x.name !== f.name))}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+          <span className="dim"> · they go in the sandbox, nothing else can see them</span>
+        </p>
+      )}
 
       {connections.length > 0 && !askingRepo && (
         <p className="work-gaps work-conn">

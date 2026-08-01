@@ -1400,6 +1400,57 @@ button.danger:hover {
   cursor: pointer;
 }
 
+/* Documents dropped on the intake. They land in the job's sandbox and go no
+   further, which the note beside them says out loud. */
+.work.dropping {
+  outline: 2px dashed #5b6ee1;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.work-clip {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+.work-clip:hover {
+  opacity: 1;
+}
+.work-clip input {
+  display: none;
+}
+.work-files {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+.work-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  background: #11151f;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  color: #d8dce6;
+}
+.work-file button {
+  border: none;
+  background: transparent;
+  color: #626a7d;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 11px;
+}
+.work-file button:hover {
+  color: #d95763;
+}
+
 /* Questions asked before the money moves. Never a blocker: Start ignores them. */
 .work-ask {
   display: flex;

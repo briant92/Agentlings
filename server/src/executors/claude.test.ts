@@ -255,6 +255,23 @@ describe('buildAppend', () => {
     expect(text).toContain('never npm install');
   });
 
+  // Inputs live in ./input the way the clone lives in ./repo, and the session
+  // has to be told — an attached file nobody mentions is a file nobody reads.
+  it('points the session at the files the user attached', () => {
+    const text = buildAppend(undefined, [], [], false, [], undefined, [], [
+      { name: 'contract.pdf', bytes: 240 * 1024 },
+      { name: 'figures.xlsx', bytes: 12 * 1024 },
+    ]);
+    expect(text).toContain('input/contract.pdf');
+    expect(text).toContain('input/figures.xlsx');
+    expect(text).toContain('240 KB');
+    expect(text).toContain('do not go looking elsewhere');
+  });
+
+  it('says nothing about attachments when there are none', () => {
+    expect(buildAppend(undefined, [], [], false)).not.toContain('Files the user attached');
+  });
+
   // Guessing a call shape costs a turn, and pdf-parse reads like the function
   // it used to be while now being a class.
   it('gives the call shape, not just the name', () => {

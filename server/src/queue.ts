@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Job, JobMeter } from '@agentlings/shared';
+import type { Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
 import { CANCELLED } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
-import { deliveredFiles } from './outputs';
+import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
 
 export interface NewJobSpec {
@@ -21,6 +21,8 @@ export interface NewJobSpec {
   maxTurns?: number;
   /** Answers given before the run, handed to the session on top of the prompt. */
   clarifications?: string[];
+  /** Files the user attached, written into the sandbox before it can run. */
+  attachments?: { name: string; data: Buffer }[];
   /** This job compiles a recipe into a tool; recorded for the ledger's sake. */
   compile?: boolean;
   /** Ceiling quoted before the work. */
@@ -145,9 +147,45 @@ export class JobQueue {
       slot: this.freeSlot(),
       createdAt: Date.now(),
     };
+    const attached = this.writeAttachments(job.id, spec.attachments);
+    if (attached.length > 0) job.attachments = attached;
     this.jobs.set(job.id, job);
     this.persist();
     return job;
+  }
+
+  /**
+   * Puts attached files in the sandbox before the job is picked up.
+   *
+   * Written here rather than staged and copied at `start`, because the sandbox
+   * is simply a directory and there is nothing to gain by creating it a few
+   * minutes later — no staging area, no copy step, and nothing to orphan if
+   * the job is never run.
+   *
+   * They go in `input/` rather than at the root, which is what keeps them from
+   * being counted as output the run never produced: every "did it deliver"
+   * check reads top-level files only.
+   */
+  private writeAttachments(
+    jobId: string,
+    files: { name: string; data: Buffer }[] | undefined,
+  ): JobAttachment[] {
+    if (!files?.length) return [];
+    const dir = path.join(this.sandboxDir(jobId), 'input');
+    mkdirSync(dir, { recursive: true });
+    const written: JobAttachment[] = [];
+    for (const file of files) {
+      const name = safeAttachmentName(file.name);
+      if (!name) continue;
+      writeFileSync(path.join(dir, name), file.data);
+      written.push({ name, bytes: file.data.length });
+    }
+    return written;
+  }
+
+  /** Where a job's attached files wait for it. */
+  inputDir(jobId: string): string {
+    return path.join(this.sandboxDir(jobId), 'input');
   }
 
   /**

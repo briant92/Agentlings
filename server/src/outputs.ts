@@ -138,6 +138,29 @@ export function deliveredFiles(dir: string): boolean {
 }
 
 /**
+ * A filename safe to write inside a sandbox, or null.
+ *
+ * The name arrives from a browser, which is to say from anywhere, and this is
+ * the one place a caller chooses what a file is called on disk. Any directory
+ * part is stripped rather than rejected — a browser sends "contract.pdf" but a
+ * crafted request can send anything, and the only thing that matters is that
+ * what lands is a plain name in the directory we chose.
+ *
+ * Both separators are handled whatever the platform: a Windows path arriving
+ * on a POSIX server would otherwise sail through `path.basename` intact.
+ */
+export function safeAttachmentName(name: string): string | null {
+  const base = name.replace(/\\/g, '/').split('/').pop() ?? '';
+  const trimmed = base.trim();
+  if (!trimmed || trimmed === '.' || trimmed === '..') return null;
+  if (trimmed.includes('\0')) return null;
+  // A dotfile would be invisible to every listing the app has, including the
+  // one the review panel reads — a file the user attached and then cannot see.
+  if (trimmed.startsWith('.')) return null;
+  return trimmed;
+}
+
+/**
  * The sandbox's top-level files. Text comes back inline, because that is what
  * the review panel reads; anything binary is announced and left on disk to be
  * fetched on its own.

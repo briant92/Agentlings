@@ -15,7 +15,12 @@ import type {
   ServerMessage,
   SettingsInfo,
 } from '@agentlings/shared';
-import { SOCKET_LEVEL_GONE, TICK_MS } from '@agentlings/shared';
+import {
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENTS,
+  SOCKET_LEVEL_GONE,
+  TICK_MS,
+} from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { describe, readConnections } from './connections';
 import { clarificationLines, questionsFor } from './clarify';
@@ -397,6 +402,37 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
  * One sentence in, a queued job out. The project folder is asked for once per
  * level and remembered; '' records that the user declined.
  */
+/**
+ * Files that came with the request, as bytes.
+ *
+ * They ride with the request that creates the job rather than being uploaded
+ * first and referenced later, which is what removes the staging area and the
+ * orphans that come with one — there is no window in which bytes exist with no
+ * job to own them.
+ *
+ * The caps are the point of failing loudly here: a large document read into a
+ * session's context can eat the turn budget the quote was built from, and the
+ * quote does not know attachments exist.
+ */
+function decodeAttachments(
+  files: { name?: string; data?: string }[] | undefined,
+): { name: string; data: Buffer }[] {
+  if (!files?.length) return [];
+  if (files.length > MAX_ATTACHMENTS) {
+    throw new Error(`too many files — ${MAX_ATTACHMENTS} at most`);
+  }
+  return files.map((file) => {
+    const name = file.name?.trim();
+    if (!name || typeof file.data !== 'string') throw new Error('each file needs a name and data');
+    const data = Buffer.from(file.data, 'base64');
+    if (data.length === 0) throw new Error(`"${name}" is empty`);
+    if (data.length > MAX_ATTACHMENT_BYTES) {
+      throw new Error(`"${name}" is larger than ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB`);
+    }
+    return { name, data };
+  });
+}
+
 app.post('/api/levels/:lid/work', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
@@ -405,9 +441,17 @@ app.post('/api/levels/:lid/work', async (c) => {
     repoPath?: string;
     tools?: string[];
     answers?: Record<string, string>;
+    files?: { name?: string; data?: string }[];
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
+
+  let attachments: { name: string; data: Buffer }[];
+  try {
+    attachments = decodeAttachments(body.files);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'bad attachment' }, 400);
+  }
 
   if (body.repoPath !== undefined) {
     const repoPath = body.repoPath.trim();
@@ -439,6 +483,7 @@ app.post('/api/levels/:lid/work', async (c) => {
         { hasRepo: !!rt.meta.repoPath, tier: quote.tier },
         body.answers,
       ),
+      attachments,
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

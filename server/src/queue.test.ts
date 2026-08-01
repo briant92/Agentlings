@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SimulatedExecutor } from './executors/simulated';
-import { JobQueue } from './queue';
+import { deliveredFiles, listOutputs, producedArtefacts } from './outputs';
+import { jobsFile, JobQueue } from './queue';
 
 describe('JobQueue', () => {
   let root: string;
@@ -114,6 +115,66 @@ describe('JobQueue', () => {
     expect(new JobQueue(root).get(job.id)).toMatchObject({
       prompt: 'tighten up the error handling',
       clarifications: ['Which file? server/src/ledger.ts'],
+    });
+  });
+
+  describe('attached files', () => {
+    it('puts them in the sandbox before the job is picked up', () => {
+      const job = queue.add({
+        title: 'Summarise it',
+        prompt: 'summarise the attached contract',
+        attachments: [{ name: 'contract.pdf', data: Buffer.from('%PDF-1.7\n') }],
+      });
+      expect(job.attachments).toEqual([{ name: 'contract.pdf', bytes: 9 }]);
+      expect(readFileSync(path.join(queue.inputDir(job.id), 'contract.pdf'), 'utf8')).toBe(
+        '%PDF-1.7\n',
+      );
+    });
+
+    // The reason inputs live in a subdirectory. Every "did this run deliver"
+    // check reads top-level files, so an attachment at the sandbox root would
+    // make a job that did nothing look like it had produced something.
+    it('is never mistaken for something the run produced', () => {
+      const job = queue.add({
+        title: 'Summarise it',
+        prompt: 'summarise the attached contract',
+        attachments: [{ name: 'contract.pdf', data: Buffer.from('%PDF-1.7\n') }],
+      });
+      const dir = queue.sandboxDir(job.id);
+      expect(deliveredFiles(dir)).toBe(false);
+      expect(producedArtefacts(dir)).toBe(false);
+      expect(listOutputs(dir)).toEqual([]);
+
+      // …and a run that then delivers nothing is still a plain failure.
+      queue.start(job.id);
+      queue.fail(job.id, 'agent session failed (error_max_turns)');
+      expect(queue.get(job.id)!.status).toBe('failed');
+    });
+
+    it('strips any directory part from the name it was given', () => {
+      const job = queue.add({
+        title: 'Sneaky',
+        prompt: 'x',
+        attachments: [{ name: '../../jobs.json', data: Buffer.from('owned') }],
+      });
+      expect(job.attachments).toEqual([{ name: 'jobs.json', bytes: 5 }]);
+      expect(existsSync(path.join(queue.inputDir(job.id), 'jobs.json'))).toBe(true);
+      // The level's real job list is untouched.
+      expect(readFileSync(jobsFile(root), 'utf8')).not.toBe('owned');
+    });
+
+    it('survives a restart, so the job still knows what it was given', () => {
+      const job = queue.add({
+        title: 'Summarise it',
+        prompt: 'x',
+        attachments: [{ name: 'a.docx', data: Buffer.from('one') }],
+      });
+      expect(new JobQueue(root).get(job.id)!.attachments).toEqual([{ name: 'a.docx', bytes: 3 }]);
+    });
+
+    it('writes no attachments field when none were given', () => {
+      expect(queue.add({ title: 'Plain', prompt: 'x' }).attachments).toBeUndefined();
+      expect(queue.add({ title: 'Empty', prompt: 'x', attachments: [] }).attachments).toBeUndefined();
     });
   });
 

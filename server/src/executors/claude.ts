@@ -11,7 +11,7 @@ import {
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import type { Agentling, Job, JobMeter } from '@agentlings/shared';
+import type { Agentling, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { resolveForJob, toMcpServers, type Connection } from '../connections';
 import { cloneRepo, writeDiff } from '../gitwork';
@@ -309,6 +309,7 @@ export function buildAppend(
   sources: string[] = [],
   approach?: string,
   repoFiles: string[] = [],
+  attachments: JobAttachment[] = [],
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -327,6 +328,16 @@ export function buildAppend(
       // from what the run actually left behind rather than what it predicted.
     ].join('\n'),
   );
+  if (attachments.length > 0) {
+    parts.push(
+      [
+        '## Files the user attached',
+        'They are already in ./input — read them from there, and do not go looking elsewhere.',
+        ...attachments.map((a) => `- input/${a.name} (${Math.max(1, Math.round(a.bytes / 1024))} KB)`),
+        'Use the document libraries below to read them rather than opening them as plain text.',
+      ].join('\n'),
+    );
+  }
   parts.push(DOCUMENT_LIBRARIES);
   if (repoFiles.length > 0) {
     parts.push(
@@ -554,6 +565,7 @@ export class ClaudeAgentExecutor implements Executor {
           sources,
           hint?.approach,
           hasRepo ? repoListing(path.join(sandboxDir, 'repo')) : [],
+          job.attachments ?? [],
         ),
         allowedTools,
         maxTurns: turnBudget,

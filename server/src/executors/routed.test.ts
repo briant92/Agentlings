@@ -382,6 +382,25 @@ describe('RoutedExecutor', () => {
     // The sharp edge. An answer is replayed to the user word for word, and a
     // failed run's summary is its error message — banking one would serve
     // "ran out of turns" as the answer to this question for ever.
+    // The recipe key is the prompt, so the same sentence with a different file
+    // attached would replay the first file's summary for the second.
+    it('never banks an answer from a run that was given a file', async () => {
+      await expect(
+        run(
+          build(dying('the way that worked')),
+          job({
+            prompt: 'summarise the attached contract',
+            attachments: [{ name: 'contract.pdf', bytes: 900 }],
+          }),
+          PIP,
+        ),
+      ).rejects.toThrow();
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.answer).toBeUndefined();
+      expect(recipe.approach).toBeDefined(); // the method is still worth keeping
+    });
+
     it('never banks an answer from a run that failed', async () => {
       await expect(
         run(build(dying('the way that worked')), job({ prompt: 'Name three colours' }), PIP),

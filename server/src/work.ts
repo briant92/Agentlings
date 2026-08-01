@@ -118,6 +118,7 @@ export function queuedJobSpec(args: {
   plan: WorkPlan;
   quote: Quote;
   clarifications?: string[];
+  attachments?: { name: string; data: Buffer }[];
 }): {
   title: string;
   prompt: string;
@@ -126,6 +127,7 @@ export function queuedJobSpec(args: {
   preferredRole?: string;
   quotedUsd?: number;
   clarifications?: string[];
+  attachments?: { name: string; data: Buffer }[];
 } {
   return {
     title: args.title,
@@ -133,6 +135,7 @@ export function queuedJobSpec(args: {
     repoPath: args.repoPath,
     ...(args.tools?.length ? { tools: args.tools } : {}),
     ...(args.clarifications?.length ? { clarifications: args.clarifications } : {}),
+    ...(args.attachments?.length ? { attachments: args.attachments } : {}),
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never

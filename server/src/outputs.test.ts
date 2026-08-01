@@ -8,6 +8,7 @@ import {
   listOutputs,
   opensInBrowser,
   producedArtefacts,
+  safeAttachmentName,
   safeOutputPath,
   SNIFF_BYTES,
 } from './outputs';
@@ -150,6 +151,32 @@ describe('safeOutputPath', () => {
     expect(safeOutputPath(dir, 'repo')).toBeNull();
     expect(safeOutputPath(dir, 'nothing-here.md')).toBeNull();
     expect(safeOutputPath(dir, '')).toBeNull();
+  });
+});
+
+// The name arrives from a browser, which is to say from anywhere, and this is
+// the one place a caller chooses what a file is called on disk.
+describe('safeAttachmentName', () => {
+  it('keeps an ordinary filename', () => {
+    expect(safeAttachmentName('contract.pdf')).toBe('contract.pdf');
+    expect(safeAttachmentName('Q3 report (final).xlsx')).toBe('Q3 report (final).xlsx');
+  });
+
+  it('strips any directory part, on either platform', () => {
+    expect(safeAttachmentName('../../etc/passwd')).toBe('passwd');
+    expect(safeAttachmentName('C:\\Windows\\System32\\drivers\\etc\\hosts')).toBe('hosts');
+    expect(safeAttachmentName('nested/dir/report.docx')).toBe('report.docx');
+  });
+
+  it('refuses names that resolve to nothing usable', () => {
+    for (const bad of ['', '   ', '.', '..', 'dir/', 'a\0b']) {
+      expect(safeAttachmentName(bad)).toBeNull();
+    }
+  });
+
+  it('refuses a dotfile, which every listing would hide', () => {
+    expect(safeAttachmentName('.env')).toBeNull();
+    expect(safeAttachmentName('/tmp/.hidden')).toBeNull();
   });
 });
 

@@ -66,6 +66,13 @@ export class RoutedExecutor implements Executor {
     private levelDir: string,
     private knowledge: () => string[],
     private webConfig: () => { allow?: string[]; maxChars?: number } | null,
+    /**
+     * What a run of this job could do — its connections, the SDK tools its
+     * role grants, its skills, the libraries a sandbox can resolve. Injected
+     * rather than worked out here, because this class knows the level and the
+     * job and nothing about roles, and one place should decide what counts.
+     */
+    private capabilities: (job: Job, agentling?: Agentling) => string[],
     private fallback: Executor,
   ) {}
 
@@ -134,6 +141,7 @@ export class RoutedExecutor implements Executor {
           recipes,
           tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,
+          capabilities: this.capabilities(job, agentling),
         });
 
     if (decision.kind === 'answer') {
@@ -291,7 +299,7 @@ export class RoutedExecutor implements Executor {
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
         at: Date.now(),
-        tools: job.tools,
+        capabilities: this.capabilities(job, agentling),
       });
       onProgress?.('noted how to do this next time');
     }

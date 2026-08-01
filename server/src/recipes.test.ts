@@ -52,7 +52,7 @@ describe('findRecipe', () => {
       role: 'analyst',
       approach: 'sum column D',
       hits: 0,
-      tools: [],
+      capabilities: [],
       learnedAt: 1,
     },
   ];
@@ -155,7 +155,7 @@ describe('matching strength', () => {
       role: 'worker',
       approach: 'read the module, then write the test beside it',
       hits: 0,
-      tools: [],
+      capabilities: [],
       learnedAt: 1,
     },
   ];
@@ -171,7 +171,7 @@ describe('matching strength', () => {
   });
 
   it('still calls an exact repeat strong', () => {
-    expect(findRecipe(recipes, 'Add a test for the estimate module')?.strong).toBe(true);
+    expect(findRecipe(recipes, 'Add a test for the estimate module', [])?.strong).toBe(true);
   });
 
   it('finds nothing at all for unrelated work', () => {
@@ -198,31 +198,31 @@ describe('a method is only as good as what was available when it was found', () 
   const prompt = 'Read the reddit programming page';
 
   it('shortens the run when the crew can reach exactly what it could before', () => {
-    const found = findRecipe([{ ...base, tools: ['web'] }], prompt, ['web']);
+    const found = findRecipe([{ ...base, capabilities: ['conn:web'] }], prompt, ['conn:web']);
     expect(found?.strong).toBe(true);
   });
 
   it('stops shortening it the moment a new capability appears', () => {
-    const found = findRecipe([{ ...base, tools: ['web'] }], prompt, ['browser', 'web']);
+    const found = findRecipe([{ ...base, capabilities: ['conn:web'] }], prompt, ['conn:browser', 'conn:web']);
     expect(found?.strong).toBe(false);
     // The method is still handed over — demoted, not discarded.
     expect(found?.recipe.approach).toContain('old.reddit');
   });
 
   it('stops too when a capability it relied on is taken away', () => {
-    expect(findRecipe([{ ...base, tools: ['web'] }], prompt, [])?.strong).toBe(false);
+    expect(findRecipe([{ ...base, capabilities: ['conn:web'] }], prompt, [])?.strong).toBe(false);
   });
 
   it('does not care what order the connections arrive in', () => {
-    const r = { ...base, tools: ['browser', 'web'] };
-    expect(findRecipe([r], prompt, ['web', 'browser'])?.strong).toBe(true);
+    const r = { ...base, capabilities: ['conn:browser', 'conn:web'] };
+    expect(findRecipe([r], prompt, ['conn:browser', 'conn:web'])?.strong).toBe(true);
   });
 
   // Absent means written before this was recorded. Unknown provenance is
   // treated as changed, so every existing recipe is demoted exactly once and
   // then re-banked with its capabilities by the run that follows.
   it('treats a recipe of unknown provenance as changed', () => {
-    expect(findRecipe([base], prompt, ['web'])?.strong).toBe(false);
+    expect(findRecipe([base], prompt, ['conn:web'])?.strong).toBe(false);
     expect(findRecipe([base], prompt, [])?.strong).toBe(false);
   });
 
@@ -232,10 +232,10 @@ describe('a method is only as good as what was available when it was found', () 
       role: 'scout',
       approach: 'use the browser, the mirror is gone',
       at: 2,
-      tools: ['web', 'browser'],
+      capabilities: ['conn:web', 'conn:browser'],
     });
-    expect(relearned[0].tools).toEqual(['browser', 'web']);
-    expect(findRecipe(relearned, prompt, ['browser', 'web'])?.strong).toBe(true);
+    expect(relearned[0].capabilities).toEqual(['conn:browser', 'conn:web']);
+    expect(findRecipe(relearned, prompt, ['conn:browser', 'conn:web'])?.strong).toBe(true);
   });
 });
 

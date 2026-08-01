@@ -46,6 +46,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-034 — 2026-08-01 — A browser that reads and cannot act](#d-034--2026-08-01--a-browser-that-reads-and-cannot-act)
 - [D-035 — 2026-08-01 — The browser measured, and the case for it is weaker than the case made for it](#d-035--2026-08-01--the-browser-measured-and-the-case-for-it-is-weaker-than-the-case-made-for-it)
 - [D-036 — 2026-08-01 — A method is only as good as what was available when it was found](#d-036--2026-08-01--a-method-is-only-as-good-as-what-was-available-when-it-was-found)
+- [D-037 — 2026-08-01 — The rest of the axes, as one surface rather than five comparisons](#d-037--2026-08-01--the-rest-of-the-axes-as-one-surface-rather-than-five-comparisons)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1426,3 +1427,59 @@ skill, a document library, a raised turn cap or a better model all change what
 a good method is, and none of them demotes anything. The honest claim is that
 the axis which actually bit has been closed, not that recipes now track
 capability.
+
+## D-037 — 2026-08-01 — The rest of the axes, as one surface rather than five comparisons
+
+D-036 closed the connections axis and said plainly what it left open: a role's
+tools, its skills, the document libraries, the turn cap and the model all change
+what a good method is, and none of them demoted anything. This closes them —
+and the design decision is that they are **not five comparisons**.
+
+A run's capability surface is one sorted list of prefixed tokens —
+`conn:web`, `tool:Bash`, `skill:cite-sources`, `lib:pdf-lib` — and a recipe
+stores the surface it was written under. The only operation is "is this the
+same surface", so a flat list beats a record with a field per axis: adding an
+axis later is a new prefix and no migration, and the list stays readable on
+disk, which matters at the moment a recipe demotes and someone asks why. It
+also replaces D-036's `capabilities`-as-connections field a day old, which is
+churn worth admitting: the generalisation should have come first, and the cost
+of getting there second was one superseded field and one retired backfill.
+
+**Two axes are deliberately excluded, and the line is what they change.** A
+capability is what a run *can do*, not how well or how long it does it. The
+model changes how well; the turn cap changes how long — and a leashed run takes
+`RECIPE_TURNS` regardless of its role's cap, so recording that one would demote
+on a number the run never uses. Including them would make every model change
+demote every recipe on file, for no gain in what the crew can discover.
+
+`surfaceFor` in index.ts is the single place that decides what counts, because
+it is the only place that knows the job, the role registry, the skills on disk
+and the root's dependencies at once. `RoutedExecutor` takes it as a supplier
+rather than working it out: that class knows a level and a job and nothing
+about roles, and the router, the recipe it banks and the recipe it matches
+against must never disagree about the surface.
+
+Proven against the real role files and `package.json`: a scout's surface is 13
+tokens, and a recipe written under it stops shortening the run when the browser
+is switched on, when a library is installed, when a skill is added to the role,
+or when the role gains Bash — and keeps shortening it when nothing changes. A
+bonus that fell out rather than being designed: scout and worker have different
+surfaces, so a method found by a scout no longer shortens a worker's run
+either. That is D-026's observation — the role that runs a job need not be the
+role it was matched to — handled without a rule of its own.
+
+**No backfill this time, and that is a reversal.** D-036 shipped
+`backfill-recipe-tools.ts` because unknown provenance demotes and a blanket
+demotion costs a full-length run per recipe. The other axes cannot be
+reconstructed: a job record does not say what skills its role had, and the
+root's dependencies at the time are unknowable. Filling them from today's role
+definitions would be a guess, which is the mislabelling this log keeps
+catching, so the script is retired and every recipe demotes exactly once before
+healing. Cheap here — the ledger shows almost no repeat work — and honest,
+which the alternative would not have been.
+
+One process note worth keeping. A scripted edit reported success by checking
+for a string that already existed elsewhere in the same file, so the router
+context went unwired while the check said otherwise, and three tests failed for
+a reason the check had ruled out. **Verify a change by what it should now do,
+not by whether some text is present.**

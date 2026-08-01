@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { sameSurface } from './capability';
 
 /**
  * What the crew has worked out how to do. Lever 7: when the agent solves
@@ -23,7 +24,7 @@ export interface Recipe {
   /** Only set when the job had no repository and no web access. */
   answer?: string;
   /**
-   * The connections the run that wrote this method could reach, sorted.
+   * What the run that wrote this method could do, as capability tokens.
    *
    * A method is only as good as what was available when it was found. Measured
    * on 2026-08-01: a job solved with `fetch_page` banked a recipe, and the next
@@ -35,7 +36,7 @@ export interface Recipe {
    * Absent means a recipe written before this was recorded: provenance
    * unknown, which is treated as changed rather than assumed to match.
    */
-  tools?: string[];
+  capabilities?: string[];
   hits: number;
   /**
    * Times a run using this recipe actually landed. Separate from `hits`
@@ -205,28 +206,25 @@ export function writeRecipes(levelDir: string, recipes: Recipe[]): void {
  * strong; anything else has to earn it.
  */
 /**
- * Whether a recipe was written under the capabilities this job has now.
+ * Whether a recipe was written under the capability surface this job has now.
  *
- * Exported because it is the whole of the rule and deserves to be readable.
- * Any difference counts, in either direction: a method that used a connection
- * since switched off is actively wrong, and a method written without one that
- * now exists may simply be beaten. Neither is a reason to throw the method
- * away — only a reason to stop treating it as settled.
+ * Any difference counts, in either direction: a method that used something
+ * since taken away is actively wrong, and a method written without something
+ * that now exists may simply be beaten. Neither is a reason to throw the
+ * method away — only a reason to stop treating it as settled.
  */
-export function sameCapabilities(recipe: Recipe, tools: string[] | undefined): boolean {
-  if (!recipe.tools) return false;
-  const now = [...(tools ?? [])].sort();
-  return recipe.tools.length === now.length && recipe.tools.every((t, i) => t === now[i]);
+export function sameCapabilities(recipe: Recipe, capabilities: string[] | undefined): boolean {
+  return sameSurface(recipe.capabilities, capabilities);
 }
 
 export function findRecipe(
   recipes: Recipe[],
   prompt: string,
-  tools?: string[],
+  capabilities?: string[],
 ): { recipe: Recipe; exact: boolean; strong: boolean } | null {
   const key = normalise(prompt);
   const exact = recipes.find((r) => r.key === key);
-  if (exact) return { recipe: exact, exact: true, strong: sameCapabilities(exact, tools) };
+  if (exact) return { recipe: exact, exact: true, strong: sameCapabilities(exact, capabilities) };
 
   const wanted = terms(prompt);
   const corpus = recipes.map((r) => r.terms);
@@ -248,7 +246,7 @@ export function findRecipe(
   return {
     recipe: best,
     exact: false,
-    strong: bestScore >= SIMILAR_ENOUGH && sameCapabilities(best, tools),
+    strong: bestScore >= SIMILAR_ENOUGH && sameCapabilities(best, capabilities),
   };
 }
 
@@ -264,19 +262,19 @@ export function rememberRecipe(
     approach: string;
     answer?: string;
     at: number;
-    tools?: string[];
+    capabilities?: string[];
   },
 ): Recipe[] {
   const key = normalise(entry.prompt);
   // Recorded on update as well as on create, so a recipe re-learned under new
   // capabilities stops being demoted after one full-length run rather than for
   // ever. It is also how every recipe written before this field heals itself.
-  const tools = [...(entry.tools ?? [])].sort();
+  const capabilities = entry.capabilities ? [...entry.capabilities].sort() : undefined;
   const existing = recipes.find((r) => r.key === key);
   if (existing) {
     existing.approach = entry.approach;
     existing.role = entry.role;
-    existing.tools = tools;
+    existing.capabilities = capabilities;
     if (entry.answer !== undefined) existing.answer = entry.answer;
     return recipes;
   }
@@ -287,7 +285,7 @@ export function rememberRecipe(
       terms: terms(entry.prompt),
       role: entry.role,
       approach: entry.approach,
-      tools,
+      ...(capabilities ? { capabilities } : {}),
       ...(entry.answer !== undefined ? { answer: entry.answer } : {}),
       hits: 0,
       learnedAt: entry.at,

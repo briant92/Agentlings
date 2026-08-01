@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
+  Agentling,
   AgentlingProfile,
   CrewMember,
   Job,
@@ -23,6 +24,7 @@ import {
   TICK_MS,
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
+import { capabilityTokens } from './capability';
 import { describe, readConnections } from './connections';
 import {
   enabledNames,
@@ -35,7 +37,7 @@ import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { ClaudeAgentExecutor, COMPILE_TURNS, RECIPE_TURNS, turnsFor } from './executors/claude';
+import { ClaudeAgentExecutor, COMPILE_TURNS, RECIPE_TURNS, turnsFor, mapTools } from './executors/claude';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -204,6 +206,7 @@ function makeLevel(dir: string): LevelRuntime {
     dir,
     () => readKnowledge(dir),
     () => readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web') ?? null,
+    surfaceFor,
     useClaude
       ? new ClaudeAgentExecutor(
           registry,
@@ -320,6 +323,41 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
 }
 
 const app = new Hono();
+
+/**
+ * Libraries a sandbox can resolve, read once. A sandbox lives inside the
+ * project, so Node walks up to the root's node_modules (D-031) — which means
+ * installing one changes what every job can do, silently, and a method written
+ * before it should stop being treated as settled. Measured then: an agentling
+ * that did not know `pdf-lib` existed hand-assembled PDF bytes over several
+ * turns, and succeeded, which is what made it expensive rather than wrong.
+ */
+const LIBRARIES = (() => {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+    return Object.keys(pkg.dependencies ?? {}).sort();
+  } catch {
+    return [];
+  }
+})();
+
+/**
+ * Everything a run of this job could do, in one list.
+ *
+ * The single place that decides what counts as a capability, so the router,
+ * the recipe it banks and the one it matches against can never disagree.
+ */
+function surfaceFor(job: Job, agentling?: Agentling): string[] {
+  const role = agentling ? registry.get(agentling.role) : undefined;
+  return capabilityTokens({
+    connections: job.tools,
+    tools: mapTools(role?.tools ?? []),
+    skills: (role?.skills ?? []).filter((s) => existsSync(path.join(SKILLS_DIR, s, 'SKILL.md'))),
+    libraries: LIBRARIES,
+  });
+}
 
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {

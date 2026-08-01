@@ -116,6 +116,9 @@ describe('RoutedExecutor', () => {
       levelDir,
       () => over.knowledge ?? KNOWLEDGE,
       () => over.web ?? null,
+      // The fixtures declare `capabilities: []`, so a run here counts as the
+      // same surface and the leash behaviour under test is unchanged.
+      () => [],
       fallback,
     );
   }
@@ -168,7 +171,7 @@ describe('RoutedExecutor', () => {
           approach: 'just answer it',
           answer: 'red, green, blue',
           hits: 2,
-          tools: [],
+          capabilities: [],
           learnedAt: 1,
           ...over,
         },
@@ -214,7 +217,7 @@ describe('RoutedExecutor', () => {
           role: 'worker',
           approach: 'read the module, then write the test beside it',
           hits: 0,
-          tools: [],
+          capabilities: [],
           learnedAt: 1,
         },
       ]);
@@ -342,7 +345,7 @@ describe('RoutedExecutor', () => {
           role: 'worker',
           approach: 'the old way',
           hits: 0,
-          tools: [],
+          capabilities: [],
           learnedAt: 1,
         },
       ]);
@@ -565,7 +568,7 @@ describe('RoutedExecutor', () => {
           approach: 'read the module, then write the test beside it',
           hits: 0,
           successes: 0,
-          tools: [],
+          capabilities: [],
           learnedAt: 1,
         },
       ]);
@@ -662,7 +665,7 @@ describe('RoutedExecutor', () => {
           approach: 'read the module, then write the test beside it',
           hits: successes,
           successes,
-          tools: [],
+          capabilities: [],
           learnedAt: 1,
         },
       ]);

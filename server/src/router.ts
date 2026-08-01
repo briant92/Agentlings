@@ -30,6 +30,9 @@ export interface RouterContext {
   tools?: ToolManifest[];
   /** Set when the job opted into web access. */
   canFetch: boolean;
+  /** What this run can do, so a method found under a different surface
+   *  hands over its hint without also shortening the leash. */
+  capabilities?: string[];
 }
 
 /** "What did we learn about X" — a question about the past, not new work. */
@@ -133,7 +136,7 @@ export function decide(job: Job, context: RouterContext): Decision {
 
   // The job's own connections, so a method found without them cannot shorten
   // a run that now has them — the crew has to be able to notice it has grown.
-  const found = findRecipe(context.recipes, prompt, job.tools);
+  const found = findRecipe(context.recipes, prompt, context.capabilities);
   if (found) {
     // Only an exact repeat with no outside inputs may reuse an answer: the
     // same words with a different repository is a different question.

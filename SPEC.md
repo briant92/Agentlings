@@ -8,6 +8,12 @@ and carries the results to the exit for your review.
 Decided 2026-07-30 through a design interview; this file is the product
 source of truth. Update it when scope changes.
 
+`DECISIONS.md` is the companion record: this file says what the product is
+and how it behaves, that one says why each choice was made and what
+measurement settled it. Its entries are numbered (`D-017`) and the IDs are
+stable, so cite one rather than a title or a line number. Reasoning that
+runs longer than a sentence belongs there, not here.
+
 ## Product decisions
 
 | Question | Decision |
@@ -215,6 +221,15 @@ under [State on disk](#state-on-disk)).
   memory intact.
 
 ## Milestones
+
+The summaries below are the shape of each milestone; the account of what was
+tried, measured and rejected is in `DECISIONS.md`:
+
+- M1 executor → D-007 · M3 non-expert setup → D-011 · levels → D-013
+- M5.0 meter and cap → D-022 · M5.1 connections → D-005 · M5.3 router → D-015
+- M5.4 recipes → D-019, D-020, D-023
+- M5.5 billing → D-012, D-016–D-018, D-026–D-027, D-029
+- M5.6 compiled tools → D-021, D-024, D-025
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

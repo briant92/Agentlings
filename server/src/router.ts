@@ -131,7 +131,9 @@ export function decide(job: Job, context: RouterContext): Decision {
     };
   }
 
-  const found = findRecipe(context.recipes, prompt);
+  // The job's own connections, so a method found without them cannot shorten
+  // a run that now has them — the crew has to be able to notice it has grown.
+  const found = findRecipe(context.recipes, prompt, job.tools);
   if (found) {
     // Only an exact repeat with no outside inputs may reuse an answer: the
     // same words with a different repository is a different question.

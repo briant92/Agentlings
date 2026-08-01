@@ -45,6 +45,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-033 — 2026-08-01 — The ellipsis the model believed, and the answer with nowhere to go](#d-033--2026-08-01--the-ellipsis-the-model-believed-and-the-answer-with-nowhere-to-go)
 - [D-034 — 2026-08-01 — A browser that reads and cannot act](#d-034--2026-08-01--a-browser-that-reads-and-cannot-act)
 - [D-035 — 2026-08-01 — The browser measured, and the case for it is weaker than the case made for it](#d-035--2026-08-01--the-browser-measured-and-the-case-for-it-is-weaker-than-the-case-made-for-it)
+- [D-036 — 2026-08-01 — A method is only as good as what was available when it was found](#d-036--2026-08-01--a-method-is-only-as-good-as-what-was-available-when-it-was-found)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1377,3 +1378,51 @@ One process note. The first measurement script polled for 300s and reported
 harness gave up, not the app. The runs cost real money and produced real
 output while the experiment recorded nothing, which is a reminder that an
 instrument shorter than the thing it measures manufactures its own result.
+
+## D-036 — 2026-08-01 — A method is only as good as what was available when it was found
+
+Fixing what D-035 measured: a job solved with `fetch_page` banked a recipe, and
+the next run of the same shape — with a browser newly switched on — matched
+that recipe, took the five-turn leash, followed the method and never tried the
+browser. Every part worked as designed. The emergent result was that a crew
+which has learned a method cannot notice it has grown.
+
+A recipe now records the connections its run could reach, and a mismatch with
+what the job can reach today **demotes a strong match to a weak one** — the
+method is still handed over, the leash is simply not cut. That is D-020's
+asymmetry applied to a second axis: a stale method given to a full-length run
+costs one turn it can ignore, while the same method with the leash cut costs
+the whole run, and here it also costs the chance to find the better way. Any
+difference counts, in either direction. A method that used a connection since
+switched off is actively wrong; one written without a connection that now
+exists may simply be beaten.
+
+Deliberately **not** touched: the `answer` tier. It looks like the same bug in
+its strongest form — zero turns, no exploration — but the router already checks
+that the current job has no repository and no web before replaying, so that
+path is capability-aware already. Fixing it twice would be the "collapse two
+notions that only sound alike" error this log records.
+
+**The backfill is the interesting half.** Absent `tools` means unknown
+provenance, treated as changed, which is safe and also expensive: without a
+backfill every recipe on file pays for one full-length run before healing. So
+`scripts/backfill-recipe-tools.ts` stamps a recipe only where a job record
+still on disk normalises to that exact key — an identification, since a
+recipe's key *is* `normalise(prompt)`, not a similarity match. Of 15 recipes it
+stamped 9, left 6 orphaned where the job records are gone, and left **1
+ambiguous** — which is the reddit recipe that caused all of this, because run A
+banked it under `web` and run B under `browser,web`. Two runs, one key,
+genuinely contested provenance. The ambiguity rule protected exactly the case
+that motivated the change, and leaving it demoted is the right answer rather
+than a gap.
+
+Verified on the real file afterwards: a recipe banked under `web` stays strong
+against `web` and goes weak against `web + browser`, with its method still
+attached; the contested one stays weak whatever it is asked.
+
+What this does not fix is the general shape, which is worth stating so nobody
+believes otherwise. Connections are one axis of capability. A new role, a new
+skill, a document library, a raised turn cap or a better model all change what
+a good method is, and none of them demotes anything. The honest claim is that
+the axis which actually bit has been closed, not that recipes now track
+capability.

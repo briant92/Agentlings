@@ -52,6 +52,7 @@ describe('findRecipe', () => {
       role: 'analyst',
       approach: 'sum column D',
       hits: 0,
+      tools: [],
       learnedAt: 1,
     },
   ];
@@ -154,6 +155,7 @@ describe('matching strength', () => {
       role: 'worker',
       approach: 'read the module, then write the test beside it',
       hits: 0,
+      tools: [],
       learnedAt: 1,
     },
   ];
@@ -174,6 +176,66 @@ describe('matching strength', () => {
 
   it('finds nothing at all for unrelated work', () => {
     expect(findRecipe(recipes, 'book a table for dinner')).toBeNull();
+  });
+});
+
+/**
+ * Measured on 2026-08-01 and the reason this exists: a job solved with
+ * `fetch_page` banked a recipe; the next run of the same shape, with a browser
+ * newly switched on, matched that recipe, took the five-turn leash, followed
+ * the method and never tried the browser. Every part worked as designed, and
+ * the crew could not notice it had grown.
+ */
+describe('a method is only as good as what was available when it was found', () => {
+  const base = {
+    key: 'read the reddit programming page',
+    terms: terms('read the reddit programming page'),
+    role: 'scout',
+    approach: 'fetch the old.reddit mirror, it is server-rendered',
+    hits: 3,
+    learnedAt: 1,
+  };
+  const prompt = 'Read the reddit programming page';
+
+  it('shortens the run when the crew can reach exactly what it could before', () => {
+    const found = findRecipe([{ ...base, tools: ['web'] }], prompt, ['web']);
+    expect(found?.strong).toBe(true);
+  });
+
+  it('stops shortening it the moment a new capability appears', () => {
+    const found = findRecipe([{ ...base, tools: ['web'] }], prompt, ['browser', 'web']);
+    expect(found?.strong).toBe(false);
+    // The method is still handed over — demoted, not discarded.
+    expect(found?.recipe.approach).toContain('old.reddit');
+  });
+
+  it('stops too when a capability it relied on is taken away', () => {
+    expect(findRecipe([{ ...base, tools: ['web'] }], prompt, [])?.strong).toBe(false);
+  });
+
+  it('does not care what order the connections arrive in', () => {
+    const r = { ...base, tools: ['browser', 'web'] };
+    expect(findRecipe([r], prompt, ['web', 'browser'])?.strong).toBe(true);
+  });
+
+  // Absent means written before this was recorded. Unknown provenance is
+  // treated as changed, so every existing recipe is demoted exactly once and
+  // then re-banked with its capabilities by the run that follows.
+  it('treats a recipe of unknown provenance as changed', () => {
+    expect(findRecipe([base], prompt, ['web'])?.strong).toBe(false);
+    expect(findRecipe([base], prompt, [])?.strong).toBe(false);
+  });
+
+  it('heals itself: re-learning records what the run could reach', () => {
+    const relearned = rememberRecipe([{ ...base }], {
+      prompt,
+      role: 'scout',
+      approach: 'use the browser, the mirror is gone',
+      at: 2,
+      tools: ['web', 'browser'],
+    });
+    expect(relearned[0].tools).toEqual(['browser', 'web']);
+    expect(findRecipe(relearned, prompt, ['browser', 'web'])?.strong).toBe(true);
   });
 });
 

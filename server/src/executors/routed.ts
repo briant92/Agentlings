@@ -291,6 +291,7 @@ export class RoutedExecutor implements Executor {
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
         at: Date.now(),
+        tools: job.tools,
       });
       onProgress?.('noted how to do this next time');
     }

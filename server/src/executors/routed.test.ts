@@ -168,6 +168,7 @@ describe('RoutedExecutor', () => {
           approach: 'just answer it',
           answer: 'red, green, blue',
           hits: 2,
+          tools: [],
           learnedAt: 1,
           ...over,
         },
@@ -213,6 +214,7 @@ describe('RoutedExecutor', () => {
           role: 'worker',
           approach: 'read the module, then write the test beside it',
           hits: 0,
+          tools: [],
           learnedAt: 1,
         },
       ]);
@@ -340,6 +342,7 @@ describe('RoutedExecutor', () => {
           role: 'worker',
           approach: 'the old way',
           hits: 0,
+          tools: [],
           learnedAt: 1,
         },
       ]);
@@ -562,6 +565,7 @@ describe('RoutedExecutor', () => {
           approach: 'read the module, then write the test beside it',
           hits: 0,
           successes: 0,
+          tools: [],
           learnedAt: 1,
         },
       ]);
@@ -658,6 +662,7 @@ describe('RoutedExecutor', () => {
           approach: 'read the module, then write the test beside it',
           hits: successes,
           successes,
+          tools: [],
           learnedAt: 1,
         },
       ]);

@@ -92,6 +92,7 @@ describe('decide', () => {
     approach: 'Open the sheet, sum column D, ignore blank rows.',
     answer: 'The invoices total £48,201.',
     hits: 2,
+    tools: [],
     learnedAt: 1,
   };
 
@@ -145,6 +146,7 @@ describe('a recipe that only half fits', () => {
     role: 'worker',
     approach: 'read the module, then write the test beside it',
     hits: 0,
+    tools: [],
     learnedAt: 1,
   };
 

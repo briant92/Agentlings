@@ -17,7 +17,8 @@ Every capability carries a status:
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
 
-Written 2026-08-01 against `e5c80c9`.
+Written 2026-08-01 against `e5c80c9`; §8's figures regenerate with
+`npm run ledger:report`, and §15 is the list of what is not here yet.
 
 ---
 
@@ -30,8 +31,8 @@ Written 2026-08-01 against `e5c80c9`.
 | **What it starts with** | A name, a colour, a role, an empty memory file, and whatever its level already knows |
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
 | **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
-| **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §9 |
-| **What one job costs** | Free (three of five tiers), ~13c on a leash, ~50c for a full session — quoted before it runs and never billed above the quote |
+| **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §10 |
+| **What one job costs** | Free on three of five tiers, 19c on a leash, 39c for a full session — measured, not quoted from memory (§8) |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
@@ -127,7 +128,7 @@ preview exists to ask.
 | Work on your code | `git clone --local --no-hardlinks` into `sandbox/repo`; every change captured as `DIFF.patch` after the session |
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job |
-| Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§8) |
+| Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§9) |
 | Report | `RESULT.md`: outcome first, evidence second |
 
 The document libraries are named in the system prompt with their exact call
@@ -170,7 +171,7 @@ Twelve that act are deliberately absent — `click`, `type`, `fill_form`,
 `press_key`, `select_option`, `drag`, `drop`, `file_upload`, `handle_dialog`,
 `evaluate`, `run_code_unsafe`, `network_request`. `catalog.test.ts` asserts
 those names against the shipped catalog, so the boundary is a test rather than
-a description of one. Why, in full, is §10.
+a description of one. Why, in full, is §11.
 
 It ships **off**. Signing in, when you want it, works by re-using a session you
 made yourself: log in once in a real browser, save the storage state, point
@@ -254,7 +255,7 @@ server is declared with `name`, `label`, `transport: "stdio"`, `command`,
 
 **Not built:** any credentialed connection at all. Not Gmail, not a calendar,
 not a ticket tracker, not a database. The registry would take one today; none
-has been added, because adding one is a decision about §10 rather than a line
+has been added, because adding one is a decision about §11 rather than a line
 in a list.
 
 **Never:** borrowing claude.ai or Claude Code connector auth. The app owns its
@@ -347,8 +348,11 @@ without the agent is an answer nobody checked.
 | `answer` | A question about what this level already knows, answered from `KNOWLEDGE.md`; or an exact repeat with a stored answer | free | Plain code |
 | `fetch` | A bare "read this page" — addresses plus words that only mean *fetch* | free | Plain code |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
-| `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | ~13c | A short session |
-| `agent` | Everything else. A weak match (≥ 0.3) still lends its method | ~50c | A full session |
+| `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | 19c | A short session |
+| `agent` | Everything else. A weak match (≥ 0.3) still lends its method | 39c | A full session |
+
+Those two figures are measured over 79 jobs, not estimated — §8 has the
+workings and the command that regenerates them.
 
 Guards that keep the free tiers honest:
 
@@ -367,7 +371,135 @@ Guards that keep the free tiers honest:
 
 ---
 
-## 8. How an agentling learns
+## 8. What costs money — Live
+
+Every figure in this section is generated from `.agentlings/ledger.jsonl`:
+
+```bash
+npm run ledger:report
+```
+
+Run it rather than trusting what is printed below. The numbers here were taken
+on **2026-08-01, over 79 jobs spanning 2026-07-30 to 2026-08-01** — and the
+reason the command exists is that `SPEC.md` carried "~13c / ~50c" for the two
+paid tiers until that day, by which point the real figures were 19.2c and
+39.2c. A cost written into prose is a cost nobody recomputes.
+
+### The three classes
+
+**Free — no model runs at all.** These cost nothing however often you use them.
+
+| Process | Why it is free |
+|---|---|
+| Intake: matching, titling, choosing who takes it | `match.ts` is BM25 plus a hand-written concept map. Local, deterministic, no auth, no network |
+| The pre-flight questions | `clarify.ts`, deterministic rules; never asked on free work |
+| The quote itself | A lookup over the ledger, not a model |
+| `answer` tier | Recall from `KNOWLEDGE.md`, or an exact repeat with a stored answer |
+| `fetch` tier | Pages pulled by plain code before any session starts |
+| `tool` tier | Two plain-node scripts, no dependencies, no network |
+| Library sync, search, install | GitHub's API, unauthenticated unless `GITHUB_TOKEN` is set |
+| The world, the sim, the sockets | Deterministic by design — no LLM call decides movement |
+
+**Paid — a model runs.**
+
+| Process | Measured | Notes |
+|---|---|---|
+| `oneshot` — a recipe on a 5-turn leash | **19.2c** mean, 47c max | 4.5c per turn with a repo, 7.9c without |
+| `agent` — a full session | **39.2c** mean, $1.32 max | 5.8c per turn with a repo, 2.8c without |
+| The close-out write-up | ~2c | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died |
+| A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. Four so far |
+| The optional refine tier on intake | fractions of a cent | One Haiku turn, no tools. Every failure path falls back to the local answer |
+
+**Free to run, but it puts tokens in a paid session.** The trap worth naming:
+these charge nothing themselves and are not free.
+
+| Process | What it really costs |
+|---|---|
+| `fetch_page` inside a session | The trimmed text is input tokens on every subsequent turn. Trimming to 12,000 chars is what keeps it small — a Wikipedia article is 573 KB raw, ~3k tokens delivered |
+| The read-only browser | Measured at 0.65c/turn in D-035 — cheap, but every snapshot is tokens |
+| A repo clone | The largest single driver of what a turn costs: 5.8c against 2.8c for the same tier without one |
+| Attachments | A large document eats context the turn budget was priced without. The quote does not yet know they exist |
+
+### What you are actually charged
+
+Three rules, all enforced in `priceFor` rather than promised in prose:
+
+- **Never above the quote.** The charge is `min(cost, quoted)`.
+- **Failed work is free.** The app absorbs it.
+- **A promise of free that fails stays free.** If a compiled tool claimed a job,
+  could not prove its output, and a session had to do it, the run is absorbed.
+
+Over those 79 jobs that came to: **spent $18.51, chargeable $6.60, absorbed
+$10.88.** Fifty-nine per cent of all money spent was on work that failed and
+was never billed — driven by the one-shot tier, which is 5 done against 21
+failed. That ratio is a fact about a short leash, not a fault: a leashed run
+trades the write-up for a much cheaper run, and `partial` exists because
+calling the result a failure hides work that is ready to promote.
+
+Four rows are marked `costUnknown`: a killed session never reaches the message
+the SDK reports cost on, so its spend is real and unmeasurable. Read the totals
+as *at least*.
+
+### Does it get cheaper? Two step-downs, not a curve
+
+This is the part worth reading carefully, because the obvious metric cannot
+show the effect.
+
+| | Jobs | Free | Spent | Mean per job |
+|---|---|---|---|---|
+| First half | 39 | 18% | $6.45 | 16.5c |
+| Second half | 40 | 30% | $12.06 | **30.1c** |
+
+The free share is climbing exactly as designed and the mean cost per job nearly
+doubled. Both are true: the cheap tiers took more of the easy work while the
+paid half absorbed four compiles at about $1 each. **Mean cost per job is
+dominated by novel work and will never show learning**, so it is the wrong
+number to watch.
+
+Nor does a recipe make one job cheaper by degrees. Its runs are flat —
+
+```
+13 runs  "in slugify.js, make slugify robust…"   9.4c → 11.1c → 14.8c → … → 13.2c
+ 4 runs  "write exports.md at the repo root…"    46.6c → 28.1c → 46.8c → 37.8c
+```
+
+— because a recipe cuts the price **once**, by moving the job down a tier, and
+then holds it there. There are exactly two step-downs, and both are discrete:
+
+| Step | Fires when | Measured |
+|---|---|---|
+| session → one-shot | A recipe matches strongly | 39.2c → 19.2c, **51% off** |
+| one-shot → tool | Three deliveries, then you approve a compile | 19.2c → free, **100% off** |
+
+So the number that tracks the intent is **what share of work has descended the
+ladder, and what the descent avoided** — not any average.
+
+**Avoided so far: about $8.13, against $18.51 actually spent.** 25 one-shot
+runs saved ~$5.00 and 8 free runs saved ~$3.13, pricing each at what a session
+would have cost. It is a counterfactual and the report says so: the assumption
+is that each would otherwise have run as an ordinary session, which is what the
+router's fall-through would have made it.
+
+**The honest caveat, which applies to this whole section.** 79 jobs over two
+days is a small and mostly synthetic sample — nearly every one was queued to
+exercise a mechanism rather than to get work done, and there has been about one
+genuine repeat. The machinery for the fourth tier was built ahead of the demand
+deliberately and with that known (D-021). These figures describe a test bench,
+not a workload.
+
+### One known gap in the arithmetic
+
+`closeOutUsd` is set on the job meter and declared in `JobMeter`, but it is
+never copied into the ledger row and `LedgerEntry` has no field for it. So
+`costPerTurn` divides *session plus write-up* across the session's own turns,
+inflating every per-turn rate by roughly a cent and biasing turn budgets
+slightly **down**. `SPEC.md` M5.5 currently claims the separation is in
+effect; it is not. Logged as D-039, and the 79 existing rows can never be
+backfilled with it.
+
+---
+
+## 9. How an agentling learns
 
 Four things accumulate, at three different scopes.
 
@@ -475,7 +607,7 @@ whatever happened to be done yesterday.
 
 ---
 
-## 9. Boundaries
+## 10. Boundaries
 
 ### The sandbox — Partial, and this is the one to read carefully
 
@@ -517,7 +649,7 @@ movement.
 
 ---
 
-## 10. Representation and privacy — the honest section
+## 11. Representation and privacy — the honest section
 
 ### Acting on your behalf — Not built, deliberately
 
@@ -574,7 +706,7 @@ What is **not built**, and should not be assumed:
   Levels do not share sandboxes, but nothing stops you pointing two levels at
   the same repository.
 - **No filesystem isolation.** The sandbox is a working directory and an
-  instruction, not a jail — see §9. A session with `Bash` runs as you do.
+  instruction, not a jail — see §10. A session with `Bash` runs as you do.
 
 The honest one-line summary: **privacy here is the sandbox, the localhost
 boundary and the absence of any credential the app holds itself — not a data
@@ -582,7 +714,7 @@ control plane.**
 
 ---
 
-## 11. The loop
+## 12. The loop
 
 ### One job, end to end
 
@@ -661,7 +793,7 @@ untouched until you press Approve.
 
 ---
 
-## 12. Reference — every number that binds
+## 13. Reference — every number that binds
 
 ### Turns
 
@@ -742,7 +874,7 @@ without an API key.
 
 ---
 
-## 13. What an agentling is not
+## 14. What an agentling is not
 
 - **Not autonomous.** It takes one job, does it, and stops. There is no
   standing instruction, no schedule, no self-started work.
@@ -753,3 +885,115 @@ without an API key.
 - **Not shared.** No multi-user, no auth, no hosting — localhost only.
 - **Not an actor.** It reads and it produces. Everything that reaches the real
   world goes through you.
+
+---
+
+## 15. Capability roadmap
+
+Everything §14 says it is not, as a list you can tick. Each row names what it
+unlocks, what it needs, and what it is **blocked on** — because the axes are
+not alike: some are wiring, and some are a decision nobody has taken yet. A row
+blocked on a decision cannot be picked up by doing the work.
+
+Ticking a row means the capability is **Live** in the sections above, and the
+section is the record — this list is the plan, not the evidence.
+
+**On naming servers.** Rows below name a *capability*, not an npm package. The
+one connection this project wired had its tool list established by speaking
+JSON-RPC to the server rather than trusting its README, because a wrong tool
+name grants nothing and does so silently (D-034). Do that at wire-up; do not
+paste a package name from here into a catalog.
+
+### Connections — the registry is built and empty
+
+`catalog/connections.json` takes any stdio MCP server today: `command`, `args`,
+a `tools` allowlist, and `secrets` referenced by env-var name. Nothing
+credentialed ships, by decision (D-005). Each of these is wiring plus one
+judgement — *which of its tools are reading, and which are acting*.
+
+- [x] **Read a web page** — built in, on by default, trimmed to 12k chars
+- [x] **Read a page in a real browser** — Playwright MCP, 8 reading tools, ships off
+- [ ] **A code host** (issues, PRs, CI status) — unlocks "what broke on main",
+      "summarise this PR". Needs a token in `.env` and a read-only tool list.
+      *Blocked on: nothing. This is the cheapest first credentialed connection.*
+- [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
+      own material instead of the level's `KNOWLEDGE.md` alone.
+      *Blocked on: nothing technical; decide what the crew may read.*
+- [ ] **A database, read-only** — unlocks the `analyst` role against real data
+      rather than files. *Blocked on: a read-only credential actually existing.*
+- [ ] **A task tracker** — unlocks "what am I meant to be doing".
+      *Blocked on: reading is easy, and the useful half is writing — which is
+      §11's question, not this one.*
+- [ ] **Filesystem beyond the sandbox** — unlocks working across repositories.
+      *Blocked on: §10. The sandbox is already only an instruction; granting a
+      tool that formalises leaving it deserves the boundary decision first.*
+- [ ] **Email / calendar / chat, reading** — unlocks context the crew cannot
+      otherwise see. *Blocked on: nothing technical. Note that reading a mailbox
+      moves personal data into a session, which §11 says there is no control
+      plane for.*
+
+### Acting, not reading — one decision, not seven tasks
+
+Every row here is the same blocker. The safety model is sandbox → review →
+promote, and an action on the live internet has no promote step (D-034).
+Pausing a run to ask was the obvious mitigation and was refused: it needs a
+`waiting` job status and a runner holding stdin (D-030).
+
+- [ ] **Click, type, fill a form** — the twelve Playwright tools held back
+- [ ] **Send anything** — mail, message, comment, PR
+- [ ] **Write to an external system** — tracker, database, calendar
+- [ ] **Represent you under authorisation** — the general case of all three
+
+*Blocked on: deciding what review looks like for an irreversible act. Options
+that exist and have not been chosen between: a pre-approved allowlist of
+actions; a dry-run-then-confirm turn; a `waiting` status with the run parked.
+Until one is chosen, none of these rows is a task.*
+
+### Runtime and executor
+
+- [x] Whole-folder skill installs — 200 files, 2 MB, same commit as `SKILL.md`
+- [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
+      editing without destroying formatting does not, because Node has no good
+      round-tripper. *Blocked on: a second runtime. Python would do it and was
+      turned down — not installed, and the obvious skills are Proprietary while
+      `skills/` is committed. Revisit when editing user files is real work.*
+- [ ] **Compiled tools that use the document libraries** — a tool is "plain
+      node, no dependencies" on purpose, so no tool can produce a PDF.
+      *Blocked on: reopening the fourth-tier contract, which is a decision.*
+- [ ] **A job that waits for a specialist, or times out to anyone free** — one
+      scribe currently serialises every document job while others idle.
+      *Blocked on: choosing which behaviour is right; both are defensible.*
+
+### Product shape (M6)
+
+- [ ] **Goal decomposition** — one sentence becomes several jobs
+- [ ] **Job pipelines** — output of one feeds the next
+- [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
+- [ ] **Blocker agentlings** — a paused queue you can see
+
+*Blocked on: nothing but sequencing. These are the metaphor deepening, and they
+are worth less than a single credentialed connection until the crew is doing
+real work.*
+
+### Cost machinery
+
+- [ ] **`closeOutUsd` into the ledger** — §8's known gap. Every per-turn rate
+      is inflated by about a cent. *Blocked on: nothing. Small, and it moves
+      every future turn budget, so it deserves its own measured pass (D-039).*
+- [ ] **The quote knowing about attachments** — a large document eats context
+      the budget was priced without. *Blocked on: enough rows to measure it.*
+- [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the
+      ledger carries turns and cost, so the comparison comes free from real
+      traffic. *Blocked on: real traffic. A paired measurement now would land at
+      n=2, which is the small-sample error this project keeps catching.*
+- [ ] **A compile priced as its own kind of work** — measured at an 8% gap over
+      four runs and dismissed as noise. `compile` is recorded on the ledger and
+      deliberately not read. *Blocked on: more compiles, not more thought.*
+
+### The one that is not on this list
+
+Charging anyone. The billing spine is built for pass-through and the ledger
+separates cost from price from the first entry, because a ledger cannot be
+reconstructed retroactively (D-012). But there is no invoice, no payment, and
+no second user — and Anthropic's terms on reselling model access are an open
+question that comes before any of it.

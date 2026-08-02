@@ -48,6 +48,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-036 — 2026-08-01 — A method is only as good as what was available when it was found](#d-036--2026-08-01--a-method-is-only-as-good-as-what-was-available-when-it-was-found)
 - [D-037 — 2026-08-01 — The rest of the axes, as one surface rather than five comparisons](#d-037--2026-08-01--the-rest-of-the-axes-as-one-surface-rather-than-five-comparisons)
 - [D-038 — 2026-08-01 — CLAUDE.md trimmed to what the harness does not already do](#d-038--2026-08-01--claudemd-trimmed-to-what-the-harness-does-not-already-do)
+- [D-039 — 2026-08-01 — The close-out cost never reached the ledger](#d-039--2026-08-01--the-close-out-cost-never-reached-the-ledger)
 
 ## By theme
 
@@ -67,6 +68,7 @@ entry updates one file rather than two.
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033
 - **The project's own notes** — D-002, D-038
+- **Cost, continued** — D-039
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1575,3 +1577,39 @@ index living in this file, and the reasoning about which behavioural clauses
 were doing work. That reasoning is now a record of what was tried rather than
 of what is in force — kept, because the next person to look at the file's
 length will have the same idea.
+
+## D-039 — 2026-08-01 — The close-out cost never reached the ledger
+
+Found while building `scripts/ledger-report.mjs`: no row in 79 has a
+`closeOutUsd`, because `LedgerEntry` has no such field. The meter does —
+`claude.ts` sets it, `JobMeter` declares it, the terminal card shows it — but
+the row builder at `index.ts:245` copies `recipeKey`, `compile`, `turns`,
+`turnsAllowed`, `costUnknown` and `model` across and not that one.
+
+**So `SPEC.md` M5.5 states something untrue.** It says `closeOutUsd` "is part
+of `costUsd` but kept separate, so the per-turn rate prices the session rather
+than the session plus a fixed errand". The separation exists in memory and dies
+at the ledger, so `costPerTurn` divides session-plus-write-up across the
+session's own turns.
+
+The error is small and one-directional: a write-up is about 2c against a 39.2c
+session mean, so every rate is inflated by roughly a cent, and since the rate
+divides a quote into turns, the bias is toward granting **fewer** turns than
+the money would buy. Nothing is over-billed — `priceFor` caps that
+independently — which is why it has been invisible.
+
+**This is D-033 recurring in the same shape**, and worth saying plainly: a
+field can be threaded through a type, a spec and a route and still be dropped
+by the one function that builds the object. The hard-won rule was written from
+that exact failure and did not prevent this one, because the rule tells you the
+shape of the bug and not where to look for it. What actually found it was
+computing something from the data and noticing a column was missing — which is
+the argument for the report script existing at all.
+
+**Not fixed here, deliberately.** It changes every future turn budget, so it
+wants its own pass with a before-and-after on real rows rather than riding
+along with a documentation commit. Two things are already true and will not
+improve by waiting: the 79 existing rows can never be backfilled, since the
+split was never written down; and a fix only starts paying from the next run.
+Recorded in `AGENTLING.md` §8 as a known gap and in §15 as a task blocked on
+nothing.

@@ -1027,8 +1027,26 @@ Until one is chosen, none of these rows is a task.*
       turned down — not installed, and the obvious skills are Proprietary while
       `skills/` is committed. Revisit when editing user files is real work.*
 - [ ] **Compiled tools that use the document libraries** — a tool is "plain
-      node, no dependencies" on purpose, so no tool can produce a PDF.
-      *Blocked on: reopening the fourth-tier contract, which is a decision.*
+      node, no dependencies" on purpose, so no tool can produce a PDF. The
+      libraries already resolve from the project root and need no network, so
+      this half is close to free: the risk is a generated script reaching for
+      something heavy, not a script reaching outside. *Blocked on: reopening
+      the fourth-tier contract, which is a decision.*
+- [ ] **Compiled tools that can reach a connection** — the one that would make
+      "list the open issues and write them up" a genuinely free job, since the
+      fetch is already free and only the reading is paid for. Scoped
+      2026-08-01, and the framing matters: **not** "give tools the network".
+      A tool runs with no model and no review, chosen by the router on words
+      and shape alone, so arbitrary outbound calls from an unreviewed generated
+      script is a new risk class. The safe version is that a tool gets the same
+      gated doors a session gets — `/internal/fetch` and `/internal/github`,
+      already allowlisted, already trimmed, already refusing anything the
+      catalog does not grant — and nothing else. The registry stays the only
+      door outside, for tools as well as sessions. That in turn needs a tool
+      manifest to record which connections it was compiled against, and the
+      router to refuse it when those are switched off, which is the capability
+      surface recipes already carry (D-036, D-037). *Blocked on: a decision
+      that the doors, not the network, are what a tool may have.*
 - [ ] **A job that waits for a specialist, or times out to anyone free** — one
       scribe currently serialises every document job while others idle.
       *Blocked on: choosing which behaviour is right; both are defensible.*

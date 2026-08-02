@@ -223,8 +223,35 @@ export class JobQueue {
     return dir;
   }
 
+  /**
+   * Whether the run left anything for the user — the one notion of delivery,
+   * asked on both the success and the failure path.
+   *
+   * It was only ever asked on failure. A session that exits cleanly was
+   * assumed to have delivered, and one that ends by explaining it *cannot* do
+   * the job exits cleanly too: job 149620b5 said "I need write permission to
+   * complete this job", produced an empty sandbox, and was filed `done` and
+   * charged 4.7c (D-041).
+   */
+  private delivered(job: Job, sandbox: string): boolean {
+    // A compile is judged only on its tool: half of one is not a delivery,
+    // `installTool` refuses it, and its stray working files must not be
+    // mistaken for output.
+    if (job.compile) return deliveredTool(sandbox);
+    return existsSync(patchFile(sandbox)) || deliveredFiles(sandbox);
+  }
+
   complete(jobId: string, summary: string, meter?: JobMeter): void {
     const job = this.mustGet(jobId);
+    // Finishing is not delivering. A run that produced nothing is a failure
+    // however politely it ended, and its own summary is the best explanation
+    // of why — so it becomes the error rather than being thrown away. Failure
+    // is also what stops it being billed, since `priceFor` absorbs those.
+    if (!this.delivered(job, this.sandboxDir(jobId))) {
+      job.summary = summary;
+      this.fail(jobId, summary, meter);
+      return;
+    }
     job.status = 'done';
     job.summary = summary;
     if (meter) job.meter = meter;
@@ -267,13 +294,7 @@ export class JobQueue {
     // purpose, and presenting the result as delivery would argue with that.
     // The guard belongs here rather than in the caller because a killed
     // session rejects through this path, not through `cancel`.
-    // A compile is judged only on its tool: half of one is not a delivery,
-    // `installTool` refuses it, and its stray working files must not be
-    // mistaken for output.
-    const delivered = job.compile
-      ? deliveredTool(sandbox)
-      : hasPatch || deliveredFiles(sandbox);
-    job.status = delivered && error !== CANCELLED ? 'partial' : 'failed';
+    job.status = this.delivered(job, sandbox) && error !== CANCELLED ? 'partial' : 'failed';
     this.finish(job);
   }
 

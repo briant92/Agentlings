@@ -1897,3 +1897,41 @@ and the report had **its own copy** — so fixing `totals` moved the report by
 exactly zero, and the number only changed when the copy went. This project's
 own rule, met head on for the second time: "it delivered" keeps being
 re-derived locally, and the answer is to call the shared function.
+
+**Settled as `failed`, and not for the reason this entry expected.** It argued
+for `done` priced at zero, on the grounds that the session did complete. That
+reads the status as a description of the run. It is not: `done` means delivered
+and ready to review, `partial` means delivered but cut short, `failed` means
+did not deliver. The taxonomy classifies **delivery**, and by it a run that
+produced nothing has exactly one cell — whatever manners it exited with. Naming
+that made the third option collapse: no `priceFor` change is needed, because
+absorbing failures is already the rule.
+
+`complete()` now asks the same question `fail()` asks, through one private
+`delivered()` both call, and hands an empty run to `fail()` with the session's
+own summary as the error. "I need write permission to complete this job" is a
+better account of what happened than anything the queue could invent, and it
+was previously discarded along with the outcome.
+
+**Fixing the queue alone would have changed nothing that matters.** The ledger
+takes its outcome from the sim's callback, which hardcoded `'done'` on the
+resolve path — so an empty run would still have been announced as a delivery,
+still credited to the agentling who could not do it, and still priced. The sim
+now reads the queue's verdict back and lets the event, the career counter, the
+outcome and the walk to the exit all follow it. That is three things fixed by
+one question being asked in the right place, and it is worth noting that the
+half I first wrote would have looked correct in the queue's own tests while
+leaving the bill exactly where it was.
+
+Mutation-tested on both halves: without the queue change an empty sandbox files
+`done`, and without the sim change the events read `['started', 'done']` with
+nobody credited a failure.
+
+**One adjacent case left alone.** `RoutedExecutor` credits a recipe when
+`result !== undefined || hasPatch` — a clean exit, which is the same assumption
+this entry just removed, so a run that delivered nothing can still credit its
+recipe. It is deliberately *not* changed here: that counter was set to clean
+exits on purpose, measured against job 2711da49 where a files-on-disk test
+banked a success for a run that produced no PDF, and moving it is a separate
+decision about what "the recipe reliably works" means. Recorded so the next
+person finds the reasoning rather than the inconsistency.

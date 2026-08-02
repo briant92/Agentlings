@@ -280,7 +280,10 @@ describe('JobQueue', () => {
 
     it('keeps finished work exactly as it was', () => {
       const job = queue.add({ title: 'Done already', prompt: 'x' });
-      queue.start(job.id);
+      const dir = queue.start(job.id);
+      // A completed run has left something behind, or it did not complete
+      // (D-041). This test is about persistence, so it delivers like a real one.
+      writeFileSync(path.join(dir, 'RESULT.md'), 'all good');
       queue.complete(job.id, 'all good', { costUsd: 0.25, turns: 3 });
 
       const restored = new JobQueue(root).get(job.id)!;
@@ -423,6 +426,40 @@ describe('JobQueue', () => {
     // Found live on job 2ff16bf2: "Produce a PDF" on a level with no
     // repository wrote a valid PDF and was filed `failed`, because delivery
     // was judged by a diff — which a job with no clone can never have.
+    /**
+     * The mirror of every case in this block. Those ask whether a run that
+     * *died* left something worth keeping; this asks whether a run that
+     * *finished* left anything at all, which nothing used to ask.
+     *
+     * Job 149620b5: a scout read a code host correctly, could not write —
+     * its role had no write tool — and ended by saying "I need write
+     * permission to complete this job". It exited cleanly, so it was filed
+     * `done` and charged 4.7c for an empty sandbox (D-041).
+     */
+    it('calls a run that finished but produced nothing a failure', () => {
+      const job = queue.add({ title: 'Summarise', prompt: 'Summarise the commits' });
+      queue.start(job.id);
+      queue.complete(job.id, 'I need write permission to complete this job.', {
+        costUsd: 0.047,
+      });
+
+      const done = queue.get(job.id)!;
+      expect(done.status).toBe('failed');
+      // Its own words are the best account of why, so they become the error
+      // rather than being discarded with the outcome.
+      expect(done.error).toContain('write permission');
+      expect(done.meter?.costUsd).toBe(0.047);
+    });
+
+    it('still calls a run that produced something done', () => {
+      const job = queue.add({ title: 'Summarise', prompt: 'Summarise the commits' });
+      const dir = queue.start(job.id);
+      writeFileSync(path.join(dir, 'RESULT.md'), '# the commits\n');
+      queue.complete(job.id, 'summarised them', { costUsd: 0.08 });
+
+      expect(queue.get(job.id)!.status).toBe('done');
+    });
+
     it('calls a run that left files partial, even with no repository', () => {
       const job = queue.add({ title: 'Produce a PDF', prompt: 'Produce a PDF' });
       const dir = queue.start(job.id);

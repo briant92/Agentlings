@@ -104,6 +104,50 @@ describe('Sim', () => {
     });
   });
 
+  /**
+   * The other half of D-041. `complete` files an empty run as a failure, and
+   * this callback used to hardcode `done` regardless — so the terminal
+   * announced a delivery, the agentling was credited with a job it had not
+   * done, and the ledger priced it. All three follow the queue's verdict now.
+   */
+  describe('a run that finishes without delivering', () => {
+    const emptyExecutor: Executor = {
+      run: async () => ({ summary: 'I need write permission to complete this job.' }),
+    };
+    /** Waits for the executor promise and the callbacks chained after it. */
+    const settle = () => new Promise((resolve) => setImmediate(resolve));
+
+    it('is announced as failed, not as delivered', async () => {
+      const events: { type: string; detail?: string }[] = [];
+      const s = new Sim(CREW, queue, emptyExecutor, (e) => events.push(e));
+      const job = queue.add({ title: 'Summarise', prompt: 'p' });
+      for (let i = 0; i < 200 && queue.get(job.id)!.status === 'queued'; i++) s.step();
+      await settle();
+
+      expect(queue.get(job.id)!.status).toBe('failed');
+      expect(events.map((e) => e.type)).toContain('failed');
+      expect(events.map((e) => e.type)).not.toContain('done');
+    });
+
+    it('is not credited to the agentling that could not do it', async () => {
+      const outcomes: string[] = [];
+      const s = new Sim(CREW, queue, emptyExecutor, undefined, (_a, _j, outcome) =>
+        outcomes.push(outcome),
+      );
+      const job = queue.add({ title: 'Summarise', prompt: 'p' });
+      for (let i = 0; i < 200 && queue.get(job.id)!.status === 'queued'; i++) s.step();
+      await settle();
+
+      const worker = s.agentlings.find((a) => a.jobsFailed > 0)!;
+      expect(worker.jobsDone).toBe(0);
+      expect(worker.jobsFailed).toBe(1);
+      // What the ledger prices. `failed` is what makes it absorbed.
+      expect(outcomes).toEqual(['failed']);
+      // Nothing to carry to the exit.
+      expect(worker.state).toBe('idle');
+    });
+  });
+
   it('hires drop in at the hatch and join the patrol', () => {
     const hired = sim.addAgentling({ id: 'a3', name: 'Fen', color: 0xffb86c, role: 'worker' });
     expect(sim.agentlings).toHaveLength(3);

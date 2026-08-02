@@ -459,7 +459,9 @@ these charge nothing themselves and are not free.
 Three rules, all enforced in `priceFor` rather than promised in prose:
 
 - **Never above the quote.** The charge is `min(cost, quoted)`.
-- **Failed work is free.** The app absorbs it.
+- **Failed work is free.** The app absorbs it — and a run that finished but
+  left nothing behind is failed work, however politely it ended. Delivery is
+  what the statuses classify, not how the session exited (D-041).
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
@@ -1113,12 +1115,11 @@ real work.*
 - [x] **`closeOutUsd` into the ledger** — the rate now prices the session
       alone, and 13 of 79 historical rows were recovered by identification
       (D-039)
-- [ ] **A clean exit with nothing produced is billed** — `fail()` checks
-      whether a run delivered; `complete()` does not, so a session that ends by
-      explaining it could not do the work is recorded `done` and charged.
-      Measured on job 149620b5, 4.7c for an empty sandbox. *Blocked on:
-      deciding whether that is `failed`, `partial`, or `done` priced at zero
-      — the last needs `priceFor` to read delivery as well as outcome (D-041).*
+- [x] **A clean exit with nothing produced is billed** — settled as `failed`,
+      because this app's statuses classify delivery rather than how a session
+      ended. One shared delivery check now answers for both paths, and the
+      verdict reaches the status, the event, the career record and the price
+      (D-041)
 - [ ] **The quote knowing about attachments** — a large document eats context
       the budget was priced without. *Blocked on: enough rows to measure it.*
 - [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the

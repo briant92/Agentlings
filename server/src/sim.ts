@@ -233,11 +233,38 @@ export class Sim {
       )
       .then((result) => {
         this.queue.complete(jobId, result.summary, result.meter);
-        this.emit({ type: 'done', jobId, title: job.title, agentling: a.name, detail: result.summary });
-        a.jobsDone++;
-        this.onOutcome(a, this.queue.get(jobId) ?? job, 'done', result.summary, result.lesson);
-        a.state = 'delivering';
-        a.targetX = EXIT_X;
+        /**
+         * The queue decides whether that counted, not this callback.
+         *
+         * A run can finish cleanly and deliver nothing — the session that says
+         * it cannot do the job returns normally — and `complete` now files
+         * that as a failure. Reading the verdict back keeps the three things
+         * that follow from it honest: the event the terminal shows, the
+         * agentling's career record, and the outcome the ledger prices. This
+         * used to hardcode `done`, so a job that produced nothing was
+         * announced as delivered, credited to the crew member who could not do
+         * it, and billed (D-041).
+         */
+        const after = this.queue.get(jobId) ?? job;
+        const landed = after.status !== 'failed';
+        const detail = landed ? result.summary : (after.error ?? result.summary);
+        this.emit({
+          type: landed ? 'done' : 'failed',
+          jobId,
+          title: job.title,
+          agentling: a.name,
+          detail,
+        });
+        if (landed) a.jobsDone++;
+        else a.jobsFailed++;
+        this.onOutcome(a, after, landed ? 'done' : 'failed', detail, result.lesson);
+        if (landed) {
+          a.state = 'delivering';
+          a.targetX = EXIT_X;
+        } else {
+          a.jobId = undefined;
+          a.state = 'idle'; // nothing to carry to the exit
+        }
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);

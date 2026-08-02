@@ -56,6 +56,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-044 — 2026-08-02 — Landing three times does not make a method compilable](#d-044--2026-08-02--landing-three-times-does-not-make-a-method-compilable)
 - [D-045 — 2026-08-02 — The first compile produced a cache, and its own check could not tell](#d-045--2026-08-02--the-first-compile-produced-a-cache-and-its-own-check-could-not-tell)
 - [D-046 — 2026-08-02 — The knowledge store: opened, not settled](#d-046--2026-08-02--the-knowledge-store-opened-not-settled)
+- [D-047 — 2026-08-02 — The knowledge store is synced and indexed, never read live](#d-047--2026-08-02--the-knowledge-store-is-synced-and-indexed-never-read-live)
 
 ## By theme
 
@@ -80,8 +81,8 @@ entry updates one file rather than two.
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045
-- **Outside access, still open** — the knowledge store, options not chosen:
-  D-046
+- **Outside access, continued again** — the knowledge store: options in D-046,
+  settled as sync-and-index by D-047
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2066,11 +2067,15 @@ fix.
 
 ## D-046 — 2026-08-02 — The knowledge store: opened, not settled
 
-**This entry is open.** Every other entry here records a resolved question and
-what settled it; this one records a question, the options, and what each would
-cost — because the roadmap row said "decide what the crew may read" and a
-one-line blocker is not a decision anybody can take. Cite it as the place the
-options live, never as a position this project holds.
+**This entry was opened, and is now closed by D-047**, which picked option C.
+It is kept as written because the options and what each would cost are the
+reasoning D-047 rests on; read it for the alternatives, cite D-047 for the
+position. What remains genuinely open here is the *second* question only in the
+sense of its thresholds — the answer itself is in D-047 too.
+
+**It was written open**, against this file's usual contract, because the
+roadmap row said "decide what the crew may read" and a one-line blocker is not
+a decision anybody can take.
 
 **The goal.** A level's recall corpus is closed. `KNOWLEDGE.md` is written by
 the crew, from its own finished jobs, so a level can answer for free only about
@@ -2163,3 +2168,58 @@ composed chain rather than hop by hop, since composition is where this keeps
 failing: "what is our deployment process?" produces `asked: true,
 recallable: 0` on a 38c session row, and "what did we learn about the payment
 flow" produces a free `routed` row with neither field.
+
+## D-047 — 2026-08-02 — The knowledge store is synced and indexed, never read live
+
+D-046 laid out three scoping shapes and refused to pick between them. Picked:
+**C — the crew reads a trimmed local index, scoped per level, and never talks
+to the store live.** A (one connection, whole store) and B (a per-level
+allowlist over live reads) are both rejected, and B's virtue is kept.
+
+**Decided at n=0 traffic, deliberately, and the split is the point.** The
+counter added the same day sizes whether the store is worth building and when;
+it says nothing about which shape it should take. Shape turns on the safety
+model and on where the corpus plugs in, both already settled here, so waiting
+for rows would not have improved this answer — and D-046's own warning about
+small samples applies to the *build-it-at-all* question, which stays open.
+
+**It is the only shape that keeps the app's one safety guarantee.** Everything
+here is sandbox → review → promote, and preview-before-install for anything
+executable (D-011, D-021). A and B both hand a session live reach into a corpus
+nobody has read; the index is an artefact you can inspect *before* the crew can
+use it. "Nothing arrives unread" already governs a skill's companion files, and
+a page of notes going straight into a session is the same event.
+
+**It is also the cheapest, which is not a coincidence.** `readKnowledge` returns
+`string[]`, and both consumers — the recall tier and the session context —
+select from it with `relevantLines`. An index that emits lines slots into that
+seam with no new tier, no new router branch, and no second scorer. A and B would
+each need one, and a second notion of "a note that bears on this job" is exactly
+the duplication D-030 was written about.
+
+**Size stays ours.** M5.2 measured the trim-before-the-model shape at 573 KB raw
+against ~3k tokens delivered, and D-040 refused a stdio code host because an
+unbounded reply is the expensive kind. A live store returns whatever it returns,
+in every request of the session.
+
+**B's virtue is kept rather than lost.** The index is per level, which is where
+capability belongs (D-013) — a method proven against one project is not proven
+against another, and a note about one project is not a note about another.
+Choosing what a level syncs *is* "decide what the crew may read"; C relocates
+that from a standing live grant to a one-time choice with a reviewable result.
+
+**The second question, which D-046 warned would ship as ambiguity if left:
+the free tier may serve from the index, with two guards.** Every synced line
+carries its source and the date it was synced, and a recall answer says so; and
+an index past a staleness threshold falls through to a paid session rather than
+answering free. The distinction that makes the guards necessary: a `KNOWLEDGE.md`
+note is an immutable record of something that happened on a date, while a wiki
+page asserts what is *currently* true. Notes cannot rot the way pages can, and
+serving a stale page for free is the outcome D-045 caught the first compiled
+tool committing.
+
+**What this does not decide.** Which store, and the threshold numbers — both
+want measurement rather than argument, and the threshold especially should be
+set against real staleness rather than picked. When one is wired, D-040's rule
+stands: establish its tool list by speaking to the server, not by trusting its
+README, because a wrong tool name grants nothing and does so silently.

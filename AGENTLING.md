@@ -1054,11 +1054,16 @@ judgement — *which of its tools are reading, and which are acting*.
       unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs
       `GITHUB_TOKEN` in `.env`; ships off
 - [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
-      own material instead of the level's `KNOWLEDGE.md` alone.
-      *Blocked on: nothing technical; decide what the crew may read. The
-      options, and the separate question of whether the free tier may serve
-      from it, are laid out open in D-046 — which is now collecting the figure
-      that would size it: see "How much paid work was a question" below.*
+      own material instead of the level's `KNOWLEDGE.md` alone. **Shape
+      decided, not built**: synced and indexed per level, never read live, so
+      the corpus is an artefact you can inspect before the crew can use it —
+      the same "nothing arrives unread" rule a skill's files already follow.
+      It emits lines into the `readKnowledge` seam, so it needs no new tier and
+      no second scorer. The free tier may answer from it, provided each line
+      carries its source and sync date and a stale index falls through to a
+      paid session (D-047). *Blocked on: whether it is worth building at all —
+      see "How much paid work was a question" below, which is the figure that
+      answers it and currently stands at zero rows.*
 - [ ] **CI status** — removed from the code host rather than shipped broken
       (D-040). GitHub restricts the Checks API to GitHub Apps, and the
       documented Commit Statuses fallback measured 0 statuses against 399

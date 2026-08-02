@@ -534,6 +534,13 @@ Read the sample size before trusting any of it: five jobs. The honest summary
 is that the step-down is largest where runs are long and wandering and
 approaches zero — or reverses — on work already cheap and tight.
 
+**And five is out of what can be seen, not out of what happened.** A run is
+matched to its job by its prompt, from the job record, so **10 paid rows cannot
+be grouped at all** — their job records are gone and which job they were is
+unknowable. The report says so rather than averaging over the remainder, and
+the same caveat applies here: those rows might have been repeats, and nothing
+above would know.
+
 The second step, compiling to a tool, is the unconditional one, because it
 removes the model rather than shortening it. `write exports.md` shows the whole
 ladder in one line: **78.2c session → 46.6c leashed → free, twice.**

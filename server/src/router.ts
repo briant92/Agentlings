@@ -78,6 +78,47 @@ export function relevantLines(lines: string[], query: string, limit = 6): string
     .map((entry) => entry.line);
 }
 
+/**
+ * Question-shaped: a leading interrogative, or a question mark anywhere.
+ *
+ * Deliberately tighter than `RECALL`, which recognises only the handful of
+ * phrasings the free tier dares answer on. This one is a measurement rather
+ * than a routing decision, so it can afford to be broad — but not so broad
+ * that imperatives fall in: a leading bare "do"/"can" would match "do the
+ * dishes", so only wh-words lead. "do we have a deploy doc" with no question
+ * mark is therefore missed, which understates rather than inflates.
+ */
+const QUESTION = /\?|^\s*(what|why|how|when|where|which|who|whose)\b/i;
+
+/**
+ * The two facts a paid run can cheaply record about whether it was recall:
+ * whether the user asked something, and how many of this level's own notes
+ * bear on it at all.
+ *
+ * Recorded and deliberately not read — the same bargain as `LedgerEntry`'s
+ * `compile`, and for the same reason: a rate can be computed from a ledger
+ * whenever there is finally enough of it, and a ledger cannot be given a
+ * field it never wrote. What counts as "recall-only" is a bar nobody can
+ * place yet, so this stores the raw signal and leaves the bar to a query
+ * over real traffic (D-046).
+ */
+export interface RecallSignal {
+  asked: boolean;
+  /** Notes sharing at least one term with the prompt. Uncapped, unlike the
+   *  eight a session is actually given. */
+  recallable: number;
+}
+
+export function recallSignal(prompt: string, knowledge: string[]): RecallSignal {
+  return {
+    asked: QUESTION.test(prompt),
+    // The same scorer the recall tier and the session context both use, asked
+    // for all of them rather than the top few — one notion of "a note that
+    // bears on this job", not a second one that could drift from it.
+    recallable: relevantLines(knowledge, prompt, knowledge.length).length,
+  };
+}
+
 /** True when the prompt is only addresses and words meaning "fetch". */
 export function isFetchOnly(prompt: string, urls: string[]): boolean {
   if (urls.length === 0) return false;

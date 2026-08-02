@@ -12,7 +12,7 @@ import {
   writeRecipes,
 } from '../recipes';
 import { deliveredFiles, producedArtefacts } from '../outputs';
-import { type Decision, decide } from '../router';
+import { type Decision, decide, recallSignal } from '../router';
 import {
   RUN_SCRIPT,
   TOOL_TIMEOUT_MS,
@@ -178,10 +178,11 @@ export class RoutedExecutor implements Executor {
     agentling?: Agentling,
   ): Promise<ExecutorResult> {
     const recipes = readRecipes(this.levelDir);
+    const knowledge = this.knowledge();
     const decision: Decision = job.noRouter
       ? { kind: 'agent' }
       : decide(job, {
-          knowledge: this.knowledge(),
+          knowledge,
           recipes,
           tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,
@@ -365,9 +366,18 @@ export class RoutedExecutor implements Executor {
     }
 
     if (!result) throw failure;
+    // Measured here rather than at the row builder because this is the only
+    // place that holds both the prompt and the level's notes, and computed for
+    // `noRouter` runs too: "do it properly" is still paid traffic, and one
+    // that was a question is exactly the traffic D-046 is trying to size.
+    // Nothing reads it — see LedgerEntry.asked.
+    const signal = recallSignal(job.prompt, knowledge);
     // The user was quoted nothing, because a tool was going to do it. The tool
     // did not, and a promise of free that arrives as a bill is the one thing
     // the quote exists to prevent — so this one is on the app.
-    return toolFellBack ? { ...result, meter: { ...result.meter, toolFellBack } } : result;
+    return {
+      ...result,
+      meter: { ...result.meter, ...signal, ...(toolFellBack ? { toolFellBack } : {}) },
+    };
   }
 }

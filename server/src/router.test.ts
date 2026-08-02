@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Job } from '@agentlings/shared';
 import { terms, type Recipe } from './recipes';
-import { decide, isFetchOnly, relevantLines, type RouterContext } from './router';
+import { decide, isFetchOnly, recallSignal, relevantLines, type RouterContext } from './router';
 
 function job(over: Partial<Job> = {}): Job {
   return {
@@ -33,6 +33,52 @@ describe('relevantLines', () => {
 
   it('returns nothing when nothing is related', () => {
     expect(relevantLines(KNOWLEDGE, 'what did we learn about quantum tunnelling')).toEqual([]);
+  });
+});
+
+/**
+ * Measurement, not routing: nothing here decides anything, so what the tests
+ * watch is that the two facts stay raw and stay honest. The bar that turns
+ * them into "recall-only" is deliberately absent (D-046).
+ */
+describe('recallSignal', () => {
+  it('records a question the crew has notes for', () => {
+    expect(recallSignal('what did we learn about the payment flow', KNOWLEDGE)).toEqual({
+      asked: true,
+      recallable: 1,
+    });
+  });
+
+  // The case the whole field exists for: a question, and nothing on file.
+  // Zero is the answer here, not the absence of one.
+  it('records a question the crew has nothing for', () => {
+    expect(recallSignal('what is our deployment process?', KNOWLEDGE)).toEqual({
+      asked: true,
+      recallable: 0,
+    });
+  });
+
+  it('does not count an imperative as a question', () => {
+    expect(recallSignal('do the payment flow refactor', KNOWLEDGE).asked).toBe(false);
+    expect(recallSignal('fix login', KNOWLEDGE).asked).toBe(false);
+  });
+
+  it('counts a question mark anywhere, not just a leading wh-word', () => {
+    expect(recallSignal('the payment flow — how does it retry?', KNOWLEDGE).asked).toBe(true);
+  });
+
+  // Uncapped, unlike the eight notes a session is actually handed: this is
+  // measuring how much the level knows, not choosing what to send.
+  it('counts every note that bears on it, past the session limit', () => {
+    const many = Array.from({ length: 12 }, (_, i) => `note ${i} about the payment flow`);
+    expect(recallSignal('what do we know about the payment flow?', many).recallable).toBe(12);
+  });
+
+  it('is not a question when it is work', () => {
+    expect(recallSignal('add a test for the estimate module', KNOWLEDGE)).toEqual({
+      asked: false,
+      recallable: 0,
+    });
   });
 });
 

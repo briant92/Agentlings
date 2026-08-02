@@ -239,7 +239,10 @@ describe('RoutedExecutor', () => {
       expect(progress[0]).toContain('less exploring');
     });
 
-    it('returns what the session returned, untouched', async () => {
+    // The session's own numbers pass through untouched; the router adds only
+    // its measurement alongside them. Both halves matter — a layer that edited
+    // what the session reported would corrupt the ledger it feeds.
+    it('returns what the session returned, plus what it measured', async () => {
       stored();
       const session = new FakeSession({
         summary: 'wrote the test',
@@ -250,7 +253,38 @@ describe('RoutedExecutor', () => {
 
       expect(out.summary).toBe('wrote the test');
       expect(out.lesson).toBe('the module was tiny');
-      expect(out.meter).toEqual({ costUsd: 0.11, turns: 3 });
+      expect(out.meter).toEqual({
+        costUsd: 0.11,
+        turns: 3,
+        // Written even though this job was not a question. It is the
+        // denominator: without the false rows there is no "how much paid
+        // traffic was recall", only a count of the ones that were.
+        asked: false,
+        recallable: 0,
+      });
+    });
+
+    // The run D-046 is trying to size: a question, on a level whose own notes
+    // had nothing to say about it. Recorded on the row, read by nobody yet.
+    it('measures a question the level had no notes for', async () => {
+      stored();
+      const out = await run(
+        build(new FakeSession()),
+        job({ prompt: 'what is our deployment process?' }),
+        PIP,
+      );
+      expect(out.meter).toMatchObject({ asked: true, recallable: 0 });
+    });
+
+    // "Do it properly" skips the router but is still paid traffic, and a
+    // question that arrives that way counts exactly like any other.
+    it('measures a run that skipped the router', async () => {
+      const out = await run(
+        build(new FakeSession()),
+        job({ prompt: 'what did we learn about login?', noRouter: true }),
+        PIP,
+      );
+      expect(out.meter).toMatchObject({ asked: true, recallable: 1 });
     });
 
     it('credits the recipe even when the session taught it nothing new', async () => {

@@ -77,7 +77,7 @@ import {
 import {
   append as appendLedger,
   costPerTurn,
-  priceFor,
+  ledgerRow,
   rateFor,
   readLedger,
   totals,
@@ -242,48 +242,7 @@ function makeLevel(dir: string): LevelRuntime {
 
       // Every job goes in the ledger, including the ones we absorb — the
       // difference between cost and price is only visible if both are kept.
-      const costUsd = job.meter?.costUsd ?? 0;
-      appendLedger(SANDBOX_ROOT, {
-        at: Date.now(),
-        jobId: job.id,
-        levelId: meta.id,
-        // The role that did the work, not the one the matcher asked for. A job
-        // routed to a role nobody holds is picked up by whoever is free, and
-        // the session runs as *their* role — filing it under the absent
-        // specialist would build a history for work that never happened, and
-        // rob the role that really did it of its own.
-        jobClass: agentling.role,
-        // Which recipe this repeated, when it repeated one. Priced per turn by
-        // the role above; quoted by this. A one-shot's quote asks "have we done
-        // this job before", and the role cannot answer that.
-        ...(job.meter?.recipeKey ? { recipeKey: job.meter.recipeKey } : {}),
-        ...(job.compile ? { compile: true } : {}),
-        tier: job.meter?.tooled
-          ? 'tool'
-          : job.meter?.routed
-            ? 'routed'
-            : job.meter?.oneShot
-              ? 'oneshot'
-              : 'session',
-        outcome,
-        costUsd,
-        // Part of costUsd, and recorded apart from it so the per-turn rate can
-        // price the session rather than the session plus a fixed errand. It was
-        // set on the meter and dropped exactly here for 79 jobs (D-039).
-        ...(job.meter?.closeOutUsd ? { closeOutUsd: job.meter.closeOutUsd } : {}),
-        // A job quoted free because a tool would do it is never billed when the
-        // tool turned out not to.
-        priceUsd: priceFor(outcome, costUsd, job.meter?.toolFellBack ? 0 : job.quotedUsd),
-        ...(job.meter?.toolFellBack ? { toolFellBack: true } : {}),
-        ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
-        ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
-        ...(job.meter?.turnsAllowed !== undefined
-          ? { turnsAllowed: job.meter.turnsAllowed }
-          : {}),
-        hasRepo: Boolean(job.repoPath),
-        ...(job.meter?.costUnknown ? { costUnknown: true } : {}),
-        ...(job.meter?.model ? { model: job.meter.model } : {}),
-      });
+      appendLedger(SANDBOX_ROOT, ledgerRow(job, meta.id, agentling.role, outcome, Date.now()));
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
       if (runtime) {

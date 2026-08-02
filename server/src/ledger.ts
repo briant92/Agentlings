@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { JobMeter } from '@agentlings/shared';
 
 /**
  * Append-only record of what work cost and what it would be charged for.
@@ -110,6 +111,108 @@ export interface LedgerEntry {
    */
   hasRepo?: boolean;
   model?: string;
+  /**
+   * Whether this paid run was a question, and how many of the level's own
+   * notes bore on it. Written on sessions and one-shots; absent on the free
+   * tiers, where the router has already said what the job was.
+   *
+   * Recorded and deliberately not read, exactly like `compile` above. The
+   * question they exist to answer is D-046's: a level can answer for free only
+   * about work it has already done, and nothing in this ledger says how much
+   * paid traffic was a question the crew's own material could have covered. So
+   * the size of that prize is currently unknown, and a knowledge store cannot
+   * be priced before it is built.
+   *
+   * Two raw facts rather than one verdict, because the bar is the part nobody
+   * can place yet — `recallable: 0` on an asked question is the interesting
+   * case (nothing on file), and so is a high count (on file, still paid for),
+   * and which of those matters depends on data that does not exist. Deciding
+   * "recall-only" at write time would bake in a guess and lose the rest;
+   * storing both leaves it a query.
+   *
+   * `asked` understates: it needs a question mark or a leading wh-word, so
+   * "do we have a deploy doc" is missed. Better that than counting "do the
+   * dishes" as a question — an undercount is a floor, an overcount is a story.
+   */
+  asked?: boolean;
+  recallable?: number;
+}
+
+/**
+ * The row a finished job becomes.
+ *
+ * Lived inline in the server's completion callback, where nothing could reach
+ * it without binding a port — and it is the one function in this app with a
+ * proven habit of dropping fields silently. `closeOutUsd` was set on the meter
+ * and copied here for 79 jobs; `toolFellBack` for two more; both were declared
+ * on the type, written by the executor, documented in the spec, and lost in
+ * exactly these lines (D-039). Pulled out so a test can watch it rather than a
+ * reader, which is the only difference between those two bugs shipping and not.
+ *
+ * Pure and mechanical: same expression, same order, same conditionals.
+ */
+export function ledgerRow(
+  job: {
+    id: string;
+    meter?: JobMeter;
+    quotedUsd?: number;
+    repoPath?: string;
+    compile?: boolean;
+  },
+  levelId: string,
+  /** The role that actually ran it, not the one the matcher named. */
+  role: string,
+  outcome: 'done' | 'failed',
+  at: number,
+): LedgerEntry {
+  const costUsd = job.meter?.costUsd ?? 0;
+  return {
+    at,
+    jobId: job.id,
+    levelId,
+    // The role that did the work, not the one the matcher asked for. A job
+    // routed to a role nobody holds is picked up by whoever is free, and the
+    // session runs as *their* role — filing it under the absent specialist
+    // would build a history for work that never happened, and rob the role
+    // that really did it of its own.
+    jobClass: role,
+    // Which recipe this repeated, when it repeated one. Priced per turn by the
+    // role above; quoted by this. A one-shot's quote asks "have we done this
+    // job before", and the role cannot answer that.
+    ...(job.meter?.recipeKey ? { recipeKey: job.meter.recipeKey } : {}),
+    ...(job.compile ? { compile: true } : {}),
+    tier: job.meter?.tooled
+      ? 'tool'
+      : job.meter?.routed
+        ? 'routed'
+        : job.meter?.oneShot
+          ? 'oneshot'
+          : 'session',
+    outcome,
+    costUsd,
+    // Part of costUsd, and recorded apart from it so the per-turn rate can
+    // price the session rather than the session plus a fixed errand.
+    ...(job.meter?.closeOutUsd ? { closeOutUsd: job.meter.closeOutUsd } : {}),
+    // A job quoted free because a tool would do it is never billed when the
+    // tool turned out not to.
+    priceUsd: priceFor(outcome, costUsd, job.meter?.toolFellBack ? 0 : job.quotedUsd),
+    ...(job.meter?.toolFellBack ? { toolFellBack: true } : {}),
+    ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
+    ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
+    ...(job.meter?.turnsAllowed !== undefined ? { turnsAllowed: job.meter.turnsAllowed } : {}),
+    hasRepo: Boolean(job.repoPath),
+    ...(job.meter?.costUnknown ? { costUnknown: true } : {}),
+    ...(job.meter?.model ? { model: job.meter.model } : {}),
+    // Gated on presence, never on truth: `asked: false` and `recallable: 0`
+    // are both answers, and the second is the interesting one — a question
+    // with nothing on file is precisely the run a knowledge store would have
+    // served. Writing these only when truthy would keep the boring half and
+    // drop the half D-046 is asking about, and the absent field is already
+    // doing a job here: it means the row predates the measurement, not that
+    // the run was not a question.
+    ...(job.meter?.asked !== undefined ? { asked: job.meter.asked } : {}),
+    ...(job.meter?.recallable !== undefined ? { recallable: job.meter.recallable } : {}),
+  };
 }
 
 export function ledgerFile(sandboxRoot: string): string {

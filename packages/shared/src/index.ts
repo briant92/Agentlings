@@ -90,6 +90,10 @@ export interface JobMeter {
    * is a fixed errand, not something the turn budget can buy more or less of.
    */
   closeOutUsd?: number;
+  /** The prompt was question-shaped. Measurement only — see LedgerEntry. */
+  asked?: boolean;
+  /** How many of the level's own notes bear on the prompt. Measurement only. */
+  recallable?: number;
 }
 
 /** A connection a job can opt into. Secret values never appear here. */

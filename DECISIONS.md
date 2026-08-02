@@ -2113,3 +2113,41 @@ comparison — real traffic, not more thought. The cheap first move is to record
 it: a routed `agent` run that recalls rather than produces is already
 distinguishable in principle, and counting those would price this row before it
 is built rather than after. (D-042, D-044)
+
+**The counting started the same day.** Two raw facts on every paid row —
+`asked` (question-shaped) and `recallable` (how many of the level's own notes
+share a term with the prompt) — computed by `recallSignal` in `router.ts` from
+the same scorer the recall tier and the session context already use, so there
+is one notion of "a note that bears on this job" rather than a second that
+could drift from it.
+
+Recorded and read by nobody, the same bargain as `compile` (D-029). Two facts
+rather than one verdict because the bar is the part nobody can place: an asked
+question with `recallable: 0` is the run a store would have served, a high
+count is a run that was paid for despite the notes being there, and which of
+those matters is what the data has to say. Deciding "recall-only" at write time
+would bake in the guess this entry exists to avoid.
+
+Gated on presence rather than truth, which is the whole design: `asked: false`
+is written, because without the negative rows there is no denominator and the
+answer is a count with nothing to divide by. An absent field means the row
+predates the measurement — a distinction that would be lost if false were
+treated as nothing to say. `asked` understates by construction, needing a
+question mark or a leading wh-word, so "do we have a deploy doc" is missed;
+an undercount is a floor, an overcount is a story.
+
+Free-tier rows carry neither, deliberately: the router already answered those,
+so they are not the paid traffic being sized.
+
+**And the row builder was pulled out of the server to be tested.** It is the
+one function in this app with a proven habit of dropping fields silently —
+`closeOutUsd` for 79 jobs, `toolFellBack` for two more, both declared on the
+type and written by the executor and lost in those lines (D-039). It sat inside
+a completion callback in `index.ts`, unreachable without binding a port and
+writing to the real ledger, so both bugs were found by reading job files
+afterwards. `ledgerRow` is now pure and every field the meter can carry is
+pinned by a test, including the ones that already worked. Verified over the
+composed chain rather than hop by hop, since composition is where this keeps
+failing: "what is our deployment process?" produces `asked: true,
+recallable: 0` on a 38c session row, and "what did we learn about the payment
+flow" produces a free `routed` row with neither field.

@@ -7,6 +7,7 @@ import {
   append,
   costPerTurn,
   history,
+  ledgerRow,
   priceFor,
   rateFor,
   readLedger,
@@ -402,5 +403,100 @@ describe('costPerTurn', () => {
     ]);
     expect(result.costUsd).toBe(0.2);
     expect(result.unmeasured).toBe(1);
+  });
+});
+
+/**
+ * The builder that turns a finished job into a row.
+ *
+ * These tests exist because this is the function with a proven habit of
+ * dropping fields silently: `closeOutUsd` was declared on the type, set by the
+ * executor, described in the spec, and copied here for 79 jobs; `toolFellBack`
+ * for two more (D-039). Both were found by reading job files afterwards, which
+ * is the expensive way. So every field the meter can carry is pinned here,
+ * including the ones that were already working.
+ */
+describe('ledgerRow', () => {
+  const AT = 1_700_000_000_000;
+  const row = (
+    meter: NonNullable<Parameters<typeof ledgerRow>[0]['meter']>,
+    over: Partial<Parameters<typeof ledgerRow>[0]> = {},
+  ): LedgerEntry => ledgerRow({ id: 'j1', meter, ...over }, 'hq', 'worker', 'done', AT);
+
+  it('files the run under the role that actually ran it', () => {
+    expect(row({ costUsd: 0.3 })).toMatchObject({
+      at: AT,
+      jobId: 'j1',
+      levelId: 'hq',
+      jobClass: 'worker',
+      tier: 'session',
+      outcome: 'done',
+      costUsd: 0.3,
+      priceUsd: 0.3,
+      hasRepo: false,
+    });
+  });
+
+  it('carries the close-out split the rate depends on', () => {
+    expect(row({ costUsd: 0.3, closeOutUsd: 0.02 }).closeOutUsd).toBe(0.02);
+  });
+
+  it('carries a tool fall-back, and absorbs the run it caused', () => {
+    const entry = row({ costUsd: 0.4, toolFellBack: true }, { quotedUsd: 0 });
+    expect(entry.toolFellBack).toBe(true);
+    // Quoted free on the strength of a tool that then could not: the app eats it.
+    expect(entry.priceUsd).toBe(0);
+  });
+
+  it('picks the tier from what actually ran', () => {
+    expect(row({ tooled: true }).tier).toBe('tool');
+    expect(row({ routed: true }).tier).toBe('routed');
+    expect(row({ oneShot: true }).tier).toBe('oneshot');
+    expect(row({ costUsd: 0.3 }).tier).toBe('session');
+  });
+
+  it('never charges above the quote, and nothing at all for a failure', () => {
+    expect(ledgerRow({ id: 'j1', meter: { costUsd: 0.9 }, quotedUsd: 0.5 }, 'hq', 'worker', 'done', AT).priceUsd).toBe(0.5);
+    expect(ledgerRow({ id: 'j1', meter: { costUsd: 0.9 } }, 'hq', 'worker', 'failed', AT).priceUsd).toBe(0);
+  });
+
+  it('carries the rest of the meter', () => {
+    expect(
+      row({ costUsd: 0.3, turns: 4, turnsAllowed: 10, model: 'haiku', costUnknown: true, recipeKey: 'k' }),
+    ).toMatchObject({
+      turns: 4,
+      turnsAllowed: 10,
+      model: 'haiku',
+      costUnknown: true,
+      recipeKey: 'k',
+    });
+    expect(ledgerRow({ id: 'j1', meter: {}, compile: true }, 'hq', 'worker', 'done', AT).compile).toBe(true);
+    expect(row({}, { repoPath: '/repo' }).hasRepo).toBe(true);
+  });
+
+  // The measurement D-046 is waiting on. Both fields are gated on presence
+  // rather than truth, so the uninteresting answers survive to be a denominator.
+  describe('the recall measurement', () => {
+    it('records a question with nothing on file', () => {
+      expect(row({ costUsd: 0.3, asked: true, recallable: 0 })).toMatchObject({
+        asked: true,
+        recallable: 0,
+      });
+    });
+
+    it('keeps the negative answers, which are the denominator', () => {
+      const entry = row({ costUsd: 0.3, asked: false, recallable: 0 });
+      expect(entry.asked).toBe(false);
+      expect(Object.hasOwn(entry, 'asked')).toBe(true);
+      expect(Object.hasOwn(entry, 'recallable')).toBe(true);
+    });
+
+    // An older row is not a run that failed to be a question — it is a run
+    // from before anybody was counting, and the two must stay distinguishable.
+    it('leaves the fields off entirely when the run was never measured', () => {
+      const entry = row({ costUsd: 0.3 });
+      expect(Object.hasOwn(entry, 'asked')).toBe(false);
+      expect(Object.hasOwn(entry, 'recallable')).toBe(false);
+    });
   });
 });

@@ -57,6 +57,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-045 — 2026-08-02 — The first compile produced a cache, and its own check could not tell](#d-045--2026-08-02--the-first-compile-produced-a-cache-and-its-own-check-could-not-tell)
 - [D-046 — 2026-08-02 — The knowledge store: opened, not settled](#d-046--2026-08-02--the-knowledge-store-opened-not-settled)
 - [D-047 — 2026-08-02 — The knowledge store is synced and indexed, never read live](#d-047--2026-08-02--the-knowledge-store-is-synced-and-indexed-never-read-live)
+- [D-048 — 2026-08-02 — The knowledge store built, and the free tier caught guessing](#d-048--2026-08-02--the-knowledge-store-built-and-the-free-tier-caught-guessing)
 
 ## By theme
 
@@ -82,7 +83,9 @@ entry updates one file rather than two.
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045
 - **Outside access, continued again** — the knowledge store: options in D-046,
-  settled as sync-and-index by D-047
+  settled as sync-and-index by D-047, built in D-048
+- **The free tier's honesty** — the recall tier scoring on its own asking
+  words: D-048
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2223,3 +2226,60 @@ want measurement rather than argument, and the threshold especially should be
 set against real staleness rather than picked. When one is wired, D-040's rule
 stands: establish its tool list by speaking to the server, not by trusting its
 README, because a wrong tool name grants nothing and does so silently.
+
+## D-048 — 2026-08-02 — The knowledge store built, and the free tier caught guessing
+
+D-047 decided the shape; this is it built, and the thing that building it found.
+
+**The store.** `store.ts` walks the folders a level names, splits markdown at
+its headings, trims each passage to 600 chars and writes
+`store-index.json` — every entry stamped with its file and the date it was
+read. `storeLines` renders an entry as a corpus line with that provenance
+*inside* the line, which is why neither the recall tier nor the session prompt
+contains a word about stores: both already print lines. `readKnowledge` returns
+`string[]`, so the index needed no new tier, no router branch and no second
+scorer, exactly as D-047 predicted from the seam.
+
+Staleness is one rule in one place: past a week `storeLines` returns nothing, so
+a stale index cannot be matched, the free tier has nothing to answer from, and
+the job falls through to a session that can go and look. Two copies of that rule
+would eventually disagree.
+
+`recallSignal` is deliberately *not* fed the store. It measures whether the
+crew's own notes could have answered a paid question — the figure that says
+whether a store was worth having — and letting the store feed it would have had
+it answer its own question yes the moment the store existed (D-046).
+
+**Then the live check found the free tier answering a question about quantum
+mechanics.** Quoting "what do we know about quantum tunnelling" against `hq`
+came back `routed` — free, "we already know this". With the store emptied it
+still did, so this was never about the store: it had been true of the recall
+tier all along and the store only made it louder.
+
+Measured rather than guessed at: `terms()` returns `['know', 'quantum',
+'tunnell']`, `know` is not a stopword, and `relevantLines` accepted any note
+scoring above zero. One note of 86 matched, sharing exactly `['know']` — a note
+about writing `EXPORTS.md`. So the tier was scoring on the one word guaranteed
+to appear in every question that reaches it, and "never guess" was guessing by
+construction.
+
+**Fixed by scoring on what the question is about.** The asking vocabulary —
+know, learn, find, remind, tell, and their forms — is dropped before scoring,
+inside `relevantLines`, so the recall tier, the counter and the eight notes a
+session is handed all get one rule rather than three copies. The set is built by
+running `terms()` over those words rather than written out pre-stemmed, so it
+cannot drift from the stemmer. A question left with no subject at all — "what do
+we know" — now matches nothing, which is the honest answer: there is no subject
+to be relevant to.
+
+Verified live against the real level, and the negative case matters as much as
+the positive: "quantum tunnelling" now quotes a session; "rolling back a deploy"
+against an indexed folder quotes free and answers with `[ops/deploy.md, synced
+2026-08-02]` attached; and "what do we know about the ledger" *correctly* quotes
+a session, because `hq` turns out to hold no note containing the word — checked
+rather than assumed, since an over-correction would look identical from outside.
+
+**What is not built: any UI.** The store is reachable only over the API
+(`GET/POST /api/levels/:lid/knowledge`, `POST .../sources`, `POST .../sync`).
+Pointing a level at a folder from inside the app is the obvious next piece and
+was left out rather than half-done.

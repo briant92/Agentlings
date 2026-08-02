@@ -109,6 +109,10 @@ the loop runs end to end without one.
 
 **Understanding the request.**
 
+- `store.ts` — your own notes, synced into a per-level index the crew reads.
+  Never read live: the index is an artefact you can inspect before a session
+  can use it, each line carries its source and sync date, and a stale index
+  contributes nothing so the free tier falls through rather than serving it.
 - `match.ts` — the local, deterministic concept matcher. Works with no auth
   and no network, always.
 - `work.ts` — turning a sentence into a plan: title, role, who will run it.
@@ -139,6 +143,7 @@ the app's memory is not the repository's.
     jobs.json               the queue, so a restart resumes
     KNOWLEDGE.md            what this level's crew has learned
     recipes.json            approaches worth reusing, and how often they land
+    store-index.json        your own notes, indexed — source and date per entry
     tool-candidates.jsonl   jobs a compiled tool could have served
     memory/<name>.md        one agentling's lessons
     tools/<name>/           tool.json + run.mjs + verify.mjs
@@ -156,6 +161,9 @@ Routes below are the M0 shapes; everything job-facing is scoped per level
 | `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}`; quoted and role-matched like `/work`, but keeps the caller's title and takes no repository unless given one |
 | `GET /api/jobs/:id/output` | Sandbox files for review |
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
+| `GET /api/levels/:lid/knowledge` | The store: sources, counts, and whether the index has gone stale |
+| `POST /api/levels/:lid/knowledge/sources` | Point this level at folders of your own material, and index them |
+| `POST /api/levels/:lid/knowledge/sync` | Re-read those folders — the crew reads the index, so nothing changes until this runs |
 | `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |
 | `POST /api/levels/:lid/tools/promote` | Compile a proven recipe into a tool |
 | `POST /api/levels/:lid/tools/:name/retire` | Take a tool out of service, with the reason |

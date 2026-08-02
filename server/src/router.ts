@@ -24,7 +24,19 @@ export type Decision =
   | { kind: 'agent'; approach?: string; recipeKey?: string };
 
 export interface RouterContext {
+  /** What the crew earned: one line per finished job. */
   knowledge: string[];
+  /**
+   * Your own material, synced and indexed (D-047). Kept apart from `knowledge`
+   * rather than merged upstream for one reason: `recallSignal` counts the
+   * crew's own notes, and folding these in would redefine what that counter
+   * means halfway through the measurement it was built for.
+   *
+   * Empty when the index is stale, which is how the staleness guard reaches
+   * here — a stale store simply has nothing to match, so the free tier cannot
+   * answer from it.
+   */
+  store?: string[];
   recipes: Recipe[];
   /** Compiled tools this level has earned. Empty until one is promoted. */
   tools?: ToolManifest[];
@@ -66,9 +78,36 @@ const FETCH_ONLY = new Set([
   'it',
 ]);
 
-/** Knowledge lines that share the most words with the question, best first. */
+/**
+ * The recall question's own vocabulary, which must never be what makes a note
+ * relevant.
+ *
+ * "What do we know about X" carries `know` into the scored terms, and `know` is
+ * not a stopword — so any note containing it matched, and one shared word is
+ * all `relevantLines` ever required. Measured on the real `hq` level: "what do
+ * we know about quantum tunnelling" scored 1 of 86 notes, sharing exactly
+ * `['know']`, and was answered *free* from a note about `EXPORTS.md`. The free
+ * tier's whole promise is "never guess", and it was guessing on the one word
+ * guaranteed to be in every question that reaches it.
+ *
+ * Built by running `terms` over the words rather than written out stemmed, so
+ * it cannot drift from the stemmer the way a hand-stemmed list would.
+ */
+const ASKING = new Set(
+  terms('know knows known knowing learn learns learned learnt find finds remind reminds tell tells'),
+);
+
+/**
+ * Knowledge lines that share the most words with the question, best first.
+ *
+ * Scored on what the question is *about*: the asking words are dropped first,
+ * so a question whose subject appears nowhere on file matches nothing and the
+ * job falls through to a session that can go and look.
+ */
 export function relevantLines(lines: string[], query: string, limit = 6): string[] {
-  const wanted = new Set(terms(query));
+  const wanted = new Set(terms(query).filter((t) => !ASKING.has(t)));
+  // A question with no subject left — "what do we know" — is not a question
+  // this tier can answer, and showing it something anyway would be the guess.
   if (wanted.size === 0) return [];
   return lines
     .map((line) => ({ line, score: terms(line).filter((t) => wanted.has(t)).length }))
@@ -138,7 +177,11 @@ export function decide(job: Job, context: RouterContext): Decision {
   // A question about what the crew already knows is answerable from the file
   // the crew already wrote. No session, no tokens.
   if (RECALL.test(prompt)) {
-    const lines = relevantLines(context.knowledge, prompt);
+    // The crew's own notes and your indexed material are one corpus here: both
+    // are lines on file, scored the same way. A store line carries its source
+    // and sync date inside the line, so an answer built from them says where
+    // each came from without this branch knowing a store exists.
+    const lines = relevantLines([...context.knowledge, ...(context.store ?? [])], prompt);
     if (lines.length > 0) {
       return {
         kind: 'answer',
@@ -148,7 +191,7 @@ export function decide(job: Job, context: RouterContext): Decision {
           '',
           ...lines.map((line) => `- ${line}`),
           '',
-          'Answered from the level\'s own notes — no agentling session was needed.',
+          'Answered from what this level has on file — no agentling session was needed.',
         ].join('\n'),
         reason: 'a question about what we already know',
       };

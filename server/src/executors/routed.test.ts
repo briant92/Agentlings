@@ -11,6 +11,7 @@ import {
   writeRecipes,
   type Recipe,
 } from '../recipes';
+import { STALE_MS, writeIndex } from '../store';
 import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from '../tools';
 import { CANCELLED, SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
@@ -683,6 +684,59 @@ describe('RoutedExecutor', () => {
       stored();
       await run(build(new FakeSession()), job({ prompt: 'write tests for the estimate module' }), PIP);
       expect(readRecipes(levelDir)[0].hits).toBe(1);
+    });
+  });
+
+  /**
+   * The knowledge store (D-047). What matters here is the seam: the store
+   * reaches the router, and does *not* reach the counter.
+   */
+  describe('the knowledge store', () => {
+    const indexed = (syncedAt: number): void =>
+      writeIndex(levelDir, {
+        sources: ['/notes'],
+        syncedAt,
+        entries: [{ text: 'Deploys run on Fridays.', source: 'ops/deploy.md', syncedAt }],
+        skipped: 0,
+      });
+
+    it('answers a question from your own material, with no session', async () => {
+      indexed(Date.now());
+      const session = new FakeSession();
+      await run(build(session, { knowledge: [] }), job({ prompt: 'what do we know about deploys' }), PIP);
+
+      expect(session.runs).toHaveLength(0);
+      expect(result()).toContain('Deploys run on Fridays.');
+      // Provenance survives all the way to what the user reads.
+      expect(result()).toContain('ops/deploy.md');
+    });
+
+    it('pays for the job once the index has gone stale', async () => {
+      indexed(Date.now() - STALE_MS - 1);
+      const session = new FakeSession();
+      await run(build(session, { knowledge: [] }), job({ prompt: 'what do we know about deploys' }), PIP);
+
+      expect(session.runs).toHaveLength(1);
+    });
+
+    /**
+     * The counter asks whether the crew's *own* notes could have answered a
+     * paid question — the figure that says whether a store was worth having.
+     * If the store fed it, the counter would answer its own question yes the
+     * moment the store existed, and rows before and after would not compare.
+     *
+     * The prompt is question-shaped but not phrased the narrow way the recall
+     * tier insists on, so it reaches a session with the store indexed and
+     * matching: exactly the case where the two corpora could get confused.
+     */
+    it('does not let the store move the counter', async () => {
+      indexed(Date.now());
+      const out = await run(
+        build(new FakeSession(), { knowledge: [] }),
+        job({ prompt: 'how often do deploys happen?' }),
+        PIP,
+      );
+      expect(out.meter).toMatchObject({ asked: true, recallable: 0 });
     });
   });
 

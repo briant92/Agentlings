@@ -34,6 +34,23 @@ describe('relevantLines', () => {
   it('returns nothing when nothing is related', () => {
     expect(relevantLines(KNOWLEDGE, 'what did we learn about quantum tunnelling')).toEqual([]);
   });
+
+  /**
+   * The free tier was guessing on the one word guaranteed to be in every
+   * question that reaches it. Measured on the real `hq` level: "what do we
+   * know about quantum tunnelling" scored 1 of 86 notes, sharing exactly
+   * `['know']`, and was answered free from a note about `EXPORTS.md`.
+   */
+  it('does not match on the asking words themselves', () => {
+    const notes = ['2026-07-31 · Ivy (scribe) failed "Write EXPORTS.md" — verify what you know'];
+    expect(relevantLines(notes, 'what do we know about quantum tunnelling')).toEqual([]);
+    // The subject still matches when the level really does have it on file.
+    expect(relevantLines(notes, 'what do we know about EXPORTS.md')).toHaveLength(1);
+  });
+
+  it('answers nothing to a question with no subject in it', () => {
+    expect(relevantLines(KNOWLEDGE, 'what do we know')).toEqual([]);
+  });
 });
 
 /**
@@ -79,6 +96,50 @@ describe('recallSignal', () => {
       asked: false,
       recallable: 0,
     });
+  });
+});
+
+/**
+ * The store joins the recall corpus, and deliberately does not join the
+ * counter. Both halves are load-bearing (D-047, D-046).
+ */
+describe('the knowledge store in the recall tier', () => {
+  const STORE = ['Deploys run on Fridays. [ops/deploy.md, synced 2026-08-02]'];
+
+  it('answers from your own material, not just what the crew earned', () => {
+    const decision = decide(
+      job({ prompt: 'what do we know about deploys' }),
+      context({ knowledge: [], store: STORE }),
+    );
+    expect(decision.kind).toBe('answer');
+    // The provenance rides in the line, so the answer names its source with no
+    // code in the router that knows a store exists.
+    if (decision.kind === 'answer') expect(decision.body).toContain('ops/deploy.md');
+  });
+
+  // A stale index arrives here already empty — the guard lives in `storeLines`,
+  // in one place — so this is what the router sees and it falls through.
+  it('falls through to a session when the store contributed nothing', () => {
+    const decision = decide(
+      job({ prompt: 'what do we know about deploys' }),
+      context({ knowledge: [], store: [] }),
+    );
+    expect(decision.kind).toBe('agent');
+  });
+
+  // The corpus the recall tier scores over is knowledge *plus* store; what the
+  // counter scores over is knowledge alone. That the two differ is the whole
+  // point, and it is enforced by the executor — see routed.test.ts.
+  it('scores the store alongside the notes, not instead of them', () => {
+    const decision = decide(
+      job({ prompt: 'what do we know about the payment flow and deploys' }),
+      context({ store: STORE }),
+    );
+    expect(decision.kind).toBe('answer');
+    if (decision.kind === 'answer') {
+      expect(decision.body).toContain('ops/deploy.md'); // from the store
+      expect(decision.body).toContain('payment flow'); // from the crew's notes
+    }
   });
 });
 

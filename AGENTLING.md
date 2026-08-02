@@ -235,6 +235,36 @@ off, so the app's fetch was gated and this second door was not.
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 
+Your own notes are **not** a connection and deliberately never became one — see
+below.
+
+### Reading your own notes — Live, and not a connection
+
+A level can be pointed at folders of your own material. They are read **once,
+by a sync you ask for**, into `store-index.json` beside that level's other
+files; the crew reads the index and never the source (D-047).
+
+That is not an implementation detail, it is the reason this exists at all. Every
+guarantee here rests on one shape — work in a sandbox, review, promote; nothing
+arrives unread — and a live connection to a notes store hands a session reach
+into a corpus nobody has looked at. An index is a file you can open first.
+
+| | |
+|---|---|
+| What is indexed | `.md` `.markdown` `.mdx` `.txt`, walked recursively; dotfolders and `node_modules` skipped |
+| What a passage is | A markdown section, split at headings, heading kept — usually the only place the subject is named |
+| Size | 600 chars a passage, 250 files a source, the overflow **reported** rather than dropped quietly |
+| Provenance | Every line ends `[<file>, synced <date>]`, so a free answer and a session's context both say where it came from |
+| Staleness | Past a week the index contributes **nothing** — the free tier cannot answer from it and the job falls through to a session that can go and look |
+| Scope | Per level, like recipes and tools: a note about one project is not a note about another (D-013) |
+
+It joins the recall corpus rather than sitting beside it: `readKnowledge`
+returns lines, so an index that emits lines needed no new tier, no router branch
+and no second scorer.
+
+**No UI yet.** Sources are set over the API
+(`POST /api/levels/:lid/knowledge/sources`), not from inside the app.
+
 ### Reading a code host — Live, read-only
 
 Seven tools: `list_pull_requests` · `get_pull_request` · `get_pull_request_files`
@@ -741,6 +771,18 @@ overlap the recall tier uses — never another level's, and never simply the mos
 recent. Feeding it the twelve most recent instead showed a job about billing
 whatever happened to be done yesterday.
 
+Since D-048 that corpus is the crew's own notes **plus** whatever your
+knowledge store has indexed, scored together and told apart by the source each
+store line carries.
+
+**Relevance is scored on what the question is about.** The asking words — know,
+learn, find, remind, tell — are dropped first, because they arrive in every
+question that reaches the recall tier and are therefore evidence of nothing.
+Until this was fixed, "what do we know about quantum tunnelling" was answered
+free against `hq` from a note about `EXPORTS.md`: 1 of 86 notes matched, sharing
+exactly `['know']`. The free tier's promise is never guess, and it had been
+guessing on the one word guaranteed to be there.
+
 ---
 
 ## 10. Boundaries
@@ -964,6 +1006,9 @@ untouched until you press Approve.
 | `TOOL_TIMEOUT_MS` | 60 s | `tools.ts` | A compiled tool that hangs is not cheaper |
 | KNOWLEDGE notes per session | 8 | `executors/claude.ts` | Chosen by term overlap, not recency |
 | KNOWLEDGE notes per recall | 6 | `router.ts` | The `answer` tier |
+| `STALE_MS` | 7 days | `store.ts` | Past it the knowledge store contributes nothing at all |
+| `MAX_PER_SOURCE` | 250 | `store.ts` | Files indexed per folder; the overflow is reported |
+| `MAX_ENTRY_CHARS` | 600 | `store.ts` | One passage, so eight of them are still a small prompt |
 
 ### Reaching out
 
@@ -1053,17 +1098,16 @@ judgement — *which of its tools are reading, and which are acting*.
       because the reference server is deprecated and a code host is where an
       unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs
       `GITHUB_TOKEN` in `.env`; ships off
-- [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
-      own material instead of the level's `KNOWLEDGE.md` alone. **Shape
-      decided, not built**: synced and indexed per level, never read live, so
-      the corpus is an artefact you can inspect before the crew can use it —
-      the same "nothing arrives unread" rule a skill's files already follow.
-      It emits lines into the `readKnowledge` seam, so it needs no new tier and
-      no second scorer. The free tier may answer from it, provided each line
-      carries its source and sync date and a stale index falls through to a
-      paid session (D-047). *Blocked on: whether it is worth building at all —
-      see "How much paid work was a question" below, which is the figure that
-      answers it and currently stands at zero rows.*
+- [x] **A knowledge store** — folders of your own material, synced into a
+      per-level index and never read live, so the corpus is an artefact you can
+      inspect before a session can use it. Markdown splits at its headings;
+      each passage is trimmed to 600 chars and stamped with its file and the
+      date it was read, and that provenance rides *inside* the corpus line, so
+      a recall answer and a session's context both show it. A stale index
+      (a week) contributes nothing anywhere, which is how the free tier falls
+      through instead of serving something that may have rotted. API only —
+      **no UI yet**, so a level is pointed at a folder over
+      `POST /api/levels/:lid/knowledge/sources` (D-047, D-048)
 - [ ] **CI status** — removed from the code host rather than shipped broken
       (D-040). GitHub restricts the Checks API to GitHub Apps, and the
       documented Commit Statuses fallback measured 0 statuses against 399

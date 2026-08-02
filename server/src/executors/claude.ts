@@ -473,7 +473,11 @@ export function buildAppend(
   }
   if (knowledge.length > 0) {
     parts.push(
-      `## What this level's crew has learned\n${knowledge.map((k) => `- ${k}`).join('\n')}`,
+      // "knows", not "has learned": since D-047 these lines are the crew's own
+      // notes *and* your indexed material, and a store passage was not learned
+      // by anybody here. Each one names its own source, so the session can tell
+      // them apart without the heading pretending they are the same thing.
+      `## What this level knows\n${knowledge.map((k) => `- ${k}`).join('\n')}`,
     );
   }
   if (lessons.length > 0) {

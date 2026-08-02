@@ -58,6 +58,7 @@ import {
   type CrewSeed,
   type LevelMeta,
 } from './levels';
+import { isStale, readIndex, storeLines, sync, writeIndex } from './store';
 import {
   fetchTemplate,
   installState,
@@ -214,7 +215,11 @@ function makeLevel(dir: string): LevelRuntime {
           registry,
           memory,
           SKILLS_DIR,
-          () => readKnowledge(dir),
+          // What the crew earned plus what you indexed, as one corpus: the
+          // session picks the 8 most relevant either way, and a store line
+          // carries its own source and date so the prompt stays honest about
+          // where each came from. Stale contributes nothing (D-047).
+          () => [...readKnowledge(dir), ...storeLines(dir, Date.now())],
           () => readConnections(CONNECTIONS_FILE),
           () => readLedger(SANDBOX_ROOT),
         )
@@ -867,6 +872,9 @@ function quoteFor_(
   };
   const decision = decide(probe, {
     knowledge: readKnowledge(rt.dir),
+    // The quote has to see the same corpus the run will, or it prices a
+    // session for work the store is about to answer for nothing.
+    store: storeLines(rt.dir, Date.now()),
     recipes: readRecipes(rt.dir),
     tools: usableTools(rt.dir),
     canFetch: tools?.includes('web') === true,
@@ -1032,6 +1040,61 @@ app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
   rt.roster = rt.roster.filter((s) => s.id !== seed.id);
   saveRoster(rt);
   return c.json({ id: seed.id, name: seed.name, archived: archived !== null });
+});
+
+/**
+ * The knowledge store: which folders this level indexes, and what the index
+ * holds. Returns the sources and the counts, never the passages — the point of
+ * an index you can inspect is a page you can read, not a JSON dump of your
+ * notes crossing the API on every poll.
+ */
+app.get('/api/levels/:lid/knowledge', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const index = readIndex(rt.dir);
+  return c.json({
+    sources: rt.meta.knowledgeSources ?? [],
+    indexed: index !== null,
+    entries: index?.entries.length ?? 0,
+    files: index ? new Set(index.entries.map((e) => e.source)).size : 0,
+    syncedAt: index?.syncedAt,
+    // Reported rather than hidden: a store that quietly indexed half your
+    // notes would answer confidently from the half it had.
+    skipped: index?.skipped ?? 0,
+    // Stale contributes nothing anywhere, so this is the difference between a
+    // level that can answer from your material and one that has stopped.
+    stale: index ? isStale(index, Date.now()) : false,
+  });
+});
+
+/** Point this level at folders of your own material, and index them now. */
+app.post('/api/levels/:lid/knowledge/sources', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as { paths?: unknown };
+  if (!Array.isArray(body.paths) || body.paths.some((p) => typeof p !== 'string')) {
+    return c.json({ error: 'paths must be a list of folders' }, 400);
+  }
+  const paths = (body.paths as string[]).map((p) => p.trim()).filter(Boolean);
+  // Which folders exist is worth saying now rather than after a silent sync
+  // that found nothing: a typed path is the likeliest thing to be wrong.
+  const missing = paths.filter((p) => !existsSync(p));
+  rt.meta.knowledgeSources = paths;
+  writeMeta(rt.dir, rt.meta);
+  const index = sync(paths, Date.now());
+  writeIndex(rt.dir, index);
+  return c.json({ sources: paths, missing, entries: index.entries.length, skipped: index.skipped });
+});
+
+/** Re-read the folders. The crew reads the index, so nothing changes until this runs. */
+app.post('/api/levels/:lid/knowledge/sync', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const sources = rt.meta.knowledgeSources ?? [];
+  if (sources.length === 0) return c.json({ error: 'no folders to index' }, 400);
+  const index = sync(sources, Date.now());
+  writeIndex(rt.dir, index);
+  return c.json({ entries: index.entries.length, skipped: index.skipped, syncedAt: index.syncedAt });
 });
 
 /** The compiled tools this level has earned, and what they have done. */

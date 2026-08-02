@@ -19,6 +19,12 @@ export interface LevelMeta {
    * intake: undefined means never asked, '' means the user declined.
    */
   repoPath?: string;
+  /**
+   * Folders of your own material this level indexes into its knowledge store.
+   * Per level because capability is per level (D-013): a note about one
+   * project is not a note about another, the same reason a recipe is.
+   */
+  knowledgeSources?: string[];
 }
 
 export interface CrewSeed {

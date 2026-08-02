@@ -13,6 +13,7 @@ import {
 } from '../recipes';
 import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide, recallSignal } from '../router';
+import { storeLines } from '../store';
 import {
   RUN_SCRIPT,
   TOOL_TIMEOUT_MS,
@@ -179,10 +180,15 @@ export class RoutedExecutor implements Executor {
   ): Promise<ExecutorResult> {
     const recipes = readRecipes(this.levelDir);
     const knowledge = this.knowledge();
+    // Read here rather than injected, like recipes and tools above: this class
+    // already knows the level, and `storeLines` returns nothing when the index
+    // is missing or stale, so there is no case to special-case.
+    const store = storeLines(this.levelDir, Date.now());
     const decision: Decision = job.noRouter
       ? { kind: 'agent' }
       : decide(job, {
           knowledge,
+          store,
           recipes,
           tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,

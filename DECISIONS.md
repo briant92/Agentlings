@@ -55,6 +55,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-043 — 2026-08-02 — The tool tier could not fail into a session, and its absorption was invisible](#d-043--2026-08-02--the-tool-tier-could-not-fail-into-a-session-and-its-absorption-was-invisible)
 - [D-044 — 2026-08-02 — Landing three times does not make a method compilable](#d-044--2026-08-02--landing-three-times-does-not-make-a-method-compilable)
 - [D-045 — 2026-08-02 — The first compile produced a cache, and its own check could not tell](#d-045--2026-08-02--the-first-compile-produced-a-cache-and-its-own-check-could-not-tell)
+- [D-046 — 2026-08-02 — The knowledge store: opened, not settled](#d-046--2026-08-02--the-knowledge-store-opened-not-settled)
 
 ## By theme
 
@@ -79,6 +80,8 @@ entry updates one file rather than two.
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045
+- **Outside access, still open** — the knowledge store, options not chosen:
+  D-046
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2060,3 +2063,53 @@ compile is *in flight*, which is robust to discard, cancel, a crash or a
 restart. Chasing each terminal path would have left the next one to be found
 the same way — as cancelling did, ten minutes later, straight after the discard
 fix.
+
+## D-046 — 2026-08-02 — The knowledge store: opened, not settled
+
+**This entry is open.** Every other entry here records a resolved question and
+what settled it; this one records a question, the options, and what each would
+cost — because the roadmap row said "decide what the crew may read" and a
+one-line blocker is not a decision anybody can take. Cite it as the place the
+options live, never as a position this project holds.
+
+**The goal.** A level's recall corpus is closed. `KNOWLEDGE.md` is written by
+the crew, from its own finished jobs, so a level can answer for free only about
+work it has already done. Ask it something you wrote down yourself, somewhere
+else, and it falls through to a paid session — 38c to reread your own notes.
+The `answer` tier is where cost actually reaches zero, so widening what it may
+legitimately claim is the largest saving left on the board.
+
+**It is not blocked on wiring, and that is worth being precise about.**
+`catalog/connections.json` takes any stdio MCP server today, and a notes store
+is a reading connection, so it sidesteps the acting blocker entirely (D-034).
+What is undecided is scope, and §11 is why: there is no classification,
+redaction or retention layer, so whatever the store returns enters a Claude
+session whole. A notes store is usually undifferentiated personal material.
+"Point it at my notes" is therefore a bigger grant than "point it at my repo".
+
+**Three scoping options, none chosen.**
+
+| | Shape | Costs |
+|---|---|---|
+| A | One connection, whole store, ships off — exactly how `github` ships | Simplest, and the grant is all-or-nothing. Every read is live, so freshness is whatever the store says today |
+| B | Per-level allowlist of spaces, folders or tags | Matches D-013: capability is per level because a method proven against one project is not proven against another, and a notes store cuts across that grain. Costs a scoping UI and a decision per level |
+| C | Sync-and-index — a trimmed local index the crew reads, never the store live | Matches the shape M5.2 already proved for the web: trim before the model, one implementation, and the size is ours. Makes freshness explicit and auditable. Costs a sync path and staleness becomes a real state |
+
+**A second question, separate from scoping and easy to conflate with it: may
+the free tier serve from it?** `KNOWLEDGE.md` is trusted because the crew
+earned it — every note is the residue of a job that ran. External docs have
+unknown freshness and no such provenance, and D-045 is the standing warning
+that a free wrong answer is the one outcome worse than a right answer that cost
+money. A defensible split is that a store **grounds a session** and never
+**answers on its own** until freshness can be established, which pushes the
+saving from "free" down to "cheaper" and is a materially different feature.
+Deciding scope without deciding this would ship the ambiguity.
+
+**What would settle it, and why nothing here is measured.** No figure in this
+entry is evidence: nothing in the ledger records whether a question *could*
+have been answered from own material, so the size of the prize is unknown. That
+is the same shortage that parks the attachment quote and the clarification
+comparison — real traffic, not more thought. The cheap first move is to record
+it: a routed `agent` run that recalls rather than produces is already
+distinguishable in principle, and counting those would price this row before it
+is built rather than after. (D-042, D-044)

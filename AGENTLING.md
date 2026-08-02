@@ -1055,7 +1055,9 @@ judgement — *which of its tools are reading, and which are acting*.
       `GITHUB_TOKEN` in `.env`; ships off
 - [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
       own material instead of the level's `KNOWLEDGE.md` alone.
-      *Blocked on: nothing technical; decide what the crew may read.*
+      *Blocked on: nothing technical; decide what the crew may read. The
+      options, and the separate question of whether the free tier may serve
+      from it, are laid out open in D-046.*
 - [ ] **CI status** — removed from the code host rather than shipped broken
       (D-040). GitHub restricts the Checks API to GitHub Apps, and the
       documented Commit Statuses fallback measured 0 statuses against 399

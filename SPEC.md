@@ -296,11 +296,16 @@ tried, measured and rejected is in `DECISIONS.md`:
     provenance in `.agentlings/catalog/installed.json`, so a later sync can
     report "update available" and never apply one. GitHub is read
     unauthenticated unless `GITHUB_TOKEN` is set; the token is sent to the
-    API host only, never to raw file hosts. Per-source cap of 60 with the
+    API host only, never to raw file hosts. Per-source cap of 250 with the
     overflow count shown rather than silently dropped.
-    - **Known limitation:** only the single `.md` is installed. Skills that
-      ship supporting scripts or reference files arrive incomplete; whole
-      -folder installs are the obvious follow-up.
+    - **A skill brings its folder.** Up to 200 companion files and 2MB,
+      fetched at the same commit as its `SKILL.md` so the instructions and
+      the scripts cannot disagree. A remote path that could climb out of the
+      folder it is written into, or that names a drive, is refused rather
+      than sanitised. The preview says how many extra files arrive and that
+      they are scripts it can run, because "nothing arrives unread" would
+      otherwise cover only the part that is markdown. A role stays one file:
+      a role *is* its `.md`.
     - **Starter set + fallback.** Ships 5 generalist jobs (worker, mason,
       scout, scribe, analyst) and 6 generalist abilities, hand-written
       against this app's contract — sandbox only, RESULT.md out — which

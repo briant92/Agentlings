@@ -252,14 +252,14 @@ tried, measured and rejected is in `DECISIONS.md`:
   env is laundered of `CLAUDE*`/`ANTHROPIC_BASE_URL` so a server started
   from inside a Claude Code terminal doesn't inherit that session's
   endpoint or auth.
-- **M2 — durability & quality of life.** Persist jobs (JSONL or SQLite),
-  survive restarts, cancel button, per-job live log stream. External-app
-  access via an in-app MCP connection registry: named connections defined
-  in server config (tokens in `.env`), jobs opt in through a
-  `tools: string[]` field, and the executor passes only those MCP servers
-  into the agentling's Agent SDK session. Credentialed connections stay
-  opt-in; reading the web does not (D-032).
-- **M3 — say what you need (in progress).** The app is for a non-expert:
+- **M2 — durability & quality of life (built).** Persist jobs (`jobs.json`
+  per level), survive restarts, cancel button, per-job live log stream.
+  External-app access via an in-app MCP connection registry: named
+  connections defined in server config (tokens in `.env`), jobs opt in
+  through a `tools: string[]` field, and the executor passes only those MCP
+  servers into the agentling's Agent SDK session. Credentialed connections
+  stay opt-in; reading the web does not (D-032).
+- **M3 — say what you need (built).** The app is for a non-expert:
   every setup step becomes a sentence in plain language.
   - **M3.1 (built).** Concept matcher, `server/src/match.ts`: BM25 over the
     installed catalog plus a hand-written concept map, split into INTENT

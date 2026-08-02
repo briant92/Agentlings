@@ -51,6 +51,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-039 — 2026-08-01 — The close-out cost never reached the ledger](#d-039--2026-08-01--the-close-out-cost-never-reached-the-ledger)
 - [D-040 — 2026-08-01 — The code host is builtin, because the budget for a stdio server is not ours](#d-040--2026-08-01--the-code-host-is-builtin-because-the-budget-for-a-stdio-server-is-not-ours)
 - [D-041 — 2026-08-02 — A clean exit is not a delivery, and scout could not write](#d-041--2026-08-02--a-clean-exit-is-not-a-delivery-and-scout-could-not-write)
+- [D-042 — 2026-08-02 — The quote overshot sevenfold, and narrowing it did not help](#d-042--2026-08-02--the-quote-overshot-sevenfold-and-narrowing-it-did-not-help)
 
 ## By theme
 
@@ -73,6 +74,7 @@ entry updates one file rather than two.
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
+- **Quoting, continued** — D-042
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1763,3 +1765,55 @@ than a missing call:
 
 The last is the closest fit and it changes what `priceFor` is, so it wants its
 own pass. Recorded in `AGENTLING.md` §15 under cost machinery.
+
+## D-042 — 2026-08-02 — The quote overshot sevenfold, and narrowing it did not help
+
+The third run of the same job was the first genuine repeat in the ledger. The
+recipe fired — `oneshot`, five-turn leash, key recorded — and two things came
+out of it that the tier story did not predict.
+
+**The leash saved nothing.** Run two was a full session at 7.86c over 12 turns;
+run three was leashed to 5 and cost **8.04c**. A recipe saves the exploring, and
+a Haiku scout calling one tool and writing one file was not exploring. The
+close-out is a fixed ~2.2c either way. So `AGENTLING.md` §8's "51% off" is a
+population average across mixed roles and shapes, and for work that was already
+cheap and tight the step-down is zero. Worth stating there, because the number
+reads like a promise about the next job.
+
+**The quote said 56.7c for a job that cost 8.04c.** Traced exactly:
+`quoteFor('oneshot', recipeKey, …)` found no history for that key, fell through
+to the whole one-shot population — worker and scribe runs against repository
+clones, mean 18.8c, max 47.3c — and `max(mean × 2, max × 1.2)` is 56.72c to the
+cent. Scout's own five runs had cost 1.4c to 8.0c. Nobody was over-charged,
+since `priceFor` caps at actual cost, but the quote is what the user sees
+*before* deciding to run anything.
+
+**The obvious fix was built, measured, and thrown away.** `shapeHistory` looked
+right by analogy with `costPerTurn`, which narrows by role and shape because
+D-018 proved a pooled rate predicts neither. Replaying every paid quote in the
+ledger against only the rows that preceded it:
+
+| variant | mean abs error | breaches | quotes over 5× actual |
+|---|---|---|---|
+| today | 35.0c | 8 | 7 |
+| role+shape, same tier only | 33.9c | 8 | 7 |
+| role+shape, falling back to session | 34.8c | 8 | 7 |
+
+Identical to within noise on 63 quotes. On the seven quotes it actually
+changed, four came closer and three got worse — one badly, a 13.3c scribe
+one-shot quoted at 103.9c, because falling back from `oneshot` to `session`
+inherits full-session prices for a five-turn leash. Excluding compiles from
+that population helps and does not rescue it: scribe sessions with a repository
+genuinely run 28c–107c.
+
+So the defect is real and this was not its fix. Reverted rather than shipped,
+which is D-029's shape again — the compile rate split, measured and then not
+done. The right time to reopen is when a role has one-shot history of its own,
+because the honest reading of these numbers is that the fallback matters less
+than having any same-kind history at all, and 80 mostly-synthetic jobs cannot
+supply it.
+
+One thing not to lose: mean absolute error is the wrong yardstick for a quote
+the user reads. A 7× overshoot on one job matters to whoever decides not to run
+it, and averages over 63 rows cannot see that. Whatever reopens this should be
+judged on the ratio of the worst quotes, not the mean of all of them.

@@ -684,6 +684,17 @@ tests for module X" never compiles, because the assertions depend on the
 module; "list the modules with no test file" does. Tools take the scaffolding,
 sessions keep the judgement (D-021).
 
+**There is a sharper test than that, learned by compiling the wrong thing.** A
+recipe for writing a short explanatory note reached the gate and compiled
+cleanly — into a `run.mjs` holding the note as a string literal. That is a
+cache, not a method, and it makes the tier's own safety check circular: a
+`verify.mjs` written by the same session, checking a constant that session
+hardcoded, can never fail. The router's matching then offers it to neighbouring
+questions — measured at 0.70 for "what a web manifest is" and 0.78 for "what
+CORS is", both over the 0.65 bar — so asking about CORS would have returned the
+favicon note, free and verified. **If the answer is a literal in `run.mjs`, it
+compiled a cache.** Discarded on review, which is what review is for (D-045).
+
 A tool is a directory holding a manifest and two plain-node ES modules,
 `run.mjs` and `verify.mjs` — no shell, no dependencies, no network. Nothing
 about it is trusted:

@@ -54,6 +54,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-042 — 2026-08-02 — The quote overshot sevenfold, and narrowing it did not help](#d-042--2026-08-02--the-quote-overshot-sevenfold-and-narrowing-it-did-not-help)
 - [D-043 — 2026-08-02 — The tool tier could not fail into a session, and its absorption was invisible](#d-043--2026-08-02--the-tool-tier-could-not-fail-into-a-session-and-its-absorption-was-invisible)
 - [D-044 — 2026-08-02 — Landing three times does not make a method compilable](#d-044--2026-08-02--landing-three-times-does-not-make-a-method-compilable)
+- [D-045 — 2026-08-02 — The first compile produced a cache, and its own check could not tell](#d-045--2026-08-02--the-first-compile-produced-a-cache-and-its-own-check-could-not-tell)
 
 ## By theme
 
@@ -77,7 +78,7 @@ entry updates one file rather than two.
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
-- **The fourth tier, in service** — D-043, D-044
+- **The fourth tier, in service** — D-043, D-044, D-045
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2009,3 +2010,53 @@ compile. That is the price of reading availability instead of use, and closing
 it needs the run to record which tools it actually called — which the ledger
 does not carry and no measurement yet demands. Recorded so the next person
 knows the gate is a filter and not a proof.
+
+## D-045 — 2026-08-02 — The first compile produced a cache, and its own check could not tell
+
+The `anchor2` recipe — five deliveries of "write a short note explaining what a
+favicon is, with one example" — was promoted on request. The compile went
+perfectly by every measure the app has: 51.1c against a $1.58 quote, 8 turns of
+10, both scripts written, status `done`.
+
+`run.mjs` holds the note as a string literal.
+
+**That is a cache, not a method, and it makes the tier's safety check
+circular.** `verify.mjs` is twenty assertions about the note's structure —
+definition, testable claim, one `<link>` example, a caching gotcha — and every
+one of them passes by construction, because the same session hardcoded the text
+those assertions describe. A program checking a constant it itself wrote cannot
+fail. The check that D-021 insisted on "harder than the script" was, here,
+theatre.
+
+**And the router would have served it to other questions.** Tools match on the
+strong bar, which is the recipe bar. Measured against the compiled manifest:
+
+| prompt | score | |
+|---|---|---|
+| …what a **favicon** is | 1.000 | claims |
+| …what a **web manifest** is | 0.700 | claims |
+| …what a **service worker** is | 0.700 | claims |
+| …what **CORS** is | 0.778 | claims |
+
+So "explain CORS" returns the favicon note — free, and passing verification.
+That is the free wrong answer this tier exists to prevent, arrived at through
+the tier's own machinery.
+
+**So the boundary has a sharper test than D-021's.** "Add tests for module X"
+versus "list the modules with no test file" is a rule about the job. This is a
+rule about the artefact: **if the answer is a literal in `run.mjs`, it compiled
+a cache** — and no `verify.mjs` can detect that, because the same session wrote
+both. Nothing automated caught it. Reading the generated code did, which is
+precisely what the review gate is for (D-011, D-021), and is the first time
+that gate has earned its keep on a compile rather than a library install.
+
+**Discarding it then poisoned the recipe.** The manifest is written before the
+compiling session runs, and `promote` refused any later attempt because "a tool
+for that recipe already exists" — a tool with nothing to execute. Discard is
+supposed to be the safe half of review; instead it made the recipe permanently
+uncompilable, and the router never noticed because `usableTools` needs both
+scripts. Fixed by asking the question properly: refuse when a tool *works* or a
+compile is *in flight*, which is robust to discard, cancel, a crash or a
+restart. Chasing each terminal path would have left the next one to be found
+the same way — as cancelling did, ten minutes later, straight after the discard
+fix.

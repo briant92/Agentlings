@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +101,7 @@ import {
   isComplete,
   promotionPrompt,
   readTools,
+  toolDir,
   toolNameFor,
   usableTools,
   writeTool,
@@ -715,6 +716,21 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       400,
     );
   }
+  /**
+   * Discarding a compile un-reserves its name. The manifest is written before
+   * the compiling session runs, so refusing its output has to remove it — left
+   * behind it is a tool with nothing to execute, and `promote` reads it as
+   * "a tool for that recipe already exists" and refuses every later attempt.
+   *
+   * Found by discarding one: the recipe became permanently uncompilable, which
+   * is the opposite of what reviewing its output is for. The router was never
+   * at risk — `usableTools` needs both scripts — so this was invisible until
+   * somebody tried again (D-045).
+   */
+  if (body.action === 'discard') {
+    const abandoned = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
+    if (abandoned) rmSync(toolDir(rt.dir, abandoned.name), { recursive: true, force: true });
+  }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script
   // to check it worked, which left the output file in its clone, and promoting
@@ -1130,8 +1146,34 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
       400,
     );
   }
-  if (readTools(rt.dir).some((t) => t.recipeKey === key && !t.retiredReason)) {
-    return c.json({ error: 'a tool for that recipe already exists' }, 400);
+  /**
+   * A manifest is written before the compiling session runs, so "a manifest
+   * exists" is not "a tool exists". Refusing on the manifest alone made every
+   * abandoned compile poison its recipe for ever: discard one and it can never
+   * be compiled again, which is the opposite of what reviewing output is for.
+   *
+   * Asked properly instead — is there a tool that *works*, or a compile still
+   * in flight? Both are reasons not to start another. A stranded manifest is
+   * neither, and this is deliberately robust to how it was stranded: discard,
+   * cancel, a crash, a restart. Chasing each terminal path would leave the
+   * next one to be found the same way (D-045).
+   */
+  const inFlight = (t: { pendingJobId?: string }): boolean => {
+    const job = t.pendingJobId ? rt.queue.get(t.pendingJobId) : undefined;
+    return job?.status === 'queued' || job?.status === 'running';
+  };
+  const blocking = readTools(rt.dir).find(
+    (t) => t.recipeKey === key && !t.retiredReason && (isComplete(rt.dir, t) || inFlight(t)),
+  );
+  if (blocking) {
+    return c.json(
+      {
+        error: inFlight(blocking)
+          ? 'a compile for that recipe is already running'
+          : 'a tool for that recipe already exists',
+      },
+      400,
+    );
   }
 
   /**

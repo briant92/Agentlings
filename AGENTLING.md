@@ -32,7 +32,7 @@ Written 2026-08-01 against `e5c80c9`; §8's figures regenerate with
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
 | **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
 | **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §10 |
-| **What one job costs** | Free on three of five tiers, 19c on a leash, 39c for a full session — measured, not quoted from memory (§8) |
+| **What one job costs** | Free on three of five tiers, 19c on a leash, 38c for a full session — measured, not quoted from memory (§8) |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
@@ -83,7 +83,7 @@ the SDK session, not advised in a prompt.
 |---|---|---|---|---|---|
 | `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work | default | 10 |
 | `mason` | Builds — implements, refactors, fixes | read, write, edit, bash, grep | small-diffs, check-your-work | default | 15 |
-| `scout` | Research — reads much, writes little | read, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
+| `scout` | Research — reads much, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
 | `scribe` | Documentation — turns work into words | read, write, grep | concise-reports, plain-language | default | 10 |
 | `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
 
@@ -383,9 +383,9 @@ without the agent is an answer nobody checked.
 | `fetch` | A bare "read this page" — addresses plus words that only mean *fetch* | free | Plain code |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
 | `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | 19c | A short session |
-| `agent` | Everything else. A weak match (≥ 0.3) still lends its method | 39c | A full session |
+| `agent` | Everything else. A weak match (≥ 0.3) still lends its method | 38c | A full session |
 
-Those two figures are measured over 79 jobs, not estimated — §8 has the
+Those two figures are measured over 82 jobs, not estimated — §8 has the
 workings and the command that regenerates them.
 
 Guards that keep the free tiers honest:
@@ -414,10 +414,10 @@ npm run ledger:report
 ```
 
 Run it rather than trusting what is printed below. The numbers here were taken
-on **2026-08-01, over 79 jobs spanning 2026-07-30 to 2026-08-01** — and the
+on **2026-08-01, over 82 jobs spanning 2026-07-30 to 2026-08-02** — and the
 reason the command exists is that `SPEC.md` carried "~13c / ~50c" for the two
-paid tiers until that day, by which point the real figures were 19.2c and
-39.2c. A cost written into prose is a cost nobody recomputes.
+paid tiers until that day, by which point the real figures were 18.8c and
+37.5c. A cost written into prose is a cost nobody recomputes.
 
 ### The three classes
 
@@ -438,8 +438,8 @@ paid tiers until that day, by which point the real figures were 19.2c and
 
 | Process | Measured | Notes |
 |---|---|---|
-| `oneshot` — a recipe on a 5-turn leash | **19.2c** mean, 47c max | 4.5c per turn with a repo, 7.9c without |
-| `agent` — a full session | **39.2c** mean, $1.32 max | 5.8c per turn with a repo, 2.8c without |
+| `oneshot` — a recipe on a 5-turn leash | **18.8c** mean, 47c max | 4.5c per turn with a repo, 5.8c without |
+| `agent` — a full session | **37.5c** mean, $1.32 max | 5.8c per turn with a repo, 2.1c without |
 | The close-out write-up | ~2c | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died |
 | A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. Four so far |
 | The optional refine tier on intake | fractions of a cent | One Haiku turn, no tools. Every failure path falls back to the local answer |
@@ -463,8 +463,8 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 79 jobs that came to: **spent $18.51, chargeable $6.60, absorbed
-$10.88.** Fifty-nine per cent of all money spent was on work that failed and
+Over those 82 jobs that came to: **spent $18.73, chargeable $6.81, absorbed
+$10.88.** Fifty-eight per cent of all money spent was on work that failed and
 was never billed — driven by the one-shot tier, which is 5 done against 21
 failed. That ratio is a fact about a short leash, not a fault: a leashed run
 trades the write-up for a much cheaper run, and `partial` exists because
@@ -481,14 +481,15 @@ show the effect.
 
 | | Jobs | Free | Spent | Mean per job |
 |---|---|---|---|---|
-| First half | 39 | 18% | $6.45 | 16.5c |
-| Second half | 40 | 30% | $12.06 | **30.1c** |
+| First half | 41 | 22% | $6.45 | 15.7c |
+| Second half | 41 | 24% | $12.28 | **30.0c** |
 
-The free share is climbing exactly as designed and the mean cost per job nearly
-doubled. Both are true: the cheap tiers took more of the easy work while the
-paid half absorbed four compiles at about $1 each. **Mean cost per job is
-dominated by novel work and will never show learning**, so it is the wrong
-number to watch.
+The free share barely moved and the mean cost per job doubled. Both are true:
+the cheap tiers took the easy work while the paid half absorbed four compiles
+at about $1 each. **Mean cost per job is dominated by novel work and will never
+show learning**, so it is the wrong number to watch — and it is unstable as
+well as uninformative, since these two rows shifted from 18%/30% to 22%/24%
+simply because three more jobs moved where the halfway point falls.
 
 Nor does a recipe make one job cheaper by degrees. Its runs are flat —
 
@@ -502,19 +503,35 @@ then holds it there. There are exactly two step-downs, and both are discrete:
 
 | Step | Fires when | Measured |
 |---|---|---|
-| session → one-shot | A recipe matches strongly | 39.2c → 19.2c, **51% off** |
-| one-shot → tool | Three deliveries, then you approve a compile | 19.2c → free, **100% off** |
+| session → one-shot | A recipe matches strongly | 37.5c → 18.8c, **50% off** |
+| one-shot → tool | Three deliveries, then you approve a compile | 18.8c → free, **100% off** |
+
+**That first figure is a population average, and it is not a promise about your
+next job.** It compares two tiers across mixed roles and shapes, and what a
+recipe actually removes is the *exploring*. Where a job was not exploring,
+there is nothing to remove.
+
+Measured on the case that made the point (D-042): the same commit-summary job
+run three times — 7.86c as a full session over 12 turns, then **8.04c** on a
+five-turn leash. No saving at all. A Haiku scout calling one tool and writing
+one file had no exploration to cut, and the close-out is a fixed ~2.2c either
+way. The leash still binds; it just had nothing to bind against.
+
+So the step-down is largest exactly where runs are long and wandering, and
+approaches zero on work that was already cheap and tight. The second step —
+compiling to a tool — is the one that is unconditional, because it removes the
+model rather than shortening it.
 
 So the number that tracks the intent is **what share of work has descended the
 ladder, and what the descent avoided** — not any average.
 
-**Avoided so far: about $8.13, against $18.51 actually spent.** 25 one-shot
-runs saved ~$5.00 and 8 free runs saved ~$3.13, pricing each at what a session
+**Avoided so far: about $7.86, against $18.73 actually spent.** 26 one-shot
+runs saved ~$4.86 and 8 free runs saved ~$3.00, pricing each at what a session
 would have cost. It is a counterfactual and the report says so: the assumption
 is that each would otherwise have run as an ordinary session, which is what the
 router's fall-through would have made it.
 
-**The honest caveat, which applies to this whole section.** 79 jobs over two
+**The honest caveat, which applies to this whole section.** 82 jobs over three
 days is a small and mostly synthetic sample — nearly every one was queued to
 exercise a mechanism rather than to get work done, and there has been about one
 genuine repeat. The machinery for the fourth tier was built ahead of the demand
@@ -523,7 +540,7 @@ not a workload.
 
 ### The write-up is priced apart from the session — Live
 
-A close-out costs **2–5c, mean 3.53c** — about 9% of a session, not the
+A close-out costs **2–5c, mean 3.4c** — about 9% of a session, not the
 rounding error it was assumed to be. It is part of what you spend and is
 deliberately excluded from every per-turn rate, because the write-up is a fixed
 errand on a cheap model rather than something a turn budget buys more or less

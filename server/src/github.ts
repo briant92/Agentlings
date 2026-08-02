@@ -153,11 +153,23 @@ function day(iso: string | undefined): string {
   return (iso ?? '').slice(0, 10);
 }
 
-/** Plain language, and never the raw body — an API error is not a session's problem to parse. */
-function explain(status: number, repo: string): string {
+/**
+ * Plain language, and never the raw body — an API error is not a session's
+ * problem to parse.
+ *
+ * `subject` is what was actually looked up, and it exists because this
+ * collapsed two different 404s into one message: asking for pull request #1 in
+ * a repository that has no pull requests answered "no such repository, or the
+ * token cannot see it", which sends whoever reads it after a permissions fault
+ * that is not there. Found on the first authenticated run against a real
+ * private repo, not by any of the fourteen tests.
+ */
+function explain(status: number, repo: string, subject = `repository ${repo}`): string {
   if (status === 401) return 'GitHub rejected the token — check GITHUB_TOKEN in .env';
-  if (status === 403) return 'GitHub refused: rate limit, or the token cannot see this repository';
-  if (status === 404) return `no such repository, or the token cannot see it: ${repo}`;
+  if (status === 403) {
+    return `GitHub refused: the token lacks the permission this needs, or the rate limit is spent (${subject})`;
+  }
+  if (status === 404) return `no such ${subject}, or the token cannot see it`;
   return `GitHub returned ${status}`;
 }
 
@@ -192,14 +204,18 @@ export async function callGithub(
     ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
   };
 
-  const get = async (url: string): Promise<{ data?: unknown; error?: string }> => {
+  const get = async (
+    url: string,
+    /** What was looked up, so a 404 can say which thing was missing. */
+    subject?: string,
+  ): Promise<{ data?: unknown; error?: string }> => {
     let res;
     try {
       res = await options.http(url, headers);
     } catch (err) {
       return { error: `could not reach GitHub: ${err instanceof Error ? err.message : String(err)}` };
     }
-    if (!res.ok) return { error: explain(res.status, repo) };
+    if (!res.ok) return { error: explain(res.status, repo, subject) };
     try {
       return { data: JSON.parse(await res.text()) };
     } catch {
@@ -229,7 +245,7 @@ export async function callGithub(
       };
     }
     case 'get_pull_request': {
-      const { data, error } = await get(`${API}/repos/${repo}/pulls/${Number(number)}`);
+      const { data, error } = await get(`${API}/repos/${repo}/pulls/${Number(number)}`, `pull request #${Number(number)} in ${repo}`);
       if (error) return { error };
       const p = data as any;
       return {
@@ -246,6 +262,7 @@ export async function callGithub(
     case 'get_pull_request_files': {
       const { data, error } = await get(
         `${API}/repos/${repo}/pulls/${Number(number)}/files?per_page=${MAX_ITEMS}`,
+        `pull request #${Number(number)} in ${repo}`,
       );
       if (error) return { error };
       const list = (data as any[]) ?? [];
@@ -280,7 +297,7 @@ export async function callGithub(
       };
     }
     case 'get_issue': {
-      const { data, error } = await get(`${API}/repos/${repo}/issues/${Number(number)}`);
+      const { data, error } = await get(`${API}/repos/${repo}/issues/${Number(number)}`, `issue #${Number(number)} in ${repo}`);
       if (error) return { error };
       const i = data as any;
       const labels = ((i.labels as any[]) ?? []).map((l) => l.name ?? l).join(', ');
@@ -315,6 +332,7 @@ export async function callGithub(
     case 'get_checks': {
       const { data, error } = await get(
         `${API}/repos/${repo}/commits/${encodeURIComponent(String(ref))}/check-runs?per_page=${MAX_ITEMS}`,
+        `CI checks for ${ref} in ${repo}`,
       );
       if (error) return { error };
       const list = ((data as any)?.check_runs as any[]) ?? [];
@@ -332,6 +350,7 @@ export async function callGithub(
       const query = ref ? `?ref=${encodeURIComponent(ref)}` : '';
       const { data, error } = await get(
         `${API}/repos/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}${query}`,
+        `path ${path} in ${repo}`,
       );
       if (error) return { error };
       const f = data as any;

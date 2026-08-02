@@ -101,6 +101,25 @@ describe('callGithub', () => {
     expect(r.text!.length).toBeLessThan(1200);
   });
 
+  // Found on the first authenticated run against a real private repo, and by
+  // none of the tests above: asking for #1 where no pull request exists is a
+  // 404 on the pull request, not on the repository. Blaming the repository
+  // sends the reader after a permissions fault that is not there — two
+  // different misses collapsed into one message.
+  it('names the thing that was missing, not the repository', async () => {
+    const missing: Http = async () => ({ ok: false, status: 404, text: async () => '' });
+    const pr = await callGithub('get_pull_request', { repo: 'a/b', number: 1 }, { http: missing });
+    expect(pr.error).toContain('pull request #1');
+    expect(pr.error).not.toContain('no such repository');
+
+    const issue = await callGithub('get_issue', { repo: 'a/b', number: 9 }, { http: missing });
+    expect(issue.error).toContain('issue #9');
+
+    // A repository-level lookup still blames the repository, which is right.
+    const list = await callGithub('list_issues', { repo: 'a/b' }, { http: missing });
+    expect(list.error).toContain('repository a/b');
+  });
+
   it('says what a failure means in plain language', async () => {
     const unauthorised: Http = async () => ({ ok: false, status: 401, text: async () => '' });
     const r = await callGithub('list_issues', { repo: 'a/b' }, { http: unauthorised });

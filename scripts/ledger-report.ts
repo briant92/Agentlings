@@ -179,6 +179,18 @@ const keyOf = (r: { recipeKey?: string; jobId: string }): string | undefined =>
 const byKey = new Map<string, typeof rows>();
 let ungrouped = 0;
 for (const r of rows) {
+  /**
+   * A compile is not work anybody asked for twice.
+   *
+   * It goes through the same queue and carries a prompt like everything else,
+   * so grouping by prompt collected the compile *brief* — "The crew has done
+   * this job enough times to stop paying for it…" — into a row reading like a
+   * job run twice. Nothing downstream depended on it, and it made the section
+   * claim a repeat that never happened, which is the one thing a report about
+   * repeats must not do. Excluded rather than counted as ungrouped: its job
+   * record is right there, it simply is not this section's subject.
+   */
+  if (r.compile) continue;
   const key = keyOf(r);
   if (!key) {
     if (r.costUsd > 0) ungrouped++;

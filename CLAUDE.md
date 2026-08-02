@@ -78,7 +78,7 @@ implementation rather than after mistakes.
 A personal orchestration tool with Lemmings-style presentation: a horde of
 small agentlings marches through a side-view 2D world, picks up real coding
 jobs, works them in per-job sandboxes, and delivers results for review.
-Full product definition: SPEC.md.
+Full product definition: SPEC.md. What one agentling can do: AGENTLING.md.
 
 Greenfield, started 2026-07-29. Solo developer (Brian).
 
@@ -140,6 +140,21 @@ turn.
 
 New entries append to `DECISIONS.md` with the next ID. An entry is a decision
 plus what proved it — length is whatever the evidence takes, not one line.
+
+### Capability surface
+
+What an agentling can do — activities, reach, turn budget, the five tiers,
+learning, boundaries — lives in `AGENTLING.md`. Read it before answering a
+capability question or writing user-facing copy about one, and update it when a
+capability lands. Do not `@`-import it; like `DECISIONS.md` it is opened on
+demand.
+
+It is **derived, not authored**. Every claim is regenerable from the code and
+tagged Live / Partial / Not built, so decide nothing in it: a change is settled
+in `DECISIONS.md`, described in `SPEC.md`, then reflected here with the numbers
+re-read from source rather than copied from the prose. Where it disagrees with
+the code the code wins and the file is wrong — the opposite of `DECISIONS.md`,
+where the entry stands and the code is what drifted.
 
 ### Hard-won rules
 

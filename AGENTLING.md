@@ -32,7 +32,7 @@ Written 2026-08-01 against `e5c80c9`; §8's figures regenerate with
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
 | **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
 | **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §10 |
-| **What one job costs** | Free on three of five tiers, 19c on a leash, 38c for a full session — measured, not quoted from memory (§8) |
+| **What one job costs** | Free on three of five tiers, 18c on a leash, 38c for a full session — measured, not quoted from memory (§8) |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
@@ -382,10 +382,10 @@ without the agent is an answer nobody checked.
 | `answer` | A question about what this level already knows, answered from `KNOWLEDGE.md`; or an exact repeat with a stored answer | free | Plain code |
 | `fetch` | A bare "read this page" — addresses plus words that only mean *fetch* | free | Plain code |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
-| `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | 19c | A short session |
+| `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | 18c | A short session |
 | `agent` | Everything else. A weak match (≥ 0.3) still lends its method | 38c | A full session |
 
-Those two figures are measured over 82 jobs, not estimated — §8 has the
+Those two figures are measured over 86 jobs, not estimated — §8 has the
 workings and the command that regenerates them.
 
 Guards that keep the free tiers honest:
@@ -414,10 +414,10 @@ npm run ledger:report
 ```
 
 Run it rather than trusting what is printed below. The numbers here were taken
-on **2026-08-01, over 82 jobs spanning 2026-07-30 to 2026-08-02** — and the
+on **2026-08-02, over 86 jobs spanning 2026-07-30 to 2026-08-02** — and the
 reason the command exists is that `SPEC.md` carried "~13c / ~50c" for the two
-paid tiers until that day, by which point the real figures were 18.8c and
-37.5c. A cost written into prose is a cost nobody recomputes.
+paid tiers until that day, by which point the real figures were 19.2c and
+39.2c. A cost written into prose is a cost nobody recomputes.
 
 ### The three classes
 
@@ -438,8 +438,8 @@ paid tiers until that day, by which point the real figures were 18.8c and
 
 | Process | Measured | Notes |
 |---|---|---|
-| `oneshot` — a recipe on a 5-turn leash | **18.8c** mean, 47c max | 4.5c per turn with a repo, 5.8c without |
-| `agent` — a full session | **37.5c** mean, $1.32 max | 5.8c per turn with a repo, 2.1c without |
+| `oneshot` — a recipe on a 5-turn leash | **17.9c** mean, 47c max | 4.5c per turn with a repo, 4.0c without |
+| `agent` — a full session | **37.8c** mean, $1.32 max | 5.8c per turn with a repo, 2.1c without |
 | The close-out write-up | ~2c | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died |
 | A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. Four so far |
 | The optional refine tier on intake | fractions of a cent | One Haiku turn, no tools. Every failure path falls back to the local answer |
@@ -465,8 +465,8 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 82 jobs that came to: **spent $18.73, chargeable $6.81, absorbed
-$11.71.** Sixty-three per cent of all money spent was never charged for.
+Over those 86 jobs that came to: **spent $19.38, chargeable $7.46, absorbed
+$11.71.** Sixty per cent of all money spent was never charged for.
 
 Most of that is failed work, driven by the one-shot tier at 5 done against 21
 failed — a fact about a short leash rather than a fault, since a leashed run
@@ -488,15 +488,16 @@ show the effect.
 
 | | Jobs | Free | Spent | Mean per job |
 |---|---|---|---|---|
-| First half | 41 | 22% | $6.45 | 15.7c |
-| Second half | 41 | 24% | $12.28 | **30.0c** |
+| First half | 43 | 21% | $6.86 | 16.0c |
+| Second half | 43 | 26% | $12.52 | **29.1c** |
 
 The free share barely moved and the mean cost per job doubled. Both are true:
 the cheap tiers took the easy work while the paid half absorbed four compiles
 at about $1 each. **Mean cost per job is dominated by novel work and will never
 show learning**, so it is the wrong number to watch — and it is unstable as
-well as uninformative, since these two rows shifted from 18%/30% to 22%/24%
-simply because three more jobs moved where the halfway point falls.
+well as uninformative: across three recomputations these two rows have read
+18%/30%, then 22%/24%, then 21%/26% — moved by where the halfway point falls
+and by nothing else.
 
 Nor does a recipe make one job cheaper by degrees. Its runs are flat —
 
@@ -510,8 +511,8 @@ then holds it there. There are exactly two step-downs, and both are discrete:
 
 | Step | Fires when | Measured |
 |---|---|---|
-| session → one-shot | A recipe matches strongly | 37.5c → 18.8c, **50% off** |
-| one-shot → tool | Three deliveries, then you approve a compile | 18.8c → free, **100% off** |
+| session → one-shot | A recipe matches strongly | 37.8c → 17.9c, **53% off** |
+| one-shot → tool | Three deliveries, then you approve a compile | 17.9c → free, **100% off** |
 
 **That first figure is a population average across two whole tiers, and the
 per-job saving is about half of it.** Five jobs have now been run on both
@@ -524,13 +525,19 @@ tiers, which is the only comparison that answers "what did the leash do to
 | write a note in anchor2.md | 20.9c | 13.9c | 33% off |
 | write exports.md at the repo root | 66.9c | 39.8c | 41% off |
 | read a reddit page | 36.5c | 21.2c | 42% off |
-| summarise recent commits | 7.2c | 8.0c | **11% dearer** |
+| summarise recent commits | 7.2c | 7.3c | **1% dearer** |
 
-So: 18–42% on work that was exploring, and *negative* on work that was not.
-What a recipe removes is the exploring, and the commit summary had none to
-remove — a Haiku scout calling one tool and writing one file, with a fixed
-~2.2c close-out either way (D-042). The leash still binds; it had nothing to
-bind against.
+So: 18–42% on work that was exploring, and nothing on work that was not. What a
+recipe removes is the exploring, and the commit summary had none to remove — a
+Haiku scout calling one tool and writing one file, with a fixed ~2.2c close-out
+either way (D-042). The leash still binds; it had nothing to bind against.
+
+**The two numbers have already been seen to move independently**, which is the
+argument for keeping both. Three more leashed runs of that commit summary took
+the headline from 50% to 53% — nothing improved, the cheap runs simply pulled
+the tier mean down — while the per-job column barely stirred and its worst case
+went from 11% dearer to 1% dearer. A tier average moves when the *mix* changes;
+only the per-job column moves when a job does.
 
 Read the sample size before trusting any of it: five jobs. The honest summary
 is that the step-down is largest where runs are long and wandering and
@@ -550,13 +557,13 @@ ladder in one line: **78.2c session → 46.6c leashed → free, twice.**
 So the number that tracks the intent is **what share of work has descended the
 ladder, and what the descent avoided** — not any average.
 
-**Avoided so far: about $7.86, against $18.73 actually spent.** 26 one-shot
-runs saved ~$4.86 and 8 free runs saved ~$3.00, pricing each at what a session
+**Avoided so far: about $8.59, against $19.38 actually spent.** 28 one-shot
+runs saved ~$5.57 and 8 free runs saved ~$3.02, pricing each at what a session
 would have cost. It is a counterfactual and the report says so: the assumption
 is that each would otherwise have run as an ordinary session, which is what the
 router's fall-through would have made it.
 
-**The honest caveat, which applies to this whole section.** 82 jobs over three
+**The honest caveat, which applies to this whole section.** 86 jobs over three
 days is a small and mostly synthetic sample — nearly every one was queued to
 exercise a mechanism rather than to get work done, and there has been about one
 genuine repeat. The machinery for the fourth tier was built ahead of the demand
@@ -565,7 +572,7 @@ not a workload.
 
 ### The write-up is priced apart from the session — Live
 
-A close-out costs **2–5c, mean 3.4c** — about 9% of a session, not the
+A close-out costs **2–5c, mean 3.3c** — about 9% of a session, not the
 rounding error it was assumed to be. It is part of what you spend and is
 deliberately excluded from every per-turn rate, because the write-up is a fixed
 errand on a cheap model rather than something a turn budget buys more or less

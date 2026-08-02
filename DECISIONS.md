@@ -50,6 +50,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-038 — 2026-08-01 — CLAUDE.md trimmed to what the harness does not already do](#d-038--2026-08-01--claudemd-trimmed-to-what-the-harness-does-not-already-do)
 - [D-039 — 2026-08-01 — The close-out cost never reached the ledger](#d-039--2026-08-01--the-close-out-cost-never-reached-the-ledger)
 - [D-040 — 2026-08-01 — The code host is builtin, because the budget for a stdio server is not ours](#d-040--2026-08-01--the-code-host-is-builtin-because-the-budget-for-a-stdio-server-is-not-ours)
+- [D-041 — 2026-08-02 — A clean exit is not a delivery, and scout could not write](#d-041--2026-08-02--a-clean-exit-is-not-a-delivery-and-scout-could-not-write)
 
 ## By theme
 
@@ -71,6 +72,7 @@ entry updates one file rather than two.
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
+- **Delivery and roles** — D-041
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1714,3 +1716,50 @@ Worth keeping the shape of this: the tool list came from enumerating the
 reference server, which was right, and every one of those 26 tools is
 implementable *by a GitHub App*. What the enumeration could not tell us was
 which of them a PAT may call. A capability list is not a permission list.
+
+## D-041 — 2026-08-02 — A clean exit is not a delivery, and scout could not write
+
+The first real job through the code host connection found two faults, neither
+of which any test had caught. Job `149620b5`: "list the last 10 commits on
+briant92/Agentlings and summarise what changed", queued with no repository so
+the connection was the only way to answer.
+
+**The connection worked.** `mcp__github__list_commits` was called and returned,
+which proves the whole chain end to end — catalog, settings, `grantedTools`,
+the executor's config, the runner building zod schemas from those specs, the
+internal endpoint, the API.
+
+**`scout` could not write down what it found.** Its frontmatter said
+`tools: [read, grep, web_fetch]` while its own prompt promised "you never
+modify files other than your own notes and RESULT.md", and every session is
+told to write RESULT.md. So it read the commits, tried `Write`, was refused,
+tried `Bash cat >`, was refused, and ended by saying it had no way to record
+the answer. Fixed by adding `write`, with a test over the shipped roles
+asserting each has `Write` or `Bash` — Bash counts, since `analyst` delivers by
+`cat >` and is coherent that way. Mutation-tested: the guard fails on the old
+frontmatter with the role named.
+
+**The second fault is the one worth deciding.** The job was recorded `done` and
+**priced at 4.7c**, having produced nothing: its sandbox holds `.session.json`
+and no RESULT.md. `fail()` asks whether a run delivered — `hasPatch ||
+deliveredFiles(sandbox)` — and carries three measured cases in its comment
+explaining why. `complete()` asks nothing and sets `done` unconditionally.
+
+So a run that *dies* is checked for delivery and a run that *exits cleanly* is
+assumed to have delivered, and this run exited cleanly by explaining that it
+could not do the work. That is this project's own rule recurring: "it
+delivered" keeps being re-derived, the shared function exists, and the success
+path does not call it.
+
+Not fixed here, because the right answer is a decision about billing rather
+than a missing call:
+
+- `failed` — absorbed, which is honest about the outcome but files a session
+  that ran fine under the same label as one that crashed.
+- `partial` — the existing name for "left something worth your attention",
+  except here there is nothing to review at all.
+- `done` at a price of zero — keeps the outcome accurate and stops the charge,
+  and needs `priceFor` to take delivery as well as outcome.
+
+The last is the closest fit and it changes what `priceFor` is, so it wants its
+own pass. Recorded in `AGENTLING.md` §15 under cost machinery.

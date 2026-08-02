@@ -1073,6 +1073,12 @@ real work.*
 - [x] **`closeOutUsd` into the ledger** — the rate now prices the session
       alone, and 13 of 79 historical rows were recovered by identification
       (D-039)
+- [ ] **A clean exit with nothing produced is billed** — `fail()` checks
+      whether a run delivered; `complete()` does not, so a session that ends by
+      explaining it could not do the work is recorded `done` and charged.
+      Measured on job 149620b5, 4.7c for an empty sandbox. *Blocked on:
+      deciding whether that is `failed`, `partial`, or `done` priced at zero
+      — the last needs `priceFor` to read delivery as well as outcome (D-041).*
 - [ ] **The quote knowing about attachments** — a large document eats context
       the budget was priced without. *Blocked on: enough rows to measure it.*
 - [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the

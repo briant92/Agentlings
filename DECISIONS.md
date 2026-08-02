@@ -1553,3 +1553,25 @@ exists to catch the ones that go unchecked.
 
 The two sections that actually change behaviour — the hard-won rules and the
 project conventions — are intact or sharper.
+
+**Amended the same day: the behavioural cut is reverted, the rest stands.**
+Brian asked for the original 66 lines back and for the project half to live
+somewhere else. So `CLAUDE.md` is now the Karpathy base verbatim — byte-checked
+against `11912ca` — plus a project header naming the four documents, and
+`PROJECT.md` holds the working rules, `@`-imported on the last line.
+
+The import is the whole point and worth stating plainly: **a file that is not
+imported is not resident, and a rule that is not resident does not apply.**
+Moving the project half behind a pointer would have quietly switched off the
+IGPL boundary, the secrets rule and the hard-won rules — the last of which
+exist precisely because an archive changes no behaviour. So this buys
+separation and an upstream-diffable base, and saves no context at all: 90 + 110
+lines against 151, both loaded every turn. That is the opposite of what the
+morning's trim optimised for, and it is a fair trade once the goal is stated as
+flow rather than size.
+
+What survives from the original entry: the merged hard-won rules, the thematic
+index living in this file, and the reasoning about which behavioural clauses
+were doing work. That reasoning is now a record of what was tried rather than
+of what is in force — kept, because the next person to look at the file's
+length will have the same idea.

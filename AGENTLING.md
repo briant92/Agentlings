@@ -1057,7 +1057,8 @@ judgement — *which of its tools are reading, and which are acting*.
       own material instead of the level's `KNOWLEDGE.md` alone.
       *Blocked on: nothing technical; decide what the crew may read. The
       options, and the separate question of whether the free tier may serve
-      from it, are laid out open in D-046.*
+      from it, are laid out open in D-046 — which is now collecting the figure
+      that would size it: see "How much paid work was a question" below.*
 - [ ] **CI status** — removed from the code host rather than shipped broken
       (D-040). GitHub restricts the Checks API to GitHub Apps, and the
       documented Commit Statuses fallback measured 0 statuses against 399
@@ -1157,6 +1158,22 @@ real work.*
 - [ ] **A compile priced as its own kind of work** — measured at an 8% gap over
       four runs and dismissed as noise. `compile` is recorded on the ledger and
       deliberately not read. *Blocked on: more compiles, not more thought.*
+- [ ] **How much paid work was a question the crew's own notes covered** — the
+      measurement that prices a knowledge store *before* it is built rather than
+      after. Every paid row carries `asked` (question-shaped) and `recallable`
+      (notes sharing a term with the prompt), computed by `recallSignal` in
+      `router.ts` from the same scorer the recall tier uses. **Including the
+      runs that died and the ones you cancelled** — those become ledger rows
+      too, and on a short leash they are most of them, so measuring only the
+      runs that landed would blind the counter exactly where the traffic is.
+      Free-tier rows carry neither: the router already answered those, so they
+      are not the traffic being sized. Two raw facts rather than one verdict,
+      because where "recall" stops and "work" begins is the part the data has to
+      settle — and both are gated on presence rather than truth, so the negative
+      rows survive as a denominator and an absent field still means "written
+      before anyone was counting". Recorded and deliberately not read.
+      *Blocked on: real traffic. The counter starts at zero rows — no history
+      carries it, and none can be given it.* (D-046)
 
 ### The one that is not on this list
 

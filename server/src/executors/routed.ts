@@ -365,13 +365,31 @@ export class RoutedExecutor implements Executor {
       writeRecipes(this.levelDir, updated);
     }
 
-    if (!result) throw failure;
     // Measured here rather than at the row builder because this is the only
     // place that holds both the prompt and the level's notes, and computed for
     // `noRouter` runs too: "do it properly" is still paid traffic, and one
     // that was a question is exactly the traffic D-046 is trying to size.
     // Nothing reads it — see LedgerEntry.asked.
     const signal = recallSignal(job.prompt, knowledge);
+
+    // A run that died is paid traffic like any other, and on a short leash it
+    // is most of them — `SessionFailure` carries a meter precisely because the
+    // ledger files a row for it. Attaching this only to the runs that landed
+    // would make the counter blind exactly where the traffic is, which is the
+    // bias D-017 caught in the quote and this project has now paid for six
+    // times. A cancelled run counts too: it was still a question, and it still
+    // spent money.
+    if (!result) {
+      if (failure instanceof SessionFailure) {
+        throw new SessionFailure(
+          failure.message,
+          { ...failure.meter, ...signal },
+          failure.lesson,
+          failure.approach,
+        );
+      }
+      throw failure;
+    }
     // The user was quoted nothing, because a tool was going to do it. The tool
     // did not, and a promise of free that arrives as a bill is the one thing
     // the quote exists to prevent — so this one is on the app.

@@ -2139,6 +2139,18 @@ an undercount is a floor, an overcount is a story.
 Free-tier rows carry neither, deliberately: the router already answered those,
 so they are not the paid traffic being sized.
 
+**The first version measured only the runs that landed, which is this project's
+oldest mistake wearing a new hat.** The signal was attached to the executor's
+success return, and a run that dies throws a `SessionFailure` instead — which
+carries a meter precisely because the ledger files a row for it. So every
+question that ran out of turns would have been counted as no question at all,
+and on a short leash those are most runs. Exactly the blindness D-017 found in
+the quote, arrived at independently four entries later. Caught by checking the
+claim "every paid row carries it" against the failure path rather than against
+the tests, all of which passed. Failed and cancelled runs now carry it too: a
+cancelled run was still a question and still spent money, which is a different
+question from whether anyone wanted it compiled.
+
 **And the row builder was pulled out of the server to be tested.** It is the
 one function in this app with a proven habit of dropping fields silently —
 `closeOutUsd` for 79 jobs, `toolFellBack` for two more, both declared on the

@@ -287,6 +287,42 @@ describe('RoutedExecutor', () => {
       expect(out.meter).toMatchObject({ asked: true, recallable: 1 });
     });
 
+    /**
+     * The one that would otherwise go missing. A dead run still becomes a
+     * ledger row — `SessionFailure` carries a meter for exactly that reason —
+     * and on a short leash most runs end this way. Measuring only the runs
+     * that landed would leave the counter blind where the traffic actually is,
+     * which is the bias D-017 caught in the quote.
+     */
+    it('measures a run that died, because that is a ledger row too', async () => {
+      const dead = new SessionFailure('ran out of turns', { costUsd: 0.22 });
+      await expect(
+        run(build(new DyingSession(dead)), job({ prompt: 'what is our deploy process?' }), PIP),
+      ).rejects.toMatchObject({
+        message: 'ran out of turns',
+        // The session's own numbers survive the rethrow alongside the measurement.
+        meter: { costUsd: 0.22, asked: true, recallable: 0 },
+      });
+    });
+
+    // Cancelling is a different question from "did anyone want this compiled",
+    // which the tool-candidate counter excludes. This one only asks whether it
+    // was a question, and a cancelled run was still a question that cost money.
+    //
+    // The prompt is the interesting population on purpose: question-shaped and
+    // squarely about something the level *has* a note on, but not phrased the
+    // narrow way the free recall tier insists on — so it gets paid for anyway.
+    // Those are the rows that say the notes are there and are not being used.
+    it('measures a cancelled run', async () => {
+      await expect(
+        run(
+          build(new DyingSession(new SessionFailure(CANCELLED))),
+          job({ prompt: 'how does the payment flow retry?' }),
+          PIP,
+        ),
+      ).rejects.toMatchObject({ meter: { asked: true, recallable: 1 } });
+    });
+
     it('credits the recipe even when the session taught it nothing new', async () => {
       stored();
       await run(build(new FakeSession()), job({ prompt: 'add a test for formatUsd' }), PIP);

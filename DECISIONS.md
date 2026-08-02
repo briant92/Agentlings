@@ -1613,3 +1613,34 @@ improve by waiting: the 79 existing rows can never be backfilled, since the
 split was never written down; and a fix only starts paying from the next run.
 Recorded in `AGENTLING.md` §8 as a known gap and in §15 as a task blocked on
 nothing.
+
+**Fixed the same day, with the measurement the entry asked for.** `LedgerEntry`
+gained the field, `index.ts` copies it, and `costPerTurn` subtracts it — plus a
+filter change that matters on its own: a row now qualifies on *session* cost
+above zero rather than total cost, so a killed run whose only measured spend
+was its write-up no longer contributes turns against a zero and drags the rate
+down. Three tests, one per case: the split is excluded, a row without one is
+read as all-session, and the write-up-only row is ignored.
+
+**The write-up is dearer than this entry guessed.** It said "about 2c" and
+"roughly a cent" of rate inflation. Measured across 14 surviving records the
+mean is **3.53c**, range 2.07–4.82c — about 9% of a 39.2c session, not a
+rounding error. The guess came from a figure in the notes, which is the thing
+this project's first rule says not to trust, in an entry written by the person
+who wrote the rule.
+
+**It did not ship inert, because the history was recoverable by
+identification.** `scripts/backfill-ledger-closeout.mjs` reads the split back
+off the persisted job records and matches on `jobId`: 13 rows stamped, 65 with
+no surviving split left alone, and 1 refused because its recorded write-up
+equalled its total. Nothing was inferred from the mean — that is the
+mislabelling D-036 retired its own backfill to avoid, and a stamped average is
+indistinguishable from a real observation once written.
+
+Rates fell 1.3–6.3% (scribe one-shot with a repo 5.37c → 5.03c; worker session
+without one 2.97c → 2.82c). **At a 50c ceiling exactly one of five classes wins
+a turn**, and several are clamped by their role's cap regardless — so the
+honest claim is that the retrospective effect is small, and the prospective one
+is larger, because every new row carries the split where only 13 of 79 old ones
+could. Nobody was over-billed at any point; `priceFor` caps the charge
+independently, which is why this survived 79 jobs unnoticed.

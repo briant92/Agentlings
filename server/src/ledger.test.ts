@@ -295,6 +295,40 @@ describe('costPerTurn', () => {
     expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.025, 6);
   });
 
+  // D-039. The write-up is a fixed errand on a cheap model, not something the
+  // turn budget buys more or less of, so charging it to the session's turns
+  // makes every turn look dearer and grants fewer of them. Measured on real
+  // rows: a close-out runs 2–5c against a 39c session mean, so this is a
+  // ~9% error, not a rounding one.
+  it('prices the session alone, not the session plus its write-up', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0.44, closeOutUsd: 0.04, turnsAllowed: 10 }),
+    ];
+    // 0.40 of session over 10 turns, not 0.44.
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.04, 6);
+  });
+
+  // Rows written before D-039 carry no split. Treating a missing field as zero
+  // is what they meant, and is what keeps the old history usable rather than
+  // silently dropping every row that predates the fix.
+  it('treats a row with no recorded write-up as all session', () => {
+    const entries = [entry({ jobClass: 'mason', costUsd: 0.4, turnsAllowed: 10 })];
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.04, 6);
+  });
+
+  // A killed run can reach the ledger having measured nothing but its own
+  // write-up. Its turns are real and its session cost is not known, so
+  // counting the turns against a zero would drag the rate toward zero — the
+  // same shape as the pooled-shape bug that made the budget unable to bind.
+  it('ignores a row whose only measured spend was the write-up', () => {
+    const entries = [
+      entry({ jobClass: 'mason', costUsd: 0.04, closeOutUsd: 0.04, turnsAllowed: 10 }),
+      entry({ jobClass: 'mason', costUsd: 0.4, turnsAllowed: 10 }),
+    ];
+    expect(costPerTurn(entries, 'mason').samples).toBe(1);
+    expect(costPerTurn(entries, 'mason').usd).toBeCloseTo(0.04, 6);
+  });
+
   it('counts failures — a session that died still burnt turns', () => {
     const entries = [
       entry({ jobClass: 'mason', costUsd: 0.2, turnsAllowed: 8, outcome: 'failed', priceUsd: 0 }),

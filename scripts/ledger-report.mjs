@@ -96,6 +96,15 @@ console.log(
 console.log(`free jobs    ${free} of ${rows.length}  (${Math.round((100 * free) / rows.length)}%)`);
 const unmeasured = rows.filter((r) => r.costUnknown).length;
 if (unmeasured) console.log(`unmeasured   ${unmeasured}  (spent money none of the above includes)`);
+// Part of `spent`, shown apart from it because the per-turn rate excludes it:
+// the write-up is a fixed errand, not something a turn budget buys (D-039).
+const split = rows.filter((r) => r.closeOutUsd);
+if (split.length) {
+  const wrote = split.reduce((s, r) => s + r.closeOutUsd, 0);
+  console.log(
+    `write-ups    ${usd(wrote)} over ${split.length} rows, mean ${usd(wrote / split.length)}  (inside 'spent'; excluded from every per-turn rate)`,
+  );
+}
 
 console.log('\n## Trend\n');
 const half = Math.floor(rows.length / 2);

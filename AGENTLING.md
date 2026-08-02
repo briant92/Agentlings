@@ -487,15 +487,49 @@ genuine repeat. The machinery for the fourth tier was built ahead of the demand
 deliberately and with that known (D-021). These figures describe a test bench,
 not a workload.
 
-### One known gap in the arithmetic
+### The write-up is priced apart from the session — Live
 
-`closeOutUsd` is set on the job meter and declared in `JobMeter`, but it is
-never copied into the ledger row and `LedgerEntry` has no field for it. So
-`costPerTurn` divides *session plus write-up* across the session's own turns,
-inflating every per-turn rate by roughly a cent and biasing turn budgets
-slightly **down**. `SPEC.md` M5.5 currently claims the separation is in
-effect; it is not. Logged as D-039, and the 79 existing rows can never be
-backfilled with it.
+A close-out costs **2–5c, mean 3.53c** — about 9% of a session, not the
+rounding error it was assumed to be. It is part of what you spend and is
+deliberately excluded from every per-turn rate, because the write-up is a fixed
+errand on a cheap model rather than something a turn budget buys more or less
+of. Charging it to the session's turns makes each turn look dearer and grants
+fewer of them.
+
+That separation was specified from the start and did not exist until
+2026-08-01: the field was set on the meter, declared in `JobMeter`, shown on
+the terminal card, and dropped by the one function that built the ledger row —
+79 jobs with no split recorded (D-039). Found by computing something from the
+data and noticing a column missing, which is the argument for
+`npm run ledger:report` existing at all.
+
+Fixing the copy would have shipped inert, so the history was recovered **by
+identification**: 13 rows still had their split in a surviving job record and
+were matched on `jobId`; one was refused because its recorded write-up equalled
+its total, which is a killed run that measured nothing else. The other 65 keep
+no split and are read as all-session, which is what they meant when written.
+Nothing was inferred from an average — stamping the 3.53c mean onto rows that
+never recorded one would manufacture history indistinguishable from the real
+thing.
+
+Measured effect on the rates, before against after:
+
+| Class, tier, shape | Before | After | |
+|---|---|---|---|
+| scribe · session · repo | 7.53c | 7.38c | −2.0% |
+| scribe · one-shot · repo | 5.37c | 5.03c | −6.3% |
+| worker · session · repo | 4.93c | 4.80c | −2.6% |
+| worker · session · no repo | 2.97c | 2.82c | −5.1% |
+| worker · one-shot · repo | 3.72c | 3.67c | −1.3% |
+
+**Small today, and honestly so.** At a 50c ceiling only one of those five
+classes wins a turn (worker without a repo, 16 → 17); the rest are unchanged,
+and several are clamped by their role's cap regardless. The recovery covers 13
+of 79 rows, so it understates what the fix does from here: every new row
+carries the split, which makes the correction the full ~9% rather than the
+1–6% recoverable retrospectively. Nobody was ever over-billed by it — the
+charge is capped by `priceFor` independently — which is precisely why it stayed
+invisible for 79 jobs.
 
 ---
 
@@ -977,9 +1011,9 @@ real work.*
 
 ### Cost machinery
 
-- [ ] **`closeOutUsd` into the ledger** — §8's known gap. Every per-turn rate
-      is inflated by about a cent. *Blocked on: nothing. Small, and it moves
-      every future turn budget, so it deserves its own measured pass (D-039).*
+- [x] **`closeOutUsd` into the ledger** — the rate now prices the session
+      alone, and 13 of 79 historical rows were recovered by identification
+      (D-039)
 - [ ] **The quote knowing about attachments** — a large document eats context
       the budget was priced without. *Blocked on: enough rows to measure it.*
 - [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the

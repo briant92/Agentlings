@@ -58,8 +58,23 @@ export interface LedgerEntry {
   compile?: boolean;
   tier: Tier;
   outcome: 'done' | 'failed';
-  /** What it actually cost us, from the SDK. */
+  /** What it actually cost us, from the SDK. Includes `closeOutUsd`. */
   costUsd: number;
+  /**
+   * The part of `costUsd` spent by the close-out pass rather than by the
+   * session.
+   *
+   * Kept separate so `costPerTurn` can price the session alone: the write-up
+   * is a fixed errand on a cheap model, not something the turn budget can buy
+   * more or less of, so charging it to the session's turns makes every turn
+   * look dearer than it is and grants fewer of them.
+   *
+   * It was declared on `JobMeter` and on no ledger row for 79 jobs, because
+   * the row builder simply did not copy it (D-039). Rows written before the
+   * fix carry it only where a persisted job still held the split and the
+   * backfill could match it by id.
+   */
+  closeOutUsd?: number;
   /**
    * The run spent money we could not measure. A killed session never reaches
    * the result message the SDK reports cost on, so its spend is real and
@@ -196,16 +211,25 @@ export function costPerTurn(
   hasRepo?: boolean,
 ): { samples: number; usd: number } {
   const granted = (e: LedgerEntry): number => e.turnsAllowed ?? 0;
+  /**
+   * The session's own cost: total less the close-out errand. A row that never
+   * recorded the split contributes its total, which is what it did before
+   * D-039 and the honest reading of a row that does not say otherwise.
+   */
+  const session = (e: LedgerEntry): number => e.costUsd - (e.closeOutUsd ?? 0);
   const useful = entries.filter(
     (e) =>
       e.jobClass === jobClass &&
       (tier ? e.tier === tier : true) &&
       (hasRepo === undefined || e.hasRepo === hasRepo) &&
-      e.costUsd > 0 &&
+      // The session must have cost something, not merely the job: a killed run
+      // whose only measured spend was its write-up prices no turns at all, and
+      // counting its turns against a zero session cost would deflate the rate.
+      session(e) > 0 &&
       granted(e) > 0,
   );
   if (useful.length === 0) return { samples: 0, usd: 0 };
-  const cost = useful.reduce((sum, e) => sum + e.costUsd, 0);
+  const cost = useful.reduce((sum, e) => sum + session(e), 0);
   const turns = useful.reduce((sum, e) => sum + granted(e), 0);
   return { samples: useful.length, usd: cost / turns };
 }

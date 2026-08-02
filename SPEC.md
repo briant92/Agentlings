@@ -479,11 +479,12 @@ tried, measured and rejected is in `DECISIONS.md`:
     **What the ledger records about a job is what actually happened to it.**
     The job class is the role that *ran* the work, not the role the matcher
     named — a job routed to a role nobody holds is picked up by whoever is
-    free and runs as their role. `closeOutUsd` is part of `costUsd` and was
-    meant to be kept separate, so the per-turn rate would price the session
-    rather than the session plus a fixed errand — **it is not: the field never
-    reaches the ledger row, so the rate still includes the errand** (D-039).
-    `hasRepo` records the shape the rate depends on. (D-026, D-029)
+    free and runs as their role. `closeOutUsd` is part of `costUsd` but kept
+    separate on the row, so the per-turn rate prices the session rather than
+    the session plus a fixed errand — specified from the start, and actually
+    true only since the row builder was fixed and the recoverable history
+    backfilled by id (D-039). `hasRepo` records the shape the rate depends on.
+    (D-026, D-029)
 
     **Nothing is billed above its quote, and some things below it.** Failed
     work is charged nothing. So is a job quoted free because a compiled tool

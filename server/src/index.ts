@@ -265,6 +265,10 @@ function makeLevel(dir: string): LevelRuntime {
               : 'session',
         outcome,
         costUsd,
+        // Part of costUsd, and recorded apart from it so the per-turn rate can
+        // price the session rather than the session plus a fixed errand. It was
+        // set on the meter and dropped exactly here for 79 jobs (D-039).
+        ...(job.meter?.closeOutUsd ? { closeOutUsd: job.meter.closeOutUsd } : {}),
         // A job quoted free because a tool would do it is never billed when the
         // tool turned out not to.
         priceUsd: priceFor(outcome, costUsd, job.meter?.toolFellBack ? 0 : job.quotedUsd),

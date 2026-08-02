@@ -24,7 +24,7 @@ import {
   TICK_MS,
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
-import { capabilityTokens } from './capability';
+import { capabilityTokens, connectionsIn } from './capability';
 import { describe, readConnections } from './connections';
 import {
   enabledNames,
@@ -1132,6 +1132,31 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   }
   if (readTools(rt.dir).some((t) => t.recipeKey === key && !t.retiredReason)) {
     return c.json({ error: 'a tool for that recipe already exists' }, 400);
+  }
+
+  /**
+   * Landing three times says the method is repeatable. It does not say the
+   * method is *compilable*, and nothing asked that until a recipe reached the
+   * gate that plainly was not: "list the last 10 commits on GitHub" earned its
+   * three deliveries through the code-host connection, and a tool is plain
+   * node with no network. Promoting it would have spent about a dollar asking
+   * a session to write a script that cannot exist (D-044).
+   *
+   * Judged on the connections the recipe was learned with, minus the ones that
+   * are on by default — those appear on nearly every surface and so carry no
+   * information. What remains was switched on deliberately.
+   */
+  const ambient = readConnections(CONNECTIONS_FILE)
+    .filter((conn) => conn.defaultOn === true)
+    .map((conn) => conn.name);
+  const needs = connectionsIn(recipe.capabilities, ambient);
+  if (needs.length > 0) {
+    return c.json(
+      {
+        error: `that method used ${needs.join(' and ')}, and a compiled tool is plain node with no network — it could never do this job. Compiled tools take the scaffolding; work that has to reach outside stays a session.`,
+      },
+      400,
+    );
   }
 
   // A recipe compiled before and retired is a second attempt, not a first.

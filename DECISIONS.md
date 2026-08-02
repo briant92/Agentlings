@@ -53,6 +53,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-041 — 2026-08-02 — A clean exit is not a delivery, and scout could not write](#d-041--2026-08-02--a-clean-exit-is-not-a-delivery-and-scout-could-not-write)
 - [D-042 — 2026-08-02 — The quote overshot sevenfold, and narrowing it did not help](#d-042--2026-08-02--the-quote-overshot-sevenfold-and-narrowing-it-did-not-help)
 - [D-043 — 2026-08-02 — The tool tier could not fail into a session, and its absorption was invisible](#d-043--2026-08-02--the-tool-tier-could-not-fail-into-a-session-and-its-absorption-was-invisible)
+- [D-044 — 2026-08-02 — Landing three times does not make a method compilable](#d-044--2026-08-02--landing-three-times-does-not-make-a-method-compilable)
 
 ## By theme
 
@@ -76,7 +77,7 @@ entry updates one file rather than two.
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
-- **The fourth tier, in service** — D-043
+- **The fourth tier, in service** — D-043, D-044
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1967,3 +1968,44 @@ at 12:32; not worth reconstructing further, and now not worth worrying about.
 That run also priced honestly: quoted 16.1c, cost 8.4c, charged 8.4c, five
 turns, 2.1c of it the write-up. One more delivery and it is compilable, which
 will be the first recipe to reach that gate on its own.
+
+## D-044 — 2026-08-02 — Landing three times does not make a method compilable
+
+Five runs of the code-host summary took its recipe to three deliveries — the
+first recipe to reach the compile gate by the ordinary path, which is what
+D-021 built the machinery for and had never seen. It is also a recipe that can
+never be compiled.
+
+A tool is two plain-node modules with "no dependencies, no shell commands, no
+network". That job earns its answer through the code-host connection. The gate
+checked that the method was **repeatable** and never that it was
+**reproducible in code**, so promoting it would have spent about a dollar
+asking a session to write a script that cannot exist — and the honest outcomes
+are a compile that fails its own check, or one that passes a trivial check and
+serves a stale answer for free, which is the single outcome this tier exists to
+prevent.
+
+**The obvious guard was wrong and the data said so before it shipped.**
+Refusing any recipe whose surface names a connection would also refuse
+`anchor2` — five deliveries of writing a short note — because `web` ships on
+and therefore sits in almost every surface, including recipes that never
+fetched anything. A capability surface records what a run *could* reach, not
+what it used, which is exactly the ambiguity that makes this hard.
+
+What separates them is deliberateness. Measured across both levels: the two
+recipes that actually compiled carry no connection tokens at all; `anchor2`
+carries only the ambient `web`; the code-host recipe carries `github` and
+`browser`, which the user had to switch on. So the gate subtracts the
+`defaultOn` connections and refuses on what is left. Ambient availability
+carries no information; a connection somebody turned on does.
+
+Verified live and for nothing: promoting the code-host recipe now answers "that
+method used browser and github, and a compiled tool is plain node with no
+network — it could never do this job."
+
+**The limit, stated rather than hidden.** A job that genuinely fetched a page
+with nothing but `web` still passes this gate and will produce a failing
+compile. That is the price of reading availability instead of use, and closing
+it needs the run to record which tools it actually called — which the ledger
+does not carry and no measurement yet demands. Recorded so the next person
+knows the gate is a filter and not a proof.

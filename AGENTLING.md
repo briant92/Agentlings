@@ -707,6 +707,14 @@ it is **reviewed and promoted**, exactly like a library install: a generated
 tool is executable instruction. A second attempt is told how the first failed,
 because a retry that is not is an identical first try at the same price.
 
+**It also refuses work that could never be a script.** Landing three times says
+a method is repeatable; it does not say it is compilable, and the first recipe
+to reach the gate on its own was one that could not be — "list the last 10
+commits on GitHub" earned its deliveries through the code-host connection, and
+a tool is plain node with no network. Promotion now reads the connections the
+recipe was learned with, minus the ones that are on by default, and refuses
+with the reason. Caught before it spent the dollar (D-044).
+
 ### Level knowledge — Live
 
 Every finished job appends to the level's `KNOWLEDGE.md`. A session is given

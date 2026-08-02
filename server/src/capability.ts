@@ -35,6 +35,30 @@ export function capabilityTokens(parts: {
   ].sort();
 }
 
+/**
+ * The connections a stored surface says the run *could* reach.
+ *
+ * Availability, not use — which is the whole difficulty. A compiled tool is
+ * two plain-node modules with "no dependencies, no shell commands, no
+ * network", so a method that genuinely reached a connection can never become
+ * one; but the surface cannot say whether it did. `web` ships on, so it
+ * appears on almost every recipe, including ones that never fetched anything.
+ *
+ * So callers must decide which of these are informative. `ambient` is how:
+ * pass the connections that are on unless the user says otherwise, and their
+ * presence tells you nothing. What is left was switched on deliberately, and a
+ * method found with it is a method that plausibly needed it. (D-044)
+ */
+export function connectionsIn(
+  capabilities: string[] | undefined,
+  ambient: string[] = [],
+): string[] {
+  return (capabilities ?? [])
+    .filter((token) => token.startsWith('conn:'))
+    .map((token) => token.slice('conn:'.length))
+    .filter((name) => !ambient.includes(name));
+}
+
 /** Whether two surfaces are the same one. */
 export function sameSurface(a: string[] | undefined, b: string[] | undefined): boolean {
   if (!a || !b) return false;

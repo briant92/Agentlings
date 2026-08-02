@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { capabilityTokens, sameSurface } from './capability';
+import { capabilityTokens, connectionsIn, sameSurface } from './capability';
+
+describe('connectionsIn', () => {
+  const surface = capabilityTokens({
+    connections: ['web', 'github', 'browser'],
+    tools: ['Read', 'Write'],
+    skills: ['cite-sources'],
+  });
+
+  it('reads the connections back out of a surface', () => {
+    expect(connectionsIn(surface).sort()).toEqual(['browser', 'github', 'web']);
+  });
+
+  /**
+   * The distinction the compile gate turns on. `web` ships on, so it is in
+   * almost every surface including recipes that never fetched anything —
+   * `anchor2`, five deliveries of writing a note, carries it. Treating that as
+   * "needed the network" would refuse the most promotable recipe in the level
+   * for a reason that is not true. What the user switched on deliberately is
+   * the part that carries information. (D-044)
+   */
+  it('drops the connections that are on by default', () => {
+    expect(connectionsIn(surface, ['web']).sort()).toEqual(['browser', 'github']);
+  });
+
+  it('leaves nothing when only ambient connections were available', () => {
+    const plain = capabilityTokens({ connections: ['web'], tools: ['Read'] });
+    expect(connectionsIn(plain, ['web'])).toEqual([]);
+  });
+
+  // Every recipe written before surfaces existed, and the two that compiled.
+  it('says nothing was needed when no surface was recorded', () => {
+    expect(connectionsIn(undefined, ['web'])).toEqual([]);
+  });
+});
 
 /**
  * D-036 closed one axis — the connections a job could reach — and left the

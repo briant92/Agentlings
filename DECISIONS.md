@@ -49,6 +49,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-037 — 2026-08-01 — The rest of the axes, as one surface rather than five comparisons](#d-037--2026-08-01--the-rest-of-the-axes-as-one-surface-rather-than-five-comparisons)
 - [D-038 — 2026-08-01 — CLAUDE.md trimmed to what the harness does not already do](#d-038--2026-08-01--claudemd-trimmed-to-what-the-harness-does-not-already-do)
 - [D-039 — 2026-08-01 — The close-out cost never reached the ledger](#d-039--2026-08-01--the-close-out-cost-never-reached-the-ledger)
+- [D-040 — 2026-08-01 — The code host is builtin, because the budget for a stdio server is not ours](#d-040--2026-08-01--the-code-host-is-builtin-because-the-budget-for-a-stdio-server-is-not-ours)
 
 ## By theme
 
@@ -69,6 +70,7 @@ entry updates one file rather than two.
   D-033
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
+- **Outside access, continued** — D-040
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1644,3 +1646,47 @@ honest claim is that the retrospective effect is small, and the prospective one
 is larger, because every new row carries the split where only 13 of 79 old ones
 could. Nobody was over-billed at any point; `priceFor` caps the charge
 independently, which is why this survived 79 jobs unnoticed.
+
+## D-040 — 2026-08-01 — The code host is builtin, because the budget for a stdio server is not ours
+
+The roadmap called a code host the cheapest first credentialed connection and
+said it was blocked on nothing. Two things turned up on contact.
+
+**The obvious server is deprecated.** `@modelcontextprotocol/server-github`
+starts, works, and prints `npm warn deprecated … Package no longer supported`.
+GitHub's supported replacement ships as a Docker image — Docker is not
+installed here — or as a remote HTTP endpoint, and `Connection.transport` is
+`builtin | stdio`, so this registry cannot express a hosted server at all. That
+gap is now recorded in `AGENTLING.md` §5 as the first thing to fix if the next
+connection is somebody else's.
+
+**Builtin is the better answer regardless, and the catalog had already argued
+it.** Its own comment says results should be small by design, "and for a stdio
+server that budget is the server's own flags, not ours: the SDK talks to it
+directly, so nothing of ours sits in between". A code host is precisely where
+that bites — one issue list or one diff is unbounded. Measured against a real
+repository, 30 open issues are **150,320 characters of API JSON and 3,969 as
+delivered, 38× smaller**. `get_pull_request_files` returns names and line
+counts and never the patch, though the API offers one on every entry.
+
+So `github.ts` is our own eight tools over the REST API, reusing the token
+discipline the library sync already had, and `agent-runner.mjs` builds their
+schemas from config rather than importing anything of ours.
+
+**The tools were enumerated, not read about.** Speaking JSON-RPC to the
+reference server returned 26 tools, 14 reading and 12 acting. That is D-034's
+method and it earns its keep twice: it produced the read/act split honestly,
+and the acting names are now asserted absent in two places — the catalog, which
+is the grant, and the implementation.
+
+**A test caught a traversal hole that review did not.** `isRepo` was
+`/^[\w.-]+\/[\w.-]+$/`, which reads as "word characters, dots and dashes" and
+silently accepts `..` as a whole segment — so `../secrets` was a well-formed
+`owner/name` and went into an API path. The check is now per segment with
+all-dots refused. Worth recording because the regex looked obviously fine, and
+the test that failed was written to assert something else entirely.
+
+**Live before believing it:** three tools called against a real public
+repository, unauthenticated, returning correctly shaped and trimmed output. The
+connection ships **off** and cannot be switched on without `GITHUB_TOKEN` —
+which the user sets themselves. 688 tests green.

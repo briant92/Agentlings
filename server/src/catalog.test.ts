@@ -74,3 +74,50 @@ describe('what a job is actually allowed to call', () => {
     expect(names).not.toContain('browser');
   });
 });
+
+/**
+ * The same boundary on the code host, and the same reason it is asserted here
+ * rather than described in a comment: the catalog's `tools` list is the grant,
+ * and `/internal/github` refuses anything the list does not name.
+ *
+ * The twelve below are the acting tools the reference GitHub MCP server
+ * exposes, enumerated by speaking JSON-RPC to it rather than reading its
+ * README (D-034's method, D-040's application). Adding one is a decision about
+ * the safety model — a merged pull request cannot be reviewed afterwards —
+ * which is why breaking this test should be uncomfortable.
+ */
+describe('the code host connection is read-only', () => {
+  const github = all.find((c) => c.name === 'github');
+  const ACTS = [
+    'create_or_update_file',
+    'create_repository',
+    'push_files',
+    'create_issue',
+    'create_pull_request',
+    'fork_repository',
+    'create_branch',
+    'update_issue',
+    'add_issue_comment',
+    'create_pull_request_review',
+    'merge_pull_request',
+    'update_pull_request_branch',
+  ];
+
+  it('ships, and grants only reading tools', () => {
+    expect(github).toBeDefined();
+    for (const name of ACTS) expect(github!.tools ?? []).not.toContain(name);
+  });
+
+  it('grants something, so the test cannot pass by the connection being empty', () => {
+    expect((github!.tools ?? []).length).toBeGreaterThan(0);
+    expect(github!.tools).toContain('list_issues');
+  });
+
+  // Credentialed connections ship off: they carry a token and read on the
+  // user's behalf, which is a different decision from reading a public page.
+  it('ships off and cannot be switched on without its secret', () => {
+    expect(github!.defaultOn).not.toBe(true);
+    expect(Object.keys(github!.secrets ?? {})).toContain('GITHUB_TOKEN');
+    expect(grantedTools(['github'], all, {}, {})).not.toContain('github');
+  });
+});

@@ -20,6 +20,7 @@ import type { MemoryStore } from '../memory';
 import { outputNames } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
+import { GITHUB_TOOLS } from '../github';
 import { extractUrls, fetchPage } from '../web';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
@@ -599,6 +600,7 @@ export class ClaudeAgentExecutor implements Executor {
     const { granted, refused } = resolveForJob(job.tools, this.connections(), process.env);
     for (const { name, reason } of refused) onProgress?.(`connection "${name}" unavailable: ${reason}`);
     const web = granted.find((c) => c.name === 'web');
+    const codeHost = granted.find((c) => c.name === 'github');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -689,6 +691,18 @@ export class ClaudeAgentExecutor implements Executor {
         mcpServers: toMcpServers(granted, process.env),
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
+          : {}),
+        // Builtin like `web`, and for the same reason: the server owns the
+        // call so it owns the size of the reply. Only the tools the catalog
+        // actually granted are described to the session — every visible tool
+        // is definition overhead in each of its requests.
+        ...(codeHost
+          ? {
+              github: {
+                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/github`,
+                tools: GITHUB_TOOLS.filter((t) => (codeHost.tools ?? []).includes(t.name)),
+              },
+            }
           : {}),
         sources,
       }),

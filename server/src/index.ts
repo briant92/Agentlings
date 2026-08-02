@@ -106,6 +106,7 @@ import {
   writeTool,
 } from './tools';
 import { decide } from './router';
+import { callGithub } from './github';
 import { fetchPage } from './web';
 import { planWork, queuedJobSpec, runnerRole } from './work';
 
@@ -1216,6 +1217,30 @@ app.post('/internal/fetch', async (c) => {
   const web = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web');
   if (!web) return c.json({ error: 'web access is not configured' }, 404);
   return c.json(await fetchPage(url, { allow: web.allow, maxChars: web.maxChars }));
+});
+
+/**
+ * Code-host reads for a running session, for the same reason as /internal/fetch:
+ * the server owns the call so it owns the size of the answer, and the token
+ * never leaves this process. Localhost, like the rest of the API.
+ */
+app.post('/internal/github', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'github');
+  if (!connection) return c.json({ error: 'the code host connection is not configured' }, 404);
+  // The catalog's own list is the grant. A tool this connection does not
+  // declare is refused here as well as by the allowlist, so the two cannot
+  // drift into disagreeing about what was granted.
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(
+    await callGithub(body.tool, body.args ?? {}, {
+      http,
+      token: process.env.GITHUB_TOKEN,
+    }),
+  );
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));

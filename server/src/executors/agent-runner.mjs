@@ -51,6 +51,47 @@ try {
     });
   }
 
+  // The 'github' connection is ours too, and builtin for the same reason as
+  // 'web': the server owns the call, so it owns how much comes back. The tool
+  // shapes arrive as config rather than being written out here, because this
+  // file is plain JS spawned with plain node and must not import anything of
+  // ours — so it builds the schemas generically from what it was handed.
+  if (config.github?.tools?.length) {
+    const { z } = await import('zod');
+    mcpServers.github = createSdkMcpServer({
+      name: 'github',
+      version: '1.0.0',
+      tools: config.github.tools.map((spec) =>
+        tool(
+          spec.name,
+          spec.description,
+          Object.fromEntries(
+            spec.params.map((p) => {
+              const base = p.type === 'number' ? z.number() : z.string();
+              const described = base.describe(p.describe);
+              return [p.name, p.required ? described : described.optional()];
+            }),
+          ),
+          async (args) => {
+            let text;
+            try {
+              const res = await fetch(config.github.endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ tool: spec.name, args }),
+              });
+              const reply = await res.json();
+              text = reply.error ? `Could not do that: ${reply.error}` : reply.text;
+            } catch (err) {
+              text = `Could not reach the code host: ${err instanceof Error ? err.message : String(err)}`;
+            }
+            return { content: [{ type: 'text', text }] };
+          },
+        ),
+      ),
+    });
+  }
+
   // Every granted connection's tools, named by the catalog. Was a single
   // hardcoded 'mcp__web__fetch_page', which meant an stdio connection could be
   // configured and then have all of its tools refused by the allowlist.

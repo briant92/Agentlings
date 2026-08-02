@@ -232,13 +232,45 @@ off, so the app's fetch was gated and this second door was not.
 | Connection | Transport | Default | Status |
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
+| `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
+
+### Reading a code host — Live, read-only
+
+Eight tools: `list_pull_requests` · `get_pull_request` · `get_pull_request_files`
+· `list_issues` · `get_issue` · `list_commits` · `get_checks` ·
+`get_file_contents`. Enough for "what broke on main" and "summarise this PR"
+without the crew having a clone.
+
+**It is builtin rather than an MCP server, and that was a decision** (D-040).
+The reference GitHub MCP server is deprecated by npm, and GitHub's supported
+replacement ships as Docker or a remote HTTP endpoint this registry cannot
+express. Builtin turned out better regardless, for the reason the catalog
+already gives about stdio — *the budget for a stdio server is that server's own
+flags, not ours* — and a code host is exactly where that bites. Measured on 30
+open issues from a real repository: **150,320 characters of raw API JSON
+against 3,969 delivered, 38× smaller.** Owning the call means owning the size
+of the answer.
+
+**It reads and cannot act.** Of the 26 tools the reference server exposes —
+enumerated by speaking JSON-RPC to it rather than trusting its README — the
+twelve that create, update, comment, merge, push or fork are absent.
+`catalog.test.ts` asserts the grant and `github.test.ts` asserts the
+implementation, so the boundary is two tests rather than a sentence.
+`get_pull_request_files` deliberately returns names and line counts and never
+the patch, though the API offers one on every entry: a diff is unbounded, and
+it is what makes a turn expensive.
+
+The token is required, not optional as it is for the library — a connection
+whose secret is missing is listed as not ready and can never be switched on.
 
 ### Connecting to other apps — Partial
 
-The socket is built; nothing credentialed is plugged into it. An external MCP
-server is declared with `name`, `label`, `transport: "stdio"`, `command`,
-`args`, `tools` and optional `secrets: {ENV_NAME: "why it is needed"}`.
+One credentialed connection is plugged in — the code host above — and it is
+builtin, so the *external* socket still carries nothing but the browser. An
+external MCP server is declared with `name`, `label`, `transport: "stdio"`,
+`command`, `args`, `tools` and optional
+`secrets: {ENV_NAME: "why it is needed"}`.
 
 - **The tool list is the grant.** A server offering both reading and acting can
   be adopted for reading alone by naming only its reading tools; anything not
@@ -253,10 +285,12 @@ server is declared with `name`, `label`, `transport: "stdio"`, `command`,
 - **They all ship off.** Credentialed connections carry credentials and act on
   the user's behalf, which is a different decision from reading a page (D-005).
 
-**Not built:** any credentialed connection at all. Not Gmail, not a calendar,
-not a ticket tracker, not a database. The registry would take one today; none
-has been added, because adding one is a decision about §11 rather than a line
-in a list.
+**Not built:** everything else credentialed. Not Gmail, not a calendar, not a
+ticket tracker, not a database. And one shape the registry cannot express at
+all: `transport` is `builtin | stdio`, so a **hosted MCP server reached over
+HTTP** — which is how most vendors now ship, GitHub's own included — has no
+place to go. That is the first thing to fix if the next connection is somebody
+else's rather than ours.
 
 **Never:** borrowing claude.ai or Claude Code connector auth. The app owns its
 own external credentials or has none — a stated non-goal.
@@ -947,9 +981,10 @@ judgement — *which of its tools are reading, and which are acting*.
 
 - [x] **Read a web page** — built in, on by default, trimmed to 12k chars
 - [x] **Read a page in a real browser** — Playwright MCP, 8 reading tools, ships off
-- [ ] **A code host** (issues, PRs, CI status) — unlocks "what broke on main",
-      "summarise this PR". Needs a token in `.env` and a read-only tool list.
-      *Blocked on: nothing. This is the cheapest first credentialed connection.*
+- [x] **A code host** — 8 read tools over GitHub, builtin rather than MCP
+      because the reference server is deprecated and a code host is where an
+      unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs
+      `GITHUB_TOKEN` in `.env`; ships off
 - [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
       own material instead of the level's `KNOWLEDGE.md` alone.
       *Blocked on: nothing technical; decide what the crew may read.*

@@ -34,6 +34,18 @@
     "at the file. The app never sees a password — and with the variable unset",
     "the argument is dropped and browsing works signed out.",
     "",
+    "'github' is builtin rather than an MCP server, and that is a decision",
+    "(D-040). The reference GitHub MCP server is deprecated by npm, and the",
+    "supported replacement ships as Docker or a remote HTTP endpoint that this",
+    "registry cannot express. Builtin is the better answer regardless, for the",
+    "reason given below about stdio budgets: a code host is exactly where an",
+    "unbounded reply hurts, since one issue list or one diff can be enormous.",
+    "Owning the call means owning the size of the answer, so every tool returns",
+    "compact lines and none of them returns a patch. It reads and cannot act:",
+    "of the 26 tools the reference server exposes, the 12 that create, update,",
+    "comment, merge, push or fork are absent, and catalog.test.ts asserts it.",
+    "It needs GITHUB_TOKEN in .env and is never live without one.",
+    "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
     "They ship off by default — they carry credentials and act on the user's",
@@ -51,6 +63,26 @@
       "defaultOn": true,
       "tools": ["fetch_page"],
       "allow": [],
+      "maxChars": 12000
+    },
+    {
+      "name": "github",
+      "label": "Read a code host",
+      "description": "Reads issues, pull requests, commits, CI results and files from GitHub. Reads only — it cannot open, comment, merge or push anything.",
+      "transport": "builtin",
+      "tools": [
+        "list_pull_requests",
+        "get_pull_request",
+        "get_pull_request_files",
+        "list_issues",
+        "get_issue",
+        "list_commits",
+        "get_checks",
+        "get_file_contents"
+      ],
+      "secrets": {
+        "GITHUB_TOKEN": "a GitHub token with read access to the repositories the crew should see"
+      },
       "maxChars": 12000
     },
     {

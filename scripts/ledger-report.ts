@@ -11,6 +11,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { normalise } from '../server/src/recipes';
+import { totals } from '../server/src/ledger';
 
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
@@ -111,19 +112,29 @@ for (const tier of ['routed', 'tool', 'oneshot', 'session']) {
 }
 
 console.log('\n## Billing\n');
-const cost = rows.reduce((s, r) => s + r.costUsd, 0);
-const price = rows.reduce((s, r) => s + r.priceUsd, 0);
-const absorbed = rows
-  .filter((r) => r.outcome === 'failed')
-  .reduce((s, r) => s + r.costUsd, 0);
+/**
+ * From `totals`, not from a second copy of the same arithmetic.
+ *
+ * It used to keep its own copy: `absorbed` was "cost of rows whose outcome is
+ * failed", which misses a tool fall-back — a run that finished `done` and was
+ * deliberately charged nothing. So fixing `totals` moved this report by
+ * exactly zero until the copy went, which is the argument for calling the
+ * shared function rather than re-deriving it alongside.
+ */
+const { costUsd: cost, priceUsd: price, absorbedUsd: absorbed, unmeasured } = totals(rows);
 const free = rows.filter((r) => r.costUsd === 0).length;
 console.log(`spent        ${usd(cost)}`);
 console.log(`chargeable   ${usd(price)}`);
 console.log(
-  `absorbed     ${usd(absorbed)}  (${Math.round((100 * absorbed) / cost)}% of spend — failed work is never billed)`,
+  `absorbed     ${usd(absorbed)}  (${Math.round((100 * absorbed) / cost)}% of spend — spent and never charged)`,
 );
+const fellBack = rows.filter((r) => r.toolFellBack);
+if (fellBack.length) {
+  console.log(
+    `  of which    ${usd(fellBack.reduce((s, r) => s + r.costUsd, 0))} over ${fellBack.length} rows a compiled tool claimed and could not finish`,
+  );
+}
 console.log(`free jobs    ${free} of ${rows.length}  (${Math.round((100 * free) / rows.length)}%)`);
-const unmeasured = rows.filter((r) => r.costUnknown).length;
 if (unmeasured) console.log(`unmeasured   ${unmeasured}  (spent money none of the above includes)`);
 // Part of `spent`, shown apart from it because the per-turn rate excludes it:
 // the write-up is a fixed errand, not something a turn budget buys (D-039).

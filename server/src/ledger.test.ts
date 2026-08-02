@@ -259,6 +259,27 @@ describe('quoteFor', () => {
   });
 });
 
+describe('absorbed', () => {
+  // A tool fall-back finishes `done` at a price of zero: the run succeeded and
+  // the app ate it, because the quote had promised free. Keying absorption on
+  // the outcome hid 83c across two real jobs and reported the total as though
+  // it were complete.
+  it('counts spend that was never charged, whatever the outcome says', () => {
+    const entries = [
+      entry({ outcome: 'done', costUsd: 0.28, priceUsd: 0, toolFellBack: true }),
+      entry({ outcome: 'failed', costUsd: 0.1, priceUsd: 0 }),
+      entry({ outcome: 'done', costUsd: 0.2, priceUsd: 0.2 }),
+    ];
+    expect(totals(entries).absorbedUsd).toBeCloseTo(0.38, 6);
+    expect(totals(entries).priceUsd).toBeCloseTo(0.2, 6);
+  });
+
+  it('adds nothing for work that was free to begin with', () => {
+    const entries = [entry({ tier: 'tool', costUsd: 0, priceUsd: 0 })];
+    expect(totals(entries).absorbedUsd).toBe(0);
+  });
+});
+
 describe('costPerTurn', () => {
   it('divides total cost by total turns, not by job', () => {
     // 0.30 over 10 turns and 0.10 over 10 turns is 2c a turn, not the 2.5c a

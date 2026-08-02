@@ -464,11 +464,16 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
   could not prove its output, and a session had to do it, the run is absorbed.
 
 Over those 82 jobs that came to: **spent $18.73, chargeable $6.81, absorbed
-$10.88.** Fifty-eight per cent of all money spent was on work that failed and
-was never billed — driven by the one-shot tier, which is 5 done against 21
-failed. That ratio is a fact about a short leash, not a fault: a leashed run
+$11.71.** Sixty-three per cent of all money spent was never charged for.
+
+Most of that is failed work, driven by the one-shot tier at 5 done against 21
+failed — a fact about a short leash rather than a fault, since a leashed run
 trades the write-up for a much cheaper run, and `partial` exists because
 calling the result a failure hides work that is ready to promote.
+
+The rest, **83.4c over two jobs, is the third rule above doing its work**: a
+compiled tool claimed the job, could not finish, and the session that rescued
+it was absorbed rather than billed against a quote of free.
 
 Four rows are marked `costUnknown`: a killed session never reaches the message
 the SDK reports cost on, so its spend is real and unmeasurable. Read the totals

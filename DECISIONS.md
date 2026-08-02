@@ -52,6 +52,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-040 — 2026-08-01 — The code host is builtin, because the budget for a stdio server is not ours](#d-040--2026-08-01--the-code-host-is-builtin-because-the-budget-for-a-stdio-server-is-not-ours)
 - [D-041 — 2026-08-02 — A clean exit is not a delivery, and scout could not write](#d-041--2026-08-02--a-clean-exit-is-not-a-delivery-and-scout-could-not-write)
 - [D-042 — 2026-08-02 — The quote overshot sevenfold, and narrowing it did not help](#d-042--2026-08-02--the-quote-overshot-sevenfold-and-narrowing-it-did-not-help)
+- [D-043 — 2026-08-02 — The tool tier could not fail into a session, and its absorption was invisible](#d-043--2026-08-02--the-tool-tier-could-not-fail-into-a-session-and-its-absorption-was-invisible)
 
 ## By theme
 
@@ -75,6 +76,7 @@ entry updates one file rather than two.
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
+- **The fourth tier, in service** — D-043
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1850,3 +1852,48 @@ report says so rather than quietly averaging over what is left. `AGENTLING.md`
 §8 now carries the per-job table instead of the tier comparison alone, and the
 trail prints one letter per tier so `78.2c(S) → 46.6c(1) → 0.0c(T)` shows the
 whole ladder on one line.
+
+## D-043 — 2026-08-02 — The tool tier could not fail into a session, and its absorption was invisible
+
+Reading one odd trail in the repeat report — `0.0c(T) → 0.0c(S) → 27.7c(S)` for
+"list every server module that has no test" — turned up three faults and one
+thing working exactly as designed.
+
+**Working:** the fall-back billing. Two jobs have had a tool claim them and
+fail, at 27.7c and 55.7c, and both were charged **nothing**. "A promise of free
+that arrives as a bill is the one thing the quote exists to prevent" holds on
+real money.
+
+**The tier could not fail into a session.** `runTool` awaited `cloneRepo`
+unguarded, so a `git clone` failure threw out of the executor and killed the
+job — the one route where "if the tool cannot, do it properly" did not hold.
+Job d450afd3 died exactly there. It was then filed as a `session` failure in a
+tier it never reached, and left the tool's strike count untouched, so the
+ledger recorded a session that never ran and the tool showed a clean record for
+a job it had lost. Guarding the clone fixes all three at once, which is why
+there is no separate fix for the mis-attribution: removing the cause was
+cheaper than labelling the effect. `writeDiff` is guarded for the same reason —
+work whose diff cannot be captured is work nobody can approve.
+
+**No strike for a failed clone, deliberately.** Two failures retire a tool, and
+the clone is ours rather than the tool's; retiring a working tool because the
+filesystem was busy would punish it for our fault. The test asserts the strike
+count stays at zero, and mutation-testing it reproduces d450afd3's exact error.
+
+**`toolFellBack` never reached the ledger** — set on `JobMeter`, dropped by the
+same row builder that dropped `closeOutUsd` (D-039). So the ledger could not
+answer how often the fourth tier claims work it cannot finish, which is the
+question that decides whether the tier is worth having. Now recorded, and the
+two historical rows recovered by identification from the surviving job records.
+
+**And `absorbed` was counting the wrong thing.** It read "cost of rows whose
+outcome is `failed`", but a fall-back finishes `done` at a price of zero — so
+83.4c of deliberate absorption was invisible and the total read as complete.
+It is now "spent and never charged", which is what the word meant all along:
+$10.88 → **$11.71, 63% of all spend**.
+
+The part worth keeping is how that last one hid. `totals()` had the definition,
+and the report had **its own copy** — so fixing `totals` moved the report by
+exactly zero, and the number only changed when the copy went. This project's
+own rule, met head on for the second time: "it delivered" keeps being
+re-derived locally, and the answer is to call the shared function.

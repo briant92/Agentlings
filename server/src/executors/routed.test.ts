@@ -634,6 +634,44 @@ describe('RoutedExecutor', () => {
       expect(progress.some((p) => p.includes('could not prove'))).toBe(true);
     });
 
+    /**
+     * The tier's promise is "if the tool cannot, do it properly". The clone was
+     * the one route where that did not hold: it was unguarded, so a `git clone`
+     * failure threw out of the executor and killed the job. Measured on job
+     * d450afd3, which died on the clone, was filed as a `session` failure in a
+     * tier it never reached, and left the tool's strikes untouched.
+     *
+     * A real path that cannot be cloned, rather than a mock, because the point
+     * is that whatever git does the job still reaches a session.
+     */
+    it('falls through when the repository cannot be cloned', async () => {
+      const name = 'tidy-invoice';
+      writeTool(levelDir, {
+        name,
+        recipeKey: PROMPT,
+        terms: ['total', 'invoice', 'spreadsheet'],
+        hasRepo: true,
+        description: 'compiled',
+        learnedAt: 1,
+        runs: 0,
+        failures: 0,
+      });
+      writeFileSync(path.join(toolDir(levelDir, name), RUN_SCRIPT), WROTE);
+      writeFileSync(path.join(toolDir(levelDir, name), VERIFY_SCRIPT), CHECKS);
+
+      const session = new FakeSession();
+      await run(
+        build(session),
+        job({ prompt: PROMPT, repoPath: path.join(levelDir, 'no-such-repository') }),
+        PIP,
+      );
+
+      expect(session.runs).toHaveLength(1);
+      expect(progress.some((p) => p.includes('could not clone'))).toBe(true);
+      // Ours, not the tool's — a busy filesystem must not retire a working tool.
+      expect(readTools(levelDir)[0].failures).toBe(0);
+    });
+
     it('falls through when the script itself crashes', async () => {
       tool('throw new Error("nope")', CHECKS);
       const session = new FakeSession();

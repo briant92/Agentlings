@@ -82,6 +82,18 @@ export interface LedgerEntry {
    * understate the ledger.
    */
   costUnknown?: boolean;
+  /**
+   * A compiled tool claimed this job, could not deliver, and a session did it
+   * instead. The user was quoted nothing on the strength of that tool, so the
+   * run is absorbed.
+   *
+   * Recorded because the ledger could not otherwise answer how often the
+   * fourth tier claims work it cannot finish — the question that decides
+   * whether the tier earns its keep. It was on `JobMeter` and on no row, so
+   * the two fall-backs on record could only be found by reading job files:
+   * the same gap as `closeOutUsd` (D-039), in the same builder.
+   */
+  toolFellBack?: boolean;
   /** What the user would be charged. Zero for failures: the app absorbs those. */
   priceUsd: number;
   /** The ceiling quoted before the work, when there was one. */
@@ -142,7 +154,7 @@ export interface Totals {
   jobs: number;
   costUsd: number;
   priceUsd: number;
-  /** Cost of work that failed, and was therefore not charged for. */
+  /** Money spent that nobody was charged for, whatever the outcome says. */
   absorbedUsd: number;
   free: number;
   /**
@@ -158,7 +170,12 @@ export function totals(entries: LedgerEntry[]): Totals {
       jobs: acc.jobs + 1,
       costUsd: acc.costUsd + entry.costUsd,
       priceUsd: acc.priceUsd + entry.priceUsd,
-      absorbedUsd: acc.absorbedUsd + (entry.outcome === 'failed' ? entry.costUsd : 0),
+      // Spent and not charged, which is not the same as failed. A tool
+      // fall-back finishes `done` at a price of zero — the run succeeded and
+      // the app ate it, because the quote had promised free. Keying this on
+      // the outcome hid 83c of deliberate absorption across two jobs and
+      // reported the total as complete.
+      absorbedUsd: acc.absorbedUsd + (entry.priceUsd === 0 ? entry.costUsd : 0),
       free: acc.free + (entry.tier === 'routed' ? 1 : 0),
       unmeasured: acc.unmeasured + (entry.costUnknown ? 1 : 0),
     }),

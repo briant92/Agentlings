@@ -273,6 +273,7 @@ function makeLevel(dir: string): LevelRuntime {
         // A job quoted free because a tool would do it is never billed when the
         // tool turned out not to.
         priceUsd: priceFor(outcome, costUsd, job.meter?.toolFellBack ? 0 : job.quotedUsd),
+        ...(job.meter?.toolFellBack ? { toolFellBack: true } : {}),
         ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
         ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
         ...(job.meter?.turnsAllowed !== undefined

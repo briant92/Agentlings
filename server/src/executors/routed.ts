@@ -27,6 +27,11 @@ import { fetchPage } from '../web';
 import { CANCELLED, SessionFailure } from './claude';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
+/** The first line of whatever was thrown — an error is not a paragraph. */
+function first(err: unknown): string {
+  return err instanceof Error ? err.message.split('\n')[0] : String(err);
+}
+
 /**
  * Runs one plain-node script in the sandbox and says whether it succeeded.
  * Killed at the timeout, because a compiled tool that hangs has stopped being
@@ -100,7 +105,44 @@ export class RoutedExecutor implements Executor {
     const dir = toolDir(this.levelDir, name);
     onProgress?.(`running the ${name} tool — no session needed`);
 
-    if (job.repoPath) await cloneRepo(job.repoPath, sandboxDir);
+    /**
+     * Every way out of the tool path, and the only way out other than success.
+     *
+     * Emptying the sandbox is not tidiness: discarding the *result* is not
+     * enough, because the tool's files are the work. Found live — a
+     * half-finished clone left behind collided with the one the fallback
+     * session then tried to make, and the job died on the collision instead of
+     * quietly being done properly. The sandbox is ours alone until the session
+     * starts, so emptying it is exactly right.
+     *
+     * It says why, because the caller cannot know: a tool that failed its own
+     * check and a clone that never happened are different events, and the
+     * caller used to report both as "could not prove its work".
+     */
+    const wipe = (why: string): null => {
+      rmSync(sandboxDir, { recursive: true, force: true });
+      mkdirSync(sandboxDir, { recursive: true });
+      onProgress?.(`${why} — doing it properly instead`);
+      return null;
+    };
+    /**
+     * The clone was unguarded, so a `git clone` failure threw straight out of
+     * the executor and killed the job — the one route where "if the tool
+     * cannot, do it properly" did not hold. Measured on job d450afd3: it died
+     * on the clone, was filed as a `session` failure in a tier it never
+     * reached, and left the tool's strike count untouched.
+     *
+     * No strike is recorded for it, deliberately. Two failures retire a tool,
+     * and the clone is ours rather than the tool's — retiring a working tool
+     * because the filesystem was busy would punish it for our fault.
+     */
+    if (job.repoPath) {
+      try {
+        await cloneRepo(job.repoPath, sandboxDir);
+      } catch (err) {
+        return wipe(`could not clone for the ${name} tool (${first(err)})`);
+      }
+    }
 
     const ran = await runNode(path.join(dir, RUN_SCRIPT), sandboxDir);
     // Checked in a second process on purpose: a run that crashed cannot be
@@ -109,18 +151,20 @@ export class RoutedExecutor implements Executor {
 
     const after = recordToolRun(this.levelDir, manifest, proved);
     if (!proved) {
-      // Discarding the *result* is not enough: the tool's files are the work.
-      // Found live — a half-finished clone left behind collided with the one
-      // the fallback session then tried to make, and the job died on the
-      // collision instead of quietly being done properly. The sandbox is ours
-      // alone until the session starts, so emptying it is exactly right.
-      rmSync(sandboxDir, { recursive: true, force: true });
-      mkdirSync(sandboxDir, { recursive: true });
       if (after.retiredReason) onProgress?.(`${name} retired — ${after.retiredReason}`);
-      return null;
+      return wipe(`the ${name} tool could not prove its work`);
     }
 
-    if (job.repoPath) await writeDiff(sandboxDir);
+    // Guarded for the same reason as the clone: the work is only reviewable as
+    // a diff, so a run whose diff cannot be captured has produced nothing the
+    // user can approve, and must fall back rather than throw.
+    if (job.repoPath) {
+      try {
+        await writeDiff(sandboxDir);
+      } catch (err) {
+        return wipe(`could not capture what the ${name} tool changed (${first(err)})`);
+      }
+    }
     return {
       summary: `Done by the ${name} tool, which the crew wrote after doing this by hand. No session, no cost.`,
       meter: { costUsd: 0, turns: 0, routed: true, tooled: true },

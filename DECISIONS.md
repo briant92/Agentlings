@@ -1817,3 +1817,36 @@ One thing not to lose: mean absolute error is the wrong yardstick for a quote
 the user reads. A 7× overshoot on one job matters to whoever decides not to run
 it, and averages over 63 rows cannot see that. Whatever reopens this should be
 judged on the ratio of the worst quotes, not the mean of all of them.
+
+**The report was measuring the wrong population, and fixing it changed the
+answer.** `recipeKey` is only written on `oneshot` rows, so grouping by it saw
+a job's leashed runs and none of the sessions that preceded them — which hid
+the very transition the section exists to show. The key is now recovered from
+the job record's own prompt through the same `normalise` the router keys
+recipes by, imported rather than copied, since a second notion of "the same
+job" drifting from the first is a mistake already on this list.
+
+Repeated jobs went from 4 to 8, and five of them have now been seen on both
+tiers, which is the first time the step-down could be measured *within* a job
+rather than across two populations:
+
+| job | session | leash | |
+|---|---|---|---|
+| make slugify robust | 13.4c | 11.0c | 18% off |
+| write a note in anchor2.md | 20.9c | 13.9c | 33% off |
+| write exports.md at the repo root | 66.9c | 39.8c | 41% off |
+| read a reddit page | 36.5c | 21.2c | 42% off |
+| summarise recent commits | 7.2c | 8.0c | 11% dearer |
+
+**So the population figure of 50% roughly doubles the real per-job saving**,
+which is 18–42% where there was exploring to cut and negative where there was
+not. The two numbers differ because the tiers hold different work, not because
+the leash behaves differently — exactly the pooling error D-018 found in the
+rate and D-042 found in the quote, now found a third time in the headline this
+project has been quoting at itself.
+
+Ten paid rows cannot be grouped at all, their job records being gone, and the
+report says so rather than quietly averaging over what is left. `AGENTLING.md`
+§8 now carries the per-job table instead of the tier comparison alone, and the
+trail prints one letter per tier so `78.2c(S) → 46.6c(1) → 0.0c(T)` shows the
+whole ladder on one line.

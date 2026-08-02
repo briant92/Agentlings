@@ -506,21 +506,32 @@ then holds it there. There are exactly two step-downs, and both are discrete:
 | session → one-shot | A recipe matches strongly | 37.5c → 18.8c, **50% off** |
 | one-shot → tool | Three deliveries, then you approve a compile | 18.8c → free, **100% off** |
 
-**That first figure is a population average, and it is not a promise about your
-next job.** It compares two tiers across mixed roles and shapes, and what a
-recipe actually removes is the *exploring*. Where a job was not exploring,
-there is nothing to remove.
+**That first figure is a population average across two whole tiers, and the
+per-job saving is about half of it.** Five jobs have now been run on both
+tiers, which is the only comparison that answers "what did the leash do to
+*this* job":
 
-Measured on the case that made the point (D-042): the same commit-summary job
-run three times — 7.86c as a full session over 12 turns, then **8.04c** on a
-five-turn leash. No saving at all. A Haiku scout calling one tool and writing
-one file had no exploration to cut, and the close-out is a fixed ~2.2c either
-way. The leash still binds; it just had nothing to bind against.
+| Job | Session | Leash | |
+|---|---|---|---|
+| make slugify robust | 13.4c | 11.0c | 18% off |
+| write a note in anchor2.md | 20.9c | 13.9c | 33% off |
+| write exports.md at the repo root | 66.9c | 39.8c | 41% off |
+| read a reddit page | 36.5c | 21.2c | 42% off |
+| summarise recent commits | 7.2c | 8.0c | **11% dearer** |
 
-So the step-down is largest exactly where runs are long and wandering, and
-approaches zero on work that was already cheap and tight. The second step —
-compiling to a tool — is the one that is unconditional, because it removes the
-model rather than shortening it.
+So: 18–42% on work that was exploring, and *negative* on work that was not.
+What a recipe removes is the exploring, and the commit summary had none to
+remove — a Haiku scout calling one tool and writing one file, with a fixed
+~2.2c close-out either way (D-042). The leash still binds; it had nothing to
+bind against.
+
+Read the sample size before trusting any of it: five jobs. The honest summary
+is that the step-down is largest where runs are long and wandering and
+approaches zero — or reverses — on work already cheap and tight.
+
+The second step, compiling to a tool, is the unconditional one, because it
+removes the model rather than shortening it. `write exports.md` shows the whole
+ladder in one line: **78.2c session → 46.6c leashed → free, twice.**
 
 So the number that tracks the intent is **what share of work has descended the
 ladder, and what the descent avoided** — not any average.

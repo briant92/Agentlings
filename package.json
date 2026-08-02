@@ -18,7 +18,7 @@
     "build": "npm run build -w web",
     "art": "node scripts/bake-sprites.mjs",
     "art:check": "tsx scripts/check-pack.ts",
-    "ledger:report": "node scripts/ledger-report.mjs"
+    "ledger:report": "tsx scripts/ledger-report.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

@@ -8,10 +8,39 @@
 //   npm run ledger:report
 //
 // Plain node, no dependencies, reads one file. Safe to run any time.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { normalise } from '../server/src/recipes';
 
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
+const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
+
+/**
+ * Which recipe each job belongs to, including the runs that predate it.
+ *
+ * `recipeKey` is only written on `oneshot` rows, so grouping by it alone sees
+ * a job's third run and not its first two — which hid the whole point, since
+ * the step down from session to leash is the thing the section is about.
+ *
+ * The key is recovered from the job record's own prompt, through the same
+ * `normalise` the router keys recipes by. Imported rather than copied: a
+ * second notion of "the same job" that drifts from the first is the mistake
+ * this repo has already paid for.
+ *
+ * Rows whose job record is gone stay ungrouped and are counted, not dropped.
+ */
+function promptKeys(): Map<string, string> {
+  const keys = new Map<string, string>();
+  for (const level of existsSync(LEVELS) ? readdirSync(LEVELS) : []) {
+    const file = path.join(LEVELS, level, 'jobs.json');
+    if (!existsSync(file)) continue;
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    for (const job of Array.isArray(parsed) ? parsed : (parsed.jobs ?? [])) {
+      if (job.id && job.prompt) keys.set(job.id, normalise(job.prompt));
+    }
+  }
+  return keys;
+}
 
 /** A torn last line must not lose the rest of the history — as in ledger.ts. */
 function read() {
@@ -132,22 +161,66 @@ for (const [label, v] of [
  * to move.
  */
 console.log('\n## Repeat work — two step-downs, not a curve\n');
-const byKey = new Map();
-for (const r of rows.filter((r) => r.recipeKey)) {
-  if (!byKey.has(r.recipeKey)) byKey.set(r.recipeKey, []);
-  byKey.get(r.recipeKey).push(r);
+const keys = promptKeys();
+/** The recipe a row belongs to: what it recorded, else what its job asked. */
+const keyOf = (r: { recipeKey?: string; jobId: string }): string | undefined =>
+  r.recipeKey ?? keys.get(r.jobId);
+const byKey = new Map<string, typeof rows>();
+let ungrouped = 0;
+for (const r of rows) {
+  const key = keyOf(r);
+  if (!key) {
+    if (r.costUsd > 0) ungrouped++;
+    continue;
+  }
+  if (!byKey.has(key)) byKey.set(key, []);
+  byKey.get(key)!.push(r);
 }
 const repeated = [...byKey.entries()].filter(([, v]) => v.length >= 2);
+/** One letter per tier, so the step down is visible in the trail itself. */
+const mark = (tier: string) => ({ session: 'S', oneshot: '1', tool: 'T', routed: 'R' })[tier] ?? '?';
 if (!repeated.length) {
-  console.log('no recipe has been reused yet — nothing to compare.');
+  console.log('no job has been run twice yet — nothing to compare.');
 } else {
-  console.log('Each recipe, run by run. A flat line is the expected shape:');
+  console.log('Each job, run by run.  S = full session, 1 = one-shot leash, T = compiled tool\n');
   for (const [key, v] of repeated.sort((a, b) => b[1].length - a[1].length)) {
-    const trail = v.map((r) => usd(r.costUsd)).join(' → ');
-    console.log(`  ${num(v.length, 2)} runs  ${key.slice(0, 40).padEnd(40)}  ${trail}`);
+    const trail = v.map((r) => `${usd(r.costUsd)}(${mark(r.tier)})`).join(' → ');
+    console.log(`  ${num(v.length, 2)} runs  ${key.slice(0, 38).padEnd(38)}  ${trail}`);
   }
   console.log('\nA recipe does not make a job cheaper by degrees. It cuts the price once,');
   console.log('by moving the job down a tier, and then holds it there.');
+  if (ungrouped) {
+    console.log(
+      `\n(${ungrouped} paid rows could not be grouped — their job record is gone, so which job they were is unknowable.)`,
+    );
+  }
+
+  /**
+   * The step down measured *within* a job rather than across the population.
+   *
+   * The headline below compares two whole tiers, which mixes roles and shapes
+   * — D-042 measured one job at 7.86c as a session and 8.04c on the leash, so
+   * the population figure is not a promise about any particular job. This only
+   * counts jobs seen on both tiers, and says how few that is.
+   */
+  const bothTiers = repeated
+    .map(([key, v]) => ({
+      key,
+      s: v.filter((r) => r.tier === 'session' && r.costUsd > 0).map((r) => r.costUsd),
+      o: v.filter((r) => r.tier === 'oneshot' && r.costUsd > 0).map((r) => r.costUsd),
+    }))
+    .filter((g) => g.s.length > 0 && g.o.length > 0);
+  if (bothTiers.length) {
+    const avg = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
+    console.log(`\nSame job on both tiers — ${bothTiers.length} of ${repeated.length}:`);
+    for (const g of bothTiers) {
+      const cut = Math.round((100 * (avg(g.s) - avg(g.o))) / avg(g.s));
+      console.log(
+        `  ${g.key.slice(0, 38).padEnd(38)}  session ${usd(avg(g.s))} → leash ${usd(avg(g.o))}  ${cut > 0 ? `${cut}% off` : `${-cut}% dearer`}`,
+      );
+    }
+    console.log('This is the honest per-job version of step 1 below. Read the sample size.');
+  }
 }
 
 const meanOf = (v) => (v.length ? v.reduce((s, r) => s + r.costUsd, 0) / v.length : 0);

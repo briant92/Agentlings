@@ -262,6 +262,15 @@ It joins the recall corpus rather than sitting beside it: `readKnowledge`
 returns lines, so an index that emits lines needed no new tier, no router branch
 and no second scorer.
 
+**Measured on real work, and the shape of the win is lopsided** (D-049). A
+recall question it covered was answered `routed`, **$0, no session at all** —
+the whole session avoided. But paired on a question where the crew already had
+a clone of the same files, it saved **1 turn and 2.45c of 27c, about 9%**, on
+n=1, with both answers equally correct. Its lines are input tokens on every
+turn, so it makes each turn dearer and buys fewer of them. Point it at material
+the crew *cannot otherwise reach*; pointing it at a repository it already
+clones is close to its worst case.
+
 Set up from **reading** in the level header: add a folder and it is read on the
 spot, since a saved folder nobody read is a setting that looks done and does
 nothing. The panel shows how much it holds and when it was read, flags a source
@@ -372,6 +381,13 @@ came back as 6 when the run was cut off, and lower when it finished early.
 ### Rules the user can rely on
 
 - **Nothing is billed above its quote.** `priceFor` takes the minimum.
+- **Every way in carries a ceiling**, which is what makes the line above mean
+  anything: an unquoted route has no minimum to take, so the cap silently does
+  not apply. Two have been found and closed — `POST /jobs` (D-027) and
+  `POST /jobs/:id/redo` (D-049), both by tripping over a row with no
+  `quotedUsd` rather than by a test. A redo is quoted as a **session** because
+  it sets `noRouter`: the router would price the same job `routed`, $0, for a
+  run that is really going to be a full session.
 - **Failed work is charged nothing.** The app absorbs it.
 - **Work quoted free that then cost money is absorbed too** — if a compiled
   tool claimed a job, could not prove its output, and a session had to do it

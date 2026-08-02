@@ -107,7 +107,7 @@ import {
   usableTools,
   writeTool,
 } from './tools';
-import { decide } from './router';
+import { type Decision, decide } from './router';
 import { callGithub } from './github';
 import { fetchPage } from './web';
 import { planWork, queuedJobSpec, runnerRole } from './work';
@@ -552,6 +552,22 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const previous = rt.queue.get(c.req.param('id'));
   if (!previous) return c.json({ error: 'unknown job' }, 404);
+  // This was the second unquoted way in, found exactly as the first was — by
+  // tripping over a ledger row with no `quotedUsd` (D-027, D-049). Without a
+  // ceiling `turnsForBudget` never binds and the run silently falls back to
+  // the role's cap, which is a hole in "the quote binds before the money
+  // moves" rather than a shortcut.
+  //
+  // Quoted as a session on purpose: `noRouter` below means the router is
+  // never asked, so a routed quote of zero or a one-shot's leash would price
+  // work that is not going to happen.
+  const plan = planWork(
+    matcher(),
+    registry.list(),
+    rt.sim.agentlings,
+    previous.repoPath,
+    previous.prompt,
+  );
   const job = rt.queue.add({
     title: previous.title,
     prompt: previous.prompt,
@@ -559,6 +575,14 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
     preferredRole: previous.preferredRole,
     tools: previous.tools,
     noRouter: true,
+    quotedUsd: quoteFor_(
+      rt,
+      previous.prompt,
+      previous.tools,
+      previous.preferredRole ?? runnerRole(plan),
+      previous.repoPath,
+      true,
+    ).ceilingUsd,
   });
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
@@ -859,6 +883,15 @@ function quoteFor_(
   tools: string[] | undefined,
   role: string | null,
   repoPath: string | undefined,
+  /**
+   * The job will bypass the router, so asking the router what it would do
+   * produces a fiction — a `routed` quote of zero, or a one-shot's leash, for
+   * a run that is about to be a full session either way.
+   *
+   * Branches on exactly the expression `RoutedExecutor` branches on, so the
+   * quote and the run cannot disagree about which of them is happening.
+   */
+  noRouter = false,
 ): Quote {
   const probe: Job = {
     id: '',
@@ -870,18 +903,21 @@ function quoteFor_(
     ...(repoPath ? { repoPath } : {}),
     ...(tools?.length ? { tools } : {}),
   };
-  const decision = decide(probe, {
-    knowledge: readKnowledge(rt.dir),
-    // The quote has to see the same corpus the run will, or it prices a
-    // session for work the store is about to answer for nothing.
-    store: storeLines(rt.dir, Date.now()),
-    recipes: readRecipes(rt.dir),
-    tools: usableTools(rt.dir),
-    canFetch: tools?.includes('web') === true,
-    // The same surface the run will have. Without it the quote demotes every
-    // recipe the executor would honour, and prices a session for a one-shot.
-    capabilities: surfaceFor(probe, role),
-  });
+  const decision: Decision = noRouter
+    ? { kind: 'agent' }
+    : decide(probe, {
+        knowledge: readKnowledge(rt.dir),
+        // The quote has to see the same corpus the run will, or it prices a
+        // session for work the store is about to answer for nothing.
+        store: storeLines(rt.dir, Date.now()),
+        recipes: readRecipes(rt.dir),
+        tools: usableTools(rt.dir),
+        canFetch: tools?.includes('web') === true,
+        // The same surface the run will have. Without it the quote demotes
+        // every recipe the executor would honour, and prices a session for a
+        // one-shot.
+        capabilities: surfaceFor(probe, role),
+      });
   const tier: Tier =
     decision.kind === 'answer' || decision.kind === 'fetch'
       ? 'routed'

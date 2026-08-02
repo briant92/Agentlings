@@ -58,6 +58,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-046 — 2026-08-02 — The knowledge store: opened, not settled](#d-046--2026-08-02--the-knowledge-store-opened-not-settled)
 - [D-047 — 2026-08-02 — The knowledge store is synced and indexed, never read live](#d-047--2026-08-02--the-knowledge-store-is-synced-and-indexed-never-read-live)
 - [D-048 — 2026-08-02 — The knowledge store built, and the free tier caught guessing](#d-048--2026-08-02--the-knowledge-store-built-and-the-free-tier-caught-guessing)
+- [D-049 — 2026-08-02 — The store measured, and the second unquoted way in](#d-049--2026-08-02--the-store-measured-and-the-second-unquoted-way-in)
 
 ## By theme
 
@@ -86,6 +87,8 @@ entry updates one file rather than two.
   settled as sync-and-index by D-047, built in D-048
 - **The free tier's honesty** — the recall tier scoring on its own asking
   words: D-048
+- **The store measured on real work, and quoting `noRouter`** — D-049, which
+  also closes the second unquoted route (D-027 is the first)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2311,3 +2314,60 @@ opens on its empty state, a folder added through it reports "4 passages from
 remove takes each back out with the counts refreshing. No screenshot — the
 preview pane in this environment does not composite frames, a known limitation
 of the harness rather than of the app.
+
+## D-049 — 2026-08-02 — The store measured, and the second unquoted way in
+
+The knowledge store run against real work for the first time, and the result is
+mixed in a way worth writing down rather than rounding up.
+
+**Where it wins, it wins completely.** "What do we know about the close-out
+pass" was answered `routed`, **$0, no session at all**, from six indexed
+passages each carrying `[AGENTLING.md, synced 2026-08-02]`. That question would
+have been a session before. The saving is not a percentage.
+
+**Where the crew already has a clone, it wins almost nothing.** Paired on one
+prompt — "which decision settled how a knowledge store is scoped, and which
+options did it reject" — with `noRouter` both times so no recipe could confound
+it:
+
+| | turns | total | session only | per turn |
+|---|---|---|---|---|
+| store on | 4 | 24.88c | 20.20c | 5.05c |
+| store off | 5 | 27.32c | 22.61c | 4.52c |
+
+**1 turn and 2.45c, about 9%** — and the per-turn column says why: the store
+makes each turn *dearer*, because its lines are input tokens on every one of
+them, and buys fewer turns in exchange. On this question that trade barely came
+out ahead. **Both answers were equally correct**, and both cited
+`repo/DECISIONS.md` line ranges rather than the store: with a clone in the
+sandbox the session can simply read the file, so the store was helping it find
+what it could already reach.
+
+**n=1 paired, which is the small-sample error this project keeps catching**, and
+a one-turn delta sits inside ordinary variation. Both confounds push the same
+way — API prompt caching should have made the second run cheaper, and the level's
+own notes grew between runs (`recallable` 2 → 3) — so the small win is if
+anything understated. It is still n=1.
+
+**So the store's value is concentrated in the recall tier and in material the
+crew cannot otherwise reach**, which is what D-046 said the goal was. Pointing
+it at the repository the crew already clones is close to its worst case, and
+that is how it was measured here. Do not generalise this number to a notes
+folder that is not in the repo.
+
+**And the paired run turned up a second unquoted way in.** The no-store row
+carried no `quotedUsd` at all: `POST /jobs/:id/redo` called `queue.add` without
+quoting, so `turnsForBudget` never bound and the run fell back to the role's
+cap. That is D-027 exactly, on a different route, found the same way — by
+tripping over a ledger row.
+
+Fixed by quoting it, with the part that matters being *which* quote. A redo sets
+`noRouter`, so asking the router what it would do produces a fiction:
+`/work/plan` prices the close-out question at **`routed`, $0**, and a redo of
+that same job really runs a full session. The old code would have queued it
+with a $0 ceiling and then spent real money against it — a promise of free
+arriving as a bill, the one thing the quote exists to prevent. `quoteFor_` now
+takes a `noRouter` flag and branches on the same expression `RoutedExecutor`
+branches on, so the quote and the run cannot disagree about which of them is
+happening. Verified as D-027 was, live and cancelled before either spent:
+redoing the free job now quotes **$1.58** where the router says $0.

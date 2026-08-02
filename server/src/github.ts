@@ -103,11 +103,14 @@ export const GITHUB_TOOLS: ToolSpec[] = [
     description: 'Recent commits on a branch — short sha, first line, author and date.',
     params: [REPO, { name: 'ref', type: 'string', describe: 'branch or sha; defaults to the default branch' }],
   },
-  {
-    name: 'get_checks',
-    description: 'CI results for a commit or branch — which checks passed and which did not.',
-    params: [REPO, { name: 'ref', type: 'string', required: true, describe: 'branch, tag or sha' }],
-  },
+  // `get_checks` lived here and was removed on first contact with a real token
+  // (D-040). GitHub restricts the Checks API to GitHub Apps, so a fine-grained
+  // PAT cannot read it and the permission is not even offered in the picker.
+  // The documented fallback, the Commit Statuses API, does not cover it either:
+  // measured against an Actions-based repository, one commit had 0 statuses
+  // and 399 check runs. Reading CI needs a GitHub App, which is a bigger
+  // decision than a tool, so the honest move was to stop shipping a tool that
+  // could not work rather than leave it failing politely.
   {
     name: 'get_file_contents',
     description: 'Read one file from a repository, trimmed to a budget.',
@@ -326,22 +329,6 @@ export async function callGithub(
             (c) =>
               `${String(c.sha).slice(0, 7)} ${firstLine(c.commit?.message ?? '')} — ${c.commit?.author?.name ?? 'unknown'}, ${day(c.commit?.author?.date)}`,
           ),
-        ].join('\n'),
-      };
-    }
-    case 'get_checks': {
-      const { data, error } = await get(
-        `${API}/repos/${repo}/commits/${encodeURIComponent(String(ref))}/check-runs?per_page=${MAX_ITEMS}`,
-        `CI checks for ${ref} in ${repo}`,
-      );
-      if (error) return { error };
-      const list = ((data as any)?.check_runs as any[]) ?? [];
-      if (!list.length) return { text: `No CI checks reported for ${repo} at ${ref}.` };
-      const failed = list.filter((r) => r.conclusion && r.conclusion !== 'success' && r.conclusion !== 'neutral');
-      return {
-        text: [
-          `${list.length} check${list.length === 1 ? '' : 's'} for ${repo} at ${ref} — ${failed.length} not passing:`,
-          ...list.map((r) => `${r.conclusion ?? r.status} — ${r.name}`),
         ].join('\n'),
       };
     }

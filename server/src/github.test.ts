@@ -139,18 +139,15 @@ describe('callGithub', () => {
     expect(r.text).toContain('5 bytes');
   });
 
-  it('counts the checks that are not passing', async () => {
-    const { http } = fake({
-      '/check-runs': {
-        check_runs: [
-          { name: 'build', conclusion: 'success' },
-          { name: 'test', conclusion: 'failure' },
-        ],
-      },
-    });
+  // `get_checks` was removed rather than fixed (D-040): GitHub restricts the
+  // Checks API to GitHub Apps, and the documented Commit Statuses fallback
+  // measured 0 statuses against 399 check runs on an Actions repository. This
+  // asserts it stays gone, so it cannot drift back in as a tool that 403s.
+  it('does not offer a CI tool it cannot serve', async () => {
+    expect(GITHUB_TOOL_NAMES).not.toContain('get_checks');
+    const { http } = fake({});
     const r = await callGithub('get_checks', { repo: 'a/b', ref: 'main' }, { http });
-    expect(r.text).toContain('1 not passing');
-    expect(r.text).toContain('failure — test');
+    expect(r.error).toMatch(/no such tool/);
   });
 });
 

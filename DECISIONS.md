@@ -1690,3 +1690,27 @@ the test that failed was written to assert something else entirely.
 repository, unauthenticated, returning correctly shaped and trimmed output. The
 connection ships **off** and cannot be switched on without `GITHUB_TOKEN` —
 which the user sets themselves. 688 tests green.
+
+**`get_checks` removed on first contact with a real token.** Seven of the eight
+tools verified live against the private repo; the eighth 403'd, and the
+permission it needs was not in the fine-grained PAT picker. Both observations
+have the same cause: GitHub restricts the Checks API to GitHub Apps, so no
+personal access token can read it.
+
+The documented fallback is the Commit Statuses API, which a fine-grained token
+*can* read — and it does not cover the same ground. Measured against an
+Actions-based repository, one commit returned **0 statuses and 399 check runs**:
+GitHub Actions reports as check runs and posts no statuses at all, so a
+statuses-based tool would answer "no CI" on every repository whose CI is
+Actions. Switching would have produced a tool that works and is wrong, which is
+worse than one that fails honestly.
+
+So it is gone rather than fixed, and a test asserts it stays gone so it cannot
+drift back as a tool that 403s. Reading CI needs a GitHub App — a bigger
+decision than a tool, and moot here until the repo has any CI to read, which it
+does not. Recorded as a roadmap row.
+
+Worth keeping the shape of this: the tool list came from enumerating the
+reference server, which was right, and every one of those 26 tools is
+implementable *by a GitHub App*. What the enumeration could not tell us was
+which of them a PAT may call. A capability list is not a permission list.

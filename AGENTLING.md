@@ -237,8 +237,8 @@ off, so the app's fetch was gated and this second door was not.
 
 ### Reading a code host — Live, read-only
 
-Eight tools: `list_pull_requests` · `get_pull_request` · `get_pull_request_files`
-· `list_issues` · `get_issue` · `list_commits` · `get_checks` ·
+Seven tools: `list_pull_requests` · `get_pull_request` · `get_pull_request_files`
+· `list_issues` · `get_issue` · `list_commits` ·
 `get_file_contents`. Enough for "what broke on main" and "summarise this PR"
 without the crew having a clone.
 
@@ -981,13 +981,19 @@ judgement — *which of its tools are reading, and which are acting*.
 
 - [x] **Read a web page** — built in, on by default, trimmed to 12k chars
 - [x] **Read a page in a real browser** — Playwright MCP, 8 reading tools, ships off
-- [x] **A code host** — 8 read tools over GitHub, builtin rather than MCP
+- [x] **A code host** — 7 read tools over GitHub, builtin rather than MCP
       because the reference server is deprecated and a code host is where an
       unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs
       `GITHUB_TOKEN` in `.env`; ships off
 - [ ] **A knowledge store** (notes, wiki, docs) — unlocks answering from your
       own material instead of the level's `KNOWLEDGE.md` alone.
       *Blocked on: nothing technical; decide what the crew may read.*
+- [ ] **CI status** — removed from the code host rather than shipped broken
+      (D-040). GitHub restricts the Checks API to GitHub Apps, and the
+      documented Commit Statuses fallback measured 0 statuses against 399
+      check runs on an Actions repository, so it covers nothing Actions
+      produces. *Blocked on: a GitHub App, which is a bigger decision than a
+      tool — and on this repo having any CI to read.*
 - [ ] **A database, read-only** — unlocks the `analyst` role against real data
       rather than files. *Blocked on: a read-only credential actually existing.*
 - [ ] **A task tracker** — unlocks "what am I meant to be doing".

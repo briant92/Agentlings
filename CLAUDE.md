@@ -6,70 +6,34 @@ project-specific instructions. Where they conflict, project-specific wins.
 
 ## Behavioral guidelines
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial
-tasks, use judgment.
+Adopted from the Karpathy-inspired base (D-002) and since cut to what the
+harness does not already do by default (D-038). Bias toward caution over speed;
+on trivial tasks, use judgment. The numbering is referenced elsewhere in this
+file, so it stays.
 
-### 1. Think Before Coding
+**1. Think before coding.** State your assumptions. Where several readings are
+possible, present them rather than picking silently. Where something is
+unclear, stop and name what is confusing.
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**2. Simplicity first.** The minimum that solves the problem, nothing
+speculative. If you wrote 200 lines and it could be 50, rewrite it.
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+**3. Surgical changes.** Touch only what you must, and match the existing style
+even where you would do it differently. Notice unrelated dead code and
+**mention it — do not delete it**. Do remove the imports, variables and
+functions your own change orphaned. The test: every changed line traces to the
+request.
 
-### 2. Simplicity First
+**4. Goal-driven execution.** Turn the task into a verifiable goal — "add
+validation" becomes "write tests for invalid inputs, then make them pass". For
+multi-step work, state the plan as steps with their checks:
 
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes,
-simplify.
-
-### 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-### 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
 ```
 1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it
-work") require constant clarification.
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer
-rewrites due to overcomplication, and clarifying questions come before
-implementation rather than after mistakes.
+Weak criteria ("make it work") need constant clarification; strong ones let you
+loop independently.
 
 ---
 
@@ -121,25 +85,20 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 
 - Definition of done (extends rule 4): show the evidence — test output,
   command results — don't just assert success.
-- Commit early and often with descriptive messages once git is initialized.
+- Commit early and often with descriptive messages.
 
 ### Decision log
 
 Every resolved question, with the evidence that settled it, lives in
-`DECISIONS.md` — 37 entries, newest last. Read it before reopening anything
-settled, and cite the entry ID (`D-017`) rather than a title or a line number.
-Do not `@`-import it; it is meant to be opened on demand, not loaded on every
-turn.
+`DECISIONS.md`, newest last. Read it before reopening anything settled, and
+cite the entry ID (`D-017`) rather than a title or a line number. Do not
+`@`-import it; it is meant to be opened on demand, not loaded on every turn.
+Its own **By theme** index, next to its Contents, is the way in when you know
+the subject but not the ID.
 
-- D-001–D-007, D-032, D-034–D-035 — concept, stack, outside access, identity, executor
-- D-008–D-010, D-014 — visuals and terrain: palette, art-as-data, art source, scenes-as-data
-- D-011, D-013 — levels as workspaces, and the non-expert setup path
-- D-012, D-016–D-018, D-026–D-027, D-029 — cost: quotes, ceilings, turn budgets, rates, billing
-- D-015, D-019–D-025, D-036–D-037 — learning: recipes, close-out, compiled tools, promotion
-- D-028, D-030–D-031, D-033 — socket payload, UI/UX, documents, answering a run
-
-New entries append to `DECISIONS.md` with the next ID. An entry is a decision
-plus what proved it — length is whatever the evidence takes, not one line.
+New entries append with the next ID, and the same edit adds them to both
+indexes. An entry is a decision plus what proved it — length is whatever the
+evidence takes, not one line.
 
 ### Capability surface
 
@@ -161,35 +120,31 @@ where the entry stands and the code is what drifted.
 Distilled from the entries above; each points at the account it came from.
 These are here because an archive changes no behaviour.
 
-- Measure before tuning. A figure in these notes is not evidence — recompute
-  it, including when the note is a premise you argued for. (D-016, D-029, D-035)
-- Anything that learns only from clean successes goes blind exactly where most
-  runs land. Check the population before the logic. (D-017, D-019, D-023, D-030)
-- "It delivered" keeps being re-derived locally, and every local copy silently
-  assumes a repository. Call the shared function. (D-030)
-- Collapsing two notions that only sound alike is as dangerous as duplicating
-  one. (D-030)
-- A field can be threaded through a type, a spec and a route and still be
-  dropped by the one function that builds the object. (D-033)
-- A correct fix can ship inert. Ask what existing data it needs to reach, and
-  backfill by identification — never by guess. (D-026, D-030, D-036)
-- A mechanism that learns a method will keep using it after the ground moves.
-  Ask what a stored decision assumed, not just whether it was right. (D-036,
-  D-037)
-- Verify a change by what it now does, not by whether some text is present —
-  a scripted check matched a string that already existed. (D-037)
-- Price a turn by `turnsAllowed`. A cut-off run reports `turnsAllowed + 1` and
-  nothing more. (D-022, D-025)
+- Measure it, run it live, and verify by what it now does. A figure in these
+  notes is not evidence — recompute it, including when the note is a premise
+  you argued for; faults invisible to 636 passing tests were obvious on the
+  first real call; and a scripted check once passed by matching a string that
+  already existed. (D-016, D-021, D-024, D-029, D-030, D-033, D-035, D-037)
+- Ask what a mechanism learned from, and what it assumed. Anything that learns
+  only from clean successes goes blind exactly where most runs land, and
+  anything that learned a method keeps using it after the ground moves. Check
+  the population before the logic. (D-017, D-019, D-023, D-030, D-036, D-037)
+- A change can be complete in the type, the spec and the route and still reach
+  nothing — the one function that builds the object drops the field, or the fix
+  ships inert against data written before it. Ask what existing data it must
+  reach, and backfill by identification, never by guess. (D-026, D-030, D-033,
+  D-036)
+- Duplicating one notion and collapsing two that only sound alike are the same
+  mistake. "It delivered" kept being re-derived locally, and every copy silently
+  assumed a repository — call the shared function. (D-030)
+- Price a turn by `turnsAllowed`: a cut-off run reports `turnsAllowed + 1` and
+  nothing more, and a quote may never come in under the turns it has already
+  decided to grant. (D-022, D-025, D-026)
 - "Ran out of turns" does not mean "needed more turns" — for a close-out or a
-  compile it is the ordinary ending. (D-025)
-- A quote may never come in under the turns it has already decided to grant.
-  (D-022, D-026)
-- When a run is short of turns, look at what it spends them on before granting
-  more. (D-015, D-025)
+  compile it is the ordinary ending. When a run is short, look at what it spends
+  them on before granting more. (D-015, D-025)
 - The user is never billed above the quote, and work that cost money and failed
   is absorbed. (D-012, D-021)
-- Run it live before believing it. Faults invisible to 636 passing tests were
-  obvious on the first real call. (D-021, D-024, D-030, D-033)
 - Generated instruction is executable: preview before installing, and make a
   tool prove its own output. (D-011, D-021)
 - Mutation-test after committing — `git checkout <file>` destroyed an hour of

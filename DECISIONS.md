@@ -47,6 +47,26 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-035 — 2026-08-01 — The browser measured, and the case for it is weaker than the case made for it](#d-035--2026-08-01--the-browser-measured-and-the-case-for-it-is-weaker-than-the-case-made-for-it)
 - [D-036 — 2026-08-01 — A method is only as good as what was available when it was found](#d-036--2026-08-01--a-method-is-only-as-good-as-what-was-available-when-it-was-found)
 - [D-037 — 2026-08-01 — The rest of the axes, as one surface rather than five comparisons](#d-037--2026-08-01--the-rest-of-the-axes-as-one-surface-rather-than-five-comparisons)
+- [D-038 — 2026-08-01 — CLAUDE.md trimmed to what the harness does not already do](#d-038--2026-08-01--claudemd-trimmed-to-what-the-harness-does-not-already-do)
+
+## By theme
+
+The Contents above is chronological; this is the way in when you know the
+subject but not the ID. Lived in CLAUDE.md until D-038 and moved here so a new
+entry updates one file rather than two.
+
+- **Concept, stack, outside access, identity, executor** — D-001–D-007, D-032,
+  D-034–D-035
+- **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
+  D-008–D-010, D-014
+- **Levels as workspaces, and the non-expert setup path** — D-011, D-013
+- **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
+  D-026–D-027, D-029
+- **Learning** — recipes, close-out, compiled tools, promotion: D-015,
+  D-019–D-025, D-036–D-037
+- **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
+  D-033
+- **The project's own notes** — D-002, D-038
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -1483,3 +1503,53 @@ for a string that already existed elsewhere in the same file, so the router
 context went unwired while the check said otherwise, and three tests failed for
 a reason the check had ruled out. **Verify a change by what it should now do,
 not by whether some text is present.**
+
+## D-038 — 2026-08-01 — CLAUDE.md trimmed to what the harness does not already do
+
+CLAUDE.md had reached 196 lines and a third of it was the behavioural base
+D-002 adopted. Read against the harness's own instructions, rules 1 and 2 were
+close to duplicates — scope discipline, when to ask rather than guess, matching
+the surrounding style are all default now, so those lines bought nothing and
+cost context on every turn.
+
+**What survived is what is not default, and the test was behavioural rather
+than editorial.** Four clauses have visibly steered sessions: mention unrelated
+dead code rather than deleting it, remove the orphans your own change made,
+match existing style even where you would not, and state a multi-step plan as
+steps with their checks. Everything else went: **66 lines → 33**. The four
+headings stay numbered because Ground rules and Workflow both cite them
+("extends rule 1"), and deleting them would have broken two references to fix a
+third problem.
+
+Reopening D-002 rather than quietly overriding it: the base was adopted as a
+decision, so cutting it is a decision, and this entry is what the file's own
+rule asks for.
+
+**The hard-won rules were compressed by merging, not cutting.** They grow one
+per lesson and were sixteen bullets saying about nine things — three separate
+rules about measuring, running live and verifying by behaviour are one rule
+with three citations. Merged to nine, every `D-` reference preserved, so
+nothing became harder to trace back. That the count *fell* while the log grew
+is the point: an archive changes no behaviour, and a list nobody finishes
+reading is an archive.
+
+Worth recording that this bought almost no lines — 38 → 34 — because a merged
+bullet carries every clause it absorbed and runs four lines instead of two. The
+win is that there are seven fewer things to read, not that the file is shorter,
+and predicting it as a line saving was the wrong unit.
+
+**The thematic index moved here.** Six lines grouping the entries by subject
+lived in CLAUDE.md, which meant a new entry had to be written in one file and
+indexed in another — a two-file edit nobody would keep up. It is not redundant
+with Contents, which is chronological, so it moved rather than being deleted.
+Both indexes now live beside what they index.
+
+**Net 196 → 151, against a predicted ~120.** The estimate was made by section
+before any of it was written and missed two ways: merged bullets are wordier per
+bullet than the ones they replace (above), and the Capability surface block was
+left at full length by choice rather than cut to 8. Recorded rather than
+rounded, because a proposal's arithmetic is a claim like any other and this log
+exists to catch the ones that go unchecked.
+
+The two sections that actually change behaviour — the hard-won rules and the
+project conventions — are intact or sharper.

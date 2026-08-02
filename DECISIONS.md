@@ -59,6 +59,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-047 — 2026-08-02 — The knowledge store is synced and indexed, never read live](#d-047--2026-08-02--the-knowledge-store-is-synced-and-indexed-never-read-live)
 - [D-048 — 2026-08-02 — The knowledge store built, and the free tier caught guessing](#d-048--2026-08-02--the-knowledge-store-built-and-the-free-tier-caught-guessing)
 - [D-049 — 2026-08-02 — The store measured, and the second unquoted way in](#d-049--2026-08-02--the-store-measured-and-the-second-unquoted-way-in)
+- [D-050 — 2026-08-02 — Three tiers of capability, and what a compiled tool may inherit](#d-050--2026-08-02--three-tiers-of-capability-and-what-a-compiled-tool-may-inherit)
 
 ## By theme
 
@@ -89,6 +90,8 @@ entry updates one file rather than two.
   words: D-048
 - **The store measured on real work, and quoting `noRouter`** — D-049, which
   also closes the second unquoted route (D-027 is the first)
+- **Where capability lives** — the three tiers, what may graduate between them,
+  and why a tool's surface is recorded but not gated on: D-050
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2371,3 +2374,77 @@ takes a `noRouter` flag and branches on the same expression `RoutedExecutor`
 branches on, so the quote and the run cannot disagree about which of them is
 happening. Verified as D-027 was, live and cancelled before either spent:
 redoing the free job now quotes **$1.58** where the router says $0.
+
+## D-050 — 2026-08-02 — Three tiers of capability, and what a compiled tool may inherit
+
+A design review of the whole learning story, prompted by the observation that
+the knowledge store as built (D-047, D-048) is a **bespoke input path in a
+generic app**: it asks the user to already keep notes, in a folder, and to point
+at them. That is an integration, not a capability. Its measured value stands
+(D-049) and its role is narrowed accordingly — the door for material the crew
+cannot otherwise reach, not the spine.
+
+**The spine is what the level writes for itself**, which mostly exists:
+`KNOWLEDGE.md`, `recipes.json`, `memory/<name>.md` and `tools/`, with the M5
+ladder bending cost from `agent` to `oneshot` to a free compiled tool. Within a
+level, `usableTools` is not scoped per agentling, so a tool the crew earns is
+already available to everyone in it.
+
+**The gap is that earned capability cannot leave the level that earned it.**
+Nothing crosses but the ledger and the authored catalog. So the cost curve bends
+per project and resets to zero for every new level — invisible with one project,
+structural with many. Stated as three tiers:
+
+| tier | holds | flows |
+|---|---|---|
+| baseline | `roles/*.md`, `skills/`, `buildAppend`, the router's free tiers | one copy, so it rises for everyone at once |
+| level | knowledge, recipes, tools | never sideways |
+| agentling | lessons | never sideways |
+
+The baseline already propagates instantly *because there is only one copy of
+it* — improve `worker.md` and every worker everywhere is better on its next
+session. `AGENTLING.md` describes that baseline and is not part of it; it is
+derived, and no agentling reads it.
+
+**Generality should be earned, not declared.** A tool would graduate from level
+to baseline on being independently earned in **two or more levels** — one
+project cannot demonstrate that a method generalises, which is exactly D-013's
+argument, so this respects it rather than overturning it. And the unit that
+graduates is the **tool only**: a tool is mechanics, while a recipe, a lesson
+and a knowledge line are all prose about one context. Prose never crosses. That
+answers the contamination question structurally rather than by a rule someone
+has to remember.
+
+**The premise for gating a tool on its surface was wrong, and checking the
+contract is what showed it.** The proposal was that a compiled tool, unlike a
+recipe, has no capability surface and so never notices the baseline improving —
+the D-036 bug, unfixed for tools. The asymmetry is real: `Recipe.capabilities`
+and `sameCapabilities` exist, `ToolManifest` had nothing. But the compile brief
+is *"No dependencies, no shell commands, no network. Node built-ins only"*, so a
+tool uses **none of the four axes a surface records**. A moved surface therefore
+makes a tool possibly *dated*, never possibly *wrong* — and its output is proved
+by `verify.mjs` on every run regardless. Refusing on a mismatch would drop a
+free, proven answer into a paid session to buy nothing.
+
+So the gate is not built and the record is. `ToolManifest.capabilities` is
+copied from the recipe at compile time — the only moment both are in hand — and
+read by nobody, the same bargain as `compile` and `asked`. It is kept because
+the contract is a brief rather than a jail, nothing stops a generated `run.mjs`
+importing from the project root, and because giving tools the gated doors a
+session gets would make the field load-bearing overnight for a question that
+cannot be answered retroactively.
+
+`scripts/backfill-tool-surface.mjs` recovered **1 of 5** tools on this machine
+by identification (`tool.recipeKey === recipe.key`); the other four were
+compiled before D-036 and their recipes carry no surface either. Reading the
+level's surface *now* would have produced a plausible number describing a moment
+that never happened, so those four keep an absent field, which is the honest
+record. Idempotent, and 686 tests green.
+
+**Stages 1–3 are deliberately not built**: record `earnedBy`/`earnedIn`, then
+count cross-level recurrence, then the graduated catalog behind the same review
+gate a compile already passes — a graduated tool is still executable
+instruction (D-011, D-021). All three are downstream of repeat traffic that does
+not exist: one genuine repeat in 36 jobs, two working tools, one active level.
+Building the graduation mechanism now would be the mistake this log keeps
+recording, in a nicer shape.

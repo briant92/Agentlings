@@ -36,6 +36,33 @@ export interface ToolManifest {
    * the two jobs can be identical.
    */
   hasRepo: boolean;
+  /**
+   * The capability surface of the recipe this was compiled from — what the
+   * crew could reach when the method was found.
+   *
+   * **Recorded and deliberately not read**, the same bargain as `compile` on a
+   * ledger row and `asked` beside it, and for the same reason: a manifest
+   * cannot be given a field it never wrote, and the surface is only knowable
+   * at compile time.
+   *
+   * Not read because gating on it today would cost money for no correctness.
+   * A tool is "no dependencies, no shell commands, no network — Node built-ins
+   * only", so by contract it uses none of the four axes a surface records: no
+   * connection, no library, no SDK tool, no skill. A recipe demotes when the
+   * surface moves because a *method* can be beaten by something new (D-036).
+   * A compiled tool is already the cheapest tier there is, and its output is
+   * proved by `verify.mjs` on every run, so a moved surface makes it possibly
+   * dated rather than possibly wrong. Refusing on that would drop a free,
+   * proven answer into a paid session to buy nothing.
+   *
+   * Kept anyway because the contract is a brief, not a jail — nothing stops a
+   * generated `run.mjs` importing from the project root — and because the one
+   * change that *would* invalidate a tool is giving tools the gated doors a
+   * session gets, which the roadmap already says needs "a tool manifest to
+   * record which connections it was compiled against". That question cannot be
+   * answered retroactively for anything compiled before this field existed.
+   */
+  capabilities?: string[];
   description: string;
   learnedAt: number;
   runs: number;

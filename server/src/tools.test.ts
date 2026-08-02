@@ -99,6 +99,28 @@ describe('a tool on disk', () => {
     recordToolRun(levelDir, readTools(levelDir)[0], false);
     expect(usableTools(levelDir)).toEqual([]);
   });
+
+  /**
+   * The surface the method was found under, which is knowable only at compile
+   * time. Recorded and read by nobody — a tool is Node built-ins only, so no
+   * axis a surface records can currently invalidate one, and refusing on a
+   * moved surface would drop a free proven answer into a paid session to buy
+   * nothing. It is kept because a manifest cannot be given a field it never
+   * wrote, and because giving tools the gated doors would make it load-bearing.
+   */
+  it('carries the capability surface it was compiled under', () => {
+    const surface = ['conn:web', 'lib:pdf-lib', 'tool:Bash'];
+    writeTool(levelDir, manifest({ capabilities: surface }));
+    expect(readTools(levelDir)[0].capabilities).toEqual(surface);
+  });
+
+  // Four of the five tools on this machine predate the surface existing, and
+  // the honest record of that is an absent field rather than a plausible one.
+  it('is still usable when it predates the surface being recorded', () => {
+    complete();
+    expect(readTools(levelDir)[0].capabilities).toBeUndefined();
+    expect(usableTools(levelDir)).toHaveLength(1);
+  });
 });
 
 describe('recordToolRun', () => {

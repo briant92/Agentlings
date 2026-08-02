@@ -1298,6 +1298,11 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     recipeKey: key,
     terms: recipe.terms,
     hasRepo: Boolean(rt.meta.repoPath),
+    // Copied from the recipe rather than read off the level now: the surface
+    // that matters is the one the *method* was found under, and this is the
+    // only moment both are in hand. Absent when the recipe predates D-036,
+    // which is a fact about the history and not something to invent.
+    ...(recipe.capabilities ? { capabilities: recipe.capabilities } : {}),
     description: `Compiled from a recipe the crew landed ${recipe.successes} times.`,
     learnedAt: Date.now(),
     runs: 0,

@@ -741,6 +741,22 @@ tests for module X" never compiles, because the assertions depend on the
 module; "list the modules with no test file" does. Tools take the scaffolding,
 sessions keep the judgement (D-021).
 
+**A tool belongs to its level, and inside it to everyone.** `usableTools` is
+not scoped per agentling, so a method one of them earned is a method the whole
+crew has. It cannot leave that level, which is D-013 on purpose — and also the
+ceiling on the whole idea, since the cost curve then bends per project and
+starts again at zero in a new one. What would let a tool graduate, and why only
+a *tool* may (mechanics carry no context; a recipe or a lesson is prose about
+one), is D-050. Not built: it needs the same work proven in two levels, and
+there is one.
+
+**Each tool records the surface it was compiled under** and nothing reads it.
+A tool is Node built-ins only, so none of the four axes a surface records can
+invalidate one today; a moved surface makes it dated, not wrong, and its output
+is proved by `verify.mjs` on every run anyway. It is recorded because the field
+could not be added backwards — 4 of the 5 tools on this machine predate it and
+their surface is simply unknown (D-050).
+
 **There is a sharper test than that, learned by compiling the wrong thing.** A
 recipe for writing a short explanatory note reached the gate and compiled
 cleanly — into a `run.mjs` holding the note as a string literal. That is a
@@ -1190,8 +1206,13 @@ Until one is chosen, none of these rows is a task.*
       door outside, for tools as well as sessions. That in turn needs a tool
       manifest to record which connections it was compiled against, and the
       router to refuse it when those are switched off, which is the capability
-      surface recipes already carry (D-036, D-037). *Blocked on: a decision
-      that the doors, not the network, are what a tool may have.*
+      surface recipes already carry (D-036, D-037). **Half of that now exists**:
+      `ToolManifest.capabilities` is stamped from the recipe at compile time and
+      read by nobody, because a tool is Node built-ins only and so cannot today
+      be invalidated by a surface that moved (D-050). The day tools get the
+      doors, that field is load-bearing — and it could not have been added
+      backwards. *Blocked on: a decision that the doors, not the network, are
+      what a tool may have.*
 - [ ] **A job that waits for a specialist, or times out to anyone free** — one
       scribe currently serialises every document job while others idle.
       *Blocked on: choosing which behaviour is right; both are defensible.*

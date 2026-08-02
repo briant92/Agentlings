@@ -1935,3 +1935,35 @@ exits on purpose, measured against job 2711da49 where a files-on-disk test
 banked a success for a run that produced no PDF, and moving it is a separate
 decision about what "the recipe reliably works" means. Recorded so the next
 person finds the reasoning rather than the inconsistency.
+
+**The adjacent case above is now done, and needed a third condition rather
+than a swap.** `RoutedExecutor` credited a recipe on `result !== undefined ||
+hasPatch` — a clean exit, which is the assumption this entry removed. Neither
+obvious replacement works, because three runs on record pull in different
+directions:
+
+| run | should count | clean-exit | files on disk | both |
+|---|---|---|---|---|
+| 2711da49 — wrote a generator, ran out, no PDF | no | no | **yes** | no |
+| 149620b5 — finished politely, empty sandbox | no | **yes** | no | no |
+| correct diff, then ran out writing it up | yes | no | yes | **no** |
+
+So it reads `(result !== undefined && deliveredFiles) || hasPatch`: a clean
+exit must also have left something, and a diff stays sufficient on its own,
+which is the third row. Mutation-tested — without it, the polite empty run
+banks a success, and three of those compile a tool from a method that delivers
+nothing.
+
+**And the counter was checked on live code, because a dead cohort said it might
+not work.** The `slugify` recipe carries 13 one-shot rows recording its key and
+`hits: 0` on disk, which would mean the three-successes gate never opens by the
+ordinary path — the symptom already on record as "the fourth tier had to be
+built speculatively". Ruled out as a live fault: `rememberRecipe` preserves
+counters, the answers backfill only deletes `answer`, and a fourth run of the
+code-host job moved the recipe from 1/1 to **2/2 with `lastUsedAt` set**. The
+zeros are a ghost of code that was committed at 11:58 and evidently not running
+at 12:32; not worth reconstructing further, and now not worth worrying about.
+
+That run also priced honestly: quoted 16.1c, cost 8.4c, charged 8.4c, five
+turns, 2.1c of it the write-up. One more delivery and it is compilable, which
+will be the first recipe to reach that gate on its own.

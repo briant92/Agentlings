@@ -461,6 +461,31 @@ describe('RoutedExecutor', () => {
       expect(recipe.successes ?? 0).toBe(0);
     });
 
+    /**
+     * The third case, and the one that made the test read as it does. A clean
+     * exit was sufficient on its own, which is the assumption D-041 removed
+     * everywhere else: job 149620b5 finished politely and produced nothing —
+     * a scout that read a code host and had no tool to write with — and would
+     * have banked a success for it. Three of those compile a tool from a
+     * method that delivers nothing.
+     */
+    it('does not count a run that finished politely and produced nothing', async () => {
+      stored();
+      await run(build(new FakeSession()), job({ prompt: 'add a test for formatUsd' }), PIP);
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.hits).toBe(1);
+      expect(recipe.successes ?? 0).toBe(0);
+    });
+
+    it('counts a run that finished and left something behind', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'RESULT.md'), '# did the job\n');
+      await run(build(new FakeSession()), job({ prompt: 'add a test for formatUsd' }), PIP);
+
+      expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
+    });
+
     it('records nothing when it died before writing anything down', async () => {
       await expect(run(build(dying()), job(), PIP)).rejects.toThrow();
       expect(existsSync(path.join(levelDir, 'recipes.json'))).toBe(false);

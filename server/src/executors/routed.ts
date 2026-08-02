@@ -11,7 +11,7 @@ import {
   rememberRecipe,
   writeRecipes,
 } from '../recipes';
-import { producedArtefacts } from '../outputs';
+import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide } from '../router';
 import {
   RUN_SCRIPT,
@@ -318,7 +318,20 @@ export class RoutedExecutor implements Executor {
       // every time it failed. Widening this alongside `partial` was one change
       // too many, made the same day, on the strength of the two sounding
       // similar.
-      const delivered = result !== undefined || existsSync(patchFile(sandboxDir));
+      //
+      // The clean exit is not sufficient on its own either, which took a third
+      // case to see. Job 149620b5 finished politely and produced nothing — a
+      // scout that read a code host and had no tool to write with — and would
+      // have credited its recipe for it (D-041). So a clean exit must also
+      // have left something; a diff stays sufficient by itself, since that is
+      // the case above, where the work is done and only the write-up was cut.
+      //
+      // Neither half alone satisfies all three runs on record, which is why
+      // this reads as it does rather than as `partial`'s test or as a plain
+      // check for files.
+      const delivered =
+        (result !== undefined && deliveredFiles(sandboxDir)) ||
+        existsSync(patchFile(sandboxDir));
       updated = creditRecipe(updated, usedKey, Date.now(), delivered);
     }
     if (approach && agentling) {

@@ -1052,8 +1052,13 @@ app.get('/api/levels/:lid/knowledge', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const index = readIndex(rt.dir);
+  const sources = rt.meta.knowledgeSources ?? [];
   return c.json({
-    sources: rt.meta.knowledgeSources ?? [],
+    sources,
+    // Checked on every read, not only when it was added: a folder that has
+    // since been moved or renamed contributes nothing, and a source that
+    // silently contributes nothing is a setting that looks done and is not.
+    missing: sources.filter((p) => !existsSync(p)),
     indexed: index !== null,
     entries: index?.entries.length ?? 0,
     files: index ? new Set(index.entries.map((e) => e.source)).size : 0,

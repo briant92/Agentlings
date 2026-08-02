@@ -6,6 +6,7 @@ import { CrewRail } from '../panels/CrewRail';
 import { HireModal } from '../panels/HireModal';
 import { ProfileModal } from '../panels/ProfileModal';
 import { ReviewModal } from '../panels/ReviewModal';
+import { KnowledgeModal } from '../panels/KnowledgeModal';
 import { RolesModal } from '../panels/RolesModal';
 import { Terminal } from '../panels/Terminal';
 import { Tour, tourSeen } from '../panels/Tour';
@@ -31,6 +32,7 @@ export function LevelView({
   const [rolesOpen, setRolesOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [crewOpen, setCrewOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [hired, setHired] = useState<Agentling | null>(null);
   const [tour, setTour] = useState(false);
   // Pointing at someone in the rail lights them up in the world and the other
@@ -87,6 +89,9 @@ export function LevelView({
           >
             library
           </button>
+          <button className="ghost" onClick={() => setKnowledgeOpen(true)}>
+            reading
+          </button>
         </span>
       </header>
       <main>
@@ -141,7 +146,10 @@ export function LevelView({
       {rolesOpen && (
         <RolesModal initialQuery={libraryQuery} onClose={() => setRolesOpen(false)} />
       )}
-      {tour && !hired && !reviewJob && !profileId && !rolesOpen && (
+      {knowledgeOpen && (
+        <KnowledgeModal levelId={level.id} onClose={() => setKnowledgeOpen(false)} />
+      )}
+      {tour && !hired && !reviewJob && !profileId && !rolesOpen && !knowledgeOpen && (
         <Tour onDone={() => setTour(false)} />
       )}
     </div>

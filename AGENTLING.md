@@ -262,8 +262,12 @@ It joins the recall corpus rather than sitting beside it: `readKnowledge`
 returns lines, so an index that emits lines needed no new tier, no router branch
 and no second scorer.
 
-**No UI yet.** Sources are set over the API
-(`POST /api/levels/:lid/knowledge/sources`), not from inside the app.
+Set up from **reading** in the level header: add a folder and it is read on the
+spot, since a saved folder nobody read is a setting that looks done and does
+nothing. The panel shows how much it holds and when it was read, flags a source
+that is **not found** — re-checked on every open, so a folder since moved is
+caught and not only a typo — and says plainly when the copy has gone stale and
+the crew has therefore stopped using it, which is invisible anywhere else.
 
 ### Reading a code host — Live, read-only
 
@@ -1105,9 +1109,8 @@ judgement — *which of its tools are reading, and which are acting*.
       date it was read, and that provenance rides *inside* the corpus line, so
       a recall answer and a session's context both show it. A stale index
       (a week) contributes nothing anywhere, which is how the free tier falls
-      through instead of serving something that may have rotted. API only —
-      **no UI yet**, so a level is pointed at a folder over
-      `POST /api/levels/:lid/knowledge/sources` (D-047, D-048)
+      through instead of serving something that may have rotted. Set up from
+      **reading** in the level header (D-047, D-048)
 - [ ] **CI status** — removed from the code host rather than shipped broken
       (D-040). GitHub restricts the Checks API to GitHub Apps, and the
       documented Commit Statuses fallback measured 0 statuses against 399

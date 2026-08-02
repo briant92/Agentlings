@@ -96,6 +96,33 @@ export interface JobMeter {
   recallable?: number;
 }
 
+/**
+ * The knowledge store's index, as the UI sees it.
+ *
+ * Counts and dates, never the passages themselves: the point of an index you
+ * can inspect is a file you can open, not your notes crossing the API on every
+ * poll of a status panel.
+ */
+export interface KnowledgeStatus {
+  /** The folders this level indexes, as they were typed. */
+  sources: string[];
+  /**
+   * Of those, the ones not on disk right now — a typo, or a folder since moved.
+   * Re-checked on every read rather than only when it was added, because a
+   * source that silently contributes nothing looks exactly like one that works.
+   */
+  missing: string[];
+  indexed: boolean;
+  entries: number;
+  files: number;
+  syncedAt?: number;
+  /** Files found beyond the per-source cap. Shown, never silently dropped. */
+  skipped: number;
+  /** Past a week the store contributes nothing at all, so this is the difference
+   *  between a level that can answer from your material and one that stopped. */
+  stale: boolean;
+}
+
 /** A connection a job can opt into. Secret values never appear here. */
 export interface ConnectionInfo {
   name: string;

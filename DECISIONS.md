@@ -2283,3 +2283,31 @@ rather than assumed, since an over-correction would look identical from outside.
 (`GET/POST /api/levels/:lid/knowledge`, `POST .../sources`, `POST .../sync`).
 Pointing a level at a folder from inside the app is the obvious next piece and
 was left out rather than half-done.
+
+**The UI, added the same day (D-048 continued).** *reading* in the level header
+opens the store panel: the folders this level reads, what the copy holds, when
+it was taken, and an add box. Adding a folder reads it immediately — a saved
+folder nobody read is a setting that looks done and does nothing, which is the
+same failure as a connection listed ready with no secret behind it.
+
+Three things the panel says that nothing else can. A **stale** copy is called
+out in words, because "the crew quietly stopped using your notes a week ago" is
+otherwise invisible from every screen in the app. The **overflow** past the
+250-per-folder cap is shown with the advice to point somewhere narrower, rather
+than a number nobody can act on. And a source that is **not found** is marked on
+its own row.
+
+That last one came out of driving the finished UI rather than out of designing
+it. Typing a bad path showed an error and then saved the folder anyway, so the
+error scrolled away and left a row identical to a working one — a source
+contributing nothing, looking exactly like a source contributing everything.
+The fix re-checks existence on every read of the status rather than only when
+the folder is added, which also catches the more likely case: a folder that was
+fine when added and has since been moved or renamed.
+
+Verified in the browser against the running app, not only by test: the panel
+opens on its empty state, a folder added through it reports "4 passages from
+2 files · read just now", a bad path is marked NOT FOUND on its own row, and
+remove takes each back out with the counts refreshing. No screenshot — the
+preview pane in this environment does not composite frames, a known limitation
+of the harness rather than of the app.

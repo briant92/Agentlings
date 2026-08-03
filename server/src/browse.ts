@@ -86,9 +86,12 @@ export function categorise(
  * How many entries each source really contributes, counted from the index
  * itself.
  *
- * `SourceStatus.count` cannot answer this: it is recorded per source before
- * `dedupe` drops names already claimed by a source listed earlier, so it
- * overstates by whatever it lost — 204 against 180 on the real catalogue. A
+ * `SourceStatus.count` now agrees, being recomputed after `dedupe` rather than
+ * before it, where it overstated by every name a source lost to one listed
+ * earlier — 204 against 180 on the real catalogue. This still counts the
+ * entries, because an index synced before that fix carries the old number and
+ * a filter promising 204 rows while yielding 180 is worse than offering none.
+ * Counting the list the filter reads makes the two impossible to disagree. A
  * source that contributes nothing still appears, with zero, rather than
  * vanishing from a filter that is supposed to list what there is.
  */

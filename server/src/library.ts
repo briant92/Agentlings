@@ -172,6 +172,7 @@ async function syncSource(
     ).filter((entry): entry is CatalogEntry => entry !== null);
 
     return {
+      // Provisional: `syncSources` lowers the count to what survives dedupe.
       status: { ...base, sha, count: entries.length, ok: true, truncated: truncated || undefined },
       entries,
     };
@@ -200,10 +201,18 @@ export async function syncSources(
   token?: string,
 ): Promise<LibraryIndex> {
   const results = await inBatches(sources, 3, (source) => syncSource(source, http, token));
+  const entries = dedupe(results.flatMap((r) => r.entries));
+  // What a source contributed is what survived. Counted per source before
+  // `dedupe` ran, the number overstates by every name already claimed by a
+  // source listed earlier — 204 against 180 for `wshobson-agents` on the real
+  // catalogue, and 556 against 532 summed. `truncated` does not cover this: it
+  // reports the MAX_PER_SOURCE cap, which no source currently hits.
+  const kept = new Map<string, number>();
+  for (const entry of entries) kept.set(entry.source, (kept.get(entry.source) ?? 0) + 1);
   return {
     fetchedAt: now,
-    sources: results.map((r) => r.status),
-    entries: dedupe(results.flatMap((r) => r.entries)),
+    sources: results.map((r) => ({ ...r.status, count: kept.get(r.status.name) ?? 0 })),
+    entries,
   };
 }
 

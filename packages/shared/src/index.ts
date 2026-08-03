@@ -327,6 +327,11 @@ export interface SourceStatus {
   trust: string;
   license?: string;
   sha?: string;
+  /**
+   * How many of this source's entries reached the index — counted *after*
+   * cross-source dedupe, so it is what filtering on this source yields rather
+   * than what the sync read.
+   */
   count: number;
   ok: boolean;
   error?: string;
@@ -378,10 +383,10 @@ export interface LibraryBrowse {
   /**
    * Per source, how many entries are *actually indexed*.
    *
-   * Not `SourceStatus.count`, which is taken before entries are deduplicated
-   * across sources and so overstates any source that lost a name to one listed
-   * before it — measured at 204 against 180 for `wshobson-agents`. Browsing is
-   * the first place in the app that shows a per-source number, and offering a
+   * Counted from the index rather than read from `SourceStatus.count`. The two
+   * agree since the count began being taken after cross-source dedupe instead
+   * of before it — measured at 204 against 180 for `wshobson-agents` — but an
+   * index synced before that still carries the old number, and offering a
    * filter that promises 204 and yields 180 is worse than offering none.
    */
   indexed: { name: string; label: string; entries: number }[];

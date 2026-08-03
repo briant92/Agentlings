@@ -59,6 +59,25 @@ function fakeHttp(files: Record<string, string>, overrides: Record<string, numbe
   return { http, calls };
 }
 
+/** The same fake, with a separate tree per repository. */
+function multiRepoHttp(repos: Record<string, Record<string, string>>): Http {
+  return async (url) => {
+    const repo = Object.keys(repos).find((r) => url.includes(`/${r}/`));
+    if (!repo) return { ok: false, status: 404, text: async () => '' };
+    const files = repos[repo];
+    if (url.includes('/commits/')) {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ sha: HEAD }) };
+    }
+    if (url.includes('/git/trees/')) {
+      const tree = Object.keys(files).map((p) => ({ path: p, type: 'blob' }));
+      return { ok: true, status: 200, text: async () => JSON.stringify({ tree }) };
+    }
+    const file = Object.keys(files).find((p) => url.endsWith(`/${HEAD}/${p}`));
+    if (file) return { ok: true, status: 200, text: async () => files[file] };
+    return { ok: false, status: 404, text: async () => '' };
+  };
+}
+
 describe('globToRegExp', () => {
   it('matches a file at any depth', () => {
     const rx = globToRegExp('**/SKILL.md');
@@ -123,6 +142,36 @@ describe('syncSources', () => {
       { 'https://api.github.com/repos/anthropics/skills/commits/main': 404 },
     );
     expect((await syncSources([SOURCE], http, 1)).sources[0].error).toMatch(/not found/);
+  });
+
+  /**
+   * A count taken before dedupe describes what the sync read, not what the
+   * catalogue holds: measured on the real index, `wshobson-agents` reported 204
+   * while 180 of its entries reached `entries`, and the four sources summed to
+   * 556 against 532. `truncated` never covered it — that is the per-source cap.
+   */
+  it('counts what a source contributed, not what it read', async () => {
+    const http = multiRepoHttp({
+      'first/repo': {
+        'pdf/SKILL.md': skill('pdf', 'Reads PDFs and extracts text'),
+        'xlsx/SKILL.md': skill('xlsx', 'Creates and edits spreadsheets'),
+      },
+      'second/repo': {
+        // The same `kind:name` as the source listed before it: dropped.
+        'pdf/SKILL.md': skill('pdf', 'Also reads PDFs'),
+        'docx/SKILL.md': skill('docx', 'Writes documents'),
+      },
+    });
+    const first: Source = { ...SOURCE, name: 'first', repo: 'first/repo' };
+    const second: Source = { ...SOURCE, name: 'second', repo: 'second/repo' };
+    const index = await syncSources([first, second], http, 1);
+
+    const survived = (name: string) => index.entries.filter((e) => e.source === name).length;
+    expect(survived('second')).toBe(1);
+    expect(index.sources[1].count).toBe(survived('second'));
+    expect(index.sources[0].count).toBe(survived('first'));
+    // The property that was false: source counts sum to the catalogue.
+    expect(index.sources.reduce((n, s) => n + s.count, 0)).toBe(index.entries.length);
   });
 
   it('sends the token only to the API, never to raw file hosts', async () => {

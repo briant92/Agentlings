@@ -114,6 +114,15 @@ describe('a tool on disk', () => {
     expect(readTools(levelDir)[0].capabilities).toEqual(surface);
   });
 
+  // Who compiled it and where, recorded at the only moment either is knowable
+  // and read by nobody. The round trip is the whole contract: the fields have
+  // to survive the write so they are there to be read the day something wants
+  // them, since a manifest cannot be given provenance it never wrote.
+  it('carries the agentling and level that earned it', () => {
+    writeTool(levelDir, manifest({ earnedBy: 'Pip', earnedIn: 'hq' }));
+    expect(readTools(levelDir)[0]).toMatchObject({ earnedBy: 'Pip', earnedIn: 'hq' });
+  });
+
   // Four of the five tools on this machine predate the surface existing, and
   // the honest record of that is an absent field rather than a plausible one.
   it('is still usable when it predates the surface being recorded', () => {

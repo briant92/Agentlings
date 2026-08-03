@@ -63,6 +63,20 @@ export interface ToolManifest {
    * answered retroactively for anything compiled before this field existed.
    */
   capabilities?: string[];
+  /**
+   * Who earned the tool and where: the agentling that compiled it, and the
+   * level it was compiled in.
+   *
+   * **Recorded and deliberately not read**, the same bargain as `capabilities`
+   * above. Provenance is only knowable at compile time and a manifest cannot be
+   * given a field it never wrote, so it is written now; nothing reads it,
+   * because matching or ranking on who wrote a tool would change which answers
+   * the router takes without buying any correctness.
+   */
+  earnedBy?: string;
+  /** The level the tool was compiled in. Recorded and deliberately not read,
+   * for the same reason as `earnedBy`. */
+  earnedIn?: string;
   description: string;
   learnedAt: number;
   runs: number;

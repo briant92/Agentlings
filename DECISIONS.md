@@ -60,6 +60,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-048 — 2026-08-02 — The knowledge store built, and the free tier caught guessing](#d-048--2026-08-02--the-knowledge-store-built-and-the-free-tier-caught-guessing)
 - [D-049 — 2026-08-02 — The store measured, and the second unquoted way in](#d-049--2026-08-02--the-store-measured-and-the-second-unquoted-way-in)
 - [D-050 — 2026-08-02 — Three tiers of capability, and what a compiled tool may inherit](#d-050--2026-08-02--three-tiers-of-capability-and-what-a-compiled-tool-may-inherit)
+- [D-051 — 2026-08-02 — The crew's first real finding: the recall tier counts where recipes weigh](#d-051--2026-08-02--the-crews-first-real-finding-the-recall-tier-counts-where-recipes-weigh)
 
 ## By theme
 
@@ -92,6 +93,8 @@ entry updates one file rather than two.
   also closes the second unquoted route (D-027 is the first)
 - **Where capability lives** — the three tiers, what may graduate between them,
   and why a tool's surface is recorded but not gated on: D-050
+- **The crew working on itself** — the rarity asymmetry the recall tier has and
+  recipes do not, and what a job's phrasing costs: D-051
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2448,3 +2451,61 @@ instruction (D-011, D-021). All three are downstream of repeat traffic that does
 not exist: one genuine repeat in 36 jobs, two working tools, one active level.
 Building the graduation mechanism now would be the mistake this log keeps
 recording, in a nicer shape.
+
+## D-051 — 2026-08-02 — The crew's first real finding: the recall tier counts where recipes weigh
+
+The first jobs queued as work rather than as tests of a mechanism. One
+delivered a finding better than the hunch that prompted it; the other failed in
+a way that was the specification's fault, not the crew's.
+
+**The finding.** A scout surveyed `relevantLines` over hq's 92 notes and ten
+realistic questions for 17.7c (charged 9.6c — the quote capped it and 8.1c was
+absorbed). **72% of all matches share exactly one word.** But the useful half is
+what it noticed next: whether that is signal or noise depends entirely on how
+*rare* the word is. Questions about `slugify` and `export` matched at 100%
+single-word and every match was right; questions containing `test` and `write`
+matched at 78–100% single-word and were noise.
+
+That is sharper than the hunch it came from. After D-048 removed the asking
+words, the remaining worry was recorded as "single-content-term matching still
+lets weak hits into the tail", with the implied fix of demanding two terms.
+Demanding two would have thrown away the `slugify` case, which is the tier
+working perfectly.
+
+**The asymmetry it points at.** `similarity()` in `recipes.ts` already weights
+by rarity — *"two jobs both mentioning `estimate` are far better evidence of the
+same work than two both mentioning `file`"* — with a `RARITY_NEEDS` guard so a
+small corpus does not weigh its only signal down to nothing. `relevantLines` in
+`router.ts` scores a raw count of shared terms and has never weighted anything.
+So the paid tier that only lends a method reasons about rarity, and the **free**
+tier that answers outright does not. That is the wrong way round: a weak match
+on a recipe wastes a turn a session can ignore, a weak match here is a free
+answer nobody checked.
+
+**Not fixed, because the two candidate fixes have different blast radii and one
+of them moves an instrument mid-measurement.** `relevantLines` serves three
+callers — the recall tier's answer, the eight notes a session is handed, and
+`recallSignal`'s `recallable`. Weighting the *score* changes ranking only, so
+`recallable` (a count of lines scoring above zero) is untouched and the counter
+keeps its meaning. Adding a *threshold* changes which lines count at all, and
+would redefine `recallable` after four rows — cheap now, not later, but a choice
+rather than an accident. Recorded so whoever picks it up knows the second option
+is not free.
+
+**And the failure was mine.** The other job asked a `worker` to add two fields
+to a type, stamp them at a call site and write a test — three files against a
+~1,300-file clone. `worker` declares no `maxTurns`, so it took the default 10,
+spent 11, and produced **nothing at all**: no result, no diff, no change in its
+clone. 45c spent, nothing charged, since failures are absorbed. It had already
+been given the strongest known lever — the exact file paths — and still did not
+fit. The answer is not a bigger cap (D-015, D-025: running out of turns is an
+ordinary ending, and "ran out" is not "needed more"); it is that a three-file
+change is two jobs. Re-queued split.
+
+**Worth carrying separately: phrasing picks the role, and the role picks the
+price.** The same survey, worded as implementation, quoted **$1.58** and routed
+to `worker`; worded as "survey… read only, change nothing" it quoted **9.6c**
+and routed to `scout` — 16×, before any work happened, because scout has real
+history in the ledger while worker-with-a-repo still quotes the ignorance
+ceiling. The quote is a lookup over what that class has actually cost, so an
+unfamiliar class is expensive by definition.

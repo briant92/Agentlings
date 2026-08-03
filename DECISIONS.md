@@ -66,6 +66,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-054 — 2026-08-02 — A search connection, built because the gap was measured](#d-054--2026-08-02--a-search-connection-built-because-the-gap-was-measured)
 - [D-055 — 2026-08-03 — A free tier for finding pages, and what it must never claim](#d-055--2026-08-03--a-free-tier-for-finding-pages-and-what-it-must-never-claim)
 - [D-056 — 2026-08-03 — The ledger gains an author, and the panels that needed one](#d-056--2026-08-03--the-ledger-gains-an-author-and-the-panels-that-needed-one)
+- [D-057 — 2026-08-03 — Two ways to count one thing, and why the slower one stays](#d-057--2026-08-03--two-ways-to-count-one-thing-and-why-the-slower-one-stays)
 
 ## By theme
 
@@ -109,6 +110,9 @@ entry updates one file rather than two.
 - **Reading the crew record** — the productivity block and the inbox, the author
   the ledger never recorded, and the three tests that passed without testing:
   D-056
+- **Counting what is actually there** — a per-source count taken before dedupe,
+  and the second derivation left in place on purpose rather than collapsed:
+  D-057, which is D-030's rule met head-on and answered
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2878,3 +2882,47 @@ flat floor under the roll call pushed the record 31px through the panel's own
 border at the 240px minimum the app's grid allows. Both are now shares rather
 than pixels, swept from 240 to 860px of panel with no spill and the live half
 larger at every step.
+
+## D-057 — 2026-08-03 — Two ways to count one thing, and why the slower one stays
+
+`SourceStatus.count` was recorded inside `syncSource`, before `syncSources` ran
+`dedupe` across every source. Dedupe drops any `kind:name` a source listed
+earlier already claimed, so the count described what a source **read**, never
+what it contributed: measured on the real index, `wshobson-agents` reported 204
+against the 180 that reached `entries`, and the four sources summed to 556
+against 532. `truncated` never covered it — that reports the `MAX_PER_SOURCE`
+cap, which no source currently hits. `syncSources` now recomputes each count
+from the deduped entries, and the on-disk index was re-synced: 180 == 180,
+532 == 532, 0 entries added or removed.
+
+**The decision is not the fix, it is what was left duplicated.** `browse.ts`
+still counts the index itself in `indexedBySource` rather than reading the
+number now sitting in `count`, and that reads as a straight violation of D-030 —
+one notion, two derivations, the shape that let "it delivered" drift. Two
+reasons it stays. The weaker one is temporary: an index synced before this
+carries the old figure, and a fix that ships inert against data written before
+it is this project's most repeated bug (D-026, D-030, D-033, D-036). The
+durable one is that `indexedBySource` counts *the same list the filter is about
+to show*, so the number and the rows come from one pass and cannot disagree,
+whereas `count` is a cache written at sync time and only ever as fresh as the
+last sync.
+
+**The clean resolution was available and not taken.** Deleting `count` from
+`SourceStatus` altogether and letting every caller ask `indexedBySource` gives
+one number instead of two that agree — D-030 satisfied rather than argued
+around. It costs a field in a persisted JSON shape plus the truncation warning
+in `RolesModal` that reads it. It was not done because the task was to make
+`count` mean one thing, not to remove it, and widening that unasked is the kind
+of call the brief did not hand over. **If a third consumer of `count` appears,
+take the collapse rather than writing a fourth argument for keeping the cache.**
+
+**What dedupe discards is still discarded.** It reports nothing about what it
+dropped or to whom, so "24 of these are also published by `wshobson-agents`" is
+not merely unshown — it is uncomputable without changing `dedupe` to return its
+losses per source. Worth knowing before anyone promises that line in the UI.
+
+Proved by a test that syncs two sources both publishing `skill:pdf` and asserts
+the later one's count is what survived rather than what it read, plus the
+property that was false: source counts sum to `entries.length`. Mutation-tested
+after committing — reverting the one line in `syncSources` fails it with
+`expected 2 to be 1` while the file's other 28 tests stay green.

@@ -1293,6 +1293,7 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     // that is what it will be.
     quotedUsd: compileQuote(rt, recipe.role).ceilingUsd || undefined,
   });
+  const earnedBy = rt.roster.find((s) => s.id === job.assignedTo)?.name;
   writeTool(rt.dir, {
     name,
     recipeKey: key,
@@ -1303,6 +1304,13 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     // only moment both are in hand. Absent when the recipe predates D-036,
     // which is a fact about the history and not something to invent.
     ...(recipe.capabilities ? { capabilities: recipe.capabilities } : {}),
+    // Where it was earned, and by whom. Stamped here for the same reason the
+    // capabilities are: this is the only moment both the level and the compile
+    // job are in hand. The name is absent when the job has not been picked up
+    // by anyone yet, which is a fact about the timing and not something to
+    // invent.
+    ...(rt.meta.id ? { earnedIn: rt.meta.id } : {}),
+    ...(earnedBy ? { earnedBy } : {}),
     description: `Compiled from a recipe the crew landed ${recipe.successes} times.`,
     learnedAt: Date.now(),
     runs: 0,

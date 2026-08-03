@@ -2509,3 +2509,20 @@ and routed to `scout` — 16×, before any work happened, because scout has real
 history in the ledger while worker-with-a-repo still quotes the ignorance
 ceiling. The quote is a lookup over what that class has actually cost, so an
 unfamiliar class is expensive by definition.
+
+**A promoted change does not reach the next job until it is committed** — found
+by splitting the failed job in two and watching the second half fail anyway.
+`cloneRepo` runs `git clone --local`, which clones **HEAD**, not the working
+tree. The first half was reviewed and promoted, so its fields were in the real
+`tools.ts`; they were not in the *commit*, so the second half's clone did not
+have them. It dutifully re-derived the whole first half — both diffs carry the
+same base blob for `tools.ts` — and then ran out of turns partway through the
+change it was actually asked for, leaving a declared `const` nobody used. Not
+promotable, and the run cost 45c that was absorbed.
+
+Committing first and re-queuing the identical sentence finished in one go, and
+the diff it produced is the one that shipped: 37.7c, and it matched the
+conditional-spread style and the comment voice of the line above it without
+being shown either. So dependent jobs need a commit between them, not merely a
+promote — and this is the second time today the gap between "the app did it" and
+"the repository has it" cost a run.

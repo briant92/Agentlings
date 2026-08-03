@@ -2722,3 +2722,34 @@ because the gate held rather than because the string was never there.
 
 11 tests on the search module, 4 on the catalog entry, 711 server and 66 web
 green. Nothing has actually searched yet: that waits on a key.
+
+**Verified on the run that measured the gap.** The prompt from D-053 that
+exhausted its budget in the browser was re-queued verbatim, in a level with no
+repository, with the browser still switched on so the substitution was still
+available:
+
+| | turns | calls | last tool | cost | charged |
+|---|---|---|---|---|---|
+| browser, failed | 11 | 10 | `browser_evaluate` *(refused)* | 27.5c | 0 |
+| model knowledge | 4 | 3 | `Write` | 34.3c | 34.3c |
+| **search + fetch** | 9 | 8 | `Write` | 39.5c | 39.5c |
+
+It never opened the browser. Given a tool that finds pages, it searched, read
+two of them and wrote up what they said — and the answer is the kind the
+substitution could not produce: **919 goals as of 19 July 2026**, split 794 club
+and 125 international, with two independent sources agreeing *on the split
+rather than only the total*, a third matching, and the lower figures still
+circulating (911, 914, 918) correctly diagnosed as older snapshots rather than
+rival counts, since 23 of those goals were scored in 2026.
+
+It also carried D-053's honest-fallback habit into a run that had sources:
+counting basis stated, and *"not verified by me: whether Messi has played
+between 19 July and today."*
+
+**The price of being right is about 5c.** Against the model-knowledge run it is
+39.5c versus 34.3c, for a sourced and cross-checked answer instead of an
+unverified one carrying a knowledge-cutoff caveat. Against the failed run it is
+39.5c charged versus 27.5c absorbed for nothing. And the fetched pages are the
+reason a turn here costs 4.4c against the 2.0c a no-repo session averages —
+search buys accuracy with input tokens on every subsequent turn, exactly as a
+clone does, which is worth knowing before assuming a search tier is cheap.

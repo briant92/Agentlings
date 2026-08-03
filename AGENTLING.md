@@ -165,6 +165,13 @@ whole budget driving the browser at a search engine and died (D-053). **A
 missing capability is substituted, not refused** — which is why the fix was a
 search box rather than a better browser.
 
+**Verified on that same failing prompt** (D-054): with the browser still
+switched on and available, it searched, read two pages and wrote up a
+cross-checked answer in 9 turns — never opening the browser. A turn cost 4.4c
+against the 2.0c a no-repo session averages, because fetched pages are input
+tokens on every subsequent turn. Search buys accuracy the same way a clone buys
+context: by making every turn dearer.
+
 The two compose and both trim: `search_web` returns titles, snippets and links,
 then `fetch_page` reads the one that was chosen. `WebSearch` — the SDK's own —
 is still never granted, and a session reaching for it is denied.

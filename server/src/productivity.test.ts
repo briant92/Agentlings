@@ -86,6 +86,12 @@ describe('isJournal', () => {
     expect(
       isJournal('2026-07-31 · failed runs usually mean the repo was never cloned; check first'),
     ).toBe(false);
+    expect(
+      isJournal('2026-07-31 · delivered work should name the file it wrote, not describe it'),
+    ).toBe(false);
+    expect(isJournal('2026-07-31 · merged with care: read both files before rewriting either')).toBe(
+      false,
+    );
     expect(isJournal('2026-07-31 · A probe job is a liveness check, not a puzzle')).toBe(false);
   });
 
@@ -95,16 +101,29 @@ describe('isJournal', () => {
 });
 
 describe('cheaperClasses', () => {
-  it('compares halves rather than endpoints', () => {
-    // Falling overall, but the last run is the dearest of the four. Read off
-    // first-against-last this class is getting worse; it plainly is not.
+  it('sees a fall that the endpoints hide', () => {
+    // Halves: 0.40 down to 0.25 — cheaper. Endpoints: 0.30 up to 0.40 — not.
+    // The two rules must disagree here or this test proves nothing about
+    // which one is running.
     const rows = [
-      entry({ at: 1, costUsd: 0.4 }),
-      entry({ at: 2, costUsd: 0.4 }),
+      entry({ at: 1, costUsd: 0.3 }),
+      entry({ at: 2, costUsd: 0.5 }),
       entry({ at: 3, costUsd: 0.1 }),
-      entry({ at: 4, costUsd: 0.3 }),
+      entry({ at: 4, costUsd: 0.4 }),
     ];
     expect(cheaperClasses(rows)).toEqual({ repeated: 1, cheaper: 1 });
+  });
+
+  it('is not fooled by one cheap run at the end', () => {
+    // Halves: 0.30 up to 0.65 — dearer. Endpoints: 0.50 down to 0.40 —
+    // cheaper. A trend read off two runs turns on whichever went last.
+    const rows = [
+      entry({ at: 1, costUsd: 0.5 }),
+      entry({ at: 2, costUsd: 0.1 }),
+      entry({ at: 3, costUsd: 0.9 }),
+      entry({ at: 4, costUsd: 0.4 }),
+    ];
+    expect(cheaperClasses(rows)).toEqual({ repeated: 1, cheaper: 0 });
   });
 
   it('orders by time, not by the order it was handed', () => {

@@ -133,11 +133,15 @@ describe('deliveriesFor', () => {
     expect(read).toEqual(['kept']);
   });
 
-  it('orders a job that never recorded finishing by when it was made', () => {
+  it('dates a job that never recorded finishing by when it was made', () => {
     const jobs = [
       job({ id: 'a', createdAt: 5, finishedAt: undefined }),
       job({ id: 'b', createdAt: 1, finishedAt: 3 }),
     ];
-    expect(deliveriesFor(jobs, names, dirFor, 10).map((d) => d.jobId)).toEqual(['a', 'b']);
+    const rows = deliveriesFor(jobs, names, dirFor, 10);
+    expect(rows.map((d) => d.jobId)).toEqual(['a', 'b']);
+    // The reported date needs the same fallback the sort uses, or the row
+    // sorts to the top of the list showing 1970 beside it.
+    expect(rows.map((d) => d.at)).toEqual([5, 3]);
   });
 });

@@ -50,21 +50,27 @@ export function signalFor(ratio: number | null): BudgetSignal {
  * Whether the memory line is the app's own journal rather than something
  * learnt.
  *
- * Matched against the four shapes the app writes, not against a guess at what
- * a lesson looks like: the sim writes `delivered "…" as role` and `failed "…"
- * as role — …`, a merge writes `merged with …`, and hiring writes `hired to:`.
- * Anything else came back from a session, which is the only way a real lesson
- * gets in. Distinguishing them by length or by tone would misfile the short
- * ones, and a crew of 114 lines that has learnt 43 things should say 43.
+ * Matched against the whole shape of the four lines the app writes, not
+ * against their opening words: the sim writes `delivered "…" as role`, a merge
+ * writes `merged with Name, who delivered 3`, and a lesson is free prose that
+ * can begin with any of those words — "merged with care: read both files
+ * before rewriting either" is a real lesson and starts exactly like the
+ * bookkeeping. Anything not of these shapes came back from a session, which is
+ * the only way a lesson gets in at all.
+ *
+ * A crew of 114 memory lines that has learnt 43 things should say 43, and
+ * every line this misreads moves one between those two numbers.
  */
+const JOURNAL = [
+  /^delivered ".*" as \S+$/,
+  /^failed ".*" as \S+ — /,
+  /^merged with .+, who delivered \d+$/,
+  /^hired to: /,
+];
+
 export function isJournal(line: string): boolean {
   const text = line.replace(/^\d{4}-\d{2}-\d{2} · /, '');
-  return (
-    text.startsWith('delivered "') ||
-    text.startsWith('failed "') ||
-    text.startsWith('merged with ') ||
-    text.startsWith('hired to:')
-  );
+  return JOURNAL.some((shape) => shape.test(text));
 }
 
 /**

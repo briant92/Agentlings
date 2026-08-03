@@ -65,6 +65,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-053 — 2026-08-02 — A missing capability is not refused, it is substituted](#d-053--2026-08-02--a-missing-capability-is-not-refused-it-is-substituted)
 - [D-054 — 2026-08-02 — A search connection, built because the gap was measured](#d-054--2026-08-02--a-search-connection-built-because-the-gap-was-measured)
 - [D-055 — 2026-08-03 — A free tier for finding pages, and what it must never claim](#d-055--2026-08-03--a-free-tier-for-finding-pages-and-what-it-must-never-claim)
+- [D-056 — 2026-08-03 — The ledger gains an author, and the panels that needed one](#d-056--2026-08-03--the-ledger-gains-an-author-and-the-panels-that-needed-one)
 
 ## By theme
 
@@ -105,6 +106,9 @@ entry updates one file rather than two.
   why "find out" is a budget instruction: D-053
 - **Finding a page** — the search connection and why it is builtin: D-054,
   and the free tier that answers a bare search without a session: D-055
+- **Reading the crew record** — the productivity block and the inbox, the author
+  the ledger never recorded, and the three tests that passed without testing:
+  D-056
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2809,3 +2813,68 @@ circulating figures were stale snapshots rather than rival counts. This tier
 only removes the session from requests that never wanted judgement in the first
 place. D-021's line holds: pay for judgement that has not been compiled yet, and
 nothing else.
+
+## D-056 — 2026-08-03 — The ledger gains an author, and the panels that needed one
+
+The crew rail gained a productivity block under the roll call and the terminal
+an inbox of finished work under the feed. Both read the ledger, and building
+them turned up the reason nothing had read it that way before: **a row records
+the role that ran a job, never the agentling.** Two hires holding the same role
+are one entry in that file, so "who is spending" had no answer in the only
+complete account of what has been paid out.
+
+**The alternative source is worse in a way that hides itself.** Per-member spend
+can be summed from `jobs.json` instead — the backoffice already does something
+like it — but the queue keeps only jobs still in it. Measured on `hq`: the
+ledger holds 95 runs at $22.47, the queue 83 of them at $20.87. A panel built on
+the queue would have been $1.59 light and said nothing about it.
+
+So `LedgerEntry` gained `agentlingId`, and `scripts/backfill-ledger-author.mjs`
+filled the history **by identification**: each row matched to its job by id, the
+author copied from that job's own `assignedTo`. 87 of 104 rows resolved. The
+other 17 have lost their job record — their sandbox holds a `.session.json` that
+names the *role* and nothing else — so they were left blank rather than
+attributed to whoever held that role, which would have built a spending record
+for work that agentling may never have touched. What they cost is reported as
+`unattributed`, and the panel says so in words: without that line the crew's
+figures simply add up to less than the level's, which reads as arithmetic gone
+wrong rather than as a known hole. (The rule is D-030's and D-036's: backfill by
+identification, never by guess.)
+
+**The street lights are spend over quote** — green under half, amber to 85%, red
+above — and the count of runs stopped at their ceiling sits beside the ratio in
+words rather than in a second colour. The two genuinely disagree and the choice
+was made on the real numbers: by ratio Pip is 28% and Sol 22%, both green; by
+how often the budget binds, Sol is capped on 4 of 11 priced runs against Pip's 1
+of 15. A member can be cheap in dollars and capped a third of the time, and that
+says **the quote is too tight for their work**, not that they overspend. One
+light for one meaning; the other fact is still on the row, in a sentence.
+
+**Two figures that only sound alike were kept apart, and two that were the same
+were joined.** `delivered` cannot come from the ledger: a run that exhausts its
+turns holding a finished diff files as a ledger failure and as a `partial` job —
+14 of them here — so reading delivery off the ledger undercounts by exactly the
+runs most worth reviewing. It is taken from the queue and documented as a floor.
+Meanwhile `Outcome`/`outcomeOf` moved into the shared model and the backoffice
+now takes its lifetime line from the same request the new block does. Two copies
+of that map, and two totals for one level, is how one job comes to be "kept" in
+one panel and "to review" in the other (D-030 again).
+
+**Mutation-tested, and three of the tests were not doing their job.** Seventeen
+mutants; fourteen were caught first time. The three survivors each marked a test
+that asserted something true of both the right rule and the wrong one: a
+"compares halves not endpoints" case whose data made both rules agree, a journal
+matcher probed only on `failed` and not on `delivered`, and an ordering test that
+never checked the date it displayed. Fixing the third also tightened `isJournal`
+from opening words to whole shapes, since "merged with care: read both files
+before rewriting either" is a real lesson that starts exactly like the
+bookkeeping. Re-run against all 119 real memory lines, strict and loose agree
+on every one — the hole was real and unhit, which is the only kind a passing
+suite ever shows you.
+
+**Layout was measured, not eyeballed.** A fixed 240px inbox came out *taller*
+than the live feed it sits under (134px against 106px on a short panel), and a
+flat floor under the roll call pushed the record 31px through the panel's own
+border at the 240px minimum the app's grid allows. Both are now shares rather
+than pixels, swept from 240 to 860px of panel with no spill and the live half
+larger at every step.

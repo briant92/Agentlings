@@ -1672,7 +1672,18 @@ button.danger:hover {
   gap: 2px 8px;
   padding: 6px;
   overflow-y: auto;
-  min-height: 0;
+  /* Takes the slack so the record sits at the foot of the panel. It never had
+     to before, being the last thing in the rail — with a block beneath it, a
+     list that only grows to fit its rows left 377px of nothing between the
+     two on a tall window, and the record floating in the middle.
+     The floor keeps that from reversing on a short one, where the record is
+     fixed by its contents and the roll call would be left two rows. */
+  flex: 1;
+  /* Relative below about 460px of rail, because a fixed floor plus the
+     record's own 62% cap can add up to more than the panel — at the 240px
+     minimum the app's grid allows, a flat 92px floor pushed the record 31px
+     through the panel's border. */
+  min-height: min(92px, 20%);
 }
 .rail-empty {
   font-size: 12px;
@@ -1751,16 +1762,13 @@ button.danger:hover {
   }
   /* Stacked, both panels carry a second block underneath, so the old caps
      would have left the roll call and the feed a couple of rows each. They
-     grow by roughly what was added below them and each inner list keeps its
-     own scroll. */
+     grow by roughly what was added below them; the blocks inside are bounded
+     as shares of these heights, so nothing further is needed here. */
   .rail {
     max-height: 420px;
   }
   .terminal {
     height: 560px;
-  }
-  .inbox {
-    max-height: 200px;
   }
 }
 
@@ -1814,9 +1822,27 @@ button.danger:hover {
    A block at the foot of the rail rather than a second scrolling pane. The
    roll call above keeps flex:1 and gives up space to this, which is fixed by
    its contents — a dashboard that scrolls is one nobody reads. */
+/* Bounded as a share of the rail rather than by a fixed height, for the same
+   reason the inbox is: a fixed cap either cuts a member off on a tall window
+   or starves the roll call on a short one. The head, tiles and footnote are
+   fixed; only the lights give, and they scroll when a big crew needs it. */
 .prod {
   flex: none;
+  max-height: 62%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* The head, tiles and footnote cannot shrink, so below about a 300px rail
+     even an empty lights list leaves the block taller than the space — and
+     without this it spilt 8px through the panel's own border. Never reached
+     at any ordinary window size; it is the floor under the floor. */
+  overflow-y: auto;
   border-top: 1px solid #262b36;
+}
+.p-head,
+.p-tiles,
+.p-foot {
+  flex: none;
 }
 .p-head {
   display: flex;
@@ -1874,11 +1900,17 @@ button.danger:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The one part of the block that gives. Without a bound on it, each new hire
+   took another 50px off the roll call above — measured at 1440x900 with a
+   crew of four, that had already left the roll call 86px, and it is the half
+   that answers who is working right now. */
 .p-lights {
   padding: 8px 10px 4px;
   display: flex;
   flex-direction: column;
   gap: 3px;
+  overflow-y: auto;
+  min-height: 0;
 }
 .p-lights-h {
   display: flex;
@@ -1987,16 +2019,22 @@ button.danger:hover {
 }
 
 /* ── inbox: finished work, under the feed ──────────────────────────────
-   Unlike the productivity block this one scrolls: the feed above is the live
-   half and stays the taller of the two, while this keeps a fixed slice so a
-   long history cannot push the terminal off the screen. */
+   A share of the panel rather than a fixed slice, so the feed above keeps the
+   majority of it at any window height. At 240px fixed it came out taller than
+   the feed on a 1440x900 window — the live half reduced to six lines by the
+   archive underneath it. */
 .inbox {
   flex: none;
   border-top: 1px solid #262b36;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 240px;
+  /* The share is of the whole panel while the feed gets only what the head and
+     footer leave, so a flat percentage lets the inbox overtake the feed on a
+     short one — 134px against 106px at 45%, measured. The second term is that
+     leftover halved, which keeps the live half the larger of the two at every
+     height rather than only above 290px. */
+  max-height: min(40%, calc(50% - 29px));
 }
 .in-head {
   display: flex;

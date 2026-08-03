@@ -49,6 +49,40 @@ describe('callSearch', () => {
     expect(text).not.toContain('<strong>');
   });
 
+  /**
+   * Brave escapes the text around the terms it marks up, so a snippet arrives
+   * with tags *and* entities. Seen on the first real search, where an
+   * apostrophe came through as `&#x27;` — noise the model pays to read.
+   */
+  it('decodes the entities Brave escapes, not just the tags', async () => {
+    const { http } = fake({
+      web: {
+        results: [
+          {
+            title: 'Barcelona&#x27;s season',
+            description: 'Tom &amp; Jerry &lt;3 &quot;quoted&quot; &#8212; dash',
+            url: 'https://example.com/a',
+          },
+        ],
+      },
+    });
+    const { text } = await callSearch('search_web', { query: 'x' }, { http, ...KEY });
+    expect(text).toContain("Barcelona's season");
+    expect(text).toContain('Tom & Jerry <3 "quoted" — dash');
+    expect(text).not.toContain('&#');
+    expect(text).not.toContain('&amp;');
+  });
+
+  // An entity that is not one stays as it was, rather than being eaten.
+  it('leaves something that only looks like an entity alone', async () => {
+    const { http } = fake({
+      web: { results: [{ title: 'A&B', description: 'x &notreal; y', url: 'https://e.com/a' }] },
+    });
+    const { text } = await callSearch('search_web', { query: 'x' }, { http, ...KEY });
+    expect(text).toContain('A&B');
+    expect(text).toContain('&notreal;');
+  });
+
   // Search finds, `fetch_page` reads. Saying so is what stops a session
   // treating a two-line snippet as the answer.
   it('says how to read one', async () => {

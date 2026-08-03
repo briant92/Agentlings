@@ -54,9 +54,36 @@ interface BraveResult {
   url?: unknown;
 }
 
-/** Brave marks matched terms with <strong>; they are noise in a prompt. */
+const ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+};
+
+/**
+ * Brave marks matched terms with `<strong>` and escapes the text around them,
+ * so a snippet arrives with both tags and entities in it. Both are noise a
+ * model pays to read — seen live on the first real search, where an apostrophe
+ * came through as `&#x27;`.
+ */
 function plain(value: unknown): string {
-  return typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : '';
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (whole, code: string) => {
+      if (code.startsWith('#')) {
+        const point = code[1]?.toLowerCase() === 'x'
+          ? Number.parseInt(code.slice(2), 16)
+          : Number.parseInt(code.slice(1), 10);
+        return Number.isFinite(point) && point > 0 ? String.fromCodePoint(point) : whole;
+      }
+      return ENTITIES[code.toLowerCase()] ?? whole;
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function clip(text: string, max: number): string {

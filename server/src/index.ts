@@ -37,7 +37,7 @@ import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { ClaudeAgentExecutor, COMPILE_TURNS, RECIPE_TURNS, turnsFor, mapTools } from './executors/claude';
+import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -79,11 +79,9 @@ import {
   append as appendLedger,
   costPerTurn,
   ledgerRow,
-  rateFor,
   readLedger,
   totals,
   totalsBy,
-  type Tier,
 } from './ledger';
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
@@ -104,10 +102,9 @@ import {
   readTools,
   toolDir,
   toolNameFor,
-  usableTools,
   writeTool,
 } from './tools';
-import { type Decision, decide } from './router';
+import { type QuoteContext, quoteFor_ } from './quote';
 import { callGithub } from './github';
 import { fetchPage } from './web';
 import { planWork, queuedJobSpec, runnerRole } from './work';
@@ -330,6 +327,9 @@ function surfaceFor(job: Job, roleName?: string | null): string[] {
   });
 }
 
+/** What `quoteFor_` has to consult, gathered once — none of it varies per call. */
+const QUOTE_CTX: QuoteContext = { sandboxRoot: SANDBOX_ROOT, registry, surfaceFor };
+
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {
   const connections = readConnections(CONNECTIONS_FILE);
@@ -419,7 +419,7 @@ app.post('/api/levels/:lid/jobs', async (c) => {
       repoPath,
       tools,
       plan,
-      quote: quoteFor_(rt, prompt, tools, runnerRole(plan), repoPath),
+      quote: quoteFor_(QUOTE_CTX, rt.dir, prompt, tools, runnerRole(plan), repoPath),
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
@@ -437,7 +437,8 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // The quote decides whether asking is worth it at all, and the quote needs
   // the role the draft settles — so the questions are filled in last.
   const quote = quoteFor_(
-    rt,
+    QUOTE_CTX,
+    rt.dir,
     text,
     granted(body.tools),
     runnerRole(draft),
@@ -519,7 +520,14 @@ app.post('/api/levels/:lid/work', async (c) => {
   // will run it — is shared with the other way in, so the two cannot drift.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
   const tools = granted(body.tools);
-  const quote = quoteFor_(rt, text, tools, runnerRole(plan), rt.meta.repoPath || undefined);
+  const quote = quoteFor_(
+    QUOTE_CTX,
+    rt.dir,
+    text,
+    tools,
+    runnerRole(plan),
+    rt.meta.repoPath || undefined,
+  );
   const job = rt.queue.add(
     queuedJobSpec({
       title: plan.title,
@@ -576,7 +584,8 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
     tools: previous.tools,
     noRouter: true,
     quotedUsd: quoteFor_(
-      rt,
+      QUOTE_CTX,
+      rt.dir,
       previous.prompt,
       previous.tools,
       previous.preferredRole ?? runnerRole(plan),
@@ -624,7 +633,14 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
       repoPath: previous.repoPath,
       tools,
       plan: { ...plan, role: previous.preferredRole ?? plan.role },
-      quote: quoteFor_(rt, prompt, tools, previous.preferredRole ?? runnerRole(plan), previous.repoPath),
+      quote: quoteFor_(
+        QUOTE_CTX,
+        rt.dir,
+        prompt,
+        tools,
+        previous.preferredRole ?? runnerRole(plan),
+        previous.repoPath,
+      ),
       continues: previous.id,
     }),
   );
@@ -875,75 +891,6 @@ function granted(requested: string[] | undefined): string[] {
     readSettings(SANDBOX_ROOT),
     process.env,
   );
-}
-
-function quoteFor_(
-  rt: LevelRuntime,
-  text: string,
-  tools: string[] | undefined,
-  role: string | null,
-  repoPath: string | undefined,
-  /**
-   * The job will bypass the router, so asking the router what it would do
-   * produces a fiction — a `routed` quote of zero, or a one-shot's leash, for
-   * a run that is about to be a full session either way.
-   *
-   * Branches on exactly the expression `RoutedExecutor` branches on, so the
-   * quote and the run cannot disagree about which of them is happening.
-   */
-  noRouter = false,
-): Quote {
-  const probe: Job = {
-    id: '',
-    title: '',
-    prompt: text,
-    status: 'queued',
-    slot: -1,
-    createdAt: 0,
-    ...(repoPath ? { repoPath } : {}),
-    ...(tools?.length ? { tools } : {}),
-  };
-  const decision: Decision = noRouter
-    ? { kind: 'agent' }
-    : decide(probe, {
-        knowledge: readKnowledge(rt.dir),
-        // The quote has to see the same corpus the run will, or it prices a
-        // session for work the store is about to answer for nothing.
-        store: storeLines(rt.dir, Date.now()),
-        recipes: readRecipes(rt.dir),
-        tools: usableTools(rt.dir),
-        canFetch: tools?.includes('web') === true,
-        // The same surface the run will have. Without it the quote demotes
-        // every recipe the executor would honour, and prices a session for a
-        // one-shot.
-        capabilities: surfaceFor(probe, role),
-      });
-  const tier: Tier =
-    decision.kind === 'answer' || decision.kind === 'fetch'
-      ? 'routed'
-      : decision.kind === 'tool'
-        ? 'tool'
-        : decision.kind === 'oneshot'
-          ? 'oneshot'
-          : 'session';
-  const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
-  const ledger = readLedger(SANDBOX_ROOT);
-  // What this run is about to be allowed to spend, worked out exactly as the
-  // executor will: the leash it will be given, priced at what a turn of this
-  // role's work in this shape and on this tier has really cost. The quote may
-  // not come in under that, or it would be quoting for turns it has already
-  // decided to grant.
-  const leash = decision.kind === 'oneshot' ? RECIPE_TURNS : turnsFor(role ? registry.get(role) : undefined);
-  const rate = rateFor(
-    ledger,
-    role ?? '',
-    decision.kind === 'oneshot' ? 'oneshot' : 'session',
-    Boolean(repoPath),
-  );
-  return quoteFor(tier, jobClass, ledger, {
-    maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
-    ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),
-  });
 }
 
 function crewOf(rt: LevelRuntime): CrewMember[] {

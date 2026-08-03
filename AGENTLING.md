@@ -251,7 +251,7 @@ off, so the app's fetch was gated and this second door was not.
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
-| `search` — find pages | builtin | off, needs `GOOGLE_API_KEY` + `GOOGLE_CSE_ID` | Live, read-only |
+| `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 
 Your own notes are **not** a connection and deliberately never became one — see
@@ -1174,10 +1174,11 @@ judgement — *which of its tools are reading, and which are acting*.
       size, so what comes back is three fields a result. Built because the gap
       was *measured* rather than assumed — a session that cannot search
       substitutes something far dearer and usually fails (D-053). It composes
-      with `fetch_page`: search finds, fetch reads, both trim. Google’s
-      Programmable Search Engine over its official API — scraping it is against
-      the terms and returns 429 and a CAPTCHA anyway (D-035). Needs both
-      `GOOGLE_API_KEY` and `GOOGLE_CSE_ID`; ships off
+      with `fetch_page`: search finds, fetch reads, both trim. Brave, not
+      Google — Custom Search stopped being a general web search on 2026-01-20
+      and caps new engines at 50 nominated domains (D-054). Scraping is not the
+      fallback either: 429 and a CAPTCHA (D-035). Needs `BRAVE_API_KEY`; ships
+      off
 - [x] **A knowledge store** — folders of your own material, synced into a
       per-level index and never read live, so the corpus is an artefact you can
       inspect before a session can use it. Markdown splits at its headings;

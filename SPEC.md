@@ -105,7 +105,7 @@ the loop runs end to end without one.
 - `web.ts` — pages as trimmed text, never a raw dump.
 - `search.ts` — finding a page, as against reading one. Builtin so the reply
   size is ours: titles, snippets and links, then `fetch_page` reads the chosen
-  one. Google Custom Search; needs `GOOGLE_API_KEY` and `GOOGLE_CSE_ID`; ships off.
+  one. Brave Search; needs `BRAVE_API_KEY`; ships off.
 - `connections.ts` — what a job may reach outside its sandbox; `settings.ts`
   decides which of those are live. Reading the web is on by default, everything
   credentialed is not.

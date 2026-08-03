@@ -53,13 +53,17 @@
     "budget driving the browser at a search engine and died. A search API answers",
     "in verbose JSON, so owning the call owns the size: what comes back is three",
     "fields a result, enough to choose a URL and hand it to fetch_page. The two",
-    "tools compose and both trim. It is Google's Programmable Search Engine over",
-    "the official JSON API — scraping the search page is against the terms and",
-    "D-035 measured what it returns to a crawler anyway: 429 and a CAPTCHA. It",
-    "needs BOTH GOOGLE_API_KEY and GOOGLE_CSE_ID in .env and is never live",
-    "without both; it ships off, like everything credentialed. A new search",
-    "engine searches only the sites you list, so switch it to the whole web in",
-    "its control panel or it will return almost nothing.",
+    "tools compose and both trim. It needs BRAVE_API_KEY in .env and is never",
+    "live without one; it ships off, like everything credentialed.",
+    "",
+    "Brave rather than Google, and that is not a preference — Google Custom",
+    "Search stopped being a general web search on 20 January 2026. Engines",
+    "created after that date can only search up to 50 domains you nominate, and",
+    "existing whole-web engines lose it on 1 January 2027. It was built against",
+    "Google first and reverted when the console refused to enable the toggle",
+    "(D-054). Scraping the search page is not the fallback: it is against the",
+    "terms, and D-035 measured what it returns to a crawler anyway — 429 and a",
+    "CAPTCHA, which is the wall the run in D-053 died against.",
     "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
@@ -106,8 +110,7 @@
       "transport": "builtin",
       "tools": ["search_web"],
       "secrets": {
-        "GOOGLE_API_KEY": "a Google API key with the Custom Search JSON API enabled",
-        "GOOGLE_CSE_ID": "the id of a Programmable Search Engine, set to search the whole web"
+        "BRAVE_API_KEY": "a Brave Search API key — free tier at brave.com/search/api"
       }
     },
     {

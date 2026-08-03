@@ -2673,15 +2673,28 @@ and for a stdio server that budget is the server's own flags, not ours. Owning
 the call owns the size: `search_web` returns three fields a result, capped at ten
 results with snippets clipped to 200 characters.
 
-**Google's Programmable Search Engine, over its official JSON API.** Built
-first against Brave and replaced before it ever ran a query, which cost almost
-nothing because a provider is one URL and one parse behind an injected `http` —
-which is the point of building it that way. Scraping the search page was never a
-candidate: it is against the terms, and D-035 had already measured what it
-returns to a crawler, which is 429 and a CAPTCHA — the exact wall the run in
-D-053 died against. The price is a second secret and a setup step, since a new
-search engine searches only the sites you list until it is switched to the whole
-web, so an empty result names that cause rather than leaving it to be guessed at.
+**Brave, after Google was tried and turned out to be impossible.** Scraping the
+search page was never a candidate — against the terms, and D-035 had already
+measured what it returns to a crawler: 429 and a CAPTCHA, the exact wall the run
+in D-053 died against. So the choice was between search APIs, and I recommended
+Google Custom Search as the official, well-supported one.
+
+**It cannot do general web search any more, and I did not know.** As of
+**20 January 2026** Programmable Search Engine only serves engines configured
+against a list of at most 50 nominated domains; whole-web engines created before
+that date keep working until 1 January 2027 and no new one can have it. The
+control panel does not explain this — the toggle is simply dead — and the user
+found the notice in a help page after doing the console setup on my advice. My
+knowledge cutoff is May 2026, so this was four months inside it and I still gave
+a confident recommendation. **A capability that used to exist is the easiest
+kind of thing to be wrong about, because nothing contradicts you until someone
+tries it.**
+
+The revert cost one `git checkout` of two files and four one-line edits, which
+is the only part of this that went right and was not luck: the provider sits
+behind one URL, one parse and an injected `http`, so swapping it never touched
+the tool, the gate, the runner or the trimming. Recorded here mostly so nobody
+tries Google Custom Search for this again.
 
 **Two tools, not one, and that is the design.** `search_web` finds and
 `fetch_page` reads, each trimming its own half, and the search result text says
@@ -2707,5 +2720,5 @@ elsewhere. Rewritten to go through `resolveForJob` and `mcpToolNames`, and
 paired with a positive case that grants the key, so the negatives can only pass
 because the gate held rather than because the string was never there.
 
-16 tests on the search module, 5 on the catalog entry, 716 server and 66 web
-green. Nothing has actually searched yet: that waits on the two keys.
+11 tests on the search module, 4 on the catalog entry, 711 server and 66 web
+green. Nothing has actually searched yet: that waits on a key.

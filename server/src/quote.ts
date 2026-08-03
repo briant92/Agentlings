@@ -21,6 +21,13 @@ export interface QuoteContext {
   registry: RoleRegistry;
   /** Everything a run of this job could do — the router's capability view. */
   surfaceFor: (job: Job, roleName?: string | null) => string[];
+  /**
+   * The search key, so the quote can tell whether the free search tier is
+   * actually available. Optional: without it a search is priced as a session,
+   * which is the safe direction — quoting free for work that then costs money
+   * is the one thing the quote exists to prevent.
+   */
+  searchToken?: () => string | undefined;
 }
 
 /**
@@ -68,13 +75,17 @@ export function quoteFor_(
         recipes: readRecipes(levelDir),
         tools: usableTools(levelDir),
         canFetch: tools?.includes('web') === true,
+        // The quote has to see the same tiers the run will, or it prices a
+        // session for work about to be routed free — the mismatch D-049 was
+        // written about, in the other direction.
+        canSearch: tools?.includes('search') === true && Boolean(ctx.searchToken?.()),
         // The same surface the run will have. Without it the quote demotes
         // every recipe the executor would honour, and prices a session for a
         // one-shot.
         capabilities: ctx.surfaceFor(probe, role),
       });
   const tier: Tier =
-    decision.kind === 'answer' || decision.kind === 'fetch'
+    decision.kind === 'answer' || decision.kind === 'fetch' || decision.kind === 'search'
       ? 'routed'
       : decision.kind === 'tool'
         ? 'tool'
@@ -96,7 +107,17 @@ export function quoteFor_(
     decision.kind === 'oneshot' ? 'oneshot' : 'session',
     Boolean(repoPath),
   );
+  // Which free thing it is, since `routed` covers three and the user is
+  // reading this to decide whether to queue the job.
+  const freeBecause =
+    decision.kind === 'fetch'
+      ? 'Free — just reading the pages you named'
+      : decision.kind === 'search'
+        ? 'Free — just looking for pages'
+        : undefined;
+
   return quoteFor(tier, jobClass, ledger, {
+    ...(freeBecause ? { freeBecause } : {}),
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
     ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),
   });

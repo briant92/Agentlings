@@ -17,6 +17,8 @@ import { extractUrls } from './web';
 export type Decision =
   | { kind: 'answer'; summary: string; body: string; reason: string; recipeKey?: string }
   | { kind: 'fetch'; urls: string[]; reason: string }
+  /** A bare "find me pages about X" — the links, with nothing read or judged. */
+  | { kind: 'search'; query: string; reason: string }
   | { kind: 'oneshot'; approach: string; reason: string; recipeKey: string }
   /** Work compiled into a script; runs in code, for nothing. */
   | { kind: 'tool'; toolName: string; reason: string }
@@ -42,6 +44,8 @@ export interface RouterContext {
   tools?: ToolManifest[];
   /** Set when the job opted into web access. */
   canFetch: boolean;
+  /** Set when the search connection is granted to this job. */
+  canSearch?: boolean;
   /** What this run can do, so a method found under a different surface
    *  hands over its hint without also shortening the leash. */
   capabilities?: string[];
@@ -158,6 +162,50 @@ export function recallSignal(prompt: string, knowledge: string[]): RecallSignal 
   };
 }
 
+/**
+ * A prompt that opens by asking for a search, and the subject it asks about.
+ *
+ * Mirrors `isFetchOnly`: the tier may claim a job only when the whole request
+ * is "put this in front of me". The difference is that a query is arbitrary
+ * text, so the allowlist cannot cover the subject — instead the *lead* must be
+ * a search instruction and the remainder must not turn the search into a
+ * question about its own results.
+ */
+const SEARCH_LEAD =
+  /^\s*(?:please\s+)?(?:can\s+you\s+)?(?:do\s+a\s+|run\s+a\s+)?(?:web\s+)?(?:search|look\s*up|find)\s+(?:the\s+web\s+|online\s+|me\s+)?(?:for\s+|pages?\s+(?:for|about|on)\s+|links?\s+(?:for|about|on)\s+|about\s+)?/i;
+
+/**
+ * Words that mean the user wants something done *with* the results.
+ *
+ * A blocklist, and deliberately generous: a real query containing one of these
+ * — "search for the best typescript orm" — simply falls through and costs a
+ * session. That is the safe direction. The router's rule is that a missed
+ * saving costs money and a wrong answer costs trust, and handing back a list
+ * of links to someone who asked a question is a wrong answer given for free.
+ */
+const WANTS_MORE = new Set([
+  'and', 'then', 'also', 'plus', 'after', 'afterwards',
+  'summarise', 'summarize', 'summary', 'explain', 'compare', 'analyse', 'analyze',
+  'why', 'how', 'what', 'which', 'who', 'when', 'whether',
+  'tell', 'give', 'answer', 'decide', 'recommend', 'suggest', 'choose', 'pick',
+  'best', 'should', 'write', 'report', 'list', 'check', 'verify', 'confirm',
+]);
+
+export function searchQuery(prompt: string): string | null {
+  const lead = SEARCH_LEAD.exec(prompt);
+  if (!lead) return null;
+  const rest = prompt.slice(lead[0].length).trim().replace(/[?.!]+$/, '').trim();
+  if (!rest) return null;
+  const words = rest
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter(Boolean);
+  if (words.length === 0) return null;
+  if (words.some((w) => WANTS_MORE.has(w))) return null;
+  return rest;
+}
+
 /** True when the prompt is only addresses and words meaning "fetch". */
 export function isFetchOnly(prompt: string, urls: string[]): boolean {
   if (urls.length === 0) return false;
@@ -203,6 +251,16 @@ export function decide(job: Job, context: RouterContext): Decision {
   const urls = extractUrls(prompt, 5);
   if (context.canFetch && isFetchOnly(prompt, urls)) {
     return { kind: 'fetch', urls, reason: 'just fetching pages' };
+  }
+
+  // "Find me pages about X" is the same shape as "read this page": the answer
+  // is the links, and a session would spend a turn producing what one call
+  // already returns. Only when nothing is asked *about* the results — see
+  // `searchQuery` — and only when an address was not given, since a prompt
+  // carrying a URL is a fetch and not a search.
+  if (context.canSearch && urls.length === 0) {
+    const query = searchQuery(prompt);
+    if (query) return { kind: 'search', query, reason: 'just looking for pages' };
   }
 
   // Ahead of every recipe tier: if this job has been compiled, run the

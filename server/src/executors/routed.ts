@@ -13,6 +13,7 @@ import {
 } from '../recipes';
 import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide, recallSignal } from '../router';
+import type { SearchResult } from '../search';
 import { storeLines } from '../store';
 import {
   RUN_SCRIPT,
@@ -80,6 +81,16 @@ export class RoutedExecutor implements Executor {
      */
     private capabilities: (job: Job, role?: string | null) => string[],
     private fallback: Executor,
+    /**
+     * Runs one search, or absent when this level has no way to.
+     *
+     * Injected whole rather than as a key, so this class needs neither the
+     * secret nor an HTTP client — and so the tier can be exercised without a
+     * network, which a hardcoded `fetch` would have made impossible. Last and
+     * optional, so the call sites that predate the search tier keep working and
+     * simply never route one.
+     */
+    private searchFor?: (query: string) => Promise<SearchResult>,
   ) {}
 
   /** Work the router answered itself has no session to stop. */
@@ -192,6 +203,10 @@ export class RoutedExecutor implements Executor {
           recipes,
           tools: usableTools(this.levelDir),
           canFetch: job.tools?.includes('web') === true,
+          // Both halves are required: the connection has to be granted to this
+          // job *and* a key has to exist, or the free tier would claim work it
+          // cannot then do.
+          canSearch: job.tools?.includes('search') === true && Boolean(this.searchFor),
           capabilities: this.capabilities(job, agentling?.role),
         });
 
@@ -230,6 +245,26 @@ export class RoutedExecutor implements Executor {
       };
     }
 
+    if (decision.kind === 'search') {
+      onProgress?.(`searching for ${decision.query}`);
+      const found = await this.searchFor!(decision.query);
+      // A search that failed is not an answer. Falling through costs money and
+      // returns something; reporting the error for free returns nothing, and
+      // the user asked for pages rather than for an apology.
+      if (found.error) {
+        onProgress?.(`search failed (${found.error}) — doing it properly instead`);
+      } else {
+        writeFileSync(
+          path.join(sandboxDir, 'RESULT.md'),
+          `# What the search found\n\n${found.text}\n\nSearched directly — no agentling session was needed.\n`,
+        );
+        return {
+          summary: `Searched for "${decision.query}" — no session needed.`,
+          meter: { costUsd: 0, turns: 0, routed: true },
+        };
+      }
+    }
+
     let toolFellBack = false;
     if (decision.kind === 'tool') {
       const done = await this.runTool(decision.toolName, job, sandboxDir, onProgress);
@@ -249,8 +284,11 @@ export class RoutedExecutor implements Executor {
       hint = { approach: decision.approach };
       onProgress?.('something like this was done before — starting from that method');
     }
-    // Whichever way the method arrived, the recipe was used.
-    const usedKey = decision.kind === 'tool' ? undefined : decision.recipeKey;
+    // Whichever way the method arrived, the recipe was used. A `search` only
+    // reaches here when the search itself failed and the job fell through, and
+    // it carries no recipe either way.
+    const usedKey =
+      decision.kind === 'tool' || decision.kind === 'search' ? undefined : decision.recipeKey;
 
     let result: ExecutorResult | undefined;
     let failure: unknown;

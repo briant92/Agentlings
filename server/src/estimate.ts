@@ -49,10 +49,11 @@ export function quoteFor(
   tier: Tier,
   jobClass: string,
   ledger: LedgerEntry[],
-  options: { maxCeilingUsd?: number; floorUsd?: number } = {},
+  options: { maxCeilingUsd?: number; floorUsd?: number; freeBecause?: string } = {},
 ): Quote {
   const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
   const floor = options.floorUsd ?? 0;
+  const { freeBecause } = options;
   /**
    * Bounded above by the runaway cap and below by what the run is about to be
    * allowed to spend. The floor exists because a quote lower than the turns it
@@ -76,10 +77,14 @@ export function quoteFor(
       expectedUsd: 0,
       samples: 0,
       certainty: 'certain',
+      // `routed` covers three different free things and the wording only ever
+      // spoke for one of them. It was loose for a fetch — we do not "know" a
+      // page we are about to read — and plainly wrong for a search, where the
+      // app is about to go and look. The caller knows which; this does not.
       wording:
         tier === 'tool'
           ? 'Free — the crew wrote a tool for this'
-          : 'Free — we already know this',
+          : (freeBecause ?? 'Free — we already know this'),
     };
   }
 

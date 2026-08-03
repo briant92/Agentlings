@@ -64,6 +64,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-052 — 2026-08-02 — A claim about the turn cap, withdrawn, and the instrument that was missing](#d-052--2026-08-02--a-claim-about-the-turn-cap-withdrawn-and-the-instrument-that-was-missing)
 - [D-053 — 2026-08-02 — A missing capability is not refused, it is substituted](#d-053--2026-08-02--a-missing-capability-is-not-refused-it-is-substituted)
 - [D-054 — 2026-08-02 — A search connection, built because the gap was measured](#d-054--2026-08-02--a-search-connection-built-because-the-gap-was-measured)
+- [D-055 — 2026-08-03 — A free tier for finding pages, and what it must never claim](#d-055--2026-08-03--a-free-tier-for-finding-pages-and-what-it-must-never-claim)
 
 ## By theme
 
@@ -102,7 +103,8 @@ entry updates one file rather than two.
   counter that had to exist before it could be asked: D-052
 - **How to ask for work** — what the crew does when a capability is missing, and
   why "find out" is a budget instruction: D-053
-- **Finding a page** — the search connection and why it is builtin: D-054
+- **Finding a page** — the search connection and why it is builtin: D-054,
+  and the free tier that answers a bare search without a session: D-055
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2753,3 +2755,57 @@ unverified one carrying a knowledge-cutoff caveat. Against the failed run it is
 reason a turn here costs 4.4c against the 2.0c a no-repo session averages —
 search buys accuracy with input tokens on every subsequent turn, exactly as a
 clone does, which is worth knowing before assuming a search tier is cheap.
+
+## D-055 — 2026-08-03 — A free tier for finding pages, and what it must never claim
+
+Asked why a search cost a full session when the app already answers *"read this
+page"* for nothing, the answer was that nobody had built the other half. The
+router had `answer`, `fetch` and `tool` free, and zero references to search: a
+bare *"search for X"* paid ~35c for a session to make one API call and paste the
+result. Now `search` is the fourth free tier.
+
+**The whole design is in what it refuses.** `fetch` can use an allowlist because
+its subject is a URL; a query is arbitrary text, so the subject cannot be
+checked. Instead the *lead* must be a search instruction and the remainder must
+not turn the search into a question about its own results — `and`, `then`,
+`summarise`, `compare`, `why`, `how`, `best`, `should` and a dozen more. A
+prompt carrying an address is a fetch, never a search: the page was named.
+
+**Under-firing is deliberate.** "Search for the best typescript orm" contains
+`best` and so costs a session, though it is a plain query. That is the safe
+direction, and the reason is the router's own rule: a missed saving costs money,
+a wrong answer costs trust — and **handing a list of links to somebody who asked
+a question is a wrong answer given for free.** Ten of the sixteen router tests
+added here assert that it does *not* fire.
+
+**It also refuses work it could not finish.** The tier claims a job only when
+the connection is granted to it *and* the level actually has a way to search, so
+a level with no key never routes one. And a search that fails is not an answer:
+the job falls through to a session, because the user asked for pages rather than
+for an apology.
+
+**Injected whole rather than as a key**, which was a correction mid-build. The
+first version called `fetch` directly and would have made the tier untestable
+without a network — the same untestability that hid two ledger bugs for 79 jobs
+(D-039). `RoutedExecutor` now takes `searchFor?: (query) => Promise<SearchResult>`,
+so the executor needs neither the secret nor an HTTP client, and five tests
+exercise the tier with no network at all.
+
+**And the quote was lying.** `routed` covers three different free things and the
+wording only ever spoke for one: a search quoted *"Free — we already know this"*,
+which is the opposite of true — the app is about to go and look. It was loose
+for `fetch` too. `quoteFor` now takes the reason from the caller, who knows
+which of the three it is.
+
+Verified live: *"search for typescript 6 release notes"* quotes **"Free — just
+looking for pages"**, runs at `tier: routed, costUsd: 0, turns: 0`, and writes
+real results. The same sentence with *"and summarise what changed"* quotes 33c
+and a session; *"how many goals has Messi scored?"* still quotes $1.58 and a
+session. 727 server and 66 web tests green.
+
+**What this does not do is make research free.** The Messi run cost 39.5c and
+what it bought was the judgement — cross-checking sources, spotting that three
+circulating figures were stale snapshots rather than rival counts. This tier
+only removes the session from requests that never wanted judgement in the first
+place. D-021's line holds: pay for judgement that has not been compiled yet, and
+nothing else.

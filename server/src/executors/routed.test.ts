@@ -11,6 +11,7 @@ import {
   writeRecipes,
   type Recipe,
 } from '../recipes';
+import type { SearchResult } from '../search';
 import { STALE_MS, writeIndex } from '../store';
 import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from '../tools';
 import { CANCELLED, SessionFailure } from './claude';
@@ -111,7 +112,12 @@ describe('RoutedExecutor', () => {
 
   function build(
     fallback: Executor,
-    over: { knowledge?: string[]; web?: { allow?: string[]; maxChars?: number } | null } = {},
+    over: {
+      knowledge?: string[];
+      web?: { allow?: string[]; maxChars?: number } | null;
+      /** Absent by default, which is how a level with no key behaves. */
+      search?: (query: string) => Promise<SearchResult>;
+    } = {},
   ): RoutedExecutor {
     return new RoutedExecutor(
       levelDir,
@@ -121,6 +127,7 @@ describe('RoutedExecutor', () => {
       // same surface and the leash behaviour under test is unchanged.
       () => [],
       fallback,
+      over.search,
     );
   }
 
@@ -737,6 +744,86 @@ describe('RoutedExecutor', () => {
         PIP,
       );
       expect(out.meter).toMatchObject({ asked: true, recallable: 0 });
+    });
+  });
+
+  /**
+   * The free search tier. Injected whole rather than as a key, so this runs
+   * without a network — the point of that seam.
+   */
+  describe('a bare request for pages', () => {
+    const PROMPT = 'search for typescript decorators';
+
+    const asked: string[] = [];
+    const searching = (reply: SearchResult) => async (query: string) => {
+      asked.push(query);
+      return reply;
+    };
+    beforeEach(() => {
+      asked.length = 0;
+    });
+
+    it('answers it with the links, and no session', async () => {
+      const session = new FakeSession();
+      const found = { text: '1. A page\n   https://example.com/a' };
+      const out = await run(
+        build(session, { search: searching(found) }),
+        job({ prompt: PROMPT, tools: ['search'] }),
+        PIP,
+      );
+
+      expect(asked).toEqual(['typescript decorators']);
+      expect(session.runs).toHaveLength(0);
+      expect(result()).toContain('https://example.com/a');
+      expect(out.meter).toMatchObject({ costUsd: 0, turns: 0, routed: true });
+    });
+
+    // The connection has to be granted to the job as well as configured.
+    it('does not claim it when the job did not ask for search', async () => {
+      const session = new FakeSession();
+      await run(build(session, { search: searching({ text: 'links' }) }), job({ prompt: PROMPT }), PIP);
+
+      expect(asked).toEqual([]);
+      expect(session.runs).toHaveLength(1);
+    });
+
+    // A level with no key has no search to inject, so the tier cannot claim
+    // work it would then be unable to do.
+    it('does not claim it when the level has no way to search', async () => {
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: PROMPT, tools: ['search'] }), PIP);
+      expect(session.runs).toHaveLength(1);
+    });
+
+    /**
+     * A search that failed is not an answer. Falling through costs money and
+     * returns something; reporting the error for free returns nothing, and the
+     * user asked for pages rather than for an apology.
+     */
+    it('pays for the job properly when the search itself fails', async () => {
+      const session = new FakeSession();
+      await run(
+        build(session, { search: searching({ error: 'the search quota is used up (429)' }) }),
+        job({ prompt: PROMPT, tools: ['search'] }),
+        PIP,
+      );
+
+      expect(session.runs).toHaveLength(1);
+      expect(progress.some((p) => p.includes('search failed'))).toBe(true);
+    });
+
+    // The guarantee that matters: a question is still a question, and the free
+    // tier must never answer one with a list of links.
+    it('sends a request that wants more than links to a session', async () => {
+      const session = new FakeSession();
+      await run(
+        build(session, { search: searching({ text: 'links' }) }),
+        job({ prompt: 'search for typescript decorators and explain them', tools: ['search'] }),
+        PIP,
+      );
+
+      expect(asked).toEqual([]);
+      expect(session.runs).toHaveLength(1);
     });
   });
 

@@ -32,7 +32,7 @@ Written 2026-08-01 against `e5c80c9`; §8's figures regenerate with
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
 | **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
 | **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §10 |
-| **What one job costs** | Free on three of five tiers, 18c on a leash, 38c for a full session — measured, not quoted from memory (§8) |
+| **What one job costs** | Free on four of six tiers, 18c on a leash, 38c for a full session — measured, not quoted from memory (§8) |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
@@ -459,7 +459,7 @@ the history is worthless (D-012).
 
 ---
 
-## 7. The five tiers — Live
+## 7. The six tiers — Live
 
 Every request that never reaches the model costs nothing, so this is the
 largest saving available and the most dangerous, because an answer given
@@ -473,6 +473,7 @@ without the agent is an answer nobody checked.
 |---|---|---|---|
 | `answer` | A question about what this level already knows, answered from `KNOWLEDGE.md`; or an exact repeat with a stored answer | free | Plain code |
 | `fetch` | A bare "read this page" — addresses plus words that only mean *fetch* | free | Plain code |
+| `search` | A bare "find me pages about X" — a search instruction and a subject, with nothing asked *about* the results | free | One API call |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
 | `oneshot` | A recipe matches strongly (≥ 0.65) — the method, on a 5-turn leash | 18c | A short session |
 | `agent` | Everything else. A weak match (≥ 0.3) still lends its method | 38c | A full session |

@@ -222,6 +222,16 @@ function makeLevel(dir: string): LevelRuntime {
           () => readLedger(SANDBOX_ROOT),
         )
       : simulated,
+    // Absent without a key, which is what makes the free tier refuse to claim
+    // a search it could not then run.
+    process.env.BRAVE_API_KEY
+      ? (query: string) =>
+          callSearch(
+            'search_web',
+            { query },
+            { http: (url, headers) => fetch(url, { headers }), token: process.env.BRAVE_API_KEY },
+          )
+      : undefined,
   );
   const roster = readRoster(dir);
   const sim = new Sim(
@@ -329,7 +339,12 @@ function surfaceFor(job: Job, roleName?: string | null): string[] {
 }
 
 /** What `quoteFor_` has to consult, gathered once — none of it varies per call. */
-const QUOTE_CTX: QuoteContext = { sandboxRoot: SANDBOX_ROOT, registry, surfaceFor };
+const QUOTE_CTX: QuoteContext = {
+  sandboxRoot: SANDBOX_ROOT,
+  registry,
+  surfaceFor,
+  searchToken: () => process.env.BRAVE_API_KEY,
+};
 
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {

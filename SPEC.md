@@ -425,6 +425,7 @@ tried, measured and rejected is in `DECISIONS.md`:
     |---|---|---|
     | `answer` | recall from KNOWLEDGE.md, or an exact repeat with a stored answer | free |
     | `fetch` | a bare "read this page" | free |
+    | `search` | a bare "find me pages about X" | free |
     | `tool` | a compiled tool matches the job's words *and* shape (M5.6) | free |
     | `oneshot` | a recipe matches strongly — the method, on a 5-turn leash | ~13c |
     | `agent` | everything else; a weak recipe match still lends its method | ~50c |

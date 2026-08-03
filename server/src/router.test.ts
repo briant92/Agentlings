@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Job } from '@agentlings/shared';
 import { terms, type Recipe } from './recipes';
-import { decide, isFetchOnly, recallSignal, relevantLines, type RouterContext } from './router';
+import {
+  decide,
+  isFetchOnly,
+  recallSignal,
+  relevantLines,
+  searchQuery,
+  type RouterContext,
+} from './router';
 
 function job(over: Partial<Job> = {}): Job {
   return {
@@ -140,6 +147,90 @@ describe('the knowledge store in the recall tier', () => {
       expect(decision.body).toContain('ops/deploy.md'); // from the store
       expect(decision.body).toContain('payment flow'); // from the crew's notes
     }
+  });
+});
+
+/**
+ * The free search tier, and mostly the cases where it must *not* fire.
+ *
+ * The whole risk is handing a list of links to somebody who asked a question,
+ * which is a wrong answer given for free — the outcome the router's rule exists
+ * to prevent. So under-firing is the safe direction throughout: a real query
+ * containing an analysis word simply costs a session.
+ */
+describe('searchQuery', () => {
+  it('claims a bare request for pages', () => {
+    expect(searchQuery('search for messi career goals')).toBe('messi career goals');
+    expect(searchQuery('search the web for typescript decorators')).toBe('typescript decorators');
+    expect(searchQuery('look up brave search api pricing')).toBe('brave search api pricing');
+    expect(searchQuery('find pages about rust ownership')).toBe('rust ownership');
+    expect(searchQuery('Please can you do a web search for vitest mocking')).toBe('vitest mocking');
+  });
+
+  it('drops the trailing punctuation but keeps the subject as written', () => {
+    expect(searchQuery('search for Node 24 release notes?')).toBe('Node 24 release notes');
+  });
+
+  // The dangerous half. Each of these wants something done *with* the results,
+  // and answering it with links would be worse than paying for a session.
+  it('refuses anything that asks for more than the links', () => {
+    for (const prompt of [
+      'search for messi goals and tell me the total',
+      'search for the fastest json parser and compare them',
+      'look up typescript 6 and summarise what changed',
+      'find pages about vitest, then write a guide',
+      'search for how many goals messi scored',
+      'search for which orm is best for postgres',
+    ]) {
+      expect(searchQuery(prompt)).toBeNull();
+    }
+  });
+
+  it('is not a search just because the word appears', () => {
+    expect(searchQuery('add a search box to the settings modal')).toBeNull();
+    expect(searchQuery('why does the search tier not fire')).toBeNull();
+    expect(searchQuery('search')).toBeNull();
+  });
+
+  // A question is a question however it is dressed: the recall tier may answer
+  // one from what is on file, but a list of links never answers it.
+  it('does not claim a plain question', () => {
+    expect(searchQuery('how many goals has messi scored')).toBeNull();
+    expect(searchQuery('what is the brave search free tier')).toBeNull();
+  });
+});
+
+describe('the search tier', () => {
+  const CAN = { canSearch: true };
+
+  it('claims a bare search when the connection is granted', () => {
+    const decision = decide(job({ prompt: 'search for messi career goals' }), context(CAN));
+    expect(decision.kind).toBe('search');
+    if (decision.kind === 'search') expect(decision.query).toBe('messi career goals');
+  });
+
+  // Both halves are required upstream — granted *and* keyed — so with the
+  // connection off this is an ordinary paid job.
+  it('does not claim it when the connection is not granted', () => {
+    expect(decide(job({ prompt: 'search for messi career goals' }), context()).kind).toBe('agent');
+  });
+
+  // A prompt carrying an address is a fetch: the page was named, so there is
+  // nothing to look for.
+  it('leaves a prompt with a URL to the fetch tier', () => {
+    const decision = decide(
+      job({ prompt: 'read https://example.com/a' }),
+      context({ ...CAN, canFetch: true }),
+    );
+    expect(decision.kind).toBe('fetch');
+  });
+
+  it('sends anything that wants the results interpreted to a session', () => {
+    const decision = decide(
+      job({ prompt: 'search for messi goals and tell me the total' }),
+      context(CAN),
+    );
+    expect(decision.kind).toBe('agent');
   });
 });
 

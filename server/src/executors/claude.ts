@@ -21,6 +21,7 @@ import { outputNames } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { GITHUB_TOOLS } from '../github';
+import { SEARCH_TOOLS } from '../search';
 import { extractUrls, fetchPage } from '../web';
 import type { Executor, ExecutorResult, RunHint } from './executor';
 
@@ -605,6 +606,7 @@ export class ClaudeAgentExecutor implements Executor {
     for (const { name, reason } of refused) onProgress?.(`connection "${name}" unavailable: ${reason}`);
     const web = granted.find((c) => c.name === 'web');
     const codeHost = granted.find((c) => c.name === 'github');
+    const searchConn = granted.find((c) => c.name === 'search');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -705,6 +707,19 @@ export class ClaudeAgentExecutor implements Executor {
               github: {
                 endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/github`,
                 tools: GITHUB_TOOLS.filter((t) => (codeHost.tools ?? []).includes(t.name)),
+              },
+            }
+          : {}),
+        // Finding a page, as against reading one. Builtin for the same reason
+        // as the two above, and separate from `web` on purpose: search returns
+        // links, `fetch_page` returns text, and a session that can only do the
+        // second substitutes something far more expensive for the first
+        // (D-053).
+        ...(searchConn
+          ? {
+              search: {
+                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/search`,
+                tools: SEARCH_TOOLS.filter((t) => (searchConn.tools ?? []).includes(t.name)),
               },
             }
           : {}),

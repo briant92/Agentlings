@@ -121,3 +121,49 @@ describe('the code host connection is read-only', () => {
     expect(grantedTools(['github'], all, {}, {})).not.toContain('github');
   });
 });
+
+/**
+ * Finding a page, as against reading one. It exists because the gap was
+ * measured: a session that cannot search does not refuse, it substitutes —
+ * once cheaply into model knowledge, once expensively into the browser, where
+ * it died (D-053).
+ */
+describe('the search connection', () => {
+  const search = all.find((c) => c.name === 'search');
+
+  it('ships, granting exactly the one tool it is for', () => {
+    expect(search).toBeDefined();
+    expect(search!.tools).toEqual(['search_web']);
+  });
+
+  /**
+   * Asserted through `resolveForJob` and `mcpToolNames`, not off `grantedTools`
+   * — that one returns *connection* names, so `not.toContain('search_web')`
+   * would pass however broken the gate was. The first draft of these tests did
+   * exactly that, which is the vacuous-check trap this project has hit before.
+   */
+  const callable = (settings: object, env: Record<string, string>): string[] => {
+    const names = grantedTools(['search'], all, settings, env);
+    return mcpToolNames(resolveForJob(names, all, env).granted);
+  };
+
+  it('ships off, so asking for it is not enough on its own', () => {
+    expect(search!.defaultOn).not.toBe(true);
+    expect(Object.keys(search!.secrets ?? {})).toContain('BRAVE_API_KEY');
+    expect(callable({}, {})).not.toContain('mcp__search__search_web');
+  });
+
+  // Switched on but with no key is still nothing: a connection whose secret is
+  // missing is never live, whatever the user or the default says.
+  it('stays refused when the key is missing even if it is switched on', () => {
+    expect(callable({ connections: { search: true } }, {})).not.toContain(
+      'mcp__search__search_web',
+    );
+  });
+
+  it('becomes callable once the key exists and the user asks for it', () => {
+    expect(callable({ connections: { search: true } }, { BRAVE_API_KEY: 'k' })).toContain(
+      'mcp__search__search_web',
+    );
+  });
+});

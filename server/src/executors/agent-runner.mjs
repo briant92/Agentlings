@@ -56,12 +56,21 @@ try {
   // shapes arrive as config rather than being written out here, because this
   // file is plain JS spawned with plain node and must not import anything of
   // ours — so it builds the schemas generically from what it was handed.
-  if (config.github?.tools?.length) {
+  //
+  // One loop rather than a block each: 'search' arrived as a third of these and
+  // a third copy of the same twenty lines is how two of them quietly stop
+  // agreeing about error handling.
+  for (const [name, subject] of [
+    ['github', 'the code host'],
+    ['search', 'the search service'],
+  ]) {
+    const builtin = config[name];
+    if (!builtin?.tools?.length) continue;
     const { z } = await import('zod');
-    mcpServers.github = createSdkMcpServer({
-      name: 'github',
+    mcpServers[name] = createSdkMcpServer({
+      name,
       version: '1.0.0',
-      tools: config.github.tools.map((spec) =>
+      tools: builtin.tools.map((spec) =>
         tool(
           spec.name,
           spec.description,
@@ -75,7 +84,7 @@ try {
           async (args) => {
             let text;
             try {
-              const res = await fetch(config.github.endpoint, {
+              const res = await fetch(builtin.endpoint, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ tool: spec.name, args }),
@@ -83,7 +92,7 @@ try {
               const reply = await res.json();
               text = reply.error ? `Could not do that: ${reply.error}` : reply.text;
             } catch (err) {
-              text = `Could not reach the code host: ${err instanceof Error ? err.message : String(err)}`;
+              text = `Could not reach ${subject}: ${err instanceof Error ? err.message : String(err)}`;
             }
             return { content: [{ type: 'text', text }] };
           },

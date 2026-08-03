@@ -103,6 +103,9 @@ the loop runs end to end without one.
 - `ledger.ts` — what work cost and what it may be charged; the per-turn rate
   the turn budget is derived from.
 - `web.ts` — pages as trimmed text, never a raw dump.
+- `search.ts` — finding a page, as against reading one. Builtin so the reply
+  size is ours: titles, snippets and links, then `fetch_page` reads the chosen
+  one. Needs `BRAVE_API_KEY`; ships off.
 - `connections.ts` — what a job may reach outside its sandbox; `settings.ts`
   decides which of those are live. Reading the web is on by default, everything
   credentialed is not.

@@ -63,6 +63,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-051 — 2026-08-02 — The crew's first real finding: the recall tier counts where recipes weigh](#d-051--2026-08-02--the-crews-first-real-finding-the-recall-tier-counts-where-recipes-weigh)
 - [D-052 — 2026-08-02 — A claim about the turn cap, withdrawn, and the instrument that was missing](#d-052--2026-08-02--a-claim-about-the-turn-cap-withdrawn-and-the-instrument-that-was-missing)
 - [D-053 — 2026-08-02 — A missing capability is not refused, it is substituted](#d-053--2026-08-02--a-missing-capability-is-not-refused-it-is-substituted)
+- [D-054 — 2026-08-02 — A search connection, built because the gap was measured](#d-054--2026-08-02--a-search-connection-built-because-the-gap-was-measured)
 
 ## By theme
 
@@ -101,6 +102,7 @@ entry updates one file rather than two.
   counter that had to exist before it could be asked: D-052
 - **How to ask for work** — what the crew does when a capability is missing, and
   why "find out" is a budget instruction: D-053
+- **Finding a page** — the search connection and why it is builtin: D-054
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2656,3 +2658,47 @@ like a leak and was a denial. Read the granted list before reading a tool name a
 an action. The instrument is still the right one: without it this failure would
 have read as "ran out of turns, cause unknown", and instead it names the exact
 wall the run died against.
+
+## D-054 — 2026-08-02 — A search connection, built because the gap was measured
+
+D-053 measured what the crew does when it cannot search: it substitutes. One run
+fell back to model knowledge and labelled it honestly; another spent its whole
+budget driving the browser at a search engine and died there. The cheapest
+answer to that is not a better browser — it is a search box, so `search` is now
+a connection.
+
+**Builtin, not an MCP server, for D-040's reason verbatim.** A search API answers
+in verbose JSON — ranking metadata, thumbnails, profiles, dates, per result —
+and for a stdio server that budget is the server's own flags, not ours. Owning
+the call owns the size: `search_web` returns three fields a result, capped at ten
+results with snippets clipped to 200 characters. Brave was chosen over a
+keyless option because the alternative that needs no key returns abstracts
+rather than ranked results, which would have half-answered the question that
+prompted this and nothing else.
+
+**Two tools, not one, and that is the design.** `search_web` finds and
+`fetch_page` reads, each trimming its own half, and the search result text says
+so in as many words. A single tool returning page contents would have re-created
+the unbounded reply the split exists to avoid.
+
+**Credentialed, so it ships off and is never live without `BRAVE_API_KEY`** —
+the same rule as the code host. Verified against the running server: it lists
+`ready: false, enabled: false, missing: ["BRAVE_API_KEY"]`, so it cannot be
+switched on at all until a key exists.
+
+**The runner's builtin-tool block became a loop rather than a third copy.**
+`web`, `github` and now `search` all reach back into the server through a gated
+`/internal/*` door; two of them build their SDK tool schemas generically from
+config, and a third near-identical twenty lines is how two of them quietly stop
+agreeing about error handling (D-030).
+
+**And the first draft of the catalog tests passed vacuously.** They asserted
+`grantedTools(...)` did not contain `'search_web'` — but that function returns
+*connection* names, so the assertion was true however broken the gate was. The
+trap already on record as a scripted check matching a string that existed
+elsewhere. Rewritten to go through `resolveForJob` and `mcpToolNames`, and
+paired with a positive case that grants the key, so the negatives can only pass
+because the gate held rather than because the string was never there.
+
+11 tests on the search module, 4 on the catalog entry, 711 server and 66 web
+green. Nothing has actually searched yet: that waits on a key.

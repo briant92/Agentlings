@@ -106,6 +106,7 @@ import {
 } from './tools';
 import { type QuoteContext, quoteFor_ } from './quote';
 import { callGithub } from './github';
+import { callSearch } from './search';
 import { fetchPage } from './web';
 import { planWork, queuedJobSpec, runnerRole } from './work';
 
@@ -1331,6 +1332,24 @@ app.post('/internal/github', async (c) => {
       http,
       token: process.env.GITHUB_TOKEN,
     }),
+  );
+});
+
+/**
+ * Web search for a running session, gated exactly as `/internal/github` is:
+ * the server owns the call so it owns the size of the answer, and the key
+ * never leaves this process.
+ */
+app.post('/internal/search', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'search');
+  if (!connection) return c.json({ error: 'the search connection is not configured' }, 404);
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(
+    await callSearch(body.tool, body.args ?? {}, { http, token: process.env.BRAVE_API_KEY }),
   );
 });
 

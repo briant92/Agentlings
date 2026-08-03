@@ -46,6 +46,16 @@
     "comment, merge, push or fork are absent, and catalog.test.ts asserts it.",
     "It needs GITHUB_TOKEN in .env and is never live without one.",
     "",
+    "'search' is builtin for the same reason as 'github', and exists because of",
+    "a measured failure (D-053): the crew could read a page you named and never",
+    "find one, and a missing capability is substituted rather than refused — one",
+    "run answered from model knowledge and said so, another spent its whole",
+    "budget driving the browser at a search engine and died. A search API answers",
+    "in verbose JSON, so owning the call owns the size: what comes back is three",
+    "fields a result, enough to choose a URL and hand it to fetch_page. The two",
+    "tools compose and both trim. It needs BRAVE_API_KEY in .env and is never",
+    "live without one; it ships off, like everything credentialed.",
+    "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
     "They ship off by default — they carry credentials and act on the user's",
@@ -83,6 +93,16 @@
         "GITHUB_TOKEN": "a GitHub token with read access to the repositories the crew should see"
       },
       "maxChars": 12000
+    },
+    {
+      "name": "search",
+      "label": "Search the web",
+      "description": "Finds pages by searching, and returns titles, snippets and links. Reading one is a separate step — hand a link to the web connection.",
+      "transport": "builtin",
+      "tools": ["search_web"],
+      "secrets": {
+        "BRAVE_API_KEY": "a Brave Search API key — free tier at brave.com/search/api"
+      }
     },
     {
       "name": "browser",

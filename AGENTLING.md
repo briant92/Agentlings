@@ -158,12 +158,16 @@ Two paths, one implementation:
 
 Non-HTTP is refused. 15-second timeout, 5 MB cap.
 
-**It reads a page you name; it cannot find one.** There is no search — not in a
-role's tools, not in a connection. `WebSearch` is not granted and a session that
-reaches for it is denied. That gap is total for any question with no URL
-attached, and the crew does not stop at it: measured on two real jobs, one fell
-back to model knowledge and said so, the other spent its whole budget in the
-browser and died (D-053). **A missing capability is substituted, not refused.**
+**This reads a page you name. Finding one is the `search` connection**, added
+after the gap was measured rather than guessed at: two real jobs asked the same
+question, one fell back to model knowledge and said so, the other spent its
+whole budget driving the browser at a search engine and died (D-053). **A
+missing capability is substituted, not refused** — which is why the fix was a
+search box rather than a better browser.
+
+The two compose and both trim: `search_web` returns titles, snippets and links,
+then `fetch_page` reads the one that was chosen. `WebSearch` — the SDK's own —
+is still never granted, and a session reaching for it is denied.
 
 ### Driving a browser — Partial (reads, cannot act)
 
@@ -247,6 +251,7 @@ off, so the app's fetch was gated and this second door was not.
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
+| `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 
 Your own notes are **not** a connection and deliberately never became one — see
@@ -1164,6 +1169,13 @@ judgement — *which of its tools are reading, and which are acting*.
       because the reference server is deprecated and a code host is where an
       unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs
       `GITHUB_TOKEN` in `.env`; ships off
+- [x] **Search the web** — `search_web` over the Brave API, builtin for D-040's
+      reason: a search API answers in verbose JSON, and owning the call owns the
+      size, so what comes back is three fields a result. Built because the gap
+      was *measured* rather than assumed — a session that cannot search
+      substitutes something far dearer and usually fails (D-053). It composes
+      with `fetch_page`: search finds, fetch reads, both trim. Needs
+      `BRAVE_API_KEY`; ships off
 - [x] **A knowledge store** — folders of your own material, synced into a
       per-level index and never read live, so the corpus is an artefact you can
       inspect before a session can use it. Markdown splits at its headings;

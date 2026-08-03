@@ -53,8 +53,13 @@
     "budget driving the browser at a search engine and died. A search API answers",
     "in verbose JSON, so owning the call owns the size: what comes back is three",
     "fields a result, enough to choose a URL and hand it to fetch_page. The two",
-    "tools compose and both trim. It needs BRAVE_API_KEY in .env and is never",
-    "live without one; it ships off, like everything credentialed.",
+    "tools compose and both trim. It is Google's Programmable Search Engine over",
+    "the official JSON API — scraping the search page is against the terms and",
+    "D-035 measured what it returns to a crawler anyway: 429 and a CAPTCHA. It",
+    "needs BOTH GOOGLE_API_KEY and GOOGLE_CSE_ID in .env and is never live",
+    "without both; it ships off, like everything credentialed. A new search",
+    "engine searches only the sites you list, so switch it to the whole web in",
+    "its control panel or it will return almost nothing.",
     "",
     "External MCP servers take: name, label, description, transport 'stdio',",
     "command, args, tools, and optional secrets {ENV_NAME: 'why it is needed'}.",
@@ -101,7 +106,8 @@
       "transport": "builtin",
       "tools": ["search_web"],
       "secrets": {
-        "BRAVE_API_KEY": "a Brave Search API key — free tier at brave.com/search/api"
+        "GOOGLE_API_KEY": "a Google API key with the Custom Search JSON API enabled",
+        "GOOGLE_CSE_ID": "the id of a Programmable Search Engine, set to search the whole web"
       }
     },
     {

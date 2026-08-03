@@ -147,9 +147,9 @@ describe('the search connection', () => {
     return mcpToolNames(resolveForJob(names, all, env).granted);
   };
 
-  it('ships off, so asking for it is not enough on its own', () => {
+  it('ships off, needing both halves, so asking for it is not enough', () => {
     expect(search!.defaultOn).not.toBe(true);
-    expect(Object.keys(search!.secrets ?? {})).toContain('BRAVE_API_KEY');
+    expect(Object.keys(search!.secrets ?? {})).toEqual(['GOOGLE_API_KEY', 'GOOGLE_CSE_ID']);
     expect(callable({}, {})).not.toContain('mcp__search__search_web');
   });
 
@@ -161,9 +161,17 @@ describe('the search connection', () => {
     );
   });
 
-  it('becomes callable once the key exists and the user asks for it', () => {
-    expect(callable({ connections: { search: true } }, { BRAVE_API_KEY: 'k' })).toContain(
-      'mcp__search__search_web',
-    );
+  // Half-configured is not configured. Two secrets means two ways to be
+  // half-way there, and either one alone must still refuse.
+  it('stays refused with only one of the two halves', () => {
+    const on = { connections: { search: true } };
+    expect(callable(on, { GOOGLE_API_KEY: 'k' })).not.toContain('mcp__search__search_web');
+    expect(callable(on, { GOOGLE_CSE_ID: 'e' })).not.toContain('mcp__search__search_web');
+  });
+
+  it('becomes callable once both halves exist and the user asks for it', () => {
+    expect(
+      callable({ connections: { search: true } }, { GOOGLE_API_KEY: 'k', GOOGLE_CSE_ID: 'e' }),
+    ).toContain('mcp__search__search_web');
   });
 });

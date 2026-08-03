@@ -2671,20 +2671,27 @@ a connection.
 in verbose JSON — ranking metadata, thumbnails, profiles, dates, per result —
 and for a stdio server that budget is the server's own flags, not ours. Owning
 the call owns the size: `search_web` returns three fields a result, capped at ten
-results with snippets clipped to 200 characters. Brave was chosen over a
-keyless option because the alternative that needs no key returns abstracts
-rather than ranked results, which would have half-answered the question that
-prompted this and nothing else.
+results with snippets clipped to 200 characters.
+
+**Google's Programmable Search Engine, over its official JSON API.** Built
+first against Brave and replaced before it ever ran a query, which cost almost
+nothing because a provider is one URL and one parse behind an injected `http` —
+which is the point of building it that way. Scraping the search page was never a
+candidate: it is against the terms, and D-035 had already measured what it
+returns to a crawler, which is 429 and a CAPTCHA — the exact wall the run in
+D-053 died against. The price is a second secret and a setup step, since a new
+search engine searches only the sites you list until it is switched to the whole
+web, so an empty result names that cause rather than leaving it to be guessed at.
 
 **Two tools, not one, and that is the design.** `search_web` finds and
 `fetch_page` reads, each trimming its own half, and the search result text says
 so in as many words. A single tool returning page contents would have re-created
 the unbounded reply the split exists to avoid.
 
-**Credentialed, so it ships off and is never live without `BRAVE_API_KEY`** —
+**Credentialed, so it ships off and is never live without both halves** —
 the same rule as the code host. Verified against the running server: it lists
-`ready: false, enabled: false, missing: ["BRAVE_API_KEY"]`, so it cannot be
-switched on at all until a key exists.
+`ready: false` with both secrets named, so it cannot be switched on at all
+until they exist — and a test pins that either one alone still refuses.
 
 **The runner's builtin-tool block became a loop rather than a third copy.**
 `web`, `github` and now `search` all reach back into the server through a gated
@@ -2700,5 +2707,5 @@ elsewhere. Rewritten to go through `resolveForJob` and `mcpToolNames`, and
 paired with a positive case that grants the key, so the negatives can only pass
 because the gate held rather than because the string was never there.
 
-11 tests on the search module, 4 on the catalog entry, 711 server and 66 web
-green. Nothing has actually searched yet: that waits on a key.
+16 tests on the search module, 5 on the catalog entry, 716 server and 66 web
+green. Nothing has actually searched yet: that waits on the two keys.

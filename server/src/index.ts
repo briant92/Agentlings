@@ -1349,7 +1349,11 @@ app.post('/internal/search', async (c) => {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
   return c.json(
-    await callSearch(body.tool, body.args ?? {}, { http, token: process.env.BRAVE_API_KEY }),
+    await callSearch(body.tool, body.args ?? {}, {
+      http,
+      key: process.env.GOOGLE_API_KEY,
+      cx: process.env.GOOGLE_CSE_ID,
+    }),
   );
 });
 

@@ -354,6 +354,30 @@ export interface LibrarySearchResult {
 }
 
 /**
+ * One group of the catalogue, for browsing it without a query.
+ *
+ * Derived from where a source keeps its files, never from what the entries
+ * say. A source that arranges nothing becomes one category named for itself.
+ */
+export interface LibraryCategory {
+  name: string;
+  jobs: number;
+  abilities: number;
+  /** Which sources contribute, so a mixed category can say so. */
+  sources: string[];
+  /** The category's *lowest* trust: one community file makes it community. */
+  trust: 'official' | 'community';
+}
+
+/** GET /api/library/browse — the shape of the catalogue, without its contents. */
+export interface LibraryBrowse {
+  categories: LibraryCategory[];
+  /** Totals across everything indexed, for the kind filter's counts. */
+  jobs: number;
+  abilities: number;
+}
+
+/**
  * Tier 2's answer: the same sentence checked by one short Claude call. Always
  * optional — the local matcher answers without it.
  */

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LibrarySearchResult, LibraryStatus, RoleInfo, SkillInfo } from '@agentlings/shared';
 import { api, postJson } from '../api';
+import { LibraryBrowse } from './LibraryBrowse';
 import { LibraryResults } from './LibraryResults';
 
 const DEBOUNCE_MS = 300;
@@ -36,6 +37,7 @@ export function RolesModal({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [browsing, setBrowsing] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [url, setUrl] = useState('');
   const [kind, setKind] = useState<'role' | 'skill'>('role');
@@ -123,6 +125,10 @@ export function RolesModal({
             <button className="work-link" disabled={busy} onClick={() => void resync()}>
               {busy ? 'checking…' : 'check again'}
             </button>
+            {' · '}
+            <button className="work-link" onClick={() => setBrowsing(!browsing)}>
+              {browsing ? 'hide' : 'browse all'}
+            </button>
           </p>
           {status?.sources
             .filter((s) => !s.ok)
@@ -138,6 +144,22 @@ export function RolesModal({
                 {s.repo}: showing the first {s.count}, {s.truncated} more not indexed
               </p>
             ))}
+
+          {/* A query takes the screen: browsing is a mode you leave rather than
+              a filter fighting the search box. The block keeps its own state
+              while hidden, so clearing the query returns to the same category.
+              Letting the two combine would make the browse filters a second,
+              quieter search engine — and a forgotten category selection reads
+              as "the library has nothing like that". */}
+          {browsing && !query.trim() && (
+            <LibraryBrowse
+              sources={status?.sources ?? []}
+              onInstalled={(name) => {
+                setNote(`Added ${name}. Any agentling can use it now.`);
+                void refresh();
+              }}
+            />
+          )}
 
           {searching && <p className="dim">searching…</p>}
           {result?.hits.length === 0 && (

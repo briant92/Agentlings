@@ -69,6 +69,12 @@ export function LibraryResults({
                 {hit.entry.name}
               </span>
               <span className="dim lib-kind">{hit.entry.kind === 'role' ? 'job' : 'ability'}</span>
+              {/* Stated, not ranked. Browsing puts hundreds of strangers'
+                  agent definitions in front of someone with no query to judge
+                  them by, and "it was in the library" should not read as "it
+                  was vetted" — 18 of the 532 indexed entries are official.
+                  What actually protects anyone is still reading it first. */}
+              <span className={`lib-trust ${hit.entry.trust}`}>{hit.entry.trust}</span>
               {installed && <span className="badge done">in your library</span>}
               {!installed && hit.state === 'outdated' && (
                 <span className="badge running">update available</span>

@@ -41,6 +41,7 @@ import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
+import { categorise, entriesIn } from './browse';
 import { deliveriesFor } from './deliveries';
 import { applyPatch, patchFile } from './gitwork';
 import {
@@ -1415,6 +1416,49 @@ app.get('/api/library', (c) => c.json(libraryStatus(library, Date.now())));
 app.post('/api/library/refresh', async (c) => {
   await syncLibrary();
   return c.json(libraryStatus(library, Date.now()));
+});
+
+/**
+ * The catalogue's shape, for browsing it without a query.
+ *
+ * Two answers from one route, because they are two views of the same fetch and
+ * the expensive half is optional. Without `category` it returns the categories
+ * and their counts — a few KB, the whole index being 372 of them. With one it
+ * returns that category's entries as installable hits.
+ *
+ * Counts describe what is *indexed*, never what a repository holds: a source
+ * is capped at MAX_PER_SOURCE and the overflow is already reported on the
+ * status line, so a category promising files the library cannot show would be
+ * this app's oldest bug — a figure nobody can act on.
+ */
+app.get('/api/library/browse', async (c) => {
+  if (!library) await syncLibrary();
+  const entries = library?.entries ?? [];
+  const sources = library?.sources ?? [];
+  const kindParam = c.req.query('kind');
+  const kind = kindParam === 'role' || kindParam === 'skill' ? kindParam : undefined;
+  const source = c.req.query('source') || undefined;
+  const category = c.req.query('category');
+
+  if (category === undefined) {
+    // The kind filter narrows the categories too, so choosing "abilities"
+    // cannot leave a chip on screen that opens empty.
+    const shown = entriesIn(entries, sources, { kind, source });
+    return c.json({
+      categories: categorise(shown, sources),
+      jobs: entries.filter((e) => e.kind === 'role').length,
+      abilities: entries.filter((e) => e.kind === 'skill').length,
+    });
+  }
+
+  const manifest = loadManifest(SANDBOX_ROOT);
+  const names = installedNames();
+  return c.json(
+    entriesIn(entries, sources, { category, kind, source }).map((entry) => ({
+      entry,
+      state: installState(manifest, names, entry),
+    })),
+  );
 });
 
 /** Plain-language search across the indexed sources. */

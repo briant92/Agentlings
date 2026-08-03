@@ -2160,3 +2160,146 @@ button.danger:hover {
   font-size: 12px;
   color: #b7bdcb;
 }
+
+/* ── library browsing: the catalogue without a query ───────────────────
+   Sits between the search box and the installed lists, and takes the room
+   only while it is open. Everything inside it is chrome around rows that
+   `LibraryResults` draws — the same rows search renders, so there is one
+   install path and one preview path however you arrived at a template. */
+.br {
+  border: 1px solid #262b36;
+  border-radius: 5px;
+  background: #0b0d14;
+  margin: 6px 0 4px;
+  overflow: hidden;
+}
+.br-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 7px 9px;
+  border-bottom: 1px solid #262b36;
+}
+.br-seg {
+  display: flex;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.br-seg button {
+  font: inherit;
+  font-size: 11px;
+  background: #10131a;
+  color: #8a91a3;
+  border: none;
+  border-right: 1px solid #262b36;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.br-seg button:last-child {
+  border-right: none;
+}
+.br-seg button.on {
+  background: #1d2637;
+  color: #cfd6e4;
+}
+.br-seg button i {
+  font-style: normal;
+  color: #5f6675;
+}
+.br-seg button.on i {
+  color: var(--db-sky);
+}
+.br-src {
+  margin-left: auto;
+  background: #171a21;
+  color: #8a91a3;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 6px;
+}
+/* Capped and scrolling: a hundred categories is a page of its own, and the
+   entries below are what the block is for. */
+.br-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 9px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.br-cat {
+  font: inherit;
+  font-size: 11px;
+  background: #10131a;
+  color: #b7bdcb;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.br-cat:hover {
+  border-color: #4a5468;
+  color: #fff;
+}
+.br-cat.on {
+  background: #1d2637;
+  border-color: #3d5a2e;
+  color: var(--db-lime-light);
+}
+.br-cat i {
+  font-style: normal;
+  color: #5f6675;
+  margin-left: 4px;
+}
+.br-cat.on i {
+  color: var(--db-lime);
+}
+.br-cat.more {
+  color: var(--db-sky);
+  border-style: dashed;
+}
+.br-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid #262b36;
+  background: #0e1119;
+  font-size: 11px;
+}
+.br-who {
+  color: var(--db-lime-light);
+}
+.br-clear {
+  margin-left: auto;
+}
+.br-list {
+  padding: 2px 10px 8px;
+}
+.br-empty {
+  font-size: 11px;
+  margin: 8px 10px;
+}
+/* Stated where the decision is made. Not a ranking and not a filter: the app
+   is not qualified to recommend between a published skill and a community
+   one, only to stop the second being mistaken for the first. */
+.lib-trust {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.lib-trust.official {
+  color: var(--db-lime-light);
+  border-color: #3d5a2e;
+}
+.lib-trust.community {
+  color: #8a91a3;
+  border-color: #3a4152;
+}

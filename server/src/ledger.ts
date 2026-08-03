@@ -33,6 +33,22 @@ export interface LedgerEntry {
    */
   jobClass: string;
   /**
+   * Who actually ran it.
+   *
+   * The role above answers "what does a turn of this cost"; it cannot answer
+   * "who is spending". Both questions look the same until two agentlings hold
+   * the same role, and then the second has no answer at all — which is how the
+   * crew's spending came to be read off the queue file instead, a source that
+   * keeps only the jobs still in it and was already missing 12 of this level's
+   * 95 runs.
+   *
+   * Absent on rows written before this existed, and on the 17 whose job record
+   * has since gone: the backfill matched rows to jobs by id, and a row it could
+   * not identify was left blank rather than attributed to the likeliest name.
+   * `LevelProductivity.unattributed` reports what that leaves unaccounted for.
+   */
+  agentlingId?: string;
+  /**
    * The recipe a one-shot was a repeat of. What a *quote* is looked up by on
    * that tier, because "done this 7 times before" means this job, not this
    * role.
@@ -180,6 +196,8 @@ export function ledgerRow(
     quotedUsd?: number;
     repoPath?: string;
     compile?: boolean;
+    /** Who picked it up. The row's author, and the only record of one. */
+    assignedTo?: string;
   },
   levelId: string,
   /** The role that actually ran it, not the one the matcher named. */
@@ -198,6 +216,11 @@ export function ledgerRow(
     // would build a history for work that never happened, and rob the role
     // that really did it of its own.
     jobClass: role,
+    // Taken from the job rather than passed in beside the role: the two must
+    // agree, and the one place they cannot disagree is the job that records
+    // both. Gated on presence — an absent author means the row predates the
+    // field or its job was never assigned, never that nobody ran it.
+    ...(job.assignedTo ? { agentlingId: job.assignedTo } : {}),
     // Which recipe this repeated, when it repeated one. Priced per turn by the
     // role above; quoted by this. A one-shot's quote asks "have we done this
     // job before", and the role cannot answer that.

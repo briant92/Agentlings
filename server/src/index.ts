@@ -41,6 +41,7 @@ import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
+import { deliveriesFor } from './deliveries';
 import { applyPatch, patchFile } from './gitwork';
 import {
   appendKnowledge,
@@ -87,6 +88,7 @@ import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
 import { contentTypeFor, listOutputs, opensInBrowser, safeOutputPath } from './outputs';
+import { productivityOf } from './productivity';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
@@ -865,6 +867,35 @@ app.get('/api/levels/:lid/crew', (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   return c.json(crewOf(rt));
+});
+
+/**
+ * The productivity panel: what the crew has produced and what it cost.
+ *
+ * Computed here rather than in the browser because the ledger is the only
+ * complete account of what has been paid out, and it is not something to ship
+ * to a client — it grows without bound and holds every run of every level.
+ */
+app.get('/api/levels/:lid/productivity', (c) => {
+  const lid = c.req.param('lid');
+  const rt = getLevel(lid);
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const entries = readLedger(SANDBOX_ROOT).filter((e) => e.levelId === lid);
+  return c.json(
+    productivityOf(entries, rt.queue.list(), crewOf(rt), (name) => rt.memory.lessons(name)),
+  );
+});
+
+/** The inbox: the latest finished work, with what each run left on disk. */
+app.get('/api/levels/:lid/deliveries', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const asked = Number(c.req.query('limit'));
+  // Capped whatever is asked for: each row costs a directory read, and this is
+  // polled on every change to the queue.
+  const limit = Number.isFinite(asked) ? Math.min(Math.max(asked, 1), 50) : 12;
+  const names = new Map(rt.roster.map((seed) => [seed.id, seed.name]));
+  return c.json(deliveriesFor(rt.queue.list(), names, (id) => rt.queue.sandboxDir(id), limit));
 });
 
 /**

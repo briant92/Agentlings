@@ -1,14 +1,21 @@
 import { useMemo, useState } from 'react';
-import type { CrewMember, Job } from '@agentlings/shared';
+import type { CrewMember, Job, LevelProductivity } from '@agentlings/shared';
 import { entriesFor, type Outcome, tally } from './ledger';
 
 /**
  * The work record: everything the crew has finished, what it produced and what
  * it cost, filterable by who did it.
  *
- * Reads the job list the level already holds rather than an endpoint of its
- * own — the socket sends the whole queue whenever it changes, so the history
- * is on the client before this panel opens.
+ * The rows read the job list the level already holds rather than an endpoint
+ * of its own — the socket sends the whole queue whenever it changes, so the
+ * history is on the client before this panel opens.
+ *
+ * The lifetime line above them does not, and cannot: the queue holds only the
+ * jobs still in it, so adding those up gave a level total $1.60 short of what
+ * the ledger says was really paid out. It reads the same figures the
+ * productivity panel does, from the same request, so the two can no longer
+ * disagree — and the row subtotal beneath it is labelled as a subtotal rather
+ * than left to look like a second, quieter answer to the same question.
  */
 
 const FILTERS: (Outcome | 'all')[] = ['all', 'to review', 'kept', 'closed'];
@@ -29,10 +36,13 @@ function money(usd: number): string {
 export function Backoffice({
   jobs,
   crew,
+  productivity,
   onOpenReview,
 }: {
   jobs: Job[];
   crew: CrewMember[];
+  /** The level's real lifetime spend. Null until the first fetch lands. */
+  productivity: LevelProductivity | null;
   /** Opens the job's outputs; the crew panel closes so nothing stacks. */
   onOpenReview: (jobId: string) => void;
 }) {
@@ -77,10 +87,21 @@ export function Backoffice({
         )}
       </div>
 
+      {productivity && productivity.jobs > 0 && (
+        <p className="back-lifetime">
+          {productivity.jobs} runs all told · {money(productivity.costUsd)} spent ·{' '}
+          {money(productivity.priceUsd)} billable
+          {productivity.unmeasured > 0 && ` · ${productivity.unmeasured} unmeasured`}
+        </p>
+      )}
+
       <p className="dim back-tally">
         {totals.jobs === 0
           ? 'Nothing here yet.'
-          : `${totals.jobs} finished · ${totals.toReview} still to review · ${money(totals.costUsd)} on these` +
+          : // Deliberately "showing": these are the rows on screen and they
+            // move with the filters, which is a different quantity from the
+            // line above however similar the words.
+            `showing ${totals.jobs} · ${totals.toReview} still to review · ${money(totals.costUsd)} on these` +
             (totals.unmeasured > 0
               ? ` · ${totals.unmeasured} stopped mid-run, cost unknown`
               : '')}

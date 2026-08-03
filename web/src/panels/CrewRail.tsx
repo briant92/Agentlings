@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import type { Agentling, JobEvent, WorldState } from '@agentlings/shared';
+import type { Agentling, JobEvent, LevelProductivity, WorldState } from '@agentlings/shared';
 import { renderPortrait } from '../world/sprites';
 import { type Activity, crewActivity } from './activity';
+import { Productivity } from './Productivity';
 
 /**
  * Who is on the floor and what they are doing, beside the reporting feed.
@@ -11,6 +12,11 @@ import { type Activity, crewActivity } from './activity';
  * hovering them one at a time. Only agentlings actually in the world appear:
  * the sim materialises the awake ones, so resting crew are absent here by
  * construction rather than by a filter that could drift.
+ *
+ * Underneath sits the record: what all that activity has cost and produced.
+ * That half deliberately does include resting crew — they still spent what
+ * they spent, and dropping them would move their money into the unattributed
+ * pile the moment they went to sleep.
  */
 
 function Portrait({ agentling }: { agentling: Agentling }) {
@@ -62,12 +68,15 @@ export function CrewRail({
   world,
   events,
   hoveredId,
+  productivity,
   onSelect,
   onHover,
 }: {
   world: WorldState | null;
   events: JobEvent[];
   hoveredId: string | null;
+  /** The crew's record. Null until the first fetch lands. */
+  productivity: LevelProductivity | null;
   onSelect: (agentlingId: string) => void;
   onHover: (agentlingId: string | null) => void;
 }) {
@@ -97,6 +106,7 @@ export function CrewRail({
           />
         ))}
       </div>
+      <Productivity data={productivity} onSelect={onSelect} />
     </div>
   );
 }

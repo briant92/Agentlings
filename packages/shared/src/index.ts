@@ -241,6 +241,34 @@ export interface Job {
   error?: string;
 }
 
+/**
+ * What became of a job, grouped the way someone reviewing work would ask.
+ *
+ * Shared rather than owned by the panel that first needed it: the inbox on the
+ * server and the work record in the browser both sort jobs into these three,
+ * and two copies of this map is how the same job comes to be called "kept" in
+ * one panel and "to review" in the other.
+ */
+export type Outcome = 'to review' | 'kept' | 'closed';
+
+const OUTCOMES: Record<string, Outcome> = {
+  done: 'to review',
+  partial: 'to review',
+  promoted: 'kept',
+  discarded: 'closed',
+  failed: 'closed',
+};
+
+/** Null for `queued` and `running`, which are not history yet. */
+export function outcomeOf(status: JobStatus): Outcome | null {
+  return OUTCOMES[status] ?? null;
+}
+
+/** Whether a run left something for the user, whatever its ledger outcome. */
+export function isDelivery(status: JobStatus): boolean {
+  return status === 'done' || status === 'partial' || status === 'promoted';
+}
+
 export type AgentlingState = 'idle' | 'walking' | 'working' | 'delivering';
 
 export interface Agentling {
@@ -423,6 +451,112 @@ export interface SpendTotals {
   absorbedUsd: number;
   /** Jobs answered without a session at all. */
   free: number;
+}
+
+/** How a crew member's spending sits against what was quoted for their work. */
+export type BudgetSignal = 'green' | 'amber' | 'red';
+
+/** Under this share of quote a member is green; under the second, amber. */
+export const BUDGET_GREEN = 0.5;
+export const BUDGET_AMBER = 0.85;
+
+/** One crew member's spending record, as the street lights read it. */
+export interface MemberSpend {
+  id: string;
+  name: string;
+  color: number;
+  /** Their runs the ledger can account for. */
+  jobs: number;
+  costUsd: number;
+  /** What was quoted across the runs of theirs that carried a quote. */
+  quotedUsd: number;
+  /** Priced runs only — the denominator `ratio` is honest about. */
+  priced: number;
+  /** `costUsd` over `quotedUsd`, or null when nothing of theirs was quoted. */
+  ratio: number | null;
+  signal: BudgetSignal;
+  /**
+   * Runs that spent essentially their whole quote. Carried beside the ratio
+   * rather than folded into it: a member can be cheap in dollars and still be
+   * capped half the time, which says the quote is too tight for their work
+   * rather than that they overspend.
+   */
+  atCeiling: number;
+}
+
+/**
+ * The crew's record, for the productivity panel.
+ *
+ * Read from the ledger, which is the only complete account of what the app has
+ * paid out — the queue file holds only jobs that are still in it. Where a
+ * figure can come from just one of the two, the field says which.
+ */
+export interface LevelProductivity {
+  /** Every run this level has ever made. */
+  jobs: number;
+  costUsd: number;
+  /** What was chargeable. Failures are absorbed, so this is never the total. */
+  priceUsd: number;
+  absorbedUsd: number;
+  /** Runs answered without paying a model at all. */
+  free: number;
+  /** Runs that spent money nobody can measure; totals read "at least". */
+  unmeasured: number;
+  /**
+   * Runs that left something for the user.
+   *
+   * The only figure here taken from the queue rather than the ledger, because
+   * a run that exhausts its turns holding a finished diff files as a ledger
+   * failure and as a `partial` job — 14 of them on this level's history — so
+   * the ledger alone undercounts delivery by exactly the jobs most worth
+   * reviewing. It is therefore a floor: jobs that have left the queue file
+   * cannot be counted.
+   */
+  delivered: number;
+  /** Lines across every crew memory, and how many are worth the name. */
+  lessons: number;
+  /**
+   * Of `lessons`, the automatic "delivered X / failed Y / merged with Z / hired
+   * to" journal. Split out because a crew whose memory is 71 lines of its own
+   * career and 43 of method has learnt 43 things, not 114.
+   */
+  journal: number;
+  /** Job classes run more than once — the ones that could get cheaper. */
+  repeated: number;
+  /** Of those, the ones costing less lately than they used to. */
+  cheaper: number;
+  /** Runs on a class that used to cost money and now goes free. */
+  nowFree: number;
+  crew: MemberSpend[];
+  /**
+   * Runs whose author is no longer on record, and what they spent. The crew
+   * figures add up to less than the level's by exactly this, and saying so is
+   * the difference between a known hole and an arithmetic bug.
+   */
+  unattributed: number;
+  unattributedUsd: number;
+}
+
+/** One file a delivery left behind. Named and sized; never its contents. */
+export interface DeliveryFile {
+  name: string;
+  bytes: number;
+}
+
+/** One finished piece of work, as the inbox lists it. */
+export interface Delivery {
+  jobId: string;
+  title: string;
+  /** Who made it, by name where the roster still knows them. */
+  who: string;
+  /** When it finished, or was created if it somehow never recorded that. */
+  at: number;
+  status: JobStatus;
+  outcome: Outcome;
+  /** What it cost, or null when nothing was spent or nothing was measured. */
+  costUsd: number | null;
+  files: DeliveryFile[];
+  changes?: JobChanges;
 }
 
 /**

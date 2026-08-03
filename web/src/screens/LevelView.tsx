@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Agentling } from '@agentlings/shared';
+import type { Agentling, LevelProductivity } from '@agentlings/shared';
 import { api, lvl } from '../api';
 import { CrewPanel } from '../panels/CrewPanel';
 import { CrewRail } from '../panels/CrewRail';
@@ -42,6 +42,36 @@ export function LevelView({
   const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
 
   useEffect(() => () => clearTimeout(arrival.current), []);
+
+  /**
+   * The crew's record, fetched once here and handed to both panels that show
+   * it. The productivity block and the backoffice were otherwise going to add
+   * up the same money from two different sources and disagree about it — the
+   * ledger keeps a row for every run ever made, the queue only the jobs still
+   * in it, and on this project's own history that is a $1.60 gap.
+   *
+   * Refetched when the job list changes identity and at no other time: the
+   * socket sends a list only when the queue's revision moves, so that is a
+   * free and exact trigger for "something finished".
+   */
+  const [productivity, setProductivity] = useState<LevelProductivity | null>(null);
+  const [revision, setRevision] = useState(0);
+  const jobs = world?.jobs;
+  useEffect(() => {
+    if (jobs) setRevision((n) => n + 1);
+  }, [jobs]);
+  useEffect(() => {
+    if (revision === 0) return;
+    let alive = true;
+    void api<LevelProductivity>(lvl(level.id, '/productivity'))
+      .then((data) => alive && setProductivity(data))
+      // A panel of figures that fails to load is not worth interrupting the
+      // level for; it keeps the last ones it had.
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [level.id, revision]);
 
   // Nothing here can work without the level, and there is no reconnect coming.
   useEffect(() => {
@@ -117,10 +147,17 @@ export function LevelView({
           world={world}
           events={events}
           hoveredId={hoveredId}
+          productivity={productivity}
           onSelect={setProfileId}
           onHover={setHoveredId}
         />
-        <Terminal levelId={level.id} world={world} events={events} onOpenReview={setReviewJobId} />
+        <Terminal
+          levelId={level.id}
+          world={world}
+          events={events}
+          revision={revision}
+          onOpenReview={setReviewJobId}
+        />
       </aside>
       {reviewJob && (
         <ReviewModal levelId={level.id} job={reviewJob} onClose={() => setReviewJobId(null)} />
@@ -136,6 +173,7 @@ export function LevelView({
         <CrewPanel
           levelId={level.id}
           jobs={world?.jobs ?? []}
+          productivity={productivity}
           onOpenReview={setReviewJobId}
           onClose={() => setCrewOpen(false)}
         />

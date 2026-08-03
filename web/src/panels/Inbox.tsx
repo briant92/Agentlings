@@ -1,0 +1,175 @@
+import { useCallback, useEffect, useState } from 'react';
+import type { Delivery, DeliveryFile } from '@agentlings/shared';
+import { lvl } from '../api';
+import { money } from './Productivity';
+
+/**
+ * The latest finished work, under the reporting feed.
+ *
+ * The feed scrolls away and is gone after a restart — its events are numbered
+ * per server run and held in memory. This is the durable half: what the crew
+ * has actually produced, newest first, with the files one click from being
+ * read or saved.
+ *
+ * It reads a listing of names and sizes only. The files themselves are fetched
+ * by the route the review panel already uses, so there is one way to get a
+ * file out of a sandbox rather than two.
+ */
+
+/** Which sandbox files are the crew's paperwork rather than the deliverable. */
+const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md', 'DIFF.patch']);
+
+function fileUrl(levelId: string, jobId: string, name: string): string {
+  return lvl(levelId, `/jobs/${jobId}/output/${encodeURIComponent(name)}`);
+}
+
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function when(at: number): string {
+  const d = new Date(at);
+  return new Date().toDateString() === d.toDateString()
+    ? d.toTimeString().slice(0, 5)
+    : d.toDateString().slice(4, 10);
+}
+
+/**
+ * The deliverable first, paperwork after.
+ *
+ * A job that wrote a spreadsheet also wrote a RESULT.md about it, and listing
+ * them in directory order puts the write-up where the eye lands first. What
+ * was asked for goes first.
+ */
+function order(files: DeliveryFile[]): DeliveryFile[] {
+  const rank = (name: string) => (PAPERWORK.has(name) ? 1 : 0);
+  return [...files].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+}
+
+/**
+ * Which deliveries have been looked at.
+ *
+ * The browser's business, not the server's, and deliberately: "have I read
+ * this" is about the person sitting here, while the job's status is about the
+ * work. Keyed per level, like the crew panel's dismissed merges.
+ */
+function seenKey(levelId: string): string {
+  return `agentlings:inbox-seen:${levelId}`;
+}
+function readSeen(levelId: string): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(seenKey(levelId)) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function Inbox({
+  levelId,
+  /** Bumped whenever the queue changes, so the list refetches then and only then. */
+  revision,
+  onOpenReview,
+}: {
+  levelId: string;
+  revision: number;
+  onOpenReview: (jobId: string) => void;
+}) {
+  const [rows, setRows] = useState<Delivery[] | null>(null);
+  const [seen, setSeen] = useState<string[]>(() => readSeen(levelId));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void fetch(lvl(levelId, '/deliveries'))
+      .then((res) => (res.ok ? (res.json() as Promise<Delivery[]>) : Promise.reject(res.statusText)))
+      .then((data) => alive && setRows(data))
+      .catch((err: unknown) => alive && setError(err instanceof Error ? err.message : String(err)));
+    return () => {
+      alive = false;
+    };
+  }, [levelId, revision]);
+
+  const markSeen = useCallback(
+    (jobId: string) => {
+      setSeen((prev) => {
+        if (prev.includes(jobId)) return prev;
+        const next = [...prev, jobId];
+        localStorage.setItem(seenKey(levelId), JSON.stringify(next));
+        return next;
+      });
+    },
+    [levelId],
+  );
+
+  const open = (jobId: string) => {
+    markSeen(jobId);
+    onOpenReview(jobId);
+  };
+
+  const fresh = (rows ?? []).filter((d) => !seen.includes(d.jobId)).length;
+
+  return (
+    <div className="inbox">
+      <div className="in-head">
+        <span className="t-title">inbox</span>
+        {fresh > 0 && <span className="in-pill">{fresh} new</span>}
+        <span className="dim in-count">latest delivered work</span>
+      </div>
+      <div className="in-list">
+        {rows === null && !error && <p className="dim in-empty">Loading…</p>}
+        {error && <p className="error">{error}</p>}
+        {rows?.length === 0 && (
+          <p className="dim in-empty">Nothing delivered yet. Finished work lands here.</p>
+        )}
+        {rows?.map((d) => {
+          const unread = !seen.includes(d.jobId);
+          const files = order(d.files);
+          return (
+            <div key={d.jobId} className={`in-row${unread ? ' unread' : ''}`}>
+              <span className="dim in-when">{when(d.at)}</span>
+              <span className="in-main">
+                <span className="in-title">
+                  {unread && <span className="in-dot" />}
+                  <span className="in-name">{d.title}</span>
+                  <span className={`badge ${d.status}`}>
+                    {d.outcome === 'to review' ? d.status : d.outcome}
+                  </span>
+                </span>
+                {files.length > 0 && (
+                  <span className="in-files">
+                    {files.map((f) => (
+                      <a
+                        key={f.name}
+                        className={`in-chip${PAPERWORK.has(f.name) ? ' paper' : ''}`}
+                        href={fileUrl(levelId, d.jobId, f.name)}
+                        download={f.name}
+                        onClick={() => markSeen(d.jobId)}
+                        title={`Save ${f.name}`}
+                      >
+                        {f.name} <i>{size(f.bytes)}</i>
+                      </a>
+                    ))}
+                  </span>
+                )}
+                <span className="dim in-made">
+                  {d.who}
+                  {d.costUsd !== null && ` · ${money(d.costUsd)}`}
+                  {d.changes && d.changes.files > 0 &&
+                    ` · ${d.changes.files === 1 ? '1 file' : `${d.changes.files} files`}, +${d.changes.added} −${d.changes.removed}`}
+                  {files.length === 0 && ' · nothing left on disk'}
+                </span>
+              </span>
+              <span className="in-acts">
+                <button className="work-link" onClick={() => open(d.jobId)}>
+                  preview
+                </button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

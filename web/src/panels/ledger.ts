@@ -1,4 +1,4 @@
-import type { CrewMember, Job, JobStatus } from '@agentlings/shared';
+import { type CrewMember, type Job, type Outcome, outcomeOf } from '@agentlings/shared';
 
 /**
  * The work record behind the crew door.
@@ -8,22 +8,14 @@ import type { CrewMember, Job, JobStatus } from '@agentlings/shared';
  * The jobs themselves are persisted, which makes them the only durable account
  * of what the crew has actually done — this turns that into something you can
  * read.
+ *
+ * `Outcome` and `outcomeOf` used to live here. They moved to the shared model
+ * when the inbox needed the same three groups on the server: two copies of
+ * that map is how one job comes to be "kept" in one panel and "to review" in
+ * the other.
  */
 
-/** What became of a job, grouped the way someone reviewing work would ask. */
-export type Outcome = 'to review' | 'kept' | 'closed';
-
-const OUTCOMES: Record<string, Outcome> = {
-  done: 'to review',
-  partial: 'to review',
-  promoted: 'kept',
-  discarded: 'closed',
-  failed: 'closed',
-};
-
-export function outcomeOf(status: JobStatus): Outcome | null {
-  return OUTCOMES[status] ?? null; // queued and running are not history yet
-}
+export { type Outcome, outcomeOf };
 
 export interface Entry {
   job: Job;

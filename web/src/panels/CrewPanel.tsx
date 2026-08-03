@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CrewMember, Job, MergePreview, MergeProposal } from '@agentlings/shared';
+import type {
+  CrewMember,
+  Job,
+  LevelProductivity,
+  MergePreview,
+  MergeProposal,
+} from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { Backoffice } from './Backoffice';
 
@@ -52,12 +58,15 @@ interface Pair {
 export function CrewPanel({
   levelId,
   jobs,
+  productivity,
   onOpenReview,
   onClose,
 }: {
   levelId: string;
   /** The level's whole job list — the crew's work record lives in it. */
   jobs: Job[];
+  /** Lifetime spend, from the ledger; the queue above cannot answer it. */
+  productivity: LevelProductivity | null;
   onOpenReview: (jobId: string) => void;
   onClose: () => void;
 }) {
@@ -214,6 +223,7 @@ export function CrewPanel({
             <Backoffice
               jobs={jobs}
               crew={crew ?? []}
+              productivity={productivity}
               onOpenReview={(jobId) => {
                 // One overlay at a time: the review takes the screen rather
                 // than stacking a second backdrop over this one.

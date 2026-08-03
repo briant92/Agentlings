@@ -1749,11 +1749,18 @@ button.danger:hover {
   .side {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* Stacked, both panels carry a second block underneath, so the old caps
+     would have left the roll call and the feed a couple of rows each. They
+     grow by roughly what was added below them and each inner list keeps its
+     own scroll. */
   .rail {
-    max-height: 180px;
+    max-height: 420px;
   }
   .terminal {
-    height: 320px;
+    height: 560px;
+  }
+  .inbox {
+    max-height: 200px;
   }
 }
 
@@ -1793,4 +1800,325 @@ button.danger:hover {
   text-transform: uppercase;
   color: var(--db-orange);
   white-space: nowrap;
+}
+
+/* Partial: the run exhausted its turns holding a finished diff. Its own
+   outcome, and it had no badge colour of its own — it reads as work to look
+   at, not as a failure, so it borrows the running amber rather than the red. */
+.badge.partial {
+  background: #4d3a24;
+  color: #ffb86c;
+}
+
+/* ── productivity: the crew's record, under the roll call ───────────────
+   A block at the foot of the rail rather than a second scrolling pane. The
+   roll call above keeps flex:1 and gives up space to this, which is fixed by
+   its contents — a dashboard that scrolls is one nobody reads. */
+.prod {
+  flex: none;
+  border-top: 1px solid #262b36;
+}
+.p-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 5px;
+}
+.p-when {
+  margin-left: auto;
+  font-size: 11px;
+}
+.p-empty {
+  font-size: 12px;
+  margin: 0 10px 10px;
+}
+/* Two by two, because the rail is the 1fr of a 1fr 2fr split — about 300px on
+   a 1400 window, which is one tile short of fitting four across. */
+.p-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0 10px;
+  background: #262b36;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.p-tile {
+  background: #0b0d14;
+  padding: 7px 8px;
+  min-width: 0;
+}
+.p-n {
+  font-size: 17px;
+  line-height: 1.1;
+}
+.p-n.money {
+  color: var(--db-yellow);
+}
+.p-n.good {
+  color: var(--db-lime-light);
+}
+.p-l {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8a91a3;
+  margin-top: 2px;
+}
+.p-s {
+  font-size: 10px;
+  color: #5f6675;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-lights {
+  padding: 8px 10px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.p-lights-h {
+  display: flex;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5f6675;
+}
+.p-lights-h span:last-child {
+  margin-left: auto;
+}
+.p-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 3px 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.p-row:hover {
+  background: #151926;
+}
+.p-lamp {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+/* Three bulbs, one lit. A single dot that changes colour says the same thing
+   in less room and reads as decoration; a housing with two dark lamps beside
+   the lit one is what makes it a signal. */
+.p-bulb {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1c2130;
+  border: 1px solid #2c3242;
+}
+.p-bulb.g.on {
+  background: var(--db-lime);
+  border-color: var(--db-lime-light);
+  box-shadow: 0 0 5px rgba(106, 190, 48, 0.8);
+}
+.p-bulb.a.on {
+  background: var(--db-yellow);
+  border-color: var(--db-yellow);
+  box-shadow: 0 0 5px rgba(251, 242, 54, 0.7);
+}
+.p-bulb.r.on {
+  background: #ac3232;
+  border-color: #d04a4a;
+  box-shadow: 0 0 5px rgba(172, 50, 50, 0.8);
+}
+.p-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.p-name {
+  font-size: 12px;
+}
+.p-sub {
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-bar {
+  display: block;
+  width: 54px;
+  height: 4px;
+  margin-top: 3px;
+  background: #1c2130;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.p-bar i {
+  display: block;
+  height: 100%;
+}
+.p-bar i.green {
+  background: var(--db-lime);
+}
+.p-bar i.amber {
+  background: var(--db-yellow);
+}
+.p-bar i.red {
+  background: #ac3232;
+}
+.p-pct {
+  font-size: 11px;
+  text-align: right;
+}
+.p-foot {
+  margin: 0;
+  padding: 2px 10px 8px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #5f6675;
+}
+
+/* ── inbox: finished work, under the feed ──────────────────────────────
+   Unlike the productivity block this one scrolls: the feed above is the live
+   half and stays the taller of the two, while this keeps a fixed slice so a
+   long history cannot push the terminal off the screen. */
+.inbox {
+  flex: none;
+  border-top: 1px solid #262b36;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 240px;
+}
+.in-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 4px;
+  flex: none;
+}
+.in-pill {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--db-lime);
+  color: #10131a;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.in-count {
+  margin-left: auto;
+  font-size: 11px;
+}
+.in-list {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 2px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.in-empty {
+  font-size: 12px;
+  margin: 4px 0;
+}
+.in-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.in-row:hover {
+  background: #151926;
+  border-color: #262b36;
+}
+.in-row.unread {
+  background: #10141f;
+}
+.in-when {
+  font-size: 11px;
+}
+.in-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.in-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  font-size: 12px;
+}
+.in-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.in-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--db-lime-light);
+  flex: none;
+}
+.in-files {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+/* Each chip is the file's own download link, so saving one thing does not
+   mean opening the review panel to reach it. */
+.in-chip {
+  font-size: 10px;
+  color: #b7bdcb;
+  background: #151926;
+  border: 1px solid #262b36;
+  border-radius: 3px;
+  padding: 1px 5px;
+  text-decoration: none;
+}
+.in-chip:hover {
+  border-color: #4a5468;
+  color: #fff;
+}
+.in-chip i {
+  font-style: normal;
+  color: #5f6675;
+}
+/* The crew's own paperwork, dimmed: it is worth having and it is not what was
+   asked for, and a row where RESULT.md looks like the deliverable buries the
+   spreadsheet next to it. */
+.in-chip.paper {
+  color: #8a91a3;
+}
+.in-made {
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.in-acts {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* The level's real lifetime spend, above rows that only ever show a subset. */
+.back-lifetime {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: #b7bdcb;
 }

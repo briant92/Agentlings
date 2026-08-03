@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Job, JobEvent, WorldState } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { Inbox } from './Inbox';
 
 type Filter = 'all' | 'active' | 'results';
 const FILTERS: Filter[] = ['all', 'active', 'results'];
@@ -86,16 +87,27 @@ function ReplyBox({
   );
 }
 
-/** The reporting rail: one chronological feed for everything the horde does. */
+/**
+ * The reporting rail: one chronological feed for everything the horde does,
+ * with the inbox of finished work beneath it.
+ *
+ * The two halves answer different questions on purpose. The feed is live and
+ * disposable — numbered per server run, held in memory, gone after a restart.
+ * The inbox is the durable half: what the crew actually produced, still there
+ * tomorrow.
+ */
 export function Terminal({
   levelId,
   world,
   events,
+  revision,
   onOpenReview,
 }: {
   levelId: string;
   world: WorldState | null;
   events: JobEvent[];
+  /** Bumped when the queue changes; the inbox refetches on it. */
+  revision: number;
   onOpenReview: (jobId: string) => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
@@ -186,6 +198,7 @@ export function Terminal({
         <span>{paused ? 'paused' : 'following'}</span>
         <span className="cursor" />
       </div>
+      <Inbox levelId={levelId} revision={revision} onOpenReview={onOpenReview} />
     </aside>
   );
 }

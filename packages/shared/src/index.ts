@@ -90,6 +90,9 @@ export interface JobMeter {
    * is a fixed errand, not something the turn budget can buy more or less of.
    */
   closeOutUsd?: number;
+  /** Tool calls the session made, and the last one it made. Measurement only. */
+  toolCalls?: number;
+  lastTool?: string;
   /** The prompt was question-shaped. Measurement only — see LedgerEntry. */
   asked?: boolean;
   /** How many of the level's own notes bear on the prompt. Measurement only. */

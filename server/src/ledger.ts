@@ -136,6 +136,28 @@ export interface LedgerEntry {
    */
   asked?: boolean;
   recallable?: number;
+  /**
+   * How many tool calls the session made, and which one it made last.
+   *
+   * Recorded and deliberately not read, the same bargain as `compile` and
+   * `asked`. The question they exist for is what a turn budget is actually
+   * spent on — and specifically whether a run that hits its cap ran out doing
+   * the work or ran out checking it, since the second would be an argument for
+   * moving verification off the session's turns the way D-020 moved the
+   * write-up, and the first would be an argument for nothing.
+   *
+   * Nothing could answer that before. The ledger carried `turns` and `cost`,
+   * and the per-tool-call `progress` events lived only in memory and died with
+   * the process, so the shape of a run was unrecoverable the moment it ended.
+   * A claim was made on the strength of that gap and was wrong (D-052).
+   *
+   * `lastTool` is the sharper of the two: a run stopping on `Bash` was checking
+   * something, one stopping on `Write` or `Edit` was still producing. Neither
+   * is proof on its own — a `Bash` call can be `ls` as easily as `npm test` —
+   * so this is evidence to be counted over many runs, not read off one.
+   */
+  toolCalls?: number;
+  lastTool?: string;
 }
 
 /**
@@ -212,6 +234,11 @@ export function ledgerRow(
     // the run was not a question.
     ...(job.meter?.asked !== undefined ? { asked: job.meter.asked } : {}),
     ...(job.meter?.recallable !== undefined ? { recallable: job.meter.recallable } : {}),
+    // Presence, not truth, for the same reason as above: `toolCalls: 0` is an
+    // answer — a session that called nothing — and an absent field means the
+    // row was written before anyone was counting.
+    ...(job.meter?.toolCalls !== undefined ? { toolCalls: job.meter.toolCalls } : {}),
+    ...(job.meter?.lastTool ? { lastTool: job.meter.lastTool } : {}),
   };
 }
 

@@ -376,7 +376,18 @@ worked out to 17 turns against a role cap of 8, so the cap always won and the
 ceiling could never bind on anything (D-018).
 
 **The rate prices a turn *granted*, never a turn the SDK reports.** A cap of 4
-came back as 6 when the run was cut off, and lower when it finished early.
+came back as 6 when the run was cut off, and lower when it finished early. The
+gap can be much wider: a scout capped at 12 reported **21**. Across the ledger
+`turns > turnsAllowed` fires on 43 of 88 paid runs and seven of those *finished*,
+so the reported count is not a cut-off marker and reasoning built on it has
+already been wrong once (D-022, D-052).
+
+**Since D-052 a row also records what the run spent itself on** — `toolCalls`
+and `lastTool`, counted off the tool stream. Recorded and read by nobody, but
+it is the only number that survives a *killed* run: a cancelled session never
+reaches the result message the SDK reports cost and turns on, so its row shows
+`costUnknown` and no turns at all, while still saying it made 3 calls and was
+last reading.
 
 ### Rules the user can rely on
 

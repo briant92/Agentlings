@@ -905,6 +905,13 @@ export class ClaudeAgentExecutor implements Executor {
       let meter: JobMeter = {};
       let errorMsg = '';
       let stderr = '';
+      // What the run spent itself on, counted from the tool stream because
+      // nothing else records it: the ledger has turns and cost, and the
+      // progress events die with the process. Without this, "did the budget
+      // run out on the work or on checking the work" cannot be asked at all
+      // (D-052).
+      let toolCalls = 0;
+      let lastTool: string | undefined;
       child.stderr.on('data', (chunk: Buffer) => {
         stderr += String(chunk);
       });
@@ -917,6 +924,8 @@ export class ClaudeAgentExecutor implements Executor {
           return;
         }
         if (msg.type === 'progress' && msg.name) {
+          toolCalls++;
+          lastTool = msg.name;
           onProgress?.(toolLine(msg.name, msg.input));
         } else if (msg.type === 'result') {
           summary = firstLine(String(msg.summary ?? ''));
@@ -935,6 +944,13 @@ export class ClaudeAgentExecutor implements Executor {
       child.on('close', (code) => {
         clearTimeout(timer);
         this.running.delete(jobId);
+        // Folded in here, where all four exits converge, rather than at each
+        // of them: the run that died is the one worth measuring, and attaching
+        // a measurement only to the clean path is the mistake this project has
+        // now made twice (D-046, D-052). `toolCalls` is written even at zero —
+        // a run that called nothing is an answer, and an absent field means
+        // the row predates the counter.
+        meter = { ...meter, toolCalls, ...(lastTool ? { lastTool } : {}) };
         if (this.cancelled.delete(jobId)) {
           // Killed on purpose: say so, rather than reporting whatever the
           // dying process happened to leave on stderr. It spent money on the

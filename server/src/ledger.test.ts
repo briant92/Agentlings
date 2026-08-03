@@ -499,4 +499,32 @@ describe('ledgerRow', () => {
       expect(Object.hasOwn(entry, 'recallable')).toBe(false);
     });
   });
+
+  /**
+   * What the turn budget was spent on. The question is whether a run that hit
+   * its cap ran out doing the work or checking it, which nothing could answer
+   * before: the ledger had turns and cost, and the tool stream died with the
+   * process (D-052).
+   */
+  describe('what the run spent itself on', () => {
+    it('records the count and the last tool', () => {
+      expect(row({ costUsd: 0.3, toolCalls: 14, lastTool: 'Bash' })).toMatchObject({
+        toolCalls: 14,
+        lastTool: 'Bash',
+      });
+    });
+
+    // A session that called nothing is an answer, not a missing measurement.
+    it('keeps a count of zero', () => {
+      const entry = row({ costUsd: 0.3, toolCalls: 0 });
+      expect(entry.toolCalls).toBe(0);
+      expect(Object.hasOwn(entry, 'toolCalls')).toBe(true);
+    });
+
+    it('leaves both off for a run from before the counter', () => {
+      const entry = row({ costUsd: 0.3 });
+      expect(Object.hasOwn(entry, 'toolCalls')).toBe(false);
+      expect(Object.hasOwn(entry, 'lastTool')).toBe(false);
+    });
+  });
 });

@@ -61,6 +61,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-049 — 2026-08-02 — The store measured, and the second unquoted way in](#d-049--2026-08-02--the-store-measured-and-the-second-unquoted-way-in)
 - [D-050 — 2026-08-02 — Three tiers of capability, and what a compiled tool may inherit](#d-050--2026-08-02--three-tiers-of-capability-and-what-a-compiled-tool-may-inherit)
 - [D-051 — 2026-08-02 — The crew's first real finding: the recall tier counts where recipes weigh](#d-051--2026-08-02--the-crews-first-real-finding-the-recall-tier-counts-where-recipes-weigh)
+- [D-052 — 2026-08-02 — A claim about the turn cap, withdrawn, and the instrument that was missing](#d-052--2026-08-02--a-claim-about-the-turn-cap-withdrawn-and-the-instrument-that-was-missing)
 
 ## By theme
 
@@ -95,6 +96,8 @@ entry updates one file rather than two.
   and why a tool's surface is recorded but not gated on: D-050
 - **The crew working on itself** — the rarity asymmetry the recall tier has and
   recipes do not, and what a job's phrasing costs: D-051
+- **What a turn is spent on** — a withdrawn claim about the cap, and the tool
+  counter that had to exist before it could be asked: D-052
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2526,3 +2529,69 @@ conditional-spread style and the comment voice of the line above it without
 being shown either. So dependent jobs need a commit between them, not merely a
 promote — and this is the second time today the gap between "the app did it" and
 "the repository has it" cost a run.
+
+## D-052 — 2026-08-02 — A claim about the turn cap, withdrawn, and the instrument that was missing
+
+I claimed the 10-turn cap was "reliably cutting runs at the verification step,
+not the work step", on the strength of "four of seven jobs ended at
+`turnsAllowed + 1` with the task essentially done". Measured, it does not hold.
+
+**The ground truth, on the five cap-hit failures I had personally reviewed:**
+
+| job | diff | what it actually was |
+|---|---|---|
+| `381a307f` | 0 B | nothing at all |
+| `95c748d0` | 1.4 KB | re-derived a prior job, unused `const` — not promotable |
+| `d42aae86` | 4.3 KB | new file written, its caller untouched |
+| `9177b021` | 6.9 KB | complete and correct |
+| `0d32e24a` | 5.7 KB | complete and correct |
+
+**Two of five, not four of seven.** The four were jobs I had promoted something
+from, which is a different set: promoting the *good half* of a half-finished run
+is not the run having finished. I counted my own review decisions and reported
+them as a property of the runs.
+
+**And the signal underneath it was one this log had already measured as
+unreliable.** `turns > turnsAllowed` fires on **43 of 88 paid runs**, and seven
+of those finished `done` — D-022 recorded exactly that, "a successful run can
+report more too". So the premise was built on a marker already known not to mark
+the thing. That is the failure this project keeps writing down: *measure the
+premise, especially one you are the one advancing.* Fourth instance.
+
+**What is actually supported**: of 33 examinable cap-hit failures, 23 left a
+diff or a result. That says the review gate recovers real work from runs nobody
+was billed for, which is worth knowing and is a different claim.
+
+**The real answer was that the question could not be asked.** Nothing recorded
+what a turn was spent on. The ledger carried `turns` and `cost`; the per-tool-call
+`progress` events lived in memory and died with the process; and the close-out
+lessons describe the work, not the budget — all five say something about the
+task and none mentions running out. So "was the last turn the work or the check"
+had no answer in stored data, and I had filled that gap with a plausible story.
+
+**So the instrument now exists.** `toolCalls` and `lastTool` are counted off the
+tool stream and folded into the meter at the single point where all four of the
+runner's exits converge — deliberately not at each exit, because attaching a
+measurement only to the clean path is the mistake made in D-046 and the failing
+runs are the entire population of interest. Recorded and read by nobody, the
+same bargain as `compile` and `asked`.
+
+Verified live on both halves rather than by reading the code:
+
+- a finished scout run — `toolCalls: 20, lastTool: "Write"`, ending by writing
+  its report
+- a **cancelled** run — `toolCalls: 3, lastTool: "Read"`, still gathering when
+  it was killed
+
+The second is the useful one twice over: it proves the failure path carries the
+field, and it carries **no `turns` at all**, because a killed session never
+reaches the result message the SDK reports on. On exactly the runs where the
+existing budget numbers go blank, this one still says what happened.
+
+**One observation, offered as an observation.** The finished run reported 21
+turns against a cap of 12, having made 20 tool calls. `turns ≈ toolCalls + 1` on
+a single sample, and a gap between cap and reported turns far wider than the
+"cap of 4 came back as 6" already on record. If it holds across rows it would
+say the reported count tracks tool calls rather than the thing the cap limits —
+which would explain why the cap and the reported number have never agreed. It
+is n=1 and is written here as a thing to check, not a finding.

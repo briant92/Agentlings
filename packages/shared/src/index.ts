@@ -375,6 +375,16 @@ export interface LibraryBrowse {
   /** Totals across everything indexed, for the kind filter's counts. */
   jobs: number;
   abilities: number;
+  /**
+   * Per source, how many entries are *actually indexed*.
+   *
+   * Not `SourceStatus.count`, which is taken before entries are deduplicated
+   * across sources and so overstates any source that lost a name to one listed
+   * before it — measured at 204 against 180 for `wshobson-agents`. Browsing is
+   * the first place in the app that shows a per-source number, and offering a
+   * filter that promises 204 and yields 180 is worse than offering none.
+   */
+  indexed: { name: string; label: string; entries: number }[];
 }
 
 /**

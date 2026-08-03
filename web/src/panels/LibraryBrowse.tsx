@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { LibraryBrowse as Browse, LibraryHit, SourceStatus } from '@agentlings/shared';
+import type { LibraryBrowse as Browse, LibraryHit } from '@agentlings/shared';
 import { api } from '../api';
 import { LibraryResults } from './LibraryResults';
 
@@ -31,11 +31,15 @@ function query(kind: Kind, source: string, category?: string): string {
 }
 
 export function LibraryBrowse({
-  sources,
+  hidden,
   onInstalled,
 }: {
-  /** From the library status the modal already holds; names the source filter. */
-  sources: SourceStatus[];
+  /**
+   * A query is on screen, so this is out of the way — hidden rather than
+   * unmounted. Unmounting loses the category you had open, and the whole
+   * promise of leaving the search box is coming back to where you were.
+   */
+  hidden: boolean;
   onInstalled: (name: string) => void;
 }) {
   const [shape, setShape] = useState<Browse | null>(null);
@@ -46,9 +50,11 @@ export function LibraryBrowse({
   const [all, setAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // The last shape is kept while the next one loads. Clearing it would empty
+  // the source dropdown that is driving the request, and blank the chips on
+  // every filter change for the sake of a message nobody has time to read.
   useEffect(() => {
     let alive = true;
-    setShape(null);
     void api<Browse>(`/api/library/browse${query(kind, source)}`)
       .then((data) => alive && setShape(data))
       .catch((err: unknown) => alive && setError(err instanceof Error ? err.message : String(err)));
@@ -85,7 +91,7 @@ export function LibraryBrowse({
   const total = shape ? shape.jobs + shape.abilities : 0;
 
   return (
-    <div className="br">
+    <div className="br" hidden={hidden}>
       <div className="br-bar">
         <span className="br-seg">
           <button className={kind === 'all' ? 'on' : ''} onClick={() => setKind('all')}>
@@ -98,16 +104,21 @@ export function LibraryBrowse({
             abilities <i>{shape?.abilities ?? '·'}</i>
           </button>
         </span>
+        {/* Counted from the index rather than taken from the source's own
+            status, which is recorded before entries are deduplicated across
+            sources and overstates by whatever it lost — 204 against 180 on the
+            real catalogue. A filter that promises 204 and yields 180 is worse
+            than a filter with no numbers on it. */}
         <select
           className="br-src"
           value={source}
           onChange={(e) => setSource(e.target.value)}
           aria-label="Filter by source"
         >
-          <option value="all">all {sources.length} sources</option>
-          {sources.map((s) => (
+          <option value="all">all {shape?.indexed.length ?? 0} sources</option>
+          {(shape?.indexed ?? []).map((s) => (
             <option key={s.name} value={s.name}>
-              {s.label} · {s.count}
+              {s.label} · {s.entries}
             </option>
           ))}
         </select>

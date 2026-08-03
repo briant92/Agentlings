@@ -146,14 +146,16 @@ export function RolesModal({
             ))}
 
           {/* A query takes the screen: browsing is a mode you leave rather than
-              a filter fighting the search box. The block keeps its own state
-              while hidden, so clearing the query returns to the same category.
-              Letting the two combine would make the browse filters a second,
-              quieter search engine — and a forgotten category selection reads
+              a filter fighting the search box. Hidden rather than unmounted,
+              so clearing the query returns to the category you had open —
+              unmounting reset it, which made "browse all" a thing you had to
+              start over every time you tried a search.
+              Letting the two combine instead would make the browse filters a
+              second, quieter search engine, where a forgotten category reads
               as "the library has nothing like that". */}
-          {browsing && !query.trim() && (
+          {browsing && (
             <LibraryBrowse
-              sources={status?.sources ?? []}
+              hidden={query.trim() !== ''}
               onInstalled={(name) => {
                 setNote(`Added ${name}. Any agentling can use it now.`);
                 void refresh();

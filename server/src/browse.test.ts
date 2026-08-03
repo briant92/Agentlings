@@ -1,6 +1,6 @@
 import type { CatalogEntry, SourceStatus } from '@agentlings/shared';
 import { describe, expect, it } from 'vitest';
-import { categorise, categoryOf, entriesIn } from './browse';
+import { categorise, categoryOf, entriesIn, indexedBySource } from './browse';
 
 function entry(over: Partial<CatalogEntry> = {}): CatalogEntry {
   return {
@@ -69,13 +69,27 @@ describe('categoryOf', () => {
 
   it('has no category for a source nobody has written a rule for', () => {
     expect(categoryOf(entry({ source: 'someone-elses-repo', path: 'a/b/c.md' }))).toBeNull();
+    // Nor one that merely resembles a source we do know. The rule is keyed on
+    // the whole source name: a loose prefix would file a stranger's repo under
+    // wshobson's plugin taxonomy the moment its name happened to start the
+    // same way, and it would look entirely plausible on screen.
+    expect(
+      categoryOf(entry({ source: 'wonderful-agents', path: 'plugins/backend/agents/x.md' })),
+    ).toBeNull();
   });
 
   it('does not read a known source that moved its files', () => {
     // The rule is anchored on the folder name, not on depth: a VoltAgent file
     // outside `categories/` is not a category we can name, and guessing from
     // position is how a rename becomes 154 entries in a nonsense group.
+    // Both cases are deep enough to have a second segment, so only the
+    // folder-name check can reject them. A length test alone would pass these
+    // and quietly name a category after whatever happened to sit there.
     expect(categoryOf(entry({ path: 'archive/01-core-development/x.md' }))).toBeNull();
+    expect(
+      categoryOf(entry({ source: 'wshobson-agents', path: 'archive/backend/agents/x.md' })),
+    ).toBeNull();
+    // And still null when it is simply too shallow to have one.
     expect(categoryOf(entry({ source: 'wshobson-agents', path: 'agents/x.md' }))).toBeNull();
   });
 
@@ -115,14 +129,17 @@ describe('categorise', () => {
   });
 
   it('orders by size, largest first', () => {
+    // The names run the other way from the sizes on purpose: with `alpha`
+    // small and `zebra` large, A–Z and largest-first disagree, so this can
+    // only pass under the rule it is meant to be testing. The real index is
+    // long-tailed enough that alphabetical would bury everything worth
+    // seeing under a run of one-entry categories.
     const list = [
-      entry({ name: 'a', path: 'categories/01-small/a.md' }),
-      entry({ name: 'b', path: 'categories/02-big/b.md' }),
-      entry({ name: 'c', path: 'categories/02-big/c.md' }),
+      entry({ name: 'a', path: 'categories/01-alpha/a.md' }),
+      entry({ name: 'b', path: 'categories/02-zebra/b.md' }),
+      entry({ name: 'c', path: 'categories/02-zebra/c.md' }),
     ];
-    // Alphabetical would put the one-entry category first and bury the useful
-    // one; the real index is long-tailed enough for that to matter.
-    expect(categorise(list, sources).map((c) => c.name)).toEqual(['big', 'small']);
+    expect(categorise(list, sources).map((c) => c.name)).toEqual(['zebra', 'alpha']);
   });
 
   it('breaks ties by name so the order survives a resync', () => {
@@ -213,6 +230,33 @@ describe('entriesIn', () => {
     expect(entriesIn(list, sources, { category: 'core', kind: 'role' }).map((e) => e.name)).toEqual([
       'alpha',
       'zeta',
+    ]);
+  });
+});
+
+describe('indexedBySource', () => {
+  const sources = [
+    source({ name: 'first', label: 'First', count: 99 }),
+    source({ name: 'second', label: 'Second', count: 99 }),
+  ];
+
+  it('counts what is in the index, not what the source claimed', () => {
+    // `count` is recorded before dedupe drops names an earlier source already
+    // claimed, so it overstates — 204 against 180 on the real catalogue. The
+    // filter has to promise what it can actually show.
+    const list = [entry({ source: 'first' }), entry({ source: 'first' }), entry({ source: 'second' })];
+    expect(indexedBySource(list, sources)).toEqual([
+      { name: 'first', label: 'First', entries: 2 },
+      { name: 'second', label: 'Second', entries: 1 },
+    ]);
+  });
+
+  it('keeps a source that contributed nothing, at zero', () => {
+    // Dropping it would remove an option from a filter meant to list what
+    // there is, and make a source that failed to sync simply disappear.
+    expect(indexedBySource([entry({ source: 'first' })], sources)).toEqual([
+      { name: 'first', label: 'First', entries: 1 },
+      { name: 'second', label: 'Second', entries: 0 },
     ]);
   });
 });

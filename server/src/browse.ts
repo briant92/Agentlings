@@ -82,6 +82,27 @@ export function categorise(
     .sort((a, b) => b.jobs + b.abilities - (a.jobs + a.abilities) || a.name.localeCompare(b.name));
 }
 
+/**
+ * How many entries each source really contributes, counted from the index
+ * itself.
+ *
+ * `SourceStatus.count` cannot answer this: it is recorded per source before
+ * `dedupe` drops names already claimed by a source listed earlier, so it
+ * overstates by whatever it lost — 204 against 180 on the real catalogue. A
+ * source that contributes nothing still appears, with zero, rather than
+ * vanishing from a filter that is supposed to list what there is.
+ */
+export function indexedBySource(
+  entries: readonly CatalogEntry[],
+  sources: readonly SourceStatus[],
+): { name: string; label: string; entries: number }[] {
+  return sources.map((source) => ({
+    name: source.name,
+    label: source.label,
+    entries: entries.filter((e) => e.source === source.name).length,
+  }));
+}
+
 export interface BrowseFilter {
   category?: string;
   /** `role` or `skill`; absent means both. */

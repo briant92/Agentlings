@@ -41,7 +41,7 @@ import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
-import { categorise, entriesIn } from './browse';
+import { categorise, entriesIn, indexedBySource } from './browse';
 import { deliveriesFor } from './deliveries';
 import { applyPatch, patchFile } from './gitwork';
 import {
@@ -1448,6 +1448,7 @@ app.get('/api/library/browse', async (c) => {
       categories: categorise(shown, sources),
       jobs: entries.filter((e) => e.kind === 'role').length,
       abilities: entries.filter((e) => e.kind === 'skill').length,
+      indexed: indexedBySource(entries, sources),
     });
   }
 

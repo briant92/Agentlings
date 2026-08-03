@@ -158,6 +158,13 @@ Two paths, one implementation:
 
 Non-HTTP is refused. 15-second timeout, 5 MB cap.
 
+**It reads a page you name; it cannot find one.** There is no search — not in a
+role's tools, not in a connection. `WebSearch` is not granted and a session that
+reaches for it is denied. That gap is total for any question with no URL
+attached, and the crew does not stop at it: measured on two real jobs, one fell
+back to model knowledge and said so, the other spent its whole budget in the
+browser and died (D-053). **A missing capability is substituted, not refused.**
+
 ### Driving a browser — Partial (reads, cannot act)
 
 Playwright MCP, headless and isolated, fetched by `npx` so no code lands in the
@@ -172,6 +179,13 @@ Twelve that act are deliberately absent — `click`, `type`, `fill_form`,
 `evaluate`, `run_code_unsafe`, `network_request`. `catalog.test.ts` asserts
 those names against the shipped catalog, so the boundary is a test rather than
 a description of one. Why, in full, is §11.
+
+**Measured again in production, and the case is still weak** (D-053). A run
+sent looking for a fact it could not search for spent ten tool calls in the
+browser and exhausted its turns; its last act was to ask for `browser_evaluate`
+— one of the twelve it does not have — and be refused. The same question,
+worded without "find out", was answered in three calls for 34c. D-035's negative
+measurement now has a live failure behind it.
 
 It ships **off**. Signing in, when you want it, works by re-using a session you
 made yourself: log in once in a real browser, save the storage state, point
@@ -388,6 +402,11 @@ it is the only number that survives a *killed* run: a cancelled session never
 reaches the result message the SDK reports cost and turns on, so its row shows
 `costUnknown` and no turns at all, while still saying it made 3 calls and was
 last reading.
+
+**`lastTool` is what the model asked for, not what it got.** A run whose last
+call was `browser_evaluate` was *refused* it — that tool is not granted. Read
+the connection's tool list before reading a name here as something that
+happened; the same trap once made a denied `WebFetch` look like a leak (D-053).
 
 ### Rules the user can rely on
 

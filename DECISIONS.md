@@ -62,6 +62,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-050 — 2026-08-02 — Three tiers of capability, and what a compiled tool may inherit](#d-050--2026-08-02--three-tiers-of-capability-and-what-a-compiled-tool-may-inherit)
 - [D-051 — 2026-08-02 — The crew's first real finding: the recall tier counts where recipes weigh](#d-051--2026-08-02--the-crews-first-real-finding-the-recall-tier-counts-where-recipes-weigh)
 - [D-052 — 2026-08-02 — A claim about the turn cap, withdrawn, and the instrument that was missing](#d-052--2026-08-02--a-claim-about-the-turn-cap-withdrawn-and-the-instrument-that-was-missing)
+- [D-053 — 2026-08-02 — A missing capability is not refused, it is substituted](#d-053--2026-08-02--a-missing-capability-is-not-refused-it-is-substituted)
 
 ## By theme
 
@@ -98,6 +99,8 @@ entry updates one file rather than two.
   recipes do not, and what a job's phrasing costs: D-051
 - **What a turn is spent on** — a withdrawn claim about the cap, and the tool
   counter that had to exist before it could be asked: D-052
+- **How to ask for work** — what the crew does when a capability is missing, and
+  why "find out" is a budget instruction: D-053
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -2595,3 +2598,61 @@ a single sample, and a gap between cap and reported turns far wider than the
 say the reported count tracks tool calls rather than the thing the cap limits —
 which would explain why the cap and the reported number have never agreed. It
 is n=1 and is written here as a thing to check, not a finding.
+
+## D-053 — 2026-08-02 — A missing capability is not refused, it is substituted
+
+The first two jobs queued through the UI by the user rather than by a session
+were the same question asked twice. One finished in 4 turns for 34c; the other
+exhausted its budget and was absorbed. Nothing about the subject matters — what
+separates them is what each reached for when the thing it needed was absent, and
+that generalises to every job the crew will ever take.
+
+**There is no search.** The crew can read a page you *name* — `fetch_page`, and
+the browser's eight reading tools. Nothing can *find* one. For a question with
+no URL attached, that gap is total, and the run that succeeded says so in its
+own output: *"`WebSearch` was attempted first and denied by the permission
+mode."*
+
+**Neither run stopped there, and that is the finding.** A missing capability
+does not produce a clean refusal — it produces a detour, and the detours differ
+enormously in price:
+
+| | detour taken | tool calls | outcome |
+|---|---|---|---|
+| "How many goals has X scored in his career?" | fell back to model knowledge, and labelled it unverified | 3 | done, 34c |
+| "Can anyone **find out** how many goals X has scored?" | went to the browser | 10 | **failed, 27.5c absorbed** |
+
+**The phrasing chose the detour.** "Find out" reads as an instruction to go and
+look, so the second run went looking with the only looking tool it had. The
+first was asked a question and answered it. Two words of difference, 62c and one
+failure apart — the same lever measured earlier that day, where wording a job as
+a survey rather than an implementation moved its quote 16× by moving its role.
+So: **say what you want done, not how hard to try.** "Find out" and "make sure"
+and "check thoroughly" are budget instructions wearing the clothes of politeness.
+
+**The good pattern is the first run's**, and it is worth protecting: when it
+could not verify, it answered from what it had, said exactly which parts were
+settled and which were moving, gave its own cutoff, and named where to check. An
+unverified answer that says so is useful; the failure mode to fear is the
+confident one.
+
+**A job carries the level's repository whether the work needs it or not, and
+that sets the price.** Both runs cloned a 1,300-file codebase to answer a
+question that never touched it. Measured on this ledger the same day: **5.2c per
+granted turn with a repo against 2.0c without**, over 35 and 8 runs. That is why
+it quoted $1.58. The app cannot fix this by itself — `needsRepo` in the planner
+means "the level has no folder, so ask", not "this work needs one", and deciding
+a job does not need the code is a guess that leaves an agentling blind when it is
+wrong. Choosing a level without a repository is the user saying it, which is the
+only safe form the answer can take.
+
+**And the new instrument has a misreading, which caught its own author within the
+hour.** `lastTool` on the failed run is `browser_evaluate` — a tool the catalog
+does **not** grant, asserted by a test. The run's final act was to ask for
+something it could never have and be refused. `toolCalls` and `lastTool` are
+counted off the progress stream, which records **what the model asked for, not
+what it got** — the trap already on record from a `WebFetch` call that looked
+like a leak and was a denial. Read the granted list before reading a tool name as
+an action. The instrument is still the right one: without it this failure would
+have read as "ran out of turns, cause unknown", and instead it names the exact
+wall the run died against.

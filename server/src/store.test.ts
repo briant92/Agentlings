@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -87,7 +88,10 @@ describe('sync', () => {
   beforeEach(() => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-store-'));
   });
-  afterEach(() => rmSync(root, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   const write = (rel: string, text: string): void => {
     const full = path.join(root, rel);
@@ -480,7 +484,9 @@ describe('staleness', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-level-'));
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   const indexed = (syncedAt: number): void =>
     writeIndex(dir, {

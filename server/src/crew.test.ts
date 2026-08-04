@@ -1,4 +1,5 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -93,7 +94,10 @@ describe('memory archive', () => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-mem-'));
     memory = new MemoryStore(dir);
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('moves lessons aside instead of destroying them', () => {
     memory.append('Bea', 'learned something');

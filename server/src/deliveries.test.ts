@@ -1,4 +1,5 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Job } from '@agentlings/shared';
@@ -10,9 +11,10 @@ let root: string;
 beforeEach(() => {
   root = mkdtempSync(path.join(tmpdir(), 'deliveries-'));
 });
-afterEach(() => {
-  rmSync(root, { recursive: true, force: true });
-});
+// rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+afterEach(() =>
+  rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+);
 
 const dirFor = (jobId: string) => path.join(root, jobId);
 

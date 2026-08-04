@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -18,9 +19,10 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), 'agentlings-outputs-'));
 });
-afterEach(() => {
-  rmSync(dir, { recursive: true, force: true });
-});
+// rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+afterEach(() =>
+  rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+);
 
 /** The first bytes of a real PDF, NUL included — the shape that used to break. */
 const PDF = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x00, 0x0a, 0xff, 0xfe]);

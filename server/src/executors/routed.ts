@@ -304,6 +304,16 @@ export class RoutedExecutor implements Executor {
       failure = err;
     }
 
+    // A mid-flight run — a continuation or a reply — lends a method and counts
+    // as usage, and testifies to nothing else: it delivered the *remainder* of
+    // a job, not the job, so it must not say the method gets the job done
+    // (that compiles a tool that would then redo the whole job from scratch),
+    // must not say the job fits a budget (a continuation finishing in eight
+    // calls would license a five-turn leash for work that needs twenty-four —
+    // D-068's trap by another door), and must not author the recipe (its
+    // close-out describes resuming). Fresh runs keep all three (D-074).
+    const midFlight = Boolean(job.continues);
+
     // Counted after the run rather than before it, so it can know whether the
     // run happened. Work stopped on purpose is not evidence that anybody wants
     // it compiled — the same reasoning that keeps a cancelled job `failed`
@@ -313,7 +323,14 @@ export class RoutedExecutor implements Executor {
     // A run that *failed* still counts. It was asked for and attempted, and
     // most runs on a short leash end that way — gating this on a clean exit is
     // the mistake this project has already paid for five times over.
-    if (usedKey && !(failure instanceof SessionFailure && failure.message === CANCELLED)) {
+    //
+    // A mid-flight run does not: a compiled tool starts from nothing, so it
+    // could never have served the job this run picked up halfway.
+    if (
+      usedKey &&
+      !midFlight &&
+      !(failure instanceof SessionFailure && failure.message === CANCELLED)
+    ) {
       const used = recipes.find((r) => r.key === usedKey);
       if (used && (used.successes ?? 0) >= TOOL_CANDIDATE_RUNS) {
         // Not acted on: this only counts how often a compiled tool could have
@@ -340,9 +357,12 @@ export class RoutedExecutor implements Executor {
       result?.approach ?? (failure instanceof SessionFailure ? failure.approach : undefined);
     // The answer is only ever a finished run's, and only when nothing outside
     // the sandbox fed into it. A failed run's summary is its error message,
-    // and an answer is replayed to the user word for word.
+    // and an answer is replayed to the user word for word. A mid-flight run's
+    // summary describes the remainder it picked up, not the job.
     const answer =
-      result && !job.repoPath && !job.tools?.length ? result.summary : undefined;
+      result && !job.repoPath && !job.tools?.length && !midFlight
+        ? result.summary
+        : undefined;
 
     let updated = recipes;
     if (usedKey) {
@@ -401,13 +421,13 @@ export class RoutedExecutor implements Executor {
         updated,
         usedKey,
         Date.now(),
-        delivered,
-        fitted,
+        delivered && !midFlight,
+        fitted && !midFlight,
         result?.meter?.turnsAllowed,
         result?.meter?.toolCalls,
       );
     }
-    if (approach && agentling) {
+    if (approach && agentling && !midFlight) {
       // An answer is replayed to the user word for word, which is right when
       // the words *were* the deliverable and a lie when they only described
       // one. Measured on job 57bbff81: a run that had written a PDF banked its

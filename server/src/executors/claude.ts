@@ -429,10 +429,20 @@ export function titleAddsSomething(job: Job): boolean {
 
 export function sessionPrompt(job: Job): string {
   const base = titleAddsSomething(job) ? `Job: ${job.title}\n\n${job.prompt}` : job.prompt;
-  if (!job.clarifications?.length) return base;
-  return `${base}\n\nThe user has already settled these:\n${job.clarifications
-    .map((line) => `- ${line}`)
-    .join('\n')}`;
+  const parts = [base];
+  if (job.clarifications?.length) {
+    parts.push(
+      `The user has already settled these:\n${job.clarifications
+        .map((line) => `- ${line}`)
+        .join('\n')}`,
+    );
+  }
+  // A continuation's carry-on brief rides here, never in `job.prompt`, for the
+  // same reason the clarification answers above do: a recipe is keyed on
+  // normalise(prompt), and a brief folded into the prompt gave a continuation
+  // a different key from the job it continues (D-074).
+  if (job.brief) parts.push(job.brief);
+  return parts.join('\n\n');
 }
 
 export function buildAppend(
@@ -571,14 +581,66 @@ export function closeOutEvidence(sandboxDir: string): string | null {
   return parts.length > 0 ? parts.join('\n\n') : null;
 }
 
-/** First "- " line of LESSON.md, if the agent wrote one. */
+/**
+ * First "- " line of LESSON.md, if the agent wrote one.
+ *
+ * `known` on its own is the close-out declining: it was shown what the crew's
+ * notes already say (see `closeOutBrief`) and judged its lesson a repeat. The
+ * honest result is then no new lesson — not the same fact in new words, which
+ * is how one publication-lag lesson came to fill every note slot (D-073).
+ */
 export function parseLesson(text: string): string | undefined {
+  const notARepeat = (lesson: string): string | undefined =>
+    /^known\.?$/i.test(lesson) ? undefined : lesson;
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
-    if (trimmed.startsWith('- ') && trimmed.length > 2) return trimmed.slice(2).trim();
+    if (trimmed.startsWith('- ') && trimmed.length > 2) return notARepeat(trimmed.slice(2).trim());
   }
   const fallback = text.trim().split(/\r?\n/)[0]?.trim();
-  return fallback || undefined;
+  return fallback ? notARepeat(fallback) : undefined;
+}
+
+/**
+ * What the close-out is asked, given what the run left behind and what the
+ * crew already knows.
+ *
+ * The known notes are the exact window the next session will be handed — this
+ * agentling's newest lessons plus the level's most relevant notes — because
+ * that window is where a repeated lesson costs: a recurring job that re-banks
+ * its one lesson every run fills all of those slots with copies (D-073, eight
+ * copies after ten runs of one sentence). Deterministic dedup cannot catch the
+ * reworded copy — measured, rewordings of one fact score 0.3–0.5 under
+ * `similarity()`, a band hq's genuinely distinct notes crowd — so the one
+ * reader that can judge a paraphrase, the model already being paid for the
+ * write-up, is shown what is on file and asked to decline a repeat.
+ */
+export function closeOutBrief(
+  job: { prompt: string },
+  evidence: string,
+  known: string[],
+): { prompt: string; append: string } {
+  const onFile =
+    known.length > 0
+      ? `\n\nThe crew's notes already say:\n${known.map((k) => `- ${k}`).join('\n')}`
+      : '';
+  return {
+    prompt: `A job has just finished. Write down what it teaches.\n\nThe job was: ${job.prompt}\n\n${evidence}${onFile}`,
+    append: [
+      'You are writing the crew notes for a job that has already run. Do not do the job.',
+      // Measured: without this it opened the file it had just been told
+      // about and ran out of turns having written nothing.
+      'Do not read, open or search any files. Everything you need is in this message.',
+      'Write exactly two files in the working directory, then stop:',
+      '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
+      ...(known.length > 0
+        ? [
+            '  If that one thing is already in the crew\'s notes above, write LESSON.md holding exactly the word "known" — do not say it again in new words.',
+          ]
+        : []),
+      '- APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
+      'If the run failed, say what to do differently — a run that died still teaches something.',
+    ].join('\n'),
+  };
 }
 
 /** Short human line for a tool_use block, e.g. "Bash npm test". */
@@ -713,6 +775,12 @@ export class ClaudeAgentExecutor implements Executor {
       turnCapFor(role, hint, job.maxTurns),
     );
 
+    // What this level knows *about this job*, not what it did most recently —
+    // the same selection the recall tier uses. Hoisted because the close-out is
+    // shown the same window: "already known" has to mean "already in what the
+    // next session will read", or the two drift apart (D-073).
+    const relevantNotes = relevantLines(this.knowledge(), job.prompt, 8);
+
     const configPath = path.join(sandboxDir, '.session.json');
     writeFileSync(
       configPath,
@@ -722,9 +790,7 @@ export class ClaudeAgentExecutor implements Executor {
         append: buildAppend(
           role,
           lessons,
-          // What this level knows *about this job*, not what it did most
-          // recently. Same selection the recall tier uses.
-          relevantLines(this.knowledge(), job.prompt, 8),
+          relevantNotes,
           hasRepo,
           sources,
           hint?.approach,
@@ -781,7 +847,13 @@ export class ClaudeAgentExecutor implements Executor {
     } catch (err) {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
-      const salvage = await this.harvestAndCloseOut(sandboxDir, hasRepo, job, onProgress);
+      const salvage = await this.harvestAndCloseOut(
+        sandboxDir,
+        hasRepo,
+        job,
+        [...lessons, ...relevantNotes],
+        onProgress,
+      );
       // The same shape the success path records. A failed run that is still
       // filed as a full session pollutes the very history the quote reads.
       const failedMeter: JobMeter = {
@@ -804,6 +876,7 @@ export class ClaudeAgentExecutor implements Executor {
       sandboxDir,
       hasRepo,
       job,
+      [...lessons, ...relevantNotes],
       onProgress,
     );
 
@@ -836,12 +909,13 @@ export class ClaudeAgentExecutor implements Executor {
     sandboxDir: string,
     hasRepo: boolean,
     job: Job,
+    known: string[],
     onProgress?: (detail: string) => void,
   ): Promise<{ lesson?: string; approach?: string; closeOutUsd?: number }> {
     const first = await this.harvest(sandboxDir, hasRepo, onProgress);
     if (first.lesson && first.approach) return first;
 
-    const meter = await this.closeOut(sandboxDir, job, job.id, onProgress);
+    const meter = await this.closeOut(sandboxDir, job, job.id, known, onProgress);
     if (!meter) return first;
 
     const after = await this.harvest(sandboxDir, hasRepo);
@@ -892,27 +966,20 @@ export class ClaudeAgentExecutor implements Executor {
     sandboxDir: string,
     job: Job,
     jobId: string,
+    known: string[],
     onProgress?: (detail: string) => void,
   ): Promise<JobMeter | undefined> {
     const evidence = closeOutEvidence(sandboxDir);
     if (!evidence) return undefined;
 
+    const brief = closeOutBrief(job, evidence, known);
     const configPath = path.join(sandboxDir, '.closeout.json');
     writeFileSync(
       configPath,
       JSON.stringify({
         cwd: sandboxDir,
-        prompt: `A job has just finished. Write down what it teaches.\n\nThe job was: ${job.prompt}\n\n${evidence}`,
-        append: [
-          'You are writing the crew notes for a job that has already run. Do not do the job.',
-          // Measured: without this it opened the file it had just been told
-          // about and ran out of turns having written nothing.
-          'Do not read, open or search any files. Everything you need is in this message.',
-          'Write exactly two files in the working directory, then stop:',
-          '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
-          '- APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
-          'If the run failed, say what to do differently — a run that died still teaches something.',
-        ].join('\n'),
+        prompt: brief.prompt,
+        append: brief.append,
         allowedTools: ['Write'],
         maxTurns: CLOSEOUT_TURNS,
         model: process.env.AGENTLINGS_CLOSEOUT_MODEL || CLOSEOUT_MODEL,

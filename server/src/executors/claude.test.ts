@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LEASH_CREDIBLE_UP_TO } from '../recipes';
 import {
+  closeOutBrief,
   closeOutEvidence,
   COMPILE_TURNS,
   RECIPE_TURNS,
@@ -329,6 +330,23 @@ describe('sessionPrompt', () => {
     expect(sessionPrompt({ ...base, clarifications: [] })).toBe(sessionPrompt(base));
   });
 
+  // The carry-on brief rides here, never in job.prompt — a recipe is keyed on
+  // the prompt, and a brief folded in gave a continuation a different key from
+  // the job it continues (D-074). Same rule as clarifications, same reason.
+  it('appends a continuation brief after the prompt it continues', () => {
+    const text = sessionPrompt({
+      ...base,
+      continues: 'j0',
+      brief: 'You have already worked on this and ran out of turns.',
+    });
+    expect(text).toContain('tighten up the error handling');
+    expect(text.endsWith('You have already worked on this and ran out of turns.')).toBe(true);
+  });
+
+  it('carries no brief when the job has none', () => {
+    expect(sessionPrompt({ ...base, continues: 'j0' })).toBe(sessionPrompt(base));
+  });
+
   // Job ca5db1b4: the card's ellipsis reached the session, the model read it
   // as a truncated message and asked the user to repeat themselves. One turn,
   // 1.4c, no work.
@@ -496,6 +514,44 @@ describe('parseLesson', () => {
   it('falls back to the first non-empty line', () => {
     expect(parseLesson('plain sentence lesson\n')).toBe('plain sentence lesson');
     expect(parseLesson('   \n')).toBeUndefined();
+  });
+
+  // "known" is the close-out declining to repeat a lesson it was shown is
+  // already on file (D-073). No new lesson is the honest result — banking the
+  // word itself would teach the crew the word "known".
+  it('reads a declined write-up as no lesson at all', () => {
+    expect(parseLesson('- known')).toBeUndefined();
+    expect(parseLesson('Known.\n')).toBeUndefined();
+  });
+
+  it('keeps a lesson that merely starts with the word', () => {
+    expect(parseLesson('- known issue: the calendar lags')).toBe('known issue: the calendar lags');
+  });
+});
+
+describe('closeOutBrief', () => {
+  const job = { prompt: 'summarise the monthly indicators' };
+
+  it('shows the close-out what the crew already knows, and asks it to decline a repeat', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', [
+      'indicators lag their reference period',
+    ]);
+    expect(brief.prompt).toContain('indicators lag their reference period');
+    expect(brief.append).toContain('the word "known"');
+  });
+
+  // A first job has nothing on file, and an instruction about notes that do
+  // not exist invites the model to go looking for them.
+  it('says nothing about known notes when there are none', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
+    expect(brief.prompt).not.toContain('already say');
+    expect(brief.append).not.toContain('known');
+  });
+
+  it('still carries the job and the evidence', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
+    expect(brief.prompt).toContain('summarise the monthly indicators');
+    expect(brief.prompt).toContain('Done.');
   });
 });
 

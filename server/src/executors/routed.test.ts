@@ -560,6 +560,39 @@ describe('RoutedExecutor', () => {
       expect(readRecipes(levelDir)[0]).toMatchObject({ successes: 1, completions: 1 });
     });
 
+    // A mid-flight run testifies to nothing beyond having happened: it
+    // delivered the *remainder* of a job, not the job, so it must not say the
+    // method gets the job done (three of those compile a tool that would then
+    // redo the whole job from scratch) nor that the job fits a budget — a
+    // continuation finishing in eight calls would license a five-turn leash
+    // for work that needs twenty-four, D-068's trap by another door (D-074).
+    it('counts a continuation only as usage, however well it delivered', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'REPORT.md'), 'the remainder\n');
+      await run(
+        build(new FakeSession({ summary: 'done' })),
+        job({ prompt: 'add a test for formatUsd', continues: 'j0' }),
+        PIP,
+      );
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.hits).toBe(1);
+      expect(recipe.successes ?? 0).toBe(0);
+      expect(recipe.completions ?? 0).toBe(0);
+    });
+
+    // Its close-out describes resuming, not the job, so banking it would
+    // overwrite a method written by a fresh run with one about carrying on.
+    it('never lets a continuation author a recipe', async () => {
+      await run(
+        build(new FakeSession({ summary: 'done', approach: 'the resume way' })),
+        job({ prompt: 'a brand new job', continues: 'j0' }),
+        PIP,
+      );
+
+      expect(readRecipes(levelDir)).toEqual([]);
+    });
+
     // Narrower than `partial` on purpose, and the difference is the point.
     // `partial` asks whether there is something worth reviewing; this asks
     // whether the recipe gets the job done, because three of these compile it

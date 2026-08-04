@@ -92,6 +92,33 @@ describe('levels', () => {
     expect(readKnowledge(dir)).toEqual(['first fact', 'second fact']);
   });
 
+  // A recurring job banks its note every run, and the eight most relevant
+  // notes a session is shown become eight copies of one fact (D-073). The
+  // date is bookkeeping, not content: the same words on a new date are the
+  // same note, and the newest telling is the one that stays.
+  it('replaces a note that says the same thing on a new date', () => {
+    const dir = levelDir(root, 'k2');
+    mkdirSync(dir, { recursive: true });
+    appendKnowledge(dir, '2026-08-01 · Pip (worker) delivered "monthly table"');
+    appendKnowledge(dir, '2026-08-02 · something else entirely');
+    appendKnowledge(dir, '2026-08-04 · Pip (worker) delivered "monthly table"');
+    expect(readKnowledge(dir)).toEqual([
+      '2026-08-02 · something else entirely',
+      '2026-08-04 · Pip (worker) delivered "monthly table"',
+    ]);
+  });
+
+  // Exact match only, deliberately: measured against the real corpora, a
+  // reworded lesson scores 0.3–0.5 under similarity() while genuinely distinct
+  // notes crowd the same band, so anything fuzzier here would eat real notes.
+  it('keeps notes that differ in any word, however alike they read', () => {
+    const dir = levelDir(root, 'k3');
+    mkdirSync(dir, { recursive: true });
+    appendKnowledge(dir, '2026-08-01 · indicators lag their reference period by 1-3 weeks');
+    appendKnowledge(dir, '2026-08-04 · indicators lag their reference period by 2-3 weeks');
+    expect(readKnowledge(dir)).toHaveLength(2);
+  });
+
   it('migrates the legacy cave into levels/hq with roles intact', () => {
     writeFileSync(path.join(root, 'roster.json'), JSON.stringify({ a1: 'scout' }));
     mkdirSync(path.join(root, 'memory'), { recursive: true });

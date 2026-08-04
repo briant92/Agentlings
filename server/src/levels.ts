@@ -1,6 +1,7 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ThemeKey } from '@agentlings/shared';
+import { undated } from './memory';
 
 /**
  * A level is a workspace: its own crew, jobs, sandboxes, memory, and shared
@@ -127,8 +128,23 @@ export function listLevelDirs(sandboxRoot: string): string[] {
 /** The level's shared brain: every finished job appends a line. */
 export function appendKnowledge(dir: string, line: string): void {
   const file = path.join(dir, 'KNOWLEDGE.md');
-  if (!existsSync(file)) appendFileSync(file, '# Level knowledge\n\n');
-  appendFileSync(file, `- ${line}\n`);
+  if (!existsSync(file)) {
+    writeFileSync(file, `# Level knowledge\n\n- ${line}\n`);
+    return;
+  }
+  // The same note on a new date replaces the old rather than joining it — a
+  // recurring job banks its lesson every run, and the eight most relevant
+  // notes a session is shown become eight copies of one fact (D-073). Exact
+  // match on the undated text only: measured, `similarity()` cannot tell a
+  // reworded lesson from a different one, so anything cleverer here would eat
+  // real notes; the reworded repeat is caught upstream, by the close-out. Only
+  // the "- " duplicate is dropped — anything else in the file stays put.
+  const fresh = undated(line);
+  const kept = readFileSync(file, 'utf8')
+    .split(/\r?\n/)
+    .filter((l) => !(l.startsWith('- ') && undated(l.slice(2)) === fresh));
+  while (kept.length > 0 && kept[kept.length - 1] === '') kept.pop();
+  writeFileSync(file, `${kept.join('\n')}\n- ${line}\n`);
 }
 
 /**

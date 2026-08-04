@@ -325,6 +325,39 @@ describe('decide', () => {
     if (decision.kind === 'oneshot') expect(decision.approach).toContain('sum column D');
   });
 
+  /**
+   * Mid-flight work — a continuation or a reply — carries its sandbox forward,
+   * and every shortcut here starts from nothing: a stored answer would replay
+   * instead of resuming, and a five-turn leash is absurd for work that has
+   * just proved it does not fit its full budget (D-074).
+   */
+  it('refuses every shortcut to mid-flight work, and still lends the method', () => {
+    const decision = decide(
+      job({ prompt: 'Total the invoices in the spreadsheet', continues: 'j0' }),
+      context({ recipes: [recipe] }),
+    );
+    expect(decision.kind).toBe('agent');
+    if (decision.kind === 'agent') {
+      expect(decision.approach).toContain('sum column D');
+      // The key rides along so the run is priced as a run of this job (D-072).
+      expect(decision.recipeKey).toBe(recipe.key);
+    }
+  });
+
+  it('will not answer a mid-flight job from the level notes either', () => {
+    const decision = decide(
+      job({ prompt: 'what did we learn about the payment flow?', continues: 'j0' }),
+      context(),
+    );
+    expect(decision.kind).toBe('agent');
+  });
+
+  it('sends mid-flight work with no recipe to a plain session', () => {
+    expect(decide(job({ prompt: 'do something', continues: 'j0' }), context())).toEqual({
+      kind: 'agent',
+    });
+  });
+
   it('falls through when a recipe is not close enough to be the same job', () => {
     const decision = decide(
       job({ prompt: 'write the quarterly board report' }),

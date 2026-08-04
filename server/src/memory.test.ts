@@ -82,6 +82,43 @@ describe('append', () => {
     expect(new MemoryStore(dir).lessons('Pip')).toEqual(['from an earlier run']);
   });
 
+  // A recurring job writes its lesson every run, and a session reads the five
+  // *newest* lessons — so without this, every slot fills with copies of one
+  // fact the moment a job repeats (D-073). The date prefix is bookkeeping:
+  // the same words on a new date are the same lesson, kept once, newest last.
+  it('replaces a lesson that says the same thing on a new date', () => {
+    memory.append('Pip', '2026-08-01 · check the agency calendar first');
+    memory.append('Pip', '2026-08-02 · a different lesson');
+    memory.append('Pip', '2026-08-04 · check the agency calendar first');
+    expect(memory.lessons('Pip')).toEqual([
+      '2026-08-02 · a different lesson',
+      '2026-08-04 · check the agency calendar first',
+    ]);
+  });
+
+  it('keeps lessons that differ in any word, however alike they read', () => {
+    memory.append('Pip', '2026-08-01 · data lags by 1-3 weeks');
+    memory.append('Pip', '2026-08-04 · data lags by 2-3 weeks');
+    expect(memory.lessons('Pip')).toHaveLength(2);
+  });
+
+  // The file is a document a person can note in; replacing a duplicate must
+  // not cost them their notes the way a whole-file rewrite would.
+  it('leaves human notes in place while replacing a duplicate', () => {
+    memory.append('Pip', '2026-08-01 · check the calendar');
+    const file = path.join(dir, 'pip.md');
+    writeFileSync(
+      file,
+      ['# Pip — lessons', '', 'A reviewer note.', '', '- 2026-08-01 · check the calendar', ''].join(
+        '\n',
+      ),
+    );
+    memory.append('Pip', '2026-08-04 · check the calendar');
+    const text = readFileSync(file, 'utf8');
+    expect(text).toContain('A reviewer note.');
+    expect(memory.lessons('Pip')).toEqual(['2026-08-04 · check the calendar']);
+  });
+
   it('treats a name as the same agentling whatever its casing', () => {
     memory.append('PIP', 'shouted');
     memory.append('pip', 'whispered');

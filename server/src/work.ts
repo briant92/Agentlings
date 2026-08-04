@@ -134,6 +134,8 @@ export function queuedJobSpec(args: {
   attachments?: { name: string; data: Buffer }[];
   /** The job this one answers, whose sandbox it carries forward. */
   continues?: string;
+  /** Standing instructions for the session, kept out of the prompt (D-074). */
+  brief?: string;
 }): {
   title: string;
   prompt: string;
@@ -144,6 +146,7 @@ export function queuedJobSpec(args: {
   clarifications?: string[];
   attachments?: { name: string; data: Buffer }[];
   continues?: string;
+  brief?: string;
 } {
   return {
     title: args.title,
@@ -154,6 +157,7 @@ export function queuedJobSpec(args: {
     ...(args.attachments?.length ? { attachments: args.attachments } : {}),
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
     ...(args.continues ? { continues: args.continues } : {}),
+    ...(args.brief ? { brief: args.brief } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never
     // spend, and every paying tier is bounded below at a cent. So a job that
@@ -169,18 +173,25 @@ export function queuedJobSpec(args: {
  * the wiring is not tested, and this is the part that decides whether the next
  * run resumes or starts again.
  *
+ * The brief only — never the prompt. A continuation used to carry both joined
+ * as its `prompt`, which gave it a different recipe key from the job it
+ * continues: it banked its close-out under a compound key nobody would ever
+ * match, and none of its runs joined the job's priced history (D-074). The
+ * brief now rides on `Job.brief`, the same seam that keeps clarification
+ * answers out of the key, and the continuation's prompt is the original
+ * sentence verbatim.
+ *
  * It points at RESULT.md rather than repeating it. The previous run was asked
  * to say what it established, what is still missing and what it would do next
  * (D-063), so the handover it wrote is better than one composed out here — and
  * it is already on disk in the sandbox this job carries forward.
  */
-export function continuationPrompt(previous: { prompt: string; repoPath?: string }): string {
+export function continuationBrief(previous: { repoPath?: string }): string {
   const carried = previous.repoPath
     ? 'the clone already carries the changes you made'
     : 'anything you produced is already here';
   return [
-    previous.prompt,
     `You have already worked on this and ran out of turns — ${carried}.`,
     'Read RESULT.md first: it says what the last run established, what is still missing, and what it would do next. Carry on from there rather than starting again, and keep RESULT.md updated as you go.',
-  ].join('\n\n');
+  ].join('\n');
 }

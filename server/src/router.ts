@@ -222,6 +222,20 @@ export function isFetchOnly(prompt: string, urls: string[]): boolean {
 export function decide(job: Job, context: RouterContext): Decision {
   const prompt = job.prompt ?? '';
 
+  // Mid-flight work — a continuation, or a reply — carries its sandbox
+  // forward, and every shortcut below starts from nothing: a stored answer
+  // would replay instead of resuming, a compiled tool would redo the job from
+  // scratch, and a five-turn leash is absurd for work that has just proved it
+  // does not fit its full budget (D-074). A matching recipe still lends its
+  // method, and carries its key so the run is recorded and priced as a run of
+  // that job (D-072).
+  if (job.continues) {
+    const found = findRecipe(context.recipes, prompt, context.capabilities);
+    return found
+      ? { kind: 'agent', approach: found.recipe.approach, recipeKey: found.recipe.key }
+      : { kind: 'agent' };
+  }
+
   // A question about what the crew already knows is answerable from the file
   // the crew already wrote. No session, no tokens.
   if (RECALL.test(prompt)) {

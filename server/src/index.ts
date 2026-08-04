@@ -113,7 +113,7 @@ import { type QuoteContext, quoteFor_ } from './quote';
 import { callGithub } from './github';
 import { callSearch } from './search';
 import { fetchPage } from './web';
-import { continuationPrompt, planWork, queuedJobSpec, runnerRole } from './work';
+import { continuationBrief, planWork, queuedJobSpec, runnerRole } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -661,6 +661,10 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
         tools,
         previous.preferredRole ?? runnerRole(plan),
         previous.repoPath,
+        // A reply is mid-flight too: the router will refuse it every shortcut,
+        // so the quote must price the session it is really about to be.
+        false,
+        previous.id,
       ),
       continues: previous.id,
     }),
@@ -695,7 +699,11 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
     return c.json({ error: 'that run did not stop for want of turns' }, 400);
   }
 
-  const prompt = continuationPrompt(previous);
+  // The original sentence verbatim: the carry-on brief rides on `brief`, never
+  // in the prompt, so a continuation is keyed, matched, quoted and credited as
+  // the job it continues rather than banking recipes under a compound key
+  // nobody will ever match (D-074).
+  const prompt = previous.prompt;
   const tools = granted(previous.tools);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
   // Whoever actually ran it, and only then what the matcher says. A
@@ -725,8 +733,11 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
         tools,
         ranAs ?? runnerRole(plan),
         previous.repoPath,
+        false,
+        previous.id,
       ),
       continues: previous.id,
+      brief: continuationBrief(previous),
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

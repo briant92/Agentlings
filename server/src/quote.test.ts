@@ -150,4 +150,28 @@ describe('quoteFor_', () => {
       expect(quote(UNKNOWN, true)).toEqual(quote(UNKNOWN));
     });
   });
+
+  /**
+   * Mid-flight work — a continuation or a reply — is refused every shortcut by
+   * the router, so the quote has to price the session it is really about to
+   * be: a routed $0 here would be a promise of free arriving as a bill, the
+   * shape D-027 and D-049 each closed once before (D-074).
+   */
+  describe('when the job continues an earlier run', () => {
+    const midFlight = (text: string) =>
+      quoteFor_(ctx, levelDir, text, undefined, 'worker', undefined, false, 'j0');
+
+    it('prices a recall question as the session it will really be', () => {
+      expect(quote(RECALL).tier).toBe('routed');
+      expect(midFlight(RECALL).tier).toBe('session');
+    });
+
+    it('never grants the leash to a continuation of a proven repeat', () => {
+      const q = midFlight(REPEAT);
+      expect(q.tier).toBe('session');
+      // The recipe key rides along, and with no keyed rows yet the quote falls
+      // back to the role's own history rather than to the tier average.
+      expect(q.samples).toBe(2);
+    });
+  });
 });

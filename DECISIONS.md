@@ -82,6 +82,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-070 — 2026-08-04 — A quote that could not find its history, and the copy that covered for it](#d-070--2026-08-04--a-quote-that-could-not-find-its-history-and-the-copy-that-covered-for-it)
 - [D-071 — 2026-08-04 — The third run says the halving was a step, not a trend](#d-071--2026-08-04--the-third-run-says-the-halving-was-a-step-not-a-trend)
 - [D-072 — 2026-08-04 — Seven runs of one sentence, none of them recording it was the same job](#d-072--2026-08-04--seven-runs-of-one-sentence-none-of-them-recording-it-was-the-same-job)
+- [D-073 — 2026-08-04 — The crew's notes stop repeating themselves](#d-073--2026-08-04--the-crews-notes-stop-repeating-themselves)
+- [D-074 — 2026-08-04 — A continuation is the same job, now everywhere it counts](#d-074--2026-08-04--a-continuation-is-the-same-job-now-everywhere-it-counts)
 
 ## By theme
 
@@ -170,6 +172,12 @@ entry updates one file rather than two.
   and the completion promptly armed the next failure, since fitting a 33-turn
   budget was about to license a five-turn leash: D-068, the third reading of a
   gate as licensing something it never verified
+- **What a recurring job does to the notes** — the same lesson re-banked every
+  run until every slot a session reads held one fact; dedup at the append
+  seams, and the close-out shown what is already on file: D-073
+- **Mid-flight runs** — the carry-on brief out of the prompt, the router's
+  shortcut guard, and what a continuation may credit — closing for
+  continuations the recipe-key gap D-072 closed for hinted sessions: D-074
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -3980,3 +3988,139 @@ $1.26 keeps D-071's reading intact: one step, then noise.
 
 **Where the level stands.** Eight paid runs of one sentence: **$8.24 spent,
 $4.93 chargeable**, four deliveries.
+
+## D-073 — 2026-08-04 — The crew's notes stop repeating themselves
+
+Found by an architecture review reading the training level's files rather than
+by anything the app said: ten runs of one sentence left **eleven lines in
+`KNOWLEDGE.md` and eight in Pip's lessons, nearly all of them the same
+publication-lag fact reworded**. Nothing reads what is already banked before
+appending, so a recurring job — the exact job the whole machine is optimised
+for — writes its one lesson every run.
+
+**The cost is slot crowding, not tokens.** A session is handed the eight most
+relevant knowledge notes and its agentling's five newest lessons. Every copy
+quotes the job title, so for this job all thirteen slots were copies of one
+fact — and would stay so, crowding out anything else the level ever learns
+about its own flagship job. The store measured this shape from outside in
+D-049 (158 passages crowding 86 crew notes); this is the same failure arising
+from within.
+
+**The obvious fix was measured first and rejected, which is why the fix has
+three parts.** A similarity threshold at the append seam cannot work: against
+the real corpora, the known rewordings of the one fact score only **0.3–0.5**
+under `similarity()` — the crude stemmer misses `publication`/`published` and
+`month`/`monthly`, and Jaccard punishes long paraphrases — while hq's 102
+genuinely distinct notes have **432 pairs at ≥0.3 and 160 at ≥0.5**. No
+threshold separates them; any choice either misses most duplicates or eats
+real notes. So:
+
+- **Exact dedup at both append seams, on the undated text.** `undated()` in
+  `memory.ts` strips the date prefix; `MemoryStore.append` and
+  `appendKnowledge` drop an existing `- ` line saying the same words before
+  appending, so the newest telling stays and the date refreshes. Zero false
+  positives by construction, and the seams preserve everything that is not a
+  lesson line — the first draft rewrote whole files and would have eaten the
+  human notes `memory.test.ts` documents as allowed. It catches real cases:
+  the same cleanup found 14 exact-duplicate bookkeeping lines on hq (jobs run
+  twice banking identical lines, one merge note banked twice).
+- **The reworded repeat is stopped at its source, by the one reader that can
+  judge a paraphrase.** The close-out is already a paid model call; it is now
+  shown the exact window the next session will read — the agentling's five
+  newest lessons plus the eight most relevant level notes — and told to write
+  LESSON.md holding exactly `known` when its lesson is already there
+  (`closeOutBrief`). `parseLesson` reads that as no lesson, so the run banks a
+  bare bookkeeping line, which the exact rule above then keeps to one copy.
+  D-011's shape: the deterministic layer does what it can prove, and the model
+  only ever declines — a wrongly-declined lesson costs one note and the next
+  run re-teaches it; a wrongly-banked one compounds forever. The decline is
+  model behaviour and is not unit-testable; the prompt and the sentinel path
+  are pinned by tests, and the next real training runs are the live check.
+- **The existing pile was cleaned rather than left to make the fix inert**
+  (the D-026/D-030/D-033/D-036 trap). `scripts/dedupe-notes.ts` applies the
+  exact rule retroactively — dry run by default, `.pre-dedupe.bak` beside each
+  changed file — and took the 14 hq lines. The training level's paraphrase
+  pile cannot be identified by any deterministic rule, so it was cleaned **by
+  hand**, the same warrant as D-030's `successes` correction: one reading of
+  eleven lines that are visibly one fact, backups kept, keeping the bare
+  failed line, Pip's newest telling and Dot's.
+
+**What this deliberately does not touch.** `relevantLines` and `recallSignal`
+are unchanged — D-051 records why moving the scorer mid-measurement redefines
+`recallable`, and this fix changes the corpus, not the instrument. Future
+`recallable` counts will be lower because the level genuinely holds fewer
+lines, which is the counter counting what is there.
+
+**Evidence.** 858 server tests and 74 web before the change, 877 and 74 after
+both this entry and D-074, typecheck clean. The dedup rules are pinned by new
+tests (same-note replacement, differing-notes kept, human notes preserved, the
+`known` sentinel, the brief's known-section and its absence); committed, then
+mutation-tested — the results are recorded below the next entry, since the two
+landed together.
+
+## D-074 — 2026-08-04 — A continuation is the same job, now everywhere it counts
+
+The training level held a second recipe: key = the economic-indicators
+sentence **plus the entire carry-on brief**, `hits: 0`, unmatchable by
+construction. `/continue` composed the brief into `job.prompt`, so a
+continuation banked its close-out under a compound key nobody would ever ask
+for again, its runs joined none of the job's keyed history (the D-072 gap,
+reopened for continuations), and the brief's own words — carry, start, updated
+— entered the rarity corpus every other match is weighed against.
+
+**The fix is D-030's rule, applied to the field it already governs.**
+Clarification answers were kept out of `job.prompt` from the start because a
+recipe is keyed on `normalise(prompt)`; the carry-on brief violated the same
+rule in the same field. So `Job.brief` now carries standing instructions to
+the session — `continuationBrief()` composes it, `queuedJobSpec` and
+`JobQueue.add` copy it (the D-033 dropped-field trap, paid at both seams), and
+`sessionPrompt` appends it after the clarifications. A continuation's prompt
+is the original sentence **verbatim**: keyed, matched, quoted and credited as
+the job it continues.
+
+**That immediately needed two guards, because the shortcuts now see the
+original prompt.**
+
+- **The router refuses every shortcut to mid-flight work.** A continuation or
+  a reply carries its sandbox forward, and every shortcut starts from nothing:
+  a stored answer would replay instead of resuming, a compiled tool would redo
+  the job from scratch, and a five-turn leash is absurd for work that has just
+  proved it does not fit its full budget. A matching recipe still lends its
+  method — and its key, so the run is priced as a run of that job (D-072).
+  The quote carries `continues` on both routes for the same reason the redo
+  carries `noRouter` (D-049): a `routed`, $0 quote for a run about to be a
+  session is a promise of free arriving as a bill.
+- **A mid-flight run counts as usage and testifies to nothing else.** It
+  delivered the *remainder* of a job, not the job — so it credits `hits` only:
+  not `successes` (three of those would compile a tool that redoes the whole
+  job from scratch), not `completions` (a continuation finishing in eight
+  calls would license a five-turn leash for work that needs twenty-four,
+  D-068's trap by another door), and it neither authors the recipe nor banks
+  an answer (its close-out and summary describe resuming, not the job).
+
+**Deliberately left alone: the reply route's composed prompt.** A reply folds
+the user's new words into `job.prompt` and so still banks per-reply recipe
+keys. That is the same wart one level down, and it is not fixed here because a
+reply genuinely is a new request — D-066's own line — and its text must
+persist on the job; moving it into `brief` would change what a brief means.
+The router guard and the quote fix cover replies regardless, since both key on
+`continues`. Recorded so the next person finds the reasoning rather than the
+inconsistency (D-043's habit).
+
+**The one recipe banked the old way was dropped by identification**
+(`scripts/drop-continuation-recipes.ts`, marker = the brief's own phrase,
+`.pre-drop.bak` kept): training-ground 2 → 1 recipes, the real one untouched
+at `completions: 6, completedInTurns: 24`.
+
+**Evidence.** 877 server tests and 74 web with D-073, typecheck clean. New
+tests pin the guard (a mid-flight exact repeat gets `agent` with the method
+and key, never `answer` or `oneshot`), the credit rule (a delivering
+continuation moves `hits` alone), the authorship rule (a continuation banks no
+recipe), the brief plumbing (`sessionPrompt` appends it; the job keeps its own
+prompt), and the quote (`session` tier for a mid-flight recall question,
+role-class fallback while the job's keyed rows accumulate). Both entries were
+committed and then mutation-tested (D-021's order), one mutation at a time
+with the rest of the suite green: disabling the `undated` filter in
+`appendKnowledge` and in `MemoryStore.append` each failed the test written for
+it, removing the router's mid-flight guard failed three, and un-guarding
+`delivered` in the credit call failed one.

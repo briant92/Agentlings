@@ -54,6 +54,14 @@ export function quoteFor_(
    * quote and the run cannot disagree about which of them is happening.
    */
   noRouter = false,
+  /**
+   * The job this one continues or answers. The probe has to carry it for the
+   * same reason it carries the repo: the router refuses every shortcut for
+   * mid-flight work, and a quote that did not know would price `routed`, $0,
+   * for a run that is about to be a session — a promise of free arriving as a
+   * bill, the exact shape D-027 and D-049 each closed once (D-074).
+   */
+  continues?: string,
 ): Quote {
   const probe: Job = {
     id: '',
@@ -64,6 +72,7 @@ export function quoteFor_(
     createdAt: 0,
     ...(repoPath ? { repoPath } : {}),
     ...(tools?.length ? { tools } : {}),
+    ...(continues ? { continues } : {}),
   };
   const decision: Decision = noRouter
     ? { kind: 'agent' }

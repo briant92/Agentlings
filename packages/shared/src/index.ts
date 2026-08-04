@@ -243,6 +243,15 @@ export interface Job {
    * up where that run stopped instead of paying to redo it.
    */
   continues?: string;
+  /**
+   * Standing instructions handed to the session on top of the prompt — the
+   * carry-on brief of a continuation, today. Kept out of `prompt` for the same
+   * reason `clarifications` is: a recipe is keyed on the prompt, so a brief
+   * folded in gave a continuation a different key from the job it continues —
+   * it banked recipes under compound keys nobody would match, and its runs
+   * joined no priced history (D-074).
+   */
+  brief?: string;
   /** A turn cap this job needs in its own right, overriding the role's. */
   maxTurns?: number;
   /**

@@ -27,6 +27,8 @@ export interface NewJobSpec {
   compile?: boolean;
   /** The job this one answers, whose sandbox it carries forward. */
   continues?: string;
+  /** Standing instructions for the session, kept out of the prompt (D-074). */
+  brief?: string;
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -145,6 +147,7 @@ export class JobQueue {
       ...(spec.clarifications?.length ? { clarifications: spec.clarifications } : {}),
       ...(spec.compile ? { compile: true } : {}),
       ...(spec.continues ? { continues: spec.continues } : {}),
+      ...(spec.brief ? { brief: spec.brief } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

@@ -217,6 +217,34 @@ export function sameCapabilities(recipe: Recipe, capabilities: string[] | undefi
   return sameSurface(recipe.capabilities, capabilities);
 }
 
+/**
+ * Whether a recipe may cut the run's budget, as against merely lend its method.
+ *
+ * Two conditions. The surface must match, for the reason above. And some run
+ * using this method must have *landed*: an approach is evidence that work is
+ * repeatable only once a run has actually repeated it.
+ *
+ * Job 306e415e bought the second one. A gathering-bound job ran out of its ten
+ * turns having delivered a partial table, banked its approach, and matched
+ * itself exactly on the next request — which, gated on the surface alone, would
+ * have handed it *five* turns to do what it had just failed to do in ten. The
+ * two-bar logic (D-019, D-023) prices the two mistakes correctly but assumes a
+ * recipe saves *exploring*. This job's turns went on gathering, and knowing the
+ * method does not gather anything.
+ *
+ * Deliberately `successes` rather than whether the authoring run finished — a
+ * near-identical question, and this file has been wrong before by collapsing
+ * two of those. `successes` counts runs that used the method and delivered, so
+ * it is evidence about the method; the authoring run's own ending is evidence
+ * about one run. It costs the leash exactly one outing: a hint-only match still
+ * credits the recipe when it lands, so a good method is leashed on its third
+ * run rather than its second, and the tier's own history — 21 leashed runs
+ * failed against 5 delivered — is the argument for buying that evidence first.
+ */
+export function canShortenLeash(recipe: Recipe, capabilities: string[] | undefined): boolean {
+  return sameCapabilities(recipe, capabilities) && (recipe.successes ?? 0) > 0;
+}
+
 export function findRecipe(
   recipes: Recipe[],
   prompt: string,
@@ -224,7 +252,7 @@ export function findRecipe(
 ): { recipe: Recipe; exact: boolean; strong: boolean } | null {
   const key = normalise(prompt);
   const exact = recipes.find((r) => r.key === key);
-  if (exact) return { recipe: exact, exact: true, strong: sameCapabilities(exact, capabilities) };
+  if (exact) return { recipe: exact, exact: true, strong: canShortenLeash(exact, capabilities) };
 
   const wanted = terms(prompt);
   const corpus = recipes.map((r) => r.terms);
@@ -246,7 +274,7 @@ export function findRecipe(
   return {
     recipe: best,
     exact: false,
-    strong: bestScore >= SIMILAR_ENOUGH && sameCapabilities(best, capabilities),
+    strong: bestScore >= SIMILAR_ENOUGH && canShortenLeash(best, capabilities),
   };
 }
 

@@ -71,6 +71,9 @@ describe('quoteFor_', () => {
         approach: 'Open the sheet with exceljs and sum the amount column.',
         capabilities: [],
         hits: 2,
+        // Proven, or it would be quoted as a session — the leash is gated on a
+        // run using the method having landed.
+        successes: 1,
         learnedAt: 1,
       },
     ]);

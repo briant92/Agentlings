@@ -182,6 +182,7 @@ describe('RoutedExecutor', () => {
           approach: 'just answer it',
           answer: 'red, green, blue',
           hits: 2,
+          successes: 1,
           capabilities: [],
           learnedAt: 1,
           ...over,
@@ -228,6 +229,7 @@ describe('RoutedExecutor', () => {
           role: 'worker',
           approach: 'read the module, then write the test beside it',
           hits: 0,
+          successes: 1,
           capabilities: [],
           learnedAt: 1,
         },
@@ -404,12 +406,27 @@ describe('RoutedExecutor', () => {
       const first = new FakeSession({ summary: 'done', approach: 'the old way' });
       await run(build(first), job(repo), PIP);
       const second = new FakeSession({ summary: 'done', approach: 'the better way' });
+      // Landing means leaving something behind, not exiting politely — the same
+      // narrow test the tool-candidate counter uses, and the reason a run that
+      // says "I cannot do this" credits nothing (D-041).
+      writeFileSync(path.join(sandboxDir, 'DIFF.patch'), 'diff --git a/x b/x\n+work\n');
       await run(build(second), job({ ...repo, prompt: 'name three colours' }), PIP);
 
-      expect(second.runs[0].hint).toMatchObject({ oneShot: true, approach: 'the old way' });
+      // The method arrives, the leash does not — nothing has yet landed *using*
+      // this recipe, and a method earns the leash by having worked. The run
+      // that wrote it did not use one, so it credited nothing.
+      expect(second.runs[0].hint).toMatchObject({ approach: 'the old way' });
+      expect(second.runs[0].hint?.oneShot).toBeUndefined();
       const recipes = readRecipes(levelDir);
       expect(recipes).toHaveLength(1);
       expect(recipes[0].approach).toBe('the better way');
+
+      // And it does arrive, one run later: the hint-only run above landed, so
+      // the recipe now has a delivery behind it. The gate costs the leash a
+      // single outing rather than withholding it.
+      const third = new FakeSession({ summary: 'done', approach: 'the better way' });
+      await run(build(third), job({ ...repo, prompt: 'name three colours' }), PIP);
+      expect(third.runs[0].hint).toMatchObject({ oneShot: true, approach: 'the better way' });
     });
   });
 

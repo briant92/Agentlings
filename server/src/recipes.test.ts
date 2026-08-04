@@ -53,6 +53,7 @@ describe('findRecipe', () => {
       role: 'analyst',
       approach: 'sum column D',
       hits: 0,
+      successes: 1,
       capabilities: [],
       learnedAt: 1,
     },
@@ -159,6 +160,7 @@ describe('matching strength', () => {
       role: 'worker',
       approach: 'read the module, then write the test beside it',
       hits: 0,
+      successes: 1,
       capabilities: [],
       learnedAt: 1,
     },
@@ -174,12 +176,61 @@ describe('matching strength', () => {
     expect(found?.recipe.approach).toContain('read the module');
   });
 
-  it('still calls an exact repeat strong', () => {
+  it('still calls a proven exact repeat strong', () => {
     expect(findRecipe(recipes, 'Add a test for the estimate module', [])?.strong).toBe(true);
   });
 
   it('finds nothing at all for unrelated work', () => {
     expect(findRecipe(recipes, 'book a table for dinner')).toBeNull();
+  });
+});
+
+/**
+ * Job 306e415e: a gathering-bound run exhausted its ten turns having delivered
+ * a partial table, banked its approach, and matched itself exactly next time —
+ * which, gated on the capability surface alone, would have given it five turns
+ * to do what it had just failed to do in ten.
+ *
+ * A method earns the leash by having worked, not by existing.
+ */
+describe('a method has to have worked before it may shorten the run', () => {
+  const unproven: Recipe = {
+    key: 'summarise this month indicators',
+    terms: terms('summarise this month indicators'),
+    role: 'worker',
+    approach: 'check each agency calendar first',
+    hits: 0,
+    capabilities: [],
+    learnedAt: 1,
+  };
+  const prompt = 'Summarise this month indicators';
+
+  it('lends the method of a recipe nobody has landed yet', () => {
+    const found = findRecipe([unproven], prompt, []);
+    expect(found?.recipe.approach).toContain('agency calendar');
+  });
+
+  it('but does not let it cut the budget', () => {
+    expect(findRecipe([unproven], prompt, [])?.strong).toBe(false);
+  });
+
+  it('leashes it once a run using it has landed', () => {
+    const proven = { ...unproven, hits: 1, successes: 1 };
+    expect(findRecipe([proven], prompt, [])?.strong).toBe(true);
+  });
+
+  // Being used is not the same as having worked, and the whole point is the
+  // gap between them: the run that banked this one used a method and died.
+  it('counts landings, not outings', () => {
+    const used = { ...unproven, hits: 4, successes: 0 };
+    expect(findRecipe([used], prompt, [])?.strong).toBe(false);
+  });
+
+  // Both conditions bind independently — a proven method under a surface that
+  // has since moved is still demoted, which is the older rule.
+  it('still defers to a capability surface that has moved', () => {
+    const proven = { ...unproven, successes: 3, capabilities: ['conn:web'] };
+    expect(findRecipe([proven], prompt, ['conn:web', 'conn:search'])?.strong).toBe(false);
   });
 });
 
@@ -197,6 +248,7 @@ describe('a method is only as good as what was available when it was found', () 
     role: 'scout',
     approach: 'fetch the old.reddit mirror, it is server-rendered',
     hits: 3,
+    successes: 1,
     learnedAt: 1,
   };
   const prompt = 'Read the reddit programming page';

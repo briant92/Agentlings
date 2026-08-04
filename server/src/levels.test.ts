@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -33,7 +33,7 @@ describe('crew colours are on the palette', () => {
     }
   });
 
-  it('for the legacy crew the migration writes', () => {
+  it('for the legacy crew the migration writes', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'agentlings-legacy-'));
     try {
       // The migration only fires when there is a pre-level cave to move.
@@ -43,7 +43,10 @@ describe('crew colours are on the palette', () => {
       expect(crew).toHaveLength(4);
       for (const member of crew) expect(PALETTE.has(member.color)).toBe(true);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      // A throw here would replace the assertion above with a lock error.
+      await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(
+        () => {},
+      );
     }
   });
 });

@@ -1,5 +1,6 @@
 import { createServer, type Server } from 'node:http';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -105,9 +106,11 @@ describe('RoutedExecutor', () => {
     progress = [];
   });
 
-  afterEach(() => {
-    rmSync(path.dirname(levelDir), { recursive: true, force: true });
-    rmSync(sandboxDir, { recursive: true, force: true });
+  // rmSync cannot outwait a Windows file lock — see ./carry.test.ts.
+  afterEach(async () => {
+    const opts = { recursive: true, force: true, maxRetries: 10, retryDelay: 50 };
+    await rm(path.dirname(levelDir), opts).catch(() => {});
+    await rm(sandboxDir, opts).catch(() => {});
   });
 
   function build(

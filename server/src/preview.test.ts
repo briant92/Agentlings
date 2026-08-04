@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -15,9 +16,10 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), 'agentlings-preview-'));
 });
-afterEach(() => {
-  rmSync(dir, { recursive: true, force: true });
-});
+// rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+afterEach(() =>
+  rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+);
 
 async function writeDocx(name: string, paragraphs: string[]): Promise<string> {
   const { Document, Packer, Paragraph } = await import('docx');

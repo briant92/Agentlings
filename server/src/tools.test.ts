@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -69,7 +70,10 @@ describe('a tool on disk', () => {
   beforeEach(() => {
     levelDir = mkdtempSync(path.join(tmpdir(), 'agentlings-tools-'));
   });
-  afterEach(() => rmSync(levelDir, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(levelDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   const complete = (name = 'tidy-invoice') => {
     writeTool(levelDir, manifest({ name }));
@@ -138,7 +142,9 @@ describe('recordToolRun', () => {
     levelDir = mkdtempSync(path.join(tmpdir(), 'agentlings-strikes-'));
     writeTool(levelDir, manifest());
   });
-  afterEach(() => rmSync(levelDir, { recursive: true, force: true }));
+  afterEach(() =>
+    rm(levelDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('counts a clean run and forgets old failures', () => {
     const once = recordToolRun(levelDir, manifest({ failures: 1 }), true);
@@ -181,7 +187,11 @@ describe('promotion', () => {
     beforeEach(() => {
       levelDir = mkdtempSync(path.join(tmpdir(), 'agentlings-names-'));
     });
-    afterEach(() => rmSync(levelDir, { recursive: true, force: true }));
+    afterEach(() =>
+      rm(levelDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(
+        () => {},
+      ),
+    );
 
     it('keeps the plain name while it is free', () => {
       expect(freeToolName(levelDir, 'tidy-invoice')).toBe('tidy-invoice');

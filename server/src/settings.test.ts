@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -89,7 +90,10 @@ describe('the store on disk', () => {
   beforeEach(() => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-settings-'));
   });
-  afterEach(() => rmSync(root, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('reads as empty before anything is written, so the catalog decides', () => {
     expect(readSettings(root)).toEqual({});

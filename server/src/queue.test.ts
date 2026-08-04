@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -16,9 +17,10 @@ describe('JobQueue', () => {
     queue = new JobQueue(root);
   });
 
-  afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
-  });
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('runs a job through its lifecycle', async () => {
     const job = queue.add({ title: 'Test job', prompt: 'do the thing' });

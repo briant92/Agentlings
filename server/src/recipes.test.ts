@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -129,7 +130,10 @@ describe('persistence', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-recipes-'));
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('survives a round trip', () => {
     const recipes = rememberRecipe([], {

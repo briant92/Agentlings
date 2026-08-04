@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -201,7 +202,10 @@ describe('repoListing', () => {
   beforeEach(() => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-listing-'));
   });
-  afterEach(() => rmSync(root, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see ./carry.test.ts.
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('lists files, nested ones included, with repo-relative paths', () => {
     mkdirSync(path.join(root, 'src'), { recursive: true });
@@ -439,7 +443,9 @@ describe('closeOutEvidence', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-closeout-'));
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('says nothing when the run left nothing behind', () => {
     expect(closeOutEvidence(dir)).toBeNull();

@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -54,7 +55,10 @@ describe('levels', () => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-lvl-'));
   });
 
-  afterEach(() => rmSync(root, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('creates a level with meta, a starting crew of two, and a unique slug', () => {
     const meta = createLevelFiles(root, { name: 'Home Chores', project: 'Household', theme: 'household' });

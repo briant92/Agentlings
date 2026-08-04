@@ -1,4 +1,5 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -55,7 +56,10 @@ describe('RoleRegistry', () => {
     registry.load();
   });
 
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  // rmSync cannot outwait a Windows file lock — see executors/carry.test.ts.
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('installs a role and lists it', () => {
     const role = registry.install(SCOUT);
@@ -83,7 +87,9 @@ describe('skills and memory', () => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-skills-'));
   });
 
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('installs and lists SKILL.md folders', () => {
     installSkill(dir, `---\nname: concise-reports\ndescription: Tight RESULT.md files\n---\nKeep it short.`);
@@ -107,7 +113,9 @@ describe('writeSkillFile', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'agentlings-skillfiles-'));
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
 
   it('puts a helper inside the skill, making folders as needed', () => {
     const written = writeSkillFile(dir, 'pdf', 'scripts/fill.py', 'print("hi")\n');

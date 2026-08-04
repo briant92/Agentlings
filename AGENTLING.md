@@ -1090,7 +1090,7 @@ untouched until you press Approve.
 | `MAX_ENTRY_CHARS` | 600 | `store.ts` | One passage, so eight of them are still a small prompt |
 | `MAX_PASSAGES_PER_FILE` | 200 | `store.ts` | About 60 pages; a long document is read that far and the count is shown |
 | `MAX_OCR_PAGES_PER_FILE` | 20 | `store.ts` | Pages of one scan read off pixels |
-| `MAX_OCR_PAGES_PER_SYNC` | 200 | `store.ts` | Scanned pages a whole sync will read; the rest is reported |
+| `MAX_OCR_PAGES_PER_SYNC` | 200 | `store.ts` | Scanned pages a whole sync will read, charged as spent; what it could not reach is reported (D-062) |
 | `OCR_SCALE` | 2 | `ocr.ts` | Render size before reading; 1 loses body text, 4 reads the JPEG artefacts |
 
 ### Reaching out

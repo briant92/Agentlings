@@ -71,6 +71,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-059 — 2026-08-04 — The store reads documents, and the splitter that made it real](#d-059--2026-08-04--the-store-reads-documents-and-the-splitter-that-made-it-real)
 - [D-060 — 2026-08-04 — A grid is not prose, and the readers stop being written twice](#d-060--2026-08-04--a-grid-is-not-prose-and-the-readers-stop-being-written-twice)
 - [D-061 — 2026-08-04 — Reading paper: the engine Windows already has](#d-061--2026-08-04--reading-paper-the-engine-windows-already-has)
+- [D-062 — 2026-08-04 — Two faults found by reading the panel copy back against the code](#d-062--2026-08-04--two-faults-found-by-reading-the-panel-copy-back-against-the-code)
 
 ## By theme
 
@@ -120,7 +121,9 @@ entry updates one file rather than two.
   where the splitter was the feature and the extensions were the easy half;
   and D-060, which adds the two formats that are not prose at all and puts the
   readers in one module before the second copy could be written; D-061 reads
-  paper itself, with the one Windows-only file in the project behind a seam
+  paper itself, with the one Windows-only file in the project behind a seam,
+  and D-062, where reading the panel copy back found a silent cap and a budget
+  charged the wrong number — plus a correction to what D-061 claimed
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
@@ -3179,7 +3182,7 @@ thing measures the fixture.
 1,497ms — essentially all of it is PowerShell starting. Per-page spawning would
 have made a ten-page document ten times slower for nothing.
 
-*A budget of 200 pages a sync, 20 a file, both reported.* Reading a text layer
+*A budget of 200 pages a sync, 20 a file.* Reading a text layer
 is free and reading pixels is not, and the sources route blocks until the sync
 finishes. Every other cap here is reported; these are too.
 
@@ -3212,3 +3215,44 @@ layer of exactly nothing — so the threshold the code deliberately sets at 40
 was untested. The stamped-scan case above was written for it, and the same
 mutation now fails 3 tests. A passing suite said the constant was covered; it
 was not, and only mutating it said so.
+
+## D-062 — 2026-08-04 — Two faults found by reading the panel copy back against the code
+
+An errand — update the reading panel for OCR — that turned into two real
+defects, neither of which any test was going to find, because both were
+behaviours nobody had asked the code about.
+
+**A correction to D-061 first.** That entry says of the OCR budgets "200 pages
+a sync, 20 a file, both reported". The second half was untrue when it was
+written. A file that got no OCR at all was counted as `unscanned`; a file read
+as far as page 20 of 50 was counted as nothing, and the panel said nothing.
+The one cap in this store that reported nothing was the one whose entry
+claimed it did. The sentence is narrowed above and the counter now exists.
+
+**And the budget was being charged the wrong number.** `budget -= allowance`,
+not the pages actually read — so a one-page receipt cost the same twenty pages
+as a twenty-page report. A folder of thirty short scans read the first ten and
+reported the other twenty as holding no text, which is a wrong answer rather
+than a slow one. `ScreenshotResult.total` had been sitting in the type the
+whole time; `ocrPdf` returns it now, so the budget is charged what it spent
+and "this document was longer than I could read" is a thing the panel can say.
+
+**What actually found them.** Not a test, not the type checker, and not the
+live run — all three were green. Reading the user-facing sentences one at a
+time and asking of each "is this still true, and how would I know". The intro
+still said "notes, documents, spreadsheets, decks" a commit after scans became
+readable; the per-file warning gave page counts for writing, slides and rows
+and not for a scan. Chasing the second one into the code is what surfaced the
+counter that did not exist and the arithmetic that was wrong. Copy is a
+description of behaviour, and description is a test that runs in your head.
+
+**And a rule broken, worth recording because the log already warned about it.**
+Mutation-testing these fixes, `git checkout -- server/src/store.ts` reverted
+them: they were not committed yet. That is D-021's hard-won rule — mutation-test
+*after* committing — hit exactly as written, in the file that records it. The
+work was redone from the conversation rather than lost, and the order is the
+point: commit, then mutate, then restore.
+
+**Evidence.** 824 server tests and 74 web. Both fixes mutation-tested after
+committing this time: charging the allowance again fails the budget test,
+removing the counter fails the cut test.

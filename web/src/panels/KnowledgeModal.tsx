@@ -157,8 +157,10 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
               words, and reads as an empty file rather than a failed one —
               which is indistinguishable from "not read" without saying so. */}
           <p className="lib-status">
-            Notes, Word documents and PDFs are read (.md, .txt, .docx, .pdf). A PDF
-            that is a scan of paper has no text in it, so nothing is taken from it.
+            Notes, Word documents, PDFs, spreadsheets and decks are read (.md, .txt,
+            .docx, .pdf, .xlsx, .pptx). A spreadsheet is read a row at a time, so the
+            numbers are found by their column names rather than by shape. A PDF that
+            is a scan of paper has no text in it, so nothing is taken from it.
           </p>
 
           {status?.indexed && (

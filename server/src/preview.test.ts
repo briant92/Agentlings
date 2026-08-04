@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cellText, GRID_ROWS, parseCsv, previewFile, sanitizeHtml } from './preview';
+import { GRID_ROWS, parseCsv, previewFile, sanitizeHtml } from './preview';
 
 /**
  * Fixtures are written by the same libraries the crew writes with, rather than
@@ -188,15 +188,6 @@ describe('sanitizeHtml', () => {
     const preview = await previewFile(file);
     expect(preview.kind === 'html' && preview.html).toContain('press me');
     expect(preview.kind === 'html' && preview.html).not.toContain('javascript:');
-  });
-});
-
-describe('cellText', () => {
-  it('shows what the application shows', () => {
-    expect(cellText({ formula: 'SUM(A1:A2)', result: 42 })).toBe('42');
-    expect(cellText({ text: 'Meridian', hyperlink: 'https://example.com' })).toBe('Meridian');
-    expect(cellText({ richText: [{ text: 'bold' }, { text: ' plain' }] })).toBe('bold plain');
-    expect(cellText(null)).toBe('');
   });
 });
 

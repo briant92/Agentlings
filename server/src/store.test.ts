@@ -9,7 +9,9 @@ import {
   STALE_MS,
   asLine,
   isStale,
+  looksLikeHeader,
   passages,
+  rowLine,
   readIndex,
   storeLines,
   sync,
@@ -170,6 +172,49 @@ describe('sync', () => {
     expect(text).not.toMatch(/--\s*\d+\s+of\s+\d+\s*--/);
   });
 
+  // A grid shares no words with a question. What makes a row findable is the
+  // sheet name and the column names travelling with it, on every row, because
+  // a long sheet is cut into passages wherever the length runs out.
+  it('reads a spreadsheet as rows that name their own columns', async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const book = new ExcelJS.Workbook();
+    const ws = book.addWorksheet('Q3 prices');
+    ws.addRow(['sku', 'supplier', 'unit']);
+    ws.addRow(['AX-114', 'Meridian', 12.4]);
+    ws.addRow(['BR-201', 'Calder', 8.75]);
+    await book.xlsx.writeFile(path.join(root, 'prices.xlsx'));
+
+    const index = await sync([root], NOW);
+    const text = index.entries.map((e) => e.text).join(' ');
+    expect(text).toContain('Q3 prices — sku=AX-114, supplier=Meridian, unit=12.4');
+    expect(text).toContain('supplier=Calder');
+    // The header row is what labels the others, not a row of its own.
+    expect(text).not.toContain('sku=sku');
+    expect(index.entries[0].source).toBe('prices.xlsx');
+  });
+
+  it('reads a deck a slide at a time', async () => {
+    const PptxGenJS = (await import('pptxgenjs')).default;
+    const deck = new PptxGenJS();
+    deck.addSlide().addText('Warranty summary', { x: 1, y: 1, w: 8, h: 1 });
+    const second = deck.addSlide();
+    second.addText('Renewal dates', { x: 1, y: 1, w: 8, h: 1 });
+    second.addText('The dishwasher runs to March 2028', { x: 1, y: 2, w: 8, h: 1 });
+    await deck.writeFile({ fileName: path.join(root, 'review.pptx') });
+
+    const index = await sync([root], NOW);
+    // A slide is a unit of thought, so it is a passage — the heading rule
+    // markdown gets for free, with the slide's own title as the heading.
+    expect(index.entries).toHaveLength(2);
+    expect(index.entries[0].text).toBe('# Warranty summary');
+    expect(index.entries[1].text).toBe('# Renewal dates The dishwasher runs to March 2028');
+    expect(index.entries[1].source).toBe('review.pptx');
+    // Read back from a live index once: a synthetic `# Slide 2` label was
+    // sitting in the recall answer where the document's words belong, and
+    // `slide` would have scored against every deck in the folder.
+    expect(index.entries.every((e) => !/Slide \d/.test(e.text))).toBe(true);
+  });
+
   // An encrypted PDF, or a .docx that is really a renamed something-else. It
   // should cost its own passages and no more.
   it('skips a document it cannot read without losing the rest of the folder', async () => {
@@ -198,6 +243,33 @@ describe('sync', () => {
     const index = await sync([root], NOW);
     expect(index.skipped).toBe(5);
     expect(new Set(index.entries.map((e) => e.source)).size).toBe(MAX_PER_SOURCE);
+  });
+});
+
+describe('reading a grid as prose', () => {
+  it('labels each value with its column, and drops the blanks', () => {
+    expect(rowLine('Prices', ['sku', 'supplier', 'unit'], ['AX-114', '', '12.40'])).toBe(
+      'Prices — sku=AX-114, unit=12.40',
+    );
+  });
+
+  it('keeps bare values when there are no column names', () => {
+    expect(rowLine('Notes', [], ['boiler', 'October'])).toBe('Notes — boiler, October');
+  });
+
+  it('says nothing about an empty row rather than naming it', () => {
+    expect(rowLine('Prices', ['sku'], ['', ''])).toBe('');
+  });
+
+  // One number in the top row and it is data. Labelling the rest under it
+  // would attach `12.40=13.05` to every line of the sheet — a confident
+  // falsehood in every passage, which is worse than no labels at all.
+  it('tells a header row from a first row of data', () => {
+    expect(looksLikeHeader(['sku', 'supplier', 'unit'])).toBe(true);
+    expect(looksLikeHeader(['AX-114', 'Meridian', '12.40'])).toBe(false);
+    expect(looksLikeHeader(['sku', 'supplier', '12.40'])).toBe(false);
+    expect(looksLikeHeader([])).toBe(false);
+    expect(looksLikeHeader(undefined)).toBe(false);
   });
 });
 

@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-import type { FilePreview, PreviewSheet, PreviewSlide } from '@agentlings/shared';
+import type { FilePreview, PreviewSheet } from '@agentlings/shared';
+import { docxHtml, readSheets, readSlides } from './documents';
 import { contentTypeFor, isBinary, opensInBrowser } from './outputs';
 
 /**
@@ -81,31 +82,6 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
- * A cell as text.
- *
- * exceljs hands back whatever the cell holds: a formula arrives as its
- * definition plus its last computed result, rich text as runs, a hyperlink as
- * a target and a caption. A preview wants the value someone would see in the
- * application, so the result wins over the formula and the caption over the
- * link.
- */
-export function cellText(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  if (typeof value === 'object') {
-    const cell = value as Record<string, unknown>;
-    if ('result' in cell) return cellText(cell.result);
-    if ('text' in cell) return cellText(cell.text);
-    if ('richText' in cell && Array.isArray(cell.richText)) {
-      return cell.richText.map((run) => cellText((run as { text?: unknown }).text)).join('');
-    }
-    if ('error' in cell) return String(cell.error);
-    return '';
-  }
-  return String(value);
-}
-
-/**
  * Splits a CSV the way a spreadsheet does, quotes and all.
  *
  * Small enough to keep rather than reach for a parser: the one CSV the crew
@@ -142,59 +118,6 @@ function sheetOf(name: string, rows: string[][], totalRows: number, totalCols: n
   };
 }
 
-async function spreadsheet(file: string): Promise<PreviewSheet[]> {
-  const ExcelJS = (await import('exceljs')).default;
-  const book = new ExcelJS.Workbook();
-  await book.xlsx.readFile(file);
-  return book.worksheets.map((sheet) => {
-    const rows: string[][] = [];
-    for (let n = 1; n <= Math.min(sheet.rowCount, GRID_ROWS); n++) {
-      const values = sheet.getRow(n).values;
-      // 1-based and sparse: index 0 is never a cell, and a gap is a blank.
-      const cells = Array.isArray(values) ? values.slice(1) : [];
-      rows.push(Array.from({ length: sheet.columnCount }, (_, i) => cellText(cells[i])));
-    }
-    return sheetOf(sheet.name, rows, sheet.rowCount, sheet.columnCount);
-  });
-}
-
-/**
- * The text of each slide, in reading order.
- *
- * A .pptx is a zip of XML, so the slides come out with no library that renders
- * one — because nothing installed renders one. Paragraphs become lines and
- * runs within a paragraph are joined, which is what turns a title split across
- * three formatting runs back into a title.
- */
-async function slides(file: string): Promise<{ slides: PreviewSlide[]; total: number }> {
-  const JSZip = (await import('jszip')).default;
-  const zip = await JSZip.loadAsync(readFileSync(file));
-  const names = Object.keys(zip.files)
-    .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
-    // Numerically: slide10 sorts before slide2 as a string.
-    .sort((a, b) => Number(/(\d+)/.exec(a)![1]) - Number(/(\d+)/.exec(b)![1]));
-  const shown: PreviewSlide[] = [];
-  for (const [i, name] of names.slice(0, MAX_SLIDES).entries()) {
-    const xml = await zip.file(name)!.async('string');
-    const lines = xml
-      .split('</a:p>')
-      .map((para) => [...para.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => decodeXml(m[1])).join(''))
-      .filter((line) => line.trim() !== '');
-    shown.push({ n: i + 1, lines });
-  }
-  return { slides: shown, total: names.length };
-}
-
-/** The five entities an OOXML text run can carry. */
-function decodeXml(text: string): string {
-  return text
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&');
-}
-
 function cut(text: string): { content: string; truncated: boolean } {
   return text.length > MAX_CHARS
     ? { content: text.slice(0, MAX_CHARS), truncated: true }
@@ -223,19 +146,26 @@ export async function previewFile(file: string): Promise<FilePreview> {
     return { kind: 'native', contentType: contentTypeFor(name) };
   }
   try {
-    if (ext === '.xlsx') return { kind: 'grid', sheets: await spreadsheet(file) };
+    if (ext === '.xlsx') {
+      const sheets = await readSheets(file, GRID_ROWS);
+      return {
+        kind: 'grid',
+        sheets: sheets.map((s) => sheetOf(s.name, s.rows, s.totalRows, s.totalCols)),
+      };
+    }
     if (ext === '.csv') {
       const rows = parseCsv(readFileSync(file, 'utf8'));
       const cols = rows.reduce((most, row) => Math.max(most, row.length), 0);
       return { kind: 'grid', sheets: [sheetOf(name, rows, rows.length, cols)] };
     }
     if (ext === '.docx') {
-      const mammoth = (await import('mammoth')).default;
-      const { value } = await mammoth.convertToHtml({ buffer: readFileSync(file) });
-      const { content, truncated } = cut(sanitizeHtml(value));
+      const { content, truncated } = cut(sanitizeHtml(await docxHtml(file)));
       return { kind: 'html', html: content, truncated };
     }
-    if (ext === '.pptx') return { kind: 'slides', ...(await slides(file)) };
+    if (ext === '.pptx') {
+      const { slides, total } = await readSlides(file, MAX_SLIDES);
+      return { kind: 'slides', slides: slides.map((lines, i) => ({ n: i + 1, lines })), total };
+    }
   } catch (err) {
     return { kind: 'none', reason: err instanceof Error ? err.message : 'could not be read' };
   }

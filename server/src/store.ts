@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { docxText, pdfText, readSheets, readSlides } from './documents';
 
 /**
  * The knowledge store: your own material, synced into a local index the crew
@@ -50,7 +51,16 @@ export const MAX_ENTRY_CHARS = 600;
  */
 export const MAX_PASSAGES_PER_FILE = 200;
 
-const INDEXABLE = new Set(['.md', '.markdown', '.txt', '.mdx', '.docx', '.pdf']);
+const INDEXABLE = new Set([
+  '.md',
+  '.markdown',
+  '.txt',
+  '.mdx',
+  '.docx',
+  '.pdf',
+  '.xlsx',
+  '.pptx',
+]);
 
 export interface StoreEntry {
   /** The passage itself, one line, at most `MAX_ENTRY_CHARS`. */
@@ -194,12 +204,45 @@ function filesUnder(root: string, limit: number): { files: string[]; skipped: nu
 }
 
 /**
+ * A row of a spreadsheet as a sentence about itself.
+ *
+ * A grid has no prose in it, and this is the whole difficulty with indexing
+ * one. `AX-114 | Meridian | 12.40` shares no words with "what do we know about
+ * supplier pricing" — the terms that would match are in the header row and the
+ * sheet tab, which are somewhere else entirely. So every row carries its sheet
+ * name and its column names: the scorer is term overlap, and a passage cut
+ * anywhere in a long sheet still has to be findable.
+ *
+ * Blank cells are dropped rather than written as `unit=`, which would spend
+ * the passage budget saying nothing.
+ */
+export function rowLine(sheet: string, headers: string[], row: string[]): string {
+  const pairs = row
+    .map((cell, i) => ({ head: headers[i]?.trim() ?? '', cell: cell.trim() }))
+    .filter(({ cell }) => cell !== '')
+    .map(({ head, cell }) => (head ? `${head}=${cell}` : cell));
+  return pairs.length > 0 ? `${sheet} — ${pairs.join(', ')}` : '';
+}
+
+/**
+ * Whether the first row names the columns rather than holding data.
+ *
+ * A header is text in every filled cell. One number in the top row and it is
+ * data, so labelling the rest under it would attach `12.40=13.05` to every
+ * line below — a confident-looking falsehood in every passage of the sheet.
+ */
+export function looksLikeHeader(row: string[] | undefined): boolean {
+  const filled = (row ?? []).map((c) => c.trim()).filter(Boolean);
+  return filled.length > 0 && filled.every((c) => !/^-?[\d.,]+%?$/.test(c));
+}
+
+/**
  * One file as plain text, whatever it is.
  *
  * The document libraries are already installed at the project root for the
- * sandboxes (D-031), so reading a .docx or a .pdf here costs nothing new — the
- * store simply had no reason to before. Both readers are lazily imported: a
- * folder of markdown should not pay to load a PDF parser.
+ * sandboxes (D-031), so reading any of these costs nothing new — the store
+ * simply had no reason to before. Everything is imported lazily by
+ * `documents.ts`: a folder of markdown loads no readers at all.
  *
  * A .pdf that is a scan of paper holds images and no text, and comes back
  * empty rather than wrong. That is worth saying out loud in the panel, because
@@ -207,20 +250,36 @@ function filesUnder(root: string, limit: number): { files: string[]; skipped: nu
  */
 export async function extract(file: string): Promise<string> {
   switch (path.extname(file).toLowerCase()) {
-    case '.docx': {
-      const mammoth = (await import('mammoth')).default;
-      return (await mammoth.extractRawText({ path: file })).value;
+    case '.docx':
+      return docxText(file);
+    case '.pdf':
+      return pdfText(file);
+    case '.xlsx': {
+      const sheets = await readSheets(file);
+      return sheets
+        .flatMap((sheet) => {
+          const headed = looksLikeHeader(sheet.rows[0]);
+          const headers = headed ? sheet.rows[0] : [];
+          return (headed ? sheet.rows.slice(1) : sheet.rows)
+            .map((row) => rowLine(sheet.name, headers, row))
+            .filter(Boolean);
+        })
+        .join('\n');
     }
-    case '.pdf': {
-      const { PDFParse } = await import('pdf-parse');
-      // A class, not the function it used to be — the shape the crew's own
-      // briefing calls out because guessing it costs a turn (D-031).
-      const { text } = await new PDFParse({ data: readFileSync(file) }).getText();
-      // `-- 1 of 1 --` between pages is the reader talking, not the document.
-      // Found by indexing a real PDF and reading the entry back: it had ridden
-      // into the passage, where it would be shown in a recall answer and
-      // pasted into an agentling's briefing as though the document said it.
-      return text.replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm, '');
+    case '.pptx': {
+      // A slide is already a unit of thought, so it becomes its own passage —
+      // the heading rule markdown gets for free. The heading is the slide's
+      // own first line, which is its title.
+      //
+      // Not a synthetic `# Slide 3`: read back from a live index, that label
+      // was sitting in the recall answer where the document's words should be,
+      // and `slide` would have scored against every deck in the folder. The
+      // same mistake as pdf-parse's page marker (D-059), made by us.
+      const { slides } = await readSlides(file);
+      return slides
+        .filter((lines) => lines.length > 0)
+        .map(([title, ...rest]) => [`# ${title.replace(/^#+\s*/, '')}`, ...rest].join('\n'))
+        .join('\n');
     }
     default:
       return readFileSync(file, 'utf8');

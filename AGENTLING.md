@@ -277,8 +277,8 @@ into a corpus nobody has looked at. An index is a file you can open first.
 
 | | |
 |---|---|
-| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf`, walked recursively; dotfolders and `node_modules` skipped. A scanned PDF holds no text and yields nothing (D-059) |
-| What a passage is | A markdown section where there are headings, kept with its heading; otherwise a length-bounded run cut at a sentence end. A document has no headings, so the second rule is what makes one readable |
+| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf` `.xlsx` `.pptx`, walked recursively; dotfolders and `node_modules` skipped. A scanned PDF holds no text and yields nothing (D-059) |
+| What a passage is | A markdown section where there are headings, kept with its heading; a slide, under its own title; a run of spreadsheet rows, each carrying its sheet and column names; otherwise a length-bounded run cut at a sentence end (D-059, D-060) |
 | Size | 600 chars a passage, 200 passages a file, 250 files a source — every overflow **reported** rather than dropped quietly |
 | Provenance | Every line ends `[<file>, synced <date>]`, so a free answer and a session's context both say where it came from |
 | Staleness | Past a week the index contributes **nothing** — the free tier cannot answer from it and the job falls through to a session that can go and look |

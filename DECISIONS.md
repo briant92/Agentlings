@@ -69,6 +69,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-057 — 2026-08-03 — Two ways to count one thing, and why the slower one stays](#d-057--2026-08-03--two-ways-to-count-one-thing-and-why-the-slower-one-stays)
 - [D-058 — 2026-08-04 — A document is shown where it lands, and two listings become one](#d-058--2026-08-04--a-document-is-shown-where-it-lands-and-two-listings-become-one)
 - [D-059 — 2026-08-04 — The store reads documents, and the splitter that made it real](#d-059--2026-08-04--the-store-reads-documents-and-the-splitter-that-made-it-real)
+- [D-060 — 2026-08-04 — A grid is not prose, and the readers stop being written twice](#d-060--2026-08-04--a-grid-is-not-prose-and-the-readers-stop-being-written-twice)
 
 ## By theme
 
@@ -115,7 +116,9 @@ entry updates one file rather than two.
 - **Documents, continued** — produced in D-031, and shown rather than merely
   offered in D-058, which also collapses the second listing and the second
   ordering (D-030's shape again); read *into* the knowledge store by D-059,
-  where the splitter was the feature and the extensions were the easy half
+  where the splitter was the feature and the extensions were the easy half;
+  and D-060, which adds the two formats that are not prose at all and puts the
+  readers in one module before the second copy could be written
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
@@ -3068,3 +3071,64 @@ leaving it to look like a file that was skipped. `.xlsx` and `.pptx` are not
 indexed either — the crew can write both and `previewFile` can read both
 (D-058), so this is a decision not to flatten a spreadsheet into prose, not a
 missing capability.
+
+## D-060 — 2026-08-04 — A grid is not prose, and the readers stop being written twice
+
+D-059 closed by naming `.xlsx` and `.pptx` as a decision not to flatten a
+spreadsheet into prose rather than a missing capability. Reopened on request,
+and the decision was the right thing to have deferred: the extensions are two
+lines and the shaping is the whole problem.
+
+**Why a spreadsheet is the hard one.** `AX-114 | Meridian | 12.40` shares no
+words with "what do we know about supplier pricing". Everything that would
+match — the column names, the sheet tab — sits somewhere else in the file, and
+`relevantLines` scores one passage at a time against the question. Worse, a
+long sheet is cut into passages wherever the length runs out (D-059), so a
+header two hundred rows above is not in the passage that would have matched.
+So every row is rendered as a sentence about itself: `Q3 prices — sku=AX-114,
+supplier=Meridian, unit=12.4`. Redundant by design — the sheet name and the
+column names repeat on every line, because a passage that cannot be cut
+anywhere is not a passage, and a term that is not in the passage cannot be
+scored. Blank cells are dropped rather than written as `unit=`, which would
+spend the budget saying nothing.
+
+**A header row is only a header row when it looks like one.** Text in every
+filled cell. One number in the top row and it is data, and labelling the rest
+under it would attach `12.40=13.05` to every line of the sheet — a confident
+falsehood repeated in every passage, which is worse than no labels at all. A
+sheet that fails the test keeps its bare values.
+
+**A deck was easy, and that is the point of the split.** A slide is already a
+unit of thought, so it becomes one passage under its own title, which is the
+heading rule markdown gets for free. Nothing new was needed.
+
+**The readers moved to `documents.ts`.** The review panel (D-058) and the
+store (D-059) want the same four formats for different reasons, and the second
+copy of "how do you read a .pptx" was about to be written. That module returns
+rows and lines and knows nothing about previews or passages; `preview.ts`
+shapes them into a `FilePreview` and `store.ts` into text. This is D-030's
+lesson used in advance for once, rather than recorded after the drift.
+
+**Caught by reading a live index, again.** The slide passages came out as
+`# Slide 1 Kitchen refit plan` — a label of ours sitting in the recall answer
+where the document's words belong, and `slide` would then have scored against
+every deck in a folder. That is precisely pdf-parse's page marker from D-059
+one entry later, except this time we wrote it. The heading is now the slide's
+own first line. Twice in two changes the fault was invisible to a passing test
+and obvious in the first real index: the tests said `toContain`, and the thing
+wrong was what else was in there.
+
+**Evidence.** 817 server tests and 74 web. Verified live on `home-chores` and
+then removed: five files — `.md`, `.docx`, `.pdf`, `.xlsx`, `.pptx` — indexed
+as six passages, and through the real router "what do we know about the
+washing machine brand" was answered free from the spreadsheet while "what do we
+know about the kitchen refit order" came back from the deck, each with its
+filename and sync date on the line. Mutation-tested after committing, one at a
+time: dropping the two extensions failed 2 tests, dropping the sheet-name
+prefix failed 3, weakening the header test failed 1, restoring the `# Slide N`
+label failed 1, and removing the blank-cell filter failed 2.
+
+**Bounds unchanged and now load-bearing.** A spreadsheet is verbose by design,
+so `MAX_PASSAGES_PER_FILE` (200) is what keeps a large workbook from being most
+of an index that is parsed on every job and every quote. exceljs reads the whole
+file whatever we ask of it, so the cap bounds the index and not the read.

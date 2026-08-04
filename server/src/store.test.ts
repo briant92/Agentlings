@@ -6,6 +6,8 @@ import { pdfText } from './documents';
 import { ocrAvailable } from './ocr';
 import {
   MAX_ENTRY_CHARS,
+  MAX_OCR_PAGES_PER_FILE,
+  MAX_OCR_PAGES_PER_SYNC,
   MAX_PASSAGES_PER_FILE,
   MAX_PER_SOURCE,
   STALE_MS,
@@ -330,6 +332,63 @@ describe('sync', () => {
     expect(index.scanned).toBe(1);
     expect(index.entries.map((e) => e.text).join(' ')).toContain('40821');
   });
+
+  /**
+   * Both faults here were found by reading the panel copy back against the
+   * code, not by a failing test.
+   *
+   * A long scan was read as far as the per-file budget and nothing said so —
+   * the one cap in the store that reported nothing. And the sync was charged
+   * the *allowance* rather than the pages it used, so a one-page receipt cost
+   * as much as a twenty-page report and a folder of short scans stopped being
+   * read after ten of them.
+   */
+  it.runIf(hasOcr)('says when a scan was longer than it could read', async () => {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const { PDFDocument } = await import('pdf-lib');
+    const doc = await PDFDocument.create();
+    for (let n = 1; n <= MAX_OCR_PAGES_PER_FILE + 3; n++) {
+      const canvas = createCanvas(600, 850);
+      const g = canvas.getContext('2d');
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, 600, 850);
+      g.fillStyle = '#111';
+      g.font = '28px Arial';
+      g.fillText(`Clause ${n} of the agreement`, 40, 120);
+      const image = await doc.embedPng(canvas.toBuffer('image/png'));
+      doc.addPage([595, 842]).drawImage(image, { x: 0, y: 0, width: 595, height: 842 });
+    }
+    writeFileSync(path.join(root, 'contract.pdf'), await doc.save());
+
+    const index = await sync([root], NOW);
+    expect(index.scanned).toBe(1);
+    expect(index.scanCut).toBe(1);
+  }, 120_000);
+
+  it.runIf(hasOcr)('charges the sync the pages it read, not the pages it allowed', async () => {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const { PDFDocument } = await import('pdf-lib');
+    // Enough one-page scans that charging the full per-file allowance would
+    // exhaust the sync budget and leave the tail unread.
+    const many = Math.floor(MAX_OCR_PAGES_PER_SYNC / MAX_OCR_PAGES_PER_FILE) + 3;
+    for (let n = 1; n <= many; n++) {
+      const canvas = createCanvas(600, 850);
+      const g = canvas.getContext('2d');
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, 600, 850);
+      g.fillStyle = '#111';
+      g.font = '30px Arial';
+      g.fillText(`Receipt number ${1000 + n}`, 40, 120);
+      const doc = await PDFDocument.create();
+      const image = await doc.embedPng(canvas.toBuffer('image/png'));
+      doc.addPage([595, 842]).drawImage(image, { x: 0, y: 0, width: 595, height: 842 });
+      writeFileSync(path.join(root, `receipt-${n}.pdf`), await doc.save());
+    }
+
+    const index = await sync([root], NOW);
+    expect(index.scanned).toBe(many);
+    expect(index.unscanned).toBe(0);
+  }, 120_000);
 
   it('leaves a text layer alone rather than re-reading it off pixels', async () => {
     const { PDFDocument, StandardFonts } = await import('pdf-lib');

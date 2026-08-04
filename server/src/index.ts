@@ -1120,6 +1120,7 @@ app.get('/api/levels/:lid/knowledge', async (c) => {
     // per-file cap. Absent on an index written before documents were readable.
     truncated: index?.truncated ?? 0,
     scanned: index?.scanned ?? 0,
+    scanCut: index?.scanCut ?? 0,
     unscanned: index?.unscanned ?? 0,
     // Windows-only, and it needs a language pack, so the platform alone does
     // not answer it. The panel tells the two apart rather than leaving a scan
@@ -1154,6 +1155,7 @@ app.post('/api/levels/:lid/knowledge/sources', async (c) => {
     skipped: index.skipped,
     truncated: index.truncated ?? 0,
     scanned: index.scanned ?? 0,
+    scanCut: index.scanCut ?? 0,
     unscanned: index.unscanned ?? 0,
   });
 });
@@ -1171,6 +1173,7 @@ app.post('/api/levels/:lid/knowledge/sync', async (c) => {
     skipped: index.skipped,
     truncated: index.truncated ?? 0,
     scanned: index.scanned ?? 0,
+    scanCut: index.scanCut ?? 0,
     unscanned: index.unscanned ?? 0,
     syncedAt: index.syncedAt,
   });

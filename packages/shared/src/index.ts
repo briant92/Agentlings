@@ -126,6 +126,8 @@ export interface KnowledgeStatus {
   truncated: number;
   /** Files whose words were read off pixels rather than out of a text layer. */
   scanned: number;
+  /** Scans read only as far as the per-file page budget — a long contract read to page 20. */
+  scanCut: number;
   /** Files holding no text that were not read: the budget ran out, or `ocr` is false. */
   unscanned: number;
   /** Whether this machine can read a scan at all. Windows-only, and it needs a

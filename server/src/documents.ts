@@ -152,7 +152,10 @@ export async function pdfText(file: string): Promise<string> {
  * Pages are written to a temp folder because the engine takes file paths, and
  * the whole folder goes at the end whatever happens.
  */
-export async function ocrPdf(file: string, maxPages: number): Promise<{ text: string; pages: number }> {
+export async function ocrPdf(
+  file: string,
+  maxPages: number,
+): Promise<{ text: string; pages: number; total: number }> {
   const { PDFParse } = await import('pdf-parse');
   const shot = await new PDFParse({ data: readFileSync(file) }).getScreenshot({
     scale: OCR_SCALE,
@@ -166,7 +169,14 @@ export async function ocrPdf(file: string, maxPages: number): Promise<{ text: st
       return image;
     });
     const read = await ocrImages(images);
-    return { text: read.map((page) => page.text ?? '').join('\n'), pages: images.length };
+    // `total` is what the document holds, against `pages` which is what the
+    // budget allowed. The caller needs both, or a 50-page contract read to
+    // page 20 is a silent cut — and every other cap here is reported.
+    return {
+      text: read.map((page) => page.text ?? '').join('\n'),
+      pages: images.length,
+      total: shot.total,
+    };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

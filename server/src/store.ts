@@ -110,6 +110,12 @@ export interface StoreIndex {
   /** Files read off pixels rather than out of a text layer. */
   scanned?: number;
   /**
+   * Scans read only as far as the per-file page budget — a long contract read
+   * to page 20. Its own counter because it is a different loss from a file
+   * that yielded nothing, and it used to be no counter at all.
+   */
+  scanCut?: number;
+  /**
    * Files that hold no text and were not read: the OCR budget ran out, or this
    * machine has no engine. The difference between the two is `ocrAvailable`,
    * and the panel says which — a scan that contributed nothing is otherwise
@@ -276,6 +282,17 @@ export function looksLikeHeader(row: string[] | undefined): boolean {
  * those as "this document has text" is how a 40-page contract indexes as the
  * word "Confidential" and nothing else.
  */
+/** What one file gave up, and what reading it cost. */
+export interface Extracted {
+  text: string;
+  /** Read off pixels rather than out of a text layer. */
+  scanned: boolean;
+  /** Pages actually put through the engine, which is what the sync is charged. */
+  ocrPages: number;
+  /** The document had more pages than the budget allowed. */
+  ocrCut: boolean;
+}
+
 export function hasTextLayer(text: string): boolean {
   return text.replace(/\s+/g, '').length >= 40;
 }
@@ -294,11 +311,8 @@ export function hasTextLayer(text: string): boolean {
  * and into an agentling's briefing word for word. A reader has to be able to
  * tell that a line was read off paper (D-061).
  */
-export async function extract(
-  file: string,
-  ocr?: { pages: number },
-): Promise<{ text: string; scanned: boolean }> {
-  const plain = (text: string): { text: string; scanned: boolean } => ({ text, scanned: false });
+export async function extract(file: string, ocr?: { pages: number }): Promise<Extracted> {
+  const plain = (text: string): Extracted => ({ text, scanned: false, ocrPages: 0, ocrCut: false });
   switch (path.extname(file).toLowerCase()) {
     case '.docx':
       return plain(await docxText(file));
@@ -308,12 +322,22 @@ export async function extract(
       // free, and OCR of the same page would be a worse copy of it.
       if (hasTextLayer(text) || !ocr) return plain(text);
       const read = await ocrPdf(file, ocr.pages);
-      return { text: read.text, scanned: true };
+      return {
+        text: read.text,
+        scanned: true,
+        // What it actually cost, not what it was allowed: charging the
+        // allowance made a one-page receipt as expensive as a 20-page report,
+        // so a folder of short scans stopped being read after ten of them.
+        ocrPages: read.pages,
+        ocrCut: read.total > read.pages,
+      };
     }
     case '.png':
     case '.jpg':
     case '.jpeg':
-      return ocr ? { text: await imageText(file), scanned: true } : plain('');
+      return ocr
+        ? { text: await imageText(file), scanned: true, ocrPages: 1, ocrCut: false }
+        : plain('');
     case '.xlsx': {
       const sheets = await readSheets(file);
       return plain(
@@ -364,6 +388,7 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
   let truncated = 0;
   let scanned = 0;
   let unscanned = 0;
+  let scanCut = 0;
   // Asked once, before any file is opened, so a machine with no engine does
   // the ordinary sync at ordinary speed instead of failing per document.
   const canOcr = await ocrAvailable();
@@ -374,7 +399,7 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
     skipped += over;
     for (const file of files) {
       const allowance = Math.min(budget, MAX_OCR_PAGES_PER_FILE);
-      let read: { text: string; scanned: boolean };
+      let read: Extracted;
       try {
         read = await extract(file, allowance > 0 ? { pages: allowance } : undefined);
       } catch {
@@ -385,7 +410,8 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
       // read halfway is the thing every cap here exists to make visible.
       if (read.scanned) {
         scanned++;
-        budget -= allowance;
+        budget -= read.ocrPages;
+        if (read.ocrCut) scanCut++;
       } else if (needsOcr(file) && read.text.trim() === '') {
         unscanned++;
       }
@@ -402,7 +428,7 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
       }
     }
   }
-  return { sources, syncedAt: now, entries, skipped, truncated, scanned, unscanned };
+  return { sources, syncedAt: now, entries, skipped, truncated, scanned, unscanned, scanCut };
 }
 
 /** A file whose words can only have come off pixels. */

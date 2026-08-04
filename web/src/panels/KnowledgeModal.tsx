@@ -111,9 +111,9 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
         <div className="m-body">
           <p className="k-intro">
             Point this level at folders of your own material — notes, documents,
-            spreadsheets, decks. The crew reads a copy taken when you press add —
-            never your files directly — so you can see exactly what it has before
-            it uses any of it.
+            spreadsheets, decks, and paperwork you only have on paper. The crew
+            reads a copy taken when you press add — never your files directly — so
+            you can see exactly what it has before it uses any of it.
           </p>
 
           <div className="sect">folders this level reads</div>
@@ -194,10 +194,23 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
               {/* "Passage" is the app's own word, and it now means three
                   different shapes depending on the file it came from. */}
               <p className="lib-status">
-                A passage is a section of writing, a slide, or a run of spreadsheet rows.
+                A passage is a section of writing, a slide, a run of spreadsheet rows, or
+                a page of scanned paper.
                 {status.scanned > 0 &&
                   ` ${status.scanned} file${status.scanned === 1 ? ' was' : 's were'} read from a scan.`}
               </p>
+              {/* Its own line rather than folded into the warning below: a
+                  contract read as far as page 20 is a different loss from one
+                  that yielded nothing, and it went unreported until the panel
+                  copy was read back against the code. */}
+              {status.scanCut > 0 && (
+                <p className="lib-warn">
+                  {status.scanCut} scan{status.scanCut === 1 ? '' : 's'}{' '}
+                  {status.scanCut === 1 ? 'was' : 'were'} longer than 20 pages and{' '}
+                  {status.scanCut === 1 ? 'was' : 'were'} read that far only. Split the long
+                  ones if what follows matters.
+                </p>
+              )}
               {/* The budget ran out, or there is no engine. Either way these
                   files are in the folder and contributing nothing, which looks
                   from here exactly like a folder that was never read. */}
@@ -233,7 +246,8 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
                   {status.truncated} file{status.truncated === 1 ? '' : 's'}{' '}
                   {status.truncated === 1 ? 'was' : 'were'} long enough that only the first
                   part was read. A file is read to about 60 pages of writing, 200 slides,
-                  or 1,300 spreadsheet rows. Split the long ones if the rest matters.
+                  or 1,300 spreadsheet rows — and a scan to 20 pages. Split the long ones
+                  if the rest matters.
                 </p>
               )}
             </>

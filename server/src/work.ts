@@ -148,3 +148,26 @@ export function queuedJobSpec(args: {
     ...(args.quote.ceilingUsd ? { quotedUsd: args.quote.ceilingUsd } : {}),
   };
 }
+
+/**
+ * The brief for picking a cut-off run back up.
+ *
+ * Pure and here rather than inline in the route, for `queuedJobSpec`'s reason:
+ * the wiring is not tested, and this is the part that decides whether the next
+ * run resumes or starts again.
+ *
+ * It points at RESULT.md rather than repeating it. The previous run was asked
+ * to say what it established, what is still missing and what it would do next
+ * (D-063), so the handover it wrote is better than one composed out here — and
+ * it is already on disk in the sandbox this job carries forward.
+ */
+export function continuationPrompt(previous: { prompt: string; repoPath?: string }): string {
+  const carried = previous.repoPath
+    ? 'the clone already carries the changes you made'
+    : 'anything you produced is already here';
+  return [
+    previous.prompt,
+    `You have already worked on this and ran out of turns — ${carried}.`,
+    'Read RESULT.md first: it says what the last run established, what is still missing, and what it would do next. Carry on from there rather than starting again, and keep RESULT.md updated as you go.',
+  ].join('\n\n');
+}

@@ -158,6 +158,11 @@ export function Terminal({
     await api(lvl(levelId, `/jobs/${jobId}/cancel`), { method: 'POST' });
   };
 
+  /** Pick a cut-off run back up: same sandbox, its own quote and turns. */
+  const carryOn = async (jobId: string) => {
+    await api(lvl(levelId, `/jobs/${jobId}/continue`), { method: 'POST' });
+  };
+
   /** Answer the agentling: a new job that carries this one's sandbox forward. */
   const reply = async (jobId: string, text: string) => {
     await api(lvl(levelId, `/jobs/${jobId}/reply`), postJson({ text }));
@@ -192,6 +197,7 @@ export function Terminal({
             onRedo={redo}
             onReply={reply}
             onCancel={cancel}
+            onContinue={carryOn}
           />
         ))}
       </div>
@@ -212,6 +218,7 @@ function EventEntry({
   onRedo,
   onReply,
   onCancel,
+  onContinue,
 }: {
   event: JobEvent;
   job: Job | undefined;
@@ -220,6 +227,7 @@ function EventEntry({
   onRedo: (jobId: string) => Promise<void>;
   onReply: (jobId: string, text: string) => Promise<void>;
   onCancel: (jobId: string) => Promise<void>;
+  onContinue: (jobId: string) => Promise<void>;
 }) {
   // Driven by the job's live status rather than the event's, so it vanishes
   // the moment the work ends. Each line offers it only for its own phase:
@@ -309,7 +317,9 @@ function EventEntry({
             </div>
             <div className="t-card">
               <div className="summary">
-                Ran out of turns before writing up, but the changes are ready to review.
+                {job.meter?.outOfTurns
+                  ? 'Ran out of turns, but what it got done is ready to review.'
+                  : 'Stopped early, but what it got done is ready to review.'}
               </div>
               <div className="t-changes">
                 {changeLine(job)}
@@ -321,6 +331,13 @@ function EventEntry({
                 <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
                   See the changes
                 </button>
+                {/* Only when the run was cut off — the server refuses the rest,
+                    and a button that is going to be refused is worse than none. */}
+                {job.meter?.outOfTurns && (
+                  <button className="ghost" onClick={() => void onContinue(event.jobId)}>
+                    Carry on
+                  </button>
+                )}
               </div>
               <ReplyBox jobId={event.jobId} onReply={onReply} />
             </div>

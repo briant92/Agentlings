@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Agentling, Quote, RoleInfo } from '@agentlings/shared';
 import { MatchIndex } from './match';
-import { planWork, pickAgentling, queuedJobSpec, runnerRole, titleFrom } from './work';
+import {
+  continuationPrompt,
+  planWork,
+  pickAgentling,
+  queuedJobSpec,
+  runnerRole,
+  titleFrom,
+} from './work';
 
 const ROLES: RoleInfo[] = [
   {
@@ -244,5 +251,39 @@ describe('queuedJobSpec', () => {
     expect(
       queuedJobSpec({ title: 't', prompt: 'p', tools: ['web'], plan, quote: quote(0.1) }).tools,
     ).toEqual(['web']);
+  });
+});
+
+/**
+ * Stage 2 of the fix for job 97b95f10's whole family: a run that is cut off
+ * mid-job should be picked up, not re-run and not made smaller by the user.
+ */
+describe('continuationPrompt', () => {
+  const previous = { prompt: 'summarise this month indicators' };
+
+  it('keeps the original request, so the next run is doing the same job', () => {
+    expect(continuationPrompt(previous)).toContain('summarise this month indicators');
+  });
+
+  // The handover the previous run wrote is better than one composed here, and
+  // it is already on disk in the sandbox this job carries forward (D-063).
+  it('points at the handover rather than repeating it', () => {
+    const text = continuationPrompt(previous);
+    expect(text).toContain('RESULT.md');
+    expect(text).toContain('what is still missing');
+    expect(text).toContain('rather than starting again');
+  });
+
+  it('says what is already there, and that differs by shape', () => {
+    expect(continuationPrompt(previous)).toContain('anything you produced is already here');
+    expect(continuationPrompt({ ...previous, repoPath: '/some/repo' })).toContain(
+      'the clone already carries the changes',
+    );
+  });
+
+  // It must ask for the same discipline the first run was given, or the second
+  // one saves its write-up for an ending it may not reach either.
+  it('asks the next run to keep RESULT.md updated too', () => {
+    expect(continuationPrompt(previous)).toContain('keep RESULT.md updated');
   });
 });

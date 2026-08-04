@@ -113,7 +113,7 @@ import { type QuoteContext, quoteFor_ } from './quote';
 import { callGithub } from './github';
 import { callSearch } from './search';
 import { fetchPage } from './web';
-import { planWork, queuedJobSpec, runnerRole } from './work';
+import { continuationPrompt, planWork, queuedJobSpec, runnerRole } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -645,6 +645,57 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
 
   // The reply keeps the role that asked the question — the answer is to them,
   // and handing it to a different specialist loses what they had in mind.
+  const tools = granted(previous.tools);
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
+  const job = rt.queue.add(
+    queuedJobSpec({
+      title: previous.title,
+      prompt,
+      repoPath: previous.repoPath,
+      tools,
+      plan: { ...plan, role: previous.preferredRole ?? plan.role },
+      quote: quoteFor_(
+        QUOTE_CTX,
+        rt.dir,
+        prompt,
+        tools,
+        previous.preferredRole ?? runnerRole(plan),
+        previous.repoPath,
+      ),
+      continues: previous.id,
+    }),
+  );
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json(job, 201);
+});
+
+/**
+ * Carry on from where a run stopped, without the user having to say so.
+ *
+ * A reply in all but the words: the same sandbox forward, the same role, its
+ * own quote and its own turn budget. What it adds is that the app knows a run
+ * was cut off and can offer the next one, rather than leaving the user to
+ * notice and phrase it — which was the whole complaint about telling people to
+ * make their requests smaller.
+ *
+ * A *request*, not automatic. Each continuation is a fresh session with a fresh
+ * price, and a job that quietly spawned three of them would be three charges
+ * against one quote — the thing the quote exists to prevent (D-012, D-025).
+ *
+ * It refuses a run that stopped for any other reason. "Ran out of turns" does
+ * not mean "needed more turns" (D-015, D-025), but its converse is firmer: a
+ * run that ended for some other reason has not asked for more.
+ */
+app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const previous = rt.queue.get(c.req.param('id'));
+  if (!previous) return c.json({ error: 'unknown job' }, 404);
+  if (!previous.meter?.outOfTurns) {
+    return c.json({ error: 'that run did not stop for want of turns' }, 400);
+  }
+
+  const prompt = continuationPrompt(previous);
   const tools = granted(previous.tools);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
   const job = rt.queue.add(

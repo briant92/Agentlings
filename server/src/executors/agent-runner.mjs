@@ -146,13 +146,22 @@ try {
       if (message.is_error) {
         // A session that ran out of turns still spent money and may still have
         // done the work. Send the meter with the error so neither is lost.
+        //
+        // And say *why* it stopped as a field rather than only inside a
+        // sentence. Reading it back out of the message would be one side
+        // saying one word and the other watching for another — the check that
+        // silently never fires, which is why CANCELLED is a shared constant.
+        // The obvious alternative, `turns > turnsAllowed`, is not a cut-off
+        // marker: it fires on 43 of 88 paid runs and seven of those finished
+        // (D-022, D-052).
         emit({
           type: 'error',
           message:
             typeof message.result === 'string'
               ? message.result
               : `agent session failed (${message.subtype ?? 'error'})`,
-          meter,
+          meter:
+            message.subtype === 'error_max_turns' ? { ...meter, outOfTurns: true } : meter,
         });
         process.exit(1);
       }

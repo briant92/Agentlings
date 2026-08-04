@@ -85,6 +85,16 @@ export interface JobMeter {
   /** The run spent money that could not be measured — see LedgerEntry. */
   costUnknown?: boolean;
   /**
+   * The session was stopped because it used every turn it was granted.
+   *
+   * Carried as a field rather than read back out of the error sentence, and
+   * deliberately not inferred from `turns > turnsAllowed`, which is not a
+   * cut-off marker — it fires on runs that finished early too (D-022, D-052).
+   * This is what makes "carry on from where it stopped" a thing the app can
+   * offer, as against a thing the user has to notice and phrase.
+   */
+  outOfTurns?: boolean;
+  /**
    * Part of `costUsd`, spent by the close-out pass rather than by the session.
    * Kept separate so the per-turn rate prices the session alone: the write-up
    * is a fixed errand, not something the turn budget can buy more or less of.

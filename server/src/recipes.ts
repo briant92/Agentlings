@@ -64,6 +64,17 @@ export interface Recipe {
    * chosen. (D-064, D-065)
    */
   completions?: number;
+  /**
+   * Turns the completing run was *granted*, not the count the SDK reported —
+   * a run capped at 33 came back saying 40, and reasoning on the reported
+   * number has already been wrong once (D-022, D-052).
+   *
+   * The upper bound on what this job needs, and the only evidence that could
+   * ever support cutting it to a five-turn leash. Recorded from the shortest
+   * completing run, because a job proved achievable in 33 turns and again in
+   * 12 needs 12.
+   */
+  completedInTurns?: number;
   learnedAt: number;
   lastUsedAt?: number;
 }
@@ -267,8 +278,34 @@ export function sameCapabilities(recipe: Recipe, capabilities: string[] | undefi
  * second. The tier's own history — 21 leashed runs failed against 8 delivered —
  * is the argument for buying that evidence first.
  */
+/**
+ * The most turns a completing run may have needed for the leash to still be a
+ * *shortening* of that run rather than a different job altogether.
+ *
+ * Twice the leash, and chosen without data — which is worth saying plainly.
+ * A run that finished in 8 turns might well do it in 5 once the exploring is
+ * handed to it; one that needed 33 will not, and the gap is not a matter of
+ * degree. Refining it needs leashed outcomes paired against this field, which
+ * is why the field is being recorded now: it cannot be added backwards.
+ *
+ * Written out rather than derived from `RECIPE_TURNS`, which lives in the
+ * executor: importing it here closes a cycle — `claude.ts` imports `router.ts`
+ * imports this file — and the module then initialises half-built. A test holds
+ * the two in step instead, since a test file is a leaf and can import both.
+ */
+export const LEASH_CREDIBLE_UP_TO = 10;
+
 export function canShortenLeash(recipe: Recipe, capabilities: string[] | undefined): boolean {
-  return sameCapabilities(recipe, capabilities) && (recipe.completions ?? 0) > 0;
+  if (!sameCapabilities(recipe, capabilities)) return false;
+  if ((recipe.completions ?? 0) < 1) return false;
+  // Having fitted *some* budget is not evidence of fitting this one. Measured
+  // on job 653f8c2e: it completed in 33 turns, which opened this gate and would
+  // have handed the next run five — firm, so the quote could not rescue it, and
+  // permanently, since it would then never complete again. The third time in
+  // one day that a gate verifying one thing was read as licensing another
+  // (D-064, D-065, D-068).
+  const needed = recipe.completedInTurns;
+  return needed === undefined || needed <= LEASH_CREDIBLE_UP_TO;
 }
 
 export function findRecipe(
@@ -365,13 +402,23 @@ export function creditRecipe(
   landed = false,
   /** Landed *and* got there inside its turns — what the leash is gated on. */
   fitted = false,
+  /** Turns that run was granted. Only meaningful when it `fitted`. */
+  turnsAllowed?: number,
 ): Recipe[] {
   const found = recipes.find((r) => r.key === key);
   if (found) {
     found.hits += 1;
     found.lastUsedAt = at;
     if (landed) found.successes = (found.successes ?? 0) + 1;
-    if (fitted) found.completions = (found.completions ?? 0) + 1;
+    if (fitted) {
+      found.completions = (found.completions ?? 0) + 1;
+      // The shortest completion, not the latest: a job proved achievable in 33
+      // turns and again in 12 needs 12, and taking the latest would let one
+      // generously-budgeted run undo what a tighter one established.
+      if (typeof turnsAllowed === 'number' && turnsAllowed >= 1) {
+        found.completedInTurns = Math.min(found.completedInTurns ?? Infinity, turnsAllowed);
+      }
+    }
   }
   return recipes;
 }

@@ -388,7 +388,17 @@ export class RoutedExecutor implements Executor {
       const fitted =
         result !== undefined &&
         (deliveredFiles(sandboxDir) || existsSync(patchFile(sandboxDir)));
-      updated = creditRecipe(updated, usedKey, Date.now(), delivered, fitted);
+      // Turns *granted*, never the count the SDK reports: job 653f8c2e was
+      // capped at 33 and came back saying 40, and this number is about to
+      // decide whether a five-turn leash is credible (D-022, D-052).
+      updated = creditRecipe(
+        updated,
+        usedKey,
+        Date.now(),
+        delivered,
+        fitted,
+        result?.meter?.turnsAllowed,
+      );
     }
     if (approach && agentling) {
       // An answer is replayed to the user word for word, which is right when

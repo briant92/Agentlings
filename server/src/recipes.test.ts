@@ -250,6 +250,77 @@ describe('a method has to have fitted before it may shorten the run', () => {
 });
 
 /**
+ * Job 653f8c2e completed in 33 turns, which opened the completions gate and
+ * would have handed the next run of the same sentence five — firm, so the
+ * quote could not rescue it, and for ever, since it would then never complete
+ * again. Fitting *some* budget is not evidence of fitting this one (D-068).
+ */
+describe('a leash has to be a shortening, not a different job', () => {
+  const base: Recipe = {
+    key: 'summarise this month indicators',
+    terms: terms('summarise this month indicators'),
+    role: 'worker',
+    approach: 'check each agency calendar first',
+    hits: 2,
+    successes: 1,
+    completions: 1,
+    capabilities: [],
+    learnedAt: 1,
+  };
+  const prompt = 'Summarise this month indicators';
+
+  it('refuses the leash when the job has been shown to need far more', () => {
+    const long = { ...base, completedInTurns: 33 };
+    expect(findRecipe([long], prompt, [])?.strong).toBe(false);
+    // The method still goes over — it is the budget that is withheld.
+    expect(findRecipe([long], prompt, [])?.recipe.approach).toContain('agency calendar');
+  });
+
+  it('allows it when the completing run was within reach of the leash', () => {
+    expect(findRecipe([{ ...base, completedInTurns: 8 }], prompt, [])?.strong).toBe(true);
+    expect(findRecipe([{ ...base, completedInTurns: 10 }], prompt, [])?.strong).toBe(true);
+  });
+
+  it('refuses one turn past the bound, so the edge is a decision not an accident', () => {
+    expect(findRecipe([{ ...base, completedInTurns: 11 }], prompt, [])?.strong).toBe(false);
+  });
+
+  // Absent means the recipe predates the field. Those keep the old behaviour
+  // rather than being demoted: the field could not be backfilled, and refusing
+  // every recipe written before today would silently retire the tier.
+  it('leaves a recipe written before the field was recorded alone', () => {
+    expect(findRecipe([base], prompt, [])?.strong).toBe(true);
+  });
+});
+
+describe('creditRecipe records what a completion cost in turns', () => {
+  const seed = () =>
+    rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 });
+
+  it('records the granted turns of a run that fitted', () => {
+    const out = creditRecipe(seed(), 'x', 2, true, true, 33);
+    expect(out[0]).toMatchObject({ completions: 1, completedInTurns: 33 });
+  });
+
+  // A run that delivered but was killed proves nothing about what the job
+  // needs — it never finished, so its cap is not an upper bound on anything.
+  it('records nothing for a run that delivered but did not fit', () => {
+    const out = creditRecipe(seed(), 'x', 2, true, false, 10);
+    expect(out[0].completedInTurns).toBeUndefined();
+    expect(out[0].completions).toBeUndefined();
+  });
+
+  // The shortest, not the latest: a job proved achievable in 12 needs 12, and
+  // a later generously-budgeted run must not undo that.
+  it('keeps the shortest completion rather than the most recent', () => {
+    let out = creditRecipe(seed(), 'x', 2, true, true, 12);
+    out = creditRecipe(out, 'x', 3, true, true, 33);
+    expect(out[0].completedInTurns).toBe(12);
+    expect(out[0].completions).toBe(2);
+  });
+});
+
+/**
  * Measured on 2026-08-01 and the reason this exists: a job solved with
  * `fetch_page` banked a recipe; the next run of the same shape, with a browser
  * newly switched on, matched that recipe, took the five-turn leash, followed

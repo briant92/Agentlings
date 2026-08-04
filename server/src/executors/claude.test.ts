@@ -3,9 +3,11 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { LEASH_CREDIBLE_UP_TO } from '../recipes';
 import {
   closeOutEvidence,
   COMPILE_TURNS,
+  RECIPE_TURNS,
   repoListing,
   turnCapFor,
   turnsFor,
@@ -138,6 +140,18 @@ describe('turnsForBudget', () => {
     // Better to run once and fail on its own terms than to start a session
     // that is forbidden to think at all.
     expect(turnsForBudget(0.001, { samples: 3, usd: 0.5 }, role)).toBe(1);
+  });
+});
+
+/**
+ * `LEASH_CREDIBLE_UP_TO` is twice the leash, and cannot say so in code:
+ * `recipes.ts` importing the executor closes a cycle (claude → router →
+ * recipes) and the module initialises half-built. This test is the join — a
+ * test file is a leaf and may import both.
+ */
+describe('the leash and the bound that judges it', () => {
+  it('keeps the credible bound at twice the leash', () => {
+    expect(LEASH_CREDIBLE_UP_TO).toBe(RECIPE_TURNS * 2);
   });
 });
 

@@ -72,6 +72,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-060 — 2026-08-04 — A grid is not prose, and the readers stop being written twice](#d-060--2026-08-04--a-grid-is-not-prose-and-the-readers-stop-being-written-twice)
 - [D-061 — 2026-08-04 — Reading paper: the engine Windows already has](#d-061--2026-08-04--reading-paper-the-engine-windows-already-has)
 - [D-062 — 2026-08-04 — Two faults found by reading the panel copy back against the code](#d-062--2026-08-04--two-faults-found-by-reading-the-panel-copy-back-against-the-code)
+- [D-063 — 2026-08-04 — The run is told its budget, and delivers before it ends](#d-063--2026-08-04--the-run-is-told-its-budget-and-delivers-before-it-ends)
+- [D-064 — 2026-08-04 — A method earns the leash by having worked, not by existing](#d-064--2026-08-04--a-method-earns-the-leash-by-having-worked-not-by-existing)
 
 ## By theme
 
@@ -127,6 +129,12 @@ entry updates one file rather than two.
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
+- **Running out of turns** — the first real job in a real level died with an
+  empty sandbox because nobody had told it there was a budget: D-063, where the
+  fix is measured as a paired re-run rather than asserted; and D-064, where that
+  fix banked a method from a run that had not finished and would have handed the
+  next one half the turns, so a recipe now has to have landed before it may
+  shorten anything
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -3256,3 +3264,98 @@ point: commit, then mutate, then restore.
 **Evidence.** 824 server tests and 74 web. Both fixes mutation-tested after
 committing this time: charging the allowance again fails the budget test,
 removing the counter fails the cut test.
+
+## D-063 — 2026-08-04 — The run is told its budget, and delivers before it ends
+
+The first real job queued into a real level failed with nothing to show for it.
+`97b95f10` — "a summary table of this month's main economic indicators from
+Chile and the US" — spent all ten of its turns gathering, made 28 tool calls,
+was still calling `search_web` when the cap fired, and left an **empty
+sandbox**. 65.8c, absorbed, and because the close-out pass only runs on a job
+that left something behind, no lesson and no approach were banked either. The
+level's whole memory of it was two generic log lines.
+
+**The brief had never mentioned there was a budget.** Read back out of the
+session record rather than inferred: it asked for `RESULT.md` "when finished"
+and said nothing about turns. The run could not ration what it did not know it
+had, and had no reason to checkpoint. It is also worth stating what the run was
+*allowed*: quoted $1.58 and dead at 66c, because `maxTurns = min(role cap,
+quote ÷ rate)` and `worker`'s cap of 10 bound long before the money did. The
+tighten-only rule is D-018 working as designed, and the effect is that a
+generic guess about a trade overrode a budget computed for this job.
+
+So the brief now carries the same number the SDK is capped at — one variable,
+so the two cannot disagree — and asks for the deliverable early and updated
+rather than saved for the end, plus a line about saying what is missing if it
+runs short.
+
+**This is not D-020 coming back.** That moved `LESSON.md` and `APPROACH.md` out
+of the session because meta-work competed with the work and was cut first.
+`RESULT.md` is the deliverable and was already demanded; this changes when it
+is written, not whether.
+
+**Evidence — the same sentence, same level, same four connections, same quote.**
+
+| | `97b95f10` | `306e415e` |
+|---|---|---|
+| status | `failed` | `partial` |
+| left behind | nothing | `RESULT.md`, an `.xlsx`, the script that built it |
+| close-out | never ran | ran, 2.3c |
+| recipe | none | banked |
+| cost | 65.8c | 93.3c |
+| charged | $0 | $0 |
+| turns | 10/10, max_turns | 10/10, max_turns |
+| output tokens | 5,799 | 15,234 |
+
+**It did not finish. It delivered anyway**, which is what the change was for.
+Cost rose 42% and bought a spreadsheet, a sourced report, a lesson and a
+method, against a baseline that bought two log lines. The report also caught
+what the request itself got wrong — the month was four days old, so only one
+indicator had published — and said so with a release date on every row.
+
+Two things learned in passing. A `partial` from a cut-off run is **not**
+charged: `sim.ts` files the ledger outcome as `failed` on the throwing path
+whatever the queue's status says, so the billing consequence feared before the
+change does not exist. And the panel and the level's own `KNOWLEDGE.md`
+therefore disagree about what happened — "to review" against "failed".
+
+## D-064 — 2026-08-04 — A method earns the leash by having worked, not by existing
+
+D-063's success set up the next failure, and it was visible before it happened.
+The recipe banked by `306e415e` is an exact key match under an unmoved
+capability surface, so `findRecipe` called it **strong** — checked against the
+stored file rather than reasoned about: `exact: true | strong: true`. The next
+run of that sentence would have been given **five turns to do what the run that
+wrote the method had just failed to do in ten.**
+
+Nothing asked whether the authoring run had got anywhere. `Recipe.successes`
+existed and was read only by tool promotion.
+
+**The two-bar logic is right and its premise did not hold here.** D-019 and
+D-023 price the two mistakes correctly — a wrong method on a full run wastes a
+turn it can ignore; the same method with the leash cut wastes the run — but
+both assume a recipe saves *exploring*. This job is gathering-bound: ten
+agencies' figures take the turns they take, and knowing the method gathers
+nothing. So `canShortenLeash` now wants a landing as well as an unmoved
+surface.
+
+**`successes`, deliberately, and not whether the authoring run finished.** Two
+questions that sound alike, and this file has been wrong before by collapsing a
+pair of those (D-030, and the three runs it took to get `partial` apart from
+delivery). `successes` counts runs that used the method and delivered — evidence
+about the *method*. The authoring run's own ending is evidence about one run.
+
+It costs the leash exactly one outing, because a hint-only match still credits
+the recipe when it lands. Proved end to end rather than argued: run 1 writes
+the method, run 2 gets it as a hint on the full cap and delivers, run 3 is
+leashed. The free `answer` tier is untouched — it keys off `exact`, not
+`strong`.
+
+The tier's own history is the argument for buying that evidence before spending
+the leash on it: **21 leashed runs failed against 5 delivered**, and most of the
+60% of all spend that is absorbed is that.
+
+**Evidence.** 833 server tests and 74 web, typecheck clean. Committed first,
+then mutation-tested: dropping the `successes` clause fails three tests.
+Against the live recipe, `strong` flips true → false, so the next run of that
+sentence gets the role's full cap with the method as a hint.

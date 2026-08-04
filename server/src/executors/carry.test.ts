@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -30,7 +31,28 @@ describe('carryForward', () => {
     await run('git', ['-C', origin, 'add', '.']);
     await run('git', ['-C', origin, 'commit', '-qm', 'init']);
   });
-  afterEach(() => rmSync(root, { recursive: true, force: true }));
+  /**
+   * Deleting four git repositories on Windows, where something outside this
+   * process may still hold one of their files — a virus scan, OneDrive, a
+   * git.exe that has only just exited. This test has failed once in a full
+   * suite run and never alone, which is the shape of a lock rather than a bug:
+   * a failing hook is reported under the test's own name, so the cleanup and
+   * the assertion are indistinguishable in the output.
+   *
+   * `rmSync` cannot do this. Measured against a file held with share mode
+   * `None`: `force` threw EPERM at once, and so did `maxRetries: 30` — the
+   * synchronous path does not retry this failure at all. The async `rm` with
+   * the same options waited the lock out and deleted the tree after 1,672ms.
+   *
+   * The catch is deliberate on top of that: a lock can outlast any bounded
+   * retry, and a leaked directory under %TEMP% is the operating system's
+   * problem, never a verdict on `carryForward`.
+   */
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(
+      () => {},
+    );
+  });
 
   const sandbox = (id: string) => {
     const dir = path.join(root, 'jobs', id);

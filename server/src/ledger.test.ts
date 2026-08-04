@@ -224,7 +224,9 @@ describe('quoteFor', () => {
     expect(quote.samples).toBe(3);
     expect(quote.certainty).toBe('high');
     expect(quote.expectedUsd).toBeCloseTo(0.03);
-    expect(quote.wording).toMatch(/done this 3 times before/);
+    // "this kind of job", as the name of this test has always said: the class
+    // here is a role, and 3 analyst runs are not 3 runs of this job.
+    expect(quote.wording).toMatch(/from 3 jobs like it/);
   });
 
   it('leaves room above the average so the ceiling is not routinely hit', () => {

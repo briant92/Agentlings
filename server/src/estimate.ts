@@ -49,7 +49,21 @@ export function quoteFor(
   tier: Tier,
   jobClass: string,
   ledger: LedgerEntry[],
-  options: { maxCeilingUsd?: number; floorUsd?: number; freeBecause?: string } = {},
+  options: {
+    maxCeilingUsd?: number;
+    floorUsd?: number;
+    freeBecause?: string;
+    /**
+     * Whether `jobClass` names this exact job or a kind of work.
+     *
+     * `quoteClass` looks up a recipe key for a one-shot and a role for
+     * everything else, and the wording spoke for the first as though it were
+     * always true: a session priced off 35 `worker` rows announced "done this
+     * 35 times before" about a job that had run six. The count is real and the
+     * claim about it was not.
+     */
+    sameJob?: boolean;
+  } = {},
 ): Quote {
   const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
   const floor = options.floorUsd ?? 0;
@@ -99,7 +113,9 @@ export function quoteFor(
       expectedUsd: own.mean,
       samples: own.samples,
       certainty: own.samples >= 3 ? 'high' : 'estimated',
-      wording: `About ${formatUsd(own.mean)} — done this ${own.samples} time${own.samples === 1 ? '' : 's'} before`,
+      wording: options.sameJob
+        ? `About ${formatUsd(own.mean)} — done this ${own.samples} time${own.samples === 1 ? '' : 's'} before`
+        : `About ${formatUsd(own.mean)} — from ${own.samples} job${own.samples === 1 ? '' : 's'} like it`,
     };
   }
 

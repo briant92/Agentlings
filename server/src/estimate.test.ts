@@ -105,11 +105,29 @@ describe('quoteFor, with history for this job', () => {
   });
 
   it('counts the runs in words a person would use', () => {
-    expect(quoteFor('session', 'tidy', costing(0.1)).wording).toBe(
+    const same = { sameJob: true };
+    expect(quoteFor('session', 'tidy', costing(0.1), same).wording).toBe(
       'About 10c — done this 1 time before',
     );
-    expect(quoteFor('session', 'tidy', costing(0.1, 0.1)).wording).toBe(
+    expect(quoteFor('session', 'tidy', costing(0.1, 0.1), same).wording).toBe(
       'About 10c — done this 2 times before',
+    );
+  });
+
+  /**
+   * `quoteClass` looks up a recipe key for a one-shot and a *role* for
+   * everything else, and the wording spoke for the first as though it were
+   * always true. Measured on the economic-indicators job once its quote could
+   * find its history at all: 35 `worker` rows announced as "done this 35 times
+   * before" about a job that had run six. The count was real; the claim was
+   * not.
+   */
+  it('does not claim a class average is the same job done again', () => {
+    expect(quoteFor('session', 'tidy', costing(0.1, 0.1)).wording).toBe(
+      'About 10c — from 2 jobs like it',
+    );
+    expect(quoteFor('session', 'tidy', costing(0.1)).wording).toBe(
+      'About 10c — from 1 job like it',
     );
   });
 

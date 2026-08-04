@@ -117,6 +117,10 @@ export function quoteFor_(
         : undefined;
 
   return quoteFor(tier, jobClass, ledger, {
+    // A one-shot is priced off the recipe key, which is this exact job; a
+    // session is priced off a role, which is a kind of work. Only the first may
+    // say "done this before".
+    sameJob: decision.kind === 'oneshot',
     ...(freeBecause ? { freeBecause } : {}),
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
     ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),

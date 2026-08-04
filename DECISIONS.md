@@ -79,6 +79,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-067 — 2026-08-04 — The quote wins against a role's standing guess](#d-067--2026-08-04--the-quote-wins-against-a-roles-standing-guess)
 - [D-068 — 2026-08-04 — A leash has to be a shortening, not a different job](#d-068--2026-08-04--a-leash-has-to-be-a-shortening-not-a-different-job)
 - [D-069 — 2026-08-04 — A method halved a real job, with no leash and no tier change](#d-069--2026-08-04--a-method-halved-a-real-job-with-no-leash-and-no-tier-change)
+- [D-070 — 2026-08-04 — A quote that could not find its history, and the copy that covered for it](#d-070--2026-08-04--a-quote-that-could-not-find-its-history-and-the-copy-that-covered-for-it)
 
 ## By theme
 
@@ -92,7 +93,11 @@ entry updates one file rather than two.
   D-008–D-010, D-014
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
-  D-026–D-027, D-029
+  D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
+  guess about a trade; and D-070, the third form of one fault — a quote that
+  cannot find its history cannot tighten, whether the class it looks up is
+  wrong (D-026, D-029), in the wrong field (`quoteClass`), or absent because
+  the matcher declined to name one
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
@@ -3372,6 +3377,22 @@ the method, run 2 gets it as a hint on the full cap and delivers, run 3 is
 leashed. The free `answer` tier is untouched — it keys off `exact`, not
 `strong`.
 
+**Amended the same day: "exactly one outing" is true going forward and was not
+true of what was already on disk.** Every recipe written before this gate has
+`completions` absent, which reads as zero, so all of them were demoted at once.
+Counted rather than estimated: **31 recipes on this machine, 1 leash-eligible,
+30 hint-only until each earns a completion of its own.** The one-shot tier is
+therefore dormant across the board rather than delayed by a run — its measured
+55% step-down does not apply to anything until recipes re-earn it one at a time.
+
+That is the conservative reading and it stands: there is no evidence any of
+those 30 methods ever completed, and the tier's own record is 21 leashed
+failures against 8 deliveries. But the sentence above understated the cost by a
+factor of thirty and the count belongs next to it. Note also that the leniency
+D-068 added for an absent `completedInTurns` cannot be reached by any of them —
+it only applies once `completions` is at least 1, which is exactly what they
+lack.
+
 The tier's own history is the argument for buying that evidence before spending
 the leash on it: **21 leashed runs failed against 8 delivered**, and most of the
 62% of all spend that is absorbed is that.
@@ -3709,3 +3730,72 @@ because it is counted in our units rather than the SDK's.
 **Where the sequence ends.** Six runs, **$5.86 spent, $2.55 chargeable**, and a
 reproducible method for a recurring job that now costs 97c — against a first
 attempt that cost 66c and left an empty sandbox.
+
+## D-070 — 2026-08-04 — A quote that could not find its history, and the copy that covered for it
+
+The sixth run of the economic-indicators sentence was quoted "Up to $2.00 —
+first time doing this". It had been quoted that way all six times.
+
+**The lookup was the fault; the copy was accurate about it.** `runnerRole`
+returned `null`, because the matcher scored the sentence at 0.24 against a
+`MIN_CONFIDENCE` of 0.35 and declines rather than guesses — which is right, and
+was then treated as though the job would therefore not be run. It was run six
+times, by whoever picked it up, and every row was filed under `worker`. So
+`history()` looked up a class no ledger row carries, found nothing, and fell
+through to the tier average, where "first time doing this" is the literal truth
+about a lookup that never happened.
+
+**Third form of one fault.** D-026 and D-029 fixed the class being *wrong* — a
+job priced as the absent specialist rather than whoever ran it. `quoteClass`
+fixed it being the wrong *field* — a one-shot quote looking up a recipe key in
+a column that only ever held roles, so 20 of 20 one-shot rows missed and every
+one of them said "first time doing this" for ever. This is the class being
+*absent*, and it produces the identical symptom for the identical reason: **a
+quote that cannot find its history cannot tighten, which was the whole promise
+of pricing from a ledger.**
+
+With no crew at all it still returns null. There is genuinely nothing to price
+under then, and a guess there would be an invented class rather than an observed
+one — which is what the test this replaced was protecting, correctly, against
+the wrong case.
+
+**Fixing the lookup exposed the wording behind it.** The quote then read "About
+44c — done this 35 times before", off 35 `worker` rows, about a job that had run
+six. `quoteClass` reads a recipe key for a one-shot and a role for everything
+else, and the copy spoke for the first as though it were always true. The count
+was real; the claim about it was not. `sameJob` is now passed by the one caller
+that knows which it is, and a class lookup reads "from 35 jobs like it".
+
+`ledger.test.ts` had asserted `done this 3 times before` under a test named
+"quotes from history once this **kind** of job has been done" — the same
+confusion written down twice, green both times, and readable in the test's own
+title. D-062's habit again: the copy is a description of behaviour, and reading
+it back is a test that runs in your head.
+
+### The other half: a bound that only ratcheted on grants
+
+`completedInTurns` recorded the turns a completing run was *granted*. Job
+`8ab9b070` was given 40, finished on 24 tool calls, and left the bound sitting
+at 33 — which was merely the smaller of two allowances and says nothing about
+what the job needs.
+
+It now takes the tighter of the grant and `toolCalls + 1`. **The units were
+checked before the swap rather than after**, which is the whole reason this
+project keeps a log: `turns === toolCalls + 1` on **5 of 5** completing rows,
+so the expression reproduces the SDK's own count exactly while being counted by
+us — and therefore survives a run the SDK never reports on at all (D-052). Had
+it not matched, tool calls and turns would have been two notions that only
+sound alike, which is the mistake three of the last six entries record.
+
+The bound is still an upper bound and still conservative: SDK turns run higher
+than the `maxTurns` grant they came from — 21 against 12 on one row — so
+comparing it to a five-turn leash refuses more readily than the truth requires.
+That is the safe direction and is not the same as being right.
+
+**Evidence.** 854 server tests and 74 web, typecheck clean. Both fixes committed
+then mutation-tested: restoring either the old `runnerRole` or the grant-only
+bound fails three tests between them. Verified live — the same sentence that
+had said "first time doing this" six times now quotes "About 44c — from 35 jobs
+like it", 35 samples, high certainty. The one-shot wording is unit-tested only:
+no recipe on this machine currently qualifies for the leash (see D-065's
+amendment), so there is nothing live to read it off.

@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { trim } from './web';
 
 /**
  * The knowledge store: your own material, synced into a local index the crew
@@ -39,10 +38,22 @@ export const MAX_PER_SOURCE = 250;
  */
 export const MAX_ENTRY_CHARS = 600;
 
-const INDEXABLE = new Set(['.md', '.markdown', '.txt', '.mdx']);
+/**
+ * Per file, once documents are in scope.
+ *
+ * A folder of notes is bounded by `MAX_PER_SOURCE`; a folder of reports is not
+ * — one 500-page PDF is more passages than 250 markdown files put together,
+ * and the whole index is read and parsed on every job and every quote. 200
+ * passages is roughly 60 pages. Files that hit it are counted and shown, on
+ * the same rule as the source cap: a store that quietly indexed the first
+ * third of a contract would answer confidently from that third.
+ */
+export const MAX_PASSAGES_PER_FILE = 200;
+
+const INDEXABLE = new Set(['.md', '.markdown', '.txt', '.mdx', '.docx', '.pdf']);
 
 export interface StoreEntry {
-  /** The passage itself, already trimmed. */
+  /** The passage itself, one line, at most `MAX_ENTRY_CHARS`. */
   text: string;
   /** The file it came from, relative to the source folder the user named. */
   source: string;
@@ -57,6 +68,12 @@ export interface StoreIndex {
   entries: StoreEntry[];
   /** Files found beyond `MAX_PER_SOURCE`, per source. Reported, never hidden. */
   skipped: number;
+  /**
+   * Files read only in part, having more than `MAX_PASSAGES_PER_FILE`.
+   * Optional because an index written before documents were readable has no
+   * such files and no such field — absent means none, not unknown.
+   */
+  truncated?: number;
 }
 
 export function indexFile(dir: string): string {
@@ -83,12 +100,50 @@ export function isStale(index: StoreIndex, now: number, staleMs = STALE_MS): boo
 }
 
 /**
- * Markdown split at headings, so a passage is a section rather than an
- * arbitrary window. A file with no headings is one passage.
+ * Cuts one long run of text into passage-sized lines.
+ *
+ * Sentence-first, then a word boundary, then a hard cut: what matters is that
+ * a passage reads as a passage, since it is shown to you in a recall answer
+ * and pasted into an agentling's briefing verbatim.
+ */
+function chunk(text: string): string[] {
+  const out: string[] = [];
+  let rest = text;
+  while (rest.length > MAX_ENTRY_CHARS) {
+    const window = rest.slice(0, MAX_ENTRY_CHARS);
+    // Only a break past halfway is worth taking; nearer the start it would
+    // leave a stub and push the real sentence into the next passage.
+    const half = MAX_ENTRY_CHARS / 2;
+    const sentence = Math.max(
+      window.lastIndexOf('. '),
+      window.lastIndexOf('? '),
+      window.lastIndexOf('! '),
+    );
+    const at =
+      sentence > half ? sentence + 1 : window.lastIndexOf(' ') > half ? window.lastIndexOf(' ') : MAX_ENTRY_CHARS;
+    out.push(rest.slice(0, at).trim());
+    rest = rest.slice(at).trim();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
+/**
+ * Text split into passages: at markdown headings where there are any, and by
+ * length everywhere else.
  *
  * The heading is kept on the front of its own section: it is usually the only
  * place the subject is named, and dropping it makes a section about "the retry
  * logic" score zero against a question that says "retry".
+ *
+ * The length half was not decoration, it was the feature. Sections used to be
+ * `trim`med to 600 characters and the rest thrown away, which is invisible on
+ * short notes and ruinous on anything else — measured before changing it, a
+ * 2,974-character text file indexed as **one** passage holding 633 characters,
+ * so 79% of it was unsearchable. A .docx or a .pdf has no `#` headings at all,
+ * so opening the store to documents on top of that would have indexed the
+ * first paragraph of each and looked like it worked (D-026's shape: complete
+ * in the type, the route and the setting, and reaching nothing).
  */
 export function passages(text: string): string[] {
   const lines = text.split(/\r?\n/);
@@ -104,9 +159,11 @@ export function passages(text: string): string[] {
   }
   if (current.some((l) => l.trim())) out.push(current.join('\n'));
   return out
+    // One entry is one line: the corpus is line-based and both consumers score
+    // lines, so a passage with a newline in it would be two things at once.
     .map((p) => p.trim().replace(/\s*\n\s*/g, ' '))
     .filter(Boolean)
-    .map((p) => trim(p, MAX_ENTRY_CHARS).text);
+    .flatMap(chunk);
 }
 
 /** Every indexable file under a folder, depth-first, sorted for a stable index. */
@@ -137,14 +194,51 @@ function filesUnder(root: string, limit: number): { files: string[]; skipped: nu
 }
 
 /**
+ * One file as plain text, whatever it is.
+ *
+ * The document libraries are already installed at the project root for the
+ * sandboxes (D-031), so reading a .docx or a .pdf here costs nothing new — the
+ * store simply had no reason to before. Both readers are lazily imported: a
+ * folder of markdown should not pay to load a PDF parser.
+ *
+ * A .pdf that is a scan of paper holds images and no text, and comes back
+ * empty rather than wrong. That is worth saying out loud in the panel, because
+ * an empty result and an unread file look identical from there.
+ */
+export async function extract(file: string): Promise<string> {
+  switch (path.extname(file).toLowerCase()) {
+    case '.docx': {
+      const mammoth = (await import('mammoth')).default;
+      return (await mammoth.extractRawText({ path: file })).value;
+    }
+    case '.pdf': {
+      const { PDFParse } = await import('pdf-parse');
+      // A class, not the function it used to be — the shape the crew's own
+      // briefing calls out because guessing it costs a turn (D-031).
+      const { text } = await new PDFParse({ data: readFileSync(file) }).getText();
+      // `-- 1 of 1 --` between pages is the reader talking, not the document.
+      // Found by indexing a real PDF and reading the entry back: it had ridden
+      // into the passage, where it would be shown in a recall answer and
+      // pasted into an agentling's briefing as though the document said it.
+      return text.replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm, '');
+    }
+    default:
+      return readFileSync(file, 'utf8');
+  }
+}
+
+/**
  * Read every named folder and build the index.
  *
  * A source that does not exist is skipped rather than fatal: these are paths a
  * user typed, and one bad line should not cost them the rest of their notes.
+ * The same goes for one unreadable file — an encrypted PDF or a .docx that is
+ * really a renamed something-else should cost its own passages and no more.
  */
-export function sync(sources: string[], now: number): StoreIndex {
+export async function sync(sources: string[], now: number): Promise<StoreIndex> {
   const entries: StoreEntry[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const source of sources) {
     if (!existsSync(source)) continue;
     const { files, skipped: over } = filesUnder(source, MAX_PER_SOURCE);
@@ -152,17 +246,19 @@ export function sync(sources: string[], now: number): StoreIndex {
     for (const file of files) {
       let text: string;
       try {
-        text = readFileSync(file, 'utf8');
+        text = await extract(file);
       } catch {
         continue;
       }
       const rel = path.relative(source, file).split(path.sep).join('/');
-      for (const passage of passages(text)) {
+      const found = passages(text);
+      if (found.length > MAX_PASSAGES_PER_FILE) truncated++;
+      for (const passage of found.slice(0, MAX_PASSAGES_PER_FILE)) {
         entries.push({ text: passage, source: rel, syncedAt: now });
       }
     }
   }
-  return { sources, syncedAt: now, entries, skipped };
+  return { sources, syncedAt: now, entries, skipped, truncated };
 }
 
 /**

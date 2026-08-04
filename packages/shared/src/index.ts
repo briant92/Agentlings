@@ -121,6 +121,9 @@ export interface KnowledgeStatus {
   syncedAt?: number;
   /** Files found beyond the per-source cap. Shown, never silently dropped. */
   skipped: number;
+  /** Files read only as far as the per-file passage cap — a long report, not a
+   *  whole folder. Same rule as `skipped`, one level down. */
+  truncated: number;
   /** Past a week the store contributes nothing at all, so this is the difference
    *  between a level that can answer from your material and one that stopped. */
   stale: boolean;

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   MAX_ENTRY_CHARS,
+  MAX_PASSAGES_PER_FILE,
   MAX_PER_SOURCE,
   STALE_MS,
   asLine,
@@ -38,9 +39,32 @@ describe('passages', () => {
     expect(passages('\n\n   \n')).toEqual([]);
   });
 
-  it('trims a passage that would swamp the context', () => {
-    const [only] = passages(`# Big\n${'word '.repeat(500)}`);
-    expect(only.length).toBeLessThanOrEqual(MAX_ENTRY_CHARS + 40);
+  it('cuts a long section into passages rather than keeping only its start', () => {
+    const body = 'word '.repeat(500);
+    const out = passages(`# Big\n${body}`);
+    expect(out.length).toBeGreaterThan(1);
+    for (const p of out) expect(p.length).toBeLessThanOrEqual(MAX_ENTRY_CHARS);
+    // The point of the change: what a section says past its first 600
+    // characters is searchable. Measured before it: a 2,974-character text
+    // file indexed as one passage holding 633 characters.
+    const kept = out.reduce((n, p) => n + p.length, 0);
+    expect(kept).toBeGreaterThan(body.length * 0.9);
+  });
+
+  it('cuts at a sentence end where there is one', () => {
+    const sentence = `${'a'.repeat(200)}. `;
+    const [first] = passages(sentence.repeat(6));
+    expect(first.endsWith('.')).toBe(true);
+  });
+
+  // A document has no `#` headings at all, so without the length rule above
+  // the whole of one would be a single passage — which is what "text files
+  // only" was quietly doing to .txt already.
+  it('splits flat prose that has no headings', () => {
+    const flat = 'Supplier pricing held steady. '.repeat(120);
+    const out = passages(flat);
+    expect(out.length).toBeGreaterThan(3);
+    expect(out.reduce((n, p) => n + p.length, 0)).toBeGreaterThan(flat.length * 0.9);
   });
 });
 
@@ -57,48 +81,121 @@ describe('sync', () => {
     writeFileSync(full, text);
   };
 
-  it('indexes markdown and text, and stamps each entry', () => {
+  it('indexes markdown and text, and stamps each entry', async () => {
     write('notes.md', '# Deploy\nRun the script.');
     write('plain.txt', 'a loose note');
-    const index = sync([root], NOW);
+    const index = await sync([root], NOW);
 
     expect(index.entries).toHaveLength(2);
     expect(index.entries.every((e) => e.syncedAt === NOW)).toBe(true);
     expect(index.entries.map((e) => e.source).sort()).toEqual(['notes.md', 'plain.txt']);
   });
 
-  it('walks subfolders and records a readable relative source', () => {
+  it('walks subfolders and records a readable relative source', async () => {
     write('team/onboarding/day-one.md', '# Day one\nGet a laptop.');
-    expect(sync([root], NOW).entries[0].source).toBe('team/onboarding/day-one.md');
+    expect((await sync([root], NOW)).entries[0].source).toBe('team/onboarding/day-one.md');
   });
 
-  it('ignores files it cannot read as prose', () => {
+  it('ignores files it cannot read as prose', async () => {
     write('notes.md', '# Keep\nthis');
     write('photo.png', 'binary-ish');
     write('script.js', 'export const x = 1;');
-    expect(sync([root], NOW).entries.map((e) => e.source)).toEqual(['notes.md']);
+    expect((await sync([root], NOW)).entries.map((e) => e.source)).toEqual(['notes.md']);
   });
 
-  it('skips dotfolders and node_modules rather than indexing a dependency tree', () => {
+  it('skips dotfolders and node_modules rather than indexing a dependency tree', async () => {
     write('notes.md', '# Keep\nthis');
     write('node_modules/pkg/README.md', '# Nope\nnot yours');
     write('.git/COMMIT_EDITMSG', 'nope');
-    expect(sync([root], NOW).entries).toHaveLength(1);
+    expect((await sync([root], NOW)).entries).toHaveLength(1);
   });
 
   // A path the user typed is the likeliest thing to be wrong, and one bad line
   // should not cost them the rest of their notes.
-  it('skips a source that does not exist instead of failing the sync', () => {
+  it('skips a source that does not exist instead of failing the sync', async () => {
     write('notes.md', '# Keep\nthis');
-    const index = sync([path.join(root, 'no-such-folder'), root], NOW);
+    const index = await sync([path.join(root, 'no-such-folder'), root], NOW);
     expect(index.entries).toHaveLength(1);
+  });
+
+  // Written by the libraries the crew writes with, not checked in as bytes: a
+  // hand-built fixture would prove the reader rather than the thing claimed,
+  // which is that material you actually have can be read.
+  it('reads a Word document', async () => {
+    const { Document, Packer, Paragraph } = await import('docx');
+    writeFileSync(
+      path.join(root, 'policy.docx'),
+      await Packer.toBuffer(
+        new Document({
+          sections: [
+            { children: [new Paragraph('Expenses over 200 need a second approver.')] },
+          ],
+        }),
+      ),
+    );
+    const index = await sync([root], NOW);
+    expect(index.entries).toHaveLength(1);
+    expect(index.entries[0].text).toContain('second approver');
+    expect(index.entries[0].source).toBe('policy.docx');
+  });
+
+  it('reads a PDF', async () => {
+    const { PDFDocument, StandardFonts } = await import('pdf-lib');
+    const doc = await PDFDocument.create();
+    doc
+      .addPage()
+      .drawText('Meridian lead time is 14 days.', {
+        x: 50,
+        y: 700,
+        size: 12,
+        font: await doc.embedFont(StandardFonts.Helvetica),
+      });
+    doc
+      .addPage()
+      .drawText('Calder lead time is 9 days.', {
+        x: 50,
+        y: 700,
+        size: 12,
+        font: await doc.embedFont(StandardFonts.Helvetica),
+      });
+    writeFileSync(path.join(root, 'supplier.pdf'), await doc.save());
+    const index = await sync([root], NOW);
+    const text = index.entries.map((e) => e.text).join(' ');
+    expect(text).toContain('Meridian lead time is 14 days');
+    expect(text).toContain('Calder lead time is 9 days');
+    expect(index.entries[0].source).toBe('supplier.pdf');
+    // The reader's own page separator is not something the document said, and
+    // it was riding into the passage — caught by indexing a real PDF and
+    // reading the entry back, not by this test, which used to pass with it in.
+    expect(text).not.toMatch(/--\s*\d+\s+of\s+\d+\s*--/);
+  });
+
+  // An encrypted PDF, or a .docx that is really a renamed something-else. It
+  // should cost its own passages and no more.
+  it('skips a document it cannot read without losing the rest of the folder', async () => {
+    write('notes.md', '# Keep\nthis');
+    writeFileSync(path.join(root, 'broken.docx'), 'not a zip');
+    const index = await sync([root], NOW);
+    expect(index.entries.map((e) => e.source)).toEqual(['notes.md']);
+  });
+
+  it('reads a long file only as far as the cap, and says it did', async () => {
+    write('long.txt', 'A sentence that carries an idea. '.repeat(6000));
+    const index = await sync([root], NOW);
+    expect(index.entries).toHaveLength(MAX_PASSAGES_PER_FILE);
+    expect(index.truncated).toBe(1);
+  });
+
+  it('counts nothing truncated when nothing was', async () => {
+    write('short.md', '# Small\nbody');
+    expect((await sync([root], NOW)).truncated).toBe(0);
   });
 
   // Reported, never hidden: a store that quietly indexed half your notes would
   // answer confidently from the half it had.
-  it('caps a source and says how many it left', () => {
+  it('caps a source and says how many it left', async () => {
     for (let i = 0; i < MAX_PER_SOURCE + 5; i++) write(`n${i}.md`, `# N${i}\nbody`);
-    const index = sync([root], NOW);
+    const index = await sync([root], NOW);
     expect(index.skipped).toBe(5);
     expect(new Set(index.entries.map((e) => e.source)).size).toBe(MAX_PER_SOURCE);
   });

@@ -153,8 +153,12 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
               if (e.key === 'Enter') void add();
             }}
           />
+          {/* A PDF that is a scan of paper holds pictures of words and no
+              words, and reads as an empty file rather than a failed one —
+              which is indistinguishable from "not read" without saying so. */}
           <p className="lib-status">
-            Word documents and PDFs are not read — text and markdown files only.
+            Notes, Word documents and PDFs are read (.md, .txt, .docx, .pdf). A PDF
+            that is a scan of paper has no text in it, so nothing is taken from it.
           </p>
 
           {status?.indexed && (
@@ -180,6 +184,13 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
                   {status.skipped} file{status.skipped === 1 ? '' : 's'} past the 250-per-folder
                   limit {status.skipped === 1 ? 'was' : 'were'} left out. Point at a narrower
                   folder to be sure of what is included.
+                </p>
+              )}
+              {status.truncated > 0 && (
+                <p className="lib-warn">
+                  {status.truncated} file{status.truncated === 1 ? '' : 's'} {' '}
+                  {status.truncated === 1 ? 'was' : 'were'} long enough that only the first
+                  part was read — about 60 pages each. Split the long ones if the rest matters.
                 </p>
               )}
             </>

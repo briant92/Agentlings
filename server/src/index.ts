@@ -1115,6 +1115,9 @@ app.get('/api/levels/:lid/knowledge', (c) => {
     // Reported rather than hidden: a store that quietly indexed half your
     // notes would answer confidently from the half it had.
     skipped: index?.skipped ?? 0,
+    // The same rule one level down: a long report read only as far as the
+    // per-file cap. Absent on an index written before documents were readable.
+    truncated: index?.truncated ?? 0,
     // Stale contributes nothing anywhere, so this is the difference between a
     // level that can answer from your material and one that has stopped.
     stale: index ? isStale(index, Date.now()) : false,
@@ -1135,20 +1138,31 @@ app.post('/api/levels/:lid/knowledge/sources', async (c) => {
   const missing = paths.filter((p) => !existsSync(p));
   rt.meta.knowledgeSources = paths;
   writeMeta(rt.dir, rt.meta);
-  const index = sync(paths, Date.now());
+  const index = await sync(paths, Date.now());
   writeIndex(rt.dir, index);
-  return c.json({ sources: paths, missing, entries: index.entries.length, skipped: index.skipped });
+  return c.json({
+    sources: paths,
+    missing,
+    entries: index.entries.length,
+    skipped: index.skipped,
+    truncated: index.truncated ?? 0,
+  });
 });
 
 /** Re-read the folders. The crew reads the index, so nothing changes until this runs. */
-app.post('/api/levels/:lid/knowledge/sync', (c) => {
+app.post('/api/levels/:lid/knowledge/sync', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const sources = rt.meta.knowledgeSources ?? [];
   if (sources.length === 0) return c.json({ error: 'no folders to index' }, 400);
-  const index = sync(sources, Date.now());
+  const index = await sync(sources, Date.now());
   writeIndex(rt.dir, index);
-  return c.json({ entries: index.entries.length, skipped: index.skipped, syncedAt: index.syncedAt });
+  return c.json({
+    entries: index.entries.length,
+    skipped: index.skipped,
+    truncated: index.truncated ?? 0,
+    syncedAt: index.syncedAt,
+  });
 });
 
 /** The compiled tools this level has earned, and what they have done. */

@@ -102,7 +102,9 @@ entry updates one file rather than two.
   the matcher declined to name one — and D-072, where it was never written down
   at all for any run that took a method without the leash, which is most of
   them; that entry also records why the pinned ceiling was measured and then
-  left alone rather than fixed
+  left alone rather than fixed — and is amended with what settled and what did
+  not, since the freak-run diagnosis it rests on has since been resolved by the
+  fix while the ceiling stayed at the clamp for a different reason entirely
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
@@ -3917,6 +3919,43 @@ stays `estimated` until three keyed rows exist.
 **It does not unpin the ceiling, and was not meant to.** $1.11 × 2 is under the
 clamp now, but the ceiling reads `max(mean × 2, max × 1.2)` off the same rows,
 and one keyed row means one max. It will settle as keyed rows accumulate.
+
+**Amended after two more runs: the prediction was half right, and the half that
+failed changed what the problem is.**
+
+`certainty` behaved exactly as designed, flipping on the third keyed row:
+
+| Keyed rows | Expected | Certainty |
+|---|---|---|
+| 1 | $1.11 | estimated |
+| 2 | $1.12 | estimated |
+| 3 | **$1.09** | **high** |
+
+The three keyed runs cost **$1.11, $1.12 and $1.04** — a range of eight cents,
+far tighter than the $0.97–$1.96 the unkeyed history had suggested, because the
+outliers are all from before the method matured and none of them are keyed.
+
+The max term settled as predicted: `max × 1.2` fell from **$2.35 to $1.35** once
+run 5's $1.96 stopped being in this job's population. **The ceiling did not
+move.** `mean × 2` is now $2.18 and takes over, so it clamps at $2.00 exactly as
+before.
+
+So the diagnosis this entry rests on — one expensive run pinning a class for
+ever — is **resolved and no longer the cause.** What holds the ceiling now is
+the multiplier itself, on a job whose max is 1.03× its mean. `mean × 2` exists
+to leave room to exceed the average; here it grants 100% headroom where 3% would
+cover every run on record. That is a better problem and a different one.
+
+Deliberately not acted on. n = 3, and those three are tight partly *because*
+they are the three most recent — a sample chosen by when the field was added
+rather than by anything about the job. And the caution in the table below is
+unchanged: the ceiling is the turn budget, so tightening it tightens turns, and
+these runs use 23–25 calls of the 40 they are granted.
+
+`completedInTurns` held at **24**: both new runs used 25 calls, above the
+standing bound, and the minimum correctly refused to move. Level totals after
+ten paid runs of one sentence: **$10.40 spent, $7.09 chargeable, six
+deliveries.**
 
 ### Why the ceiling was left pinned, measured rather than assumed
 

@@ -77,6 +77,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-065 — 2026-08-04 — The leash gets its own counter, because it was asking a different question](#d-065--2026-08-04--the-leash-gets-its-own-counter-because-it-was-asking-a-different-question)
 - [D-066 — 2026-08-04 — Carrying on, rather than asking for a smaller request](#d-066--2026-08-04--carrying-on-rather-than-asking-for-a-smaller-request)
 - [D-067 — 2026-08-04 — The quote wins against a role's standing guess](#d-067--2026-08-04--the-quote-wins-against-a-roles-standing-guess)
+- [D-068 — 2026-08-04 — A leash has to be a shortening, not a different job](#d-068--2026-08-04--a-leash-has-to-be-a-shortening-not-a-different-job)
 
 ## By theme
 
@@ -146,7 +147,11 @@ entry updates one file rather than two.
   D-067 pays it: the quote now outranks a role's standing guess, since the rule
   that said otherwise was guarding against a pooled rate that has since been
   fixed — and the same measurement exposes the next layer of it, a rate that
-  averages a class and so over-funds any job dearer than its own class
+  averages a class and so over-funds any job dearer than its own class. The job
+  then **finished**, on the fifth run, which settled that it was never too big;
+  and the completion promptly armed the next failure, since fitting a 33-turn
+  budget was about to license a five-turn leash: D-068, the third reading of a
+  gate as licensing something it never verified
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -3572,3 +3577,65 @@ rather than putting the cruder guard back.
 mutation-tested: restoring `min(cap.turns, funded)` fails three tests, one of
 them the pair that checks a firm cap and a soft cap of the same size now behave
 differently.
+
+## D-068 — 2026-08-04 — A leash has to be a shortening, not a different job
+
+D-067 gave the economic-indicators job the turns its own quote had funded, and
+it **finished** — `done`, 33 turns, $1.96 spent against a $1.58 quote, the first
+completion in five runs of that sentence. The question it was run to answer got
+a clear answer: the job was never too big, it was too tightly capped. Four runs
+had been killed by a number in a role's frontmatter while the app's own estimate
+said the work was funded.
+
+**And the completion immediately armed the next failure.** It credited
+`completions: 1`, which opened D-065's gate, which meant the next run of the
+same sentence would be handed **five** turns to do what had just taken 33 —
+`firm`, so D-067's own change meant the quote could not rescue it, and
+permanently, because a run cut off at five would never complete and so never
+revise the record.
+
+**Third time in one day, and the same shape each time.** A gate that verifies
+one thing gets read as licensing another:
+
+| Counter | What it actually verifies | What it was read as licensing | Corrected by |
+|---|---|---|---|
+| `successes` | the method gets the job done | the job fits its budget | D-065 |
+| `completions` | a run fitted the budget it had | the job fits *five* turns | this entry |
+
+Fitting *some* budget is not evidence of fitting this one. `completedInTurns`
+records what the completing run was **granted** — never the SDK's count, which
+said 40 against a cap of 33 (D-022) — and keeps the **shortest** completion,
+since a job proved achievable in 33 turns and again in 12 needs 12, and taking
+the latest would let one generously-budgeted run undo what a tighter one
+established.
+
+The leash is refused when that number is above twice its own length.
+**`LEASH_CREDIBLE_UP_TO` is chosen without data and says so in the code.** A run
+that finished in 8 turns may well do it in 5 once the exploring is handed over;
+one that needed 33 will not, and that gap is not a matter of degree. Refining it
+needs leashed outcomes paired against this field — which is the argument for
+recording the field now, since it cannot be added backwards (D-050's lesson,
+and D-039's).
+
+An absent value keeps the old behaviour rather than being demoted. Refusing
+every recipe written before today would have quietly retired the one-shot tier,
+which is a 55% step-down on the work it does suit.
+
+**A cycle found by the suite rather than by inspection.** `LEASH_CREDIBLE_UP_TO`
+cannot import `RECIPE_TURNS`: `recipes.ts` ← `router.ts` ← `claude.ts`, so the
+module initialises half-built and four test files fail to load with
+`Cannot access 'STOPWORDS' before initialization`. The direct-import check said
+there was no cycle and was looking one hop deep. The constant is written out,
+and a test holds the two in step — a test file is a leaf and may import both.
+
+**Backfilled by identification, one recipe.** The live recipe stored its
+completion before the field existed, so it was still leashing. `653f8c2e`'s
+ledger row records `turnsAllowed: 33` and `outcome: done`, which is the
+completing run's own account rather than an inference, and that is the value
+written. It is the only recipe on this machine with a completion at all.
+
+**What the run also cost, which is D-067's residual measured rather than
+projected.** $1.96 spent against a $1.58 quote — 24% over, where the projection
+was 38%. The chargeable figure is $1.58, `priceFor` capping it, so the 38c is
+absorbed exactly as designed. It is the first job in this sequence to record any
+chargeable amount, and the whole sequence spent $4.89 to produce one delivery.

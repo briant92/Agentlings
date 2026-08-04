@@ -74,6 +74,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-062 — 2026-08-04 — Two faults found by reading the panel copy back against the code](#d-062--2026-08-04--two-faults-found-by-reading-the-panel-copy-back-against-the-code)
 - [D-063 — 2026-08-04 — The run is told its budget, and delivers before it ends](#d-063--2026-08-04--the-run-is-told-its-budget-and-delivers-before-it-ends)
 - [D-064 — 2026-08-04 — A method earns the leash by having worked, not by existing](#d-064--2026-08-04--a-method-earns-the-leash-by-having-worked-not-by-existing)
+- [D-065 — 2026-08-04 — The leash gets its own counter, because it was asking a different question](#d-065--2026-08-04--the-leash-gets-its-own-counter-because-it-was-asking-a-different-question)
+- [D-066 — 2026-08-04 — Carrying on, rather than asking for a smaller request](#d-066--2026-08-04--carrying-on-rather-than-asking-for-a-smaller-request)
 
 ## By theme
 
@@ -134,7 +136,12 @@ entry updates one file rather than two.
   fix is measured as a paired re-run rather than asserted; and D-064, where that
   fix banked a method from a run that had not finished and would have handed the
   next one half the turns, so a recipe now has to have landed before it may
-  shorten anything
+  shorten anything. D-065 is the correction to that gate — the counter it used
+  answers the compile question, not the leash's, and using it locked no-repo
+  work out for ever while repo work earned the leash without finishing. D-066
+  stops asking the user to shrink the request and lets a cut-off run be picked
+  up instead; four runs of one sentence now compound for less each time and not
+  one of them has ever finished, which is where the per-run turn cap comes due
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -3365,3 +3372,137 @@ how a figure in a note goes wrong without anyone touching it.
 then mutation-tested: dropping the `successes` clause fails three tests.
 Against the live recipe, `strong` flips true → false, so the next run of that
 sentence gets the role's full cap with the method as a hint.
+
+## D-065 — 2026-08-04 — The leash gets its own counter, because it was asking a different question
+
+D-064 gated the one-shot leash on `successes`. That was the wrong counter, and
+it was wrong for a day.
+
+`successes` decides whether a method is ever compiled into a script, and it is
+deliberately generous about *how* a run ended: it credits a dying run that left
+a correct patch, because the work was done and only the write-up was cut. That
+generosity was itself hard-won — counting clean exits scored two correct
+129-line files as zero and did so in the worst direction, promoting the small
+jobs a script cannot do while excluding the big mechanical ones it is for
+(D-021).
+
+The leash is asking something else entirely: **does this job fit its budget.**
+A run that had to be killed has answered no, however good its output was.
+
+**Measured, and the failure was total rather than partial.** Job `3c031419` was
+the third run of the same sentence: it delivered a real spreadsheet and a
+sourced report, and was killed on its last turn. It credited no success —
+because a no-repo run that dies never can, the clause requiring a clean return
+being the only route to one without a patch. So that job could never earn the
+leash at all, while **identical work with a repository would have earned it
+without ever finishing**. Two shapes, two bars, inherited from a decision taken
+about a different question rather than chosen for this one.
+
+`completions` counts runs that finished inside their turns *and* left something,
+requiring the clean return in both shapes — which is also what removes the
+asymmetry. `canShortenLeash` reads it; `successes` goes back to answering only
+the compile question.
+
+**The lesson is the one this log keeps recording, and this time it caught the
+log itself.** D-064's own text says the file "has been wrong before by
+collapsing two of those" and then collapses two of those, in the same commit,
+while explaining why it was not doing so. Reusing an existing counter felt like
+the opposite of duplication; what it actually was is D-030's second failure mode
+— two notions that only sound alike, given one name. The tell was available and
+unread: `successes` had a comment three paragraphs long explaining precisely
+which question it answers.
+
+**Evidence.** 840 server tests and 74 web, typecheck clean. A regression test
+pins the pair apart — a recipe with three deliveries and no completions is
+refused the leash — and two executor tests assert the divergence end to end on
+one run. Committed, then mutation-tested: swapping the gate back to `successes`
+fails the regression test.
+
+## D-066 — 2026-08-04 — Carrying on, rather than asking for a smaller request
+
+The three runs of D-063 and D-065 all ended the same way: the work essentially
+done, the session killed at the wall. The obvious response — tell the user to
+ask for less — was refused as the actual complaint about this app. A user
+trimming their request to fit an engine is doing the engine's job, and it reads
+as underperformance because it is.
+
+What was missing is not instruction. It is that a job needing more turns than
+one run is granted had nowhere to go.
+
+Most of the machinery already existed: `continues:` carries a sandbox forward,
+and `reply` quotes and bills the follow-up as the session it is (D-033). What
+did not exist was the app **knowing a run had been cut off** and offering to
+pick it up, rather than leaving the user to notice and phrase it.
+
+**The signal is carried, not inferred.** The runner emits `outOfTurns` when the
+SDK reports `error_max_turns`. Reading it back out of the error sentence would
+be one side saying one word while the other watched for another — the check that
+silently never fires, which is why `CANCELLED` is a shared constant. The
+tempting alternative, `turns > turnsAllowed`, is *not* a cut-off marker: it
+fires on 43 of 88 paid runs and seven of those finished (D-022, D-052).
+
+**A request, never automatic.** Each continuation is a fresh session at a fresh
+price, and a job that quietly spawned three would be three charges against one
+quote — the thing a quote exists to prevent (D-012, D-025). The same reasoning
+as promotion: a charge nobody asked for is a charge nobody quoted.
+
+**The brief points at RESULT.md rather than repeating it**, which is D-063
+paying off twice: a run is already asked to record what it established, what is
+still missing and what it would do next, and that handover is on disk in the
+sandbox the continuation inherits. Better than one composed in the route, and
+free.
+
+**A defect found by running it, not by testing it.** The first live continuation
+of a `worker`'s job came back routed to `analyst`: the brief it carries has
+"read RESULT.md" in it, which is enough to swing a match made on "summary
+table". `preferredRole` could not stand in as the fallback, because the matcher
+leaves that field empty whenever it is unsure — exactly the case that produced
+this. A continuation is the *same job*, so re-matching it asks the wrong
+question. It now resolves the role from `assignedTo`, which is the ledger's own
+rule — the role that ran the work, not the one the matcher named (D-026, D-029)
+— applied to what a run is rather than to what it cost.
+
+**And the test cost something unmeasurable**, which is worth recording because
+it will recur. Verifying a queue-backed route by queueing means the sim picks
+the job up immediately; cancelling settled it `failed` at nothing charged, but
+`costUnknown` — a killed session never reaches the message the SDK reports cost
+on. It made 15 tool calls first.
+
+**Existing partials had to be reached.** The field is new, so every run already
+on disk lacked it and none could be continued — a change complete in the type,
+the route and the UI that reaches no existing data (D-026, D-030, D-033, D-036).
+Backfilled by identification on the runner's own `error_max_turns` record,
+written at the time: **37 jobs set, 52 left alone** because they carry no such
+record. Nothing was inferred from a status or a turn count.
+
+**Measured, and the answer is half of one.** The continuation of `3c031419`
+resumed rather than restarted: it opened the spreadsheet the previous run had
+left, refined the script that builds it, and rewrote the report as a handover
+instead of gathering anything again. Cheapest run of the four, and the whole
+sequence on one sentence reads:
+
+| | brief | method | continuation | cost | outcome |
+|---|---|---|---|---|---|
+| `97b95f10` | no budget | — | — | 65.8c | `failed`, empty sandbox |
+| `306e415e` | budget | — | — | 93.3c | `partial`, report + `.xlsx` |
+| `3c031419` | budget | approach | — | 78.0c | `partial` |
+| `69960175` | budget | approach | carries the sandbox | **55.5c** | `partial` |
+
+Nothing was charged for any of it. The deliverable has existed since the second
+run and each run since has improved it for less.
+
+**And all four were cut off at ten turns.** That is the finding. Continuation
+makes the work compound across runs, which is what it was for, but it does not
+make a run *finish* — so the job never files as done, the recipe never records a
+completion, and by D-065's gate it will never earn the leash. Which is correct:
+this job genuinely does not fit in ten turns, and the gate is refusing to
+pretend otherwise.
+
+So the remaining question is D-063's unresolved half, now with four runs behind
+it rather than one: `worker`'s generic cap of 10 bound a job the quote had
+funded to roughly 56 turns, four times, and `maxTurns = min(role cap, quote ÷
+rate)` means the generic guess about a trade wins over the estimate computed for
+this job every time. Whether a per-run turn cap is the right unit at all is the
+next decision, and it is a decision rather than a task — D-015 and D-025 are on
+record that "ran out of turns" does not mean "needed more turns", and four cut
+runs that each delivered are the first real evidence pulling the other way.

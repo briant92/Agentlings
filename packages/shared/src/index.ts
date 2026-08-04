@@ -124,6 +124,13 @@ export interface KnowledgeStatus {
   /** Files read only as far as the per-file passage cap — a long report, not a
    *  whole folder. Same rule as `skipped`, one level down. */
   truncated: number;
+  /** Files whose words were read off pixels rather than out of a text layer. */
+  scanned: number;
+  /** Files holding no text that were not read: the budget ran out, or `ocr` is false. */
+  unscanned: number;
+  /** Whether this machine can read a scan at all. Windows-only, and it needs a
+   *  language pack, so the platform alone does not answer it (D-061). */
+  ocr: boolean;
   /** Past a week the store contributes nothing at all, so this is the difference
    *  between a level that can answer from your material and one that stopped. */
   stale: boolean;

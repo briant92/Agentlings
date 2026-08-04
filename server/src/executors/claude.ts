@@ -192,6 +192,12 @@ const DOCUMENT_LIBRARIES = [
   '- .pptx write: `new (await import("pptxgenjs")).default()`, `await pres.writeFile({fileName})`',
   '- .pdf write/edit: `const {PDFDocument,StandardFonts}=await import("pdf-lib")`; `PDFDocument.load(bytes)` opens an existing one',
   '- .pdf text: `const {PDFParse}=await import("pdf-parse")`; `await new PDFParse({data}).getText()` → `.text`',
+  // A scan returns nothing from `getText`, and an agent that does not know
+  // there is an answer to that will conclude the file is empty and say so.
+  // Named for the same reason the rest are: D-031 watched one hand-assemble a
+  // PDF because nobody had mentioned pdf-lib, and it worked, which is what
+  // made it expensive rather than obviously wrong.
+  '- scanned .pdf or a photo (getText came back empty): `const {ocrPdf,imageText}=await import("<repo>/server/src/documents")`; `(await ocrPdf(f, 20)).text`, or `imageText(png)`. Windows only — the words are a good reading, not the document\'s own, so say so when you quote them.',
   'Use these rather than assembling a file format by hand.',
 ].join('\n');
 

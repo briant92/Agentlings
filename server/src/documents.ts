@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { ocrImages, OCR_SCALE } from './ocr';
 
 /**
  * Getting the data out of a document, in one place.
@@ -127,7 +130,9 @@ export async function docxText(file: string): Promise<string> {
  *
  * `PDFParse` is a class, not the function it used to be — the shape the crew's
  * own briefing spells out because guessing it costs a turn (D-031). A PDF that
- * is a scan of paper holds pictures of words and comes back empty.
+ * is a scan of paper holds pictures of words and comes back empty; `ocrPdf`
+ * below is what answers that case, and the caller decides when to reach for it
+ * because reading pixels costs a thousand times what reading a text layer does.
  */
 export async function pdfText(file: string): Promise<string> {
   const { PDFParse } = await import('pdf-parse');
@@ -135,4 +140,40 @@ export async function pdfText(file: string): Promise<string> {
   // `-- 1 of 1 --` between pages is the reader talking, not the document, and
   // it rode into an indexed passage until a real PDF was read back (D-059).
   return text.replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm, '');
+}
+
+/**
+ * A PDF with no text layer, read off the pixels.
+ *
+ * The rasteriser was already here: `pdf-parse` carries `pdfjs-dist` and
+ * `@napi-rs/canvas` as its own dependencies, both prebuilt, so turning a page
+ * into an image cost no new install at all — measured at about 130ms a page.
+ *
+ * Pages are written to a temp folder because the engine takes file paths, and
+ * the whole folder goes at the end whatever happens.
+ */
+export async function ocrPdf(file: string, maxPages: number): Promise<{ text: string; pages: number }> {
+  const { PDFParse } = await import('pdf-parse');
+  const shot = await new PDFParse({ data: readFileSync(file) }).getScreenshot({
+    scale: OCR_SCALE,
+    first: maxPages,
+  });
+  const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-pages-'));
+  try {
+    const images = shot.pages.map((page, i) => {
+      const image = path.join(dir, `p${i + 1}.png`);
+      writeFileSync(image, page.data);
+      return image;
+    });
+    const read = await ocrImages(images);
+    return { text: read.map((page) => page.text ?? '').join('\n'), pages: images.length };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** A photograph or a screenshot, read the same way a scanned page is. */
+export async function imageText(file: string): Promise<string> {
+  const [page] = await ocrImages([file]);
+  return page?.text ?? '';
 }

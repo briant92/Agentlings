@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { docxText, pdfText, readSheets, readSlides } from './documents';
+import { docxText, imageText, ocrPdf, pdfText, readSheets, readSlides } from './documents';
+import { ocrAvailable } from './ocr';
 
 /**
  * The knowledge store: your own material, synced into a local index the crew
@@ -51,6 +52,19 @@ export const MAX_ENTRY_CHARS = 600;
  */
 export const MAX_PASSAGES_PER_FILE = 200;
 
+/**
+ * How many pages of one scanned document to read, and how many across a whole
+ * sync.
+ *
+ * Reading a text layer is free; reading pixels is not. Measured: a page costs
+ * about 130ms to render and the engine about 1.6s to start, once per document.
+ * A folder of 250 scans would therefore block the request that started it for
+ * several minutes, so the sync carries a budget and says what it did not spend
+ * it on — the rule every other cap here follows.
+ */
+export const MAX_OCR_PAGES_PER_FILE = 20;
+export const MAX_OCR_PAGES_PER_SYNC = 200;
+
 const INDEXABLE = new Set([
   '.md',
   '.markdown',
@@ -60,6 +74,10 @@ const INDEXABLE = new Set([
   '.pdf',
   '.xlsx',
   '.pptx',
+  // A photograph of a receipt is a scanned document with a step removed.
+  '.png',
+  '.jpg',
+  '.jpeg',
 ]);
 
 export interface StoreEntry {
@@ -69,6 +87,11 @@ export interface StoreEntry {
   source: string;
   /** When it was read. Per entry, so sources synced at different times stay honest. */
   syncedAt: number;
+  /**
+   * Read off pixels rather than out of a text layer, so the words are a good
+   * guess and not the document's own. Absent means it was read exactly.
+   */
+  scanned?: boolean;
 }
 
 export interface StoreIndex {
@@ -84,6 +107,15 @@ export interface StoreIndex {
    * such files and no such field — absent means none, not unknown.
    */
   truncated?: number;
+  /** Files read off pixels rather than out of a text layer. */
+  scanned?: number;
+  /**
+   * Files that hold no text and were not read: the OCR budget ran out, or this
+   * machine has no engine. The difference between the two is `ocrAvailable`,
+   * and the panel says which — a scan that contributed nothing is otherwise
+   * indistinguishable from a file that was never there.
+   */
+  unscanned?: number;
 }
 
 export function indexFile(dir: string): string {
@@ -237,34 +269,64 @@ export function looksLikeHeader(row: string[] | undefined): boolean {
 }
 
 /**
- * One file as plain text, whatever it is.
+ * Whether a PDF's text layer amounts to anything.
+ *
+ * Not `=== ''`. A scan often carries a few stray characters — a header stamped
+ * digitally, an OCR layer some other tool left half-finished — and treating
+ * those as "this document has text" is how a 40-page contract indexes as the
+ * word "Confidential" and nothing else.
+ */
+export function hasTextLayer(text: string): boolean {
+  return text.replace(/\s+/g, '').length >= 40;
+}
+
+/**
+ * One file as plain text, and whether the words came off pixels.
  *
  * The document libraries are already installed at the project root for the
  * sandboxes (D-031), so reading any of these costs nothing new — the store
  * simply had no reason to before. Everything is imported lazily by
  * `documents.ts`: a folder of markdown loads no readers at all.
  *
- * A .pdf that is a scan of paper holds images and no text, and comes back
- * empty rather than wrong. That is worth saying out loud in the panel, because
- * an empty result and an unread file look identical from there.
+ * `scanned` travels with the text because it has to reach the entry. OCR is a
+ * conversion with real error in it — measured, a rough scan came back with
+ * `_.LDER` for `CALDER` — and the recall tier quotes a passage into an answer
+ * and into an agentling's briefing word for word. A reader has to be able to
+ * tell that a line was read off paper (D-061).
  */
-export async function extract(file: string): Promise<string> {
+export async function extract(
+  file: string,
+  ocr?: { pages: number },
+): Promise<{ text: string; scanned: boolean }> {
+  const plain = (text: string): { text: string; scanned: boolean } => ({ text, scanned: false });
   switch (path.extname(file).toLowerCase()) {
     case '.docx':
-      return docxText(file);
-    case '.pdf':
-      return pdfText(file);
+      return plain(await docxText(file));
+    case '.pdf': {
+      const text = await pdfText(file);
+      // The text layer wins whenever there is one: it is exact, instant, and
+      // free, and OCR of the same page would be a worse copy of it.
+      if (hasTextLayer(text) || !ocr) return plain(text);
+      const read = await ocrPdf(file, ocr.pages);
+      return { text: read.text, scanned: true };
+    }
+    case '.png':
+    case '.jpg':
+    case '.jpeg':
+      return ocr ? { text: await imageText(file), scanned: true } : plain('');
     case '.xlsx': {
       const sheets = await readSheets(file);
-      return sheets
-        .flatMap((sheet) => {
-          const headed = looksLikeHeader(sheet.rows[0]);
-          const headers = headed ? sheet.rows[0] : [];
-          return (headed ? sheet.rows.slice(1) : sheet.rows)
-            .map((row) => rowLine(sheet.name, headers, row))
-            .filter(Boolean);
-        })
-        .join('\n');
+      return plain(
+        sheets
+          .flatMap((sheet) => {
+            const headed = looksLikeHeader(sheet.rows[0]);
+            const headers = headed ? sheet.rows[0] : [];
+            return (headed ? sheet.rows.slice(1) : sheet.rows)
+              .map((row) => rowLine(sheet.name, headers, row))
+              .filter(Boolean);
+          })
+          .join('\n'),
+      );
     }
     case '.pptx': {
       // A slide is already a unit of thought, so it becomes its own passage —
@@ -276,13 +338,15 @@ export async function extract(file: string): Promise<string> {
       // and `slide` would have scored against every deck in the folder. The
       // same mistake as pdf-parse's page marker (D-059), made by us.
       const { slides } = await readSlides(file);
-      return slides
-        .filter((lines) => lines.length > 0)
-        .map(([title, ...rest]) => [`# ${title.replace(/^#+\s*/, '')}`, ...rest].join('\n'))
-        .join('\n');
+      return plain(
+        slides
+          .filter((lines) => lines.length > 0)
+          .map(([title, ...rest]) => [`# ${title.replace(/^#+\s*/, '')}`, ...rest].join('\n'))
+          .join('\n'),
+      );
     }
     default:
-      return readFileSync(file, 'utf8');
+      return plain(readFileSync(file, 'utf8'));
   }
 }
 
@@ -298,26 +362,52 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
   const entries: StoreEntry[] = [];
   let skipped = 0;
   let truncated = 0;
+  let scanned = 0;
+  let unscanned = 0;
+  // Asked once, before any file is opened, so a machine with no engine does
+  // the ordinary sync at ordinary speed instead of failing per document.
+  const canOcr = await ocrAvailable();
+  let budget = canOcr ? MAX_OCR_PAGES_PER_SYNC : 0;
   for (const source of sources) {
     if (!existsSync(source)) continue;
     const { files, skipped: over } = filesUnder(source, MAX_PER_SOURCE);
     skipped += over;
     for (const file of files) {
-      let text: string;
+      const allowance = Math.min(budget, MAX_OCR_PAGES_PER_FILE);
+      let read: { text: string; scanned: boolean };
       try {
-        text = await extract(file);
+        read = await extract(file, allowance > 0 ? { pages: allowance } : undefined);
       } catch {
         continue;
       }
+      // Counted whether or not it yielded anything: a scan that came back
+      // blank still spent the budget, and a folder that quietly stopped being
+      // read halfway is the thing every cap here exists to make visible.
+      if (read.scanned) {
+        scanned++;
+        budget -= allowance;
+      } else if (needsOcr(file) && read.text.trim() === '') {
+        unscanned++;
+      }
       const rel = path.relative(source, file).split(path.sep).join('/');
-      const found = passages(text);
+      const found = passages(read.text);
       if (found.length > MAX_PASSAGES_PER_FILE) truncated++;
       for (const passage of found.slice(0, MAX_PASSAGES_PER_FILE)) {
-        entries.push({ text: passage, source: rel, syncedAt: now });
+        entries.push({
+          text: passage,
+          source: rel,
+          syncedAt: now,
+          ...(read.scanned ? { scanned: true } : {}),
+        });
       }
     }
   }
-  return { sources, syncedAt: now, entries, skipped, truncated };
+  return { sources, syncedAt: now, entries, skipped, truncated, scanned, unscanned };
+}
+
+/** A file whose words can only have come off pixels. */
+function needsOcr(file: string): boolean {
+  return ['.pdf', '.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase());
 }
 
 /**
@@ -330,7 +420,12 @@ export async function sync(sources: string[], now: number): Promise<StoreIndex> 
  */
 export function asLine(entry: StoreEntry): string {
   const date = new Date(entry.syncedAt).toISOString().slice(0, 10);
-  return `${entry.text} [${entry.source}, synced ${date}]`;
+  // "read from a scan" rides in the same place the filename does, and for the
+  // same reason: the recall tier prints this line and a session is handed it
+  // word for word, and OCR text is a good guess rather than the document's own
+  // words. Whoever reads it has to be able to tell (D-061).
+  const how = entry.scanned ? `${entry.source}, read from a scan` : entry.source;
+  return `${entry.text} [${how}, synced ${date}]`;
 }
 
 /**

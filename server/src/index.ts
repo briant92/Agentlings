@@ -60,6 +60,7 @@ import {
   type CrewSeed,
   type LevelMeta,
 } from './levels';
+import { ocrAvailable } from './ocr';
 import { isStale, readIndex, storeLines, sync, writeIndex } from './store';
 import {
   fetchTemplate,
@@ -1097,7 +1098,7 @@ app.delete('/api/levels/:lid/agentlings/:aid', (c) => {
  * an index you can inspect is a page you can read, not a JSON dump of your
  * notes crossing the API on every poll.
  */
-app.get('/api/levels/:lid/knowledge', (c) => {
+app.get('/api/levels/:lid/knowledge', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const index = readIndex(rt.dir);
@@ -1118,6 +1119,12 @@ app.get('/api/levels/:lid/knowledge', (c) => {
     // The same rule one level down: a long report read only as far as the
     // per-file cap. Absent on an index written before documents were readable.
     truncated: index?.truncated ?? 0,
+    scanned: index?.scanned ?? 0,
+    unscanned: index?.unscanned ?? 0,
+    // Windows-only, and it needs a language pack, so the platform alone does
+    // not answer it. The panel tells the two apart rather than leaving a scan
+    // that contributed nothing to look like a file that was never there.
+    ocr: await ocrAvailable(),
     // Stale contributes nothing anywhere, so this is the difference between a
     // level that can answer from your material and one that has stopped.
     stale: index ? isStale(index, Date.now()) : false,
@@ -1146,6 +1153,8 @@ app.post('/api/levels/:lid/knowledge/sources', async (c) => {
     entries: index.entries.length,
     skipped: index.skipped,
     truncated: index.truncated ?? 0,
+    scanned: index.scanned ?? 0,
+    unscanned: index.unscanned ?? 0,
   });
 });
 
@@ -1161,6 +1170,8 @@ app.post('/api/levels/:lid/knowledge/sync', async (c) => {
     entries: index.entries.length,
     skipped: index.skipped,
     truncated: index.truncated ?? 0,
+    scanned: index.scanned ?? 0,
+    unscanned: index.unscanned ?? 0,
     syncedAt: index.syncedAt,
   });
 });

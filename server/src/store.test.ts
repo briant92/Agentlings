@@ -2,12 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { pdfText } from './documents';
+import { ocrAvailable } from './ocr';
 import {
   MAX_ENTRY_CHARS,
   MAX_PASSAGES_PER_FILE,
   MAX_PER_SOURCE,
   STALE_MS,
   asLine,
+  hasTextLayer,
   isStale,
   looksLikeHeader,
   passages,
@@ -20,6 +23,13 @@ import {
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 7, 2);
+
+/**
+ * The OCR tests run where there is an engine and are skipped where there is
+ * not, rather than failing. Windows-only is the accepted cost of D-061, and a
+ * suite that goes red on a Mac would be reporting the platform, not a fault.
+ */
+const hasOcr = await ocrAvailable();
 
 describe('passages', () => {
   it('splits a document at its headings', () => {
@@ -98,9 +108,12 @@ describe('sync', () => {
     expect((await sync([root], NOW)).entries[0].source).toBe('team/onboarding/day-one.md');
   });
 
+  // `.bmp` rather than `.png` since D-061: a picture of words is now something
+  // this store reads, so the file that stands for "not ours" has to be one
+  // that really is not.
   it('ignores files it cannot read as prose', async () => {
     write('notes.md', '# Keep\nthis');
-    write('photo.png', 'binary-ish');
+    write('photo.bmp', 'binary-ish');
     write('script.js', 'export const x = 1;');
     expect((await sync([root], NOW)).entries.map((e) => e.source)).toEqual(['notes.md']);
   });
@@ -213,6 +226,83 @@ describe('sync', () => {
     // sitting in the recall answer where the document's words belong, and
     // `slide` would have scored against every deck in the folder.
     expect(index.entries.every((e) => !/Slide \d/.test(e.text))).toBe(true);
+  });
+
+  /**
+   * A page of "paper": words painted as pixels, so the PDF carries no text
+   * layer at all — which is what `getText` returning nothing actually means.
+   */
+  async function writeScan(name: string, lines: string[]): Promise<void> {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const canvas = createCanvas(1240, 1754);
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, 1240, 1754);
+    g.fillStyle = '#111';
+    let y = 180;
+    for (const line of lines) {
+      g.font = '30px Arial';
+      g.fillText(line, 100, y);
+      y += 60;
+    }
+    const { PDFDocument } = await import('pdf-lib');
+    const doc = await PDFDocument.create();
+    const image = await doc.embedPng(canvas.toBuffer('image/png'));
+    doc.addPage([595, 842]).drawImage(image, { x: 0, y: 0, width: 595, height: 842 });
+    writeFileSync(path.join(root, name), await doc.save());
+  }
+
+  it.runIf(hasOcr)('reads a scanned PDF that has no text in it', async () => {
+    await writeScan('scan.pdf', ['Boiler service record', 'Invoice 88213 attended 14 October 2025']);
+    // The premise, checked rather than assumed: this really is a scan.
+    expect(hasTextLayer(await pdfText(path.join(root, 'scan.pdf')))).toBe(false);
+
+    const index = await sync([root], NOW);
+    const text = index.entries.map((e) => e.text).join(' ');
+    expect(text).toContain('88213');
+    expect(text).toContain('Boiler service record');
+    expect(index.scanned).toBe(1);
+    expect(index.unscanned).toBe(0);
+  });
+
+  it.runIf(hasOcr)('marks a scanned passage as read from a scan, on the line', async () => {
+    await writeScan('scan.pdf', ['Next service due October 2026']);
+    const index = await sync([root], NOW);
+    // OCR is a good guess, not the document's own words, and this line is
+    // quoted verbatim into answers and briefings.
+    expect(asLine(index.entries[0])).toContain('scan.pdf, read from a scan, synced');
+  });
+
+  it.runIf(hasOcr)('reads a photograph the same way', async () => {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const canvas = createCanvas(900, 400);
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, 900, 400);
+    g.fillStyle = '#111';
+    g.font = '40px Arial';
+    g.fillText('Meter reading 40821 on 3 March', 40, 120);
+    writeFileSync(path.join(root, 'meter.png'), canvas.toBuffer('image/png'));
+    const index = await sync([root], NOW);
+    expect(index.entries[0].text).toContain('40821');
+    expect(index.entries[0].scanned).toBe(true);
+  });
+
+  it('leaves a text layer alone rather than re-reading it off pixels', async () => {
+    const { PDFDocument, StandardFonts } = await import('pdf-lib');
+    const doc = await PDFDocument.create();
+    doc.addPage().drawText('Meridian lead time is 14 days and the contract renews in March.', {
+      x: 40,
+      y: 700,
+      size: 12,
+      font: await doc.embedFont(StandardFonts.Helvetica),
+    });
+    writeFileSync(path.join(root, 'typed.pdf'), await doc.save());
+    const index = await sync([root], NOW);
+    // Exact, instant and free; OCR of the same page would be a worse copy.
+    expect(index.entries[0].scanned).toBeUndefined();
+    expect(index.scanned).toBe(0);
+    expect(index.entries[0].text).toContain('Meridian lead time is 14 days');
   });
 
   // An encrypted PDF, or a .docx that is really a renamed something-else. It

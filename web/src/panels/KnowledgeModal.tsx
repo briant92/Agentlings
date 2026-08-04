@@ -154,19 +154,31 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
               if (e.key === 'Enter') void add();
             }}
           />
-          {/* Two things that surprise people, and only these two. A spreadsheet
-              is read as sentences rather than as a grid, which is why a column
-              name is the way to find a number in it. And a PDF that is a scan
-              of paper holds pictures of words and no words, so it reads as an
-              empty file rather than a failed one — indistinguishable from "not
-              read" unless it is said here. */}
+          {/* A spreadsheet is read as sentences rather than as a grid, which is
+              why a column name is the way to find a number in it. Scans are
+              named separately below because whether they can be read at all
+              depends on the machine. */}
           <p className="lib-status">
-            Notes and text, Word documents, PDFs, spreadsheets and decks are all read
-            (.md, .txt, .docx, .pdf, .xlsx, .pptx). A spreadsheet is read a row at a
-            time with each value under its column name, and a deck a slide at a time.
-            A PDF that is a scan of paper has no text in it, so nothing is taken
-            from it.
+            Notes and text, Word documents, PDFs, spreadsheets, decks, scans and
+            photographs are all read (.md, .txt, .docx, .pdf, .xlsx, .pptx, .png,
+            .jpg). A spreadsheet is read a row at a time with each value under its
+            column name, and a deck a slide at a time.
           </p>
+          {status &&
+            (status.ocr ? (
+              <p className="lib-status">
+                Scanned paper and photographs of it are read by the OCR engine built
+                into Windows. Those words are a good reading rather than the
+                document's own, so anything taken from one is marked “read from a
+                scan” wherever the crew quotes it.
+              </p>
+            ) : (
+              <p className="lib-warn">
+                This machine has no OCR engine, so a scan or a photograph holds
+                pictures of words and none this level can read. Adding an English
+                or Spanish language pack in Windows settings turns it on.
+              </p>
+            ))}
 
           {status?.indexed && (
             <>
@@ -183,7 +195,21 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
                   different shapes depending on the file it came from. */}
               <p className="lib-status">
                 A passage is a section of writing, a slide, or a run of spreadsheet rows.
+                {status.scanned > 0 &&
+                  ` ${status.scanned} file${status.scanned === 1 ? ' was' : 's were'} read from a scan.`}
               </p>
+              {/* The budget ran out, or there is no engine. Either way these
+                  files are in the folder and contributing nothing, which looks
+                  from here exactly like a folder that was never read. */}
+              {status.unscanned > 0 && (
+                <p className="lib-warn">
+                  {status.unscanned} scanned file{status.unscanned === 1 ? '' : 's'} held no
+                  text that could be read
+                  {status.ocr
+                    ? ' — a sync reads about 200 scanned pages, so point at a narrower folder for the rest.'
+                    : ', because this machine has no OCR engine.'}
+                </p>
+              )}
               {/* Invisible everywhere else, and it changes what the level can do. */}
               {status.stale && (
                 <p className="lib-warn">

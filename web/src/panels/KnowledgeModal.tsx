@@ -110,9 +110,10 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
         </div>
         <div className="m-body">
           <p className="k-intro">
-            Point this level at folders of your own notes. The crew reads a copy
-            taken when you press add — never your files directly — so you can see
-            exactly what it has before it uses any of it.
+            Point this level at folders of your own material — notes, documents,
+            spreadsheets, decks. The crew reads a copy taken when you press add —
+            never your files directly — so you can see exactly what it has before
+            it uses any of it.
           </p>
 
           <div className="sect">folders this level reads</div>
@@ -145,7 +146,7 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
           <div className="sect">add a folder</div>
           <input
             className="lib-search"
-            placeholder="C:\Users\you\Notes"
+            placeholder="C:\Users\you\Documents"
             value={draft}
             disabled={busy}
             onChange={(e) => setDraft(e.target.value)}
@@ -153,14 +154,18 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
               if (e.key === 'Enter') void add();
             }}
           />
-          {/* A PDF that is a scan of paper holds pictures of words and no
-              words, and reads as an empty file rather than a failed one —
-              which is indistinguishable from "not read" without saying so. */}
+          {/* Two things that surprise people, and only these two. A spreadsheet
+              is read as sentences rather than as a grid, which is why a column
+              name is the way to find a number in it. And a PDF that is a scan
+              of paper holds pictures of words and no words, so it reads as an
+              empty file rather than a failed one — indistinguishable from "not
+              read" unless it is said here. */}
           <p className="lib-status">
-            Notes, Word documents, PDFs, spreadsheets and decks are read (.md, .txt,
-            .docx, .pdf, .xlsx, .pptx). A spreadsheet is read a row at a time, so the
-            numbers are found by their column names rather than by shape. A PDF that
-            is a scan of paper has no text in it, so nothing is taken from it.
+            Notes and text, Word documents, PDFs, spreadsheets and decks are all read
+            (.md, .txt, .docx, .pdf, .xlsx, .pptx). A spreadsheet is read a row at a
+            time with each value under its column name, and a deck a slide at a time.
+            A PDF that is a scan of paper has no text in it, so nothing is taken
+            from it.
           </p>
 
           {status?.indexed && (
@@ -173,6 +178,11 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
                 <button className="work-link" disabled={busy} onClick={() => void resync()}>
                   {busy ? 'reading…' : 'read them again'}
                 </button>
+              </p>
+              {/* "Passage" is the app's own word, and it now means three
+                  different shapes depending on the file it came from. */}
+              <p className="lib-status">
+                A passage is a section of writing, a slide, or a run of spreadsheet rows.
               </p>
               {/* Invisible everywhere else, and it changes what the level can do. */}
               {status.stale && (
@@ -188,11 +198,16 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
                   folder to be sure of what is included.
                 </p>
               )}
+              {/* The figure used to be "about 60 pages", which is true of
+                  writing and false of the two formats added since: the cap is
+                  200 passages, and a passage holds one slide but around six
+                  spreadsheet rows. Measured, not estimated. */}
               {status.truncated > 0 && (
                 <p className="lib-warn">
-                  {status.truncated} file{status.truncated === 1 ? '' : 's'} {' '}
+                  {status.truncated} file{status.truncated === 1 ? '' : 's'}{' '}
                   {status.truncated === 1 ? 'was' : 'were'} long enough that only the first
-                  part was read — about 60 pages each. Split the long ones if the rest matters.
+                  part was read. A file is read to about 60 pages of writing, 200 slides,
+                  or 1,300 spreadsheet rows. Split the long ones if the rest matters.
                 </p>
               )}
             </>

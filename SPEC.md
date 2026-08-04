@@ -54,7 +54,7 @@ should stop before the end of it:
 
 ```
 Sim picks up a queued job
-  └─ RoutedExecutor      does it in code for nothing where it can (M5.3–M5.6)
+  └─ RoutedExecutor      does it in code for nothing where it can (M5.3–M5.8)
        └─ ClaudeAgentExecutor   one SDK session, in a child process (M1)
             └─ agent-runner.mjs      plain node; the SDK never enters the server
 ```
@@ -98,14 +98,24 @@ the loop runs end to end without one.
   them: never guess.
 - `recipes.ts` — remembered approaches, how alike two jobs are, and the
   counter that says whether a tool would have paid off.
+- `capability.ts` — what a run *could* do, as one flat token list, so a
+  recipe found under a different surface can be demoted rather than trusted.
+  Connections, tools, skills and libraries; deliberately not the model or the
+  turn cap, which change how well a run does something and not what it can do.
 - `tools.ts` — compiled tools: manifest, matching, verification, retirement.
 - `estimate.ts` — the quote, as a lookup over history rather than a model.
+- `quote.ts` — the one place a request is priced, given what the server holds
+  rather than reaching for it, so every way in is quoted the same way.
 - `ledger.ts` — what work cost and what it may be charged; the per-turn rate
-  the turn budget is derived from.
+  the turn budget is derived from. Each row also records who did it.
 - `web.ts` — pages as trimmed text, never a raw dump.
 - `search.ts` — finding a page, as against reading one. Builtin so the reply
   size is ours: titles, snippets and links, then `fetch_page` reads the chosen
   one. Brave Search; needs `BRAVE_API_KEY`; ships off.
+- `github.ts` — reading a code host, builtin for the same reason: one issue
+  list is unbounded JSON unless the caller owns the size. Compact lines,
+  capped lists, truncated bodies, never a patch. Reads and cannot act; needs
+  `GITHUB_TOKEN`; ships off.
 - `connections.ts` — what a job may reach outside its sandbox; `settings.ts`
   decides which of those are live. Reading the web is on by default, everything
   credentialed is not.
@@ -116,13 +126,43 @@ the loop runs end to end without one.
   Never read live: the index is an artefact you can inspect before a session
   can use it, each line carries its source and sync date, and a stale index
   contributes nothing so the free tier falls through rather than serving it.
+- `documents.ts` — getting the data out of a Word file, a PDF, a spreadsheet
+  or a deck, in one place. Two callers want the same files for different
+  reasons — the review panel shows them, the store indexes them — so this
+  returns rows and lines and never a preview or a passage. The libraries are
+  installed at the project root for the sandboxes and imported lazily.
+- `ocr.ts` — reading words off a picture of words, using the OCR engine
+  Windows already has. The only Windows-only file in the project, which is why
+  it is a file: everything above it asks `ocrAvailable()` and gets `false`
+  elsewhere.
 - `match.ts` — the local, deterministic concept matcher. Works with no auth
   and no network, always.
 - `work.ts` — turning a sentence into a plan: title, role, who will run it.
+- `clarify.ts` — the questions worth asking before any money moves. Local and
+  deterministic like the matcher, never on free work, never more than three,
+  and never required: Start must always work.
 - `refine.ts` — the optional one-call LLM tier that only ever refines the
   local answer.
 - `roles.ts` / `library.ts` — role and skill definitions, and the catalog
   they can be installed from (preview-first, SHA-pinned).
+- `browse.ts` — the catalog arranged for someone with no query. Categories are
+  read off the sources' own file paths, never inferred from the descriptions:
+  a taxonomy derived from prose is a plausible answer nobody can check.
+
+**Showing what happened.**
+
+- `outputs.ts` — what a job left behind, as a listing that says what each file
+  *is*. Bytes are fetched one file at a time, so a produced PDF stops coming
+  back as replacement characters.
+- `preview.ts` — that file converted for reading, in the server because the
+  libraries are already here. Every conversion loses something and says what:
+  a `.docx` keeps its words and not its layout.
+- `deliveries.ts` — finished work, newest first: the inbox. Everything that
+  reached an outcome, failures included, because the terminal feed is numbered
+  per server run and gone after a restart.
+- `productivity.ts` — what the crew produced and what it cost, built pure for
+  the reason `ledgerRow` is: one object out of three sources is exactly the
+  shape that quietly drops a field.
 
 **Plumbing.**
 
@@ -138,7 +178,8 @@ the app's memory is not the repository's.
 
 ```
 .agentlings/
-  ledger.jsonl              every job: what it cost, what it may be charged
+  ledger.jsonl              every job: what it cost, what it may be charged, who did it
+  settings.json             where you depart from a connection's shipped default
   catalog/                  the role/skill library index and what is installed
   levels/<level>/
     level.json              name, project, theme, repo path
@@ -155,24 +196,74 @@ the app's memory is not the repository's.
 
 ### REST API
 
-Routes below are the M0 shapes; everything job-facing is scoped per level
-(`/api/levels/:lid/...`) since levels landed.
+Everything job-facing is scoped per level (`/api/levels/:lid/...`); the
+catalog, settings and spend are global because they are.
+
+**Work — asking for it, watching it, resolving it.**
 
 | Route | Purpose |
 |---|---|
-| `GET /api/state` | Current `WorldState` snapshot |
-| `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}`; quoted and role-matched like `/work`, but keeps the caller's title and takes no repository unless given one |
-| `GET /api/jobs/:id/output` | Sandbox files for review — names and sizes only |
-| `GET /api/jobs/:id/output/:name` | One file, as bytes: inline for a PDF, a download for the rest |
-| `GET /api/jobs/:id/output/:name/preview` | The same file converted for reading — a grid, words, slide text, or the note that the browser draws it |
-| `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
-| `GET /api/levels/:lid/knowledge` | The store: sources, counts, and whether the index has gone stale |
+| `GET /api/levels/:lid/state` | Current `WorldState` snapshot |
+| `POST /api/levels/:lid/work/plan` | What the app *would* do with a sentence — plan, role, who takes it, quote — shown before anything is queued |
+| `POST /api/levels/:lid/work` | Queue that sentence, attachments included |
+| `POST /api/levels/:lid/jobs` | Queue a job `{title, prompt, repoPath?}`; quoted and role-matched like `/work`, but keeps the caller's title and takes no repository unless given one |
+| `POST /api/levels/:lid/jobs/:id/cancel` | Stop a run |
+| `POST /api/levels/:lid/jobs/:id/redo` | "Do it properly" — re-queue with the router's shortcut switched off |
+| `POST /api/levels/:lid/jobs/:id/reply` | Answer an agentling. A new job that carries the old sandbox forward, quoted and billed like the session it is |
+| `POST /api/levels/:lid/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
+
+**What came back.**
+
+| Route | Purpose |
+|---|---|
+| `GET /api/levels/:lid/deliveries` | The inbox: everything that reached an outcome, newest first, failures included |
+| `GET /api/levels/:lid/jobs/:id/output` | Sandbox files for review — names, sizes and what each file *is* |
+| `GET /api/levels/:lid/jobs/:id/output/:name` | One file, as bytes: inline for a PDF, a download for the rest |
+| `GET /api/levels/:lid/jobs/:id/output/:name/preview` | The same file converted for reading — a grid, words, slide text, or the note that the browser draws it |
+| `GET /api/levels/:lid/productivity` | What the crew produced and what it cost, per member and per level |
+| `GET /api/spend` | Cost, chargeable price and what was absorbed, by level and tier |
+
+**The crew and the level.**
+
+| Route | Purpose |
+|---|---|
+| `GET /api/levels` · `POST /api/levels` | The level select, and creating one |
+| `GET /api/levels/:lid/crew` | The roster: everyone hired here, resting crew included |
+| `POST /api/levels/:lid/agentlings` | Hire; `GET`/`DELETE .../:aid` read a profile and let one go |
+| `POST /api/levels/:lid/agentlings/:aid/role` | Reassign a trade |
+| `POST /api/levels/:lid/agentlings/:aid/rest` · `/wake` | Out through the door, and back through the hatch |
+| `GET /api/levels/:lid/merge/proposals` | Redundant hires worth folding together, with the reasons |
+| `POST /api/levels/:lid/merge/preview` · `POST /api/levels/:lid/merge` | What a fold would do, then doing it |
+
+**What the crew knows, and what it has compiled.**
+
+| Route | Purpose |
+|---|---|
+| `GET /api/levels/:lid/knowledge` | The store: sources, counts, what could not be read, and whether the index has gone stale |
 | `POST /api/levels/:lid/knowledge/sources` | Point this level at folders of your own material, and index them |
 | `POST /api/levels/:lid/knowledge/sync` | Re-read those folders — the crew reads the index, so nothing changes until this runs |
 | `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |
 | `POST /api/levels/:lid/tools/promote` | Compile a proven recipe into a tool |
 | `POST /api/levels/:lid/tools/:name/retire` | Take a tool out of service, with the reason |
-| `GET /api/spend` | Cost, chargeable price and what was absorbed, by level and tier |
+
+**The catalog — global, because the definitions are common and the crews that hold them are not.**
+
+| Route | Purpose |
+|---|---|
+| `GET /api/roles` · `GET /api/skills` | What is installed |
+| `POST /api/match` · `POST /api/match/refine` | The local concept matcher, and the optional one-call tier that only refines it |
+| `GET /api/library` · `POST /api/library/refresh` | Index status, and re-reading the sources |
+| `POST /api/library/search` | The same matcher against the remote index |
+| `GET /api/library/browse` | Categories and their counts; with one, that category's entries |
+| `POST /api/library/preview` · `POST /api/library/install` | Nothing installs unseen: full text and warnings first, then the exact indexed commit |
+| `POST /api/templates/install` | Install a role or skill straight from a URL |
+| `GET /api/connections` · `GET /api/settings` | What can be reached, and which of it is switched on |
+
+**The doors a running session may call back through** — `POST /internal/fetch`,
+`/internal/github`, `/internal/search`. Not for the browser. They exist so
+extraction, trimming and the allowlist have one implementation rather than one
+per caller, and so a tool that is granted a door later is granted *these* and
+nothing else.
 
 ## Agentling identity (roles, skills, memory)
 
@@ -244,6 +335,9 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.4 recipes → D-019, D-020, D-023
 - M5.5 billing → D-012, D-016–D-018, D-026–D-027, D-029
 - M5.6 compiled tools → D-021, D-024, D-025
+- M5.7 your own notes → D-046–D-051 · M5.8 finding a page → D-052–D-055
+- M5.9 reading the crew record → D-056, D-057
+- M5.10 reading what you keep → D-058–D-062
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
@@ -377,7 +471,9 @@ tried, measured and rejected is in `DECISIONS.md`:
     and the name returns to the pool. Blocked mid-job. Dismissed proposals
     are remembered per browser — a hint, not saved state.
 - **M5 — going outside, cheaply.** The Agent SDK's default is an open-ended
-  loop; the work is constraining it, and often not entering it at all.
+  loop; the work is constraining it, and often not entering it at all. The
+  later steps (M5.9 onward) are the other half of the same question — what the
+  work cost and what came back are only knowable if the app says so.
   - **M5.0 (built).** Meter and cap. `maxTurns` was 60 — now 10 by default,
     per-role in frontmatter, clamped at 40 by `turnsFor()`. The runner was
     discarding the `usage`/`total_cost_usd` the SDK returns; both are now
@@ -553,6 +649,92 @@ tried, measured and rejected is in `DECISIONS.md`:
     by counting rather than guessing: a job matching a recipe with three
     successes appends to `tool-candidates.jsonl` and nothing else happens. The
     machinery exists ahead of the demand, deliberately and with that known.
+  - **M5.7 — your own notes (built).** `store.ts`. Point a level at folders of
+    your own material and they are synced into a per-level index the crew
+    reads. **Never read live**, which is the whole design: the corpus is an
+    artefact you can inspect before any session can use it, each passage
+    carries the file it came from and the date it was read, and that provenance
+    rides *inside* the line so a free recall answer and a session's context
+    both show it. Text splits at markdown headings where there are any and by
+    length everywhere else, at sentence breaks, so a passage is bounded at 600
+    chars rather than cut off at them — eight of them are what a session is
+    handed. An index older than a week contributes nothing anywhere: the free
+    tier falls through rather than serving something that may have rotted.
+    (D-046, D-047)
+
+    Building it caught the recall tier **scoring on its own asking words**, so
+    "which decision settled X" looked like a match to notes that only shared
+    the word "decision". A free tier that answers wrongly is worse than no free
+    tier. (D-048)
+
+    **Capability lives in three tiers, and that is a decision rather than a
+    layout.** `capability.ts` records what a run could do as one flat token
+    list, so a recipe found under a different surface is demoted rather than
+    trusted. Baseline capability rises for everyone; what a level or a single
+    agentling learnt never flows sideways; only a compiled tool may graduate.
+    (D-036, D-037, D-050)
+
+    **Measured on real work, the win is uneven and that is the honest result.**
+    A question the level's own notes covered came back routed, free, with no
+    session at all. Paired against a job that already had a clone, the store
+    saved almost nothing — the clone was already the answer. It is a step down
+    a tier where it applies, not a discount everywhere. (D-049)
+
+    It is also where the crew first worked on itself: a scout surveying the
+    recall scorer over the level's own notes returned a finding sharper than
+    the hunch that prompted it — 72% of matches share exactly one word, and
+    whether that is signal turns entirely on how *rare* the word is, which
+    `recipes.ts` already weights for and the recall tier does not. (D-051)
+  - **M5.8 — finding a page, not only reading one (built).** `search.ts`, and
+    the free `search` tier that answers a bare "find me pages about X" with no
+    session at all. Builtin for `github.ts`'s reason: a search API answers in
+    verbose JSON, and owning the call owns the size — three fields a result,
+    then `fetch_page` reads the chosen one. Brave, not Google: Custom Search
+    stopped being a general web search on 2026-01-20. Scraping is not the
+    fallback either — 429 and a CAPTCHA. Needs `BRAVE_API_KEY`; ships off.
+    (D-054, D-055)
+
+    It was built because the gap was **measured**: a session that cannot search
+    does not refuse, it substitutes something far dearer and usually fails.
+    (D-053) The same stretch withdrew a claim about the turn cap that the app
+    had no instrument to support, and built the counter that could answer it.
+    (D-052)
+  - **M5.9 — reading the crew record (built).** The ledger gains an author:
+    every row records which agentling did the work, so "who is producing" is a
+    question with an answer. 87 of 104 historical rows were backfilled by job
+    id and 17 deliberately left blank, because a row whose job record is gone
+    cannot be attributed without guessing. `productivity.ts` and
+    `deliveries.ts` are the two panels that needed it — what the crew produced
+    and what it cost, and an inbox of everything that reached an outcome,
+    failures included. (D-056)
+
+    `browse.ts` makes the library readable by someone with no query: 532
+    entries in 101 categories, **grouped by the sources' own file paths** and
+    never inferred from the descriptions, because a taxonomy derived from prose
+    is a plausible answer nobody can check. Counts describe what is indexed,
+    taken per source before dedupe — two derivations of one number, and the
+    slower one stays on purpose. (D-057)
+  - **M5.10 — reading what you keep (built).** A produced document is shown
+    where it lands rather than offered as a download link, which is the whole
+    file and none of the point: `outputs.ts` says what each file *is* and
+    `preview.ts` converts it in the server, where the libraries already are.
+    Every conversion states what it loses. Two listings and two orderings
+    collapse into one. (D-058)
+
+    And the same files are read *into* the knowledge store — Word, PDF,
+    spreadsheets, decks, and paper by OCR. `documents.ts` holds the readers so
+    the panel and the store cannot disagree about how to read a `.pptx`; a grid
+    is not prose and is not split like prose. `ocr.ts` uses the engine Windows
+    already has — the one Windows-only file in the project, behind a seam every
+    caller asks with `ocrAvailable()`. Budgets are 200 pages a sync and 20 a
+    file, and a document longer than the app could read now says so, which it
+    did not when the entry first claimed it did. (D-059–D-062)
+
+    Three times in three entries, the fault worth catching was the app's own
+    scaffolding or noise passing itself off as the document's own words — which
+    is why a passage read from a scan is marked as one. The last two were found
+    by reading the panel's sentences back against the code, not by a test, a
+    type, or a live run: all three were green. (D-061, D-062)
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

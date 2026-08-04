@@ -17,7 +17,8 @@ Every capability carries a status:
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
 
-Written 2026-08-01 against `e5c80c9`; §8's figures regenerate with
+Written 2026-08-01 against `e5c80c9`, last re-read against `38131a9`
+(2026-08-04); §8's figures regenerate with
 `npm run ledger:report`, and §15 is the list of what is not here yet.
 
 ---

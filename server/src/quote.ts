@@ -92,7 +92,15 @@ export function quoteFor_(
         : decision.kind === 'oneshot'
           ? 'oneshot'
           : 'session';
-  const jobClass = decision.kind === 'oneshot' ? decision.recipeKey : (role ?? 'unclassified');
+  // Priced as *this job* whenever the router recognised one, not only when it
+  // shortened the run for it. A session handed a method is still a run of that
+  // job, and pricing it by role instead pools it with everything else the role
+  // does: measured, 35 `worker` rows quoting "About 44c" for a job whose own
+  // three completions averaged $1.40 (D-072).
+  const wider = role ?? 'unclassified';
+  // Not every decision carries one — a bare fetch has no job to recognise.
+  const recipeKey = 'recipeKey' in decision ? decision.recipeKey : undefined;
+  const jobClass = recipeKey ?? wider;
   const ledger = readLedger(ctx.sandboxRoot);
   // What this run is about to be allowed to spend, worked out exactly as the
   // executor will: the leash it will be given, priced at what a turn of this
@@ -117,10 +125,13 @@ export function quoteFor_(
         : undefined;
 
   return quoteFor(tier, jobClass, ledger, {
-    // A one-shot is priced off the recipe key, which is this exact job; a
-    // session is priced off a role, which is a kind of work. Only the first may
-    // say "done this before".
-    sameJob: decision.kind === 'oneshot',
+    // Only a recipe key is this exact job; a role is a kind of work. `quoteFor`
+    // clears this itself if it has to widen, so the wording can never outrun
+    // the rows it was actually computed from.
+    sameJob: Boolean(recipeKey),
+    // Until a recipe has rows of its own, the role it runs as is a far better
+    // answer than the tier average.
+    fallbackClass: wider,
     ...(freeBecause ? { freeBecause } : {}),
     maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
     ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),

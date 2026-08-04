@@ -122,6 +122,52 @@ describe('quoteFor, with history for this job', () => {
    * before" about a job that had run six. The count was real; the claim was
    * not.
    */
+  /**
+   * A recipe key is the better basis and carries no rows until a run has been
+   * recorded under it. Falling straight past it to the tier average would quote
+   * "first time doing this" for a job whose role has 35 rows — trading one
+   * blind answer for another.
+   */
+  describe('widening when the exact job has no history yet', () => {
+    it('prices from the wider class rather than from ignorance', () => {
+      const q = quoteFor('session', 'this exact prompt', costing(0.1, 0.1), {
+        sameJob: true,
+        fallbackClass: 'tidy',
+      });
+      expect(q.samples).toBe(2);
+      expect(q.expectedUsd).toBeCloseTo(0.1);
+    });
+
+    // The wording must widen too, or the flag it was given walks the old claim
+    // straight back in: 2 `tidy` rows are not this job done twice.
+    it('stops claiming it is the same job once it has widened', () => {
+      const q = quoteFor('session', 'this exact prompt', costing(0.1, 0.1), {
+        sameJob: true,
+        fallbackClass: 'tidy',
+      });
+      expect(q.wording).toBe('About 10c — from 2 jobs like it');
+    });
+
+    it('prefers the exact job the moment it has any rows of its own', () => {
+      const ledger = [...costing(0.1, 0.1), entry({ jobClass: 'x', recipeKey: 'this exact prompt', costUsd: 0.5 })];
+      const q = quoteFor('session', 'this exact prompt', ledger, {
+        sameJob: true,
+        fallbackClass: 'tidy',
+      });
+      expect(q.samples).toBe(1);
+      expect(q.wording).toBe('About 50c — done this 1 time before');
+    });
+
+    it('still reaches the tier average when neither class has anything', () => {
+      const q = quoteFor('session', 'this exact prompt', costing(0.1, 0.1), {
+        sameJob: true,
+        fallbackClass: 'nobody',
+      });
+      expect(q.samples).toBe(0);
+      expect(q.wording).toMatch(/first time doing this/);
+    });
+  });
+
   it('does not claim a class average is the same job done again', () => {
     expect(quoteFor('session', 'tidy', costing(0.1, 0.1)).wording).toBe(
       'About 10c — from 2 jobs like it',

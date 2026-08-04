@@ -734,7 +734,13 @@ describe('RoutedExecutor', () => {
       const session = new FakeSession();
       await run(build(session), job({ prompt: 'write tests for the estimate module' }), PIP);
 
-      expect(session.runs[0].hint).toEqual({ approach: 'read the module, then write the test beside it' });
+      expect(session.runs[0].hint).toEqual({
+        approach: 'read the module, then write the test beside it',
+        // Carried without the leash: the run is still a run *of this job*, and
+        // a session that records nothing saying so cannot be priced as one
+        // (D-072). `oneShot` is what shortens the run, and it is absent.
+        recipeKey: 'add a test for the estimate module',
+      });
       expect(session.runs[0].hint?.oneShot).toBeUndefined();
       expect(progress[0]).toContain('starting from that method');
     });

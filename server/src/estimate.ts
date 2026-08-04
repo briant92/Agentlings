@@ -63,6 +63,16 @@ export function quoteFor(
      * claim about it was not.
      */
     sameJob?: boolean;
+    /**
+     * A wider class to price from when `jobClass` has no history of its own.
+     *
+     * A recipe key identifies this exact job and is the better basis, but it
+     * carries no rows until a run has been recorded under it — and falling
+     * straight past it to the tier average would quote "first time doing this"
+     * for a job whose *role* has thirty-five rows. Specific first, then wider,
+     * then the tier: each step is a real answer and only the last is ignorance.
+     */
+    fallbackClass?: string;
   } = {},
 ): Quote {
   const cap = options.maxCeilingUsd ?? MAX_CEILING_USD;
@@ -102,7 +112,15 @@ export function quoteFor(
     };
   }
 
-  const own = history(ledger, jobClass, tier);
+  let own = history(ledger, jobClass, tier);
+  // Widened, and the wording widens with it: rows for a *kind* of work must
+  // never be announced as this job done again, which is the fault the sameJob
+  // flag exists to prevent and would otherwise walk straight back in here.
+  let sameJob = options.sameJob;
+  if (own.samples === 0 && options.fallbackClass && options.fallbackClass !== jobClass) {
+    own = history(ledger, options.fallbackClass, tier);
+    sameJob = false;
+  }
   if (own.samples > 0 && own.max > 0) {
     // Bounded by the runaway cap, not by the cautious default: once there is
     // history, the history is the better evidence and the quote should say so.
@@ -113,7 +131,7 @@ export function quoteFor(
       expectedUsd: own.mean,
       samples: own.samples,
       certainty: own.samples >= 3 ? 'high' : 'estimated',
-      wording: options.sameJob
+      wording: sameJob
         ? `About ${formatUsd(own.mean)} — done this ${own.samples} time${own.samples === 1 ? '' : 's'} before`
         : `About ${formatUsd(own.mean)} — from ${own.samples} job${own.samples === 1 ? '' : 's'} like it`,
     };

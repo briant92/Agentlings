@@ -788,7 +788,7 @@ export class ClaudeAgentExecutor implements Executor {
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
-        ...(hint?.oneShot && hint.recipeKey ? { recipeKey: hint.recipeKey } : {}),
+        ...(hint?.recipeKey ? { recipeKey: hint.recipeKey } : {}),
         ...(salvage.closeOutUsd ? { closeOutUsd: salvage.closeOutUsd } : {}),
       };
       const spent = err instanceof SessionFailure ? { ...err.meter, ...failedMeter } : failedMeter;
@@ -822,7 +822,7 @@ export class ClaudeAgentExecutor implements Executor {
         turnsAllowed: turnBudget,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         ...(hint?.oneShot ? { oneShot: true } : {}),
-        ...(hint?.oneShot && hint.recipeKey ? { recipeKey: hint.recipeKey } : {}),
+        ...(hint?.recipeKey ? { recipeKey: hint.recipeKey } : {}),
       },
     };
   }

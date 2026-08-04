@@ -281,7 +281,13 @@ export class RoutedExecutor implements Executor {
       hint = { oneShot: true, approach: decision.approach, recipeKey: decision.recipeKey };
       onProgress?.(`done before — running it with less exploring (${decision.reason})`);
     } else if (decision.kind === 'agent' && decision.approach) {
-      hint = { approach: decision.approach };
+      // The key rides along even though the leash does not. A session that used
+      // a method is still a run *of that job*, and without this it records
+      // nothing saying so: measured on seven runs of one sentence, every row
+      // came back `recipeKey: (none)`, so the quote priced them off 35
+      // unrelated `worker` rows and told the user "About 44c" for work that
+      // cost $1.26 (D-072).
+      hint = { approach: decision.approach, recipeKey: decision.recipeKey };
       onProgress?.('something like this was done before — starting from that method');
     }
     // Whichever way the method arrived, the recipe was used. A `search` only

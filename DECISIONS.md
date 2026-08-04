@@ -81,6 +81,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-069 — 2026-08-04 — A method halved a real job, with no leash and no tier change](#d-069--2026-08-04--a-method-halved-a-real-job-with-no-leash-and-no-tier-change)
 - [D-070 — 2026-08-04 — A quote that could not find its history, and the copy that covered for it](#d-070--2026-08-04--a-quote-that-could-not-find-its-history-and-the-copy-that-covered-for-it)
 - [D-071 — 2026-08-04 — The third run says the halving was a step, not a trend](#d-071--2026-08-04--the-third-run-says-the-halving-was-a-step-not-a-trend)
+- [D-072 — 2026-08-04 — Seven runs of one sentence, none of them recording it was the same job](#d-072--2026-08-04--seven-runs-of-one-sentence-none-of-them-recording-it-was-the-same-job)
 
 ## By theme
 
@@ -98,7 +99,10 @@ entry updates one file rather than two.
   guess about a trade; and D-070, the third form of one fault — a quote that
   cannot find its history cannot tighten, whether the class it looks up is
   wrong (D-026, D-029), in the wrong field (`quoteClass`), or absent because
-  the matcher declined to name one
+  the matcher declined to name one — and D-072, where it was never written down
+  at all for any run that took a method without the leash, which is most of
+  them; that entry also records why the pinned ceiling was measured and then
+  left alone rather than fixed
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
@@ -3861,3 +3865,79 @@ credible bound of 10, and this job has never been done in fewer than 24 calls.
 **Where the level stands.** Seven paid runs on one sentence: **$7.12 spent,
 $3.81 chargeable**, three deliveries, and a method that reliably produces a
 4-sheet workbook for somewhere between 97c and $1.26.
+
+## D-072 — 2026-08-04 — Seven runs of one sentence, none of them recording it was the same job
+
+The quote for the economic-indicators job said "About 44c" for work whose three
+completions had averaged $1.40. Not a rounding problem: it was pricing off 35
+unrelated `worker` rows, because none of that job's own rows said which job they
+were.
+
+```
+97b95f10 … 765c7dcc   all session   recipeKey: (none)
+```
+
+`hint` carried `recipeKey` only on the leashed branch, and the meter recorded it
+only when `oneShot`. So a session *handed a method* — the weak-match path, which
+D-069 showed is where most of the saving actually comes from — recorded nothing
+identifying the job at all. Only a leashed run was ever a run of something.
+
+**Fourth form of the fault D-070 names**, and by now the pattern is the entry:
+a quote that cannot find its history cannot tighten. The class has been wrong
+(D-026, D-029), in the wrong field (`quoteClass`), absent because the matcher
+declined (D-070), and now never written down for the majority of runs.
+
+**The widening is what makes pricing by recipe safe rather than a swap of one
+blind answer for another.** A recipe key carries no rows until a run has been
+recorded under it, so pricing by it alone would have quoted "first time doing
+this" for a job whose *role* has 36 rows. `quoteFor` now tries the exact job,
+then the wider class, then the tier — each step a real answer and only the last
+ignorance — and clears `sameJob` itself when it widens, so the wording can never
+outrun the rows it was computed from.
+
+**Measured live, before and after the first keyed run.**
+
+```
+before:  About 46c   — from 36 jobs like it    samples 36
+after:   About $1.11 — done this 1 time before  samples 1
+```
+
+That is the whole argument for finer classes in one line: **one row about this
+job beats thirty-six about this role.** $1.11 lands mid-range of the job's real
+$0.97–$1.26, where 46c was not close to anything.
+
+**n = 1, and it cannot be more.** Only run 8 carries a key. Runs 5–7 predate the
+change and were deliberately **not** backfilled: the prompt is recoverable and
+the key derivable from it, but whether a given run *used* the recipe is not
+recorded anywhere — run 1 predates the recipe existing at all, and the router's
+decision at the time is not stored. Reconstructing it would be a guess wearing
+identification's clothes, which is the line D-039 and D-046 both draw. `certainty`
+stays `estimated` until three keyed rows exist.
+
+**It does not unpin the ceiling, and was not meant to.** $1.11 × 2 is under the
+clamp now, but the ceiling reads `max(mean × 2, max × 1.2)` off the same rows,
+and one keyed row means one max. It will settle as keyed rows accumulate.
+
+### Why the ceiling was left pinned, measured rather than assumed
+
+The pinning was the original complaint and the measurement rejected both fixes:
+
+| Rule | Ceiling | Turns funded | |
+|---|---|---|---|
+| current (`max`) | $2.00 | 40 | pinned, generous |
+| recency window, any size | $2.00 | 40 | **changes nothing** — the $1.96 run *is* recent |
+| p90 instead of `max` | $1.12 | ~22 | would have **cut off run 5**, which needed 33 |
+
+A recency window was the obvious fix and would have been built without the
+measurement. And the ceiling is not a display — it *is* the turn budget, so
+tightening it tightens turns, and the run that first proved this job can finish
+needed 33 of them. Unused turns cost nothing: runs 6, 7 and 8 were granted 40 and
+used 24, 26 and 23. The clamp holding at $2.00 is D-016 working, not failing.
+
+**Also this run: `completedInTurns` fell 27 → 24**, the second consecutive
+tightening from what a run actually did rather than what it was allowed —
+`min(27, 40, 23 + 1)`. And a fourth completion at $1.11 against $1.96 / 97c /
+$1.26 keeps D-071's reading intact: one step, then noise.
+
+**Where the level stands.** Eight paid runs of one sentence: **$8.24 spent,
+$4.93 chargeable**, four deliveries.

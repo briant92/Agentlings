@@ -78,6 +78,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-066 — 2026-08-04 — Carrying on, rather than asking for a smaller request](#d-066--2026-08-04--carrying-on-rather-than-asking-for-a-smaller-request)
 - [D-067 — 2026-08-04 — The quote wins against a role's standing guess](#d-067--2026-08-04--the-quote-wins-against-a-roles-standing-guess)
 - [D-068 — 2026-08-04 — A leash has to be a shortening, not a different job](#d-068--2026-08-04--a-leash-has-to-be-a-shortening-not-a-different-job)
+- [D-069 — 2026-08-04 — A method halved a real job, with no leash and no tier change](#d-069--2026-08-04--a-method-halved-a-real-job-with-no-leash-and-no-tier-change)
 
 ## By theme
 
@@ -93,7 +94,10 @@ entry updates one file rather than two.
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
-  D-019–D-025, D-036–D-037
+  D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
+  against work somebody actually wanted done, which halved the job **without**
+  the leash and so credits the approach with a saving the tier averages had
+  been attributing to the tier change
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033
 - **The project's own notes** — D-002, D-038
@@ -3639,3 +3643,69 @@ projected.** $1.96 spent against a $1.58 quote — 24% over, where the projectio
 was 38%. The chargeable figure is $1.58, `priceFor` capping it, so the 38c is
 absorbed exactly as designed. It is the first job in this sequence to record any
 chargeable amount, and the whole sequence spent $4.89 to produce one delivery.
+
+## D-069 — 2026-08-04 — A method halved a real job, with no leash and no tier change
+
+Everything §8 of `AGENTLING.md` says about repeat work is measured on synthetic
+repeats — jobs queued to exercise a mechanism, with about one genuine repeat in
+86. This is the first measurement of a banked method against a job somebody
+actually wanted done.
+
+| Run | Turns | Method from | Cost | Outcome |
+|---|---|---|---|---|
+| `653f8c2e` | 33 | a cut-off run | $1.96 | done |
+| `8ab9b070` | 40 | **a run that completed** | **97c** | done, **25 turns used** |
+
+**51% off, and the run finished fifteen turns under its cap** — the first of six
+on this sentence not to exhaust its budget.
+
+**The part worth reading twice: this was not the one-shot tier.** The leash was
+refused (D-068), so `8ab9b070` ran as an ordinary `session` with the approach
+handed over as a hint. §8's headline step-down — 55%, session to one-shot — is
+attributed to *moving down a tier*, and D-019/D-023 price the weak match as
+nearly free but not as valuable: "a wrong method given to a full-length session
+wastes a turn it can ignore". The implication nobody had tested is that a right
+one is worth about a turn.
+
+It was worth half the job. The method carries value **independent of the leash**,
+which is not what the two-bar framing assumes, and it means the tier averages in
+§8 have been crediting the leash with savings the approach was producing.
+
+**What changed was the method's provenance, not its existence.** Runs 2–4 banked
+approaches written by close-outs of runs that died; run 5 was the first written
+by a session that finished. The concrete lever is legible in it — step 4 reads
+"build the final output with a script, not manual entry" — and run 6 had a
+generator producing the workbook early instead of assembling rows by hand. 24
+tool calls against 39.
+
+**Confounds, stated rather than buried.** The budget also rose 33 → 40 and the
+level's `recallable` notes reached 6, so the 51% is not the method alone. What
+more budget does *not* explain is finishing under the cap: the previous five runs
+all spent everything they had.
+
+**n = 1.** Six runs of one sentence in one level. The claim is that a method
+written by a completing run halved this job; it is not a rate.
+
+### Two things the same run measured
+
+**The quote for this class is now pinned rather than drifting.** D-067 warned
+the ceiling could feed back on itself; it rose $1.58 → $2.00 after run 5 and
+then stayed there, because the ceiling is `max(mean × 2, max × 1.2)` and the max
+is still run 5's $1.96. `MAX_CEILING_USD` is doing precisely the job D-016 gave
+it. The cost is that the quote has stopped being informative for this class —
+permanently $2.00 until that max ages out, and nothing ages. Run 6 cost half its
+quote and was charged its actual 97c, so the loop is bounded and not runaway.
+
+**`completedInTurns` records the grant, not the need, and so will not tighten.**
+The job completed in 25 turns and the field stayed at 33, because what is
+recorded is turns *granted* — 40 here, so `min(33, 40)` holds. That is
+deliberate: the SDK's reported count is in a different unit, run 5 having been
+capped at 33 and reported 40, which cannot be a usage figure (D-022). The
+consequence is that the bound ratchets down only on grants and over-refuses
+leashes, which is the safe direction and is not the same as being right.
+`toolCalls` — 39 against 24 — is the better signal if this is ever refined,
+because it is counted in our units rather than the SDK's.
+
+**Where the sequence ends.** Six runs, **$5.86 spent, $2.55 chargeable**, and a
+reproducible method for a recurring job that now costs 97c — against a first
+attempt that cost 66c and left an empty sandbox.

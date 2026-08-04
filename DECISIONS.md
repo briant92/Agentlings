@@ -76,6 +76,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-064 — 2026-08-04 — A method earns the leash by having worked, not by existing](#d-064--2026-08-04--a-method-earns-the-leash-by-having-worked-not-by-existing)
 - [D-065 — 2026-08-04 — The leash gets its own counter, because it was asking a different question](#d-065--2026-08-04--the-leash-gets-its-own-counter-because-it-was-asking-a-different-question)
 - [D-066 — 2026-08-04 — Carrying on, rather than asking for a smaller request](#d-066--2026-08-04--carrying-on-rather-than-asking-for-a-smaller-request)
+- [D-067 — 2026-08-04 — The quote wins against a role's standing guess](#d-067--2026-08-04--the-quote-wins-against-a-roles-standing-guess)
 
 ## By theme
 
@@ -141,7 +142,11 @@ entry updates one file rather than two.
   work out for ever while repo work earned the leash without finishing. D-066
   stops asking the user to shrink the request and lets a cut-off run be picked
   up instead; four runs of one sentence now compound for less each time and not
-  one of them has ever finished, which is where the per-run turn cap comes due
+  one of them has ever finished, which is where the per-run turn cap comes due.
+  D-067 pays it: the quote now outranks a role's standing guess, since the rule
+  that said otherwise was guarding against a pooled rate that has since been
+  fixed — and the same measurement exposes the next layer of it, a rate that
+  averages a class and so over-funds any job dearer than its own class
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -3506,3 +3511,64 @@ this job every time. Whether a per-run turn cap is the right unit at all is the
 next decision, and it is a decision rather than a task — D-015 and D-025 are on
 record that "ran out of turns" does not mean "needed more turns", and four cut
 runs that each delivered are the first real evidence pulling the other way.
+
+## D-067 — 2026-08-04 — The quote wins against a role's standing guess
+
+`maxTurns = min(role cap, quote ÷ rate)`, so a number written into a role's
+frontmatter before anyone had seen the job outranked an estimate computed for
+the work actually in front of it. Four runs of one sentence, each quoted $1.58,
+each held to `worker`'s 10, each killed having delivered (D-063, D-066). The
+quote was never allowed to mean anything.
+
+**The rule was right when it was written and had outlived its reason.** D-018
+introduced tighten-only because the per-turn rate was pooled across repo and
+no-repo work and predicted neither: the budget came out at 17 turns against a
+cap of 8, so the cap always won and the ceiling could never bind on anything.
+The fix then was the cap; the fix since has been the rate, which is per-shape
+and per-tier. What survived into today was the guard without the thing it was
+guarding against — and this project has a name for that already: a method that
+keeps being used after the ground moved (D-019, D-023, D-037).
+
+**Not every cap is a guess, and the distinction is the change.** `turnCapFor`
+returns three things and they are not alike:
+
+| Cap | What it is | Binds |
+|---|---|---|
+| `RECIPE_TURNS` | The one-shot tier *is* its five turns | firm |
+| A job's stated need | A compile's own budget, so no role has to raise its everyday one | firm |
+| The role's `maxTurns` | A standing guess about a trade | soft — yields to the quote |
+
+A quote that could stretch the leash would dissolve the one-shot tier rather
+than fund it, so firm means firm in both directions. A soft cap yields in both
+directions too: a job quoted at 5c still gets three turns and not the role's
+ten, which is the money protection tighten-only was really providing.
+
+Both hard clamps stand. `TURN_CEILING` (40) stops a cheap rate and a rich quote
+uncapping the loop between them — 100 ÷ 0.001 is 100,000 turns — and
+`MAX_CEILING_USD` upstream still stops one freak run funding the next.
+
+**Measured against the real ledger rather than reasoned about.** For
+`worker · session · no repo` the rate is **4.69c a turn over 10 samples**, so
+the job that paid for this moves from 10 turns to **33** — which is $1.55 at
+that rate, against a $1.58 quote. The conversion is sound on average, which is
+the claim being made.
+
+**And the honest residual, which the same measurement exposes.** The rate is a
+class average, and this job is dearer than its class: it really costs 6.6c a
+turn because search puts fetched pages in front of every subsequent turn. 33
+turns at 6.6c is **$2.18, about 38% over its own quote.** Nobody is billed for
+that — `priceFor` caps the charge at the quote and the app absorbs the rest —
+but it is spend, and the exposure is larger than it was, because 10 turns could
+not overspend by much and 33 can.
+
+That is the same shape as D-018's finding, one level finer: a rate pooled across
+*jobs within a shape* predicts the average and not the member. It was tolerable
+while the role cap masked it. Two things follow, and neither is done here: the
+drift is visible in the ledger and should be read there rather than argued, and
+if it is real the answer is a finer rate — per recipe, or per job history —
+rather than putting the cruder guard back.
+
+**Evidence.** 841 server tests and 74 web, typecheck clean. Committed, then
+mutation-tested: restoring `min(cap.turns, funded)` fails three tests, one of
+them the pair that checks a firm cap and a soft cap of the same size now behave
+differently.

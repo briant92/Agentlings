@@ -3352,8 +3352,14 @@ leashed. The free `answer` tier is untouched — it keys off `exact`, not
 `strong`.
 
 The tier's own history is the argument for buying that evidence before spending
-the leash on it: **21 leashed runs failed against 5 delivered**, and most of the
-60% of all spend that is absorbed is that.
+the leash on it: **21 leashed runs failed against 8 delivered**, and most of the
+62% of all spend that is absorbed is that.
+
+That figure was wrong when this entry was first written — 5, copied out of
+`AGENTLING.md`'s prose rather than recomputed, which is the one thing the
+hard-won rules say not to do with a number. Recounted off the ledger the same
+day. The ratio still carries the argument; the count was simply stale, which is
+how a figure in a note goes wrong without anyone touching it.
 
 **Evidence.** 833 server tests and 74 web, typecheck clean. Committed first,
 then mutation-tested: dropping the `successes` clause fails three tests.

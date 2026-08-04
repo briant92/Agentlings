@@ -698,19 +698,32 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
   const prompt = continuationPrompt(previous);
   const tools = granted(previous.tools);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
+  // Whoever actually ran it, and only then what the matcher says. A
+  // continuation is the same job, so re-matching it is asking the wrong
+  // question — and measured, it answers wrongly: the continuation prompt has
+  // "read RESULT.md" in it, which swung "summary table" work from the worker
+  // that ran it to `analyst`. `preferredRole` cannot stand in on its own,
+  // because the matcher declines to name a role whenever it is unsure and
+  // leaves the field empty, which is exactly when this fires. The ledger
+  // already holds this principle for what a run cost; this is it for what a
+  // run is (D-026, D-029).
+  const ranAs =
+    rt.sim.agentlings.find((a) => a.id === previous.assignedTo)?.role ??
+    rt.roster.find((a) => a.id === previous.assignedTo)?.role ??
+    previous.preferredRole;
   const job = rt.queue.add(
     queuedJobSpec({
       title: previous.title,
       prompt,
       repoPath: previous.repoPath,
       tools,
-      plan: { ...plan, role: previous.preferredRole ?? plan.role },
+      plan: { ...plan, role: ranAs ?? plan.role },
       quote: quoteFor_(
         QUOTE_CTX,
         rt.dir,
         prompt,
         tools,
-        previous.preferredRole ?? runnerRole(plan),
+        ranAs ?? runnerRole(plan),
         previous.repoPath,
       ),
       continues: previous.id,

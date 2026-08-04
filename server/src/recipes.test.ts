@@ -54,6 +54,7 @@ describe('findRecipe', () => {
       approach: 'sum column D',
       hits: 0,
       successes: 1,
+      completions: 1,
       capabilities: [],
       learnedAt: 1,
     },
@@ -161,6 +162,7 @@ describe('matching strength', () => {
       approach: 'read the module, then write the test beside it',
       hits: 0,
       successes: 1,
+      completions: 1,
       capabilities: [],
       learnedAt: 1,
     },
@@ -193,7 +195,7 @@ describe('matching strength', () => {
  *
  * A method earns the leash by having worked, not by existing.
  */
-describe('a method has to have worked before it may shorten the run', () => {
+describe('a method has to have fitted before it may shorten the run', () => {
   const unproven: Recipe = {
     key: 'summarise this month indicators',
     terms: terms('summarise this month indicators'),
@@ -205,7 +207,7 @@ describe('a method has to have worked before it may shorten the run', () => {
   };
   const prompt = 'Summarise this month indicators';
 
-  it('lends the method of a recipe nobody has landed yet', () => {
+  it('lends the method of a recipe nobody has finished on yet', () => {
     const found = findRecipe([unproven], prompt, []);
     expect(found?.recipe.approach).toContain('agency calendar');
   });
@@ -214,23 +216,36 @@ describe('a method has to have worked before it may shorten the run', () => {
     expect(findRecipe([unproven], prompt, [])?.strong).toBe(false);
   });
 
-  it('leashes it once a run using it has landed', () => {
-    const proven = { ...unproven, hits: 1, successes: 1 };
-    expect(findRecipe([proven], prompt, [])?.strong).toBe(true);
+  it('leashes it once a run using it finished inside its turns', () => {
+    const fitted = { ...unproven, hits: 1, successes: 1, completions: 1 };
+    expect(findRecipe([fitted], prompt, [])?.strong).toBe(true);
   });
 
-  // Being used is not the same as having worked, and the whole point is the
-  // gap between them: the run that banked this one used a method and died.
-  it('counts landings, not outings', () => {
-    const used = { ...unproven, hits: 4, successes: 0 };
+  // Being used is not the same as having worked.
+  it('counts completions, not outings', () => {
+    const used = { ...unproven, hits: 4, completions: 0 };
     expect(findRecipe([used], prompt, [])?.strong).toBe(false);
   });
 
-  // Both conditions bind independently — a proven method under a surface that
-  // has since moved is still demoted, which is the older rule.
+  /**
+   * The regression test for a real mistake: this gate was `successes` for one
+   * day, which is the counter that decides whether a method compiles into a
+   * script. That one counts a dying run that left a correct patch — right for
+   * "does the method work", wrong for "does the job fit". Job 3c031419
+   * delivered a spreadsheet three times and was killed three times, so under
+   * `successes` a no-repo job could never earn the leash while the same work
+   * with a clone earned it without ever finishing. (D-065)
+   */
+  it('does not leash a method that delivers and never fits', () => {
+    const delivers = { ...unproven, hits: 3, successes: 3, completions: 0 };
+    expect(findRecipe([delivers], prompt, [])?.strong).toBe(false);
+  });
+
+  // Both conditions bind independently — a method that fits, under a surface
+  // that has since moved, is still demoted. That is the older rule.
   it('still defers to a capability surface that has moved', () => {
-    const proven = { ...unproven, successes: 3, capabilities: ['conn:web'] };
-    expect(findRecipe([proven], prompt, ['conn:web', 'conn:search'])?.strong).toBe(false);
+    const fitted = { ...unproven, completions: 3, capabilities: ['conn:web'] };
+    expect(findRecipe([fitted], prompt, ['conn:web', 'conn:search'])?.strong).toBe(false);
   });
 });
 
@@ -249,6 +264,7 @@ describe('a method is only as good as what was available when it was found', () 
     approach: 'fetch the old.reddit mirror, it is server-rendered',
     hits: 3,
     successes: 1,
+    completions: 1,
     learnedAt: 1,
   };
   const prompt = 'Read the reddit programming page';

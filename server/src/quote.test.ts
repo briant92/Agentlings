@@ -74,6 +74,7 @@ describe('quoteFor_', () => {
         // Proven, or it would be quoted as a session — the leash is gated on a
         // run using the method having landed.
         successes: 1,
+        completions: 1,
         learnedAt: 1,
       },
     ]);

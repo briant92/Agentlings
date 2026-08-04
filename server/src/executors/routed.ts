@@ -377,7 +377,18 @@ export class RoutedExecutor implements Executor {
       const delivered =
         (result !== undefined && deliveredFiles(sandboxDir)) ||
         existsSync(patchFile(sandboxDir));
-      updated = creditRecipe(updated, usedKey, Date.now(), delivered);
+      // The leash asks a different question and gets its own counter. Above, a
+      // patch alone counts because the work was done and only the write-up was
+      // cut — right for "can this compile into a script", wrong for "does this
+      // job fit in five turns", which a killed run has answered no to whatever
+      // it produced. Requiring the clean return in *both* shapes is also what
+      // removes the asymmetry `successes` had here: measured on job 3c031419, a
+      // no-repo job that dies could never earn the leash while the same work
+      // with a clone earned it without finishing. (D-065)
+      const fitted =
+        result !== undefined &&
+        (deliveredFiles(sandboxDir) || existsSync(patchFile(sandboxDir)));
+      updated = creditRecipe(updated, usedKey, Date.now(), delivered, fitted);
     }
     if (approach && agentling) {
       // An answer is replayed to the user word for word, which is right when

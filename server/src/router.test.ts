@@ -293,6 +293,7 @@ describe('decide', () => {
     // Proven, so these tests are about the answer tier rather than about the
     // leash gate — an unproven recipe lends its method and never shortens.
     successes: 1,
+    completions: 1,
     capabilities: [],
     learnedAt: 1,
   };
@@ -348,6 +349,7 @@ describe('a recipe that only half fits', () => {
     approach: 'read the module, then write the test beside it',
     hits: 0,
     successes: 1,
+    completions: 1,
     capabilities: [],
     learnedAt: 1,
   };

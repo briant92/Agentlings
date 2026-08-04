@@ -183,6 +183,7 @@ describe('RoutedExecutor', () => {
           answer: 'red, green, blue',
           hits: 2,
           successes: 1,
+          completions: 1,
           capabilities: [],
           learnedAt: 1,
           ...over,
@@ -230,6 +231,7 @@ describe('RoutedExecutor', () => {
           approach: 'read the module, then write the test beside it',
           hits: 0,
           successes: 1,
+          completions: 1,
           capabilities: [],
           learnedAt: 1,
         },
@@ -526,6 +528,36 @@ describe('RoutedExecutor', () => {
       ).rejects.toThrow();
 
       expect(readRecipes(levelDir)[0]).toMatchObject({ hits: 1, successes: 1 });
+    });
+
+    // The same run, against the other counter, and the whole reason there are
+    // two. It delivered, so it may one day compile into a script; it was killed,
+    // so it has not shown the job fits — and the leash is only ever asked the
+    // second question. Gating the leash on `successes` for a day meant a
+    // gathering-bound job that delivered three times could never earn it, while
+    // the same work with a clone earned it without ever finishing (D-065).
+    it('does not count that same run as having fitted its budget', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'DIFF.patch'), 'diff --git a/x b/x\n+work\n');
+      await expect(
+        run(build(dying('the way that worked')), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow();
+
+      expect(readRecipes(levelDir)[0].completions ?? 0).toBe(0);
+    });
+
+    // And a run that finished credits both, which is what eventually opens the
+    // leash — with no repository, so this is the shape that was locked out.
+    it('counts a clean run that left files as both a landing and a fit', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'REPORT.md'), 'the work\n');
+      await run(
+        build(new FakeSession({ summary: 'done' })),
+        job({ prompt: 'add a test for formatUsd' }),
+        PIP,
+      );
+
+      expect(readRecipes(levelDir)[0]).toMatchObject({ successes: 1, completions: 1 });
     });
 
     // Narrower than `partial` on purpose, and the difference is the point.

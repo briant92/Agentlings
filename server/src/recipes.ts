@@ -44,6 +44,26 @@ export interface Recipe {
    * times and never once successful is not a candidate for anything.
    */
   successes?: number;
+  /**
+   * Times a run using this method finished inside its turn budget *and* left
+   * something behind.
+   *
+   * Separate from `successes`, and the gap between them is the point.
+   * `successes` asks whether the method gets the job done, because three of
+   * those compile it into a script — so it counts a dying run that left a
+   * correct patch, since the work was done and only the write-up was cut.
+   * This asks whether the job *fits*, which is a different question and the
+   * only one the leash should be asked.
+   *
+   * Measured on job 3c031419: three runs of a gathering-bound job, each of
+   * which delivered a real spreadsheet and each of which was killed on its
+   * last turn. Gating the leash on `successes` locked it out permanently —
+   * a no-repo run that dies never credits one, whatever it produced — while
+   * the same job with a repository would have earned the leash from a patch
+   * without ever finishing. Two shapes, two bars, inherited rather than
+   * chosen. (D-064, D-065)
+   */
+  completions?: number;
   learnedAt: number;
   lastUsedAt?: number;
 }
@@ -232,17 +252,23 @@ export function sameCapabilities(recipe: Recipe, capabilities: string[] | undefi
  * recipe saves *exploring*. This job's turns went on gathering, and knowing the
  * method does not gather anything.
  *
- * Deliberately `successes` rather than whether the authoring run finished — a
- * near-identical question, and this file has been wrong before by collapsing
- * two of those. `successes` counts runs that used the method and delivered, so
- * it is evidence about the method; the authoring run's own ending is evidence
- * about one run. It costs the leash exactly one outing: a hint-only match still
- * credits the recipe when it lands, so a good method is leashed on its third
- * run rather than its second, and the tier's own history — 21 leashed runs
- * failed against 5 delivered — is the argument for buying that evidence first.
+ * `completions`, and not `successes`, which this was gated on for one day and
+ * which was the wrong counter — collapsing two questions that only sound alike,
+ * in the entry that warned against doing exactly that. `successes` asks whether
+ * the method gets the job done, and counts a dying run that left a correct
+ * patch. The leash is asking whether the job *fits its budget*, and a run that
+ * had to be killed has answered no however good its output was. Measured: three
+ * runs of job 3c031419 each delivered and each died, which under `successes`
+ * meant a no-repo job could never earn the leash at all while the same work
+ * with a repository earned it without ever finishing. (D-065)
+ *
+ * It costs the leash exactly one outing: a hint-only match still credits the
+ * recipe, so a method that does fit is leashed on its third run rather than its
+ * second. The tier's own history — 21 leashed runs failed against 8 delivered —
+ * is the argument for buying that evidence first.
  */
 export function canShortenLeash(recipe: Recipe, capabilities: string[] | undefined): boolean {
-  return sameCapabilities(recipe, capabilities) && (recipe.successes ?? 0) > 0;
+  return sameCapabilities(recipe, capabilities) && (recipe.completions ?? 0) > 0;
 }
 
 export function findRecipe(
@@ -337,12 +363,15 @@ export function creditRecipe(
   key: string,
   at: number,
   landed = false,
+  /** Landed *and* got there inside its turns — what the leash is gated on. */
+  fitted = false,
 ): Recipe[] {
   const found = recipes.find((r) => r.key === key);
   if (found) {
     found.hits += 1;
     found.lastUsedAt = at;
     if (landed) found.successes = (found.successes ?? 0) + 1;
+    if (fitted) found.completions = (found.completions ?? 0) + 1;
   }
   return recipes;
 }

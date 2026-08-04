@@ -277,9 +277,9 @@ into a corpus nobody has looked at. An index is a file you can open first.
 
 | | |
 |---|---|
-| What is indexed | `.md` `.markdown` `.mdx` `.txt`, walked recursively; dotfolders and `node_modules` skipped |
-| What a passage is | A markdown section, split at headings, heading kept — usually the only place the subject is named |
-| Size | 600 chars a passage, 250 files a source, the overflow **reported** rather than dropped quietly |
+| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf`, walked recursively; dotfolders and `node_modules` skipped. A scanned PDF holds no text and yields nothing (D-059) |
+| What a passage is | A markdown section where there are headings, kept with its heading; otherwise a length-bounded run cut at a sentence end. A document has no headings, so the second rule is what makes one readable |
+| Size | 600 chars a passage, 200 passages a file, 250 files a source — every overflow **reported** rather than dropped quietly |
 | Provenance | Every line ends `[<file>, synced <date>]`, so a free answer and a session's context both say where it came from |
 | Staleness | Past a week the index contributes **nothing** — the free tier cannot answer from it and the job falls through to a session that can go and look |
 | Scope | Per level, like recipes and tools: a note about one project is not a note about another (D-013) |
@@ -1088,6 +1088,7 @@ untouched until you press Approve.
 | `STALE_MS` | 7 days | `store.ts` | Past it the knowledge store contributes nothing at all |
 | `MAX_PER_SOURCE` | 250 | `store.ts` | Files indexed per folder; the overflow is reported |
 | `MAX_ENTRY_CHARS` | 600 | `store.ts` | One passage, so eight of them are still a small prompt |
+| `MAX_PASSAGES_PER_FILE` | 200 | `store.ts` | About 60 pages; a long document is read that far and the count is shown |
 
 ### Reaching out
 

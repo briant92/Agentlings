@@ -68,6 +68,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-056 — 2026-08-03 — The ledger gains an author, and the panels that needed one](#d-056--2026-08-03--the-ledger-gains-an-author-and-the-panels-that-needed-one)
 - [D-057 — 2026-08-03 — Two ways to count one thing, and why the slower one stays](#d-057--2026-08-03--two-ways-to-count-one-thing-and-why-the-slower-one-stays)
 - [D-058 — 2026-08-04 — A document is shown where it lands, and two listings become one](#d-058--2026-08-04--a-document-is-shown-where-it-lands-and-two-listings-become-one)
+- [D-059 — 2026-08-04 — The store reads documents, and the splitter that made it real](#d-059--2026-08-04--the-store-reads-documents-and-the-splitter-that-made-it-real)
 
 ## By theme
 
@@ -113,7 +114,8 @@ entry updates one file rather than two.
   D-056
 - **Documents, continued** — produced in D-031, and shown rather than merely
   offered in D-058, which also collapses the second listing and the second
-  ordering (D-030's shape again)
+  ordering (D-030's shape again); read *into* the knowledge store by D-059,
+  where the splitter was the feature and the extensions were the easy half
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
@@ -3003,3 +3005,66 @@ one layer higher. And the panel still cannot show a document the crew never
 wrote: the tier matters — only a session tier can write one, since a compiled
 tool's contract is plain node with no dependencies — and so does the turn
 budget, D-030's run 5 having produced a working generator and no file.
+
+## D-059 — 2026-08-04 — The store reads documents, and the splitter that made it real
+
+Opening the knowledge store to `.docx` and `.pdf` is one line in `INDEXABLE`,
+and on its own it would have been inert.
+
+**What `passages` actually did.** It split at markdown headings and `trim`med
+each section to 600 characters, throwing the rest away. Invisible on the short
+notes it was built for and ruinous on anything else — measured before changing
+anything, a 2,974-character `.txt` indexed as **one** passage holding 633
+characters, so 79% of a plain text file was already unsearchable, and a
+markdown file with long sections lost every tail past 600. Nothing said so; the
+`skipped` counter reports files left out, not content left behind, so the panel
+showed a clean sync over a partial index.
+
+A `.docx` or a `.pdf` has no `#` headings anywhere, so adding the extensions on
+top of that would have indexed the first paragraph of each document and looked
+exactly like it worked. That is D-026's shape once more: complete in the type,
+the route, the setting and the panel copy, and reaching nothing. So the change
+that matters is that an over-long block is now **cut** into passages at a
+sentence end rather than truncated, which fixes `.txt` and long markdown in the
+same motion — they were broken before documents were ever mentioned.
+
+**The rest is small on purpose.** `extract` reads a file by extension, lazily
+importing `mammoth` or `pdf-parse` so a folder of markdown loads neither; the
+libraries are already at the project root for the sandboxes (D-031), so
+nothing was installed. `sync` becomes async and one unreadable file — an
+encrypted PDF, a `.docx` that is a renamed something-else — costs its own
+passages and no more, the same rule a missing source folder already had.
+
+**A second cap, because documents are not notes.** `MAX_PER_SOURCE` bounds a
+folder at 250 files; nothing bounded a file. One 500-page PDF is more passages
+than 250 markdown files put together, and the whole index is parsed on every
+job and every quote. So 200 passages a file — about 60 pages — with the count
+of files that hit it shown in the panel, on the same rule the source cap
+follows: a store that quietly indexed the first third of a contract would
+answer confidently from that third.
+
+**Caught by running it, not by the test.** `pdf-parse` writes `-- 1 of 1 --`
+between pages, and it rode into the indexed passage, where it would be shown
+in a recall answer and pasted into an agentling's briefing as though the
+document had said it. The unit test asserted with `toContain` and passed with
+the marker sitting in the entry; it was visible the moment a real PDF was
+indexed and the entry read back. The test now asserts its absence, over a
+two-page PDF, which is also what proves the pages are both read.
+
+**Evidence.** Verified live on the `home-chores` level and then removed again:
+a folder holding a `.docx`, a `.pdf` and an `.md` indexed as 3 passages from 3
+files, and asked through the real router, "what do we know about the
+dishwasher warranty" returned the `answer` tier — free, no session, no turns —
+quoting the PDF with `[warranty.pdf, synced 2026-08-04]` on the line, and "what
+do we know about the boiler service" returned the `.docx` the same way.
+810 server tests and 74 web. Mutation-tested after committing, one at a time so
+the signals do not mask each other: replacing the chunker with the old truncate
+failed 4, dropping the two extensions failed 2, removing the page-marker strip
+failed 1, and removing the truncation counter failed 1.
+
+**Still not read.** Anything that is not text under the hood: a scanned PDF is
+pictures of words and yields nothing, which the panel now says rather than
+leaving it to look like a file that was skipped. `.xlsx` and `.pptx` are not
+indexed either — the crew can write both and `previewFile` can read both
+(D-058), so this is a decision not to flatten a spreadsheet into prose, not a
+missing capability.

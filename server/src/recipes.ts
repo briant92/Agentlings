@@ -72,7 +72,9 @@ export interface Recipe {
    * The upper bound on what this job needs, and the only evidence that could
    * ever support cutting it to a five-turn leash. Recorded from the shortest
    * completing run, because a job proved achievable in 33 turns and again in
-   * 12 needs 12.
+   * 12 needs 12 — and from the tighter of what that run was *granted* and what
+   * it actually *did*, since a generous grant it finished well inside says
+   * nothing about the need (see `creditRecipe`).
    */
   completedInTurns?: number;
   learnedAt: number;
@@ -404,6 +406,8 @@ export function creditRecipe(
   fitted = false,
   /** Turns that run was granted. Only meaningful when it `fitted`. */
   turnsAllowed?: number,
+  /** Tool calls it actually made — the tighter bound of the two. */
+  toolCalls?: number,
 ): Recipe[] {
   const found = recipes.find((r) => r.key === key);
   if (found) {
@@ -412,11 +416,22 @@ export function creditRecipe(
     if (landed) found.successes = (found.successes ?? 0) + 1;
     if (fitted) {
       found.completions = (found.completions ?? 0) + 1;
+      // Two upper bounds on what the job needs, and the tighter one wins.
+      //
+      // The grant alone only ever ratchets down on grants: job 8ab9b070 was
+      // given 40, finished on 24 calls, and left the bound sitting at 33
+      // because 33 was simply the smaller allowance. `toolCalls + 1` is what
+      // the run *did*, and it reproduces the SDK's own turn count exactly — 5
+      // of 5 completing rows on this machine — while being counted by us, so
+      // it survives a run the SDK never reports on (D-052).
+      const bounds = [turnsAllowed, toolCalls === undefined ? undefined : toolCalls + 1].filter(
+        (n): n is number => typeof n === 'number' && n >= 1,
+      );
       // The shortest completion, not the latest: a job proved achievable in 33
       // turns and again in 12 needs 12, and taking the latest would let one
       // generously-budgeted run undo what a tighter one established.
-      if (typeof turnsAllowed === 'number' && turnsAllowed >= 1) {
-        found.completedInTurns = Math.min(found.completedInTurns ?? Infinity, turnsAllowed);
+      if (bounds.length > 0) {
+        found.completedInTurns = Math.min(found.completedInTurns ?? Infinity, ...bounds);
       }
     }
   }

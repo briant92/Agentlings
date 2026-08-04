@@ -163,8 +163,29 @@ describe('runnerRole', () => {
     expect(runnerRole(plan)).toBe('scribe');
   });
 
-  it('stays null for work nothing matched, rather than inventing a class', () => {
+  /**
+   * Not an invented class — the class this work is about to be *filed* under.
+   * The matcher declining is not the job going unrun: somebody picks it up and
+   * the ledger records their role, so pricing it under `null` looks up a class
+   * no row carries and finds nothing at all.
+   *
+   * Measured on the economic-indicators job: matched at 0.24, below the bar, so
+   * every one of six quotes fell through to the tier average and said "first
+   * time doing this" — while all six runs were recorded under `worker`. The
+   * third form of one fault: D-026 and D-029 fixed the class being wrong,
+   * `quoteClass` fixed it being the wrong field, this is it being absent.
+   */
+  it('is the role that will take the work when the matcher names nobody', () => {
     const plan = planWork(index, ROLES, team, '/repo', 'pull the numbers out of my PDFs');
+    expect(plan.role).toBeNull();
+    expect(plan.agentling).not.toBeNull();
+    expect(runnerRole(plan)).toBe(plan.agentling?.role);
+  });
+
+  // With nobody to take it there is genuinely nothing to price under, and a
+  // guess here would be an invented class rather than an observed one.
+  it('stays null when nothing matched and no crew could take it either', () => {
+    const plan = planWork(index, ROLES, [], '/repo', 'pull the numbers out of my PDFs');
     expect(plan.role).toBeNull();
     expect(runnerRole(plan)).toBeNull();
   });

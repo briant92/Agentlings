@@ -302,6 +302,28 @@ describe('creditRecipe records what a completion cost in turns', () => {
     expect(out[0]).toMatchObject({ completions: 1, completedInTurns: 33 });
   });
 
+  /**
+   * The grant alone only ratchets down on grants. Job 8ab9b070 was given 40,
+   * finished on 24 calls, and left the bound at 33 — which was just the smaller
+   * allowance, not evidence about the job. `toolCalls + 1` is what the run did,
+   * and it reproduces the SDK's own turn count exactly on 5 of 5 completing
+   * rows while being counted by us rather than reported to us.
+   */
+  it('prefers what the run did over what it was allowed', () => {
+    const out = creditRecipe(seed(), 'x', 2, true, true, 40, 24);
+    expect(out[0].completedInTurns).toBe(25);
+  });
+
+  it('keeps the grant when that is the tighter of the two', () => {
+    const out = creditRecipe(seed(), 'x', 2, true, true, 12, 20);
+    expect(out[0].completedInTurns).toBe(12);
+  });
+
+  it('still records something when only one bound is known', () => {
+    expect(creditRecipe(seed(), 'x', 2, true, true, undefined, 8)[0].completedInTurns).toBe(9);
+    expect(creditRecipe(seed(), 'x', 2, true, true, 15)[0].completedInTurns).toBe(15);
+  });
+
   // A run that delivered but was killed proves nothing about what the job
   // needs — it never finished, so its cap is not an upper bound on anything.
   it('records nothing for a run that delivered but did not fit', () => {

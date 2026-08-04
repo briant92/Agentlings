@@ -398,6 +398,7 @@ export class RoutedExecutor implements Executor {
         delivered,
         fitted,
         result?.meter?.turnsAllowed,
+        result?.meter?.toolCalls,
       );
     }
     if (approach && agentling) {

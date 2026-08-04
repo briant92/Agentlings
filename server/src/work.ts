@@ -92,7 +92,20 @@ export function planWork(
  * first time".
  */
 export function runnerRole(plan: WorkPlan): string | null {
-  return plan.noOneHasRole ? (plan.agentling?.role ?? plan.role) : plan.role;
+  // The matcher naming *nobody* is the same situation and was not treated as
+  // one. Below `MIN_CONFIDENCE` it declines rather than guesses, which is right
+  // — but the job is still going to be picked up and run by someone, and
+  // pricing it under `null` finds no history at all.
+  //
+  // Measured on the economic-indicators job: matched at 0.24 confidence, so
+  // `role` was null, so `history()` looked up a class no ledger row carries and
+  // returned nothing, so every quote fell through to the tier average and said
+  // "first time doing this" — on the sixth run of that sentence, all six of
+  // them recorded under `worker`. The third form of one fault: D-026 and D-029
+  // fixed the class being *wrong*, `quoteClass` fixed it being the wrong
+  // *field*, and this is it being absent.
+  if (!plan.role || plan.noOneHasRole) return plan.agentling?.role ?? plan.role;
+  return plan.role;
 }
 
 /**

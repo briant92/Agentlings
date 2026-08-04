@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SimulatedExecutor } from './executors/simulated';
-import { deliveredFiles, listOutputs, producedArtefacts } from './outputs';
+import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
 import { jobsFile, JobQueue } from './queue';
 
 describe('JobQueue', () => {
@@ -143,7 +143,7 @@ describe('JobQueue', () => {
       const dir = queue.sandboxDir(job.id);
       expect(deliveredFiles(dir)).toBe(false);
       expect(producedArtefacts(dir)).toBe(false);
-      expect(listOutputs(dir)).toEqual([]);
+      expect(describeOutputs(dir)).toEqual([]);
 
       // …and a run that then delivers nothing is still a plain failure.
       queue.start(job.id);

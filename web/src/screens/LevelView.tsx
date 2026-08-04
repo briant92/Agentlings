@@ -27,7 +27,9 @@ export function LevelView({
   onMissing: () => void;
 }) {
   const { world, connected, events, gone } = useWorld(level.id);
-  const [reviewJobId, setReviewJobId] = useState<string | null>(null);
+  // The file is optional and only the inbox sets it: everywhere else opens a
+  // job, not one of its files, and lands on whatever the viewer ranks first.
+  const [review, setReview] = useState<{ jobId: string; file?: string } | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
@@ -39,7 +41,7 @@ export function LevelView({
   // way about, so the two halves of the panel are talking about the same crew.
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const arrival = useRef<number | undefined>(undefined);
-  const reviewJob = world?.jobs.find((j) => j.id === reviewJobId) ?? null;
+  const reviewJob = world?.jobs.find((j) => j.id === review?.jobId) ?? null;
 
   useEffect(() => () => clearTimeout(arrival.current), []);
 
@@ -130,7 +132,7 @@ export function LevelView({
           theme={level.theme}
           onSelect={setProfileId}
           onOpenCrew={() => setCrewOpen(true)}
-          onOpenReview={setReviewJobId}
+          onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
           onHover={setHoveredId}
           hoveredId={hoveredId}
         />
@@ -156,11 +158,16 @@ export function LevelView({
           world={world}
           events={events}
           revision={revision}
-          onOpenReview={setReviewJobId}
+          onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
         />
       </aside>
       {reviewJob && (
-        <ReviewModal levelId={level.id} job={reviewJob} onClose={() => setReviewJobId(null)} />
+        <ReviewModal
+          levelId={level.id}
+          job={reviewJob}
+          file={review?.file}
+          onClose={() => setReview(null)}
+        />
       )}
       {profileId && (
         <ProfileModal
@@ -174,7 +181,7 @@ export function LevelView({
           levelId={level.id}
           jobs={world?.jobs ?? []}
           productivity={productivity}
-          onOpenReview={setReviewJobId}
+          onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
           onClose={() => setCrewOpen(false)}
         />
       )}

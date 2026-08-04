@@ -108,7 +108,8 @@ export function Terminal({
   events: JobEvent[];
   /** Bumped when the queue changes; the inbox refetches on it. */
   revision: number;
-  onOpenReview: (jobId: string) => void;
+  /** The file is the inbox's business; the feed opens a job and nothing more. */
+  onOpenReview: (jobId: string, file?: string) => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [paused, setPaused] = useState(false);

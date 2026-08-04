@@ -4,8 +4,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   contentTypeFor,
+  describeOutputs,
   isBinary,
-  listOutputs,
   opensInBrowser,
   producedArtefacts,
   safeAttachmentName,
@@ -73,28 +73,29 @@ describe('isBinary', () => {
   });
 });
 
-describe('listOutputs', () => {
+describe('describeOutputs', () => {
   it('is empty for a sandbox that was never created', () => {
-    expect(listOutputs(path.join(dir, 'nope'))).toEqual([]);
+    expect(describeOutputs(path.join(dir, 'nope'))).toEqual([]);
   });
 
-  it('inlines text and withholds binary', () => {
+  it('names and sizes every file, whatever is in it', () => {
     writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
     writeFileSync(path.join(dir, 'report.pdf'), PDF);
-    const files = listOutputs(dir).sort((a, b) => (a.name < b.name ? -1 : 1));
+    const files = describeOutputs(dir).sort((a, b) => (a.name < b.name ? -1 : 1));
 
-    expect(files.map((f) => f.name)).toEqual(['RESULT.md', 'report.pdf']);
-    expect(files[0]).toEqual({ name: 'RESULT.md', bytes: 7, binary: false, content: '# Done\n' });
-    expect(files[1]).toEqual({ name: 'report.pdf', bytes: PDF.length, binary: true });
-    // The point of the change: the bytes are not mangled into a string.
-    expect(files[1].content).toBeUndefined();
+    // No contents at any size: a listing says what is there, and reading one
+    // is a separate request for one file.
+    expect(files).toEqual([
+      { name: 'RESULT.md', bytes: 7 },
+      { name: 'report.pdf', bytes: PDF.length },
+    ]);
   });
 
   it('skips directories and dotfiles', () => {
     mkdirSync(path.join(dir, 'repo'));
     writeFileSync(path.join(dir, '.hidden'), 'x');
     writeFileSync(path.join(dir, 'RESULT.md'), 'y');
-    expect(listOutputs(dir).map((f) => f.name)).toEqual(['RESULT.md']);
+    expect(describeOutputs(dir).map((f) => f.name)).toEqual(['RESULT.md']);
   });
 });
 

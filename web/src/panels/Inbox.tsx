@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Delivery, DeliveryFile } from '@agentlings/shared';
+import type { Delivery } from '@agentlings/shared';
 import { lvl } from '../api';
+import { fileUrl, orderFiles, PAPERWORK, size } from './files';
 import { money } from './Productivity';
 
 /**
@@ -16,36 +17,11 @@ import { money } from './Productivity';
  * file out of a sandbox rather than two.
  */
 
-/** Which sandbox files are the crew's paperwork rather than the deliverable. */
-const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md', 'DIFF.patch']);
-
-function fileUrl(levelId: string, jobId: string, name: string): string {
-  return lvl(levelId, `/jobs/${jobId}/output/${encodeURIComponent(name)}`);
-}
-
-function size(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function when(at: number): string {
   const d = new Date(at);
   return new Date().toDateString() === d.toDateString()
     ? d.toTimeString().slice(0, 5)
     : d.toDateString().slice(4, 10);
-}
-
-/**
- * The deliverable first, paperwork after.
- *
- * A job that wrote a spreadsheet also wrote a RESULT.md about it, and listing
- * them in directory order puts the write-up where the eye lands first. What
- * was asked for goes first.
- */
-function order(files: DeliveryFile[]): DeliveryFile[] {
-  const rank = (name: string) => (PAPERWORK.has(name) ? 1 : 0);
-  return [...files].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 }
 
 /**
@@ -74,7 +50,7 @@ export function Inbox({
 }: {
   levelId: string;
   revision: number;
-  onOpenReview: (jobId: string) => void;
+  onOpenReview: (jobId: string, file?: string) => void;
 }) {
   const [rows, setRows] = useState<Delivery[] | null>(null);
   const [seen, setSeen] = useState<string[]>(() => readSeen(levelId));
@@ -103,9 +79,9 @@ export function Inbox({
     [levelId],
   );
 
-  const open = (jobId: string) => {
+  const open = (jobId: string, file?: string) => {
     markSeen(jobId);
-    onOpenReview(jobId);
+    onOpenReview(jobId, file);
   };
 
   const fresh = (rows ?? []).filter((d) => !seen.includes(d.jobId)).length;
@@ -125,7 +101,7 @@ export function Inbox({
         )}
         {rows?.map((d) => {
           const unread = !seen.includes(d.jobId);
-          const files = order(d.files);
+          const files = orderFiles(d.files);
           return (
             <div key={d.jobId} className={`in-row${unread ? ' unread' : ''}`}>
               <span className="dim in-when">{when(d.at)}</span>
@@ -137,19 +113,29 @@ export function Inbox({
                     {d.outcome === 'to review' ? d.status : d.outcome}
                   </span>
                 </span>
+                {/* The chip opens the file rather than saving it. Saving a
+                    .xlsx to find out whether it is the right .xlsx was the
+                    whole complaint; the arrow keeps the one-click save for
+                    when you already know. */}
                 {files.length > 0 && (
                   <span className="in-files">
                     {files.map((f) => (
-                      <a
+                      <span
                         key={f.name}
                         className={`in-chip${PAPERWORK.has(f.name) ? ' paper' : ''}`}
-                        href={fileUrl(levelId, d.jobId, f.name)}
-                        download={f.name}
-                        onClick={() => markSeen(d.jobId)}
-                        title={`Save ${f.name}`}
                       >
-                        {f.name} <i>{size(f.bytes)}</i>
-                      </a>
+                        <button onClick={() => open(d.jobId, f.name)} title={`Open ${f.name}`}>
+                          {f.name} <i>{size(f.bytes)}</i>
+                        </button>
+                        <a
+                          href={fileUrl(levelId, d.jobId, f.name)}
+                          download={f.name}
+                          onClick={() => markSeen(d.jobId)}
+                          title={`Save ${f.name}`}
+                        >
+                          ↓
+                        </a>
+                      </span>
                     ))}
                   </span>
                 )}

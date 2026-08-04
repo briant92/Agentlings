@@ -1,45 +1,26 @@
 import { useEffect, useState } from 'react';
-import type { Job, JobOutputFile } from '@agentlings/shared';
+import type { DeliveryFile, Job } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
-
-type OutputFile = JobOutputFile;
-
-function fileUrl(levelId: string, jobId: string, name: string): string {
-  return lvl(levelId, `/jobs/${jobId}/output/${encodeURIComponent(name)}`);
-}
-
-/** Browsers render these natively, so a frame needs no library at all. */
-function isPdf(name: string): boolean {
-  return name.toLowerCase().endsWith('.pdf');
-}
-
-function size(bytes: number): string {
-  if (bytes < 1024) return `${bytes} bytes`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/** The report first, then the file list, with the raw patch tucked underneath. */
-function order(files: OutputFile[]): OutputFile[] {
-  const rank = (name: string) => (name === 'RESULT.md' ? 0 : name === 'DIFF.patch' ? 2 : 1);
-  return [...files].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
-}
+import { FileViewer } from './FileViewer';
 
 /** Full sandbox contents in an overlay; Esc, backdrop, or Close dismisses. */
 export function ReviewModal({
   levelId,
   job,
+  /** The file to open on, when the inbox already knows which one was clicked. */
+  file,
   onClose,
 }: {
   levelId: string;
   job: Job;
+  file?: string;
   onClose: () => void;
 }) {
-  const [files, setFiles] = useState<OutputFile[] | null>(null);
+  const [files, setFiles] = useState<DeliveryFile[] | null>(null);
 
   useEffect(() => {
     let alive = true;
-    void api<{ files: OutputFile[] }>(lvl(levelId, `/jobs/${job.id}/output`)).then((data) => {
+    void api<{ files: DeliveryFile[] }>(lvl(levelId, `/jobs/${job.id}/output`)).then((data) => {
       if (alive) setFiles(data.files);
     });
     return () => {
@@ -62,7 +43,7 @@ export function ReviewModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal review" onClick={(e) => e.stopPropagation()}>
         <div className="m-head">
           <span className={`badge ${job.status}`}>{job.status}</span>
           <span className="m-title">{job.title}</span>
@@ -84,42 +65,7 @@ export function ReviewModal({
             </>
           )}
           {files === null && <p className="dim">Loading…</p>}
-          {files?.length === 0 && <p className="dim">Nothing was left in the sandbox.</p>}
-          {files &&
-            order(files).map((f) =>
-              f.binary ? (
-                // A document is not something to print into a <pre>. It is
-                // named, sized and offered as itself — and shown, where the
-                // browser can do that without help. A PDF it can; the Office
-                // formats it cannot, and those stay downloads.
-                <div key={f.name} className="rv-file">
-                  <h3>{f.name}</h3>
-                  <p className="dim">
-                    {size(f.bytes)} ·{' '}
-                    <a href={fileUrl(levelId, job.id, f.name)} download={f.name}>
-                      download
-                    </a>
-                  </p>
-                  {isPdf(f.name) && (
-                    <iframe
-                      className="rv-pdf"
-                      src={fileUrl(levelId, job.id, f.name)}
-                      title={f.name}
-                    />
-                  )}
-                </div>
-              ) : f.name === 'DIFF.patch' ? (
-                <details key={f.name} className="rv-raw">
-                  <summary>Show the raw patch</summary>
-                  <pre>{f.content}</pre>
-                </details>
-              ) : (
-                <div key={f.name}>
-                  <h3>{f.name}</h3>
-                  <pre>{f.content}</pre>
-                </div>
-              ),
-            )}
+          {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
         </div>
         <div className="m-foot">
           {/* `partial` gets the same actions the terminal card offers it:

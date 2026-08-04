@@ -1,6 +1,6 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
-import type { DeliveryFile, JobOutputFile } from '@agentlings/shared';
+import type { DeliveryFile } from '@agentlings/shared';
 
 /**
  * What a job left behind in its sandbox.
@@ -161,13 +161,13 @@ export function safeAttachmentName(name: string): string | null {
 }
 
 /**
- * The same listing without the contents: what each file is called and how big
- * it is, from the directory entry alone.
+ * What each file is called and how big it is, from the directory entry alone.
  *
- * `listOutputs` below reads every byte of every file so the review panel can
- * print the text ones. The inbox shows a row of name-and-size chips for a
- * dozen jobs at once and never renders a byte of it, so reading them would be
- * megabytes fetched to draw a label.
+ * The one listing, for the inbox and the review panel both. There used to be a
+ * second that read every byte of every file so the panel could print the text
+ * ones — which is megabytes fetched to draw a row of labels, and answers "what
+ * is in this file" in a place that has not been asked yet. Contents come from
+ * `previewFile`, one file at a time, when something is actually being read.
  */
 export function describeOutputs(dir: string): DeliveryFile[] {
   if (!existsSync(dir)) return [];
@@ -177,25 +177,4 @@ export function describeOutputs(dir: string): DeliveryFile[] {
       name: entry.name,
       bytes: statSync(path.join(dir, entry.name)).size,
     }));
-}
-
-/**
- * The sandbox's top-level files. Text comes back inline, because that is what
- * the review panel reads; anything binary is announced and left on disk to be
- * fetched on its own.
- */
-export function listOutputs(dir: string): JobOutputFile[] {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
-    .map((entry) => {
-      const buffer = readFileSync(path.join(dir, entry.name));
-      const binary = isBinary(buffer);
-      return {
-        name: entry.name,
-        bytes: buffer.length,
-        binary,
-        ...(binary ? {} : { content: buffer.toString('utf8') }),
-      };
-    });
 }

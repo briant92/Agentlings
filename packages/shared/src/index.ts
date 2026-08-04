@@ -159,20 +159,42 @@ export interface JobAttachment {
 export const MAX_ATTACHMENTS = 5;
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
-/**
- * One file a job left in its sandbox.
- *
- * `content` is present only for text. A job that produces a document — a PDF,
- * a spreadsheet — used to be read as UTF-8 like everything else and arrived as
- * mojibake, so the file is announced here and fetched on its own instead.
- */
-export interface JobOutputFile {
+/** One sheet of a spreadsheet, as far down as the preview goes. */
+export interface PreviewSheet {
   name: string;
-  bytes: number;
-  binary: boolean;
-  /** The file itself, for text only. */
-  content?: string;
+  /** Cells as text; the first row is whatever the sheet's first row is. */
+  rows: string[][];
+  /** What the sheet actually holds, so a cut is stated rather than implied. */
+  totalRows: number;
+  totalCols: number;
 }
+
+/** One slide, as the lines of text on it. */
+export interface PreviewSlide {
+  n: number;
+  lines: string[];
+}
+
+/**
+ * A file as the panel shows it, rather than as it saves it.
+ *
+ * The kind says how much to trust what is on screen. `native` and `text` are
+ * the file itself. `html`, `grid` and `slides` are conversions and the panel
+ * labels them as such — a converted preview that reads as the real document is
+ * the same error as a banked sentence standing in for a PDF that was never
+ * written (D-030).
+ *
+ * Everything that cuts says what it cut. A preview that quietly shows the
+ * first hundred rows of a thousand has answered a different question than the
+ * one asked.
+ */
+export type FilePreview =
+  | { kind: 'text'; content: string; truncated: boolean }
+  | { kind: 'html'; html: string; truncated: boolean }
+  | { kind: 'grid'; sheets: PreviewSheet[] }
+  | { kind: 'slides'; slides: PreviewSlide[]; total: number }
+  | { kind: 'native'; contentType: string }
+  | { kind: 'none'; reason: string };
 
 /** What a finished job actually changed, for explaining it in plain words. */
 export interface JobChanges {

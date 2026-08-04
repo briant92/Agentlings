@@ -1407,17 +1407,6 @@ button.danger:hover {
   margin: 0;
   padding-left: 18px;
 }
-.rv-raw {
-  margin-top: 14px;
-}
-.rv-raw summary {
-  font-size: 11px;
-  color: #8a91a3;
-  cursor: pointer;
-}
-.rv-raw summary:hover {
-  color: #d8dce6;
-}
 
 .hire-quote {
   font-size: 12px;
@@ -1621,16 +1610,213 @@ button.danger:hover {
 .back-made {
   font-size: 11px;
 }
-.rv-file {
-  margin-bottom: 10px;
+/* The file viewer: a rail of what the job left, and one pane showing whichever
+   is chosen. Wider than the other modals because a spreadsheet needs columns. */
+.modal.review {
+  width: min(920px, 94vw);
+}
+.fv {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  min-height: 320px;
+}
+.fv-rail {
+  width: 186px;
+  flex-shrink: 0;
+  border-right: 1px solid #262b36;
+  padding-right: 6px;
+}
+.fv-row {
+  display: flex;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: #d8dce6;
+  padding: 5px 7px;
+  cursor: pointer;
+  font: inherit;
+}
+.fv-row:hover {
+  background: #171d28;
+}
+.fv-row.on {
+  border-left-color: var(--db-lime);
+  background: #171d28;
+}
+/* Dimmed for the same reason the inbox dims it: worth having, not what was
+   asked for. */
+.fv-row.paper {
+  color: #8a91a3;
+}
+.fv-glyph {
+  color: #5f6675;
+  font-size: 12px;
+}
+.fv-meta {
+  font-size: 11px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fv-meta i {
+  display: block;
+  font-style: normal;
+  color: #5f6675;
+  font-size: 10px;
+}
+.fv-pane {
+  flex: 1;
+  min-width: 0;
+}
+.fv-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #262b36;
+}
+.fv-open {
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Says how much of the file is really on screen. A conversion that reads as
+   the document is the mistake this label exists to prevent. */
+.fv-fid {
+  font-size: 10px;
+  color: var(--db-yellow);
+  border: 1px solid #4a4326;
+  border-radius: 3px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.fv-fid.exact {
+  color: var(--db-lime-light);
+  border-color: var(--db-green);
+}
+.fv-save {
+  font-size: 11px;
+  color: var(--db-lime-light);
+}
+.fv-body {
+  padding-top: 8px;
+}
+.fv-note {
+  font-size: 10px;
+  margin: 6px 0 0;
+}
+.fv-none {
+  font-size: 12px;
+}
+.fv-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.fv-tabs button {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid transparent;
+  color: #8a91a3;
+  cursor: pointer;
+}
+.fv-tabs button.on {
+  background: #1c2733;
+  border-color: #33415c;
+  color: #d8dce6;
+}
+.fv-scroll {
+  overflow: auto;
+  max-height: 420px;
+}
+.fv-grid {
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.fv-grid th,
+.fv-grid td {
+  border: 1px solid #262b36;
+  padding: 2px 6px;
+  text-align: left;
+  font-weight: normal;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fv-grid th {
+  color: #5f6675;
+  font-size: 10px;
+  text-align: center;
+}
+/* Serif, because it is a document: the point of the pane is that it does not
+   look like the terminal it is sitting in. */
+.fv-doc {
+  background: #151a24;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 14px 18px;
+  max-height: 420px;
+  overflow: auto;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.fv-doc a {
+  color: var(--db-sky);
+}
+.fv-doc table {
+  border-collapse: collapse;
+}
+.fv-doc td,
+.fv-doc th {
+  border: 1px solid #33415c;
+  padding: 2px 6px;
+}
+.fv-slides {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  max-height: 420px;
+  overflow: auto;
+}
+.fv-slide {
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 11px;
+  min-height: 72px;
+}
+.fv-slide p {
+  margin: 2px 0 0;
+}
+.fv-text {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
 }
 /* Rendered by the browser itself — no viewer library, no bundle weight. */
-.rv-pdf {
+.fv-pdf {
   width: 100%;
-  height: 460px;
+  height: 440px;
   border: 1px solid #262b36;
   border-radius: 4px;
   background: #11151f;
+}
+.fv-img {
+  max-width: 100%;
+  border: 1px solid #262b36;
+  border-radius: 4px;
 }
 
 /* The reporting row, under the level: who is on the floor, beside what has
@@ -2119,18 +2305,37 @@ button.danger:hover {
 }
 /* Each chip is the file's own download link, so saving one thing does not
    mean opening the review panel to reach it. */
+/* Two targets in one chip: the name opens the file, the arrow saves it. */
 .in-chip {
+  display: inline-flex;
+  align-items: stretch;
   font-size: 10px;
   color: #b7bdcb;
   background: #151926;
   border: 1px solid #262b36;
   border-radius: 3px;
-  padding: 1px 5px;
-  text-decoration: none;
 }
 .in-chip:hover {
   border-color: #4a5468;
+}
+.in-chip button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+.in-chip button:hover {
   color: #fff;
+}
+.in-chip a {
+  color: #5f6675;
+  text-decoration: none;
+  padding: 1px 5px 1px 0;
+}
+.in-chip a:hover {
+  color: var(--db-lime-light);
 }
 .in-chip i {
   font-style: normal;

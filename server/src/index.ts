@@ -88,7 +88,8 @@ import {
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
-import { contentTypeFor, listOutputs, opensInBrowser, safeOutputPath } from './outputs';
+import { contentTypeFor, describeOutputs, opensInBrowser, safeOutputPath } from './outputs';
+import { previewFile } from './preview';
 import { productivityOf } from './productivity';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
@@ -684,7 +685,7 @@ app.get('/api/levels/:lid/jobs/:id/output', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const job = rt.queue.get(c.req.param('id'));
   if (!job) return c.json({ error: 'unknown job' }, 404);
-  return c.json({ files: listOutputs(rt.queue.sandboxDir(job.id)) });
+  return c.json({ files: describeOutputs(rt.queue.sandboxDir(job.id)) });
 });
 
 /**
@@ -707,6 +708,23 @@ app.get('/api/levels/:lid/jobs/:id/output/:name', (c) => {
     'Content-Type': contentTypeFor(name),
     'Content-Disposition': `${disposition}; filename="${name.replace(/"/g, '')}"`,
   });
+});
+
+/**
+ * The same file, converted for reading rather than saving.
+ *
+ * Separate from the bytes route because they answer different questions: that
+ * one hands over the document, this one describes it well enough to decide
+ * whether it is the document you asked for.
+ */
+app.get('/api/levels/:lid/jobs/:id/output/:name/preview', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const job = rt.queue.get(c.req.param('id'));
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  const file = safeOutputPath(rt.queue.sandboxDir(job.id), c.req.param('name'));
+  if (!file) return c.json({ error: 'unknown file' }, 404);
+  return c.json(await previewFile(file));
 });
 
 app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {

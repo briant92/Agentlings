@@ -22,21 +22,24 @@ describe('turnCapFor', () => {
   // runs out never counts toward the successes a tool is promoted on, so a
   // leash that always breaks leaves the fourth tier unreachable.
   it('gives a recipe job a leash it can actually finish on', () => {
-    expect(turnCapFor(undefined, { oneShot: true })).toBe(5);
+    expect(turnCapFor(undefined, { oneShot: true })).toEqual({ turns: 5, firm: true });
   });
 
   // Still shorter than a cold run, which is the entire point of the tier.
   it('keeps the leash short even for a role that asks to explore', () => {
-    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBe(5);
-    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true })).toBeLessThan(
-      turnCapFor({ maxTurns: 20 }, undefined),
+    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true }).turns).toBe(5);
+    expect(turnCapFor({ maxTurns: 20 }, { oneShot: true }).turns).toBeLessThan(
+      turnCapFor({ maxTurns: 20 }, undefined).turns,
     );
   });
 
-  it('leaves work without a recipe on the role’s own budget', () => {
-    expect(turnCapFor(undefined, {})).toBe(10);
-    expect(turnCapFor(undefined, undefined)).toBe(10);
-    expect(turnCapFor({ maxTurns: 20 }, undefined)).toBe(20);
+  // `firm: false` is the whole of D-067: a role's budget is a standing guess
+  // about a trade, so a quote computed for this job outranks it. The leash and
+  // a compile's own cap are decisions about this run and stay firm.
+  it('leaves work without a recipe on the role’s own budget, softly', () => {
+    expect(turnCapFor(undefined, {})).toEqual({ turns: 10, firm: false });
+    expect(turnCapFor(undefined, undefined).turns).toBe(10);
+    expect(turnCapFor({ maxTurns: 20 }, undefined)).toEqual({ turns: 20, firm: false });
   });
 
   it('still lets the quote tighten a recipe run further', () => {
@@ -48,22 +51,25 @@ describe('turnCapFor', () => {
   // need belongs to the job rather than the worker — otherwise every role
   // would have to raise its everyday budget to accommodate one errand.
   it('lets a job that states its own need outrank the role', () => {
-    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS)).toBe(COMPILE_TURNS);
-    expect(turnCapFor({ maxTurns: 2 }, undefined, COMPILE_TURNS)).toBe(COMPILE_TURNS);
-    expect(turnCapFor({ maxTurns: 20 }, undefined, 12)).toBe(12);
+    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS)).toEqual({
+      turns: COMPILE_TURNS,
+      firm: true,
+    });
+    expect(turnCapFor({ maxTurns: 2 }, undefined, COMPILE_TURNS).turns).toBe(COMPILE_TURNS);
+    expect(turnCapFor({ maxTurns: 20 }, undefined, 12).turns).toBe(12);
   });
 
   // A job the crew has a recipe for is one it has done before, whatever the
   // job claims to need — otherwise a compile's cap would leak into a repeat.
   it('keeps the recipe leash above a job’s own claim', () => {
-    expect(turnCapFor({ maxTurns: 10 }, { oneShot: true }, COMPILE_TURNS)).toBe(5);
+    expect(turnCapFor({ maxTurns: 10 }, { oneShot: true }, COMPILE_TURNS).turns).toBe(5);
   });
 
   it('ignores a nonsense job cap rather than uncapping the loop', () => {
-    expect(turnCapFor(undefined, undefined, 0)).toBe(10);
-    expect(turnCapFor(undefined, undefined, -3)).toBe(10);
-    expect(turnCapFor(undefined, undefined, Number.NaN)).toBe(10);
-    expect(turnCapFor(undefined, undefined, 5000)).toBe(40);
+    expect(turnCapFor(undefined, undefined, 0).turns).toBe(10);
+    expect(turnCapFor(undefined, undefined, -3).turns).toBe(10);
+    expect(turnCapFor(undefined, undefined, Number.NaN).turns).toBe(10);
+    expect(turnCapFor(undefined, undefined, 5000).turns).toBe(40);
   });
 
   // Measured rather than assumed: a compile at 15 ran out too and cost 40%
@@ -71,47 +77,67 @@ describe('turnCapFor', () => {
   // that a compile states its own budget instead of inheriting whatever the
   // role that owns the recipe happens to ask for.
   it('pins a compile to its own budget rather than the role’s', () => {
-    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS)).not.toBe(turnsFor({ maxTurns: 30 }));
+    expect(turnCapFor({ maxTurns: 30 }, undefined, COMPILE_TURNS).turns).not.toBe(
+      turnsFor({ maxTurns: 30 }),
+    );
   });
 });
 
 describe('turnsForBudget', () => {
-  const roleTurns = 8;
+  /** A role's standing guess about a trade. Yields to a quote. */
+  const role = { turns: 8, firm: false };
+  /** A decision about this run — the leash, or a compile's own need. */
+  const firm = { turns: 8, firm: true };
 
   it('spends the ceiling at the observed rate', () => {
-    // 20c at 2c a turn is ten turns, but the role only allows eight.
-    expect(turnsForBudget(0.2, { samples: 3, usd: 0.02 }, roleTurns)).toBe(8);
-    expect(turnsForBudget(0.2, { samples: 3, usd: 0.02 }, 20)).toBe(10);
+    expect(turnsForBudget(0.2, { samples: 3, usd: 0.02 }, role)).toBe(10);
+    expect(turnsForBudget(0.12, { samples: 3, usd: 0.02 }, role)).toBe(6);
   });
 
-  it('tightens the loop when the money is short', () => {
-    expect(turnsForBudget(0.1, { samples: 3, usd: 0.03 }, roleTurns)).toBe(3);
+  it('tightens the loop when the money is short, whatever kind of cap it is', () => {
+    expect(turnsForBudget(0.1, { samples: 3, usd: 0.03 }, role)).toBe(3);
+    expect(turnsForBudget(0.1, { samples: 3, usd: 0.03 }, firm)).toBe(3);
   });
 
-  // The ceiling is a cap, not a licence: a rich quote must not let a job
-  // think for longer than its role says it may.
-  it('never buys more turns than the role allows', () => {
-    expect(turnsForBudget(100, { samples: 5, usd: 0.001 }, roleTurns)).toBe(roleTurns);
+  /**
+   * The rule this replaced, and the four runs that bought the change.
+   *
+   * "Never buy more turns than the role allows" was written when the per-turn
+   * rate was pooled across repo and no-repo work and predicted neither, so the
+   * cap always won and the ceiling could never bind (D-018). The rate has been
+   * per-shape since. What was left was a standing guess about a trade beating
+   * an estimate computed for the job: four runs of one sentence, each quoted
+   * $1.58, each held to `worker`'s 10, each killed having delivered (D-066).
+   */
+  it('lets a quote buy more turns than the role would have allowed', () => {
+    expect(turnsForBudget(0.5, { samples: 3, usd: 0.02 }, role)).toBe(25);
+    // The job that paid for this: $1.58 at its measured 6.6c a turn.
+    expect(turnsForBudget(1.58, { samples: 3, usd: 0.066 }, { turns: 10, firm: false })).toBe(23);
   });
 
-  it('leaves the role in charge when there is no history to price a turn', () => {
-    expect(turnsForBudget(0.2, { samples: 0, usd: 0 }, roleTurns)).toBe(roleTurns);
-    expect(turnsForBudget(undefined, { samples: 3, usd: 0.02 }, roleTurns)).toBe(roleTurns);
+  // A firm cap is a decision about this run, not a guess about a trade. The
+  // one-shot tier *is* its five turns; a rich quote that could stretch them
+  // would dissolve the tier rather than fund it.
+  it('never lets a quote stretch a firm cap', () => {
+    expect(turnsForBudget(100, { samples: 5, usd: 0.001 }, firm)).toBe(8);
+    expect(turnsForBudget(100, { samples: 5, usd: 0.001 }, { turns: 5, firm: true })).toBe(5);
   });
 
-  // The run that exposed all this: quoted 30c, priced off a rate pooled
-  // across repo and non-repo work at 1.8c a turn, so the budget came out at
-  // 17 turns, the role cap of 8 won, and it spent 59c. Priced at what its own
-  // shape really costs, the ceiling bites first and the cap never applies.
-  it('binds before the role cap once the rate reflects the work', () => {
-    expect(turnsForBudget(0.5, { samples: 3, usd: 0.0177 }, roleTurns)).toBe(8);
-    expect(turnsForBudget(0.5, { samples: 1, usd: 0.0742 }, roleTurns)).toBe(6);
+  // The clamp that stops a cheap rate and a rich quote from uncapping the loop
+  // between them. 100 ÷ 0.001 is 100,000 turns.
+  it('still clamps a soft cap at the hard ceiling', () => {
+    expect(turnsForBudget(100, { samples: 5, usd: 0.001 }, role)).toBe(40);
+  });
+
+  it('leaves the cap in charge when there is no history to price a turn', () => {
+    expect(turnsForBudget(0.2, { samples: 0, usd: 0 }, role)).toBe(8);
+    expect(turnsForBudget(undefined, { samples: 3, usd: 0.02 }, role)).toBe(8);
   });
 
   it('still allows one turn when the budget cannot even buy that', () => {
     // Better to run once and fail on its own terms than to start a session
     // that is forbidden to think at all.
-    expect(turnsForBudget(0.001, { samples: 3, usd: 0.5 }, roleTurns)).toBe(1);
+    expect(turnsForBudget(0.001, { samples: 3, usd: 0.5 }, role)).toBe(1);
   });
 });
 

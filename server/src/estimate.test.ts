@@ -198,7 +198,9 @@ describe('quoteFor, against what the run may actually spend', () => {
       const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), {
         floorUsd: COMPILE_TURNS * usd,
       });
-      expect(turnsForBudget(quote.ceilingUsd, rate, COMPILE_TURNS)).toBe(COMPILE_TURNS);
+      expect(
+        turnsForBudget(quote.ceilingUsd, rate, { turns: COMPILE_TURNS, firm: true }),
+      ).toBe(COMPILE_TURNS);
     }
   });
 
@@ -208,7 +210,7 @@ describe('quoteFor, against what the run may actually spend', () => {
   it('stops funding turns once the runaway cap bites', () => {
     const dear = { samples: 2, usd: 0.126 };
     const quote = quoteFor('session', 'scribe', costing(0.5, 1.26), { floorUsd: 16 * 0.126 });
-    expect(turnsForBudget(quote.ceilingUsd, dear, 16)).toBe(15);
+    expect(turnsForBudget(quote.ceilingUsd, dear, { turns: 16, firm: true })).toBe(15);
   });
 });
 

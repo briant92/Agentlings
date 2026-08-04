@@ -245,17 +245,25 @@ export function turnsFor(role: { maxTurns?: number } | undefined): number {
  * recipe, and none of them should have to raise their everyday budget to
  * accommodate it. The leash still wins over both: a job the crew has a recipe
  * for is one it has done before, whatever it claims to need.
+ *
+ * `firm` says which kind of cap this is, and the distinction is the whole of
+ * D-067. The leash and a job's stated need are *decisions about this run* —
+ * the one-shot tier simply is its five turns, and a rich quote must not be
+ * able to extend it into an ordinary session. A role's `maxTurns` is nothing
+ * of the sort: it is a standing guess about a trade, made before anyone saw
+ * the job, and it has no business outranking a budget computed for the work
+ * actually in front of it.
  */
 export function turnCapFor(
   role: { maxTurns?: number } | undefined,
   hint?: { oneShot?: boolean },
   jobTurns?: number,
-): number {
-  if (hint?.oneShot) return RECIPE_TURNS;
+): { turns: number; firm: boolean } {
+  if (hint?.oneShot) return { turns: RECIPE_TURNS, firm: true };
   if (typeof jobTurns === 'number' && Number.isFinite(jobTurns) && jobTurns >= 1) {
-    return Math.min(Math.floor(jobTurns), TURN_CEILING);
+    return { turns: Math.min(Math.floor(jobTurns), TURN_CEILING), firm: true };
   }
-  return turnsFor(role);
+  return { turns: turnsFor(role), firm: false };
 }
 
 /**
@@ -268,21 +276,36 @@ export function turnCapFor(
  * notice one after the money is gone.
  *
  * Turns are the lever that exists *before* the spending, so the ceiling is
- * converted into turns at what a turn of this work has really cost. It only
- * ever tightens: a generous ceiling must not let a job run longer than its
- * role allows, and with no history the role's budget simply stands.
+ * converted into turns at what a turn of this work has really cost. With no
+ * history to price a turn, the cap simply stands.
+ *
+ * **The quote wins against a role's standing guess, in both directions.** It
+ * used to only ever tighten, on the reasoning that a generous ceiling must not
+ * let a job outrun its role — but that rule was written when the per-turn rate
+ * was pooled across repo and no-repo work and predicted neither, so the cap
+ * always won and the ceiling could never bind on anything (D-018). The rate has
+ * been per-shape and per-tier since. What the old rule left behind was a
+ * standing guess about a trade beating an estimate computed for the job:
+ * measured four times on one sentence, `worker`'s cap of 10 bound work the
+ * quote had funded to roughly 56 turns, and every one of those runs was killed
+ * having delivered (D-063, D-066).
+ *
+ * A `firm` cap still binds absolutely — see `turnCapFor`. Both hard clamps
+ * stand: `TURN_CEILING` so a loop cannot be uncapped, and the quote's own
+ * `MAX_CEILING_USD` upstream so one freak run cannot fund the next.
  */
 export function turnsForBudget(
   ceilingUsd: number | undefined,
   perTurn: { samples: number; usd: number },
-  roleTurns: number,
+  cap: { turns: number; firm: boolean },
 ): number {
   if (!ceilingUsd || ceilingUsd <= 0 || perTurn.samples === 0 || perTurn.usd <= 0) {
-    return roleTurns;
+    return cap.turns;
   }
   // At least one turn: a budget too small for a single turn should fail on
   // its own terms, not be silently turned into a session that cannot think.
-  return Math.max(1, Math.min(roleTurns, Math.floor(ceilingUsd / perTurn.usd)));
+  const funded = Math.max(1, Math.floor(ceilingUsd / perTurn.usd));
+  return cap.firm ? Math.min(cap.turns, funded) : Math.min(TURN_CEILING, funded);
 }
 
 export function mapTools(roleTools: string[]): string[] {

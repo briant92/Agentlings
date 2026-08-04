@@ -80,6 +80,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-068 — 2026-08-04 — A leash has to be a shortening, not a different job](#d-068--2026-08-04--a-leash-has-to-be-a-shortening-not-a-different-job)
 - [D-069 — 2026-08-04 — A method halved a real job, with no leash and no tier change](#d-069--2026-08-04--a-method-halved-a-real-job-with-no-leash-and-no-tier-change)
 - [D-070 — 2026-08-04 — A quote that could not find its history, and the copy that covered for it](#d-070--2026-08-04--a-quote-that-could-not-find-its-history-and-the-copy-that-covered-for-it)
+- [D-071 — 2026-08-04 — The third run says the halving was a step, not a trend](#d-071--2026-08-04--the-third-run-says-the-halving-was-a-step-not-a-trend)
 
 ## By theme
 
@@ -102,7 +103,9 @@ entry updates one file rather than two.
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
   the leash and so credits the approach with a saving the tier averages had
-  been attributing to the tier change
+  been attributing to the tier change — read with D-071, where the third run
+  lands between the first two and turns the halving back into a single step
+  followed by noise, exactly as §8 says a recipe behaves
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033
 - **The project's own notes** — D-002, D-038
@@ -3707,6 +3710,15 @@ all spent everything they had.
 **n = 1.** Six runs of one sentence in one level. The claim is that a method
 written by a completing run halved this job; it is not a rate.
 
+**Amended the same hour, by the seventh run: it was not a rate, and the caveat
+above earned its keep.** `765c7dcc` carried a method written by the run that
+produced the 97c — better than its predecessor, opening with the timing
+clarification rather than reaching it at step 3 — and cost **$1.26**. Three
+completions now read $1.96 → 97c → $1.26. What survives is the *step* from no
+proven method to a proven one, mean $1.12 against $1.96, and with no tier
+change, which is this entry's real contribution. What does not survive is any
+suggestion that banking a better method compounds. See D-071.
+
 ### Two things the same run measured
 
 **The quote for this class is now pinned rather than drifting.** D-067 warned
@@ -3799,3 +3811,53 @@ had said "first time doing this" six times now quotes "About 44c — from 35 job
 like it", 35 samples, high certainty. The one-shot wording is unit-tested only:
 no recipe on this machine currently qualifies for the leash (see D-065's
 amendment), so there is nothing live to read it off.
+
+## D-071 — 2026-08-04 — The third run says the halving was a step, not a trend
+
+D-069 measured a banked method against real work for the first time and reported
+51% off — $1.96 to 97c between two completing runs of the same sentence. It read
+like the start of a curve. The seventh run of that sentence, carrying a method
+written by the run that produced the 97c and visibly better than its
+predecessor, cost **$1.26**.
+
+| Completing run | Method it carried | Tool calls | Cost |
+|---|---|---|---|
+| `653f8c2e` | written by runs that died | 39 | $1.96 |
+| `8ab9b070` | written by a completing run | 24 | 97c |
+| `765c7dcc` | written by a *better* completing run | 26 | **$1.26** |
+
+**So D-069's headline was two points, and the third lands between them.** The
+honest reading is one step and then noise: from no proven method ($1.96) to a
+proven one (97c and $1.26, mean $1.12) — about 43% — after which the method
+getting *better* bought nothing measurable. That is not a new finding so much as
+this project's own doctrine arriving on real work: §8 already says a recipe
+"cuts the price once, by moving the job down a tier, and then holds it there".
+Here it cuts once without any tier change at all (D-069's point stands) and then
+holds, at a level noisy enough that two draws differ by 30%.
+
+**The correction matters more than the original claim.** D-069 was written the
+same hour on n=2 and carried a caveat about sample size; this is what that
+caveat was for. Read the two together, D-069's contribution is that a method is
+worth something without the leash — which run 7 supports — and not that repeated
+banking compounds, which run 7 refutes. n=3, one sentence, one level.
+
+**And the run that most needed a bigger budget did not use one.** All three
+completions were granted 40 turns and used 39, 24 and 26 calls. Nothing since
+run 5 has come close to its cap, which retires the concern D-067 was built for
+and leaves the opposite one: the quote has been pinned at the $2.00 clamp since
+run 5, so every run since has been granted turns it does not want.
+
+### The bound moved toward the truth for the first time
+
+`completedInTurns` was 33, a value that arrived by backfill from run 5's *grant*
+and had never once been derived from what a run actually did. Run 7 finished on
+26 tool calls and it is now **27** — `min(33, 40, 26 + 1)`.
+
+That is D-070's half of the fix working live, and it also re-confirms the
+relationship it rests on: `turns === toolCalls + 1` now holds on **6 of 6**
+completing rows. The leash stays refused, correctly — 27 is still far above the
+credible bound of 10, and this job has never been done in fewer than 24 calls.
+
+**Where the level stands.** Seven paid runs on one sentence: **$7.12 spent,
+$3.81 chargeable**, three deliveries, and a method that reliably produces a
+4-sheet workbook for somewhere between 97c and $1.26.

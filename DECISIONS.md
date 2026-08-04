@@ -4120,7 +4120,11 @@ recipe), the brief plumbing (`sessionPrompt` appends it; the job keeps its own
 prompt), and the quote (`session` tier for a mid-flight recall question,
 role-class fallback while the job's keyed rows accumulate). Both entries were
 committed and then mutation-tested (D-021's order), one mutation at a time
-with the rest of the suite green: disabling the `undated` filter in
-`appendKnowledge` and in `MemoryStore.append` each failed the test written for
-it, removing the router's mid-flight guard failed three, and un-guarding
-`delivered` in the credit call failed one.
+with the rest of the suite green: disabling the `undated` filter failed 1
+test in `appendKnowledge` and 2 in `MemoryStore.append` (the dedup case and
+the human-notes case), removing the router's mid-flight guard failed 2, and
+un-guarding `delivered` in the credit call failed 1. One mutant survived one
+test and it is worth recording (D-056's habit): "sends mid-flight work with no
+recipe to a plain session" passes with the guard removed, because a prompt
+nothing claims falls through to `agent` either way — it pins the contract's
+shape, and the other two tests are what actually hold the guard.

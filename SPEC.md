@@ -162,7 +162,9 @@ Routes below are the M0 shapes; everything job-facing is scoped per level
 |---|---|
 | `GET /api/state` | Current `WorldState` snapshot |
 | `POST /api/jobs` | Queue a job `{title, prompt, repoPath?}`; quoted and role-matched like `/work`, but keeps the caller's title and takes no repository unless given one |
-| `GET /api/jobs/:id/output` | Sandbox files for review |
+| `GET /api/jobs/:id/output` | Sandbox files for review — names and sizes only |
+| `GET /api/jobs/:id/output/:name` | One file, as bytes: inline for a PDF, a download for the rest |
+| `GET /api/jobs/:id/output/:name/preview` | The same file converted for reading — a grid, words, slide text, or the note that the browser draws it |
 | `POST /api/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
 | `GET /api/levels/:lid/knowledge` | The store: sources, counts, and whether the index has gone stale |
 | `POST /api/levels/:lid/knowledge/sources` | Point this level at folders of your own material, and index them |

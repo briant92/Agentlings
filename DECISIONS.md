@@ -67,6 +67,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-055 — 2026-08-03 — A free tier for finding pages, and what it must never claim](#d-055--2026-08-03--a-free-tier-for-finding-pages-and-what-it-must-never-claim)
 - [D-056 — 2026-08-03 — The ledger gains an author, and the panels that needed one](#d-056--2026-08-03--the-ledger-gains-an-author-and-the-panels-that-needed-one)
 - [D-057 — 2026-08-03 — Two ways to count one thing, and why the slower one stays](#d-057--2026-08-03--two-ways-to-count-one-thing-and-why-the-slower-one-stays)
+- [D-058 — 2026-08-04 — A document is shown where it lands, and two listings become one](#d-058--2026-08-04--a-document-is-shown-where-it-lands-and-two-listings-become-one)
 
 ## By theme
 
@@ -110,6 +111,9 @@ entry updates one file rather than two.
 - **Reading the crew record** — the productivity block and the inbox, the author
   the ledger never recorded, and the three tests that passed without testing:
   D-056
+- **Documents, continued** — produced in D-031, and shown rather than merely
+  offered in D-058, which also collapses the second listing and the second
+  ordering (D-030's shape again)
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
@@ -2926,3 +2930,76 @@ the later one's count is what survived rather than what it read, plus the
 property that was false: source counts sum to `entries.length`. Mutation-tested
 after committing — reverting the one line in `syncSources` fails it with
 `expected 2 to be 1` while the file's other 28 tests stay green.
+
+## D-058 — 2026-08-04 — A document is shown where it lands, and two listings become one
+
+The gap was not production. Measured before designing anything, from a real
+sandbox-depth path rather than from D-031's account of itself: `.docx` 8,487
+bytes, `.xlsx` 6,386, `.pptx` 44,730, `.pdf` 837, with `pdf-parse` and
+`mammoth` reading their own siblings' output back. The mechanism holds — a
+sandbox sits inside the project, so Node walks up to the root `node_modules`
+and no job installs anything.
+
+The gap was that **nothing had ever produced one, and nothing could show one
+if it had.** Every file on disk across both levels: 167 `.md`, 37 `.patch`, 23
+`.mjs`, one `.csv`. Zero documents. The PDF runs of D-030 lost their
+sandboxes, so the capability is proven in the library and still unproven in
+the crew's hands — the split the first hard-won rule is about, sitting in the
+log unnoticed for four days because "we installed the libraries" reads like
+"the crew produces documents".
+
+**Converting happens on the server.** Not a preference: the libraries are
+already there for the sandboxes, and the web workspace is pixi, react and a
+font. `previewFile` answers with a kind — `grid` from exceljs, `html` from
+mammoth, `slides` from the pptx's own XML through jszip, and for a PDF or an
+image `native`, which is the honest answer that the browser draws it better
+than any description of it. Zero new dependencies: jszip was already on disk
+as a transitive dep of four of the six document libraries and is now declared
+rather than relied on by hoisting.
+
+**Sanitising by hand rather than adding a sanitizer.** Mammoth escapes the
+document's own text, so the exposure is not what a document says but what it
+links to: a hyperlink target is author-controlled and travels into an `href`
+intact. So the tag list is fixed, every attribute is dropped, and an `href`
+survives only if it is plainly `http(s)`. Proved through the real converter,
+not against a hand-written fixture — a `.docx` built with `docx`'s own
+`ExternalHyperlink` pointing at `javascript:alert(1)`, asserted to come back
+with its words and without its scheme.
+
+**Every conversion says what it lost, and every cut says what it cut.** The
+panel carries `exact` or `converted · values, not formatting` beside the file
+name, and `100 of 214 rows` under the grid. This is not decoration. D-030
+records an answer banked as "hello-world.pdf (1,380 bytes) is a valid one-page
+PDF" over a sandbox that held that sentence and no PDF; a preview that reads
+as the document is the same error with better typography.
+
+**Two listings became one, and so did two orderings.** `listOutputs` read
+every byte of every file so the panel could print the text ones — megabytes
+fetched to draw a row of labels, and an answer to "what is in this file" in a
+place that had not asked. The route now returns `describeOutputs`, the listing
+the inbox already used, and contents come one file at a time from the preview.
+Separately, the inbox ranked paperwork last while the review panel ranked
+`RESULT.md` first, so a job that wrote a spreadsheet led with the spreadsheet
+in one panel and with the write-up in the other. One `orderFiles` now, in a
+plain module beside the JSX like `activity.ts` and `ledger.ts` — deliverables,
+then `RESULT.md`, then the rest of the paperwork.
+
+The inbox chip changed what it does: it opens the file, and a separate arrow
+saves it. Saving a `.xlsx` to find out whether it was the right `.xlsx` was
+the whole complaint.
+
+**Evidence.** 803 server tests and 74 web, plus a live run against the running
+server on a real finished job — the `.xlsx` came back as two named sheets with
+their totals, the `.docx` as its headings, the `.pptx` as two slides in order,
+the `.pdf` as `native`, and a `.md` as text. Mutation-tested after committing,
+four at once: allowing every `href`, disabling the tag list, cutting
+`GRID_ROWS` to 5, and restoring the inbox's old ordering each failed the test
+written for it — 4 of 14 server tests and 2 of 8 web, with the rest green.
+
+**Not solved, and named rather than left to be discovered.** A `.pptx` preview
+is text and no visuals, because nothing installed renders a slide. A `.docx`
+keeps its words and not its layout, which is D-031's accepted cost showing up
+one layer higher. And the panel still cannot show a document the crew never
+wrote: the tier matters — only a session tier can write one, since a compiled
+tool's contract is plain node with no dependencies — and so does the turn
+budget, D-030's run 5 having produced a working generator and no file.

@@ -277,7 +277,7 @@ into a corpus nobody has looked at. An index is a file you can open first.
 
 | | |
 |---|---|
-| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf` `.xlsx` `.pptx`, walked recursively; dotfolders and `node_modules` skipped. A scanned PDF holds no text and yields nothing (D-059) |
+| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf` `.xlsx` `.pptx` `.png` `.jpg`, walked recursively; dotfolders and `node_modules` skipped. A scan or a photograph is read by OCR where Windows has an engine, and marked `read from a scan` on the line (D-061) |
 | What a passage is | A markdown section where there are headings, kept with its heading; a slide, under its own title; a run of spreadsheet rows, each carrying its sheet and column names; otherwise a length-bounded run cut at a sentence end (D-059, D-060) |
 | Size | 600 chars a passage, 200 passages a file, 250 files a source — every overflow **reported** rather than dropped quietly |
 | Provenance | Every line ends `[<file>, synced <date>]`, so a free answer and a session's context both say where it came from |
@@ -1089,6 +1089,9 @@ untouched until you press Approve.
 | `MAX_PER_SOURCE` | 250 | `store.ts` | Files indexed per folder; the overflow is reported |
 | `MAX_ENTRY_CHARS` | 600 | `store.ts` | One passage, so eight of them are still a small prompt |
 | `MAX_PASSAGES_PER_FILE` | 200 | `store.ts` | About 60 pages; a long document is read that far and the count is shown |
+| `MAX_OCR_PAGES_PER_FILE` | 20 | `store.ts` | Pages of one scan read off pixels |
+| `MAX_OCR_PAGES_PER_SYNC` | 200 | `store.ts` | Scanned pages a whole sync will read; the rest is reported |
+| `OCR_SCALE` | 2 | `ocr.ts` | Render size before reading; 1 loses body text, 4 reads the JPEG artefacts |
 
 ### Reaching out
 

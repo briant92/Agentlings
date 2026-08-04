@@ -288,6 +288,49 @@ describe('sync', () => {
     expect(index.entries[0].scanned).toBe(true);
   });
 
+  /**
+   * The case the threshold exists for, and the one the fixtures above missed:
+   * a scan that also carries a stamp added digitally. `getText` then returns
+   * something, so "does this have a text layer" cannot mean "not empty" — the
+   * whole 40-page document would index as the word "Confidential".
+   *
+   * Written because a mutation survived: relaxing the threshold to
+   * `text.length > 0` broke nothing, since every scan fixture had a text layer
+   * of exactly nothing.
+   */
+  it.runIf(hasOcr)('reads a scan that carries a stamp of real text', async () => {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const canvas = createCanvas(1240, 1754);
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, 1240, 1754);
+    g.fillStyle = '#111';
+    g.font = '30px Arial';
+    g.fillText('Meter serial 40821 replaced on 3 March 2026', 100, 300);
+
+    const { PDFDocument, StandardFonts } = await import('pdf-lib');
+    const doc = await PDFDocument.create();
+    const image = await doc.embedPng(canvas.toBuffer('image/png'));
+    const page = doc.addPage([595, 842]);
+    page.drawImage(image, { x: 0, y: 0, width: 595, height: 842 });
+    page.drawText('CONFIDENTIAL', {
+      x: 40,
+      y: 30,
+      size: 10,
+      font: await doc.embedFont(StandardFonts.Helvetica),
+    });
+    writeFileSync(path.join(root, 'stamped.pdf'), await doc.save());
+
+    // A text layer, and worth nothing: this is the trap.
+    const layer = await pdfText(path.join(root, 'stamped.pdf'));
+    expect(layer).toContain('CONFIDENTIAL');
+    expect(hasTextLayer(layer)).toBe(false);
+
+    const index = await sync([root], NOW);
+    expect(index.scanned).toBe(1);
+    expect(index.entries.map((e) => e.text).join(' ')).toContain('40821');
+  });
+
   it('leaves a text layer alone rather than re-reading it off pixels', async () => {
     const { PDFDocument, StandardFonts } = await import('pdf-lib');
     const doc = await PDFDocument.create();

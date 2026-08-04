@@ -70,6 +70,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-058 — 2026-08-04 — A document is shown where it lands, and two listings become one](#d-058--2026-08-04--a-document-is-shown-where-it-lands-and-two-listings-become-one)
 - [D-059 — 2026-08-04 — The store reads documents, and the splitter that made it real](#d-059--2026-08-04--the-store-reads-documents-and-the-splitter-that-made-it-real)
 - [D-060 — 2026-08-04 — A grid is not prose, and the readers stop being written twice](#d-060--2026-08-04--a-grid-is-not-prose-and-the-readers-stop-being-written-twice)
+- [D-061 — 2026-08-04 — Reading paper: the engine Windows already has](#d-061--2026-08-04--reading-paper-the-engine-windows-already-has)
 
 ## By theme
 
@@ -118,7 +119,8 @@ entry updates one file rather than two.
   ordering (D-030's shape again); read *into* the knowledge store by D-059,
   where the splitter was the feature and the extensions were the easy half;
   and D-060, which adds the two formats that are not prose at all and puts the
-  readers in one module before the second copy could be written
+  readers in one module before the second copy could be written; D-061 reads
+  paper itself, with the one Windows-only file in the project behind a seam
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
   D-057, which is D-030's rule met head-on and answered
@@ -3132,3 +3134,81 @@ label failed 1, and removing the blank-cell filter failed 2.
 so `MAX_PASSAGES_PER_FILE` (200) is what keeps a large workbook from being most
 of an index that is parsed on every job and every quote. exceljs reads the whole
 file whatever we ask of it, so the cap bounds the index and not the read.
+
+## D-061 — 2026-08-04 — Reading paper: the engine Windows already has
+
+D-059 and D-060 both ended by naming the same hole — a scan holds pictures of
+words and none this app could read — and the panel said so in as many words.
+Closing it turned out to cost nothing to install, which was not the expected
+answer and is the whole reason this entry is short on options and long on
+measurements.
+
+**Both halves were already on disk.** `pdf-parse` carries `pdfjs-dist` and
+`@napi-rs/canvas` as its own dependencies, both prebuilt — no native build,
+which is what ruled a Python stack out in D-031 — and exposes `getScreenshot()`
+at about 130ms a page. And Windows ships an OCR engine, with `en-US` and
+`es-MX` installed on this machine. So the rasteriser and the reader were both
+there, and the work was joining them and being honest about the result.
+
+**Chosen over tesseract.js on measurement.** That would have been portable and
+cost ~32MB of `node_modules` (1.4MB package, 30.6MB WASM core), a postinstall
+script, and a ~15MB language download to vendor for offline use. Against a
+built-in engine that reads a rough page in well under a second, the portability
+was the only thing it bought. The accepted cost is that `ocr.ts` is now the one
+Windows-only file in the project, against PROJECT.md's "prefer cross-platform"
+— which is exactly why it is a file and not a few lines in `documents.ts`.
+Everything above it asks `ocrAvailable()`, gets `false` elsewhere, and syncs at
+ordinary speed with the scans reported unread. A portable engine later goes
+behind the same seam with no caller changing. Claude vision was the third
+option and is the better reader by far; it was turned down for bulk indexing
+because a 250-file folder becomes a real bill, and it remains the obvious
+answer for a single document inside a job.
+
+**Three constants, each measured rather than assumed, and two of them
+surprising.**
+
+*Render scale 2.* On a realistic page — 10pt body copy, skewed 1.2°, speckled,
+JPEG quality 50 — scale 1 recovered 5 of 22 expected tokens, 2 recovered 18, 3
+recovered 18, and 4 fell back to 15. Upscaling a lossy scan magnifies its
+artefacts and softens the strokes, so more resolution is worse past a point.
+An earlier probe had suggested scale 1 was fine, and it was wrong for a reason
+worth naming: its text was poster-sized. A fixture that is easier than the real
+thing measures the fixture.
+
+*One shell per document, never per page.* One page costs 1,567ms and four cost
+1,497ms — essentially all of it is PowerShell starting. Per-page spawning would
+have made a ten-page document ten times slower for nothing.
+
+*A budget of 200 pages a sync, 20 a file, both reported.* Reading a text layer
+is free and reading pixels is not, and the sources route blocks until the sync
+finishes. Every other cap here is reported; these are too.
+
+**"Is there a text layer" is not "is it non-empty".** A scan often carries a
+stamp added digitally, so `getText` returns *something* — and treating that as
+a text layer indexes a 40-page contract as the word "Confidential". The test is
+40 non-space characters.
+
+**The marker is the point, not the polish.** Every OCR'd passage says so where
+it is quoted: `[invoice-scan.pdf, read from a scan, synced 2026-08-04]`. The
+live run returned `engiñééÊR]` for `engineer R.` and `Appliance:worcester` for
+`Appliance: Worcester`, and the recall tier puts that line into a free answer
+and into an agentling's briefing word for word. Good enough to find a document,
+not good enough to quote one — and the reader has to be told which they are
+holding. This is D-058's `converted` badge one layer down, and the third time
+in three entries that the fault worth catching was scaffolding or noise passing
+itself off as the document's own words.
+
+**Evidence.** 822 server tests and 74 web. Verified live on `home-chores` and
+then removed: a photocopied invoice and a phone photo of a gas meter indexed in
+4.8s, and through the real router "what do we know about the expansion vessel
+part number" came back free, quoting `EV-4471` off the scan with the marker on
+the line. Mutation-tested after committing, one at a time: forcing the text
+layer to always win failed 2 tests, dropping the `scanned` flag from the entry
+failed 2, and setting `OCR_SCALE` to 1 failed 1.
+
+**One mutation escaped, and that is the useful part.** Relaxing the text-layer
+threshold to `length > 0` broke nothing, because every scan fixture had a text
+layer of exactly nothing — so the threshold the code deliberately sets at 40
+was untested. The stamped-scan case above was written for it, and the same
+mutation now fails 3 tests. A passing suite said the constant was covered; it
+was not, and only mutating it said so.

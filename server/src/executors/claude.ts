@@ -421,6 +421,8 @@ export function buildAppend(
   approach?: string,
   repoFiles: string[] = [],
   attachments: JobAttachment[] = [],
+  /** What the run is actually allowed, after the role cap and the quote. */
+  turns?: number,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -431,12 +433,25 @@ export function buildAppend(
       hasRepo
         ? '- The target repository is cloned at ./repo — make all code changes there.'
         : '- There is no target repository; produce your output as files in the working directory.',
-      '- When finished, write RESULT.md in the working directory: outcome first, evidence second.',
-      // Nothing here asks for LESSON.md or APPROACH.md any more. They used to
-      // compete with the work for turns, so they were cut first and the crew
-      // learned nothing: 13 of 13 recipe runs died before writing either.
-      // A separate close-out pass writes them afterwards, off a cheap model,
-      // from what the run actually left behind rather than what it predicted.
+      '- Write RESULT.md in the working directory: outcome first, evidence second.',
+      // The budget is said out loud because, measured, it was not: job 97b95f10
+      // spent all ten of its turns gathering, wrote nothing at all, and filed
+      // `failed` with an empty sandbox. No close-out runs on a job that left
+      // nothing behind, so no lesson and no approach were banked either — 66c
+      // bought two generic log lines. The brief had asked for RESULT.md "when
+      // finished" and never mentioned there was a budget to finish inside, so
+      // the run could not ration and had no reason to checkpoint.
+      //
+      // This is not D-020 coming back. That moved LESSON.md and APPROACH.md out
+      // of the session because meta-work competed with the work and was cut
+      // first. RESULT.md is the deliverable, already demanded here; this changes
+      // only *when* it is written, not whether.
+      ...(turns
+        ? [
+            `- You have ${turns} turns. When they run out the session stops wherever you are, so write RESULT.md as soon as you have anything worth reporting and keep updating it. Do not save it for the end.`,
+            '- If you run out before finishing, RESULT.md should say what you established, what is still missing, and what you would do next.',
+          ]
+        : []),
     ].join('\n'),
   );
   if (attachments.length > 0) {
@@ -692,6 +707,9 @@ export class ClaudeAgentExecutor implements Executor {
           hint?.approach,
           hasRepo ? repoListing(path.join(sandboxDir, 'repo')) : [],
           job.attachments ?? [],
+          // The same number the SDK is capped at, so the brief and the runner
+          // cannot disagree about how long the run has.
+          turnBudget,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

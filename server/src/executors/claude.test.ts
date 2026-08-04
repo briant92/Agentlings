@@ -386,6 +386,36 @@ describe('buildAppend', () => {
     expect(buildAppend(undefined, [], [], false)).not.toContain('What is in ./repo');
   });
 
+  // Job 97b95f10 spent all ten turns gathering and wrote nothing, so it filed
+  // `failed` with an empty sandbox and no close-out ran on it. A run that is
+  // never told it has a budget cannot ration one.
+  describe('the turn budget', () => {
+    const budgeted = () => buildAppend(undefined, [], [], false, [], undefined, [], [], 10);
+
+    it('tells the run how many turns it has', () => {
+      expect(budgeted()).toContain('You have 10 turns');
+    });
+
+    it('asks for RESULT.md early rather than at the end', () => {
+      const text = budgeted();
+      expect(text).toContain('as soon as you have anything worth reporting');
+      // The instruction it replaced. Both at once is a brief that argues with
+      // itself, which is worse than either alone.
+      expect(text).not.toContain('When finished, write RESULT.md');
+    });
+
+    it('asks a run that stops short to say what is missing', () => {
+      expect(budgeted()).toContain('what is still missing');
+    });
+
+    it('says nothing about turns when the budget is unknown', () => {
+      const text = buildAppend(undefined, [], [], false);
+      expect(text).not.toContain('turns');
+      // The deliverable is still demanded — the budget is what is optional.
+      expect(text).toContain('RESULT.md');
+    });
+  });
+
   // A recipe run has three turns. Spending one of them writing down the
   // method it was just handed is the difference between finishing and not.
   describe('a run that came from a recipe', () => {

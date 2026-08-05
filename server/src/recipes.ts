@@ -284,18 +284,29 @@ export function sameCapabilities(recipe: Recipe, capabilities: string[] | undefi
  * The most turns a completing run may have needed for the leash to still be a
  * *shortening* of that run rather than a different job altogether.
  *
- * Twice the leash, and chosen without data — which is worth saying plainly.
- * A run that finished in 8 turns might well do it in 5 once the exploring is
- * handed to it; one that needed 33 will not, and the gap is not a matter of
- * degree. Refining it needs leashed outcomes paired against this field, which
- * is why the field is being recorded now: it cannot be added backwards.
+ * Was twice the leash, and said so plainly: chosen without data, on the guess
+ * that a run finishing in 8 turns might well do it in 5 once the exploring is
+ * handed over. It asked to be refined by leashed outcomes paired against this
+ * field, which is why the field was recorded. Four such outcomes now exist and
+ * they separate at the leash itself, not at twice it:
+ *
+ * - completed leashed: T4·3, recorded at 4 — the only leashed completion the
+ *   engine has ever had.
+ * - cut at the wall: T2·4 (6), T3·4 (8), T6·3 (6). Each was granted 5 while
+ *   its own record said it needed more, and each was cut, delivered anyway
+ *   and absorbed.
+ *
+ * So the bound is the leash's own budget: a run may be shortened to five turns
+ * only once it has completed inside five. Anything looser is not a shortening,
+ * it is a different, smaller job — and the recipe's own `completedInTurns`
+ * was sitting there saying so each of the three times (D-095).
  *
  * Written out rather than derived from `RECIPE_TURNS`, which lives in the
  * executor: importing it here closes a cycle — `claude.ts` imports `router.ts`
  * imports this file — and the module then initialises half-built. A test holds
  * the two in step instead, since a test file is a leaf and can import both.
  */
-export const LEASH_CREDIBLE_UP_TO = 10;
+export const LEASH_CREDIBLE_UP_TO = 5;
 
 export function canShortenLeash(recipe: Recipe, capabilities: string[] | undefined): boolean {
   if (!sameCapabilities(recipe, capabilities)) return false;
@@ -408,6 +419,11 @@ export function creditRecipe(
   turnsAllowed?: number,
   /** Tool calls it actually made — the tighter bound of the two. */
   toolCalls?: number,
+  /**
+   * Turns a *leashed* run was granted before the wall cut it. The one thing a
+   * cut run testifies to, and the only revision D-095 allows it to make.
+   */
+  leashCutFrom?: number,
 ): Recipe[] {
   const found = recipes.find((r) => r.key === key);
   if (found) {
@@ -433,6 +449,28 @@ export function creditRecipe(
       if (bounds.length > 0) {
         found.completedInTurns = Math.min(found.completedInTurns ?? Infinity, ...bounds);
       }
+    }
+    // The leash learning it was wrong — the one revision a cut run may make.
+    //
+    // D-068 refused to let a cut run touch these counters, and was right about
+    // the two it named: a run that was killed has not completed, and its
+    // output does not say the job fits. But it left the leash unable to
+    // un-learn, and the loop that opens is real — measured three times, most
+    // recently on T6·3, where a recipe was leashed, cut, delivered anyway,
+    // charged $0, credited nothing, and stayed armed to do it again forever.
+    // Because a cut run credits neither counter, that recipe could also never
+    // reach `TOOL_CANDIDATE_RUNS`: the leash had quietly made the tool tier
+    // unreachable for exactly the jobs it grabbed.
+    //
+    // What a cut leashed run *does* prove is one fact, and only in one
+    // direction: the job needs more turns than it was given. So this raises a
+    // lower bound and never credits anything — no `successes`, no
+    // `completions`, nothing that could compile a tool or claim a fit. A later
+    // run that genuinely completes inside a shorter budget still pulls the
+    // bound back down through the `Math.min` above, because that is evidence
+    // of the opposite and outranks a bound inferred from a failure (D-095).
+    if (typeof leashCutFrom === 'number' && leashCutFrom >= 1) {
+      found.completedInTurns = Math.max(found.completedInTurns ?? 0, leashCutFrom + 1);
     }
   }
   return recipes;

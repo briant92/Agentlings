@@ -104,6 +104,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads](#d-092--2026-08-05--the-audience-roster-names-for-the-opted-in-a-picker-behind-to-and-the-legend-the-session-reads)
 - [D-093 — 2026-08-05 — The near-miss is a question, and the review says when approving sends nothing](#d-093--2026-08-05--the-near-miss-is-a-question-and-the-review-says-when-approving-sends-nothing)
 - [D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words](#d-094--2026-08-05--a-known-name-prefills-to-and-the-same-again-means-the-audited-words)
+- [D-095 — 2026-08-05 — The leash is bounded by its own budget, and a run it cut may say so](#d-095--2026-08-05--the-leash-is-bounded-by-its-own-budget-and-a-run-it-cut-may-say-so)
 
 ## By theme
 
@@ -193,7 +194,10 @@ entry updates one file rather than two.
   then **finished**, on the fifth run, which settled that it was never too big;
   and the completion promptly armed the next failure, since fitting a 33-turn
   budget was about to license a five-turn leash: D-068, the third reading of a
-  gate as licensing something it never verified
+  gate as licensing something it never verified — and D-095, the fourth, where
+  a bound of *twice* the leash let one completion recorded at six turns arm a
+  five-turn one, until three cut runs and a leashed completion put the bound at
+  the leash itself and let a run the leash cut raise the need it disproved
 - **What a recurring job does to the notes** — the same lesson re-banked every
   run until every slot a session reads held one fact; dedup at the append
   seams, and the close-out shown what is already on file: D-073
@@ -5189,3 +5193,74 @@ To with "Jose Dussaillant — 6783316106" — zero clicks. The reuse block's
 first real exercise waits for the next same-again send, since proving it
 live means paying for a session; its construction is pinned by the brief
 test and the trigger fires on that very sentence.
+
+## D-095 — 2026-08-05 — The leash is bounded by its own budget, and a run it cut may say so
+
+Found by running T6, not by reading code. Wave 4's job — "summarise the
+attached expenses.csv into SUMMARY.md" — was on the board for two more
+runs and then the first legitimately-earned compiled tool. Run 2 landed
+(47.0c, five calls, every figure matching an independent recompute). Run 3
+was leashed, cut at the wall, delivered a correct SUMMARY.md anyway
+(D-063), charged $0 and absorbed 20.4c. Then the ladder stopped, for two
+reasons that were both invisible until the counters were read.
+
+**"Three runs" was four, and the promote was never close.** `successes`
+counts *reuse*: the founding run banks the recipe and does not count
+itself. Three runs left `hits: 2, successes: 1`, against
+`TOOL_CANDIDATE_RUNS = 3`. That part is working as designed and the board
+was simply wrong — recorded here because the arithmetic is not obvious
+from the field names, and F4's plan was written from the prose.
+
+**The leash then made the fourth run impossible.** `canShortenLeash`
+asked `completions >= 1` and `completedInTurns <= LEASH_CREDIBLE_UP_TO`,
+which was 10 — twice the leash, and its own doc comment said plainly that
+the number was a guess awaiting leashed outcomes. So a single completion
+recorded at **six** turns armed a **five**-turn leash. The recipe's own
+record already said it did not fit. It was cut; a cut run credits neither
+`successes` nor `completions` (D-065, deliberately and rightly); so the
+recipe stays armed at six-needs-five for ever, and every future run
+repeats leash → cut → deliver → absorb. Free for the user, unbounded for
+the app — F7 as filed — but also, and this is the part F7 missed, the
+recipe can never again credit a success, so **the leash had quietly made
+the tool tier unreachable for exactly the jobs it grabbed**.
+
+Four measured leashed outcomes now exist, and they separate at the leash
+itself rather than at twice it: T4·3 completed leashed off a record of 4
+— the only leashed completion this engine has had — while T2·4 (6), T3·4
+(8) and T6·3 (6) were each granted five against a record saying more, and
+each was cut. So `LEASH_CREDIBLE_UP_TO` becomes `RECIPE_TURNS`: a run may
+be shortened to five turns only once it has completed inside five. The
+join test that keeps the two in step (the constant cannot import the
+executor without closing a cycle) now asserts equality rather than
+double.
+
+**And a leashed run cut at the wall may raise `completedInTurns`.** D-068
+refused every revision from a cut run, and was right about the two it
+named: a killed run has not completed, and its output does not say the
+job fits. It left no way to un-learn. The third fact is one only a cut
+*leashed* run witnesses — the job needs more turns than it was given — so
+`creditRecipe` takes `leashCutFrom` and raises the bound to
+`granted + 1`, credits nothing else, and yields to any later run that
+genuinely completes in less (the existing `Math.min` outranks a bound
+inferred from a failure). Both halves are needed: the tighter gate stops
+the wrong grant, and the un-learn catches the ratchet, which is measured
+— T1 and T3 both grew *more* expensive run over run as their banked
+standard matured, so a recipe that fits five turns today can need six
+next month.
+
+This is the fourth time here that a gate verifying one thing was read as
+licensing another (D-064, D-065, D-068), and the warning was written in
+`recipes.ts` directly above the code that did it. The rule that keeps
+catching it: ask what the counter's own doc comment says it measured.
+
+**Evidence.** `npm test` 1056 + 109 green, typecheck clean. Six new tests
+on the un-learn (raises past the failed budget; retires a leash a recipe
+had fitted; credits no counter; yields to a real completion; leaves the
+bound alone with no leashed cut) and the eligibility bound re-pinned at
+4/5 pass and 6 refuse, including T6·3's exact record. Two of those tests
+first passed for the wrong reason — seeded through `rememberRecipe`
+without a capability surface, they died on `sameCapabilities` and never
+reached the bound; stated surfaces fixed it, which is the same class of
+fault as a scripted check matching a string that already existed.
+Mutation proof and the live run follow this commit, and are recorded
+below rather than promised.

@@ -41,14 +41,18 @@ The dev server was left running from that session.
       works precisely where jobs fit ≤4 calls. The old ~55% headline was mostly
       the method. Residue moved to F7; refinement is just more pairs.
 - [ ] **F4 — First real repeat demand points at the blocked tool tier.**
-      *Progress 2026-08-05:* T6 ("summarise expenses.csv into SUMMARY.md") ran
-      once, delivered, and banked a recipe whose surface is verified
-      `conn:web` alone — compile-clean for D-044. **Next: two more T6 runs
-      (fresh expenses CSVs, name only `web`), then the promote request = the
-      first legitimately-earned tool.** Counter-case queued behind it: a third
-      T4 delivery makes a candidate whose compile D-044 should visibly refuse
-      (method needs the live code host). The doors/libraries decision still
-      waits for that evidence; do not build first.
+      T6 ("summarise expenses.csv into SUMMARY.md") has now run three times,
+      all delivered, on a recipe whose surface is verified `conn:web` alone —
+      compile-clean for D-044. **Blocked, and not by demand (2026-08-05):**
+      the promote is refused at `successes: 1` of 3, because `successes`
+      counts reuse only *and* run 3 was leashed → cut → uncredited. Every
+      further run repeats that, so the counter cannot move. **F7 is now a
+      prerequisite** — no more T6 runs until it is settled; they would cost
+      ~20c each, deliver correctly, charge $0 and teach nothing new.
+      Counter-case still queued behind it: a third T4 delivery makes a
+      candidate whose compile D-044 should visibly refuse (method needs the
+      live code host). The doors/libraries decision still waits for that
+      evidence; do not build first.
 - [ ] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
       reads recipes at run start and writes at end; two jobs on different
       stations lose one another's counts, and the counters now gate leashes and
@@ -71,17 +75,34 @@ The dev server was left running from that session.
       `completedInTurns` would retire the leash for jobs it demonstrably does
       not fit. Reopens D-068's counter semantics; wants its own D-entry
       before any counter moves.
+
+      *Sharpened 2026-08-05 by T6·3, and now the top of the board.* The loop
+      is not only unbounded absorption — it **freezes the recipe**. A cut run
+      credits neither counter, so a leashed-and-cut recipe can never reach
+      `successes: 3` and can never be compiled: the tool tier is unreachable
+      for exactly the jobs the leash grabs (F4, live). And the arming
+      condition is looser than this row assumed — `canShortenLeash` asks
+      `completions >= 1` and `completedInTurns <= 10`, so **one** completing
+      run recorded at **6** turns armed a **5**-turn leash. The recipe's own
+      record said it did not fit. Two questions for the entry, then: may a cut
+      leashed run raise `completedInTurns`, and should the gate compare that
+      field against the leash's actual budget rather than
+      `LEASH_CREDIBLE_UP_TO`.
 - [x] **Next step — a second real job through training-ground.** Done and then
       some: waves 1–2 of `TRAINING.md` are five distinct real jobs across 15
       runs. Superseded by the board below.
 
 ## The board — pick up here
 
-1. **T6 ×2 then promote** (F4's milestone): fresh expenses CSVs, verbatim
-   prompt, **name only `web`**; after the third delivery, request the compile
-   and review `run.mjs` for D-045's cache test before promoting.
-2. **F7's decision entry**: whether a leashed run cut at the wall may raise
-   `completedInTurns`. A counters change — take it through a D-entry first.
+1. **F7's decision entry** — now first, because wave 4 cannot move until it
+   lands: whether a leashed run cut at the wall may raise `completedInTurns`,
+   and whether `canShortenLeash` should read that field against the leash's
+   own budget. A counters change — take it through a D-entry first.
+2. **T6's fourth run, then promote** (F4's milestone) — *only after 1*. Fresh
+   expenses CSV, verbatim prompt, **name only `web`**; it must complete
+   un-leashed to credit `successes: 2`, so a fifth run follows before the
+   compile request. Then review `run.mjs` for D-045's cache test before
+   promoting. Runs 1–3 are on the board at 24.8c, 47.0c and 20.4c-absorbed.
 3. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
    promote and watch D-044 refuse with the reason. The gate's negative case,
    live.

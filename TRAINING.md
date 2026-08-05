@@ -169,6 +169,29 @@ test), and the narrowed surface passes D-044's gate. Then promote:
   tool earned end-to-end on real work with no seeding anywhere in its
   history.
 
+**Measured 2026-08-05 (runs 2–3) — the ladder is blocked, and not by demand.**
+Two things were wrong in the plan above, both discovered by running it:
+
+- **"Three runs" is four.** `successes` counts *reuse* runs; the founding run
+  banks the recipe and never counts itself (`TOOL_CANDIDATE_RUNS = 3`,
+  refused at `index.ts:1806`). After runs 1–3 the recipe reads
+  `hits: 2, successes: 1`. Read the counter, not the prose — the same rule
+  that says a figure in these notes is not evidence.
+- **The leash then makes the fourth run impossible.** `canShortenLeash`
+  requires only `completions >= 1` and `completedInTurns <= 10`, so run 3 was
+  leashed off a single completion whose own record said **6 turns** — and
+  handed **5**. It was cut, delivered anyway (D-063), charged $0. A cut run
+  credits neither `successes` nor `completions` (D-065's deliberate choice),
+  so the recipe is frozen at `successes: 1` while every future run repeats
+  leash → cut → deliver → absorb. **`successes` can never reach 3. The compile
+  is unreachable by running the job more.**
+
+This is F7 with a sharper edge: not just unbounded absorption, but a recipe
+that can no longer climb. It is also the fourth time a gate that verified one
+thing was read as licensing another (D-064, D-065, D-068 — and the warning is
+written in `recipes.ts` directly above the code that did it). F7's decision
+entry is now a **prerequisite** for wave 4, not a parallel item.
+
 ### Wave 5 — the knowledge store on its best case *(needs a folder from Brian)*
 
 Point training-ground's store (level header → *reading*) at a real folder the
@@ -210,9 +233,9 @@ server work, and a future compile candidate of the same family as
 | T4·3 | 2026-08-05 | 39be00b2 | 57c oneshot | ~18c | **23.3c** | 23.3c | 3 | done→promoted | **the first leashed completion in the engine's history** — oneshot, 3 calls inside 5 turns, 42s, and it credited a leashed completion back to the recipe. T4 arc: 29.6 → 25.5 → 23.3c |
 | T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
 | T6·1 | 2026-08-05 | 87934cf1 | 49c live | 20c | **24.8c** | 24.8c | 4 | done | 37s. Totals match an independent recompute exactly (grand 43.6750 over 104 real spend rows). **The banked recipe's surface is `conn:web` alone** — compile-clean, D-044 will pass. Best prediction landing yet (+24%) |
-| T6·2 | | | | 15c | | | | | |
-| T6·3 | | | | 15c | | | | | |
-| T6·compile | | | ~$1.58 | $1.15 | | | | | on request |
+| T6·2 | 2026-08-05 | e1296348 | 48c class ("44 jobs like it") | 15c | **47.0c** | 47.0c | 5 | done | 48s, 111 rows (cost by job class). All four figures match an independent recompute exactly. **Cost nearly doubled run-over-run** (24.8 → 47.0c) — the ratchet again: run 1's method matured into a `summarise.mjs` generator plus an exact-figures section, and the CSV grew 4.2→4.5KB. My 15c guess low for the third time on this job. **The quote was still class-priced**: one prior run does not key it — the recipe only credits on *reuse*, so run 1 left `successes: 0` |
+| T6·3 | 2026-08-05 | 8ef1063a | **56.7c keyed** | 15c | 20.4c | **$0** | 5 | partial | **leashed on its second reuse and cut at the wall** — `oneShot`, `turnsAllowed: 5`, `error_max_turns` at turn 6, SUMMARY.md correct anyway (D-063; all five figures match my recompute), charged $0, 20.4c absorbed. The gate armed off `completions: 1` with `completedInTurns: 6` on file — **the recipe's own record said six turns and the leash granted five**. D-072's keyed quote fired here, one credited run in |
+| T6·compile | | | ~$1.58 | $1.15 | | | | | **blocked** — see the arithmetic below |
 | T6·tool | | | free | $0.00 | | | | | verify must pass |
 | T7·recalls | | | free | $0.00 | | | | | |
 | T7·session | | | | 38c | | | | | |

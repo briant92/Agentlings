@@ -414,6 +414,13 @@ export class RoutedExecutor implements Executor {
       const fitted =
         result !== undefined &&
         (deliveredFiles(sandboxDir) || existsSync(patchFile(sandboxDir)));
+      // What this run was leashed to, when the wall is what stopped it. Read
+      // off the failure's own meter rather than `RECIPE_TURNS`, so it is the
+      // budget the run actually got; `hint.oneShot` is what makes it a
+      // statement about the leash rather than about a long run dying (D-095).
+      const cutMeter = failure instanceof SessionFailure ? failure.meter : undefined;
+      const leashCutFrom =
+        hint?.oneShot && cutMeter?.outOfTurns && !midFlight ? cutMeter.turnsAllowed : undefined;
       // Turns *granted*, never the count the SDK reports: job 653f8c2e was
       // capped at 33 and came back saying 40, and this number is about to
       // decide whether a five-turn leash is credible (D-022, D-052).
@@ -425,6 +432,7 @@ export class RoutedExecutor implements Executor {
         fitted && !midFlight,
         result?.meter?.turnsAllowed,
         result?.meter?.toolCalls,
+        leashCutFrom,
       );
     }
     if (approach && agentling && !midFlight) {

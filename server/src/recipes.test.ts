@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  canShortenLeash,
   creditRecipe,
   findRecipe,
   normalise,
@@ -276,13 +277,28 @@ describe('a leash has to be a shortening, not a different job', () => {
     expect(findRecipe([long], prompt, [])?.recipe.approach).toContain('agency calendar');
   });
 
-  it('allows it when the completing run was within reach of the leash', () => {
-    expect(findRecipe([{ ...base, completedInTurns: 8 }], prompt, [])?.strong).toBe(true);
-    expect(findRecipe([{ ...base, completedInTurns: 10 }], prompt, [])?.strong).toBe(true);
+  /**
+   * The bound is the leash's own budget, and four measured outcomes put it
+   * there: T4·3 completed leashed off a record of 4, while T2·4 (6), T3·4 (8)
+   * and T6·3 (6) were each granted five against a record that said more, and
+   * each was cut. "Within reach" was the guess; five is what the runs say
+   * (D-095).
+   */
+  it('allows it only when the completing run fitted the leash itself', () => {
+    expect(findRecipe([{ ...base, completedInTurns: 4 }], prompt, [])?.strong).toBe(true);
+    expect(findRecipe([{ ...base, completedInTurns: 5 }], prompt, [])?.strong).toBe(true);
   });
 
   it('refuses one turn past the bound, so the edge is a decision not an accident', () => {
-    expect(findRecipe([{ ...base, completedInTurns: 11 }], prompt, [])?.strong).toBe(false);
+    expect(findRecipe([{ ...base, completedInTurns: 6 }], prompt, [])?.strong).toBe(false);
+  });
+
+  // T6·3 exactly: one completion recorded at six turns, handed five, cut at
+  // the wall. The recipe's own record said it did not fit.
+  it('refuses the leash for the run that bought this rule', () => {
+    expect(findRecipe([{ ...base, completions: 1, completedInTurns: 6 }], prompt, [])?.strong).toBe(
+      false,
+    );
   });
 
   // Absent means the recipe predates the field. Those keep the old behaviour
@@ -339,6 +355,64 @@ describe('creditRecipe records what a completion cost in turns', () => {
     out = creditRecipe(out, 'x', 3, true, true, 33);
     expect(out[0].completedInTurns).toBe(12);
     expect(out[0].completions).toBe(2);
+  });
+});
+
+/**
+ * The leash un-learning (D-095). D-068 refused every revision from a cut run
+ * and was right about the two it named; this is the third, which a cut
+ * *leashed* run is the only witness to: the job needs more than it was given.
+ * Without it a leashed-and-cut recipe stays armed for ever and — since a cut
+ * run credits neither counter — can never reach `TOOL_CANDIDATE_RUNS` either.
+ */
+describe('a leashed run cut at the wall raises the bound it disproved', () => {
+  // The surface must be stated, not left undefined: `sameCapabilities` refuses
+  // an unknown one outright, so a leash test seeded without it would pass on
+  // the surface check and never reach the bound this describes.
+  const seed = () =>
+    rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1, capabilities: [] });
+
+  const armed = () => {
+    // Where T6 stood after run 2: one completion, recorded at six turns.
+    const out = creditRecipe(seed(), 'x', 2, true, true, 40, 5);
+    expect(out[0].completedInTurns).toBe(6);
+    return out;
+  };
+
+  it('raises the bound past the budget that failed', () => {
+    const out = creditRecipe(armed(), 'x', 3, false, false, undefined, undefined, 5);
+    expect(out[0].completedInTurns).toBe(6);
+    expect(canShortenLeash(out[0], [])).toBe(false);
+  });
+
+  it('retires the leash for a recipe that had fitted it', () => {
+    // A recipe recorded at 4 is leash-eligible; one cut run at that budget is
+    // the ratchet catching up, and it must be able to say so.
+    const fits = creditRecipe(seed(), 'x', 2, true, true, undefined, 3);
+    expect(canShortenLeash(fits[0], [])).toBe(true);
+    const cut = creditRecipe(fits, 'x', 3, false, false, undefined, undefined, 5);
+    expect(cut[0].completedInTurns).toBe(6);
+    expect(canShortenLeash(cut[0], [])).toBe(false);
+  });
+
+  it('credits nothing else — it is a failure, not a completion', () => {
+    const out = creditRecipe(armed(), 'x', 3, false, false, undefined, undefined, 5);
+    expect(out[0].completions).toBe(1);
+    expect(out[0].successes).toBe(1);
+    expect(out[0].hits).toBe(2);
+  });
+
+  // Evidence of fitting outranks a bound inferred from a failure: a run that
+  // genuinely completes inside a shorter budget pulls it back down.
+  it('yields to a later run that actually completes in less', () => {
+    const cut = creditRecipe(armed(), 'x', 3, false, false, undefined, undefined, 5);
+    const out = creditRecipe(cut, 'x', 4, true, true, undefined, 3);
+    expect(out[0].completedInTurns).toBe(4);
+    expect(canShortenLeash(out[0], [])).toBe(true);
+  });
+
+  it('leaves the bound alone when no leashed run was cut', () => {
+    expect(creditRecipe(armed(), 'x', 3, true, false, 10)[0].completedInTurns).toBe(6);
   });
 });
 

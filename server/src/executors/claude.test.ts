@@ -145,14 +145,19 @@ describe('turnsForBudget', () => {
 });
 
 /**
- * `LEASH_CREDIBLE_UP_TO` is twice the leash, and cannot say so in code:
+ * `LEASH_CREDIBLE_UP_TO` is the leash itself, and cannot say so in code:
  * `recipes.ts` importing the executor closes a cycle (claude → router →
  * recipes) and the module initialises half-built. This test is the join — a
  * test file is a leaf and may import both.
+ *
+ * It was twice the leash until D-095, on the guess that a run finishing in
+ * eight turns would do it in five once handed the method. Three cut runs and
+ * one leashed completion later, the two numbers are the same number: a run may
+ * be shortened to five turns only once it has completed inside five.
  */
 describe('the leash and the bound that judges it', () => {
-  it('keeps the credible bound at twice the leash', () => {
-    expect(LEASH_CREDIBLE_UP_TO).toBe(RECIPE_TURNS * 2);
+  it('keeps the credible bound at the leash the executor grants', () => {
+    expect(LEASH_CREDIBLE_UP_TO).toBe(RECIPE_TURNS);
   });
 });
 

@@ -1,7 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import type { AnchorFn } from '../world/anchor';
+import { AskBubble } from './AskBubble';
+import { ChannelAskCard } from './ChannelAskCard';
 
 const DEBOUNCE_MS = 250;
 
@@ -41,11 +44,14 @@ export function WorkBar({
   levelId,
   onFindAbility,
   onOpenSettings,
+  anchorFor,
 }: {
   levelId: string;
   onFindAbility: (text: string) => void;
   /** The ask-card's connect button lands in Settings, where the drawer is. */
   onOpenSettings: () => void;
+  /** The world's live sprite-anchor query, for the ask-bubble (D-084). */
+  anchorFor: { current: AnchorFn | null };
 }) {
   const [text, setText] = useState('');
   const [plan, setPlan] = useState<WorkPlan | null>(null);
@@ -55,6 +61,10 @@ export function WorkBar({
    * the asked channel when it is usable, otherwise none (a draft job).
    */
   const [channel, setChannel] = useState<string | null>(null);
+  /** Whether the ask currently floats over the agentling; false means the
+   *  in-bar card carries it instead (D-084's fallback). */
+  const [bubbleUp, setBubbleUp] = useState(false);
+  const onAnchored = useCallback((anchored: boolean) => setBubbleUp(anchored), []);
   /** Answers by question id. Empty is always a valid state — Start never waits. */
   const [answers, setAnswers] = useState<Record<string, string>>({});
   /** Files dropped on the box, read once and sent with the job that uses them. */
@@ -270,42 +280,36 @@ export function WorkBar({
         </p>
       )}
       {plan?.channelAsk && !askingRepo && plan.channelAsk.state !== 'ready' && (
-        <div className="work-channel">
-          {channel ? (
-            <p className="work-channel-note">
-              Sends via{' '}
-              {plan.channelAsk.options.find((o) => o.channel === channel)?.label ?? channel}{' '}
-              instead — every message waits for your review.{' '}
-              <button type="button" className="work-link" onClick={() => setChannel(null)}>
-                undo
-              </button>
-            </p>
-          ) : (
-            <>
-              <p className="work-channel-note">{plan.channelAsk.note}</p>
-              {plan.channelAsk.options.map((option) => (
-                <div key={option.channel} className="work-channel-opt">
-                  <span className="work-channel-name">{option.label}</span>
-                  <span className="dim work-channel-detail">{option.detail}</span>
-                  {option.state === 'ready' && option.channel !== plan.channelAsk?.asked && (
-                    <button
-                      type="button"
-                      className="work-chip"
-                      onClick={() => setChannel(option.channel)}
-                    >
-                      use {option.label}
-                    </button>
-                  )}
-                  {option.state === 'connectable' && (
-                    <button type="button" className="work-chip" onClick={onOpenSettings}>
-                      connect
-                    </button>
-                  )}
-                </div>
-              ))}
-            </>
+        <>
+          {plan.agentling && (
+            <AskBubble
+              agentlingId={plan.agentling.id}
+              anchorFor={anchorFor}
+              onAnchored={onAnchored}
+            >
+              <div className="work-channel">
+                <ChannelAskCard
+                  ask={plan.channelAsk}
+                  picked={channel}
+                  onPick={setChannel}
+                  onUndo={() => setChannel(null)}
+                  onOpenSettings={onOpenSettings}
+                />
+              </div>
+            </AskBubble>
           )}
-        </div>
+          {!(plan.agentling && bubbleUp) && (
+            <div className="work-channel">
+              <ChannelAskCard
+                ask={plan.channelAsk}
+                picked={channel}
+                onPick={setChannel}
+                onUndo={() => setChannel(null)}
+                onOpenSettings={onOpenSettings}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {plan && !askingRepo && plan.questions.length > 0 && (

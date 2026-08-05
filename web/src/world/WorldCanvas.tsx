@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, type Texture } from 'pixi.js';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Job, JobEvent, ThemeKey, WorldState } from '@agentlings/shared';
 import {
   EXIT_X,
@@ -11,6 +11,7 @@ import {
   WORLD_WIDTH,
 } from '@agentlings/shared';
 import { createAmbience } from './ambience';
+import { anchorPoint, type AnchorFn } from './anchor';
 import { type Frames, loadAtlasArt } from './atlas';
 import { createEmotes } from './emotes';
 import {
@@ -223,6 +224,7 @@ export function WorldCanvas({
   onOpenReview,
   onHover,
   hoveredId,
+  anchorFor,
 }: {
   world: WorldState | null;
   theme: ThemeKey;
@@ -236,6 +238,12 @@ export function WorldCanvas({
   onHover: (agentlingId: string | null) => void;
   /** Who the crew rail is pointing at, highlighted here in return. */
   hoveredId: string | null;
+  /**
+   * Filled with a live query for a sprite's head-top in page coordinates
+   * (D-084) — how DOM anchors over the canvas without the world knowing who
+   * is asking. Null until the stage exists, and again after it is torn down.
+   */
+  anchorFor?: MutableRefObject<AnchorFn | null>;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<WorldState | null>(null);
@@ -289,6 +297,17 @@ export function WorldCanvas({
         app.canvas.style.width = '100%';
         app.canvas.style.height = 'auto';
         host.appendChild(app.canvas);
+
+        // The bubble's window into the world (D-084): the smoothed position
+        // the sprite actually stands at, through the canvas's own rect, so a
+        // resize or layout change can never drift the mapping.
+        if (anchorFor) {
+          anchorFor.current = (id) => {
+            const m = motion.get(id);
+            if (!m) return null;
+            return anchorPoint(m.x, HEAD_Y, app.canvas.getBoundingClientRect(), WORLD_WIDTH);
+          };
+        }
 
         // Art is data: prefer the spritesheet, fall back to what is built in.
         let art: ArtSource = {
@@ -684,8 +703,12 @@ export function WorldCanvas({
 
     return () => {
       destroyed = true;
+      if (anchorFor) anchorFor.current = null;
       if (app.renderer) app.destroy(true, { children: true });
     };
+    // anchorFor is a ref box, stable by construction — the effect keys on the
+    // theme alone, exactly as before it existed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
   return <div className="world" ref={hostRef} />;

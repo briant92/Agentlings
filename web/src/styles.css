@@ -224,6 +224,76 @@ button.ghost {
 .work-channel-ready {
   color: #6daa2c;
 }
+
+/* The ask, floating over the agentling who would take the job (D-084) —
+   the mock's speech bubble: a light sheet over the dark world, tail on the
+   head, tracked each frame from the sprite's own smoothed position. */
+.ask-bubble {
+  position: fixed;
+  z-index: 30;
+  transform: translate(-50%, calc(-100% - 12px));
+  width: min(440px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.ask-bubble-card {
+  pointer-events: auto;
+  background: #eef1e4;
+  color: #221a2e;
+  border: 2px solid #0b0713;
+  border-radius: 10px;
+  padding: 11px 13px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ask-bubble-card {
+    animation: ask-bubble-float 5s ease-in-out infinite;
+  }
+  @keyframes ask-bubble-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+}
+.ask-bubble-tail {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 14px;
+  height: 14px;
+  background: #eef1e4;
+  border-right: 2px solid #0b0713;
+  border-bottom: 2px solid #0b0713;
+  transform: translateX(calc(-50% + var(--tail-dx, 0px))) rotate(45deg);
+}
+/* Inside the sheet, the same ask markup reads in daylight colours. */
+.ask-bubble .work-channel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.ask-bubble .work-channel-note {
+  color: #221a2e;
+}
+.ask-bubble .work-channel-name {
+  color: #221a2e;
+}
+.ask-bubble .work-channel-detail,
+.ask-bubble .dim {
+  color: #635c72;
+}
+.ask-bubble .work-chip {
+  border-color: #b9bcab;
+  background: #fff;
+  color: #454052;
+}
+.ask-bubble .work-link {
+  color: #34509e;
+}
 .work-channel {
   border: 1px solid #3a3160;
   border-left: 2px solid #5b6ee1;

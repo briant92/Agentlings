@@ -789,7 +789,9 @@ tried, measured and rejected is in `DECISIONS.md`:
           OUTBOX.json contract in its brief (D-031). Parked at the desk
           rather than as a `needs-connection` status — that is D-030's
           `waiting` shape, refused a second time; reasoning in D-079. The
-          bubble drawn over the agentling stays presentation polish.
+          bubble over the agentling landed later as pure presentation: the
+          same card in a tracked sheet-with-tail, with the bar card as the
+          fallback whenever the world cannot anchor it (D-084).
     - [x] **The Google Connect flow.** Loopback OAuth against the user's own
           client (never a shared one, D-076): the drawer takes client id +
           secret, Google's consent page opens in a fresh tab — one consent

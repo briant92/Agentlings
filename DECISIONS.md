@@ -93,6 +93,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-081 — 2026-08-05 — WhatsApp Business sends templates, and the audit records a declared price or none](#d-081--2026-08-05--whatsapp-business-sends-templates-and-the-audit-records-a-declared-price-or-none)
 - [D-082 — 2026-08-05 — Standing approval: earned in review, scoped to an allowlist, and not called a leash](#d-082--2026-08-05--standing-approval-earned-in-review-scoped-to-an-allowlist-and-not-called-a-leash)
 - [D-083 — 2026-08-05 — Ambience is scene data, and the stalactites the dice never rolled](#d-083--2026-08-05--ambience-is-scene-data-and-the-stalactites-the-dice-never-rolled)
+- [D-084 — 2026-08-05 — The ask floats over the agentling, and falls back to the bar](#d-084--2026-08-05--the-ask-floats-over-the-agentling-and-falls-back-to-the-bar)
 
 ## By theme
 
@@ -201,9 +202,11 @@ entry updates one file rather than two.
   client, the gmail channel that sends as them, and the 7-day trap given a
   sentence at both ends: D-080; WhatsApp Business as templates with the
   drawer learning to validate a secret *set* whole, and the audit taking a
-  declared price or none: D-081; and standing approval — earned by unchanged
+  declared price or none: D-081; standing approval — earned by unchanged
   reviews, locked to a recipient allowlist, revoked by any change, and
-  deliberately not called a leash: D-082
+  deliberately not called a leash: D-082; and the ask finally floating over
+  the agentling as the mock drew it, with the bar card as the fallback that
+  makes the diorama optional: D-084
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4646,3 +4649,38 @@ One assertion caught its own feature short — the parcel pile's hit box
 grew to 44px because the count tag's containment test demanded it. 93
 web and 1011 server tests green on the merged head, typecheck clean,
 zero console errors on a scripted mount of the merged app.
+
+## D-084 — 2026-08-05 — The ask floats over the agentling, and falls back to the bar
+
+The mock's screen 1, completed: the channel ask now renders as a speech
+bubble over the agentling who would take the job — the light sheet with the
+tail, exactly the approved design — while the work bar keeps carrying it
+whenever the world cannot. Presentation only, deliberately: D-079's card
+stays the mechanism, one component (`ChannelAskCard`) renders inside both
+frames, and nothing behavioural waits on the diorama. The 'ready' state
+keeps its quiet chip in the bar; a bubble that only ever asks is a bubble
+worth looking up at.
+
+**The seam is one function, not a layout contract.** `WorldCanvas`
+publishes a live query through a ref — sprite id in, head-top in page
+coordinates out — computed from the *smoothed* position the canvas actually
+draws (the same `motion` map the emotes read) through the canvas's own
+rect, so the edge-to-edge sizing, a resize, or the next layout pass cannot
+drift the mapping. The mapping itself is `anchorPoint` in
+`world/anchor.ts`, pure and tested. The bubble tracks it each frame with
+rAF, clamps its box to the viewport, and offsets the tail by the clamp so
+it keeps pointing at the head while the box stays on screen. The world
+learns nothing about who is asking.
+
+**The fallback is the contract.** The bubble reports whether it anchored;
+anything else — no crew yet, the stage still booting, the sprite gone —
+puts the identical card back under the intake, where the ask has lived
+since D-079. An ask can be missed pretty; it must not be missable.
+
+**Evidence.** Five new tests on the pure mapping and the clamp — the
+offset-and-scale case, the identity case, both edges, and the
+too-narrow-viewport pin — with 98 web tests and the full typecheck green.
+The production build carries `.ask-bubble` in both bundles, which is this
+repo's ship-check where a browser cannot be driven from the session; the
+float respects `prefers-reduced-motion`, and the visual pass is the open
+app's to confirm — it hot-reloads, so the bubble is already live there.

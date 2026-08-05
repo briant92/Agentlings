@@ -12,6 +12,7 @@ import { Terminal } from '../panels/Terminal';
 import { Tour, tourSeen } from '../panels/Tour';
 import { WorkBar } from '../panels/WorkBar';
 import { useWorld } from '../useWorld';
+import type { AnchorFn } from '../world/anchor';
 import { WorldCanvas } from '../world/WorldCanvas';
 import type { LevelEntry } from './SelectScreen';
 
@@ -44,6 +45,8 @@ export function LevelView({
   // way about, so the two halves of the panel are talking about the same crew.
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const arrival = useRef<number | undefined>(undefined);
+  /** The world's live sprite-anchor query; the ask-bubble reads it (D-084). */
+  const anchorFor = useRef<AnchorFn | null>(null);
   const reviewJob = world?.jobs.find((j) => j.id === review?.jobId) ?? null;
 
   useEffect(() => () => clearTimeout(arrival.current), []);
@@ -139,6 +142,7 @@ export function LevelView({
           onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
           onHover={setHoveredId}
           hoveredId={hoveredId}
+          anchorFor={anchorFor}
         />
         <WorkBar
           levelId={level.id}
@@ -147,6 +151,7 @@ export function LevelView({
             setRolesOpen(true);
           }}
           onOpenSettings={onOpenSettings}
+          anchorFor={anchorFor}
         />
       </main>
       <aside className="side">

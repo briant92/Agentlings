@@ -167,6 +167,23 @@ export interface ConnectionInfo {
   enabled: boolean;
 }
 
+/** One row of the channels Settings lists beyond the wired ones (D-088). */
+export interface ChannelShelfRow {
+  channel: string;
+  label: string;
+  detail: string;
+}
+
+/**
+ * The honest shelf (D-077's tiers, shown in Settings): what is planned, and
+ * what will never be on the menu with the reason on the row — so nobody
+ * waits for it.
+ */
+export interface ChannelShelf {
+  planned: ChannelShelfRow[];
+  never: ChannelShelfRow[];
+}
+
 /**
  * A file the user attached to a job.
  *

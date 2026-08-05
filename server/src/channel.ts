@@ -3,6 +3,7 @@ import {
   MAX_OUTBOX_MESSAGES,
   type ChannelAsk,
   type ChannelOption,
+  type ChannelShelf,
 } from '@agentlings/shared';
 import { CHANNELS } from './channels';
 import { missingSecrets, type Connection } from './connections';
@@ -102,6 +103,24 @@ const NEVER: Record<string, string> = {
   wechat: 'WeChat official accounts need Chinese business verification',
   messenger: "Meta's DM APIs are for business accounts behind Meta app review",
 };
+
+/**
+ * The honest shelf Settings shows under the wired connections (D-088): the
+ * planned tier, and the refused one with its reason on the row — D-077's
+ * tiers, served from the same maps the ask-card reads so the two can never
+ * disagree.
+ */
+export function channelShelf(): ChannelShelf {
+  const row = (source: Record<string, string>) => (channel: string) => ({
+    channel,
+    label: LABELS[channel] ?? channel,
+    detail: source[channel],
+  });
+  return {
+    planned: Object.keys(PLANNED).map(row(PLANNED)),
+    never: Object.keys(NEVER).map(row(NEVER)),
+  };
+}
 
 function wiredState(
   channel: string,

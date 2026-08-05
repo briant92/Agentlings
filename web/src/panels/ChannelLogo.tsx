@@ -9,9 +9,27 @@
 const TILE: Record<string, { letter: string; fill: string }> = {
   sms: { letter: 'S', fill: '#c8102e' },
   discord: { letter: 'D', fill: '#5865f2' },
+  github: { letter: 'GH', fill: '#24292f' },
+};
+
+/** Plain names for the channels a job can carry, for client-side copy. */
+export const CHANNEL_LABELS: Record<string, string> = {
+  telegram: 'Telegram',
+  gmail: 'Gmail',
+  'whatsapp-business': 'WhatsApp Business',
 };
 
 export function ChannelLogo({ channel }: { channel: string }) {
+  if (channel === 'google') {
+    return (
+      <svg className="ask-logo" viewBox="0 0 34 34" aria-hidden="true">
+        <circle cx="17" cy="17" r="15" fill="#fff" />
+        <text x="17" y="23" textAnchor="middle" fontSize="17" fontWeight="700" fill="#4285f4">
+          G
+        </text>
+      </svg>
+    );
+  }
   if (channel === 'telegram') {
     return (
       <svg className="ask-logo" viewBox="0 0 34 34" aria-hidden="true">
@@ -62,7 +80,14 @@ export function ChannelLogo({ channel }: { channel: string }) {
   return (
     <svg className="ask-logo" viewBox="0 0 34 34" aria-hidden="true">
       <rect x="4" y="4" width="26" height="26" rx="6" fill={tile.fill} />
-      <text x="17" y="22" textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff">
+      <text
+        x="17"
+        y="22"
+        textAnchor="middle"
+        fontSize={tile.letter.length > 1 ? 11 : 14}
+        fontWeight="700"
+        fill="#fff"
+      >
         {tile.letter}
       </text>
     </svg>

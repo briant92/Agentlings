@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { SettingsInfo } from '@agentlings/shared';
+import type { ChannelShelf, SettingsInfo } from '@agentlings/shared';
 import { api } from '../api';
+import { ChannelLogo } from '../panels/ChannelLogo';
 import { resetTour, tourSeen } from '../panels/Tour';
 import { crtEnabled, setCrt } from '../ui/crt';
 
@@ -22,8 +23,14 @@ export function SettingsModal({
   /** A Google sign-in tab is open; the server flips ready when it comes back. */
   const [googlePending, setGooglePending] = useState(false);
 
+  /** The tiers beyond the wired connections — planned, and never-with-why. */
+  const [shelf, setShelf] = useState<ChannelShelf | null>(null);
+
   useEffect(() => {
     void api<SettingsInfo>('/api/settings').then(setSettings);
+    void api<ChannelShelf>('/api/channels')
+      .then(setShelf)
+      .catch(() => setShelf(null));
   }, []);
 
   /** The server is what makes it true, so the reply is what we render. */
@@ -182,19 +189,40 @@ export function SettingsModal({
           {/* The crew reaches outside by default — this is where you take that
               back, once, rather than deciding it again for every job. */}
           <div className="sect">outside world</div>
+          {/* The garage, dressed as mock screen 3 (D-088): a card per
+              connection — mark, name, identity, an honest pill — with the
+              same switch and the same drawer the checkboxes had. */}
+          <div className="conn-grid">
           {settings?.connections.map((connection) => (
-            <div key={connection.name}>
-              <label className={`toggle${connection.ready ? '' : ' toggle-blocked'}`}>
-                <input
-                  type="checkbox"
-                  checked={connection.enabled}
-                  disabled={!connection.ready}
-                  onChange={(e) => void toggle(connection.name, e.target.checked)}
-                />
-                <span>
-                  {connection.label} — {connection.description}
+            <div
+              key={connection.name}
+              className={drawer === connection.name ? 'conn-cell open' : 'conn-cell'}
+            >
+              <div className="conn" title={connection.description}>
+                <ChannelLogo channel={connection.name} />
+                <div className="conn-meta">
+                  <div className="conn-nm">{connection.label}</div>
+                  <div className="conn-id">{connection.identity ?? connection.description}</div>
+                </div>
+                <span
+                  className={
+                    !connection.ready ? 'pill need' : connection.enabled ? 'pill on' : 'pill off'
+                  }
+                >
+                  {!connection.ready ? 'needs set-up' : connection.enabled ? 'on' : 'off'}
                 </span>
-              </label>
+                <label
+                  className={`tgl${connection.enabled ? ' on' : ''}${connection.ready ? '' : ' blocked'}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={connection.enabled}
+                    disabled={!connection.ready}
+                    onChange={(e) => void toggle(connection.name, e.target.checked)}
+                  />
+                  <i />
+                </label>
+              </div>
               {!connection.ready && (
                 <p className="dim conn-note">
                   Needs {connection.missingSecrets.join(', ')} —{' '}
@@ -297,9 +325,6 @@ export function SettingsModal({
                   </p>
                 </div>
               )}
-              {connection.ready && connection.identity && (
-                <p className="stat-done conn-note">✓ connected as {connection.identity}</p>
-              )}
               {connection.ready && connection.defaultOn && !connection.enabled && (
                 <p className="dim conn-note">
                   Off — the crew works from what you give them. Jobs that would have
@@ -308,6 +333,31 @@ export function SettingsModal({
               )}
             </div>
           ))}
+          </div>
+          {/* The tiers beyond the cards (D-077, served by the shelf route):
+              planned as quiet chips, and the refusals with the reason on the
+              row — so nobody waits for a channel this menu will not grow. */}
+          {shelf && shelf.planned.length > 0 && (
+            <div className="minis">
+              <span className="minis-label">planned</span>
+              {shelf.planned.map((row) => (
+                <span key={row.channel} className="mini" title={row.detail}>
+                  <ChannelLogo channel={row.channel} />
+                  {row.label}
+                </span>
+              ))}
+            </div>
+          )}
+          {shelf && shelf.never.length > 0 && (
+            <div className="shelf">
+              <span className="minis-label">never on this menu — so nobody waits for them</span>
+              {shelf.never.map((row) => (
+                <p key={row.channel} className="shelf-row">
+                  <b>{row.label}</b> — {row.detail}
+                </p>
+              ))}
+            </div>
+          )}
           <div className="sect">catalog</div>
           <p className="dim">Roles and skills are a global library shared by every level.</p>
           <button onClick={onOpenRoles}>Open roles &amp; skills</button>

@@ -46,7 +46,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
-import { detectChannelAsk } from './channel';
+import { channelShelf, detectChannelAsk } from './channel';
 import { secretValueProblem, storeSecret } from './env';
 import { exchangeCode, FlowStore, GOOGLE_SECRETS } from './google';
 import { quoteFor } from './estimate';
@@ -482,6 +482,13 @@ app.get('/api/settings', (c) =>
     connections: connectionList(),
   } satisfies SettingsInfo),
 );
+
+/**
+ * The channel tiers beyond the wired connections (D-088): planned, and
+ * never-with-the-reason. Settings shows them so nobody waits for a channel
+ * this menu will not grow.
+ */
+app.get('/api/channels', (c) => c.json(channelShelf()));
 
 /**
  * Turn a connection on or off for every level. Global on purpose: the registry

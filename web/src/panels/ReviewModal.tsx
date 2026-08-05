@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { DeliveryFile, Job, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
 
 /** Full sandbox contents in an overlay; Esc, backdrop, or Close dismisses. */
@@ -96,39 +97,55 @@ export function ReviewModal({
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}
           {job.outbox && (
-            <>
-              <div className="sect">
-                outbox · {job.outbox.messages.length} message
-                {job.outbox.messages.length === 1 ? '' : 's'} via {job.outbox.channel}
-                {job.outbox.template &&
-                  ` · template ${job.outbox.template.name} (${job.outbox.template.language})`}
-                {unsent.length > 0 ? ' — approving sends them' : ' — all sent'}
+            // The outbox as mock screen 4 drew it (D-088): the channel's mark
+            // on the header, a recipient's initial on each row — same rows,
+            // same sent/failed truth, dressed.
+            <div className="rv-outbox-card">
+              <div className="rv-outbox-head">
+                <ChannelLogo channel={job.outbox.channel} />
+                <div>
+                  <div className="rv-outbox-t">
+                    Outbox — {job.outbox.messages.length} message
+                    {job.outbox.messages.length === 1 ? '' : 's'} via{' '}
+                    {CHANNEL_LABELS[job.outbox.channel] ?? job.outbox.channel}
+                  </div>
+                  <div className="rv-outbox-s">
+                    {job.outbox.template &&
+                      `template ${job.outbox.template.name} (${job.outbox.template.language}) · `}
+                    {unsent.length > 0 ? 'approving sends them' : 'all sent'}
+                  </div>
+                </div>
               </div>
               <ul className="rv-outbox">
                 {job.outbox.messages.map((m) => {
                   const failure = job.outboxSent?.failed.find((f) => f.to === m.to);
                   return (
                     <li key={m.to}>
-                      <div className="rv-msg-head">
-                        <span className="rv-msg-to">
-                          {m.name ?? m.to}
-                          {m.name && <span className="rv-msg-addr"> · {m.to}</span>}
-                        </span>
-                        {sentTo.includes(m.to) && <span className="rv-msg-sent">sent</span>}
-                        {failure && <span className="rv-msg-failed">{failure.reason}</span>}
+                      <span className="rv-av" aria-hidden="true">
+                        {(m.name ?? m.to).trim().charAt(0).toUpperCase() || '?'}
+                      </span>
+                      <div className="rv-msg">
+                        <div className="rv-msg-head">
+                          <span className="rv-msg-to">
+                            {m.name ?? m.to}
+                            {m.name && <span className="rv-msg-addr"> · {m.to}</span>}
+                          </span>
+                          {sentTo.includes(m.to) && <span className="rv-msg-sent">sent</span>}
+                          {failure && <span className="rv-msg-failed">{failure.reason}</span>}
+                        </div>
+                        {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
+                        <div className="rv-msg-body">{m.body}</div>
+                        {m.params && m.params.length > 0 && (
+                          // What is actually transmitted for a template send —
+                          // the body above is the claimed rendering.
+                          <div className="rv-msg-params">sends: [{m.params.join(' · ')}]</div>
+                        )}
                       </div>
-                      {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
-                      <div className="rv-msg-body">{m.body}</div>
-                      {m.params && m.params.length > 0 && (
-                        // What is actually transmitted for a template send —
-                        // the body above is the claimed rendering.
-                        <div className="rv-msg-params">sends: [{m.params.join(' · ')}]</div>
-                      )}
                     </li>
                   );
                 })}
               </ul>
-            </>
+            </div>
           )}
           {job.changes && job.changes.files > 0 && (
             <>
@@ -159,7 +176,11 @@ export function ReviewModal({
               </p>
               <div className="rv-standing-btns">
                 <button onClick={onClose}>Keep reviewing</button>
-                <button disabled={granting} onClick={() => void setAutoSend(true)}>
+                <button
+                  className="btn-amber"
+                  disabled={granting}
+                  onClick={() => void setAutoSend(true)}
+                >
                   {granting ? '…' : 'Auto-send from the next run'}
                 </button>
               </div>
@@ -187,10 +208,15 @@ export function ReviewModal({
               reviewing opened a modal whose only button was Close. */}
           {!offer && (job.status === 'done' || job.status === 'partial') && (
             <>
-              <button onClick={() => void resolve('promote')}>
+              <button
+                className={unsent.length > 0 ? 'btn-send' : undefined}
+                onClick={() => void resolve('promote')}
+              >
                 {unsent.length > 0 ? `Approve & send ${unsent.length}` : 'Approve'}
               </button>
-              <button onClick={() => void resolve('discard')}>Discard</button>
+              <button className="btn-quiet" onClick={() => void resolve('discard')}>
+                Discard
+              </button>
             </>
           )}
           <button onClick={onClose}>Close</button>

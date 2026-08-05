@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { channelBrief, detectChannelAsk } from './channel';
+import { channelBrief, channelShelf, detectChannelAsk } from './channel';
 import type { Connection } from './connections';
 
 const telegram: Connection = {
@@ -131,6 +131,28 @@ describe('detectChannelAsk — what the card says', () => {
     const got = ask('dm the team on linkedin about the launch');
     expect(got?.state).toBe('never');
     expect(got?.note).toContain('closed to personal automation');
+  });
+});
+
+describe('channelShelf', () => {
+  it('serves the planned tier and the refusals with their reasons, labelled', () => {
+    const shelf = channelShelf();
+    expect(shelf.planned.map((r) => r.channel)).toContain('slack');
+    const whatsapp = shelf.never.find((r) => r.channel === 'whatsapp');
+    expect(whatsapp?.label).toBe('WhatsApp');
+    expect(whatsapp?.detail).toContain('no API');
+    for (const row of [...shelf.planned, ...shelf.never]) {
+      expect(row.label.length).toBeGreaterThan(0);
+      expect(row.detail.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('never lists a wired channel on either shelf', () => {
+    const shelf = channelShelf();
+    for (const wired of ['telegram', 'gmail', 'whatsapp-business']) {
+      expect(shelf.planned.map((r) => r.channel)).not.toContain(wired);
+      expect(shelf.never.map((r) => r.channel)).not.toContain(wired);
+    }
   });
 });
 

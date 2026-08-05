@@ -97,6 +97,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-085 — 2026-08-05 — Bare "mail" claims as a channel word, and stays out of the verb list](#d-085--2026-08-05--bare-mail-claims-as-a-channel-word-and-stays-out-of-the-verb-list)
 - [D-086 — 2026-08-05 — The bubble wears the mock's sheet, and the bar keeps the desk card](#d-086--2026-08-05--the-bubble-wears-the-mocks-sheet-and-the-bar-keeps-the-desk-card)
 - [D-087 — 2026-08-05 — The desk asks the send's two facts, and Start tells the truth](#d-087--2026-08-05--the-desk-asks-the-sends-two-facts-and-start-tells-the-truth)
+- [D-088 — 2026-08-05 — The garage, the drawer and the outbox wear the mock too](#d-088--2026-08-05--the-garage-the-drawer-and-the-outbox-wear-the-mock-too)
 
 ## By theme
 
@@ -219,7 +220,12 @@ entry updates one file rather than two.
   question taught the desk to ask the send's two facts on the card, Start
   to arrest a knowably doomed queue for one extra press, and a failed
   run's question to carry a reply box that continues the same job, channel
-  and all — the parked status refused a fourth time
+  and all — the parked status refused a fourth time; and D-088, which
+  finishes what D-086 started — Settings becomes the mock's garage (cards,
+  marks, honest pills, the switch, and a served shelf of planned and
+  never-with-why), the drawer's steps get their numbered squares, and the
+  outbox review wears the channel's mark with a recipient's initial on
+  every row — presentation only, over the same mechanisms
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4836,3 +4842,52 @@ answers; an address in the sentence prefills TO. Left for the demo loop:
 a real reply on a failed send job (it spawns a paid session, so it was
 typecheck-and-read verified only), and the repo-folder ask's own buttons
 bypass the arrest — send jobs rarely carry repos, noted rather than wired.
+
+## D-088 — 2026-08-05 — The garage, the drawer and the outbox wear the mock too
+
+Brian asked for the rest of what D-086 did for the bubble: the design
+preview's screens are friendlier than the surfaces they mocked, and the
+system is already proven — so the flair moves in, presentation only, over
+mechanisms that do not change. Three surfaces:
+
+- **Settings is the mock's garage (screen 3).** The checkbox sentences
+  become a card grid: the connection's mark, its name, an identity line
+  (who it connected as, else the description), an honest pill — green
+  `on`, grey `off`, amber `needs set-up` — and the same toggle restyled as
+  a switch over the same input. A cell with its drawer open spans the
+  grid. Below the cards, the tiers D-077 decided finally show where the
+  user decides: `planned` as quiet chips and **the shelf of never, each
+  row with its reason** — served by a new `GET /api/channels` off the same
+  `PLANNED`/`NEVER` maps the ask-card reads, so the two can never
+  disagree. The pill says `on`, not the mock's `connected`, because half
+  the cards are credential-less readers and "connected" would overclaim.
+- **The drawer's walkthrough gets its numbered squares (screen 2).** The
+  `setup` steps D-078 already wrote render as the mock drew them; the
+  paste-and-Check row and the Google Connect flow are untouched. The
+  separate "✓ connected as" line is gone — identity lives on the card.
+- **The outbox review is a channel-headed card (screen 4).** The mark on
+  the header, "Outbox — N messages via Gmail" with the template and
+  sent-state as the sub-line, and a recipient's initial on every row —
+  same rows, same sent/failed truth. The foot learns the mock's button
+  hierarchy: Approve-&-send is the green act, Discard the quiet one, and
+  the standing-approval offer's grant goes amber. The mock's cost line
+  ("3 × $0.025 ≈ 8¢") is deliberately absent: a declared WhatsApp rate is
+  stamped on sends.jsonl at send time (D-081) and is not in the outbox the
+  client reviews — drawing it would invent a number.
+
+`ChannelLogo` grew a Google mark and a GitHub tile and now exports the
+channel labels, so every surface names channels from one place.
+
+**Evidence.** Two shelf tests (labels and reasons present; no wired
+channel on either shelf) — 18 in channel.test.ts, 1022 server + 98 web
+green, typecheck clean. Bundles carry the new classes and copy (the
+steps rule survives minified as `li:before`). Live on a second web server
+against the shared API: `GET /api/channels` answers Slack/SMS/Discord
+planned and six refusals; the settings modal renders seven cards — every
+one with mark, pill and switch, readers `on`, the three senders honestly
+`needs set-up` — six shelf rows with reasons, and a drawer open with four
+numbered steps. The outbox card could not be probed live because no job
+in any level carries an outbox yet; it is covered by build and tests, and
+the first demo-loop send is its visual pass. The pane still cannot
+composite frames in this session, so pixels remain the open app's to
+confirm — it hot-reloads, and the garage is already live there.

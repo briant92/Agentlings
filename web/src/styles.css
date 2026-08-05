@@ -1680,6 +1680,9 @@ button.danger:hover {
   border: 1px solid #3a3160;
   border-radius: 6px;
   padding: 7px 10px;
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
 }
 .rv-msg-head {
   display: flex;
@@ -1721,6 +1724,78 @@ button.danger:hover {
   font-size: 10.5px;
   color: #8d86a3;
   margin-top: 3px;
+}
+/* The outbox dressed as mock screen 4 (D-088): the channel's mark on the
+   header, a recipient's initial on each row — same rows, same truth. */
+.rv-outbox-card {
+  border: 1px solid #3a3160;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rv-outbox-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid #3a3160;
+  background: #1d1529;
+}
+.rv-outbox-head .ask-logo {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.rv-outbox-t {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.rv-outbox-s {
+  font-size: 11px;
+  color: #8d86a3;
+}
+.rv-outbox-card .rv-outbox {
+  padding: 8px 10px;
+}
+.rv-av {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #30346d;
+  color: #deeed6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.rv-msg {
+  flex: 1;
+  min-width: 0;
+}
+/* Button truth for the review foot (D-088): sending is the green act,
+   discarding the quiet one, the leash amber — the mock's hierarchy. */
+.btn-send {
+  background: #6daa2c;
+  border-color: #6daa2c;
+  color: #122007;
+  font-weight: 600;
+}
+.btn-send:hover {
+  background: #7dbc3a;
+}
+.btn-quiet {
+  background: transparent;
+  color: #8d86a3;
+}
+.btn-amber {
+  background: #d27d2c;
+  border-color: #d27d2c;
+  color: #241304;
+  font-weight: 600;
+}
+.btn-amber:hover {
+  background: #e08d3c;
 }
 
 /* The standing-approval offer and its backoffice list (D-082). */
@@ -1805,6 +1880,165 @@ button.danger:hover {
   margin: 2px 0 8px 20px;
   font-size: 11px;
 }
+/* The garage, dressed as mock screen 3 (D-088): a card per connection with
+   its mark, an honest pill, and the same switch the checkboxes were. */
+.conn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.conn-cell.open {
+  grid-column: 1 / -1;
+}
+.conn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid #3a3160;
+  border-radius: 10px;
+  background: #1d1529;
+}
+.conn .ask-logo {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+.conn-meta {
+  flex: 1;
+  min-width: 0;
+}
+.conn-nm {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.conn-id {
+  font-size: 11px;
+  color: #8d86a3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pill {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.pill.on {
+  background: rgba(109, 170, 44, 0.16);
+  color: #a9d67f;
+  border: 1px solid rgba(109, 170, 44, 0.6);
+}
+.pill.off {
+  background: rgba(141, 134, 163, 0.12);
+  color: #8d86a3;
+  border: 1px solid #3a3160;
+}
+.pill.need {
+  background: rgba(210, 125, 44, 0.14);
+  color: #e8b478;
+  border: 1px solid rgba(210, 125, 44, 0.6);
+}
+.tgl {
+  flex: none;
+  position: relative;
+  width: 34px;
+  height: 19px;
+  border-radius: 999px;
+  border: 1px solid #3a3160;
+  background: #141021;
+  cursor: pointer;
+}
+.tgl input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: inherit;
+}
+.tgl i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #8d86a3;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tgl i {
+    transition: left 0.12s ease;
+  }
+}
+.tgl.on {
+  background: rgba(109, 170, 44, 0.35);
+  border-color: #6daa2c;
+}
+.tgl.on i {
+  left: 17px;
+  background: #cfe6b8;
+}
+.tgl.blocked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.tgl:has(input:focus-visible) {
+  outline: 2px solid #d27d2c;
+  outline-offset: 2px;
+}
+.minis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 0 8px;
+}
+.minis-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8d86a3;
+  width: 100%;
+}
+.mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  border: 1px dashed #3a3160;
+  background: rgba(29, 21, 41, 0.6);
+  color: #8d86a3;
+  font-size: 11px;
+}
+.mini .ask-logo {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.shelf {
+  border-top: 1px dashed #3a3160;
+  padding-top: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.shelf-row {
+  margin: 0;
+  font-size: 11px;
+  color: #8d86a3;
+}
+.shelf-row b {
+  color: #cf8a8c;
+  font-weight: 600;
+}
 
 /* The token drawer: paste, one real validation call, saved to .env (D-078). */
 .secret-drawer {
@@ -1815,12 +2049,40 @@ button.danger:hover {
   flex-direction: column;
   gap: 7px;
 }
+/* Numbered squares, as mock screen 2 draws the walkthrough (D-088). */
 .secret-steps {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
   font-size: 11px;
-  line-height: 1.7;
+  line-height: 1.55;
   color: #d8dce6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.secret-steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.secret-steps li::before {
+  content: counter(step);
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #30346d;
+  color: #deeed6;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
 }
 .secret-row {
   display: flex;

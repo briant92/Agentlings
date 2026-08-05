@@ -206,8 +206,10 @@ server work, and a future compile candidate of the same family as
 | T2·4 | 2026-08-05 | f843f9c3 | 57c oneshot | 30c | 30.7c | **$0** | 5 | partial→promoted | **first live one-shot since the gates** — cut at 5 turns (needed ~6), delivered SUMMARY.docx anyway (D-063), absorbed. Spend −14% vs the hint baseline |
 | T3·4 | 2026-08-05 | 7f23d9f5 | 57c oneshot | 38c | 36.2c | **$0** | 6 | partial | cut at 5, workbook + build.mjs delivered, absorbed. Spend −24% vs hint. A cut run cannot revise the record, so the leash stays armed → see F7 |
 | T4·1 | 2026-08-05 | ebb14da4 | 50c live (46c at pre-reg) | 22c | **29.6c** | 29.6c | 3 | done | 57s — cheapest and fastest run on this level, and the closest to a guess yet (+35%). D-040's trimmed replies visible: one `list_commits` covered it. The note caveats itself: subjects only, no diffs fetched. github connection proven end-to-end here; 5th recipe banked |
+| T4·2 | 2026-08-05 | 03ddc6d8 | 50c | — | 25.5c | 25.5c | 3 | done | hint; completedInTurns 4 — under the leash itself |
+| T4·3 | 2026-08-05 | 39be00b2 | 57c oneshot | ~18c | **23.3c** | 23.3c | 3 | done→promoted | **the first leashed completion in the engine's history** — oneshot, 3 calls inside 5 turns, 42s, and it credited a leashed completion back to the recipe. T4 arc: 29.6 → 25.5 → 23.3c |
 | T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
-| T6·1 | | | 46c | 20c | | | | | name `web` only |
+| T6·1 | 2026-08-05 | 87934cf1 | 49c live | 20c | **24.8c** | 24.8c | 4 | done | 37s. Totals match an independent recompute exactly (grand 43.6750 over 104 real spend rows). **The banked recipe's surface is `conn:web` alone** — compile-clean, D-044 will pass. Best prediction landing yet (+24%) |
 | T6·2 | | | | 15c | | | | | |
 | T6·3 | | | | 15c | | | | | |
 | T6·compile | | | ~$1.58 | $1.15 | | | | | on request |

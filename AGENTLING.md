@@ -261,6 +261,7 @@ off, so the app's fetch was gated and this second door was not.
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
+| `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -336,11 +337,11 @@ whose secret is missing is listed as not ready and can never be switched on.
 
 ### Connecting to other apps — Partial
 
-One credentialed connection is plugged in — the code host above — and it is
-builtin, so the *external* socket still carries nothing but the browser. An
-external MCP server is declared with `name`, `label`, `transport: "stdio"`,
-`command`, `args`, `tools` and optional
-`secrets: {ENV_NAME: "why it is needed"}`.
+Two credentialed connections are plugged in — the code host above and the
+telegram sender — and both are builtin, so the *external* socket still
+carries nothing but the browser. An external MCP server is declared with
+`name`, `label`, `transport: "stdio"`, `command`, `args`, `tools` and
+optional `secrets: {ENV_NAME: "why it is needed"}`.
 
 - **The tool list is the grant.** A server offering both reading and acting can
   be adopted for reading alone by naming only its reading tools; anything not
@@ -356,11 +357,13 @@ external MCP server is declared with `name`, `label`, `transport: "stdio"`,
   the user's behalf, which is a different decision from reading a page (D-005).
 
 **Not built:** everything else credentialed. Not Gmail, not a calendar, not a
-ticket tracker, not a database. And one shape the registry cannot express at
-all: `transport` is `builtin | stdio`, so a **hosted MCP server reached over
-HTTP** — which is how most vendors now ship, GitHub's own included — has no
-place to go. That is the first thing to fix if the next connection is somebody
-else's rather than ours.
+ticket tracker, not a database — the batch, its order and its refusals are
+decided (D-076, D-077; SPEC M5.11), not yet wired. And one shape the registry
+cannot express at all: `transport` is `builtin | stdio`, so a **hosted MCP
+server reached over HTTP** — which is how most vendors now ship, GitHub's and
+Google's own included — has no place to go. Verified 2026-08-04 that this
+batch does not force it: Google's official Workspace MCP servers still need
+your own OAuth client and are in preview, so Tier 1 stays builtin (D-076).
 
 **Never:** borrowing claude.ai or Claude Code connector auth. The app owns its
 own external credentials or has none — a stated non-goal.
@@ -934,25 +937,31 @@ movement.
 
 ## 11. Representation and privacy — the honest section
 
-### Acting on your behalf — Not built, deliberately
+### Acting on your behalf — at approval only, never in a session (D-075)
 
-An agentling **cannot act in the world**. It cannot click, type, submit a form,
-sign in, send a message, place an order, or issue an arbitrary HTTP request. It
-can read, and it can produce files you then approve.
+An agentling still **cannot act from inside a run**. It cannot click, type,
+submit a form, sign in, place an order, or issue an arbitrary HTTP request —
+the twelve Playwright acting tools stay held back, and nothing here changed
+that.
 
-This is structural rather than incidental. Every guarantee this app makes rests
-on one shape — **work in a sandbox, review, promote** — and a diff can be
-inspected before it touches anything real. `browser_click` on "Confirm order"
-happens on the live internet the instant the model decides to, and there is no
-promote step for a submitted form. The obvious mitigation, pausing a run to
-ask, needs a `waiting` job status and a runner holding stdin, which was refused
-for separate reasons (D-030, D-034).
+What changed (D-075): it can now **ask** to send. A run writes `OUTBOX.json` —
+one channel, up to 20 messages, refused with the reason when malformed — and
+that file is a deliverable like any other. Review shows the messages, and
+**Approve is the send**: the server replays the reviewed outbox through the
+channel's client with the token from `.env`, exactly as a reviewed patch is
+replayed by `git apply`. Results are stamped per recipient, so approving twice
+can never message anyone twice; a partial failure leaves the job reviewable
+with the channel's own reason per recipient, and a second Approve retries only
+those. The session never holds a send tool or a token — the telegram
+connection grants an **empty tool list**, and `catalog.test.ts` asserts it
+stays that way.
 
-So the first version reads and cannot act. That removes the real limitation —
-a plain HTTP GET returns an empty shell on most modern sites — without adding a
-new risk class, and it produces the cost data needed to price an acting version
-honestly. **Adding an acting tool is a decision about the safety model, not a
-line in a list.**
+The structural argument survives intact. Every guarantee rests on one shape —
+**work in a sandbox, review, promote** — and a send now goes *through*
+promote. What remains refused is acting mid-session, where there is no promote
+step: `browser_click` on "Confirm order" happens the instant the model decides
+to, which is D-034's argument, untouched. Pausing a run to ask was the obvious
+mitigation and stays refused (D-030).
 
 ### Personal data — Partial, and the gap is worth naming
 
@@ -983,8 +992,10 @@ What is **not built**, and should not be assumed:
 - **No retention policy.** Sandboxes, fetched pages, attachments, lessons and
   ledger rows persist under `.agentlings/` until you delete them. Nothing
   expires.
-- **No audit of what left the machine.** The ledger records what a job cost,
-  not what it sent.
+- **No audit of what a session pulled.** `sends.jsonl` now records every
+  approved send, kept and refused alike (D-075) — but nothing records what a
+  run *fetched* over its connections, and the ledger still records only what
+  a job cost.
 - **No per-level or per-job data boundary beyond the sandbox directory.**
   Levels do not share sandboxes, but nothing stops you pointing two levels at
   the same repository.
@@ -1130,6 +1141,9 @@ untouched until you press Approve.
 | `MAX_BYTES` | 5 MB | `web.ts` | Refuses to download a page it will trim anyway |
 | pre-fetched URLs | 5 | `router.ts` | URLs pulled out of your sentence |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
+| `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
+| `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |
+| `SEND_TIMEOUT_MS` | 15 s | `channels.ts` | One send call at approval |
 
 ### Intake and files
 
@@ -1247,22 +1261,26 @@ judgement — *which of its tools are reading, and which are acting*.
       moves personal data into a session, which §11 says there is no control
       plane for.*
 
-### Acting, not reading — one decision, not seven tasks
+### Acting, not reading — decided (D-075), now per-channel tasks
 
-Every row here is the same blocker. The safety model is sandbox → review →
-promote, and an action on the live internet has no promote step (D-034).
-Pausing a run to ask was the obvious mitigation and was refused: it needs a
-`waiting` job status and a runner holding stdin (D-030).
+The decision this section waited on is taken: **review is the promote step
+for an action.** A send is an outbox written in the sandbox and replayed at
+Approve — never a tool in a session, so D-034's refusal stands untouched and
+the `waiting` status stays refused (D-030). What was one blocker is a task
+list per channel (D-077; SPEC M5.11 has the slices):
 
-- [ ] **Click, type, fill a form** — the twelve Playwright tools held back
-- [ ] **Send anything** — mail, message, comment, PR
-- [ ] **Write to an external system** — tracker, database, calendar
-- [ ] **Represent you under authorisation** — the general case of all three
-
-*Blocked on: deciding what review looks like for an irreversible act. Options
-that exist and have not been chosen between: a pre-approved allowlist of
-actions; a dry-run-then-confirm turn; a `waiting` status with the run parked.
-Until one is chosen, none of these rows is a task.*
+- [x] **Send a message** — the outbox contract, per-recipient replay,
+      `sends.jsonl`, telegram as the first channel. Live — though a run is
+      not yet *told* the contract, which lands with intake detection (D-031's
+      rule: a capability nobody is told about is not one)
+- [ ] **Send mail, create an event** — the Google connection: Connect button,
+      one consent across Gmail, Calendar, Contacts (D-076)
+- [ ] **WhatsApp Business and Slack** — the rest of Tier 1 (D-077)
+- [ ] **Comment, open a PR** — GitHub write scopes as outbox entry types
+- [ ] **Standing approval (the leash)** — auto-send per job + recipients +
+      wording after N clean reviews; any change drops back to review (D-075)
+- [ ] **Click, type, fill a form** — still refused in-session; no channel
+      needs it, and reopening it is a D-034-sized decision, not a wiring task
 
 ### Runtime and executor
 

@@ -160,9 +160,14 @@ button {
   padding: 6px 10px;
   font: inherit;
   cursor: pointer;
+  /* Hard steps, no easing: motion in this UI is pixel motion (see the iris). */
+  transition: background 80ms steps(2);
 }
 button:hover {
   background: #2b3c59;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 button:disabled {
   opacity: 0.4;
@@ -486,6 +491,7 @@ button.ghost {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  animation: backdrop-in 160ms steps(4) both;
 }
 .modal {
   background: #10131a;
@@ -495,6 +501,27 @@ button.ghost {
   max-height: 82vh;
   display: flex;
   flex-direction: column;
+  /* Arrives in four hard steps, cousin to the iris wipe. Exit stays instant:
+     an unmount is a door closing, not a scene. */
+  animation: modal-in 160ms steps(4) both;
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-in {
+  from {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .m-head {
   display: flex;
@@ -932,10 +959,17 @@ select {
   overflow: hidden;
   text-align: left;
   cursor: pointer;
+  transition:
+    transform 80ms steps(2),
+    border-color 80ms steps(2);
 }
 .lvl-card:hover {
   border-color: var(--db-lime-light);
   background: #10131a;
+  transform: translateY(-2px);
+}
+.lvl-card:active {
+  transform: translateY(0);
 }
 .lvl-thumb {
   width: 100%;

@@ -85,10 +85,9 @@ html.crt body::after {
   }
 }
 #root {
-  /* 2048 − 24 padding leaves 2024, which is the first width where the world
-     gets a whole-number scale of 2 (2000 × 640). Scale 3 would be 960px tall
-     and would not leave room for the panels below on a 1440 screen, so this
-     is the practical ceiling however wide the monitor is. */
+  /* The width ceiling. The world scales with the window now, and its height
+     is width × 0.32 — past this an ultrawide would spend the whole viewport
+     on the level and leave the panels nothing. */
   max-width: 2048px;
   margin: 0 auto;
   padding: 12px;
@@ -96,13 +95,15 @@ html.crt body::after {
 /* One column: the level gets the full width, and the panels sit under it.
    The rows are header, level, panels — and the panels take whatever height is
    left rather than a fixed slice, so a tall window fills with terminal instead
-   of with nothing. They keep a floor, since the level above is sized in whole
-   scales and a short window must not squeeze them to a sliver. */
+   of with nothing. They keep a floor, so a short window cannot squeeze them
+   to a sliver. `height`, not `min-height`: the app is the window, and a long
+   feed scrolls inside its panel instead of growing the page — every scroller
+   below (t-feed flex, the inbox share) was already built for exactly that. */
 .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(240px, 1fr);
-  min-height: calc(100vh - 24px);
+  height: calc(100vh - 24px);
   gap: 16px;
   align-items: stretch;
 }
@@ -130,18 +131,13 @@ main {
   flex-direction: column;
   gap: 10px;
 }
-/* Pixel-exact frame: the canvas is scaled by whole numbers in JS, and the
-   frame shrink-wraps it rather than stretching. Between the scale steps the
-   leftover would otherwise show as a wide black bar either side — 338px of it
-   at a 1705 window — which reads as a fault rather than as a letterbox.
-   fitCanvas measures the parent for exactly this reason. */
+/* The level runs edge to edge, matching the panels below it. This trades the
+   old whole-number pixel scale for symmetry: fractional nearest-neighbour
+   leaves pixel columns a hair uneven, but a letterboxed world sat in black
+   bars and made every dialog fight for the same strip of screen. The canvas
+   keeps its 1000×320 attributes, so plain CSS holds the aspect. */
 .world {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
   background: #000;
   border: 1px solid #262b36;
   border-radius: 6px;
@@ -149,6 +145,8 @@ main {
 }
 .world canvas {
   display: block;
+  width: 100%;
+  height: auto;
   image-rendering: pixelated;
 }
 
@@ -2154,6 +2152,7 @@ button.danger:hover {
 @media (max-width: 900px) {
   .app {
     grid-template-rows: auto auto auto;
+    height: auto;
     min-height: 0;
   }
   .side {

@@ -268,24 +268,6 @@ export function WorldCanvas({
     let dustClock = 0;
     let emberClock = 0;
 
-    /**
-     * Pixel-exact presentation: the canvas keeps its 1000x320 logical size and
-     * is shown at a whole-number multiple, centred, with the frame's letterbox
-     * bars filling the slack. Only a host narrower than one full world falls
-     * back to fitting the width.
-     */
-    const fitCanvas = () => {
-      // Measured on the parent, not the frame. The frame shrink-wraps the
-      // canvas so the level looks deliberate at widths between the scale
-      // steps, which makes its own width the answer rather than the question.
-      const available = host.parentElement?.clientWidth ?? host.clientWidth;
-      const scale = Math.max(1, Math.floor(available / WORLD_WIDTH));
-      const w = Math.min(available, WORLD_WIDTH * scale);
-      app.canvas.style.width = `${w}px`;
-      app.canvas.style.height = `${Math.round((w / WORLD_WIDTH) * VIEW_H)}px`;
-    };
-    const observer = new ResizeObserver(fitCanvas);
-
     app
       .init({
         width: WORLD_WIDTH,
@@ -299,10 +281,9 @@ export function WorldCanvas({
           app.destroy(true);
           return;
         }
+        // Sizing is pure CSS: the canvas keeps its 1000×320 attributes and
+        // stretches to the frame's width, aspect held by the browser.
         host.appendChild(app.canvas);
-        fitCanvas();
-        // Watch what decides the size, not what the size decides.
-        observer.observe(host.parentElement ?? host);
 
         // Art is data: prefer the spritesheet, fall back to what is built in.
         let art: ArtSource = {
@@ -698,7 +679,6 @@ export function WorldCanvas({
 
     return () => {
       destroyed = true;
-      observer.disconnect();
       if (app.renderer) app.destroy(true, { children: true });
     };
   }, [theme]);

@@ -54,6 +54,29 @@ describe('the browser connection is read-only', () => {
   });
 });
 
+/**
+ * The first sending connection, and the boundary that makes it safe: it puts
+ * nothing in front of a model. Sends happen when the user approves a reviewed
+ * outbox (D-075) — so the tool list is empty, and widening it is a decision
+ * about the safety model, exactly like adding a browser acting tool above.
+ */
+describe('the telegram connection sends only at approval', () => {
+  const telegram = all.find((c) => c.name === 'telegram');
+
+  it('is in the catalog and ships off, like everything credentialed', () => {
+    expect(telegram).toBeDefined();
+    expect(telegram?.defaultOn).not.toBe(true);
+  });
+
+  it('grants a session no tools at all', () => {
+    expect(telegram?.tools).toEqual([]);
+  });
+
+  it('declares the bot token it can never be live without', () => {
+    expect(Object.keys(telegram?.secrets ?? {})).toEqual(['TELEGRAM_BOT_TOKEN']);
+  });
+});
+
 describe('what a job is actually allowed to call', () => {
   it('reaches the web tool through the catalog rather than a special case', () => {
     const names = grantedTools(undefined, all, {}, {});

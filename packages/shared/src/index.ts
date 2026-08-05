@@ -226,6 +226,39 @@ export interface JobChanges {
   names: string[];
 }
 
+/** One message an outbox asks to send. `to` is the channel's own address shape. */
+export interface OutboxMessage {
+  to: string;
+  /** Display name for the review card; never sent to the channel. */
+  name?: string;
+  body: string;
+}
+
+/**
+ * What a run asks to send: one channel, up to MAX_OUTBOX_MESSAGES messages,
+ * written as OUTBOX.json at the sandbox root. Never executed by the session —
+ * review shows the messages, and Approve is the send (D-075).
+ */
+export interface Outbox {
+  channel: string;
+  messages: OutboxMessage[];
+}
+
+/**
+ * What approval actually sent, stamped per recipient so a retry can never
+ * message anyone twice: `sentTo` accumulates across Approves, `failed` is the
+ * last attempt's remainder with the channel's own reason per recipient.
+ */
+export interface OutboxSent {
+  at: number;
+  sentTo: string[];
+  failed: { to: string; reason: string }[];
+}
+
+export const MAX_OUTBOX_MESSAGES = 20;
+export const MAX_OUTBOX_TO_CHARS = 200;
+export const MAX_OUTBOX_BODY_CHARS = 2000;
+
 export interface Job {
   id: string;
   title: string;
@@ -279,6 +312,12 @@ export interface Job {
   quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
+  /** Parsed from OUTBOX.json when the run left a valid one. Approve executes it (D-075). */
+  outbox?: Outbox;
+  /** OUTBOX.json existed and was not a valid outbox — the reason, never a silent drop. */
+  outboxError?: string;
+  /** Send results so far, merged across retries. */
+  outboxSent?: OutboxSent;
   /** What the session cost — recorded whether it succeeded or failed. */
   meter?: JobMeter;
   status: JobStatus;

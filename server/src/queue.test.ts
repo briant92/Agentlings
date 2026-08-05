@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SimulatedExecutor } from './executors/simulated';
+import { OUTBOX_FILE } from './outbox';
 import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
 import { jobsFile, JobQueue } from './queue';
 
@@ -41,6 +42,75 @@ describe('JobQueue', () => {
     expect(readFileSync(path.join(dir, 'RESULT.md'), 'utf8')).toContain('Test job');
 
     expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+  });
+
+  it('stamps a valid OUTBOX.json onto the job when it finishes', () => {
+    const job = queue.add({ title: 'Remind', prompt: 'remind them' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify({
+        channel: 'telegram',
+        messages: [{ to: '12345', name: 'Ana', body: 'padel on Thursday' }],
+      }),
+    );
+    queue.complete(job.id, 'wrote the outbox');
+
+    const done = queue.get(job.id)!;
+    // The outbox file is a deliverable by the top-level rule, so this is a
+    // delivery even with nothing else in the sandbox.
+    expect(done.status).toBe('done');
+    expect(done.outbox).toEqual({
+      channel: 'telegram',
+      messages: [{ to: '12345', name: 'Ana', body: 'padel on Thursday' }],
+    });
+    expect(done.outboxError).toBeUndefined();
+  });
+
+  it('surfaces an invalid OUTBOX.json as its reason, never as "no messages"', () => {
+    const job = queue.add({ title: 'Remind', prompt: 'remind them' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(path.join(dir, OUTBOX_FILE), '{"channel":"telegram"}');
+    queue.complete(job.id, 'wrote something');
+
+    const done = queue.get(job.id)!;
+    expect(done.outbox).toBeUndefined();
+    expect(done.outboxError).toContain('OUTBOX.json');
+    expect(done.outboxError).toContain('"messages"');
+  });
+
+  it('a run that died still keeps its outbox for review', () => {
+    const job = queue.add({ title: 'Remind', prompt: 'remind them' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify({ channel: 'telegram', messages: [{ to: '1', body: 'x' }] }),
+    );
+    queue.fail(job.id, 'ran out of turns');
+
+    const failed = queue.get(job.id)!;
+    expect(failed.status).toBe('partial'); // delivered something, so not a failure
+    expect(failed.outbox?.messages).toHaveLength(1);
+  });
+
+  it('merges send results so a retry skips everyone already messaged', () => {
+    const job = queue.add({ title: 'Remind', prompt: 'remind them' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    queue.fail(job.id, 'x');
+
+    queue.recordOutboxSends(job.id, {
+      sentTo: ['1'],
+      failed: [{ to: '2', reason: 'chat not found' }],
+    });
+    queue.recordOutboxSends(job.id, { sentTo: ['2'], failed: [] });
+
+    const sent = queue.get(job.id)!.outboxSent!;
+    expect(sent.sentTo).toEqual(['1', '2']);
+    expect(sent.failed).toEqual([]);
   });
 
   it('hands a freed slot to the oldest waiting job', () => {

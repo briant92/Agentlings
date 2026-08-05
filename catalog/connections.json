@@ -71,7 +71,18 @@
     "behalf, which is a different decision from reading a page. Keep results",
     "small by design — every token a tool returns is a token the model pays to",
     "read, and for a stdio server that budget is the server's own flags, not",
-    "ours: the SDK talks to it directly, so nothing of ours sits in between."
+    "ours: the SDK talks to it directly, so nothing of ours sits in between.",
+    "",
+    "'telegram' is the first sending connection, and it grants a session",
+    "NOTHING: its tools list is empty on purpose, and catalog.test.ts asserts",
+    "it stays that way. A run asks to send by writing OUTBOX.json in its",
+    "sandbox; review shows the messages; approving replays them through the",
+    "bot with the token from .env — the session never holds the token and has",
+    "no tool to send with (D-075). The switch still gates it like any",
+    "credentialed connection: off, or missing its secret, means Approve",
+    "refuses with the reason. 'to' in an outbox message is a numeric chat id —",
+    "a bot can only message people who tapped Start on it once, which makes",
+    "the reachable audience exactly the people who opted in."
   ],
   "connections": [
     {
@@ -136,6 +147,16 @@
         "browser_console_messages",
         "browser_network_requests"
       ]
+    },
+    {
+      "name": "telegram",
+      "label": "Send Telegram messages",
+      "description": "Sends messages through your Telegram bot when you approve a reviewed outbox. Grants the crew no tools at all — sends happen at review, never inside a run.",
+      "transport": "builtin",
+      "tools": [],
+      "secrets": {
+        "TELEGRAM_BOT_TOKEN": "a bot token from @BotFather — the bot can only message people who tapped Start on it"
+      }
     }
   ]
 }

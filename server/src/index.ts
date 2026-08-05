@@ -25,6 +25,7 @@ import {
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { capabilityTokens, connectionsIn } from './capability';
+import { executeOutbox, outboxRefusal } from './channels';
 import { describe, readConnections } from './connections';
 import {
   enabledNames,
@@ -95,6 +96,7 @@ import { productivityOf } from './productivity';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
+import { appendSends } from './sends';
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
 import {
@@ -848,6 +850,65 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     const abandoned = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
     if (abandoned) rmSync(toolDir(rt.dir, abandoned.name), { recursive: true, force: true });
   }
+  /**
+   * A reviewed outbox is replayed exactly as a reviewed patch is: at Approve,
+   * by us, never by the session (D-075). Before the patch on purpose — a
+   * refused send must leave nothing half-promoted, while a failed patch after
+   * a send retries cleanly, because recipients already sent to are skipped.
+   *
+   * Every refusal names its fix and returns 400 with the job still
+   * reviewable: "promoted" stamped on a refusal is the one outcome worse than
+   * refusing outright. Partial failures are the same shape — results are
+   * stamped per recipient first, so a second Approve retries only what
+   * failed and can never message anyone twice.
+   */
+  let sentNow = 0;
+  if (body.action === 'promote' && promotable && pending.outbox && !waitingTool) {
+    const outbox = pending.outbox;
+    const alreadySent = pending.outboxSent?.sentTo ?? [];
+    const remaining = outbox.messages.filter((m) => !alreadySent.includes(m.to));
+    if (remaining.length > 0) {
+      const refusal = outboxRefusal(
+        outbox,
+        readConnections(CONNECTIONS_FILE),
+        readSettings(SANDBOX_ROOT),
+        process.env,
+      );
+      if (refusal) return c.json({ error: `outbox not sent — ${refusal}` }, 400);
+      const run = await executeOutbox(outbox, alreadySent, { env: process.env });
+      const at = Date.now();
+      appendSends(SANDBOX_ROOT, [
+        ...run.sentTo.map((to) => ({
+          at,
+          levelId: rt.meta.id,
+          jobId: pending.id,
+          channel: outbox.channel,
+          to,
+          ok: true,
+        })),
+        ...run.failed.map((f) => ({
+          at,
+          levelId: rt.meta.id,
+          jobId: pending.id,
+          channel: outbox.channel,
+          to: f.to,
+          ok: false,
+          reason: f.reason,
+        })),
+      ]);
+      rt.queue.recordOutboxSends(pending.id, run);
+      sentNow = run.sentTo.length;
+      if (run.failed.length > 0) {
+        const detail = run.failed.map((f) => `${f.to}: ${f.reason}`).join('; ');
+        return c.json(
+          {
+            error: `sent ${run.sentTo.length} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
+          },
+          400,
+        );
+      }
+    }
+  }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script
   // to check it worked, which left the output file in its clone, and promoting
@@ -871,7 +932,12 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       type: 'resolved',
       jobId: job.id,
       title: job.title,
-      detail: body.action === 'promote' ? 'promoted' : 'discarded',
+      detail:
+        body.action === 'promote'
+          ? sentNow > 0
+            ? `promoted — sent ${sentNow} via ${pending.outbox?.channel}`
+            : 'promoted'
+          : 'discarded',
     });
     return c.json(job);
   } catch (err) {

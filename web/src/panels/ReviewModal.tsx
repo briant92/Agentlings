@@ -17,6 +17,9 @@ export function ReviewModal({
   onClose: () => void;
 }) {
   const [files, setFiles] = useState<DeliveryFile[] | null>(null);
+  // An Approve the server refused (a channel switched off, a recipient the
+  // channel rejected) — shown here, with the job left reviewable (D-075).
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -37,9 +40,17 @@ export function ReviewModal({
   }, [onClose]);
 
   const resolve = async (action: 'promote' | 'discard') => {
-    await api(lvl(levelId, `/jobs/${job.id}/resolve`), postJson({ action }));
-    onClose();
+    setRefusal(null);
+    try {
+      await api(lvl(levelId, `/jobs/${job.id}/resolve`), postJson({ action }));
+      onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    }
   };
+
+  const sentTo = job.outboxSent?.sentTo ?? [];
+  const unsent = job.outbox ? job.outbox.messages.filter((m) => !sentTo.includes(m.to)) : [];
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -52,6 +63,34 @@ export function ReviewModal({
         <div className="m-body">
           {job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
+          {job.outboxError && <p className="error">{job.outboxError}</p>}
+          {job.outbox && (
+            <>
+              <div className="sect">
+                outbox · {job.outbox.messages.length} message
+                {job.outbox.messages.length === 1 ? '' : 's'} via {job.outbox.channel}
+                {unsent.length > 0 ? ' — approving sends them' : ' — all sent'}
+              </div>
+              <ul className="rv-outbox">
+                {job.outbox.messages.map((m) => {
+                  const failure = job.outboxSent?.failed.find((f) => f.to === m.to);
+                  return (
+                    <li key={m.to}>
+                      <div className="rv-msg-head">
+                        <span className="rv-msg-to">
+                          {m.name ?? m.to}
+                          {m.name && <span className="rv-msg-addr"> · {m.to}</span>}
+                        </span>
+                        {sentTo.includes(m.to) && <span className="rv-msg-sent">sent</span>}
+                        {failure && <span className="rv-msg-failed">{failure.reason}</span>}
+                      </div>
+                      <div className="rv-msg-body">{m.body}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
           {job.changes && job.changes.files > 0 && (
             <>
               <div className="sect">
@@ -66,6 +105,7 @@ export function ReviewModal({
           )}
           {files === null && <p className="dim">Loading…</p>}
           {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
+          {refusal && <p className="error">{refusal}</p>}
         </div>
         <div className="m-foot">
           {/* `partial` gets the same actions the terminal card offers it:
@@ -73,7 +113,9 @@ export function ReviewModal({
               reviewing opened a modal whose only button was Close. */}
           {(job.status === 'done' || job.status === 'partial') && (
             <>
-              <button onClick={() => void resolve('promote')}>Approve</button>
+              <button onClick={() => void resolve('promote')}>
+                {unsent.length > 0 ? `Approve & send ${unsent.length}` : 'Approve'}
+              </button>
               <button onClick={() => void resolve('discard')}>Discard</button>
             </>
           )}

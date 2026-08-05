@@ -5,6 +5,7 @@ import type { Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
 import { CANCELLED } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
+import { readOutbox } from './outbox';
 import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
 
@@ -337,12 +338,41 @@ export class JobQueue {
   }
 
   private finish(job: Job): void {
+    this.stampOutbox(job);
     job.finishedAt = Date.now();
     job.slot = -1;
     // Hand the freed slot to the oldest job still waiting without one.
     const waiting = this.list().find((j) => j.status === 'queued' && j.slot < 0);
     if (waiting) waiting.slot = this.freeSlot();
     this.persist();
+  }
+
+  /**
+   * Parse anything the run asked to send, on every way a job ends — review
+   * shows messages, not a filename, and an OUTBOX.json that is not a valid
+   * outbox surfaces as its reason rather than reading as "no messages"
+   * (D-075). One seam for complete, fail and cancel alike.
+   */
+  private stampOutbox(job: Job): void {
+    // A compile's deliverable is its tool, never sends — same rule as
+    // `delivered`, which judges a compile only on the tool it left.
+    if (job.compile) return;
+    const read = readOutbox(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.error) job.outboxError = `OUTBOX.json: ${read.error}`;
+    else job.outbox = read.outbox;
+  }
+
+  /** Merges one Approve's send results; `sentTo` accumulates so retries skip them. */
+  recordOutboxSends(
+    jobId: string,
+    run: { sentTo: string[]; failed: { to: string; reason: string }[] },
+  ): Job {
+    const job = this.mustGet(jobId);
+    const prior = job.outboxSent?.sentTo ?? [];
+    job.outboxSent = { at: Date.now(), sentTo: [...prior, ...run.sentTo], failed: run.failed };
+    this.persist();
+    return job;
   }
 
   private freeSlot(): number {

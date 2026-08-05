@@ -26,8 +26,12 @@ import { connectionEnabled, type StoredSettings } from './settings';
 
 // "email" and "dm" are verbs as often as nouns — "email the summary to the
 // team" carries its channel in its verb, and demanding a second send word
-// there would miss the plainest phrasing a send request has.
-const SEND_VERBS = /\b(send|remind|message|notify|text|ping|dm|e-?mail)\b/;
+// there would miss the plainest phrasing a send request has. Each verb
+// matches its inflections too: a real 65¢ run slipped past on "to be sent
+// to my friend on Telegram", did the research, and could only report that
+// the send was blocked on capability (D-090).
+const SEND_VERBS =
+  /\b(send(?:s|ing)?|sent|remind(?:s|ed|ing)?|messag(?:e[sd]?|ing)|notif(?:y|ies|ied|ying)|text(?:s|ed|ing)?|ping(?:s|ed|ing)?|dm(?:s|ed|ing)?|e-?mail(?:s|ed|ing)?)\b/;
 
 /**
  * Word → channel, matched at the word's position in the prompt; the earliest

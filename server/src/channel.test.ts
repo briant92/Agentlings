@@ -49,6 +49,27 @@ describe('detectChannelAsk — when it fires', () => {
     expect(ask('list the repo modules')).toBeNull();
   });
 
+  it('inflected verbs claim too — the 65¢ run that slipped past as a participle (D-090)', () => {
+    const real = ask(
+      'I need a summary of the current Call of Duty: Warzone meta to be sent to my friend Pepo Dussaillant on Telegram',
+      CONNECTED,
+      TOKEN,
+    );
+    expect(real?.asked).toBe('telegram');
+    expect(ask('she texted the group on whatsapp about it')?.asked).toBe('whatsapp');
+    expect(ask('I reminded everyone on telegram already — do it again Friday')?.asked).toBe(
+      'telegram',
+    );
+  });
+
+  it('an inflection is a verb, never a channel word — mentions stay quiet', () => {
+    expect(ask('summarize the emailed report')).toBeNull(); // "emailed" fails the channel boundary
+    expect(ask('the messaging layer needs a refactor')).toBeNull(); // verb shape, no channel
+    // Verb and channel evidence in one inflected word is deliberately not
+    // enough: "email Ana" fires on the bare double-duty form, this does not.
+    expect(ask('this should be emailed to Ana')).toBeNull();
+  });
+
   it('"send a mail" is an email ask — bare "mail" claims as a channel word only', () => {
     const got = ask('send a mail to a friend');
     expect(got?.asked).toBe('gmail');

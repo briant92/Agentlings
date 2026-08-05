@@ -99,6 +99,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-087 — 2026-08-05 — The desk asks the send's two facts, and Start tells the truth](#d-087--2026-08-05--the-desk-asks-the-sends-two-facts-and-start-tells-the-truth)
 - [D-088 — 2026-08-05 — The garage, the drawer and the outbox wear the mock too](#d-088--2026-08-05--the-garage-the-drawer-and-the-outbox-wear-the-mock-too)
 - [D-089 — 2026-08-05 — The agentling's file: tagged memory, a ledger record, and a skill handed to the role](#d-089--2026-08-05--the-agentlings-file-tagged-memory-a-ledger-record-and-a-skill-handed-to-the-role)
+- [D-090 — 2026-08-05 — A verb claims in every inflection, and a reply may name the channel the job never carried](#d-090--2026-08-05--a-verb-claims-in-every-inflection-and-a-reply-may-name-the-channel-the-job-never-carried)
 
 ## By theme
 
@@ -232,7 +233,11 @@ entry updates one file rather than two.
   going forward, dedup taught to ignore the stamp), a per-member record
   read off the ledger's `agentlingId` rows, and Abilities holding tools,
   skills — with a hand-to-the-role picker that respects D-050's tiers —
-  and reach, stated honestly as the level's: D-089
+  and reach, stated honestly as the level's: D-089; and D-090, the first
+  real send job of the demo loop slipping past the desk as a participle
+  ("to be sent … on Telegram") — every send verb now claims in its
+  inflections, verb-side only so mentions stay quiet, and a reply may
+  supply the channel the original never carried, through the same gates
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4952,3 +4957,46 @@ picker offers the four real skills the worker role lacks. The hand-over
 button was deliberately not pressed live — it writes `roles/worker.md`
 for real; its path is covered by the roles tests and the route's own
 guards. The first tagged lesson arrives with the next real close-out.
+
+## D-090 — 2026-08-05 — A verb claims in every inflection, and a reply may name the channel the job never carried
+
+The demo loop's first real job hit the wall D-085 and D-087 were built to
+prevent, one layer past their fixes. Brian connected @WZBottero_Bot (the
+garage worked end to end) and queued *"I need a summary of the current
+Call of Duty: Warzone meta **to be sent** to my friend Pepo Dussaillant on
+Telegram"*. The verb gate knew only bare infinitives — `\bsend\b` does not
+match "sent" — so the desk asked nothing, the job carried no channel, the
+session was never told the outbox contract, and Pip did the honourable
+thing with a bad hand: 14 turns and 65¢ of real research, a composed
+`telegram-message.txt` sitting in the sandbox, and the closing line "the
+send is blocked on capability, not on research". Every inflection missed
+the same way: sent, sending, reminded, messaged, texted, pinged, emailed.
+
+Two fixes, one boundary decided:
+
+- **`SEND_VERBS` matches each verb's inflections** — send/sends/sent/
+  sending and their siblings across the list. Verb-side only, and that is
+  the decided boundary: an inflection is never a channel word, so
+  "summarize the emailed report" and "the messaging layer needs a
+  refactor" stay quiet ("emailed" fails the channel row's boundary), and
+  "this should be emailed to Ana" — verb and channel evidence in one
+  inflected word — is deliberately not enough, pinned by test. The bare
+  double-duty forms ("email Ana") keep firing as D-079 decided.
+- **A reply may supply the missing channel through the same gates.** The
+  reply route's continuation carries `previous.channel ??
+  detectChannelAsk(reply …)?.channel` — detection, not invention, so
+  "send it to Pepo on telegram" in an answer box gives the continuation
+  the outbox contract the original never had, and `carryForward` hands it
+  the already-composed message (everything but paperwork crosses; its own
+  doc: "answering a question would re-do and re-bill work already paid
+  for").
+
+**Evidence.** Two new pinning tests (the real sentence verbatim → telegram,
+plus texted/reminded; the three quiet counter-cases), mutation-checked:
+against the bare-verb regex exactly the inflection test fails. 1031 + 98
+and typecheck green. Live against the running server, the exact failed
+sentence's plan now returns `channelAsk: telegram/ready` with `send-to,
+send-say` and the chat-id hint. The recovery is the reply path: the 65¢
+run's research and composed message carry forward, and the continuation's
+only work is an OUTBOX.json with Pepo's chat id — the down payment shape
+D-087 promised, about to be exercised for real for the first time.

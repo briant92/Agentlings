@@ -972,10 +972,15 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
         previous.id,
       ),
       continues: previous.id,
-      // The answer continues the send it answers for: without this the reply
-      // session never hears the outbox contract and composes nothing sendable
-      // (D-087) — the brief is derived from job.channel at run time.
-      channel: previous.channel,
+      // The answer continues the send it answers for (D-087) — and when the
+      // original never carried one because the detector missed, the reply's
+      // own words may supply it through the same gates (D-090): "send it to
+      // Pepo on telegram" is detection, not invention. The brief is derived
+      // from job.channel at run time.
+      channel:
+        previous.channel ??
+        detectChannelAsk(reply, readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env)
+          ?.channel,
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

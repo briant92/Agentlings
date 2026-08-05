@@ -3,9 +3,11 @@
     "What agentlings may reach outside their sandbox. A connection declares its",
     "own default with 'defaultOn'; the user's departures from those defaults are",
     "recorded in .agentlings/settings.json, never here. Secrets are named, never",
-    "written here — put the value in .env under that name and the server passes",
-    "it to the connection only. A connection whose secrets are missing is never",
-    "live, whatever its default says.",
+    "written here — put the value in .env under that name, or paste it in",
+    "Settings, which validates it with one real call and writes the same file",
+    "(D-078). 'setup' holds the plain-words steps that drawer shows. A",
+    "connection whose secrets are missing is never live, whatever its default",
+    "says.",
     "",
     "'web' is built in and defaultOn: this is an outreach platform, so reaching",
     "a page is what the crew is for rather than something to be asked for job by",
@@ -112,6 +114,11 @@
       "secrets": {
         "GITHUB_TOKEN": "a GitHub token with read access to the repositories the crew should see"
       },
+      "setup": [
+        "Open github.com → Settings → Developer settings → Fine-grained personal access tokens",
+        "Generate a token with read-only access to the repositories the crew should see",
+        "Paste it here — it is sent to api.github.com only"
+      ],
       "maxChars": 12000
     },
     {
@@ -122,7 +129,11 @@
       "tools": ["search_web"],
       "secrets": {
         "BRAVE_API_KEY": "a Brave Search API key — free tier at brave.com/search/api"
-      }
+      },
+      "setup": [
+        "Create a free key at brave.com/search/api",
+        "Paste it here — it is sent to api.search.brave.com only"
+      ]
     },
     {
       "name": "browser",
@@ -156,7 +167,13 @@
       "tools": [],
       "secrets": {
         "TELEGRAM_BOT_TOKEN": "a bot token from @BotFather — the bot can only message people who tapped Start on it"
-      }
+      },
+      "setup": [
+        "Open Telegram and message @BotFather",
+        "Send /newbot and pick a name — it answers with a token",
+        "Paste the token here",
+        "Anyone the crew should message taps Start on your bot once"
+      ]
     }
   ]
 }

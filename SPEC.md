@@ -771,8 +771,13 @@ tried, measured and rejected is in `DECISIONS.md`:
           `sends.ts` (the audit), stamped by the queue on completion, executed
           by the resolve route, shown in the review modal. Telegram's channel
           client ships with it — token via `.env`, the drawer comes later.
-    - [ ] **The token drawer.** Paste-and-validate in Settings, per-connection
-          walkthrough; Telegram end-to-end without touching `.env`.
+    - [x] **The token drawer.** "Add it here" on any credentialed connection:
+          the catalog's own walkthrough, paste, one real validation call
+          (telegram `getMe` → @botname, github `/user` → login, one Brave
+          query), then the value lands in `.env` — still the only store —
+          and the live `process.env` in the same move, no restart. Nothing
+          stores unvalidated, refusals never echo the value, and storing
+          never switches anything on (D-078).
     - [ ] **Intake detection + the ask-bubble.** Channel words resolve to
           connections in the free matcher; a job that needs an unconnected
           channel parks as `needs-connection` and the agentling raises the

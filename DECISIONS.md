@@ -87,6 +87,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-075 — 2026-08-04 — Acting is an outbox replayed at approval, never a tool in a session](#d-075--2026-08-04--acting-is-an-outbox-replayed-at-approval-never-a-tool-in-a-session)
 - [D-076 — 2026-08-04 — Credentials: a Connect button for the OAuth pair, paste-a-token for the rest, passwords never](#d-076--2026-08-04--credentials-a-connect-button-for-the-oauth-pair-paste-a-token-for-the-rest-passwords-never)
 - [D-077 — 2026-08-04 — The connection batch: four now, nine later, six never](#d-077--2026-08-04--the-connection-batch-four-now-nine-later-six-never)
+- [D-078 — 2026-08-05 — The token drawer: one store, one real call, one inbound crossing](#d-078--2026-08-05--the-token-drawer-one-store-one-real-call-one-inbound-crossing)
 
 ## By theme
 
@@ -184,7 +185,9 @@ entry updates one file rather than two.
 - **Acting, and the apps worth acting on** — the outbox replayed at approval,
   which closes §15's "one decision, not seven tasks": D-075; the two
   credential shapes and the never-a-password rule: D-076; the researched
-  batch, its tiers and its refusals, WhatsApp personal among them: D-077
+  batch, its tiers and its refusals, WhatsApp personal among them: D-077;
+  and the token drawer that keeps `.env` the only store and validates every
+  paste with one real call before storing it: D-078
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4284,3 +4287,50 @@ token drawer with Telegram live, then intake detection and the ask-bubble,
 then the Google Connect flow, then the WhatsApp Business guide. The review
 path exists before anything can ask to send, and each slice demos alone.
 SPEC.md M5.11 tracks the slices.
+
+## D-078 — 2026-08-05 — The token drawer: one store, one real call, one inbound crossing
+
+Slice 2 of M5.11. A connection missing its secret now reads "Needs
+`TELEGRAM_BOT_TOKEN` — add it here, or set it in .env": the drawer shows the
+connection's own walkthrough (from the catalog, which is where a connection
+says what it is), takes the paste, and stores nothing until the provider has
+answered for it.
+
+**`.env` stays the only store, and that was the decision worth writing
+down.** The server already hydrates `process.env` from `.env` at boot
+(`process.loadEnvFile`), and every consumer — the resolver, the quote, the
+executor, the channels — reads `process.env` at call time. So the drawer
+writes the file and patches the live `process.env` in one move: a pasted
+token works immediately, survives a restart, and there is no second store to
+disagree with the first. The alternative, an app-managed `secrets.json`
+merged into an env view, was refused because the first reader that forgets
+the merge is Settings saying "ready" while the run says "missing secret" —
+two answers, dollars apart, which is D-032's shape. The writer is a guest in
+a hand-edited file: it replaces the one `NAME=` line, commented or live, or
+appends one, and everything else survives byte-identical, CRLF included.
+
+**Validated by one real call per connection — D-076's promise kept.**
+Telegram asks `getMe` and shows `@botname`; GitHub asks `/user` and shows
+the login; search runs one Brave query. A 429 from Brave refuses to store:
+the key may be fine, but "everything stored was validated" is the invariant
+and the fix is to wait a minute. Values are guarded before any call — no
+whitespace, quotes or `#`, at most 500 characters, so a paste that grabbed
+too much fails with "check what was copied" rather than corrupting the very
+file it was bound for — and a value never appears in any reason.
+
+**The standing sentence about secrets was amended everywhere it appears.**
+"Values never cross the API" was true and now is not, precisely once: a
+value crosses inbound at paste time, and is never returned, never listed,
+never echoed. `connections.ts`, the catalog comment and AGENTLING.md §5 and
+§11 all now say so. Storing still does not enable — everything credentialed
+ships off, and the switch stays the user's own move.
+
+**Evidence.** 26 new tests: the env writer's file shapes (commented line
+replaced in place, CRLF preserved, prefix names not mistaken), the guard's
+refusals, all three validators against a fake fetch including the
+never-echo-the-value case, and a catalog rule that every credentialed
+connection carries setup steps — an empty drawer is D-011 failed quietly.
+Then verified against the running server and the real Telegram API: a
+garbage token answered "Telegram rejected the token — check what @BotFather
+sent", `has spaces` was refused before any call was made, and `.env` gained
+no line from either.

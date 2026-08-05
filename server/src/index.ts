@@ -36,6 +36,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
+import { secretValueProblem, storeSecret } from './env';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
@@ -112,6 +113,7 @@ import {
   writeTool,
 } from './tools';
 import { type QuoteContext, quoteFor_ } from './quote';
+import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callSearch } from './search';
 import { fetchPage } from './web';
@@ -124,9 +126,10 @@ const ROLES_DIR = path.join(ROOT, 'roles');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
+const ENV_FILE = path.join(ROOT, '.env');
 
 try {
-  process.loadEnvFile(path.join(ROOT, '.env'));
+  process.loadEnvFile(ENV_FILE);
 } catch {
   // No .env yet — fine.
 }
@@ -385,6 +388,37 @@ app.patch('/api/settings/connections/:name', async (c) => {
   if (typeof body.enabled !== 'boolean') return c.json({ error: 'enabled must be a boolean' }, 400);
   writeSettings(SANDBOX_ROOT, setConnection(readSettings(SANDBOX_ROOT), name, body.enabled));
   return c.json(connectionList());
+});
+
+/**
+ * Accepts a pasted secret for a connection: validated with one real call
+ * first, then written to `.env` and the live `process.env` — the same single
+ * store the server loads at boot, so nothing needs a restart and no second
+ * store exists to disagree with this one (D-078).
+ *
+ * The value crosses the API exactly once, inbound, right here. It is never
+ * returned, never listed, and never echoed in an error. Storing does not
+ * enable: everything credentialed still ships off, and the switch stays the
+ * user's own move.
+ */
+app.post('/api/settings/connections/:name/secret', async (c) => {
+  const name = c.req.param('name');
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === name);
+  if (!connection) return c.json({ error: 'no such connection' }, 404);
+  const body = await c.req.json<{ secret?: string; value?: string }>();
+  const secretName = body.secret ?? '';
+  if (!Object.hasOwn(connection.secrets ?? {}, secretName)) {
+    return c.json({ error: `"${name}" declares no secret named "${secretName}"` }, 400);
+  }
+  const value = typeof body.value === 'string' ? body.value.trim() : '';
+  const problem = secretValueProblem(value);
+  if (problem) return c.json({ error: problem }, 400);
+  // Validated against an env view that carries the candidate value; nothing
+  // is stored until the provider has answered for it.
+  const verdict = await validateConnectionSecret(name, { ...process.env, [secretName]: value });
+  if (!verdict.ok) return c.json({ error: verdict.reason ?? 'the key did not validate' }, 400);
+  storeSecret(ENV_FILE, secretName, value, process.env);
+  return c.json({ connections: connectionList(), identity: verdict.identity ?? null });
 });
 
 app.get('/api/levels', (c) =>

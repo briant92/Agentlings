@@ -1481,6 +1481,44 @@ button.danger:hover {
   font-size: 11px;
 }
 
+/* The token drawer: paste, one real validation call, saved to .env (D-078). */
+.secret-drawer {
+  margin: 0 0 10px 20px;
+  padding: 8px 10px;
+  border-left: 2px solid #5b6ee1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.secret-steps {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #d8dce6;
+}
+.secret-row {
+  display: flex;
+  gap: 6px;
+}
+.secret-row input {
+  flex: 1;
+  min-width: 0;
+  background: #14101f;
+  border: 1px solid #3a3160;
+  border-radius: 4px;
+  color: #d8dce6;
+  font: 12px/1.4 monospace;
+  padding: 5px 8px;
+}
+.secret-row input:focus {
+  outline: 1px solid #5b6ee1;
+}
+.secret-note {
+  margin: 0;
+  font-size: 10.5px;
+}
+
 /* Documents dropped on the intake. They land in the job's sandbox and go no
    further, which the note beside them says out loud. */
 .work.dropping {

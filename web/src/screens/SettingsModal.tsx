@@ -14,6 +14,13 @@ export function SettingsModal({
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
   const [crt, setCrtState] = useState(crtEnabled());
   const [tourDone, setTourDone] = useState(tourSeen());
+  /** Which connection's token drawer is open, and its in-progress state. */
+  const [drawer, setDrawer] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [checking, setChecking] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+  /** "connected as @bot" lines, kept after the drawer closes. */
+  const [connectedAs, setConnectedAs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void api<SettingsInfo>('/api/settings').then(setSettings);
@@ -26,6 +33,38 @@ export function SettingsModal({
       { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled }) },
     );
     setSettings((prev) => (prev ? { ...prev, connections } : prev));
+  };
+
+  const openDrawer = (name: string | null) => {
+    setDrawer(name);
+    setValues({});
+    setDrawerError(null);
+  };
+
+  /** Validated by one real call server-side; stored only when it answered. */
+  const submitSecret = async (name: string, secret: string) => {
+    setChecking(true);
+    setDrawerError(null);
+    try {
+      const reply = await api<{ connections: SettingsInfo['connections']; identity: string | null }>(
+        `/api/settings/connections/${name}/secret`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ secret, value: values[secret] ?? '' }),
+        },
+      );
+      setSettings((prev) => (prev ? { ...prev, connections: reply.connections } : prev));
+      setConnectedAs((prev) => ({
+        ...prev,
+        [name]: reply.identity ? `connected as ${reply.identity}` : 'key accepted — connected',
+      }));
+      openDrawer(null);
+    } catch (err) {
+      setDrawerError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setChecking(false);
+    }
   };
 
   useEffect(() => {
@@ -108,7 +147,55 @@ export function SettingsModal({
                 </span>
               </label>
               {!connection.ready && (
-                <p className="dim conn-note">Needs {connection.missingSecrets.join(', ')} in .env.</p>
+                <p className="dim conn-note">
+                  Needs {connection.missingSecrets.join(', ')} —{' '}
+                  <button
+                    className="work-link"
+                    onClick={() => openDrawer(drawer === connection.name ? null : connection.name)}
+                  >
+                    {drawer === connection.name ? 'close' : 'add it here'}
+                  </button>{' '}
+                  or set it in .env.
+                </p>
+              )}
+              {!connection.ready && drawer === connection.name && (
+                <div className="secret-drawer">
+                  {connection.setup && (
+                    <ol className="secret-steps">
+                      {connection.setup.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                  )}
+                  {connection.missingSecrets.map((secret) => (
+                    <div key={secret} className="secret-row">
+                      <input
+                        type="password"
+                        placeholder={secret}
+                        value={values[secret] ?? ''}
+                        autoComplete="off"
+                        spellCheck={false}
+                        onChange={(e) =>
+                          setValues((prev) => ({ ...prev, [secret]: e.target.value }))
+                        }
+                      />
+                      <button
+                        disabled={checking || !(values[secret] ?? '').trim()}
+                        onClick={() => void submitSecret(connection.name, secret)}
+                      >
+                        {checking ? 'Checking…' : 'Check'}
+                      </button>
+                    </div>
+                  ))}
+                  {drawerError && <p className="error">{drawerError}</p>}
+                  <p className="dim secret-note">
+                    Checked with one real call before it is saved. Saved to .env; it never
+                    appears on screen again. Connecting does not switch anything on.
+                  </p>
+                </div>
+              )}
+              {connection.ready && connectedAs[connection.name] && (
+                <p className="stat-done conn-note">✓ {connectedAs[connection.name]}</p>
               )}
               {connection.ready && connection.defaultOn && !connection.enabled && (
                 <p className="dim conn-note">

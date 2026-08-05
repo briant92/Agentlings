@@ -8,8 +8,10 @@ import type { ConnectionInfo } from '@agentlings/shared';
  * tool a session can see is definition overhead in each of its requests.
  *
  * Secrets are referenced by environment variable name. Values never appear in
- * the registry, never cross the API, and only reach the connection they were
- * declared for.
+ * the registry and reach only the connection they were declared for. A value
+ * crosses the API exactly once — inbound, when the settings drawer stores it
+ * (D-078) — and is never returned, never listed, and never echoed in an
+ * error.
  */
 
 export interface Connection {
@@ -35,6 +37,8 @@ export interface Connection {
   args?: string[];
   /** Environment variable name → why it is needed. */
   secrets?: Record<string, string>;
+  /** Plain-words steps for getting the secret; the settings drawer shows them. */
+  setup?: string[];
   // `maxOutputTokens` used to be declared here and was read by nothing. It is
   // gone rather than wired, because it cannot be honoured: the SDK talks to a
   // stdio server directly, so there is no point of ours in between to trim at.
@@ -81,6 +85,7 @@ export function describe(
       builtin: c.transport === 'builtin',
       ready: missing.length === 0,
       missingSecrets: missing,
+      ...(c.setup ? { setup: c.setup } : {}),
       defaultOn: c.defaultOn === true,
       enabled: enabled.has(c.name),
     };

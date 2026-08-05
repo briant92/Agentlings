@@ -157,6 +157,8 @@ export interface ConnectionInfo {
   /** False when a secret it declares is missing from .env. */
   ready: boolean;
   missingSecrets: string[];
+  /** Plain-words steps for getting the secret — what the settings drawer shows. */
+  setup?: string[];
   /** What it is before anyone changes it. */
   defaultOn: boolean;
   /** Whether jobs can reach it right now — the default unless Settings says otherwise. */

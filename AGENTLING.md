@@ -348,8 +348,10 @@ optional `secrets: {ENV_NAME: "why it is needed"}`.
   named is refused by the allowlist. It also makes the catalog say what a
   connection can do without anyone having to run it.
 - **Secrets are referenced by environment variable name.** Values never appear
-  in the registry, never cross the API, and reach only the connection they were
-  declared for.
+  in the registry and reach only the connection they were declared for. A
+  value crosses the API exactly once — inbound, when the Settings drawer
+  stores it after validating it with one real call (D-078) — and is never
+  returned, never listed, and never echoed in an error.
 - **`${VAR}` in an argument** is filled from the environment, and the whole
   argument is *dropped* when the variable is unset — which is what makes an
   optional sign-in optional.
@@ -972,10 +974,12 @@ What is true today:
 - **`.agentlings/` is gitignored.** The app's memory is not the repository's:
   the ledger, the sandboxes, the rosters, the lessons and everything fetched
   stay out of version control.
-- **Secret values never move.** The registry holds environment variable *names*
-  and a reason each is needed. Values never appear in the registry, never cross
-  the API, never reach the UI, and are passed only to the connection that
-  declared them.
+- **Secret values move exactly once, inbound.** The registry holds environment
+  variable *names* and a reason each is needed. A value crosses the API only
+  when the Settings drawer stores it — validated with one real call first,
+  written to `.env`, the only store (D-078) — and is never returned, never
+  listed, never echoed in an error, and passed only to the connection that
+  declared it.
 - **Sign-in without a password.** The browser's storage-state file is one you
   make yourself; the app passes a path and never reads a credential. The file
   is a bearer token for every site in it, so it is gitignored.

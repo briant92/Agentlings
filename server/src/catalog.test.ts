@@ -77,6 +77,20 @@ describe('the telegram connection sends only at approval', () => {
   });
 });
 
+/**
+ * The settings drawer renders each credentialed connection's walkthrough from
+ * the catalog — an empty one is a drawer with a field and no way to know what
+ * goes in it, which is the non-expert setup rule (D-011) failed quietly.
+ */
+describe('every credentialed connection carries its setup steps', () => {
+  it.each(all.filter((c) => c.secrets).map((c) => [c.name, c] as const))(
+    '%s explains where its secret comes from',
+    (_, connection) => {
+      expect(connection.setup?.length ?? 0).toBeGreaterThan(0);
+    },
+  );
+});
+
 describe('what a job is actually allowed to call', () => {
   it('reaches the web tool through the catalog rather than a special case', () => {
     const names = grantedTools(undefined, all, {}, {});

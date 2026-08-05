@@ -6,6 +6,7 @@ import {
   isJournal,
   nowFreeRuns,
   productivityOf,
+  recordOf,
   signalFor,
   spendOf,
 } from './productivity';
@@ -51,6 +52,46 @@ function job(over: Partial<Job> = {}): Job {
     ...over,
   };
 }
+
+describe('recordOf (D-089)', () => {
+  it('reads only the rows that name the member, and prices failures into landed runs', () => {
+    const rows = [
+      entry({ agentlingId: 'a1', outcome: 'done', costUsd: 0.5, quotedUsd: 2 }),
+      entry({ agentlingId: 'a1', outcome: 'failed', costUsd: 0.1, quotedUsd: 2 }),
+      entry({ agentlingId: 'a2', outcome: 'done', costUsd: 9 }),
+      entry({ outcome: 'done', costUsd: 9 }), // blank author stays out, never guessed in
+    ];
+    const got = recordOf('a1', rows);
+    expect(got.runs).toBe(2);
+    expect(got.done).toBe(1);
+    expect(got.costUsd).toBeCloseTo(0.6);
+    expect(got.avgPerDoneUsd).toBeCloseTo(0.6); // the failed run rides the landed one
+    expect(got.pricedRuns).toBe(2);
+    expect(got.ratio).toBeCloseTo(0.15);
+    expect(got.signal).toBe('green');
+  });
+
+  it('has no average and no ratio before anything landed or was quoted', () => {
+    const got = recordOf('a1', [
+      entry({ agentlingId: 'a1', outcome: 'failed', costUsd: 0.06, quotedUsd: undefined }),
+    ]);
+    expect(got.avgPerDoneUsd).toBeNull();
+    expect(got.ratio).toBeNull();
+    expect(got.signal).toBe('green');
+  });
+
+  it('counts repeats and ceiling hits from the member rows alone', () => {
+    const rows = [
+      entry({ agentlingId: 'a1', at: 1, recipeKey: 'k', costUsd: 1, quotedUsd: 1 }),
+      entry({ agentlingId: 'a1', at: 2, recipeKey: 'k', costUsd: 0.4, quotedUsd: 1 }),
+      entry({ agentlingId: 'a2', at: 3, recipeKey: 'k2', costUsd: 5, quotedUsd: 5 }),
+    ];
+    const got = recordOf('a1', rows);
+    expect(got.repeated).toBe(1);
+    expect(got.cheaper).toBe(1);
+    expect(got.atCeiling).toBe(1); // the whole-quote first run, and only it
+  });
+});
 
 describe('signalFor', () => {
   it('is green below half the quote, amber to 85%, red above', () => {

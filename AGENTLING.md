@@ -115,6 +115,12 @@ if it could climb out of its folder. The preview says how many extra files a
 skill brings and that they are scripts it can run, which is the question the
 preview exists to ask.
 
+An installed skill can also be handed to a role from any agentling's card
+(Live, D-089): role-level on purpose — capability lives in the baseline tier
+(D-050), so the button says "hand to every worker" and means it. The role
+file's skills line is edited in place; recipes learned without the skill
+demote to hints until they land again (D-036's surface doing its job).
+
 ---
 
 ## 4. What an agentling can actually do

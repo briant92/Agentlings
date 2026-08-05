@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,6 +9,7 @@ import {
   listSkills,
   parseFrontmatter,
   RoleRegistry,
+  roleTextWithSkill,
   toRawUrl,
   writeSkillFile,
 } from './roles';
@@ -20,6 +21,32 @@ tools: [read, grep, web_fetch]
 skills: [concise-reports]
 ---
 You are a scout agentling.`;
+
+describe('roleTextWithSkill (D-089)', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'agentlings-roles-'));
+  });
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
+
+  it('extends the skills line and keeps everything else as written', () => {
+    writeFileSync(path.join(dir, 'scout.md'), SCOUT);
+    const next = roleTextWithSkill(dir, 'scout', 'cite-sources');
+    expect(next).toContain('skills: [concise-reports, cite-sources]');
+    expect(next).toContain('tools: [read, grep, web_fetch]');
+    expect(next).toContain('You are a scout agentling.');
+  });
+
+  it('inserts a skills line before the closing fence when none exists', () => {
+    writeFileSync(path.join(dir, 'bare.md'), '---\nname: bare\ndescription: d\n---\nBody.');
+    const next = roleTextWithSkill(dir, 'bare', 'cite-sources');
+    const parsed = parseFrontmatter(next)!;
+    expect(parsed.meta.skills).toEqual(['cite-sources']);
+    expect(parsed.body).toBe('Body.');
+  });
+});
 
 describe('parseFrontmatter quoting', () => {
   it('strips quotes published templates wrap descriptions in', () => {

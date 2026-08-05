@@ -1,4 +1,5 @@
 import {
+  type AgentlingRecord,
   BUDGET_AMBER,
   BUDGET_GREEN,
   type BudgetSignal,
@@ -122,6 +123,40 @@ export function nowFreeRuns(entries: readonly LedgerEntry[]): number {
   return entries.filter(
     (e) => (e.tier === 'tool' || e.tier === 'routed') && everPaid.has(classOf(e)),
   ).length;
+}
+
+/**
+ * One member's lifetime record for their profile card (D-089): the level
+ * block's own arithmetic, filtered to the rows that name them as author.
+ * Blank-author rows (the 17 deliberately left unattributed after D-056's
+ * backfill) are absent from every figure rather than guessed in, and
+ * `avgPerDoneUsd` divides *all* their spend by the runs that landed — a
+ * delivered run's true price carries the failures around it (D-012's
+ * absorption, seen from the member's side).
+ */
+export function recordOf(
+  memberId: string,
+  entries: readonly LedgerEntry[],
+): AgentlingRecord {
+  const mine = entries.filter((e) => e.agentlingId === memberId);
+  const done = mine.filter((e) => e.outcome === 'done').length;
+  const costUsd = mine.reduce((sum, e) => sum + e.costUsd, 0);
+  const priced = mine.filter((e) => typeof e.quotedUsd === 'number' && e.quotedUsd > 0);
+  const quotedUsd = priced.reduce((sum, e) => sum + (e.quotedUsd ?? 0), 0);
+  const ratio = quotedUsd > 0 ? priced.reduce((sum, e) => sum + e.costUsd, 0) / quotedUsd : null;
+  const { repeated, cheaper } = cheaperClasses(mine);
+  return {
+    runs: mine.length,
+    done,
+    costUsd,
+    avgPerDoneUsd: done > 0 ? costUsd / done : null,
+    repeated,
+    cheaper,
+    atCeiling: priced.filter((e) => e.costUsd >= (e.quotedUsd ?? 0) * CEILING).length,
+    pricedRuns: priced.length,
+    ratio,
+    signal: signalFor(ratio),
+  };
 }
 
 /** One member's spending, from the rows that name them as the author. */

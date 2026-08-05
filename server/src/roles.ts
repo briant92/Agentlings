@@ -94,6 +94,24 @@ export class RoleRegistry {
   }
 }
 
+/**
+ * The role file's text with one more skill on its frontmatter line (D-089).
+ * A line edit rather than a re-serialise, so a hand-written role file keeps
+ * its shape and any human notes; when no skills line exists yet, one is
+ * inserted before the closing fence. The caller hands the result to
+ * `registry.install`, which validates and persists it in one move.
+ */
+export function roleTextWithSkill(rolesDir: string, roleName: string, skill: string): string {
+  const text = readFileSync(path.join(rolesDir, `${roleName}.md`), 'utf8');
+  const parsed = parseFrontmatter(text);
+  if (!parsed) throw new Error('not a frontmatter markdown file');
+  const skills = [...toList(parsed.meta.skills), skill];
+  const line = `skills: [${skills.join(', ')}]`;
+  if (/^skills:/m.test(text)) return text.replace(/^skills:.*$/m, line);
+  // The first newline-fence after the opener is the closing one.
+  return text.replace(/\r?\n---/, `\n${line}\n---`);
+}
+
 function roleFromText(text: string): LoadedRole {
   const parsed = parseFrontmatter(text);
   if (!parsed) throw new Error('not a frontmatter markdown file');

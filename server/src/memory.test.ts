@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MemoryStore } from './memory';
+import { MemoryStore, untagged } from './memory';
 
 let root: string;
 let dir: string;
@@ -18,6 +18,22 @@ beforeEach(() => {
 afterEach(() =>
   rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
 );
+
+describe('the job stamp (D-089)', () => {
+  it('a lesson re-taught by a second job replaces its tagged twin', () => {
+    memory.append('Pip', '2026-08-04 · verify totals before writing (job: economic indicators)');
+    memory.append('Pip', '2026-08-05 · verify totals before writing (job: expenses summary)');
+    expect(memory.lessons('Pip')).toEqual([
+      '2026-08-05 · verify totals before writing (job: expenses summary)',
+    ]);
+  });
+
+  it('strips only a trailing stamp, never one mid-sentence', () => {
+    expect(untagged('check the source (job: padel reminder)')).toBe('check the source');
+    expect(untagged('a (job: one) matters here too')).toBe('a (job: one) matters here too');
+    expect(untagged('no stamp at all')).toBe('no stamp at all');
+  });
+});
 
 describe('lessons', () => {
   it('has nothing to say about an agentling who has never been taught', () => {

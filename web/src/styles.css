@@ -2039,6 +2039,228 @@ button.danger:hover {
   color: #cf8a8c;
   font-weight: 600;
 }
+/* The agentling's file, two tabs (D-089): concise tagged memory and the
+   member's own ledger record on Profile; tools, skills with a hand-over
+   picker, and reach on Abilities. */
+.p-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid #262b36;
+}
+.p-tab {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 13px 6px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: #8a91a3;
+  cursor: pointer;
+}
+.p-tab.on {
+  color: #d8dce6;
+  background: #181c26;
+  border-color: #262b36;
+}
+.p-lesson {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+}
+.p-l-date {
+  flex: none;
+  font-size: 10px;
+  color: #8a91a3;
+  background: #181c26;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 1px;
+}
+.p-l-sum {
+  flex: 1;
+  min-width: 0;
+  color: #c9cdd8;
+  line-height: 1.45;
+}
+.p-l-tag {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-top: 1px;
+  background: rgba(89, 125, 206, 0.14);
+  color: #aebef5;
+  border: 1px solid rgba(89, 125, 206, 0.5);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-l-more {
+  margin: 0;
+  font-size: 11px;
+}
+.p-record {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.p-r-cell {
+  background: #181c26;
+  border: 1px solid #262b36;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.p-r-cell.wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+}
+.p-r-big {
+  font-size: 15px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.p-r-pct {
+  font-size: 11px;
+  color: #8a91a3;
+  font-weight: 600;
+}
+.p-r-lab {
+  font-size: 10px;
+  color: #8a91a3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.p-r-sub {
+  font-size: 10.5px;
+  color: #8a91a3;
+}
+.p-r-line {
+  font-size: 11.5px;
+  color: #c9cdd8;
+}
+.p-r-line b {
+  color: #d8dce6;
+}
+.p-light {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.p-light.green {
+  background: #6daa2c;
+  box-shadow: 0 0 6px rgba(109, 170, 44, 0.7);
+}
+.p-light.amber {
+  background: #d27d2c;
+  box-shadow: 0 0 6px rgba(210, 125, 44, 0.7);
+}
+.p-light.red {
+  background: #d04648;
+  box-shadow: 0 0 6px rgba(208, 70, 72, 0.7);
+}
+.chip-add {
+  border-style: dashed;
+  color: #8a91a3;
+  background: transparent;
+  cursor: pointer;
+}
+.chip-add:hover {
+  color: #d8dce6;
+}
+.p-picker {
+  background: #181c26;
+  border: 1px solid #262b36;
+  border-radius: 9px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.p-p-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.p-p-nm {
+  flex: none;
+  font-weight: 600;
+}
+.p-p-why {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-p-add {
+  flex: none;
+  font-size: 10.5px;
+  border: 1px solid #262b36;
+  border-radius: 5px;
+  padding: 2px 9px;
+  background: #10131a;
+  color: #d8dce6;
+  cursor: pointer;
+}
+.p-p-add:hover {
+  border-color: #2f4363;
+}
+.p-p-note {
+  margin: 0;
+  font-size: 10.5px;
+}
+.p-reach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.p-rc {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #181c26;
+  border: 1px solid #262b36;
+  border-radius: 9px;
+  padding: 6px 10px;
+}
+.p-rc .ask-logo {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.p-rc-nm {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-rc-sub {
+  font-weight: 400;
+  font-size: 10.5px;
+}
+.p-reach-note {
+  margin: 0;
+  font-size: 10.5px;
+}
 
 /* The token drawer: paste, one real validation call, saved to .env (D-078). */
 .secret-drawer {

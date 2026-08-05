@@ -111,10 +111,17 @@ import {
   safeOutputPath,
 } from './outputs';
 import { previewFile } from './preview';
-import { productivityOf } from './productivity';
+import { isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
-import { installSkill, listSkills, RoleRegistry, toRawUrl, writeSkillFile } from './roles';
+import {
+  installSkill,
+  listSkills,
+  RoleRegistry,
+  roleTextWithSkill,
+  toRawUrl,
+  writeSkillFile,
+} from './roles';
 import { appendSends } from './sends';
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
@@ -270,8 +277,11 @@ function makeLevel(dir: string): LevelRuntime {
     (agentling, job, outcome, detail, lesson) => {
       const date = new Date().toISOString().slice(0, 10);
       const jobTitle = job.title;
+      // A learnt lesson is stamped with the job that taught it (D-089), so
+      // the profile can tag it; the dedup key strips the stamp, so the same
+      // lesson re-taught by a second job replaces rather than piles up.
       const line = lesson
-        ? `${date} · ${lesson}`
+        ? `${date} · ${lesson} (job: ${jobTitle})`
         : outcome === 'done'
           ? `${date} · delivered "${jobTitle}" as ${agentling.role}`
           : `${date} · failed "${jobTitle}" as ${agentling.role} — ${detail}`;
@@ -1289,7 +1299,13 @@ app.get('/api/levels/:lid/agentlings/:aid', (c) => {
           model: loaded.model,
         }
       : null,
-    memory: rt.memory.lessons(agentling.name),
+    // Learnt lessons only — the journal lines (delivered/failed/hired-to)
+    // are the career counter's story, not the memory's (D-089).
+    memory: rt.memory.lessons(agentling.name).filter((line) => !isJournal(line)),
+    record: recordOf(
+      agentling.id,
+      readLedger(SANDBOX_ROOT).filter((e) => e.levelId === rt.meta.id),
+    ),
   };
   return c.json(profile);
 });
@@ -1915,6 +1931,32 @@ app.post('/internal/search', async (c) => {
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));
+
+/**
+ * Hand a skill to a role (D-089). Role-level on purpose — capability lives
+ * in the baseline tier (D-050), so a skill handed to "worker" reaches every
+ * worker on their next session, and the card's copy says exactly that. The
+ * skill must already be installed; finding new ones stays the library's job.
+ */
+app.post('/api/roles/:name/skills', async (c) => {
+  const role = registry.get(c.req.param('name'));
+  if (!role) return c.json({ error: 'unknown role' }, 404);
+  const body = await c.req.json<{ skill?: string }>();
+  const skill = body.skill?.trim().toLowerCase();
+  if (!skill) return c.json({ error: 'skill is required' }, 400);
+  if (!listSkills(SKILLS_DIR).some((s) => s.name === skill)) {
+    return c.json(
+      { error: `"${skill}" is not an installed skill — install it from the library first` },
+      400,
+    );
+  }
+  if (role.skills.includes(skill)) {
+    return c.json({ error: `${role.name} already has ${skill}` }, 400);
+  }
+  const updated = registry.install(roleTextWithSkill(ROLES_DIR, role.name, skill));
+  const { prompt: _prompt, ...info } = updated;
+  return c.json(info);
+});
 
 app.get('/api/skills', (c) => c.json(listSkills(SKILLS_DIR)));
 

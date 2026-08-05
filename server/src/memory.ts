@@ -17,6 +17,16 @@ export function undated(line: string): string {
 }
 
 /**
+ * The lesson with its job stamp off (D-089). The close-out stamps
+ * `(job: title)` on the lessons it banks so the profile can tag them; the
+ * dedup key must ignore it, or one lesson re-taught by a second job would
+ * pile up beside itself — the exact failure D-073 closed.
+ */
+export function untagged(line: string): string {
+  return line.replace(/ \(job: [^)]*\)$/, '');
+}
+
+/**
  * Per-agentling memory: one markdown file of "- " lessons per worker.
  * M0 stubs a career-log line per job; the M1 executor reads these into the
  * session and writes real lessons back.
@@ -47,10 +57,10 @@ export class MemoryStore {
     // publication-lag lesson after ten runs of one sentence). Only the "- "
     // duplicate is dropped: the file is a document a person can note in, and
     // everything that is not a lesson line stays exactly where it was.
-    const fresh = undated(lesson);
+    const fresh = untagged(undated(lesson));
     const kept = readFileSync(file, 'utf8')
       .split(/\r?\n/)
-      .filter((line) => !(line.startsWith('- ') && undated(line.slice(2)) === fresh));
+      .filter((line) => !(line.startsWith('- ') && untagged(undated(line.slice(2))) === fresh));
     while (kept.length > 0 && kept[kept.length - 1] === '') kept.pop();
     writeFileSync(file, `${kept.join('\n')}\n- ${lesson}\n`);
   }

@@ -98,6 +98,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-086 — 2026-08-05 — The bubble wears the mock's sheet, and the bar keeps the desk card](#d-086--2026-08-05--the-bubble-wears-the-mocks-sheet-and-the-bar-keeps-the-desk-card)
 - [D-087 — 2026-08-05 — The desk asks the send's two facts, and Start tells the truth](#d-087--2026-08-05--the-desk-asks-the-sends-two-facts-and-start-tells-the-truth)
 - [D-088 — 2026-08-05 — The garage, the drawer and the outbox wear the mock too](#d-088--2026-08-05--the-garage-the-drawer-and-the-outbox-wear-the-mock-too)
+- [D-089 — 2026-08-05 — The agentling's file: tagged memory, a ledger record, and a skill handed to the role](#d-089--2026-08-05--the-agentlings-file-tagged-memory-a-ledger-record-and-a-skill-handed-to-the-role)
 
 ## By theme
 
@@ -226,6 +227,12 @@ entry updates one file rather than two.
   never-with-why), the drawer's steps get their numbered squares, and the
   outbox review wears the channel's mark with a recipient's initial on
   every row — presentation only, over the same mechanisms
+- **The agentling's file** — two tabs from an approved mock: lessons as
+  one-line rows tagged by the job that taught them (stamped at close-out
+  going forward, dedup taught to ignore the stamp), a per-member record
+  read off the ledger's `agentlingId` rows, and Abilities holding tools,
+  skills — with a hand-to-the-role picker that respects D-050's tiers —
+  and reach, stated honestly as the level's: D-089
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4891,3 +4898,57 @@ in any level carries an outbox yet; it is covered by build and tests, and
 the first demo-loop send is its visual pass. The pane still cannot
 composite frames in this session, so pixels remain the open app's to
 confirm — it hot-reloads, and the garage is already live there.
+
+## D-089 — 2026-08-05 — The agentling's file: tagged memory, a ledger record, and a skill handed to the role
+
+Brian asked for the profile card to be worth reading, mocked as its own
+preview page and settled by four answered questions: lifetime figures (a
+7-day-old project makes any window equal lifetime while costing window
+code), "all lessons" expands inline, a hand-added skill changes no pricing
+(the capability surface already reacts — D-036), and reach stays on the
+card as drawn. Two tabs over the same modal and handlers.
+
+**Profile.** A lesson renders as date chip · first line · tag. The tag is
+real, not parsed hope: the close-out now stamps `(job: title)` on the
+lessons it banks — the title is in scope where the line is composed — and
+`untagged()` joins `undated()` in the dedup key, or one lesson re-taught
+by a second job would pile up beside itself, the exact failure D-073
+closed. Old lessons carry no stamp and show no tag; nothing is backfilled
+by guesswork. The card's memory also stops showing the journal — the
+delivered/failed/hired-to lines are the career counter's story, and
+`isJournal` (the productivity module's own boundary) filters them
+server-side, so "N lessons" finally counts what was learnt. Below the
+career counter, `recordOf` reads the member's own ledger rows: runs
+landed with %, average per landed run — all their spend over the runs
+that landed, so a delivered run's price carries the failures around it
+(D-012's absorption seen from the member's side) — repeated-jobs-cheaper
+(`cheaperClasses` on their rows alone), ceiling hits, and the street
+light with lifetime spend. Blank-author rows (the 17 D-056 left) are
+absent from every figure.
+
+**Abilities.** Tools stay read-only — they are the role's, which is why
+the role selector stays in the foot. Skills gain the `+`: the picker
+lists *installed* skills the role lacks (finding new ones stays the
+library's job), and the button says "hand to every worker" because that
+is what it does — capability lives in the baseline tier (D-050), so the
+skill lands on the role by a line edit that keeps the file's own shape
+(`roleTextWithSkill` → `registry.install`), reaching every holder of the
+role on their next session. The picker says in words what it costs: a
+skill rides every session's brief, and methods learned without it step
+back to hints (D-036) until they land again. Reach lists the connections
+with the garage's marks and pills, and states that reach is the level's,
+not the member's — per-member permissions do not exist and are not drawn.
+
+**Evidence.** Eight new tests across memory (the stamp dedup),
+productivity (`recordOf`: authorship filter, failures-priced-in average,
+member-only repeats and ceiling hits) and roles (`roleTextWithSkill`
+extends the line and inserts one when absent); 1029 + 98 and typecheck
+green, bundles carrying the new copy. Live on a second web server: Pip's
+card shows his real record — 18 of 26 landed, $1.00 per landed run, 4 of
+6 repeated jobs cheaper, 1 ceiling hit, 42% of quoted, $17.97 lifetime,
+the same figures the crew rail computes — six real lessons in one-line
+rows (all untagged, correctly: every one predates the stamp), and the
+picker offers the four real skills the worker role lacks. The hand-over
+button was deliberately not pressed live — it writes `roles/worker.md`
+for real; its path is covered by the roles tests and the route's own
+guards. The first tagged lesson arrives with the next real close-out.

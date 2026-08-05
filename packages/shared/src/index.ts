@@ -647,11 +647,37 @@ export interface MergePreview {
 }
 
 /** GET /api/agentlings/:id — everything the profile popup shows. */
+/**
+ * One member's lifetime record, read off the ledger rows that name them as
+ * author (D-089). Blank-author rows — the 17 deliberately left after D-056's
+ * backfill — are simply absent from every figure rather than guessed in.
+ */
+export interface AgentlingRecord {
+  /** Ledger rows naming them. A job can be several runs (D-074). */
+  runs: number;
+  /** Runs that ended done. */
+  done: number;
+  /** Lifetime spend across all their runs, absorbed failures included. */
+  costUsd: number;
+  /** Spend ÷ done — what a landed run really costs, failures priced in. */
+  avgPerDoneUsd: number | null;
+  /** Their job classes run more than once, and how many now cost less. */
+  repeated: number;
+  cheaper: number;
+  /** Priced runs that spent essentially their whole quote. */
+  atCeiling: number;
+  pricedRuns: number;
+  /** Spend ÷ quoted over priced runs; null when nothing carried a quote. */
+  ratio: number | null;
+  signal: BudgetSignal;
+}
+
 export interface AgentlingProfile {
   agentling: Agentling;
   role: RoleInfo | null;
-  /** Most recent memory lessons, oldest first. */
+  /** Learnt lessons only, oldest first — the journal lines stay out (D-089). */
   memory: string[];
+  record: AgentlingRecord;
 }
 
 /** What a job will cost, quoted before it runs. The ceiling is enforced. */

@@ -11,6 +11,7 @@ import {
 } from '@agentlings/shared';
 import { createAmbience } from './ambience';
 import { type Frames, loadAtlasArt } from './atlas';
+import { createEmotes } from './emotes';
 import { type Box, doorBox, type HoverTarget, OUTLINE_OFFSETS, stationBox } from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
@@ -28,6 +29,11 @@ import { THEMES, type Theme } from './themes';
 const VIEW_H = 320;
 const GROUND_Y = 258;
 const MAX_PARTICLES = 400;
+/**
+ * Where a sprite's head tops out. Packs may draw at any resolution but the
+ * on-screen height is held constant, so this is a constant too.
+ */
+const HEAD_Y = GROUND_Y + 2 - SPRITE_HEIGHT * SPRITE_SCALE;
 
 /** The fixed points a scene hangs its coordinates on. */
 const ANCHORS: Anchors = {
@@ -387,6 +393,11 @@ export function WorldCanvas({
         app.stage.addChild(spriteLayer);
         const fxLayer = new Graphics();
         app.stage.addChild(fxLayer);
+        // Above the crew so a bubble reads over the sprite, below the labels
+        // so a hovered name still wins.
+        const emoteLayer = new Graphics();
+        app.stage.addChild(emoteLayer);
+        const emotes = createEmotes({ headY: HEAD_Y });
         const labelLayer = new Container();
         app.stage.addChild(labelLayer);
 
@@ -395,6 +406,7 @@ export function WorldCanvas({
           dynamic.clear();
           fxLayer.clear();
           ambientLayer.clear();
+          emoteLayer.clear();
           for (const ghost of ghosts) ghost.visible = false;
           if (!w) return;
           const t = performance.now() / 1000;
@@ -550,6 +562,9 @@ export function WorldCanvas({
               clearHover((target) => target.kind === 'agentling' && target.id === id);
             }
           }
+
+          // Emotes read the same smoothed positions the sprites stand at.
+          emotes.tick(emoteLayer, w, (id) => motion.get(id)?.x, dt, t);
 
           // Particles: integrate, retire, and draw as hard pixel squares.
           for (let i = fx.length - 1; i >= 0; i--) {

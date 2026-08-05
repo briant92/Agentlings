@@ -92,6 +92,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-080 — 2026-08-05 — Google connects by loopback, against the user's own client](#d-080--2026-08-05--google-connects-by-loopback-against-the-users-own-client)
 - [D-081 — 2026-08-05 — WhatsApp Business sends templates, and the audit records a declared price or none](#d-081--2026-08-05--whatsapp-business-sends-templates-and-the-audit-records-a-declared-price-or-none)
 - [D-082 — 2026-08-05 — Standing approval: earned in review, scoped to an allowlist, and not called a leash](#d-082--2026-08-05--standing-approval-earned-in-review-scoped-to-an-allowlist-and-not-called-a-leash)
+- [D-083 — 2026-08-05 — Ambience is scene data, and the stalactites the dice never rolled](#d-083--2026-08-05--ambience-is-scene-data-and-the-stalactites-the-dice-never-rolled)
 
 ## By theme
 
@@ -102,7 +103,9 @@ entry updates one file rather than two.
 - **Concept, stack, outside access, identity, executor** — D-001–D-007, D-032,
   D-034–D-035
 - **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
-  D-008–D-010, D-014
+  D-008–D-010, D-014; and D-083 — idle life joining the format as ambient
+  idioms, the draw reporting its own stalactite tips, and the cave comment
+  the dice had quietly falsified
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -4577,3 +4580,69 @@ tests green, typecheck clean; the approvals routes probed live with their
 refusal sentences. The full circle — three real approvals, the offer, a
 granted auto-send — needs three real runs of a real recurring job, which
 is the training ground's next errand rather than this slice's claim.
+
+## D-083 — 2026-08-05 — Ambience is scene data, and the stalactites the dice never rolled
+
+A visuals batch run in a second session alongside the M5.11 slices,
+mockup-first: four animated mocks approved as shown, four commits
+(4f03f51, 9c79106, 948b9a1, e43465b), every file in `web/` so the two
+sessions never touched the same code.
+
+**Idle life joins the terrain format.** A scene now carries an `ambient`
+section in the same spirit as its ops — parameterised idioms, not a
+drawing language, D-014's rule extended to motion: `drips`, `flyer`,
+`motes`, `beam`, `glints`, `clock`. The scene says which effects and
+where, in the same anchor coordinates the ops use; the renderer
+(`ambience.ts`) owns the state machines and draws on a layer between
+scenery and crew. Thumbnails deliberately get none of it — a snapshot of
+dust is a stain. Positional colour comes from theme slots; the water and
+the bat are fixed DB colours, the confetti's precedent — a renderer
+detail, not a theme decision. The chalkboard's painted clock hands came
+out of the scene data, and the ambient clock draws them live at the
+actual time of day.
+
+**The first effect audited the painting.** Drips need stalactite tips,
+so `drawScene` now returns marks — positions only the seeded geometry
+knows, reported so an effect hangs on the picture the player sees rather
+than on a guess at it. Wiring that up found the fault: at the shipped
+seed the cave had **zero** stalactites. Replaying the ceiling's
+mulberry32 stream showed every hang roll landing as a vine — five vines,
+no point ever clearing both the 30% spike roll and the depth bar — while
+the op's own comment promised "stalactites at the deep points and
+hanging vines elsewhere". Untrue since the D-014 port, unnoticed because
+vines filled the ceiling either way. The comment is now enforced rather
+than hoped for: every interior local-deepest point past the spike bar
+grows a stalactite before the dice speak — endpoints excluded, they sit
+over the side walls — and the dice may still add more. The shipped seed
+now hangs five spikes and two vines, in new places: the same grain trade
+D-014's header already accepted. The family is the hard-won rule about
+figures in notes — a comment describing a seeded outcome is a claim
+nobody re-measured until a feature needed it true.
+
+**Refused in the same batch: a progress meter on the signposts.**
+`meter` lands only at completion (`queue.ts` — complete, fail and cancel
+are its three writers), so a mid-run bar would be invented data. The
+running signpost instead blinks a lamp on each real tool call, wired
+from the same event feed the terminal prints, with the replayed backlog
+on connect absorbed silently so the lamp never claims work that already
+happened. The crew emotes obey the same sourcing rule: only flips they
+watched, attributed through `assignedTo`, classified with the shared
+`outcomeOf` rather than a local re-listing (D-030), and zZz only when
+the board holds nothing queued or running.
+
+**Environment note.** The Browser pane freezes rAF while hidden, so a
+session cannot verify live pixels — but a second Vite on :5273
+(`agentlings-web-second` in launch.json) shares the running engine
+through the same proxy, which lets a session verify mounting, console
+and computed styles without touching another session's dev server. The
+eyeball on the running app stays the user's step, at :5173.
+
+**Evidence.** The state machines are tested against a recorded surface
+rather than a canvas: the drip lifecycle down to the splash pixel, a
+glint's spawn-and-die, the clock's hands at an injected three o'clock,
+emote flips including the no-pop-for-history guard; scene marks
+deterministic across draws, inside the walls, clear of hatch and exit.
+One assertion caught its own feature short — the parcel pile's hit box
+grew to 44px because the count tag's containment test demanded it. 93
+web and 1011 server tests green on the merged head, typecheck clean,
+zero console errors on a scripted mount of the merged app.

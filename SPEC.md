@@ -338,6 +338,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.7 your own notes → D-046–D-051 · M5.8 finding a page → D-052–D-055
 - M5.9 reading the crew record → D-056, D-057
 - M5.10 reading what you keep → D-058–D-062
+- M5.11 connections that send → D-075–D-077
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
@@ -749,6 +750,40 @@ tried, measured and rejected is in `DECISIONS.md`:
     is why a passage read from a scan is marked as one. The last two were found
     by reading the panel's sentences back against the code, not by a test, a
     type, or a live run: all three were green. (D-061, D-062)
+  - **M5.11 — connections that send (in progress).** The batch is decided
+    (D-077): Tier 1 is Telegram, Google (Gmail + Calendar + Contacts on one
+    consent), WhatsApp Business and Slack; Tier 2 adds nine more on the same
+    two credential shapes; six apps are declined with the reason on the row,
+    WhatsApp personal first among them. Sends never happen in a session
+    (D-075): a run writes `OUTBOX.json` — one channel, up to 20 messages —
+    review shows the messages, and **Approve is the send**, replayed by the
+    server through the channel's client exactly as a patch is replayed by
+    `git apply`. Results are stamped per recipient so a retry can never
+    message anyone twice; every attempt is audited to `sends.jsonl` beside
+    the ledger; a channel that is off refuses with the reason and the job
+    stays reviewable. Credentials are a Connect button for the OAuth pair
+    and paste-a-token for everything else, passwords never (D-076).
+
+    Slices, in the approved order — the review path exists before anything
+    can ask to send:
+    - [x] **Outbox + review.** `outbox.ts` (contract + validation),
+          `channels.ts` (registry + replay with per-recipient retry),
+          `sends.ts` (the audit), stamped by the queue on completion, executed
+          by the resolve route, shown in the review modal. Telegram's channel
+          client ships with it — token via `.env`, the drawer comes later.
+    - [ ] **The token drawer.** Paste-and-validate in Settings, per-connection
+          walkthrough; Telegram end-to-end without touching `.env`.
+    - [ ] **Intake detection + the ask-bubble.** Channel words resolve to
+          connections in the free matcher; a job that needs an unconnected
+          channel parks as `needs-connection` and the agentling raises the
+          bubble with the honest fork (Business API vs Telegram vs Gmail).
+    - [ ] **The Google Connect flow.** Loopback OAuth against the user's own
+          client; one consent covers Gmail, Calendar, Contacts; the guidance
+          walks past testing-mode's 7-day expiry.
+    - [ ] **The WhatsApp Business guide + channel.** Meta setup walkthrough,
+          template sends, per-message cost into `sends.jsonl`.
+    - [ ] **The leash.** Standing approval per job + recipients + wording
+          after N clean reviews; any change drops back to review (D-075).
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

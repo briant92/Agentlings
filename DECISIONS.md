@@ -84,6 +84,9 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-072 — 2026-08-04 — Seven runs of one sentence, none of them recording it was the same job](#d-072--2026-08-04--seven-runs-of-one-sentence-none-of-them-recording-it-was-the-same-job)
 - [D-073 — 2026-08-04 — The crew's notes stop repeating themselves](#d-073--2026-08-04--the-crews-notes-stop-repeating-themselves)
 - [D-074 — 2026-08-04 — A continuation is the same job, now everywhere it counts](#d-074--2026-08-04--a-continuation-is-the-same-job-now-everywhere-it-counts)
+- [D-075 — 2026-08-04 — Acting is an outbox replayed at approval, never a tool in a session](#d-075--2026-08-04--acting-is-an-outbox-replayed-at-approval-never-a-tool-in-a-session)
+- [D-076 — 2026-08-04 — Credentials: a Connect button for the OAuth pair, paste-a-token for the rest, passwords never](#d-076--2026-08-04--credentials-a-connect-button-for-the-oauth-pair-paste-a-token-for-the-rest-passwords-never)
+- [D-077 — 2026-08-04 — The connection batch: four now, nine later, six never](#d-077--2026-08-04--the-connection-batch-four-now-nine-later-six-never)
 
 ## By theme
 
@@ -178,6 +181,10 @@ entry updates one file rather than two.
 - **Mid-flight runs** — the carry-on brief out of the prompt, the router's
   shortcut guard, and what a continuation may credit — closing for
   continuations the recipe-key gap D-072 closed for hinted sessions: D-074
+- **Acting, and the apps worth acting on** — the outbox replayed at approval,
+  which closes §15's "one decision, not seven tasks": D-075; the two
+  credential shapes and the never-a-password rule: D-076; the researched
+  batch, its tiers and its refusals, WhatsApp personal among them: D-077
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4128,3 +4135,152 @@ test and it is worth recording (D-056's habit): "sends mid-flight work with no
 recipe to a plain session" passes with the guard removed, because a prompt
 nothing claims falls through to `agent` either way — it pins the contract's
 shape, and the other two tests are what actually hold the guard.
+
+## D-075 — 2026-08-04 — Acting is an outbox replayed at approval, never a tool in a session
+
+The decision AGENTLING.md §15 called "one decision, not seven tasks", taken.
+The blocker was always the safety model: everything here is sandbox → review →
+promote, and an action on the live internet has no promote step (D-034). The
+three candidates on file were a pre-approved allowlist, a dry-run-then-confirm
+turn, and a `waiting` status with the run parked — the last already refused
+once for separate reasons (D-030).
+
+Settled as a fourth shape that keeps the model intact: **the session never
+holds a send tool.** A run that wants to message someone writes `OUTBOX.json`
+in its sandbox — one channel, recipients, bodies — and that file is a
+deliverable like any other: it counts as delivery by the existing top-level
+rule, it is read in review, and **Approve is the send**. The server replays
+the reviewed outbox through the channel's client with the stored secret,
+exactly as a reviewed patch is replayed by `git apply`. The model composes;
+plain code sends; the token never enters a session.
+
+What that buys, in the order it mattered:
+
+- **No new risk class.** The twelve held-back browser tools stay held back;
+  D-034's argument is untouched because nothing acts mid-session.
+- **Idempotent by recipient.** Send results are stamped on the job
+  (`outboxSent`) as they happen, and a partial failure leaves the job
+  reviewable with the reasons; a second Approve retries only the recipients
+  that failed. Approving twice can never message anyone twice.
+- **The audit §11 said did not exist.** Every attempt — sent or refused — is
+  appended to `sends.jsonl` beside the ledger: jobId, channel, recipient,
+  outcome. A separate file *because* the ledger row is written at completion
+  and the send happens later, at review: an append-only price history must
+  not gain a second row for an event that cost no model anything. Channel
+  prices (WhatsApp's per-message cent) join this file when a priced channel
+  ships.
+- **The leash, designed and deliberately not built.** A recurring job
+  approved unchanged several times may be offered standing approval, scoped
+  to the job, its recipient list and its wording; a new recipient or new
+  template drops it back to review. The recipient allowlist is also the
+  prompt-injection answer — nothing a session *read* can add a recipient a
+  human never approved once. It waits for a recurring job to exist to earn
+  it.
+
+One more deferral recorded as reasoning rather than a gap: the session is not
+yet *told* the outbox contract — a capability nobody is told about is not a
+capability (D-031), and the telling belongs to intake detection, where the
+channel is known to be granted before the run starts. Until then an outbox is
+written only by a run explicitly asked to write one, which is the right
+smallest surface to prove the pipe on.
+
+Evidence: the approved design of 2026-08-04 (the four mocked screens), the two
+prior refusals this composes with rather than reopens (D-030, D-034), and the
+implementation landing with this entry — validation, replay, per-recipient
+retry and audit under test, including the refusal path: promoting an outbox
+whose channel is off fails with the reason and the job stays reviewable,
+because "promoted" stamped on a refusal is the one outcome worse than refusing
+outright.
+
+## D-076 — 2026-08-04 — Credentials: a Connect button for the OAuth pair, paste-a-token for the rest, passwords never
+
+Research across the candidate menu (2026-08-04) found exactly **two**
+providers that need an OAuth flow — Google and Microsoft — and everything
+else authenticating with a token the user creates in that app's own settings
+page. So the credential surface is two shapes, and only two:
+
+- **Connect button** (Google, Microsoft): opens the provider's own consent
+  page in the user's real browser, catches the localhost redirect, and stores
+  the refresh token in the gitignored store under the env-var name the
+  connection already declares. Two providers in the whole menu makes this one
+  contained build, not a framework.
+- **Paste-a-token drawer** (Telegram, Slack, WhatsApp Business, Twilio,
+  Notion, Discord, Todoist, X…): the existing `.env` pattern surfaced in
+  Settings, with a per-connection plain-words walkthrough and validation by
+  one real call at paste time, so a bad key fails in the drawer and not in a
+  job.
+
+**Agentlings never sees, stores or transmits a password.** That extends the
+principle the browser connection set — §11's storage-state rule, "the app
+never sees a password" — to every credentialed connection, and it is not
+merely taste: Google retired password-based app access years ago, so custody
+would be a liability that does not even work.
+
+Two Google specifics that shaped the shape, verified against Google's own
+documentation:
+
+- **Testing-mode consent expires in seven days, refresh token included**, so
+  the Connect guidance walks the user to *publish* their consent screen:
+  unverified-in-production shows one warning interstitial, caps at 100
+  lifetime users (irrelevant at one), and refresh tokens persist.
+- **Each user brings their own OAuth client.** Shipping a shared client would
+  make Agentlings a multi-user app requesting restricted Gmail scopes —
+  Google verification and a paid security assessment. Own-client is the
+  standard posture for self-hosted tools and the honest one here.
+
+Also verified, and kept because it closes a question §5 left open: Google now
+ships official Workspace MCP servers — per-product, remote HTTP, Developer
+Preview — and they *still* require your own OAuth client and consent screen,
+and their Gmail write tool is `create_draft`, not send. They dodge nothing
+this decision needs dodged, so the registry's missing HTTP transport is not
+forced by this batch, and the first credentialed connections stay builtin
+thin clients for D-040's reason: a mailbox is exactly where owning the size
+of the answer bites hardest.
+
+## D-077 — 2026-08-04 — The connection batch: four now, nine later, six never
+
+The menu, settled by research rather than enthusiasm — usage, pricing and API
+posture verified 2026-08-04, in the turn recorded before this one. The
+WhatsApp question is what started it; D-075 is how any of them send.
+
+**Tier 1 — wired first.**
+
+- **Telegram** — bot token, free, sends in a minute; each recipient taps
+  Start on the bot once. The cheapest possible proof of the whole pipe.
+- **Google: Gmail + Calendar + Contacts, one consent** — the only channel
+  that arrives *as the user*, from their own address.
+- **WhatsApp Business Cloud API** — per-message pricing since July 2025,
+  ≈$0.025 US and country-dependent (≈$0.010 India, ≈€0.11 Germany), service
+  replies inside the 24-hour window free. The honest toll is the setup — a
+  Meta business account, a dedicated number that leaves the consumer app,
+  pre-approved templates — and that messages arrive from a business number,
+  which changes the decision more than the cents do.
+- **Slack** — a user-created internal app with a pasted bot token. The May
+  2025 crackdown (1 request/minute on history reads, LLM-training bans)
+  targets commercially distributed apps; internal custom apps are exempt.
+
+**Tier 2 — same two credential shapes, added on demand.** Outlook/Microsoft
+365 (Graph covers personal accounts, the second and last OAuth build),
+Discord bot, SMS via Twilio (≈1¢/message US, the fallback for recipients
+with no apps), Notion, Todoist, GitHub acting (the existing token gains
+write scopes and outbox types — no new auth at all), X (pay-per-use became
+the default in February 2026: $0.015/post, $0.005/read, no monthly minimum,
+so personal-volume posting is viable for the first time since the API
+closed), Bluesky, Reddit.
+
+**Never on the menu, with the reason on the row** so nobody waits for them:
+
+- WhatsApp personal — no API exists; puppeting WhatsApp Web breaks Meta's
+  terms, gets numbers banned, and is the acting browser D-034 declined,
+  arriving by another door.
+- Signal — no official API.
+- iMessage — nothing exists off-Mac.
+- LinkedIn — closed to personal automation and enforced.
+- WeChat — official accounts need Chinese business verification.
+- Instagram / Messenger DMs — business-account APIs behind Meta app review.
+
+**Build order, approved with the mockups:** outbox + review first, then the
+token drawer with Telegram live, then intake detection and the ask-bubble,
+then the Google Connect flow, then the WhatsApp Business guide. The review
+path exists before anything can ask to send, and each slice demos alone.
+SPEC.md M5.11 tracks the slices.

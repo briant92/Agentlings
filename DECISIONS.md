@@ -96,6 +96,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-084 — 2026-08-05 — The ask floats over the agentling, and falls back to the bar](#d-084--2026-08-05--the-ask-floats-over-the-agentling-and-falls-back-to-the-bar)
 - [D-085 — 2026-08-05 — Bare "mail" claims as a channel word, and stays out of the verb list](#d-085--2026-08-05--bare-mail-claims-as-a-channel-word-and-stays-out-of-the-verb-list)
 - [D-086 — 2026-08-05 — The bubble wears the mock's sheet, and the bar keeps the desk card](#d-086--2026-08-05--the-bubble-wears-the-mocks-sheet-and-the-bar-keeps-the-desk-card)
+- [D-087 — 2026-08-05 — The desk asks the send's two facts, and Start tells the truth](#d-087--2026-08-05--the-desk-asks-the-sends-two-facts-and-start-tells-the-truth)
 
 ## By theme
 
@@ -214,7 +215,11 @@ entry updates one file rather than two.
   D-084 had kept the mock's sheet but not its contents — the bubble now
   wears the mock's dress (title, quoted sentence, logo rows, connect
   buttons) while the bar keeps the dense desk card, one mechanism in two
-  frames
+  frames; and D-087, where a real 6¢ run whose whole delivery was a
+  question taught the desk to ask the send's two facts on the card, Start
+  to arrest a knowably doomed queue for one extra press, and a failed
+  run's question to carry a reply box that continues the same job, channel
+  and all — the parked status refused a fourth time
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4765,3 +4770,69 @@ this session (a recorded environment limit), so the same check also proved
 D-084's fallback: with `requestAnimationFrame` frozen the bubble stays
 hidden and the bar card carries the identical ask — missed pretty,
 not missable.
+
+## D-087 — 2026-08-05 — The desk asks the send's two facts, and Start tells the truth
+
+The account opens with a real run. "I need to send and email to a friend"
+was typed at the desk with Gmail unconnected, Start queued it carrying
+`channel: gmail` at the $2.00 clamp with 40 turns granted, and Pip spent
+one turn, zero tool calls and 6¢ to deliver exactly this: *"I can compose
+that for you — but I need a few details first, since I can't invent an
+address."* The outbox contract working as written (D-075's never-invent
+rule), landing as `failed` — and the terminal drew a plain failed job as a
+bare ✖ line with no reply box, so a correct question had cost money to
+reach a place with no way to answer it. Three gaps compounded: the ask
+card informed and never arrested; the clarify rules never fire on "send"
+(not in their producing-verb list); and the run's own fallback question
+was a dead end.
+
+**The flow now closes the loop at both ends, and the gate lives at the
+desk — the terminal's pre-run conversation was considered and refused,**
+because a job parked waiting on input is the `waiting` status this log has
+refused three times (D-030 twice, D-079), and the desk is where nothing is
+quoted or billed yet. "Start never waits" already had one deliberate
+exception, the project-folder ask; this is its twin, scoped the same way —
+only when the job needs it.
+
+- **The send facts are ordinary clarify questions, asked first.**
+  `questionsFor` takes an optional `channel` and emits `send-to` and
+  `send-say` ahead of everything else (the outbox contract refuses to
+  invent either), still never required server-side, still capped at three.
+  The ask wording never varies by channel — only the hint does — so the
+  queue-time recompute (the rule that stops a caller inventing
+  instructions) matches whatever card the user answered on, even when a
+  fork changed the channel between plan and queue. A draft still asks: the
+  asked name stands in for the channel at both call sites.
+- **The card is where they are answered.** Both dresses of
+  `ChannelAskCard` render the facts as fields — TO and SAY on the bubble's
+  sheet, dense rows on the bar — including after a pick, because a chosen
+  alternative still needs its recipient. An address already typed in the
+  sentence prefills TO and never overwrites. When a card is up the generic
+  question row hands the send questions to it rather than asking twice.
+- **Start arrests a knowably doomed queue for exactly one press.** The
+  first press on a run with no recipient, no channel that can send, or an
+  unconnected one relabels the button with the consequence — "Queue anyway
+  — no recipient · you connect at review" — and the card wears the reason's
+  colour; the second press queues with eyes open. Fixing the reason turns
+  Start back into Start, armed or not. D-079's queue-anyway logic survives
+  for the connection half (the drawer connects mid-review, D-078); it was
+  the missing-facts half that was dead on arrival.
+- **A failed run's question gets the reply box** done and partial jobs
+  already had, and the reply route now carries `previous.channel` — without
+  it a continuation never heard the outbox contract (the brief is derived
+  from `job.channel` at run time) and composed nothing sendable. The 6¢
+  becomes a down payment, not waste.
+
+**Evidence.** Eight new clarify tests (fire-first, per-channel hints,
+neutral fork hint, the cap, free-tier silence, forwarding with the channel
+context and dropping without it); 1020 + 98 and typecheck green. Live
+against the running API: the failing sentence's plan now returns
+`send-to, send-say` with the Gmail hint. The whole client flow proven for
+$0 by a patched fetch returning a fake 201: fields render on the card with
+the hints as placeholders and no duplicate in the loose row; the first
+press queues nothing and relabels; filling the facts drops the recipient
+clause live; the second press posts exactly one body carrying both
+answers; an address in the sentence prefills TO. Left for the demo loop:
+a real reply on a failed send job (it spawns a paid session, so it was
+typecheck-and-read verified only), and the repo-folder ask's own buttons
+bypass the arrest — send jobs rarely carry repos, noted rather than wired.

@@ -344,14 +344,22 @@ function EventEntry({
           </>
         );
       }
+      // A failed run's last words are often a question — the 6¢ run that
+      // could not invent an address asked for one, correctly, and used to die
+      // as this bare line (D-087). The reply box makes the answer continue
+      // the same job, channel and sandbox carried, instead of wasting it.
       return (
-        <div className="t-line">
-          {time}
-          <span className="ev-failed">✖ failed</span>
-          <span className="t-text">
-            {event.title} — {event.detail}
-          </span>
-        </div>
+        <>
+          <div className="t-line">
+            {time}
+            <span className="ev-failed">✖ failed</span>
+            <span className="t-text">{event.title}</span>
+          </div>
+          <div className="t-card">
+            {event.detail && <div className="summary">{event.detail}</div>}
+            <ReplyBox jobId={event.jobId} onReply={onReply} />
+          </div>
+        </>
       );
     case 'resolved':
       return (

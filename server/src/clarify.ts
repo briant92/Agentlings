@@ -51,6 +51,17 @@ const NAMED_TARGET = /[\w-]+\.[a-z]{1,5}\b|[\w-]+[/\\][\w-]+|`[^`]+`|\b[a-z]+[A-
 
 const PRONOUN = /\b(it|this|that|these|those|them)\b/i;
 
+/**
+ * Per-channel wording for the recipient hint. Only the hint varies — the ask
+ * itself never does, so the queue-time recompute matches whatever card the
+ * user answered on even when a fork changed the channel between the two.
+ */
+const SEND_TO_HINTS: Record<string, string> = {
+  gmail: 'A name and email address — no run may invent one.',
+  telegram: 'A numeric chat id — each person taps Start on your bot once.',
+  'whatsapp-business': 'A number with country code — no run may invent one.',
+};
+
 /** Free work has nothing to narrow: a routed answer and a tool both cost zero. */
 function costsMoney(tier: Quote['tier']): boolean {
   return tier === 'oneshot' || tier === 'session';
@@ -89,10 +100,32 @@ function contentless(text: string): boolean {
 
 export function questionsFor(
   text: string,
-  { hasRepo, tier }: { hasRepo: boolean; tier: Quote['tier'] },
+  { hasRepo, tier, channel }: { hasRepo: boolean; tier: Quote['tier']; channel?: string },
 ): ClarifyQuestion[] {
   if (!text.trim() || !costsMoney(tier)) return [];
   const asked: ClarifyQuestion[] = [];
+
+  // A send job asks its two facts first: the outbox contract refuses to
+  // invent a recipient or a message (D-075), so a run without them can only
+  // spend money asking for them — which a real 6¢ run did, and its whole
+  // delivery was the question (D-087). Still never required: the arrest at
+  // Start is the client's honesty, not a server gate.
+  if (channel) {
+    asked.push({
+      id: 'send-to',
+      ask: 'Who should this go to?',
+      hint: SEND_TO_HINTS[channel] ?? 'A name and where to reach them — no run may invent one.',
+      options: [],
+      freeText: true,
+    });
+    asked.push({
+      id: 'send-say',
+      ask: 'What should it say, roughly?',
+      hint: 'A line is enough — they write it out properly.',
+      options: [],
+      freeText: true,
+    });
+  }
 
   if (dangling(text)) {
     asked.push({
@@ -168,7 +201,7 @@ export function questionsFor(
  */
 export function clarificationLines(
   text: string,
-  context: { hasRepo: boolean; tier: Quote['tier'] },
+  context: { hasRepo: boolean; tier: Quote['tier']; channel?: string },
   answers: Record<string, string> | undefined,
 ): string[] {
   if (!answers) return [];

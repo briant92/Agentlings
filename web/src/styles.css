@@ -368,6 +368,58 @@ button.ghost {
   line-height: 1.45;
   color: #635c72;
 }
+/* The send facts (D-087): the two answers no run may invent, asked on the
+   sheet while nothing is billed. The bar card reuses its own dense inputs. */
+.ask-fact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ask-fact-label {
+  flex: none;
+  min-width: 34px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #635c72;
+  border: 1px solid #c9ccba;
+  border-radius: 6px;
+  padding: 5px 6px;
+  background: #fff;
+}
+.ask-fact-input {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #c9ccba;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: #221a2e;
+}
+.ask-fact-input::placeholder {
+  color: #9a94a8;
+  font-style: italic;
+}
+.ask-fact-input:focus {
+  outline: none;
+  border-color: #597dce;
+}
+/* One press said no — the card wears the reason's colour until it is fixed
+   or pressed again with eyes open (D-087). */
+.work-channel.arrested {
+  border-left-color: #d27d2c;
+  box-shadow: 0 0 0 1px #d27d2c inset;
+}
+.ask-bubble .work-channel.arrested {
+  box-shadow: none;
+}
+.ask-bubble .work-channel.arrested .ask-fact-input {
+  border-color: #d27d2c;
+}
 .work-channel {
   border: 1px solid #3a3160;
   border-left: 2px solid #5b6ee1;

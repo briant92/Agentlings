@@ -1,5 +1,8 @@
-import type { ChannelAsk } from '@agentlings/shared';
+import type { ChannelAsk, ClarifyQuestion } from '@agentlings/shared';
 import { ChannelLogo } from './ChannelLogo';
+
+/** The send facts wear short labels on the card; anything else keeps its ask. */
+const FACT_LABELS: Record<string, string> = { 'send-to': 'To', 'send-say': 'Say' };
 
 /**
  * The ask itself — one component whether it floats over the agentling as a
@@ -9,6 +12,9 @@ import { ChannelLogo } from './ChannelLogo';
  * mock's sheet — a title, the typed sentence quoted so the bubble stands
  * alone, logo rows with a connect button each, and the state's note as the
  * foot. Same ask, same handlers; only the frame decides the dress.
+ *
+ * The send facts (D-087) render on whichever dress is up — including after a
+ * pick, because a chosen alternative still needs its recipient.
  */
 export function ChannelAskCard({
   ask,
@@ -18,6 +24,9 @@ export function ChannelAskCard({
   onOpenSettings,
   variant = 'bar',
   prompt,
+  questions = [],
+  answers = {},
+  onAnswer,
 }: {
   ask: ChannelAsk;
   /** The alternative the user chose on the fork, when they chose one. */
@@ -29,16 +38,57 @@ export function ChannelAskCard({
   variant?: 'bar' | 'bubble';
   /** The typed sentence, quoted in the bubble only — the bar sits under it. */
   prompt?: string;
+  /** The send facts from the plan (D-087), answered right on the card. */
+  questions?: ClarifyQuestion[];
+  answers?: Record<string, string>;
+  onAnswer?: (id: string, value: string) => void;
 }) {
+  const facts =
+    questions.length === 0 ? null : variant === 'bubble' ? (
+      <>
+        {questions.map((q) => (
+          <div key={q.id} className="ask-fact">
+            <label className="ask-fact-label" htmlFor={`ask-${q.id}`}>
+              {FACT_LABELS[q.id] ?? q.ask}
+            </label>
+            <input
+              id={`ask-${q.id}`}
+              className="ask-fact-input"
+              placeholder={q.hint ?? q.ask}
+              value={answers[q.id] ?? ''}
+              onChange={(e) => onAnswer?.(q.id, e.target.value)}
+            />
+          </div>
+        ))}
+      </>
+    ) : (
+      <>
+        {questions.map((q) => (
+          <div key={q.id} className="work-channel-opt">
+            <span className="work-channel-name">{FACT_LABELS[q.id] ?? q.ask}</span>
+            <input
+              className="work-q-text"
+              placeholder={q.hint ?? q.ask}
+              value={answers[q.id] ?? ''}
+              onChange={(e) => onAnswer?.(q.id, e.target.value)}
+            />
+          </div>
+        ))}
+      </>
+    );
+
   if (picked) {
     return (
-      <p className="work-channel-note">
-        Sends via {ask.options.find((o) => o.channel === picked)?.label ?? picked} instead — every
-        message waits for your review.{' '}
-        <button type="button" className="work-link" onClick={onUndo}>
-          undo
-        </button>
-      </p>
+      <>
+        <p className="work-channel-note">
+          Sends via {ask.options.find((o) => o.channel === picked)?.label ?? picked} instead — every
+          message waits for your review.{' '}
+          <button type="button" className="work-link" onClick={onUndo}>
+            undo
+          </button>
+        </p>
+        {facts}
+      </>
     );
   }
   if (variant === 'bubble') {
@@ -69,6 +119,7 @@ export function ChannelAskCard({
             )}
           </div>
         ))}
+        {facts}
         <p className="ask-foot">{ask.note}</p>
       </>
     );
@@ -92,6 +143,7 @@ export function ChannelAskCard({
           )}
         </div>
       ))}
+      {facts}
     </>
   );
 }

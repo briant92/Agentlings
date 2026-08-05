@@ -65,6 +65,8 @@ export function WorkBar({
    *  in-bar card carries it instead (D-084's fallback). */
   const [bubbleUp, setBubbleUp] = useState(false);
   const onAnchored = useCallback((anchored: boolean) => setBubbleUp(anchored), []);
+  /** First Start press on a doomed queue arms the honest relabel (D-087). */
+  const [armed, setArmed] = useState(false);
   /** Answers by question id. Empty is always a valid state — Start never waits. */
   const [answers, setAnswers] = useState<Record<string, string>>({});
   /** Files dropped on the box, read once and sent with the job that uses them. */
@@ -95,11 +97,49 @@ export function WorkBar({
           setPlan(next);
           // A pick belongs to the card it was made on; a new plan is a new card.
           setChannel(null);
+          setArmed(false);
         })
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [text, levelId]);
+
+  // An address already in the sentence answers "who" — prefill, never overwrite.
+  useEffect(() => {
+    if (!plan?.questions.some((q) => q.id === 'send-to')) return;
+    const addr = text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/)?.[0];
+    if (addr) setAnswers((prev) => (prev['send-to']?.trim() ? prev : { ...prev, 'send-to': addr }));
+  }, [plan, text]);
+
+  /** The send facts live on the ask card whenever one is up (D-087). */
+  const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
+  const cardUp = !!plan?.channelAsk && plan.channelAsk.state !== 'ready';
+  const looseQuestions = plan?.questions.filter((q) => !(cardUp && q.id.startsWith('send-'))) ?? [];
+  const answerFact = (id: string, value: string) =>
+    setAnswers((prev) => ({ ...prev, [id]: value }));
+
+  /**
+   * What turns the first Start press into a warning instead of a queue: a run
+   * the desk already knows is doomed — no recipient, or nothing that can
+   * send. Recomputed each render, so fixing the reason turns Start back into
+   * Start, armed or not.
+   */
+  const arrest = (() => {
+    const ask = plan?.channelAsk;
+    if (!ask) return null;
+    const parts: string[] = [];
+    if (sendQuestions.some((q) => q.id === 'send-to') && !answers['send-to']?.trim())
+      parts.push('no recipient');
+    const effective = channel ?? ask.channel;
+    if (!effective) parts.push('a draft that sends nothing');
+    else {
+      const usable = channel
+        ? ask.options.find((o) => o.channel === channel)?.state === 'ready'
+        : ask.state === 'ready';
+      if (!usable) parts.push('you connect at review');
+    }
+    return parts.length ? parts.join(' · ') : null;
+  })();
 
   const queue = async (folder?: string) => {
     setBusy(true);
@@ -137,8 +177,18 @@ export function WorkBar({
     e.preventDefault();
     if (!text.trim()) return;
     // Ask for the project folder once, then never again for this level.
-    if (plan?.needsRepo) setAskingRepo(true);
-    else void queue();
+    if (plan?.needsRepo) {
+      setAskingRepo(true);
+      return;
+    }
+    // A doomed queue costs one extra press, with the reason on the button —
+    // never a modal, and Start stays one press whenever the run can land
+    // (D-087, the repo ask's twin).
+    if (arrest && !armed) {
+      setArmed(true);
+      return;
+    }
+    void queue();
   };
 
   const openRepo = () => {
@@ -216,7 +266,7 @@ export function WorkBar({
           📎
         </label>
         <button type="submit" disabled={!text.trim() || busy}>
-          Start
+          {armed && arrest ? `Queue anyway — ${arrest}` : 'Start'}
         </button>
       </form>
 
@@ -287,7 +337,7 @@ export function WorkBar({
               anchorFor={anchorFor}
               onAnchored={onAnchored}
             >
-              <div className="work-channel">
+              <div className={armed && arrest ? 'work-channel arrested' : 'work-channel'}>
                 <ChannelAskCard
                   ask={plan.channelAsk}
                   picked={channel}
@@ -296,27 +346,33 @@ export function WorkBar({
                   onOpenSettings={onOpenSettings}
                   variant="bubble"
                   prompt={text.trim()}
+                  questions={sendQuestions}
+                  answers={answers}
+                  onAnswer={answerFact}
                 />
               </div>
             </AskBubble>
           )}
           {!(plan.agentling && bubbleUp) && (
-            <div className="work-channel">
+            <div className={armed && arrest ? 'work-channel arrested' : 'work-channel'}>
               <ChannelAskCard
                 ask={plan.channelAsk}
                 picked={channel}
                 onPick={setChannel}
                 onUndo={() => setChannel(null)}
                 onOpenSettings={onOpenSettings}
+                questions={sendQuestions}
+                answers={answers}
+                onAnswer={answerFact}
               />
             </div>
           )}
         </>
       )}
 
-      {plan && !askingRepo && plan.questions.length > 0 && (
+      {plan && !askingRepo && looseQuestions.length > 0 && (
         <div className="work-ask">
-          {plan.questions.map((q) => (
+          {looseQuestions.map((q) => (
             <div key={q.id} className="work-q">
               <span className="work-q-ask">
                 {q.ask}

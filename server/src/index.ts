@@ -719,7 +719,13 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   return c.json({
     ...draft,
     quote,
-    questions: questionsFor(text, { hasRepo: !!rt.meta.repoPath, tier: quote.tier }),
+    // A detected send asks its facts even when the ask fell to a fork — the
+    // asked name stands in for the channel so the hint has something to say.
+    questions: questionsFor(text, {
+      hasRepo: !!rt.meta.repoPath,
+      tier: quote.tier,
+      channel: channelAsk?.channel ?? channelAsk?.asked,
+    }),
     ...(channelAsk ? { channelAsk } : {}),
   });
 });
@@ -836,7 +842,14 @@ app.post('/api/levels/:lid/work', async (c) => {
       // was actually shown.
       clarifications: clarificationLines(
         text,
-        { hasRepo: !!rt.meta.repoPath, tier: quote.tier },
+        // The same channel context the plan showed, or the send answers would
+        // be dropped by the recompute: the settled channel when one rides,
+        // else the detected ask's name (a draft still asked its facts).
+        {
+          hasRepo: !!rt.meta.repoPath,
+          tier: quote.tier,
+          channel: channel ?? channelAsk?.asked,
+        },
         body.answers,
       ),
       attachments,
@@ -942,6 +955,10 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
         previous.id,
       ),
       continues: previous.id,
+      // The answer continues the send it answers for: without this the reply
+      // session never hears the outbox contract and composes nothing sendable
+      // (D-087) — the brief is derived from job.channel at run time.
+      channel: previous.channel,
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

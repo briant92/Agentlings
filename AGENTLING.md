@@ -1291,7 +1291,10 @@ list per channel (D-077; SPEC M5.11 has the slices):
       detects a send (verb + channel word, never less), the ask-card offers
       what the catalog can honestly offer, and a job that carries a channel
       is *told* the OUTBOX.json contract in its brief — D-031's rule,
-      closed by D-079
+      closed by D-079. The desk also asks the send's two facts (recipient,
+      gist) on the card, Start arrests a knowably doomed queue for one
+      extra press, and a failed run's question carries a reply box that
+      continues the same job, channel and all (D-087)
 - [x] **Send mail** — the Google connection is live: Connect button,
       loopback OAuth against the user's own client, one consent across
       Gmail, Calendar and Contacts, and a gmail channel that sends approved

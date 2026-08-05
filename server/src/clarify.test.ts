@@ -34,6 +34,68 @@ describe('questionsFor: when it stays quiet', () => {
   });
 });
 
+describe('questionsFor: a send job asks its two facts first', () => {
+  const SEND = { hasRepo: false, tier: 'session' as const, channel: 'gmail' };
+
+  it('asks who and what, ahead of everything else', () => {
+    expect(ids('I need to send an email to a friend', SEND)).toEqual(['send-to', 'send-say']);
+  });
+
+  it('never asks without a channel — the same sentence stays as it was', () => {
+    expect(ids('I need to send an email to a friend', NO_REPO)).not.toContain('send-to');
+  });
+
+  it('hints per channel, and neutrally for a fork whose channel is unsettled', () => {
+    const hintFor = (channel: string) =>
+      questionsFor('send the reminder', { hasRepo: false, tier: 'session', channel }).find(
+        (q) => q.id === 'send-to',
+      )?.hint;
+    expect(hintFor('gmail')).toContain('email address');
+    expect(hintFor('telegram')).toContain('chat id');
+    expect(hintFor('whatsapp')).toContain('no run may invent one');
+  });
+
+  it('both facts are free text', () => {
+    for (const q of questionsFor('send the reminder', SEND)) {
+      expect(q.freeText).toBe(true);
+      expect(q.options).toEqual([]);
+    }
+  });
+
+  it('the three-question cap holds, send facts first', () => {
+    const got = ids('send everything about the launch', SEND);
+    expect(got.length).toBeLessThanOrEqual(3);
+    expect(got.slice(0, 2)).toEqual(['send-to', 'send-say']);
+  });
+
+  it('stays quiet on free tiers like every other question', () => {
+    expect(questionsFor('send the reminder', { hasRepo: false, tier: 'tool', channel: 'gmail' })).toEqual([]);
+  });
+});
+
+describe('clarificationLines: send answers ride only with the channel context', () => {
+  it('forwards the two facts when the context carries the channel', () => {
+    const lines = clarificationLines(
+      'I need to send an email to a friend',
+      { hasRepo: false, tier: 'session', channel: 'gmail' },
+      { 'send-to': 'Ana <ana@gmail.com>', 'send-say': 'happy birthday from me' },
+    );
+    expect(lines).toEqual([
+      'Who should this go to? Ana <ana@gmail.com>',
+      'What should it say, roughly? happy birthday from me',
+    ]);
+  });
+
+  it('drops them without it — an answer the user was never asked for does not ride', () => {
+    const lines = clarificationLines(
+      'I need to send an email to a friend',
+      { hasRepo: false, tier: 'session' },
+      { 'send-to': 'ana@gmail.com' },
+    );
+    expect(lines).toEqual([]);
+  });
+});
+
 describe('questionsFor: the dangling subject', () => {
   it('asks what a bare pronoun refers to', () => {
     expect(ids('fix it')).toContain('subject');

@@ -129,6 +129,18 @@ runs measured instead:
 
 Wave 2 spend: **$4.13, all delivered, all charged, nothing absorbed.**
 
+**The leashed pair (runs 4, 2026-08-05) put the first real leashed points on
+the board and closed F3's first loop.** Both leashed runs were cut at the
+5-turn wall holding their deliverables — the jobs' matured standard needs 5–7
+calls and the leash allows ~4 — so both filed failed, charged $0, absorbed
+(30.7c and 36.2c). The F3 verdict at n=2: **the leash trims spend a further
+14–24% on top of the matured method's −47/−57%, at the price of reliability**
+— the tier's historical 21-failed-vs-8 record reproducing, now with D-063
+making the cut runs deliver anyway. And the pair surfaced F7: a cut run
+cannot revise `completions`/`completedInTurns` (D-068, deliberate), so these
+recipes stay leash-eligible forever and every future repeat loops
+leash → cut → deliver → absorb. Free for the user, unbounded for the app.
+
 ### Wave 3 — L2 multi-tool
 
 | ID | Prompt (verbatim) | Trains | App quote | My predicted actual |
@@ -191,6 +203,8 @@ server work, and a future compile candidate of the same family as
 | T3·1 | 2026-08-05 | dde3c87b | 46c | 30c | **60.7c** | 60.7c | 7 | done | 85s. Totals verified independently to 4 decimals; "category" ambiguity handled by stating the choice and totalling all three readings. 2× my guess with a *small* (5.9KB) attachment — which isolates the real driver: **this level's standing context (4 connections' tool definitions + knowledge + library brief) floors every call at ~7–8c**, while the class rate pooling cheaper hq rows priced the quote. D-067's rate residual, showing up per level |
 | T3·2 | 2026-08-05 | 5fa37b98 | 50c | 23c | **$1.11** | $1.11 | 18 | done | **method-as-ratchet**: run 1's banked standard (state the interpretation, total every reading) executed in full — 275 live formulas, 5 grouping blocks, raw-XML verification. Better artifact, 2× the cost |
 | T3·3 | 2026-08-05 | 87558372 | $1.11 keyed | 19c | **47.5c** | 47.5c | 7 | done | the matured method now *includes* the efficient path. completedInTurns 19 → 8: leash-eligible for run 4 |
+| T2·4 | 2026-08-05 | f843f9c3 | 57c oneshot | 30c | 30.7c | **$0** | 5 | partial→promoted | **first live one-shot since the gates** — cut at 5 turns (needed ~6), delivered SUMMARY.docx anyway (D-063), absorbed. Spend −14% vs the hint baseline |
+| T3·4 | 2026-08-05 | 7f23d9f5 | 57c oneshot | 38c | 36.2c | **$0** | 6 | partial | cut at 5, workbook + build.mjs delivered, absorbed. Spend −24% vs hint. A cut run cannot revise the record, so the leash stays armed → see F7 |
 | T4·1 | | | 46c | 22c | | | | | |
 | T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
 | T6·1 | | | 46c | 20c | | | | | name `web` only |

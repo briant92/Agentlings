@@ -47,6 +47,18 @@ substance lives in `DECISIONS.md` and this file can go.
       tier table carry 17.9c/39.9c over "106 jobs"; live is 17.9c/49.0c over
       115. The docs' own rule (regenerate, don't trust prose) covers it; apply
       the mechanical resync when next in those files.
+- [ ] **F7 — The leash cannot un-learn** *(added 2026-08-05, from Wave 2's
+      leashed pair)*. T2·4 and T3·4 both leashed, both cut at 5 turns holding
+      their deliverables (their matured standard needs 5–7 calls), both
+      charged $0 and absorbed — and a cut run cannot revise `completions` or
+      `completedInTurns` (D-068, deliberately), so both recipes stay
+      leash-eligible and every future repeat loops leash → cut → deliver →
+      absorb: free for the user, unbounded absorption for the app. Decision
+      direction, not code: a *leashed* run cut at the wall has proved need >
+      leash, and its `toolCalls` is a lower bound — letting that raise
+      `completedInTurns` would retire the leash for jobs it demonstrably does
+      not fit. Reopens D-068's counter semantics; wants its own D-entry
+      before any counter moves.
 - [ ] **Next step — a second real job through training-ground.** Everything
       learned so far is one sentence deep. The leash bound, `mean × 2`, method
       generality, clarify-saves-turns and F3/F4 above are all blocked on real

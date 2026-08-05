@@ -281,8 +281,13 @@ export function WorldCanvas({
           app.destroy(true);
           return;
         }
-        // Sizing is pure CSS: the canvas keeps its 1000×320 attributes and
-        // stretches to the frame's width, aspect held by the browser.
+        // Sizing is presentation, pinned inline at the source: a stylesheet
+        // rule alone lost once already, to the stale style="width:1000px" a
+        // hot update left behind from the code this replaced — and Pixi's
+        // autoDensity writes the same pin when enabled. The attributes stay
+        // 1000×320, so the browser holds the aspect.
+        app.canvas.style.width = '100%';
+        app.canvas.style.height = 'auto';
         host.appendChild(app.canvas);
 
         // Art is data: prefer the spritesheet, fall back to what is built in.

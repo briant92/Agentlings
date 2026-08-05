@@ -5,6 +5,7 @@ import type {
   LevelProductivity,
   MergePreview,
   MergeProposal,
+  SendApprovalInfo,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { Backoffice } from './Backoffice';
@@ -81,11 +82,23 @@ export function CrewPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Jobs allowed to send without review, and the ones one offer away (D-082). */
+  const [approvals, setApprovals] = useState<SendApprovalInfo[]>([]);
 
   const refresh = useCallback(async () => {
     setCrew(await api<CrewMember[]>(lvl(levelId, '/crew')));
     setProposals(await api<MergeProposal[]>(lvl(levelId, '/merge/proposals')));
+    setApprovals(await api<SendApprovalInfo[]>(lvl(levelId, '/approvals')).catch(() => []));
   }, [levelId]);
+
+  const setAutoSend = async (key: string, auto: boolean) => {
+    try {
+      await api(lvl(levelId, '/approvals'), postJson({ key, auto }));
+      setApprovals(await api<SendApprovalInfo[]>(lvl(levelId, '/approvals')));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   useEffect(() => {
     void refresh();
@@ -219,6 +232,35 @@ export function CrewPanel({
         </div>
 
         <div className="m-body">
+          {tab === 'backoffice' && approvals.length > 0 && (
+            <div className="bo-standing">
+              <div className="sect">standing approvals — jobs allowed to send without review</div>
+              {approvals.map((a) => (
+                <div key={a.key} className="bo-standing-row">
+                  <span className="bo-standing-what">
+                    {a.channel} → {a.recipients.join(', ')}
+                    {a.template ? ` · template ${a.template}` : ''}
+                  </span>
+                  {a.auto ? (
+                    <>
+                      <span className="bo-standing-on">auto-send on</span>
+                      <button className="work-link" onClick={() => void setAutoSend(a.key, false)}>
+                        turn it off
+                      </button>
+                    </>
+                  ) : (
+                    <span className="dim">
+                      {a.approvals} of 3 unchanged approvals
+                      {a.eligible ? ' — the offer waits at the next review' : ''}
+                    </span>
+                  )}
+                </div>
+              ))}
+              <p className="dim bo-standing-note">
+                Any new recipient, template or channel drops a job back to review on its own.
+              </p>
+            </div>
+          )}
           {tab === 'backoffice' && (
             <Backoffice
               jobs={jobs}

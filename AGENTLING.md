@@ -37,7 +37,7 @@ Written 2026-08-01 against `e5c80c9`, last re-read against `894429f`
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash. It is told how many it has, and asked to deliver before they run out (D-063) |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
-| **Who it answers to** | You, at review. Nothing it produces reaches the real world until you promote it |
+| **Who it answers to** | You, at review. Nothing it produces reaches the real world until you promote it — or until a standing approval *you* earned and granted promotes a pure send job for you (D-082) |
 
 ---
 
@@ -967,6 +967,12 @@ step: `browser_click` on "Confirm order" happens the instant the model decides
 to, which is D-034's argument, untouched. Pausing a run to ask was the obvious
 mitigation and stays refused (D-030).
 
+One earned exception: a **standing approval** (D-082) promotes a pure send
+job without the review click — after three unchanged reviews, only if you
+granted it, locked to the recipient allowlist a human approved, and revocable
+in one click. It is review amortised, not review removed: any new recipient,
+template, channel, code change or extra file drops straight back to you.
+
 ### Personal data — Partial, and the gap is worth naming
 
 What is true today:
@@ -1151,6 +1157,7 @@ untouched until you press Approve.
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
 | `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |
 | `SEND_TIMEOUT_MS` | 15 s | `channels.ts` | One send call at approval |
+| `APPROVALS_FOR_AUTO` | 3 | `approvals.ts` | Unchanged reviews before auto-send may be offered (D-082) |
 
 ### Intake and files
 
@@ -1190,7 +1197,10 @@ without an API key.
 ## 14. What an agentling is not
 
 - **Not autonomous.** It takes one job, does it, and stops. There is no
-  standing instruction, no schedule, no self-started work.
+  schedule and no self-started work. The one standing instruction that
+  exists is a **standing approval** (D-082): after three unchanged reviews
+  of a send job you may grant auto-send, locked to the approved recipient
+  set — and even then the job runs only when you queue it.
 - **Not a pipeline.** Jobs are independent. Decomposition and pipelines are
   parked in M6.
 - **Not a chat.** A reply is a new job that carries the previous sandbox
@@ -1293,8 +1303,11 @@ list per channel (D-077; SPEC M5.11 has the slices):
       declared per-message rate or none (D-081)
 - [ ] **Slack** — the last of Tier 1 (D-077)
 - [ ] **Comment, open a PR** — GitHub write scopes as outbox entry types
-- [ ] **Standing approval (the leash)** — auto-send per job + recipients +
-      wording after N clean reviews; any change drops back to review (D-075)
+- [x] **Standing approval** — three unchanged reviews earn the offer;
+      auto-send is locked to the approved channel, recipients and template
+      (subset allowed, one stranger blocks it, any change resets the count
+      and revokes the grant), fires only on a pure send job through the
+      same gates as a manual approve, and is revocable in one click (D-082)
 - [ ] **Click, type, fill a form** — still refused in-session; no channel
       needs it, and reopening it is a D-034-sized decision, not a wiring task
 

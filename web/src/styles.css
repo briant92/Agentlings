@@ -1529,6 +1529,60 @@ button.danger:hover {
   margin-top: 3px;
 }
 
+/* The standing-approval offer and its backoffice list (D-082). */
+.rv-standing {
+  border: 1px solid #d27d2c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: rgba(210, 125, 44, 0.06);
+}
+.rv-standing-t {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0d8b8;
+}
+.rv-standing-b {
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+}
+.rv-standing-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bo-standing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.bo-standing-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.bo-standing-what {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bo-standing-on {
+  color: #d27d2c;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.bo-standing-note {
+  font-size: 11px;
+  margin: 0;
+}
+
 .hire-quote {
   font-size: 12px;
   line-height: 1.6;

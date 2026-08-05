@@ -113,7 +113,7 @@ export function outputNames(dir: string): string[] {
  * the close-out writes about the run. Everything else in a sandbox is the
  * thing the user actually asked for.
  */
-const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md']);
+export const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md']);
 
 /**
  * Whether the run made something, rather than merely reporting something.

@@ -23,6 +23,15 @@ import {
   SOCKET_LEVEL_GONE,
   TICK_MS,
 } from '@agentlings/shared';
+import {
+  approvalKey,
+  autoBlocker,
+  autoSendable,
+  describeApproval,
+  readApprovals,
+  recordApproval,
+  setAuto,
+} from './approvals';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { capabilityTokens, connectionsIn } from './capability';
 import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
@@ -94,7 +103,13 @@ import {
 import { MatchIndex, searchEntries, suggestSetup } from './match';
 import { absorptionNote, mergeLessons, proposeMerges } from './merge';
 import { MemoryStore } from './memory';
-import { contentTypeFor, describeOutputs, opensInBrowser, safeOutputPath } from './outputs';
+import {
+  contentTypeFor,
+  describeOutputs,
+  opensInBrowser,
+  outputNames,
+  safeOutputPath,
+} from './outputs';
 import { previewFile } from './preview';
 import { productivityOf } from './productivity';
 import { JobQueue } from './queue';
@@ -269,6 +284,9 @@ function makeLevel(dir: string): LevelRuntime {
       // Every job goes in the ledger, including the ones we absorb — the
       // difference between cost and price is only visible if both are kept.
       appendLedger(SANDBOX_ROOT, ledgerRow(job, meta.id, agentling.role, outcome, Date.now()));
+      // The one path that sends without review, gated hard (D-082). Fire and
+      // forget: a send must never block the finish bookkeeping around it.
+      void autoSendIfApproved(dir, queue, eventLog, meta.id, job);
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
       if (runtime) {
@@ -281,6 +299,92 @@ function makeLevel(dir: string): LevelRuntime {
   const rt: LevelRuntime = { meta, dir, queue, sim, eventLog, memory, roster };
   levels.set(meta.id, rt);
   return rt;
+}
+
+/**
+ * The one path that sends without a human in the moment (D-082). Everything
+ * about it is subtractive: it fires only on a clean finish whose whole
+ * deliverable is the outbox, only under a standing approval the user earned
+ * and then granted, and only to recipients inside that approval's allowlist.
+ * Any doubt — a refusal, a partial failure, anything else produced — leaves
+ * the job in review exactly as if no approval existed.
+ */
+async function autoSendIfApproved(
+  dir: string,
+  queue: JobQueue,
+  eventLog: EventLog,
+  levelId: string,
+  job: Job,
+): Promise<void> {
+  try {
+    if (autoBlocker(job, outputNames(queue.sandboxDir(job.id))) !== null) return;
+    const outbox = job.outbox!;
+    const approval = readApprovals(dir).find((a) => a.key === approvalKey(job.prompt));
+    if (!autoSendable(approval, outbox)) return;
+    const refusal = outboxRefusal(
+      outbox,
+      readConnections(CONNECTIONS_FILE),
+      readSettings(SANDBOX_ROOT),
+      process.env,
+    );
+    if (refusal) {
+      eventLog.emit({
+        type: 'progress',
+        jobId: job.id,
+        title: job.title,
+        detail: `standing approval could not send — ${refusal}`,
+      });
+      return;
+    }
+    const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], { env: process.env });
+    const at = Date.now();
+    const usd = sendPriceUsd(outbox.channel, process.env);
+    appendSends(SANDBOX_ROOT, [
+      ...run.sentTo.map((to) => ({
+        at,
+        levelId,
+        jobId: job.id,
+        channel: outbox.channel,
+        to,
+        ok: true,
+        ...(usd ? { usd } : {}),
+      })),
+      ...run.failed.map((f) => ({
+        at,
+        levelId,
+        jobId: job.id,
+        channel: outbox.channel,
+        to: f.to,
+        ok: false,
+        reason: f.reason,
+      })),
+    ]);
+    queue.recordOutboxSends(job.id, run);
+    if (run.failed.length > 0) {
+      eventLog.emit({
+        type: 'progress',
+        jobId: job.id,
+        title: job.title,
+        detail: `standing approval sent ${run.sentTo.length} of ${run.sentTo.length + run.failed.length} — the rest waits for your review`,
+      });
+      return;
+    }
+    queue.resolve(job.id, 'promote');
+    recordApproval(dir, job.prompt, outbox, at);
+    eventLog.emit({
+      type: 'resolved',
+      jobId: job.id,
+      title: job.title,
+      detail: `auto-sent ${run.sentTo.length} via ${outbox.channel} — standing approval`,
+    });
+  } catch (err) {
+    eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `standing approval failed: ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
 }
 
 migrateLegacy(SANDBOX_ROOT);
@@ -1101,6 +1205,13 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
 
   try {
     const job = rt.queue.resolve(pending.id, body.action);
+    // A reviewed, fully sent outbox is one more unchanged approval — the
+    // count a standing approval is earned by (D-082). Recorded only on a
+    // promote that got this far: every message either sent now or before.
+    const approval =
+      body.action === 'promote' && pending.outbox
+        ? describeApproval(recordApproval(rt.dir, pending.prompt, pending.outbox, Date.now()))
+        : null;
     rt.eventLog.emit({
       type: 'resolved',
       jobId: job.id,
@@ -1112,10 +1223,29 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
             : 'promoted'
           : 'discarded',
     });
-    return c.json(job);
+    return c.json({ ...job, ...(approval ? { sendApproval: approval } : {}) });
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
   }
+});
+
+/** Standing approvals for this level — the list, and the switch (D-082). */
+app.get('/api/levels/:lid/approvals', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json(readApprovals(rt.dir).map(describeApproval));
+});
+
+app.post('/api/levels/:lid/approvals', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ key?: string; auto?: boolean }>();
+  if (typeof body.key !== 'string' || typeof body.auto !== 'boolean') {
+    return c.json({ error: 'key and auto are required' }, 400);
+  }
+  const { approval, error } = setAuto(rt.dir, body.key, body.auto, Date.now());
+  if (!approval) return c.json({ error: error ?? 'could not change it' }, 400);
+  return c.json(describeApproval(approval));
 });
 
 app.get('/api/levels/:lid/agentlings/:aid', (c) => {

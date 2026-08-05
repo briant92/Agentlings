@@ -91,6 +91,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-079 — 2026-08-05 — The desk notices a send, and asks at the only moment asking is free](#d-079--2026-08-05--the-desk-notices-a-send-and-asks-at-the-only-moment-asking-is-free)
 - [D-080 — 2026-08-05 — Google connects by loopback, against the user's own client](#d-080--2026-08-05--google-connects-by-loopback-against-the-users-own-client)
 - [D-081 — 2026-08-05 — WhatsApp Business sends templates, and the audit records a declared price or none](#d-081--2026-08-05--whatsapp-business-sends-templates-and-the-audit-records-a-declared-price-or-none)
+- [D-082 — 2026-08-05 — Standing approval: earned in review, scoped to an allowlist, and not called a leash](#d-082--2026-08-05--standing-approval-earned-in-review-scoped-to-an-allowlist-and-not-called-a-leash)
 
 ## By theme
 
@@ -195,9 +196,11 @@ entry updates one file rather than two.
   contract — with the parked-job status refused a second time: D-079; and
   the first Connect button — Google by loopback OAuth against the user's own
   client, the gmail channel that sends as them, and the 7-day trap given a
-  sentence at both ends: D-080; and WhatsApp Business as templates with the
+  sentence at both ends: D-080; WhatsApp Business as templates with the
   drawer learning to validate a secret *set* whole, and the audit taking a
-  declared price or none: D-081
+  declared price or none: D-081; and standing approval — earned by unchanged
+  reviews, locked to a recipient allowlist, revoked by any change, and
+  deliberately not called a leash: D-082
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4517,3 +4520,60 @@ server: the whatsapp fork's three alternatives all show live states now,
 answered "Meta rejected the token" off a real graph.facebook.com call, a
 partial paste was refused before any call was made, and `.env` gained
 nothing from either.
+
+## D-082 — 2026-08-05 — Standing approval: earned in review, scoped to an allowlist, and not called a leash
+
+The last slice of M5.11, building the design D-075 recorded. A recurring
+send job approved unchanged three times may be offered standing approval;
+granted, its next clean run sends without waiting. The name is deliberate:
+this repo already has a leash — the recipe's five turns — and two
+mechanisms sharing one word is how two notions get collapsed (D-030). In
+code and UI this is a **standing approval**, and `send-approvals.json`
+sits beside the level's other records.
+
+**Identity, count, and what resets it.** The job is its prompt —
+`normalise(prompt)`, the same identity recipes and keyed quotes use
+(D-072) — and the signature is channel + sorted recipient set + template
+name where one exists. An unchanged manual approve increments the count;
+*any* signature change starts it over at one **and revokes any standing
+grant**, because what was trusted is not what is now being sent. Granting
+is refused until earned, with the count in the refusal sentence.
+
+**The allowlist is the security boundary, and subset is the rule.**
+Auto-send reaches recipients inside the approved set and nobody else —
+fewer is fine, one stranger blocks the whole send. This is D-075's
+injection answer, built: nothing a session *read* can add a recipient a
+human never approved once. Bodies are deliberately not locked, and the
+deviation from the sketch's "wording" is recorded here on purpose: a
+weekly reminder's words change by design; the recipient set is what
+exfiltration needs, while a wrong body is quality, not reach; every sent
+body remains on the promoted job's card and in `sends.jsonl`; and
+revocation is one click in crew → backoffice.
+
+**Auto fires subtractively.** Only a clean `done`; only when the outbox
+parsed; only when the run changed no code and produced nothing beyond its
+paperwork and the outbox itself — a send job that also wrote a report is
+work somebody has to look at. Then the same gates as a manual approve
+(`outboxRefusal`, verbatim — a switched-off channel refuses), the same
+idempotent per-recipient replay, the same audit rows with the same
+declared price, the same promote. A refusal or a partial failure leaves
+the job in review exactly as if no approval existed, with a terminal line
+saying why.
+
+**Where it lives.** The offer appears after the approve that earned it —
+the job is already promoted; the offer is the review's last step, never a
+gate — with the whole recipient list on the card, because the list is the
+thing being trusted. Granted approvals are listed in crew → backoffice
+with one-click revocation; auto-sent runs land in the inbox as promoted
+work and announce themselves in the terminal ("auto-sent 3 via telegram —
+standing approval").
+
+**Evidence.** 19 new tests: the count surviving recipient reordering; the
+reset-and-revoke on any change; unearned grants refused with the count;
+the subset rule and the one-stranger block; no grant → no send at any
+count; every autoBlocker guard (partial, compile, no outbox, parse error,
+changed code, an extra file); torn-file tolerance. 1011 server and 93 web
+tests green, typecheck clean; the approvals routes probed live with their
+refusal sentences. The full circle — three real approvals, the offer, a
+granted auto-send — needs three real runs of a real recurring job, which
+is the training ground's next errand rather than this slice's claim.

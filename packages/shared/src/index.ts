@@ -289,6 +289,22 @@ export const MAX_OUTBOX_MESSAGES = 20;
 export const MAX_OUTBOX_TO_CHARS = 200;
 export const MAX_OUTBOX_BODY_CHARS = 2000;
 
+/**
+ * Standing approval for one recurring send job, as the UI sees it (D-082).
+ * `eligible` means the offer may be shown: enough unchanged approvals and
+ * not yet granted. The recipient list is the allowlist auto-send is locked
+ * to — display it whole, because it is the thing being trusted.
+ */
+export interface SendApprovalInfo {
+  key: string;
+  channel: string;
+  recipients: string[];
+  template?: string;
+  approvals: number;
+  auto: boolean;
+  eligible: boolean;
+}
+
 /** One channel the ask-card offers, with its honest one-liner. */
 export interface ChannelOption {
   channel: string;

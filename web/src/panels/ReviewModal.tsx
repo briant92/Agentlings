@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DeliveryFile, Job } from '@agentlings/shared';
+import type { DeliveryFile, Job, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { FileViewer } from './FileViewer';
 
@@ -20,6 +20,13 @@ export function ReviewModal({
   // An Approve the server refused (a channel switched off, a recipient the
   // channel rejected) — shown here, with the job left reviewable (D-075).
   const [refusal, setRefusal] = useState<string | null>(null);
+  /**
+   * The standing-approval offer, when this approve earned it (D-082). The
+   * job is already promoted by the time this shows — the offer is the last
+   * step of the review, not a gate on it.
+   */
+  const [offer, setOffer] = useState<SendApprovalInfo | null>(null);
+  const [granting, setGranting] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -42,10 +49,34 @@ export function ReviewModal({
   const resolve = async (action: 'promote' | 'discard') => {
     setRefusal(null);
     try {
-      await api(lvl(levelId, `/jobs/${job.id}/resolve`), postJson({ action }));
+      const reply = await api<Job & { sendApproval?: SendApprovalInfo }>(
+        lvl(levelId, `/jobs/${job.id}/resolve`),
+        postJson({ action }),
+      );
+      if (action === 'promote' && reply.sendApproval?.eligible) {
+        setOffer(reply.sendApproval);
+        return;
+      }
       onClose();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const setAutoSend = async (auto: boolean) => {
+    if (!offer) return;
+    setGranting(true);
+    try {
+      const updated = await api<SendApprovalInfo>(
+        lvl(levelId, '/approvals'),
+        postJson({ key: offer.key, auto }),
+      );
+      if (auto) setOffer(updated);
+      else onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGranting(false);
     }
   };
 
@@ -114,12 +145,47 @@ export function ReviewModal({
           {files === null && <p className="dim">Loading…</p>}
           {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
           {refusal && <p className="error">{refusal}</p>}
+          {offer && !offer.auto && (
+            <div className="rv-standing">
+              <div className="rv-standing-t">
+                Sent, and that makes {offer.approvals} approvals without a change. Let this job
+                send itself?
+              </div>
+              <p className="rv-standing-b">
+                Auto-send stays locked to {offer.recipients.join(', ')} on {offer.channel}
+                {offer.template ? ` with the ${offer.template} template` : ''}. Anyone new, a
+                changed template or another channel always comes back to you — and every send
+                still lands in the inbox and the audit.
+              </p>
+              <div className="rv-standing-btns">
+                <button onClick={onClose}>Keep reviewing</button>
+                <button disabled={granting} onClick={() => void setAutoSend(true)}>
+                  {granting ? '…' : 'Auto-send from the next run'}
+                </button>
+              </div>
+            </div>
+          )}
+          {offer?.auto && (
+            <div className="rv-standing">
+              <div className="rv-standing-t">Auto-send is on for this job.</div>
+              <p className="rv-standing-b">
+                The next clean run sends to the approved recipients without waiting. Turn it off
+                any time in crew → backoffice, or right here.
+              </p>
+              <div className="rv-standing-btns">
+                <button disabled={granting} onClick={() => void setAutoSend(false)}>
+                  Turn it off
+                </button>
+                <button onClick={onClose}>Close</button>
+              </div>
+            </div>
+          )}
         </div>
         <div className="m-foot">
           {/* `partial` gets the same actions the terminal card offers it:
               without this, "See the changes" on the status that most needs
               reviewing opened a modal whose only button was Close. */}
-          {(job.status === 'done' || job.status === 'partial') && (
+          {!offer && (job.status === 'done' || job.status === 'partial') && (
             <>
               <button onClick={() => void resolve('promote')}>
                 {unsent.length > 0 ? `Approve & send ${unsent.length}` : 'Approve'}

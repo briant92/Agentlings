@@ -750,7 +750,7 @@ tried, measured and rejected is in `DECISIONS.md`:
     is why a passage read from a scan is marked as one. The last two were found
     by reading the panel's sentences back against the code, not by a test, a
     type, or a live run: all three were green. (D-061, D-062)
-  - **M5.11 — connections that send (in progress).** The batch is decided
+  - **M5.11 — connections that send (built).** The batch is decided
     (D-077): Tier 1 is Telegram, Google (Gmail + Calendar + Contacts on one
     consent), WhatsApp Business and Slack; Tier 2 adds nine more on the same
     two credential shapes; six apps are declined with the reason on the row,
@@ -812,8 +812,17 @@ tried, measured and rejected is in `DECISIONS.md`:
           pastes refuse before any call). Sends stamp the user's declared
           `WHATSAPP_USD_PER_MESSAGE` into `sends.jsonl`, or no price at all
           — never a guess (D-081).
-    - [ ] **The leash.** Standing approval per job + recipients + wording
-          after N clean reviews; any change drops back to review (D-075).
+    - [x] **Standing approval** (the sketch said "the leash"; renamed —
+          the recipe leash already owns that word, D-030/D-082). Three
+          unchanged reviews of a send job earn the offer; granting lets
+          the next clean run send itself, locked to the approved channel,
+          recipient set and template — subset allowed, one stranger blocks
+          the send, any signature change resets the count *and revokes the
+          grant*. Auto fires only on a pure send job (no code changes, no
+          extra files), through the same refusal gate, replay, audit and
+          promote as a manual approve, and announces itself in the
+          terminal. Offer at the earning review; list + one-click revoke
+          in crew → backoffice (D-082).
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

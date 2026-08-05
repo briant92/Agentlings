@@ -100,6 +100,35 @@ which no measurement has yet isolated from the method's. Three jobs give
 three paired points. Confound to note honestly: the method itself improves
 between runs (D-071 says one step then noise, so the pairing is fair).
 
+**Measured 2026-08-05 — the wave ran, and the leash never fired: every run 3
+was refused by D-068's credibility gate, correctly each time.** What the six
+runs measured instead:
+
+- **The method's value is job-shaped, not a rate.** Live-data gathering (T1):
+  worth ≤ 0 — 61.0 → 67.8 → 84.4c, the gathering happens fresh every run.
+  Transform jobs: worth −47% (T2, identical inputs) and −57% (T3, run 2→3).
+  F3's eventual answer will be conditional on job shape.
+- **Method-as-ratchet, quality-driven.** The close-out banks the *best* run's
+  standard and later runs pay to meet it: T3·2 cost 2× run 1 building live
+  formulas, five grouping blocks and an XML verification pass nobody asked
+  for — a better artifact at a higher price. Cost per job converges to the
+  quality ceiling, not the floor. Corollary worth a decision someday: the
+  5-turn leash is also the only cost-ceiling against quality creep, and the
+  ratchet pushes jobs out of its eligibility (T1: 12, T3 briefly 19).
+- **The gate ratchets both ways within one wave.** T2 6, T3 8 by wave end —
+  both now leash-eligible; a run 4 of each would put real leashed points on
+  F3's board (~35–50c each).
+- **D-072 keyed pricing went live**: run-3 quotes read "done this 1 time
+  before" off run 2's row; T1's ceiling tightened $2.00 → $1.36.
+- **D-073 live-verified**: 10 knowledge lines after 9 runs — the `known`
+  decline fired at least 3×, exact-dedup collapsed the repeated bare lines,
+  genuinely new lessons still banked.
+- **Predictions: 6 of 6 low, mean miss ~2.2×** — the level's ~5–8c per-call
+  context floor plus the unmodeled ratchet. The app's keyed quotes beat my
+  guesses on every repeat.
+
+Wave 2 spend: **$4.13, all delivered, all charged, nothing absorbed.**
+
 ### Wave 3 — L2 multi-tool
 
 | ID | Prompt (verbatim) | Trains | App quote | My predicted actual |
@@ -154,14 +183,14 @@ server work, and a future compile candidate of the same family as
 | Run | Date | Job id | Quoted | Predicted | Actual cost | Charged | Calls | Outcome | Note |
 |---|---|---|---|---|---|---|---|---|---|
 | T1·1 | 2026-08-05 | 44a7c682 | 46c | 40c | **61.0c** | 61.0c | 9 | done | 92s; 5 sources, figures cross-checked. Both guesses low: ~6.2c/call with 219k cache-read and all four connections' tool definitions riding — the app's 46c is a class mean over lighter jobs, mine under-weighted search tokens. Ceiling never close. One lesson line banked, no copies (D-073's first live outing) |
-| T1·2 | | | | 28c | | | | | hint, full cap |
-| T1·3 | | | | 24c | | | | | leash expected |
+| T1·2 | 2026-08-05 | b8a9a902 | 50c | 28c | **67.8c** | 67.8c | 11 | done | hint bought nothing — live-data gathering re-fetches every run (D-064's shape). First keyed T1 row. Close-out declined with `known` — D-073's sentinel live |
+| T1·3 | 2026-08-05 | 31d89544 | 68c keyed | 24c | **84.4c** | 84.4c | 20 | done | leash correctly refused (completedInTurns 12 > 10) — my "leash expected" was wrong, the gate was right. Cost *rose* run-over-run: the banked five-source standard makes each run more thorough |
 | T2·1 | 2026-08-05 | a4885b22 | 46c | 25c | **$1.50** | $1.50 | 21 | done | **6× my guess, and the miss is the finding**: I attached the repo's largest doc (AGENTLING.md, 74KB) against a prediction written for a modest one — 1.29M cache-read tokens rode 21 calls (~7.1c/call, 202s). First hard number for the "quote does not know attachments" gap; the $2.00 clamp absorbed it with 50c to spare. Deliverable good: headed one-pager via a generator script. **T2·2: attach a normal-sized document, and compare per-call, not totals** |
-| T2·2 | | | | 20c | | | | | hint expected; smaller attachment |
-| T2·3 | | | | 17c | | | | | leash expected |
+| T2·2 | 2026-08-05 | 5ec8c5cc | 50c | 20c | **66.9c** | 66.9c | 13 | done | 4.4KB attachment isolates the term: −$0.83 and −8 calls vs the 74KB run, same sentence |
+| T2·3 | 2026-08-05 | d89b4138 | 67c keyed | 17c | **35.5c** | 35.5c | 5 | done | **−47% on identical inputs** — the method a completing run wrote, D-069 replicated on a transform job. completedInTurns 14 → 6: leash-eligible for run 4 |
 | T3·1 | 2026-08-05 | dde3c87b | 46c | 30c | **60.7c** | 60.7c | 7 | done | 85s. Totals verified independently to 4 decimals; "category" ambiguity handled by stating the choice and totalling all three readings. 2× my guess with a *small* (5.9KB) attachment — which isolates the real driver: **this level's standing context (4 connections' tool definitions + knowledge + library brief) floors every call at ~7–8c**, while the class rate pooling cheaper hq rows priced the quote. D-067's rate residual, showing up per level |
-| T3·2 | | | | 23c | | | | | |
-| T3·3 | | | | 19c | | | | | leash expected |
+| T3·2 | 2026-08-05 | 5fa37b98 | 50c | 23c | **$1.11** | $1.11 | 18 | done | **method-as-ratchet**: run 1's banked standard (state the interpretation, total every reading) executed in full — 275 live formulas, 5 grouping blocks, raw-XML verification. Better artifact, 2× the cost |
+| T3·3 | 2026-08-05 | 87558372 | $1.11 keyed | 19c | **47.5c** | 47.5c | 7 | done | the matured method now *includes* the efficient path. completedInTurns 19 → 8: leash-eligible for run 4 |
 | T4·1 | | | 46c | 22c | | | | | |
 | T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
 | T6·1 | | | 46c | 20c | | | | | name `web` only |

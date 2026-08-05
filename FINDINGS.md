@@ -8,6 +8,13 @@ review conversation and, once acted on, in `DECISIONS.md`.
 This file is a working list, not a record: when every row is settled, the
 substance lives in `DECISIONS.md` and this file can go.
 
+**State at last session (2026-08-05, pushed `9b66959`):** training waves 1–2
+ran — 15 runs, 15 deliveries, $8.83 spent — and the actuals plus the wave
+findings live in `TRAINING.md`'s prediction ledger and wave-2 "Measured"
+block. Read that file before queueing anything; prompts repeat **verbatim**
+(the recipe key is the prompt) and runs go **sequentially** while F5 is open.
+The dev server was left running from that session.
+
 - [x] **F1 — The learning loop has no dedup.** A recurring job banks the same
       lesson every run: 11 near-identical lines in training-ground's
       `KNOWLEDGE.md`, 8 in Pip's lessons, all one fact. The cost is slot
@@ -24,25 +31,30 @@ substance lives in `DECISIONS.md` and this file can go.
       The brief rides on `Job.brief` (D-030's clarifications rule), the router
       refuses every shortcut to mid-flight work, a continuation credits usage
       only, and the one junk recipe was dropped by identification.
-- [ ] **F3 — The one-shot tier is dormant and the headline is measuring
-      populations, not the mechanism.** 31 recipes, 1 leash-eligible; the
-      report's step-1 figure moves with the mix (50→63% across recomputations)
-      while D-069/D-071 showed the method alone is worth ~43% with no leash.
-      When recipes re-earn completions, run the paired measurement: leash vs
-      hint-at-full-cap on the same job. Blocked on traffic.
+- [x] **F3 — The one-shot tier is dormant and the headline is measuring
+      populations, not the mechanism.** **Measured 2026-08-05** (TRAINING.md
+      wave 2 + the leashed pair): the method's value is job-shaped — ≤0 on
+      live-data gathering (T1 rose 61→84c), −47%/−57% on transforms — and the
+      leash's own margin is a further 14–24% of *spend*, bought at reliability:
+      T2·4/T3·4 were cut at the wall, delivered anyway, charged $0. T4·3 then
+      became the first leashed run ever to complete (3 calls, 23.3c): the tier
+      works precisely where jobs fit ≤4 calls. The old ~55% headline was mostly
+      the method. Residue moved to F7; refinement is just more pairs.
 - [ ] **F4 — First real repeat demand points at the blocked tool tier.**
-      training-ground's candidate counter has fired 3× on a job that can never
-      compile under the plain-node contract (needs search/web at run time;
-      deliverable is fresh data). The method already split into a compilable
-      formatter (generator script + DATA object) and an inherently paid gather.
-      Decision to take *when a second recurring job shows the same shape*:
-      tools get the gated `/internal/*` doors, and/or the document libraries.
-      Do not build on n=1.
+      *Progress 2026-08-05:* T6 ("summarise expenses.csv into SUMMARY.md") ran
+      once, delivered, and banked a recipe whose surface is verified
+      `conn:web` alone — compile-clean for D-044. **Next: two more T6 runs
+      (fresh expenses CSVs, name only `web`), then the promote request = the
+      first legitimately-earned tool.** Counter-case queued behind it: a third
+      T4 delivery makes a candidate whose compile D-044 should visibly refuse
+      (method needs the live code host). The doors/libraries decision still
+      waits for that evidence; do not build first.
 - [ ] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
       reads recipes at run start and writes at end; two jobs on different
       stations lose one another's counts, and the counters now gate leashes and
       compiles. Cheap direction: re-read and merge before write. Becomes real
-      the day two stations run at once.
+      the day two stations run at once — all 15 training runs were queued
+      sequentially to avoid it; keep doing that until fixed.
 - [ ] **F6 — Doc figures have drifted again.** AGENTLING.md §7/§8 and SPEC's
       tier table carry 17.9c/39.9c over "106 jobs"; live is 17.9c/49.0c over
       115. The docs' own rule (regenerate, don't trust prose) covers it; apply
@@ -59,10 +71,26 @@ substance lives in `DECISIONS.md` and this file can go.
       `completedInTurns` would retire the leash for jobs it demonstrably does
       not fit. Reopens D-068's counter semantics; wants its own D-entry
       before any counter moves.
-- [ ] **Next step — a second real job through training-ground.** Everything
-      learned so far is one sentence deep. The leash bound, `mean × 2`, method
-      generality, clarify-saves-turns and F3/F4 above are all blocked on real
-      traffic, not thought.
+- [x] **Next step — a second real job through training-ground.** Done and then
+      some: waves 1–2 of `TRAINING.md` are five distinct real jobs across 15
+      runs. Superseded by the board below.
+
+## The board — pick up here
+
+1. **T6 ×2 then promote** (F4's milestone): fresh expenses CSVs, verbatim
+   prompt, **name only `web`**; after the third delivery, request the compile
+   and review `run.mjs` for D-045's cache test before promoting.
+2. **F7's decision entry**: whether a leashed run cut at the wall may raise
+   `completedInTurns`. A counters change — take it through a D-entry first.
+3. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
+   promote and watch D-044 refuse with the reason. The gate's negative case,
+   live.
+4. **T5 in September**, on its real cadence — not before.
+5. **Wave 5** needs Brian to pick a real documents folder for the store.
+6. Two measured gaps now sized for whoever reopens them: the quote is blind to
+   attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
+   per-call floor here vs the pooled class rate) — both have ledger rows
+   behind them now, neither is worth code before more traffic.
 
 Deliberately **not** on the list, so nobody reopens them from here: the quote
 ceiling pinned at the $2.00 clamp (measured, both fixes rejected — D-072), the

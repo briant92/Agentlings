@@ -40,7 +40,10 @@ const CHANNEL_WORDS: [RegExp, string][] = [
   // entry wins — "on whatsapp business" is a different, wired ask.
   [/\bwhats\s?app business\b/, 'whatsapp-business'],
   [/\bwhats\s?app\b/, 'whatsapp'],
-  [/\b(gmail|e-?mail)\b/, 'gmail'],
+  // Bare "mail" claims only as the channel word, never as a verb — in both
+  // lists one word would satisfy both gates, and a mere mention ("summarise
+  // the mail export") would fire the card.
+  [/\b(g|e-?)?mail\b/, 'gmail'],
   [/\bslack\b/, 'slack'],
   [/\bsms\b/, 'sms'],
   [/\bdiscord\b/, 'discord'],

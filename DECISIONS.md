@@ -94,6 +94,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-082 — 2026-08-05 — Standing approval: earned in review, scoped to an allowlist, and not called a leash](#d-082--2026-08-05--standing-approval-earned-in-review-scoped-to-an-allowlist-and-not-called-a-leash)
 - [D-083 — 2026-08-05 — Ambience is scene data, and the stalactites the dice never rolled](#d-083--2026-08-05--ambience-is-scene-data-and-the-stalactites-the-dice-never-rolled)
 - [D-084 — 2026-08-05 — The ask floats over the agentling, and falls back to the bar](#d-084--2026-08-05--the-ask-floats-over-the-agentling-and-falls-back-to-the-bar)
+- [D-085 — 2026-08-05 — Bare "mail" claims as a channel word, and stays out of the verb list](#d-085--2026-08-05--bare-mail-claims-as-a-channel-word-and-stays-out-of-the-verb-list)
 
 ## By theme
 
@@ -206,7 +207,9 @@ entry updates one file rather than two.
   reviews, locked to a recipient allowlist, revoked by any change, and
   deliberately not called a leash: D-082; and the ask finally floating over
   the agentling as the mock drew it, with the bar card as the fallback that
-  makes the diorama optional: D-084
+  makes the diorama optional: D-084; and D-085, where the desk's first live
+  miss ("send a mail") grew the channel vocabulary by one noun, with the
+  verb list refused on the counter-case
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4684,3 +4687,38 @@ The production build carries `.ask-bubble` in both bundles, which is this
 repo's ship-check where a browser cannot be driven from the session; the
 float respects `prefers-reduced-motion`, and the visual pass is the open
 app's to confirm — it hot-reloads, so the bubble is already live there.
+
+## D-085 — 2026-08-05 — Bare "mail" claims as a channel word, and stays out of the verb list
+
+A live miss from the desk: "I need to send a mail to a friend" raised
+nothing while "…send an email…" raised the ask. Both pass the verb gate on
+"send"; the gmail row matched gmail|email|e-mail and never bare "mail", so
+`detectChannelAsk` returned null and the client had nothing to draw. Working
+as coded — the word was absent, not mishandled: no test pinned it out and no
+entry had weighed it. This is the class of gap D-079 already recorded once,
+when "email the summary" missed and "email" joined the verb list.
+
+Two fixes were run against the real regexes before choosing. Adding "mail"
+as a channel word only fires the reported phrasing and nothing new; adding
+it to the verbs too (email's own double duty) would also catch "mail the
+summary to Ana", but one word then satisfies both gates and a mere mention
+fires — "summarise the mail export" raises a card, exactly the counter-case
+channel.test.ts pins null for WhatsApp. That is the wrong side of D-079's
+pricing ("a wrong card costs trust"), so: channel word only. The row is now
+`\b(g|e-?)?mail\b` — which also picks up "e mail" spelled apart, and matches
+nothing inside hotmail, protonmail or "mailing list" — with the
+noun-not-verb constraint stated in a comment where the next edit will read
+it.
+
+Left standing, on purpose: verb-form "mail me the report" still misses,
+until real intake shows the phrasing; "email" as a mere mention ("fix the
+email parser bug") fires today, D-079's decided trade observed here and not
+reopened; and the gate is English-only, so "manda un mail" never fires — a
+product boundary, not a word-list line.
+
+**Evidence.** Two pinning cases ("send a mail to a friend" → gmail,
+connectable; "summarise the mail export" → null), mutation-checked: against
+the old regex the new test fails with `expected undefined to be 'gmail'`.
+Full suite 1012 + 98 and typecheck green. Verified live against the running
+dev server's own plan route — the failing prompt now returns the ask, the
+email prompt still does, and the counter-case returns none.

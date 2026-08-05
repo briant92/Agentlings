@@ -49,6 +49,13 @@ describe('detectChannelAsk — when it fires', () => {
     expect(ask('list the repo modules')).toBeNull();
   });
 
+  it('"send a mail" is an email ask — bare "mail" claims as a channel word only', () => {
+    const got = ask('send a mail to a friend');
+    expect(got?.asked).toBe('gmail');
+    expect(got?.state).toBe('connectable');
+    expect(ask('summarise the mail export')).toBeNull(); // word, no verb
+  });
+
   it('is case-insensitive and survives "WhatsApp" spelled apart', () => {
     expect(ask('Send weekly reminders via Whats App')?.asked).toBe('whatsapp');
   });

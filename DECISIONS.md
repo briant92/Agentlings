@@ -95,6 +95,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-083 — 2026-08-05 — Ambience is scene data, and the stalactites the dice never rolled](#d-083--2026-08-05--ambience-is-scene-data-and-the-stalactites-the-dice-never-rolled)
 - [D-084 — 2026-08-05 — The ask floats over the agentling, and falls back to the bar](#d-084--2026-08-05--the-ask-floats-over-the-agentling-and-falls-back-to-the-bar)
 - [D-085 — 2026-08-05 — Bare "mail" claims as a channel word, and stays out of the verb list](#d-085--2026-08-05--bare-mail-claims-as-a-channel-word-and-stays-out-of-the-verb-list)
+- [D-086 — 2026-08-05 — The bubble wears the mock's sheet, and the bar keeps the desk card](#d-086--2026-08-05--the-bubble-wears-the-mocks-sheet-and-the-bar-keeps-the-desk-card)
 
 ## By theme
 
@@ -209,7 +210,11 @@ entry updates one file rather than two.
   the agentling as the mock drew it, with the bar card as the fallback that
   makes the diorama optional: D-084; and D-085, where the desk's first live
   miss ("send a mail") grew the channel vocabulary by one noun, with the
-  verb list refused on the counter-case
+  verb list refused on the counter-case; and D-086, where a review found
+  D-084 had kept the mock's sheet but not its contents — the bubble now
+  wears the mock's dress (title, quoted sentence, logo rows, connect
+  buttons) while the bar keeps the dense desk card, one mechanism in two
+  frames
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4722,3 +4727,41 @@ the old regex the new test fails with `expected undefined to be 'gmail'`.
 Full suite 1012 + 98 and typecheck green. Verified live against the running
 dev server's own plan route — the failing prompt now returns the ask, the
 email prompt still does, and the counter-case returns none.
+
+## D-086 — 2026-08-05 — The bubble wears the mock's sheet, and the bar keeps the desk card
+
+A review Brian asked for found that D-084 had delivered the mock's bubble
+*frame* — sheet, tail, float, the anchor mechanics — around the work bar's
+own contents. The approved mock's bubble is a title ("This job needs a
+messaging app"), the typed sentence quoted back, option rows each carrying
+a 34px app mark, one plain-words line and a connect button, and the state's
+note as the foot; what rendered inside the sheet was the bar's dense text
+card, lifted whole by the one-component rule. No entry decided the
+difference — it drifted in through reuse, and D-084's "exactly the approved
+design" was true of the shell and silently false of the contents. The
+information design had not survived the move between frames: the bar card
+sits under the input, where a title and a quoted prompt would be redundant;
+the bubble floats over the world, where the mock gave it both precisely so
+it could stand alone.
+
+The fix keeps D-084's actual principle — one mechanism, and only the dress
+differs. `ChannelAskCard` gains a `variant`: the bar keeps the dense card
+verbatim, and the bubble renders the mock's sheet from the same ask object
+and the same handlers. The marks are inline SVG approximations lifted from
+the mock itself (telegram, whatsapp, gmail, slack drawn; anything else gets
+its initial on a tile, the mock's own treatment for the planned tier) — no
+brand asset ships and nothing is fetched. WhatsApp Business keeps the
+mock's amber "Set up" against the blue "Connect", the typed sentence rides
+a `prompt` prop the bar never passes, the note moves to the foot in the
+bubble only, and the bubble widens to the mock's 470px.
+
+**Evidence.** Typecheck and 98 web tests green; the production build
+carries the title string and both new class families in the bundles.
+Verified in a live second web server against the shared API: the mock's
+own sentence raises a bubble whose DOM reads title, quoted prompt, three
+logo rows — Telegram · Connect, WhatsApp Business · amber Set up, Gmail ·
+Connect — and the refusal foot. The pane could not composite frames in
+this session (a recorded environment limit), so the same check also proved
+D-084's fallback: with `requestAnimationFrame` frozen the bubble stays
+hidden and the bar card carries the identical ask — missed pretty,
+not missable.

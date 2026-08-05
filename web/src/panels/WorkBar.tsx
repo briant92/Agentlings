@@ -294,6 +294,8 @@ export function WorkBar({
                   onPick={setChannel}
                   onUndo={() => setChannel(null)}
                   onOpenSettings={onOpenSettings}
+                  variant="bubble"
+                  prompt={text.trim()}
                 />
               </div>
             </AskBubble>

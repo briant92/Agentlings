@@ -232,7 +232,7 @@ button.ghost {
   position: fixed;
   z-index: 30;
   transform: translate(-50%, calc(-100% - 12px));
-  width: min(440px, calc(100vw - 32px));
+  width: min(470px, calc(100vw - 32px));
   pointer-events: none;
 }
 .ask-bubble-card {
@@ -293,6 +293,80 @@ button.ghost {
 }
 .ask-bubble .work-link {
   color: #34509e;
+}
+/* The bubble's own dress (D-086) — the mock's sheet: a title, the typed
+   sentence quoted, logo rows with a connect button each, the state's note
+   as the foot. Bubble-only classes; the bar keeps the dense desk card. */
+.ask-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: #221a2e;
+}
+.ask-you {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #635c72;
+  border-left: 3px solid #c9ccba;
+  padding-left: 9px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ask-opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border: 1px solid #c9ccba;
+  border-radius: 10px;
+  background: #f7f9f0;
+}
+.ask-logo {
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+.ask-opt-txt {
+  flex: 1;
+  min-width: 0;
+}
+.ask-opt-nm {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: #221a2e;
+}
+.ask-opt-why {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #635c72;
+}
+.ask-cta {
+  flex: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: #597dce;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.ask-cta.amber {
+  background: #d27d2c;
+}
+.ask-foot {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #635c72;
 }
 .work-channel {
   border: 1px solid #3a3160;

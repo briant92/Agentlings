@@ -17,6 +17,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "web", "--", "--port", "5273", "--strictPort"],
       "port": 5273
+    },
+    {
+      "name": "agentlings-web-third",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "web", "--", "--port", "5373", "--strictPort"],
+      "port": 5373
     }
   ]
 }

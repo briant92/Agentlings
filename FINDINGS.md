@@ -97,11 +97,17 @@ The dev server was left running from that session.
 
 ## The board — pick up here
 
-1. **T6's fifth run, then promote** (F4's milestone). Fresh expenses CSV,
-   verbatim prompt, **name only `web`**; it credits `successes: 3`, which is
-   the compile candidate. Then review `run.mjs` for D-045's cache test before
-   promoting. Runs so far: 24.8c, 47.0c, 20.4c-absorbed, 69.2c — the ratchet
-   is real on this job, so budget ~70c rather than the 15c the plan assumed.
+1. **The T6 compile** (F4's milestone). Five runs are in — 24.8c, 47.0c,
+   20.4c-absorbed, 69.2c, 58.4c — and the recipe stands at `successes: 3`
+   with a surface of `conn:web` alone, so D-044 should pass and the promote
+   route's own bar is met. Ask for it (~$1.15–1.58, one-off), then **read
+   `run.mjs` before promoting**: D-045's cache test is the point, and the
+   five runs deliberately carried five different real slices of the ledger,
+   so a tool that cached an answer would be visibly wrong on the sixth.
+   Watch for one thing on the way in — `tool-candidates.jsonl` still has no
+   T6 line, because the candidate check reads the recipe as loaded at run
+   start and lands a run late. Cosmetic here; it means the UI's candidate
+   list is one run behind the promote route's own bar.
 2. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
    promote and watch D-044 refuse with the reason. The gate's negative case,
    live. Worth re-reading its recipe first — T4 completed in 4 turns, so it

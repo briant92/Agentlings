@@ -269,12 +269,24 @@ export function detectChannelAsk(
 }
 
 /**
+ * A prompt that asks for what was sent before (D-094). Deterministic like
+ * every desk word list; a stray "previous" in an unrelated send costs only
+ * a brief that carries one extra body the run ignores.
+ */
+export const RESEND_WORDS = /\b(same|again|resend|re-send|like (?:the )?last|previous)\b/i;
+
+/**
  * The outbox contract, told to the session (closing D-075's deferral by
  * D-031's rule: a capability nobody is told about is not one). Only for
  * channels that exist — a job whose ask fell to "draft" carries no channel
  * and hears nothing.
  */
-export function channelBrief(channel: string, audience: AudiencePerson[] = []): string | null {
+export function channelBrief(
+  channel: string,
+  audience: AudiencePerson[] = [],
+  /** The last body sent on this channel, when the prompt asked for the same. */
+  lastSentBody?: string,
+): string | null {
   if (!CHANNELS[channel]) return null;
   const shape =
     channel === 'gmail'
@@ -303,6 +315,17 @@ export function channelBrief(channel: string, audience: AudiencePerson[] = []): 
       ? [
           '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',
           '- "params" are the template\'s body parameters, in order; "body" is the message as it will read, so the review shows real words. "to" is the number with country code. Do not invent numbers — report the missing ones in RESULT.md.',
+        ]
+      : []),
+    // The reuse block (D-094): "send the same again" means this text, not a
+    // rebuild that drifts. Integrity is the point — reuse verbatim, adjust
+    // only what the user asked (recipient, greeting), and say it is reused.
+    ...(lastSentBody
+      ? [
+          '- The user asked to send the same thing again. This is the last message sent on this channel, verbatim — reuse this text, adjusting only what the user asked for (recipient, greeting), and say in RESULT.md that it was reused:',
+          '```',
+          lastSentBody,
+          '```',
         ]
       : []),
     // The legend (D-092): "send it to Pepo" resolves by lookup instead of

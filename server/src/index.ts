@@ -264,6 +264,11 @@ function makeLevel(dir: string): LevelRuntime {
           () => readConnections(CONNECTIONS_FILE),
           () => readLedger(SANDBOX_ROOT),
           (channel) => readAudience(SANDBOX_ROOT, channel),
+          // The newest audited body on the channel — what "the same" means.
+          (channel) =>
+            readSends(SANDBOX_ROOT)
+              .filter((r) => r.channel === channel && r.ok && r.body)
+              .at(-1)?.body,
         )
       : simulated,
     // Absent without a key, which is what makes the free tier refuse to claim
@@ -358,7 +363,7 @@ async function autoSendIfApproved(
     const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], { env: process.env });
     const at = Date.now();
     const usd = sendPriceUsd(outbox.channel, process.env);
-    const nameOf = (to: string) => outbox.messages.find((m) => m.to === to)?.name;
+    const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
     appendSends(SANDBOX_ROOT, [
       ...run.sentTo.map((to) => ({
         at,
@@ -366,7 +371,8 @@ async function autoSendIfApproved(
         jobId: job.id,
         channel: outbox.channel,
         to,
-        ...(nameOf(to) ? { name: nameOf(to) } : {}),
+        ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
+        ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
         ok: true,
         ...(usd ? { usd } : {}),
       })),
@@ -1255,7 +1261,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       // The user's own declared rate, when they set one — never a guess
       // (D-081). Only sends that happened carry it.
       const usd = sendPriceUsd(outbox.channel, process.env);
-      const nameOf = (to: string) => outbox.messages.find((m) => m.to === to)?.name;
+      const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
       appendSends(SANDBOX_ROOT, [
         ...run.sentTo.map((to) => ({
           at,
@@ -1263,7 +1269,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           jobId: pending.id,
           channel: outbox.channel,
           to,
-          ...(nameOf(to) ? { name: nameOf(to) } : {}),
+          ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
+          ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
           ok: true,
           ...(usd ? { usd } : {}),
         })),

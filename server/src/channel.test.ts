@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { channelBrief, channelShelf, detectChannelAsk, mentionsChannel } from './channel';
+import {
+  channelBrief,
+  channelShelf,
+  detectChannelAsk,
+  mentionsChannel,
+  RESEND_WORDS,
+} from './channel';
 import type { Connection } from './connections';
 
 const telegram: Connection = {
@@ -243,5 +249,31 @@ describe('channelBrief', () => {
   it('an empty roster adds no legend at all', () => {
     expect(channelBrief('telegram', [])).not.toContain('Known recipients');
     expect(channelBrief('telegram')).not.toContain('Known recipients');
+  });
+
+  it('carries the last sent body verbatim when the prompt asked for the same (D-094)', () => {
+    const brief = channelBrief('telegram', [], '*Warzone meta* — equip the FG42.')!;
+    expect(brief).toContain('reuse this text');
+    expect(brief).toContain('*Warzone meta* — equip the FG42.');
+    expect(brief).toContain('it was reused');
+    expect(channelBrief('telegram', [])).not.toContain('reuse this text');
+  });
+});
+
+describe('RESEND_WORDS (D-094)', () => {
+  it('hears the ways people ask for the same thing again', () => {
+    for (const p of [
+      'Now send the same Telegram to Pepo',
+      'send it again to Ana',
+      'resend the reminder',
+      'send Pepo one like the last message',
+    ]) {
+      expect(RESEND_WORDS.test(p)).toBe(true);
+    }
+  });
+
+  it('stays quiet on a fresh request', () => {
+    expect(RESEND_WORDS.test('Send me a Telegram with the latest Warzone meta')).toBe(false);
+    expect(RESEND_WORDS.test('send a sample loadout to Ana')).toBe(false);
   });
 });

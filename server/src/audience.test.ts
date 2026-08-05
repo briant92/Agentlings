@@ -60,6 +60,28 @@ describe('mergeSends (D-092)', () => {
     expect(twice).toEqual(once);
   });
 
+  it('a reviewed name that differs becomes an alias, once, however often re-merged (D-094)', () => {
+    const viaStart = [{ id: '67', name: 'Jose Dussaillant', viaStart: true, sends: 0 }];
+    const audit = [
+      send({ to: '67', name: 'Jose Dussaillant (Pepo)' }),
+      send({ to: '67', name: 'Jose Dussaillant (Pepo)' }),
+    ];
+    const once = mergeSends(viaStart, audit, 'telegram');
+    expect(once[0].aliases).toEqual(['Jose Dussaillant (Pepo)']);
+    const twice = mergeSends(once, audit, 'telegram');
+    expect(twice[0].aliases).toEqual(['Jose Dussaillant (Pepo)']);
+  });
+
+  it('a name that matches, or is the id, never becomes an alias', () => {
+    const known = [{ id: '86', name: 'Brian Thornton', viaStart: true, sends: 0 }];
+    const got = mergeSends(
+      known,
+      [send({ to: '86', name: 'Brian Thornton' }), send({ to: '86', name: '86' })],
+      'telegram',
+    );
+    expect(got[0].aliases).toBeUndefined();
+  });
+
   it('a tapped-Start name outranks the audit, but an id-as-name yields to it', () => {
     const viaStart = [{ id: '86', name: 'Brian Thornton', viaStart: true, sends: 0 }];
     expect(mergeSends(viaStart, [send({ to: '86', name: 'B.' })], 'telegram')[0].name).toBe(

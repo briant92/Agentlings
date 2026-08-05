@@ -3,7 +3,7 @@ import type { AudiencePerson, ConnectionInfo, WorkPlan } from '@agentlings/share
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
-import { recipientProblem } from './askFacts';
+import { matchRecipient, recipientProblem } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { RecipientPicker } from './RecipientPicker';
@@ -113,13 +113,6 @@ export function WorkBar({
     return () => clearTimeout(timer);
   }, [text, levelId, channel]);
 
-  // An address already in the sentence answers "who" — prefill, never overwrite.
-  useEffect(() => {
-    if (!plan?.questions.some((q) => q.id === 'send-to')) return;
-    const addr = text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/)?.[0];
-    if (addr) setAnswers((prev) => (prev['send-to']?.trim() ? prev : { ...prev, 'send-to': addr }));
-  }, [plan, text]);
-
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
   const cardUp = !!plan?.channelAsk && plan.channelAsk.state !== 'ready';
@@ -140,6 +133,18 @@ export function WorkBar({
       .then((reply) => setAudience(reply.people))
       .catch(() => setAudience([]));
   }, [effectiveChannel]);
+
+  // An address already in the sentence answers "who" — and so does a name
+  // the roster knows uniquely, aliases included (D-094): "to Pepo" prefills
+  // Jose through the name a reviewed send taught it. Prefill, never
+  // overwrite, and never on ambiguity — the arrest catches an empty field.
+  useEffect(() => {
+    if (!plan?.questions.some((q) => q.id === 'send-to')) return;
+    const addr = text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/)?.[0];
+    const known = addr ? null : matchRecipient(text, audience);
+    const fill = addr ?? (known ? `${known.name} — ${known.id}` : null);
+    if (fill) setAnswers((prev) => (prev['send-to']?.trim() ? prev : { ...prev, 'send-to': fill }));
+  }, [plan, text, audience]);
   const looseQuestions = plan?.questions.filter((q) => !(cardUp && q.id.startsWith('send-'))) ?? [];
   const answerFact = (id: string, value: string) =>
     setAnswers((prev) => ({ ...prev, [id]: value }));

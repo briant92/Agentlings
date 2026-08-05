@@ -179,6 +179,12 @@ export interface AudiencePerson {
   /** Their name as the channel shows it, else the id itself. */
   name: string;
   username?: string;
+  /**
+   * Other names they have gone by in reviewed sends (D-094) — "Pepo" lives
+   * here when Telegram says "Jose Dussaillant". Matching material for the
+   * To prefill; only ever collected from names the user approved at review.
+   */
+  aliases?: string[];
   /** They messaged the bot themselves — the strongest opt-in. */
   viaStart: boolean;
   /** Reviewed sends already delivered to them. */

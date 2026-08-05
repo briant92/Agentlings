@@ -21,3 +21,32 @@ export function recipientProblem(channel: string, to: string): string | null {
   const shown = to.length > 24 ? `${to.slice(0, 24)}…` : to;
   return `“${shown}” isn’t ${shape.wants}`;
 }
+
+/** A person as the matcher needs them — the roster row's naming half. */
+interface Nameable {
+  id: string;
+  name: string;
+  username?: string;
+  aliases?: string[];
+}
+
+/**
+ * The one person the sentence plainly names, or nobody (D-094). Tokens of
+ * three letters and up from names, usernames and reviewed aliases, matched
+ * as whole words — "to Pepo" finds Jose through the alias a reviewed send
+ * taught the roster. Exactly one candidate prefills; ambiguity and absence
+ * prefill nothing, because a guessed recipient is worse than an empty
+ * field the arrest will catch.
+ */
+export function matchRecipient<T extends Nameable>(prompt: string, people: T[]): T | null {
+  const text = prompt.toLowerCase();
+  const hits = people.filter((person) =>
+    [person.name, person.username ?? '', ...(person.aliases ?? [])]
+      .flatMap((source) => source.toLowerCase().split(/[^\p{L}\p{N}]+/u))
+      .some(
+        (token) =>
+          token.length >= 3 && new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'u').test(text),
+      ),
+  );
+  return hits.length === 1 ? hits[0] : null;
+}

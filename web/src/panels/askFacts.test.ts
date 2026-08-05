@@ -1,5 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { recipientProblem } from './askFacts';
+import { matchRecipient, recipientProblem } from './askFacts';
+
+const BRIAN = { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 };
+const JOSE = {
+  id: '6783316106',
+  name: 'Jose Dussaillant',
+  aliases: ['Jose Dussaillant (Pepo)'],
+  viaStart: true,
+  sends: 1,
+};
+
+describe('matchRecipient (D-094)', () => {
+  it('finds Jose through the alias a reviewed send taught the roster', () => {
+    expect(matchRecipient('Now send the same Telegram to Pepo', [BRIAN, JOSE])?.id).toBe(
+      '6783316106',
+    );
+  });
+
+  it('matches a plain first name, whole-word and case-blind', () => {
+    expect(matchRecipient('send brian the summary on telegram', [BRIAN, JOSE])?.id).toBe(
+      '8633678680',
+    );
+  });
+
+  it('an ambiguous sentence prefills nobody', () => {
+    const twins = [JOSE, { ...BRIAN, name: 'Jose Miguel' }];
+    expect(matchRecipient('send it to Jose on telegram', twins)).toBeNull();
+  });
+
+  it('"me", short words and absent names prefill nobody', () => {
+    expect(matchRecipient('Send me a Telegram with the meta', [BRIAN, JOSE])).toBeNull();
+    expect(matchRecipient('send the reminder to Ana', [BRIAN, JOSE])).toBeNull();
+  });
+
+  it('never fires on a substring — Brianna is not Brian', () => {
+    expect(matchRecipient('send Brianna the notes on telegram', [BRIAN])).toBeNull();
+  });
+});
 
 describe('recipientProblem (D-091)', () => {
   it('a name is not a chat id — the 71¢ wall, caught at the desk', () => {

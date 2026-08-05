@@ -1312,7 +1312,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       near-miss question at the desk instead of silence, one click turns
       it into the full send surface, and a job that mentioned a channel it
       never carried says so at review before Approve keeps files and sends
-      nothing (D-093)
+      nothing (D-093). A name the roster knows uniquely prefills To —
+      aliases included, learned from reviewed sends, never guessed on
+      ambiguity — and "send the same again" reuses the audited body
+      verbatim instead of rebuilding: sends.jsonl records what was said,
+      and the brief hands it back when the prompt asks for sameness
+      (D-094)
 - [x] **Send mail** — the Google connection is live: Connect button,
       loopback OAuth against the user's own client, one consent across
       Gmail, Calendar and Contacts, and a gmail channel that sends approved

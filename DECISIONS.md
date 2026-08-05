@@ -103,6 +103,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs](#d-091--2026-08-05--the-channel-names-its-recipients-shape-and-the-desk-objects-to-a-name-where-a-number-belongs)
 - [D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads](#d-092--2026-08-05--the-audience-roster-names-for-the-opted-in-a-picker-behind-to-and-the-legend-the-session-reads)
 - [D-093 — 2026-08-05 — The near-miss is a question, and the review says when approving sends nothing](#d-093--2026-08-05--the-near-miss-is-a-question-and-the-review-says-when-approving-sends-nothing)
+- [D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words](#d-094--2026-08-05--a-known-name-prefills-to-and-the-same-again-means-the-audited-words)
 
 ## By theme
 
@@ -253,7 +254,11 @@ entry updates one file rather than two.
   both gates — a channel word with no send verb raises a near-miss
   *question* the user can confirm into the full send surface, and a job
   that mentioned a channel it never carried says at review that approving
-  sends nothing, with the reply as the way out
+  sends nothing, with the reply as the way out; and D-094, from the first
+  real sends — "to Pepo" prefills To through an alias a reviewed send
+  taught the roster (unique match or nothing), and "send the same again"
+  reuses the audited body verbatim, since sends.jsonl now records what
+  was said
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5141,3 +5146,46 @@ Thornton — 8633678680", and the captured queue POST carried
 `channel: telegram` with the answer. The review guard ships in the
 bundle and meets its first real job the next time a mention slips
 through unconfirmed.
+
+## D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words
+
+Asked by Brian off the back of the first two real sends: "to Pepo" made
+him pick from the roster by hand, and "send the same Telegram" made the
+run rebuild the message from source — honestly disclosed, but drift where
+he wanted integrity. Both halves resolved on data the app already owned.
+
+**"Pepo" lives in the audit, so the roster learns it as an alias.** The
+Telegram name is Jose Dussaillant; the reviewed send recorded "Jose
+Dussaillant (Pepo)". `mergeSends` now keeps any reviewed name that
+differs from the roster's as an alias (set semantics — the whole-audit
+re-merge stays idempotent; a name equal to the id never qualifies), and
+`matchRecipient` prefills To when the prompt names exactly one person —
+tokens of three letters and up from names, usernames and aliases, matched
+as whole words, so "Brianna" never matches Brian, ambiguity prefills
+nothing, and "send **me**" stays empty on purpose: the app does not know
+which row is the user and will not pretend to. The picker's filter learnt
+the aliases too.
+
+**"The same again" is the audited body, not a rebuild.** The lesson the
+Pepo run banked said it itself: the original lived in another sandbox, so
+it rebuilt and disclosed. Now `SendRecord` carries the body on sends that
+happened — the audit of what left the machine finally records *what
+left* — and when a send prompt asks for sameness (`RESEND_WORDS`, a
+deterministic list; a stray "previous" costs one ignorable brief block),
+the executor hands the channel's newest audited body to `channelBrief`,
+which tells the run: reuse this text verbatim, adjust only what the user
+asked, and say it was reused. Say stays a gist field — integrity lives in
+the brief, not stuffed into a one-line input.
+
+**Evidence.** Five `matchRecipient` tests (the Pepo sentence verbatim
+through the alias, whole-word and case-blind, ambiguity → nobody, "me" →
+nobody, Brianna ≠ Brian), two alias-merge tests (collected once however
+often re-merged; name-equals-id never qualifies), a reuse-block brief
+test and four RESEND_WORDS cases with two quiet counter-cases; 1050 + 109
+and typecheck green. Live: the roster's next read grew
+`aliases: ["Jose Dussaillant (Pepo)"]` from the real audit line, and
+typing the exact sentence "Now send the same Telegram to Pepo" prefilled
+To with "Jose Dussaillant — 6783316106" — zero clicks. The reuse block's
+first real exercise waits for the next same-again send, since proving it
+live means paying for a session; its construction is pinned by the brief
+test and the trigger fires on that very sentence.

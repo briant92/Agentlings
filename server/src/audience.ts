@@ -91,6 +91,18 @@ export function mergeSends(
     if (known) {
       known.sends += 1;
       if (known.name === known.id && record.name) known.name = record.name;
+      // A reviewed name that differs from what Telegram says becomes an
+      // alias (D-094) — "Pepo" is how the user knows Jose, and the prefill
+      // matches on it. Set semantics keep the whole-audit re-merge
+      // idempotent.
+      if (
+        record.name &&
+        record.name !== known.name &&
+        record.name !== known.id &&
+        !(known.aliases ?? []).includes(record.name)
+      ) {
+        known.aliases = [...(known.aliases ?? []), record.name];
+      }
     } else {
       next.set(record.to, {
         id: record.to,

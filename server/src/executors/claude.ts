@@ -13,7 +13,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { Agentling, AudiencePerson, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
-import { channelBrief } from '../channel';
+import { channelBrief, RESEND_WORDS } from '../channel';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
@@ -693,6 +693,8 @@ export class ClaudeAgentExecutor implements Executor {
     private ledger: () => LedgerEntry[] = () => [],
     /** The channel's opted-in audience, for the brief's legend (D-092). */
     private audience: (channel: string) => AudiencePerson[] = () => [],
+    /** The last body sent on a channel, for "send the same again" (D-094). */
+    private lastSend: (channel: string) => string | undefined = () => undefined,
   ) {}
 
   /** Live sessions by job id, so one can be stopped on request. */
@@ -810,7 +812,13 @@ export class ClaudeAgentExecutor implements Executor {
           // cannot disagree about how long the run has.
           turnBudget,
           job.channel
-            ? (channelBrief(job.channel, this.audience(job.channel)) ?? undefined)
+            ? (channelBrief(
+                job.channel,
+                this.audience(job.channel),
+                // "The same again" reuses the audited body instead of
+                // rebuilding and drifting (D-094).
+                RESEND_WORDS.test(job.prompt) ? this.lastSend(job.channel) : undefined,
+              ) ?? undefined)
             : undefined,
         ),
         allowedTools,

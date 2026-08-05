@@ -31,7 +31,8 @@ export function RecipientPicker({
       !needle ||
       p.name.toLowerCase().includes(needle) ||
       p.id.includes(needle) ||
-      (p.username ?? '').toLowerCase().includes(needle),
+      (p.username ?? '').toLowerCase().includes(needle) ||
+      (p.aliases ?? []).some((alias) => alias.toLowerCase().includes(needle)),
   );
   if (people.length === 0) {
     return (

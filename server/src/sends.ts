@@ -21,6 +21,12 @@ export interface SendRecord {
    *  should not need a phonebook to be readable, and the audience roster
    *  reads names back from here for people who never tapped Start. */
   name?: string;
+  /**
+   * What was said, verbatim, on sends that happened (D-094) — the audit of
+   * what left the machine records what left, and "send the same again"
+   * reuses this instead of rebuilding from source and drifting.
+   */
+  body?: string;
   ok: boolean;
   /** The channel's own sentence for a failure ("chat not found"). */
   reason?: string;

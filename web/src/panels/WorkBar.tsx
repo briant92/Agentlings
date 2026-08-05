@@ -3,6 +3,7 @@ import type { ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
+import { recipientProblem } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 
@@ -128,9 +129,15 @@ export function WorkBar({
     const ask = plan?.channelAsk;
     if (!ask) return null;
     const parts: string[] = [];
-    if (sendQuestions.some((q) => q.id === 'send-to') && !answers['send-to']?.trim())
-      parts.push('no recipient');
+    const to = answers['send-to']?.trim();
+    if (sendQuestions.some((q) => q.id === 'send-to') && !to) parts.push('no recipient');
     const effective = channel ?? ask.channel;
+    // A filled recipient the channel's contract cannot reach — a name where
+    // a chat id belongs — is the 71¢ wall, caught before money moves (D-091).
+    if (to && effective) {
+      const problem = recipientProblem(effective, to);
+      if (problem) parts.push(problem);
+    }
     if (!effective) parts.push('a draft that sends nothing');
     else {
       const usable = channel

@@ -100,6 +100,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-088 — 2026-08-05 — The garage, the drawer and the outbox wear the mock too](#d-088--2026-08-05--the-garage-the-drawer-and-the-outbox-wear-the-mock-too)
 - [D-089 — 2026-08-05 — The agentling's file: tagged memory, a ledger record, and a skill handed to the role](#d-089--2026-08-05--the-agentlings-file-tagged-memory-a-ledger-record-and-a-skill-handed-to-the-role)
 - [D-090 — 2026-08-05 — A verb claims in every inflection, and a reply may name the channel the job never carried](#d-090--2026-08-05--a-verb-claims-in-every-inflection-and-a-reply-may-name-the-channel-the-job-never-carried)
+- [D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs](#d-091--2026-08-05--the-channel-names-its-recipients-shape-and-the-desk-objects-to-a-name-where-a-number-belongs)
 
 ## By theme
 
@@ -237,7 +238,11 @@ entry updates one file rather than two.
   real send job of the demo loop slipping past the desk as a participle
   ("to be sent … on Telegram") — every send verb now claims in its
   inflections, verb-side only so mentions stay quiet, and a reply may
-  supply the channel the original never carried, through the same gates
+  supply the channel the original never carried, through the same gates;
+  and D-091, the third wall of the same demo — the desk accepted a name
+  where Telegram's contract wants a number, so the arrest now checks the
+  recipient against the channel's own shape and quotes the value on the
+  button before money moves
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5000,3 +5005,41 @@ send-say` and the chat-id hint. The recovery is the reply path: the 65¢
 run's research and composed message carry forward, and the continuation's
 only work is an OUTBOX.json with Pepo's chat id — the down payment shape
 D-087 promised, about to be exercised for real for the first time.
+
+## D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs
+
+The demo's third wall, one layer past D-090: with the verb fixed, the
+re-run carried `channel: telegram` from birth, the To/Say facts rode as
+clarifications — and To said "Pepo Dussaillant". A name, where Telegram's
+contract wants the numeric chat id. The field's hint said so; nothing
+enforced it. The run obeyed the never-invent rule to the letter — composed
+the message, left it out of the outbox, wrote
+`{"channel":"telegram","messages":[]}` for the validator to refuse — and
+71¢ bought the desk's missing sentence. Every gate did its decided job;
+the arrest just could not see a recipient that cannot possibly be reached.
+
+Now it can. `recipientProblem(channel, to)` in its own tested module: a
+channel declares the shape its contract wants — telegram and
+whatsapp-business want digits somewhere, gmail wants an @ — and a filled
+To that fails its channel's shape joins the arrest, with the value quoted
+on the button: *Queue anyway — "Pepo Dussaillant" isn't a chat id*.
+"Brian — 8633678680" passes, because digits anywhere satisfy a chat id
+and the name riding along is what review wants anyway. A channel with no
+declared shape objects to nothing, and the check runs only when To is
+filled — "no recipient" keeps its own clause. Client-side only, D-087's
+pattern: the arrest is the desk's honesty, and the contract's own refusal
+stays the backstop.
+
+Recorded here so it is not lost, per the same review: the "text Ana when
+the build is done" phrasing — a send verb with no channel word — still
+fires nothing; wiring "text" to imply the planned SMS channel would only
+surface the redirect card, and it waits for real intake to want it, like
+D-085's verb-form "mail".
+
+**Evidence.** Six tests on the shape module (the 71¢ value verbatim,
+digits-anywhere passing, gmail's @, the undeclared-channel silence, the
+truncated quote); 104 web tests and typecheck green. Live on a second web
+server with Telegram genuinely connected: the ready chip up, To filled
+with "Pepo Dussaillant", the first press queued nothing and the button
+read the quoted objection; retyping "Brian — 8633678680" flipped it back
+to Start without a second press being wasted.

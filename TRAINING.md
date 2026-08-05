@@ -153,7 +153,7 @@ server work, and a future compile candidate of the same family as
 
 | Run | Date | Job id | Quoted | Predicted | Actual cost | Charged | Calls | Outcome | Note |
 |---|---|---|---|---|---|---|---|---|---|
-| T1·1 | | | 46c | 40c | | | | | |
+| T1·1 | 2026-08-05 | 44a7c682 | 46c | 40c | **61.0c** | 61.0c | 9 | done | 92s; 5 sources, figures cross-checked. Both guesses low: ~6.2c/call with 219k cache-read and all four connections' tool definitions riding — the app's 46c is a class mean over lighter jobs, mine under-weighted search tokens. Ceiling never close. One lesson line banked, no copies (D-073's first live outing) |
 | T1·2 | | | | 28c | | | | | hint, full cap |
 | T1·3 | | | | 24c | | | | | leash expected |
 | T2·1 | | | 46c | 25c | | | | | |

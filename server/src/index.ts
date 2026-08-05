@@ -46,7 +46,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
-import { channelShelf, detectChannelAsk } from './channel';
+import { channelShelf, detectChannelAsk, mentionsChannel } from './channel';
 import { secretValueProblem, storeSecret } from './env';
 import { exchangeCode, FlowStore, GOOGLE_SECRETS } from './google';
 import { quoteFor } from './estimate';
@@ -750,9 +750,14 @@ app.post('/api/levels/:lid/jobs', async (c) => {
 app.post('/api/levels/:lid/work/plan', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ text?: string; tools?: string[] }>();
+  const body = await c.req.json<{ text?: string; tools?: string[]; channel?: string }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
+  // A near-miss the user confirmed (D-093): the client re-plans naming the
+  // channel, so the send questions come from the server like any other —
+  // honoured only for channels that exist, like every pick.
+  const confirmed =
+    typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
   const draft = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
   // The quote decides whether asking is worth it at all, and the quote needs
   // the role the draft settles — so the questions are filled in last.
@@ -776,13 +781,21 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     ...draft,
     quote,
     // A detected send asks its facts even when the ask fell to a fork — the
-    // asked name stands in for the channel so the hint has something to say.
+    // asked name stands in for the channel so the hint has something to say,
+    // and a confirmed near-miss (D-093) counts like a detection.
     questions: questionsFor(text, {
       hasRepo: !!rt.meta.repoPath,
       tier: quote.tier,
-      channel: channelAsk?.channel ?? channelAsk?.asked,
+      channel: channelAsk?.channel ?? channelAsk?.asked ?? confirmed,
     }),
     ...(channelAsk ? { channelAsk } : {}),
+    // The near-miss itself, when no ask fired: a channel word with no send
+    // verb beside it (D-093), for the desk to question rather than claim.
+    ...(() => {
+      if (channelAsk) return {};
+      const mention = mentionsChannel(text);
+      return mention ? { channelMention: mention } : {};
+    })(),
   });
 });
 
@@ -910,6 +923,17 @@ app.post('/api/levels/:lid/work', async (c) => {
       ),
       attachments,
       channel,
+      // A channel word the job is NOT carrying (D-093): stamped so the
+      // review can say approving sends nothing, with the reply as the way
+      // out — the same table the ask reads, one notion.
+      ...(channel
+        ? {}
+        : (() => {
+            const mention = mentionsChannel(text);
+            return mention
+              ? { channelMention: { channel: mention.channel, label: mention.label } }
+              : {};
+          })()),
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

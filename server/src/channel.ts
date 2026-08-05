@@ -110,6 +110,30 @@ const NEVER: Record<string, string> = {
 };
 
 /**
+ * A channel word in the sentence with no send verb beside it (D-093): the
+ * near-miss the ask deliberately stays quiet on, surfaced as a question
+ * instead of a claim — "Sen me a Telegram" was a real 80¢ run whose typo'd
+ * verb turned a send into research. Same table as the ask, earliest
+ * mention wins, so the two can never disagree about what was mentioned.
+ */
+export function mentionsChannel(
+  text: string,
+): { channel: string; label: string; wired: boolean } | null {
+  const p = text.toLowerCase();
+  let found: string | null = null;
+  let at = Infinity;
+  for (const [re, channel] of CHANNEL_WORDS) {
+    const hit = re.exec(p);
+    if (hit && hit.index < at) {
+      found = channel;
+      at = hit.index;
+    }
+  }
+  if (!found) return null;
+  return { channel: found, label: LABELS[found] ?? found, wired: !!CHANNELS[found] };
+}
+
+/**
  * The honest shelf Settings shows under the wired connections (D-088): the
  * planned tier, and the refused one with its reason on the row — D-077's
  * tiers, served from the same maps the ask-card reads so the two can never

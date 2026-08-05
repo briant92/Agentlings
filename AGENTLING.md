@@ -1307,7 +1307,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       getUpdates and the send audit, offered as a picker behind the To
       field, listed in Settings with a forget button, and handed to the
       session as a legend so "send it to Pepo" resolves — the never-invent
-      rule intact, no contact book imported anywhere
+      rule intact, no contact book imported anywhere. A channel word with
+      no send verb beside it — a typo'd "Sen", a bare mention — raises a
+      near-miss question at the desk instead of silence, one click turns
+      it into the full send surface, and a job that mentioned a channel it
+      never carried says so at review before Approve keeps files and sends
+      nothing (D-093)
 - [x] **Send mail** — the Google connection is live: Connect button,
       loopback OAuth against the user's own client, one consent across
       Gmail, Calendar and Contacts, and a gmail channel that sends approved

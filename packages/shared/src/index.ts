@@ -385,6 +385,12 @@ export interface Job {
    */
   channel?: string;
   /**
+   * A channel the prompt mentioned that the job never carried (D-093) —
+   * stamped at queue time so the review can say plainly that approving
+   * sends nothing, with the reply path as the way out.
+   */
+  channelMention?: { channel: string; label: string };
+  /**
    * The job this one answers. Its sandbox is carried forward, so a reply picks
    * up where that run stopped instead of paying to redo it.
    */
@@ -870,6 +876,12 @@ export interface WorkPlan {
   questions: ClarifyQuestion[];
   /** Present when the sentence wants to send on a channel (D-079). */
   channelAsk?: ChannelAsk;
+  /**
+   * A channel word with no send verb beside it (D-093) — the near-miss the
+   * ask stays quiet on, surfaced as a question the user can confirm. Absent
+   * whenever a real ask fired.
+   */
+  channelMention?: { channel: string; label: string; wired: boolean };
 }
 
 export interface WorldState {

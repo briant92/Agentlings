@@ -102,6 +102,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-090 — 2026-08-05 — A verb claims in every inflection, and a reply may name the channel the job never carried](#d-090--2026-08-05--a-verb-claims-in-every-inflection-and-a-reply-may-name-the-channel-the-job-never-carried)
 - [D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs](#d-091--2026-08-05--the-channel-names-its-recipients-shape-and-the-desk-objects-to-a-name-where-a-number-belongs)
 - [D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads](#d-092--2026-08-05--the-audience-roster-names-for-the-opted-in-a-picker-behind-to-and-the-legend-the-session-reads)
+- [D-093 — 2026-08-05 — The near-miss is a question, and the review says when approving sends nothing](#d-093--2026-08-05--the-near-miss-is-a-question-and-the-review-says-when-approving-sends-nothing)
 
 ## By theme
 
@@ -248,7 +249,11 @@ entry updates one file rather than two.
   merged with the send audit, nothing imported), the To field becomes a
   picker, Settings lists who the bot knows with a forget button, and the
   session brief carries the legend so "send it to Pepo" resolves with the
-  never-invent rule intact
+  never-invent rule intact; and D-093, wall 4 (a typo'd "Sen") answered at
+  both gates — a channel word with no send verb raises a near-miss
+  *question* the user can confirm into the full send surface, and a job
+  that mentioned a channel it never carried says at review that approving
+  sends nothing, with the reply as the way out
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5092,3 +5097,47 @@ Jose, wrote "Jose Dussaillant — 6783316106", and Start stayed Start; the
 garage showed "knows 2 people" with forget buttons. The probe's only
 failures were the hidden pane's focus semantics, not the code. The forget
 button was deliberately not pressed on real people.
+
+## D-093 — 2026-08-05 — The near-miss is a question, and the review says when approving sends nothing
+
+Wall 4 was one letter: *"**Sen** me a Telegram with the latest Warzone
+meta"*. The typo'd verb missed even D-090's inflections, so the desk read
+research, told the session nothing about outboxes, and Pip spent 80¢
+composing a third stranded message file. Brian approved in good faith —
+the review's tells (no outbox card, plain "Approve") were true but too
+quiet — and nothing arrived. His three questions shaped the fix, and one
+of them settled a boundary: fuzzy-matching typos was considered and
+refused, because edit-distance-1 makes "test" match "text" and *"test the
+telegram integration"* must never raise a send ask.
+
+**The near-miss is asked, not claimed, and at the desk — the only free
+moment.** A run cannot pause to ask (refused four times, D-030; the reply
+box is the after-ask), so `mentionsChannel` — the ask's own word table,
+one notion — feeds a `channelMention` onto the plan whenever a channel
+word appears with no send verb. The desk shows a question: *mentions
+Telegram — not read as a send (no send verb)*, with **yes — send via
+Telegram** on wired channels (a rephrase hint otherwise). Confirming is
+the fork-pick mechanism that already existed: the client re-plans naming
+the channel, the server emits the To/Say questions like any detection
+(no copy duplicated), the picker and the D-091 arrest engage, and the
+queue carries the channel — so the run finally hears the outbox
+contract. A pick now survives a same-sentence re-plan (`plannedFor`) and
+still dies with a new sentence, which is D-079's rule kept.
+
+**The review grows the guard the 80¢ approval deserved.** The queue
+stamps `channelMention` on any job that mentioned a channel it never
+carried; the review shows it in amber: *approving keeps the files and
+sends nothing — to send, reply on the job's card*. Going forward only:
+old jobs carry no stamp and are not guessed at.
+
+**Evidence.** Three `mentionsChannel` tests (the 80¢ sentence verbatim,
+earliest-mention and the unwired flag, the no-mention null); 1045 + 104
+and typecheck green. Live on the exact typo'd sentence: the plan returns
+no ask but `channelMention: Telegram (wired)`; re-planning with the
+confirmed channel returns `send-to, send-say`; and the whole client flow
+ran for $0 behind a fake 201 — the question line rendered, one click
+brought the picked-note and both fact rows, the picker filled "Brian
+Thornton — 8633678680", and the captured queue POST carried
+`channel: telegram` with the answer. The review guard ships in the
+bundle and meets its first real job the next time a mention slips
+through unconfirmed.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { channelBrief, channelShelf, detectChannelAsk } from './channel';
+import { channelBrief, channelShelf, detectChannelAsk, mentionsChannel } from './channel';
 import type { Connection } from './connections';
 
 const telegram: Connection = {
@@ -152,6 +152,22 @@ describe('detectChannelAsk — what the card says', () => {
     const got = ask('dm the team on linkedin about the launch');
     expect(got?.state).toBe('never');
     expect(got?.note).toContain('closed to personal automation');
+  });
+});
+
+describe('mentionsChannel (D-093)', () => {
+  it('finds the typo-stranded mention — the 80¢ run, verbatim', () => {
+    const got = mentionsChannel('Sen me a Telegram with the latest Call of Duty: Warzone meta');
+    expect(got).toEqual({ channel: 'telegram', label: 'Telegram', wired: true });
+  });
+
+  it('earliest mention wins, and an unwired channel says so', () => {
+    expect(mentionsChannel('the whatsapp or telegram export')?.channel).toBe('whatsapp');
+    expect(mentionsChannel('the whatsapp export')?.wired).toBe(false);
+  });
+
+  it('finds nothing to question in a sentence with no channel word', () => {
+    expect(mentionsChannel('summarise the monthly economic indicators')).toBeNull();
   });
 });
 

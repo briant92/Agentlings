@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { AudiencePerson, ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
@@ -87,6 +87,10 @@ export function WorkBar({
       .catch(() => setConnections([]));
   }, []);
 
+  /** What the current plan was computed for — a pick survives a re-plan of
+   *  the same sentence (confirming a near-miss re-plans, D-093) and dies
+   *  with a new one, which is D-079's "a pick belongs to its card". */
+  const plannedFor = useRef('');
   useEffect(() => {
     const query = text.trim();
     if (!query) {
@@ -94,17 +98,20 @@ export function WorkBar({
       return;
     }
     const timer = window.setTimeout(() => {
-      void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query }))
+      void api<WorkPlan>(
+        lvl(levelId, '/work/plan'),
+        postJson({ text: query, ...(channel ? { channel } : {}) }),
+      )
         .then((next) => {
           setPlan(next);
-          // A pick belongs to the card it was made on; a new plan is a new card.
-          setChannel(null);
+          if (plannedFor.current !== query) setChannel(null);
+          plannedFor.current = query;
           setArmed(false);
         })
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId]);
+  }, [text, levelId, channel]);
 
   // An address already in the sentence answers "who" — prefill, never overwrite.
   useEffect(() => {
@@ -143,25 +150,29 @@ export function WorkBar({
    * send. Recomputed each render, so fixing the reason turns Start back into
    * Start, armed or not.
    */
+  /** A near-miss the user confirmed (D-093) — a send by their say-so. */
+  const mentionPicked = !plan?.channelAsk && !!channel && !!plan?.channelMention;
   const arrest = (() => {
     const ask = plan?.channelAsk;
-    if (!ask) return null;
+    if (!ask && !mentionPicked) return null;
     const parts: string[] = [];
     const to = answers['send-to']?.trim();
     if (sendQuestions.some((q) => q.id === 'send-to') && !to) parts.push('no recipient');
-    const effective = channel ?? ask.channel;
+    const effective = channel ?? ask?.channel;
     // A filled recipient the channel's contract cannot reach — a name where
     // a chat id belongs — is the 71¢ wall, caught before money moves (D-091).
     if (to && effective) {
       const problem = recipientProblem(effective, to);
       if (problem) parts.push(problem);
     }
-    if (!effective) parts.push('a draft that sends nothing');
-    else {
-      const usable = channel
-        ? ask.options.find((o) => o.channel === channel)?.state === 'ready'
-        : ask.state === 'ready';
-      if (!usable) parts.push('you connect at review');
+    if (ask) {
+      if (!effective) parts.push('a draft that sends nothing');
+      else {
+        const usable = channel
+          ? ask.options.find((o) => o.channel === channel)?.state === 'ready'
+          : ask.state === 'ready';
+        if (!usable) parts.push('you connect at review');
+      }
     }
     return parts.length ? parts.join(' · ') : null;
   })();
@@ -352,6 +363,37 @@ export function WorkBar({
       {plan?.channelAsk && !askingRepo && plan.channelAsk.state === 'ready' && (
         <p className="work-gaps work-channel-ready">
           sends via {plan.channelAsk.askedLabel} · every message waits for your review
+        </p>
+      )}
+
+      {/* The near-miss (D-093): a channel word with no send verb — asked as
+          a question, never claimed. Confirming is the fork-pick mechanism;
+          the re-plan brings the To/Say facts from the server. */}
+      {plan?.channelMention && !plan.channelAsk && !askingRepo && !channel && (
+        <p className="work-gaps work-mention">
+          mentions {plan.channelMention.label} — not read as a send (no send verb)
+          {plan.channelMention.wired ? (
+            <>
+              {' · '}
+              <button
+                className="work-link"
+                onClick={() => setChannel(plan.channelMention?.channel ?? null)}
+              >
+                yes — send via {plan.channelMention.label}
+              </button>
+            </>
+          ) : (
+            <span className="dim"> · say send / remind / message… if you meant one</span>
+          )}
+        </p>
+      )}
+      {mentionPicked && !askingRepo && plan?.channelMention && (
+        <p className="work-gaps work-channel-ready">
+          sends via {plan.channelMention.label} · every message waits for your review
+          {' · '}
+          <button className="work-link" onClick={() => setChannel(null)}>
+            undo
+          </button>
         </p>
       )}
       {plan?.channelAsk && !askingRepo && plan.channelAsk.state !== 'ready' && (

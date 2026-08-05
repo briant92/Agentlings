@@ -408,6 +408,21 @@ button.ghost {
   outline: none;
   border-color: #597dce;
 }
+/* The near-miss question (D-093): a channel word with no send verb —
+   asked, never claimed. */
+.work-mention {
+  color: #e8b478;
+}
+.rv-mention-guard {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e8b478;
+  border: 1px solid rgba(210, 125, 44, 0.6);
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: rgba(210, 125, 44, 0.07);
+}
 /* The To picker (D-092): the channel's opted-in people behind the field.
    Dark by default; the bubble's sheet overrides below. */
 .rp {

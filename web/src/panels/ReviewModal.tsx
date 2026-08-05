@@ -96,6 +96,16 @@ export function ReviewModal({
           {job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}
+          {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
+              was approved in good faith and sent nothing — this says so
+              before the button does it again. */}
+          {job.channelMention && !job.channel && !job.outbox && (
+            <p className="rv-mention-guard">
+              This job mentions {job.channelMention.label} but never carried a send channel —
+              approving keeps the files and sends nothing. To send, reply on the job's card:
+              &ldquo;Send it to … on {job.channelMention.label}&rdquo;.
+            </p>
+          )}
           {job.outbox && (
             // The outbox as mock screen 4 drew it (D-088): the channel's mark
             // on the header, a recipient's initial on each row — same rows,

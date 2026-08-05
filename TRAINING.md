@@ -205,7 +205,7 @@ server work, and a future compile candidate of the same family as
 | T3·3 | 2026-08-05 | 87558372 | $1.11 keyed | 19c | **47.5c** | 47.5c | 7 | done | the matured method now *includes* the efficient path. completedInTurns 19 → 8: leash-eligible for run 4 |
 | T2·4 | 2026-08-05 | f843f9c3 | 57c oneshot | 30c | 30.7c | **$0** | 5 | partial→promoted | **first live one-shot since the gates** — cut at 5 turns (needed ~6), delivered SUMMARY.docx anyway (D-063), absorbed. Spend −14% vs the hint baseline |
 | T3·4 | 2026-08-05 | 7f23d9f5 | 57c oneshot | 38c | 36.2c | **$0** | 6 | partial | cut at 5, workbook + build.mjs delivered, absorbed. Spend −24% vs hint. A cut run cannot revise the record, so the leash stays armed → see F7 |
-| T4·1 | | | 46c | 22c | | | | | |
+| T4·1 | 2026-08-05 | ebb14da4 | 50c live (46c at pre-reg) | 22c | **29.6c** | 29.6c | 3 | done | 57s — cheapest and fastest run on this level, and the closest to a guess yet (+35%). D-040's trimmed replies visible: one `list_commits` covered it. The note caveats itself: subjects only, no diffs fetched. github connection proven end-to-end here; 5th recipe banked |
 | T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
 | T6·1 | | | 46c | 20c | | | | | name `web` only |
 | T6·2 | | | | 15c | | | | | |

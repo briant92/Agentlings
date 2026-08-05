@@ -1,5 +1,6 @@
-import type { ChannelAsk, ClarifyQuestion } from '@agentlings/shared';
+import type { AudiencePerson, ChannelAsk, ClarifyQuestion } from '@agentlings/shared';
 import { ChannelLogo } from './ChannelLogo';
+import { RecipientPicker } from './RecipientPicker';
 
 /** The send facts wear short labels on the card; anything else keeps its ask. */
 const FACT_LABELS: Record<string, string> = { 'send-to': 'To', 'send-say': 'Say' };
@@ -27,6 +28,7 @@ export function ChannelAskCard({
   questions = [],
   answers = {},
   onAnswer,
+  audience = [],
 }: {
   ask: ChannelAsk;
   /** The alternative the user chose on the fork, when they chose one. */
@@ -42,7 +44,28 @@ export function ChannelAskCard({
   questions?: ClarifyQuestion[];
   answers?: Record<string, string>;
   onAnswer?: (id: string, value: string) => void;
+  /** The channel's opted-in people, behind the To field (D-092). */
+  audience?: AudiencePerson[];
 }) {
+  const factInput = (q: ClarifyQuestion, className: string) =>
+    q.id === 'send-to' ? (
+      <RecipientPicker
+        id={`ask-${q.id}`}
+        className={className}
+        placeholder={q.hint ?? q.ask}
+        value={answers[q.id] ?? ''}
+        onChange={(value) => onAnswer?.(q.id, value)}
+        people={audience}
+      />
+    ) : (
+      <input
+        id={`ask-${q.id}`}
+        className={className}
+        placeholder={q.hint ?? q.ask}
+        value={answers[q.id] ?? ''}
+        onChange={(e) => onAnswer?.(q.id, e.target.value)}
+      />
+    );
   const facts =
     questions.length === 0 ? null : variant === 'bubble' ? (
       <>
@@ -51,13 +74,7 @@ export function ChannelAskCard({
             <label className="ask-fact-label" htmlFor={`ask-${q.id}`}>
               {FACT_LABELS[q.id] ?? q.ask}
             </label>
-            <input
-              id={`ask-${q.id}`}
-              className="ask-fact-input"
-              placeholder={q.hint ?? q.ask}
-              value={answers[q.id] ?? ''}
-              onChange={(e) => onAnswer?.(q.id, e.target.value)}
-            />
+            {factInput(q, 'ask-fact-input')}
           </div>
         ))}
       </>
@@ -66,12 +83,7 @@ export function ChannelAskCard({
         {questions.map((q) => (
           <div key={q.id} className="work-channel-opt">
             <span className="work-channel-name">{FACT_LABELS[q.id] ?? q.ask}</span>
-            <input
-              className="work-q-text"
-              placeholder={q.hint ?? q.ask}
-              value={answers[q.id] ?? ''}
-              onChange={(e) => onAnswer?.(q.id, e.target.value)}
-            />
+            {factInput(q, 'work-q-text')}
           </div>
         ))}
       </>

@@ -122,7 +122,15 @@ import {
   toRawUrl,
   writeSkillFile,
 } from './roles';
-import { appendSends } from './sends';
+import {
+  mergeChats,
+  mergeSends,
+  readAudience,
+  removePerson,
+  telegramChats,
+  writeAudience,
+} from './audience';
+import { appendSends, readSends } from './sends';
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
 import {
@@ -255,6 +263,7 @@ function makeLevel(dir: string): LevelRuntime {
           () => [...readKnowledge(dir), ...storeLines(dir, Date.now())],
           () => readConnections(CONNECTIONS_FILE),
           () => readLedger(SANDBOX_ROOT),
+          (channel) => readAudience(SANDBOX_ROOT, channel),
         )
       : simulated,
     // Absent without a key, which is what makes the free tier refuse to claim
@@ -349,6 +358,7 @@ async function autoSendIfApproved(
     const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], { env: process.env });
     const at = Date.now();
     const usd = sendPriceUsd(outbox.channel, process.env);
+    const nameOf = (to: string) => outbox.messages.find((m) => m.to === to)?.name;
     appendSends(SANDBOX_ROOT, [
       ...run.sentTo.map((to) => ({
         at,
@@ -356,6 +366,7 @@ async function autoSendIfApproved(
         jobId: job.id,
         channel: outbox.channel,
         to,
+        ...(nameOf(to) ? { name: nameOf(to) } : {}),
         ok: true,
         ...(usd ? { usd } : {}),
       })),
@@ -499,6 +510,34 @@ app.get('/api/settings', (c) =>
  * this menu will not grow.
  */
 app.get('/api/channels', (c) => c.json(channelShelf()));
+
+/**
+ * The channel's opted-in audience (D-092), refreshed on every read — this
+ * GET is both the garage's "check for new people" and the picker's quiet
+ * refresh, one call doing both by decision. Telegram's getUpdates retains
+ * ~24 hours, so whatever it shows is merged and persisted; the send audit
+ * is re-merged whole (idempotent) so names reviewed at send time ride in.
+ * A missing token degrades to the stored roster rather than failing.
+ */
+app.get('/api/channels/:channel/audience', async (c) => {
+  const channel = c.req.param('channel');
+  let people = readAudience(SANDBOX_ROOT, channel);
+  if (channel === 'telegram' && process.env.TELEGRAM_BOT_TOKEN) {
+    try {
+      people = mergeChats(people, await telegramChats(process.env.TELEGRAM_BOT_TOKEN));
+    } catch {
+      // The stored roster is the answer when Telegram is unreachable.
+    }
+  }
+  people = mergeSends(people, readSends(SANDBOX_ROOT), channel);
+  writeAudience(SANDBOX_ROOT, channel, people);
+  return c.json({ people });
+});
+
+/** Un-know someone: the roster forgets them until they say hello again. */
+app.delete('/api/channels/:channel/audience/:id', (c) =>
+  c.json({ people: removePerson(SANDBOX_ROOT, c.req.param('channel'), c.req.param('id')) }),
+);
 
 /**
  * Turn a connection on or off for every level. Global on purpose: the registry
@@ -1192,6 +1231,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       // The user's own declared rate, when they set one — never a guess
       // (D-081). Only sends that happened carry it.
       const usd = sendPriceUsd(outbox.channel, process.env);
+      const nameOf = (to: string) => outbox.messages.find((m) => m.to === to)?.name;
       appendSends(SANDBOX_ROOT, [
         ...run.sentTo.map((to) => ({
           at,
@@ -1199,6 +1239,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           jobId: pending.id,
           channel: outbox.channel,
           to,
+          ...(nameOf(to) ? { name: nameOf(to) } : {}),
           ok: true,
           ...(usd ? { usd } : {}),
         })),

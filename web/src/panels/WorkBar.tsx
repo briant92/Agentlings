@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { ConnectionInfo, WorkPlan } from '@agentlings/shared';
+import type { AudiencePerson, ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
 import { recipientProblem } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
+import { RecipientPicker } from './RecipientPicker';
 
 const DEBOUNCE_MS = 250;
 
@@ -115,6 +116,23 @@ export function WorkBar({
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
   const cardUp = !!plan?.channelAsk && plan.channelAsk.state !== 'ready';
+
+  /**
+   * The channel's opted-in people, behind the To field (D-092). Fetching is
+   * also the quiet refresh, by decision — the route merges getUpdates and
+   * the send audit before answering.
+   */
+  const [audience, setAudience] = useState<AudiencePerson[]>([]);
+  const effectiveChannel = channel ?? plan?.channelAsk?.channel ?? null;
+  useEffect(() => {
+    if (!effectiveChannel) {
+      setAudience([]);
+      return;
+    }
+    void api<{ people: AudiencePerson[] }>(`/api/channels/${effectiveChannel}/audience`)
+      .then((reply) => setAudience(reply.people))
+      .catch(() => setAudience([]));
+  }, [effectiveChannel]);
   const looseQuestions = plan?.questions.filter((q) => !(cardUp && q.id.startsWith('send-'))) ?? [];
   const answerFact = (id: string, value: string) =>
     setAnswers((prev) => ({ ...prev, [id]: value }));
@@ -356,6 +374,7 @@ export function WorkBar({
                   questions={sendQuestions}
                   answers={answers}
                   onAnswer={answerFact}
+                  audience={audience}
                 />
               </div>
             </AskBubble>
@@ -371,6 +390,7 @@ export function WorkBar({
                 questions={sendQuestions}
                 answers={answers}
                 onAnswer={answerFact}
+                audience={audience}
               />
             </div>
           )}
@@ -405,7 +425,15 @@ export function WorkBar({
                     {o.label}
                   </button>
                 ))}
-                {q.freeText && (
+                {q.freeText && q.id === 'send-to' ? (
+                  <RecipientPicker
+                    className="work-q-text"
+                    placeholder="or say which"
+                    value={answers[q.id] ?? ''}
+                    onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
+                    people={audience}
+                  />
+                ) : q.freeText ? (
                   <input
                     className="work-q-text"
                     placeholder="or say which"
@@ -414,7 +442,7 @@ export function WorkBar({
                       setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
                     }
                   />
-                )}
+                ) : null}
               </span>
             </div>
           ))}

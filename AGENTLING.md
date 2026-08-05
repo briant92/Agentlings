@@ -1299,8 +1299,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
       is *told* the OUTBOX.json contract in its brief — D-031's rule,
       closed by D-079. The desk also asks the send's two facts (recipient,
       gist) on the card, Start arrests a knowably doomed queue for one
-      extra press, and a failed run's question carries a reply box that
-      continues the same job, channel and all (D-087)
+      extra press — including a recipient the channel's contract cannot
+      reach, like a name where a chat id belongs (D-091) — and a failed
+      run's question carries a reply box that continues the same job,
+      channel and all (D-087). The channel's opted-in audience is
+      persisted by name (Live, D-092): merged from the bot's own
+      getUpdates and the send audit, offered as a picker behind the To
+      field, listed in Settings with a forget button, and handed to the
+      session as a legend so "send it to Pepo" resolves — the never-invent
+      rule intact, no contact book imported anywhere
 - [x] **Send mail** — the Google connection is live: Connect button,
       loopback OAuth against the user's own client, one consent across
       Gmail, Calendar and Contacts, and a gmail channel that sends approved

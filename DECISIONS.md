@@ -101,6 +101,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-089 — 2026-08-05 — The agentling's file: tagged memory, a ledger record, and a skill handed to the role](#d-089--2026-08-05--the-agentlings-file-tagged-memory-a-ledger-record-and-a-skill-handed-to-the-role)
 - [D-090 — 2026-08-05 — A verb claims in every inflection, and a reply may name the channel the job never carried](#d-090--2026-08-05--a-verb-claims-in-every-inflection-and-a-reply-may-name-the-channel-the-job-never-carried)
 - [D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs](#d-091--2026-08-05--the-channel-names-its-recipients-shape-and-the-desk-objects-to-a-name-where-a-number-belongs)
+- [D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads](#d-092--2026-08-05--the-audience-roster-names-for-the-opted-in-a-picker-behind-to-and-the-legend-the-session-reads)
 
 ## By theme
 
@@ -242,7 +243,12 @@ entry updates one file rather than two.
   and D-091, the third wall of the same demo — the desk accepted a name
   where Telegram's contract wants a number, so the arrest now checks the
   recipient against the channel's own shape and quotes the value on the
-  button before money moves
+  button before money moves; and D-092, which retires the number-ferrying
+  entirely — the opted-in audience persists as a named roster (getUpdates
+  merged with the send audit, nothing imported), the To field becomes a
+  picker, Settings lists who the bot knows with a forget button, and the
+  session brief carries the legend so "send it to Pepo" resolves with the
+  never-invent rule intact
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5043,3 +5049,46 @@ server with Telegram genuinely connected: the ready chip up, To filled
 with "Pepo Dussaillant", the first press queued nothing and the button
 read the quoted objection; retyping "Brian — 8633678680" flipped it back
 to Start without a second press being wasted.
+
+## D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads
+
+"8633678680 is nobody's idea of a friend." Brian asked for names once the
+chat ids exist, and the data was already on the right boundary: everyone
+who taps Start is in the bot's own getUpdates with their name, and
+everyone a reviewed send went to is in sends.jsonl. So the roster is the
+opt-in audience persisted — never a contact-book import, which stays on
+the userbot shelf where it was refused — and the three decisions settled
+by recommendation: **refresh is one endpoint doing both jobs** (the
+garage's "check for new people" and the picker's quiet load hit the same
+GET, which merges getUpdates — Telegram retains only ~24 hours of hellos,
+so once seen means remembered — re-merges the whole send audit
+idempotently, persists, answers); **the legend rides every send job**;
+and **the roster lives at `.agentlings/audience/<channel>.json`**, global
+like the bot itself.
+
+The pieces, each on an existing seam: `SendRecord` gains the `name` the
+reviewed outbox showed (the audit stops needing a phonebook, and
+sends-only people keep the name you approved); `channelBrief` takes the
+audience and appends the legend — worded so **an address the user gives
+directly always wins**, because "use these ids and no others" would have
+broken the paste-someone-new flow — and the executor reads the roster
+through one more injected reader, the same seam knowledge and the ledger
+use. The To field becomes `RecipientPicker`: focus opens the people,
+picking writes "Name — id" (exactly what D-091's shape check accepts and
+review wants), typing filters, and with nobody on the roster it is the
+plain input it replaced. Settings lists who the bot knows under the
+Telegram card with a forget button — un-knowing someone lasts until they
+say hello again.
+
+**Evidence.** Nine audience tests (merge semantics — a returning hello
+refreshes the name and never loses a send count, idempotent audit
+re-merge, a tapped-Start name outranking the audit, disk round-trip,
+remove, getUpdates flattening with an injected http); two legend tests;
+1042 + 104 and typecheck green. Live against the real bot: the endpoint
+returned **two people — and one was news**: Jose "Pepo" Dussaillant had
+tapped Start (6783316106), so the roster's first real read resolved the
+very id the whole errand was missing. The picker opened with both, chose
+Jose, wrote "Jose Dussaillant — 6783316106", and Start stayed Start; the
+garage showed "knows 2 people" with forget buttons. The probe's only
+failures were the hidden pane's focus semantics, not the code. The forget
+button was deliberately not pressed on real people.

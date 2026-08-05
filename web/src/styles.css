@@ -408,6 +408,165 @@ button.ghost {
   outline: none;
   border-color: #597dce;
 }
+/* The To picker (D-092): the channel's opted-in people behind the field.
+   Dark by default; the bubble's sheet overrides below. */
+.rp {
+  position: relative;
+  display: inline-flex;
+  flex: 1;
+  min-width: 0;
+}
+.rp input {
+  flex: 1;
+  min-width: 0;
+}
+.rp-list {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 40;
+  min-width: 280px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  background: #181c26;
+  border: 1px solid #2b3040;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+.rp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 0;
+  border-bottom: 1px solid #232838;
+  background: transparent;
+  color: #d8dce6;
+  font: inherit;
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.rp-row:hover {
+  background: #1f2432;
+}
+.rp-av {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #30346d;
+  color: #deeed6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.rp-nm {
+  font-weight: 600;
+}
+.rp-id {
+  color: #8a91a3;
+  font-size: 10.5px;
+}
+.rp-src {
+  margin-left: auto;
+  flex: none;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a9d67f;
+}
+.rp-hint {
+  padding: 5px 10px;
+  font-size: 10px;
+  color: #8a91a3;
+  font-style: italic;
+}
+.ask-bubble .rp-list {
+  background: #fff;
+  border-color: #c9ccba;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.ask-bubble .rp-row {
+  color: #221a2e;
+  border-bottom-color: #eceee2;
+}
+.ask-bubble .rp-row:hover {
+  background: #eef3ff;
+}
+.ask-bubble .rp-id,
+.ask-bubble .rp-hint {
+  color: #635c72;
+}
+.ask-bubble .rp-src {
+  color: #4d8420;
+}
+/* The garage's "who the bot knows" (D-092). */
+.aud {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+}
+.aud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #181c26;
+  border: 1px solid #262b36;
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 11.5px;
+  color: #d8dce6;
+}
+.aud-av {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #30346d;
+  color: #deeed6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.aud-nm {
+  font-weight: 600;
+}
+.aud-id {
+  color: #8a91a3;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10.5px;
+}
+.aud-src {
+  margin-left: auto;
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.aud-x {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: #8a91a3;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 4px;
+}
+.aud-x:hover {
+  color: #e07072;
+}
+.aud-empty {
+  margin: 0;
+  font-size: 11px;
+}
 /* One press said no — the card wears the reason's colour until it is fixed
    or pressed again with eyes open (D-087). */
 .work-channel.arrested {

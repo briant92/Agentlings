@@ -211,4 +211,21 @@ describe('channelBrief', () => {
     expect(channelBrief('slack')).toBeNull();
     expect(channelBrief('carrier-pigeon')).toBeNull();
   });
+
+  it('carries the audience legend, and the user-given address still wins (D-092)', () => {
+    const brief = channelBrief('telegram', [
+      { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 },
+      { id: '71', name: 'Pepo Dussaillant', viaStart: true, sends: 0 },
+    ])!;
+    expect(brief).toContain('Known recipients');
+    expect(brief).toContain('Brian Thornton — 8633678680');
+    expect(brief).toContain('Pepo Dussaillant — 71');
+    expect(brief).toContain('gives directly always wins');
+    expect(brief).toContain('never invent one');
+  });
+
+  it('an empty roster adds no legend at all', () => {
+    expect(channelBrief('telegram', [])).not.toContain('Known recipients');
+    expect(channelBrief('telegram')).not.toContain('Known recipients');
+  });
 });

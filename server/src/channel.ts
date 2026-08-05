@@ -1,6 +1,7 @@
 import {
   MAX_OUTBOX_BODY_CHARS,
   MAX_OUTBOX_MESSAGES,
+  type AudiencePerson,
   type ChannelAsk,
   type ChannelOption,
   type ChannelShelf,
@@ -249,7 +250,7 @@ export function detectChannelAsk(
  * channels that exist — a job whose ask fell to "draft" carries no channel
  * and hears nothing.
  */
-export function channelBrief(channel: string): string | null {
+export function channelBrief(channel: string, audience: AudiencePerson[] = []): string | null {
   if (!CHANNELS[channel]) return null;
   const shape =
     channel === 'gmail'
@@ -278,6 +279,17 @@ export function channelBrief(channel: string): string | null {
       ? [
           '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',
           '- "params" are the template\'s body parameters, in order; "body" is the message as it will read, so the review shows real words. "to" is the number with country code. Do not invent numbers — report the missing ones in RESULT.md.',
+        ]
+      : []),
+    // The legend (D-092): "send it to Pepo" resolves by lookup instead of
+    // failing honestly, while the never-invent rule keeps its teeth — an id
+    // the user gives directly always wins, and a name that is neither on
+    // the roster nor given an id stays missing, exactly as before.
+    ...(audience.length > 0
+      ? [
+          '- Known recipients, for when the user names someone without an address:',
+          ...audience.map((p) => `  - ${p.name} — ${p.id}`),
+          '- An address the user gives directly always wins. A name not on this list and without an address is missing — report it in RESULT.md, never invent one.',
         ]
       : []),
     '- The user reviews every message and approves before anything is sent.',

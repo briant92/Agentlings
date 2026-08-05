@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ChannelShelf, SettingsInfo } from '@agentlings/shared';
+import type { AudiencePerson, ChannelShelf, SettingsInfo } from '@agentlings/shared';
 import { api } from '../api';
 import { ChannelLogo } from '../panels/ChannelLogo';
 import { resetTour, tourSeen } from '../panels/Tour';
@@ -25,9 +25,28 @@ export function SettingsModal({
 
   /** The tiers beyond the wired connections — planned, and never-with-why. */
   const [shelf, setShelf] = useState<ChannelShelf | null>(null);
+  /** Who the bot knows (D-092) — reading is also the quiet refresh. */
+  const [audience, setAudience] = useState<AudiencePerson[] | null>(null);
+  const [audienceOpen, setAudienceOpen] = useState(false);
+
+  const loadAudience = () =>
+    void api<{ people: AudiencePerson[] }>('/api/channels/telegram/audience')
+      .then((reply) => setAudience(reply.people))
+      .catch(() => setAudience([]));
+
+  const unknow = async (id: string) => {
+    const reply = await api<{ people: AudiencePerson[] }>(
+      `/api/channels/telegram/audience/${id}`,
+      { method: 'DELETE' },
+    );
+    setAudience(reply.people);
+  };
 
   useEffect(() => {
-    void api<SettingsInfo>('/api/settings').then(setSettings);
+    void api<SettingsInfo>('/api/settings').then((next) => {
+      setSettings(next);
+      if (next.connections.find((c) => c.name === 'telegram')?.ready) loadAudience();
+    });
     void api<ChannelShelf>('/api/channels')
       .then(setShelf)
       .catch(() => setShelf(null));
@@ -330,6 +349,55 @@ export function SettingsModal({
                   Off — the crew works from what you give them. Jobs that would have
                   fetched a page now cost a session instead.
                 </p>
+              )}
+              {/* Who the bot knows (D-092): the opt-in audience, persisted —
+                  the To picker's list, visible where connections live. */}
+              {connection.name === 'telegram' && connection.ready && audience !== null && (
+                <div className="conn-note">
+                  <span className="dim">
+                    knows {audience.length} {audience.length === 1 ? 'person' : 'people'}
+                  </span>
+                  {' · '}
+                  <button className="work-link" onClick={() => setAudienceOpen((v) => !v)}>
+                    {audienceOpen ? 'hide' : 'show'}
+                  </button>
+                  {' · '}
+                  <button className="work-link" onClick={() => loadAudience()}>
+                    check for new people
+                  </button>
+                  {audienceOpen && (
+                    <div className="aud">
+                      {audience.length === 0 && (
+                        <p className="dim aud-empty">
+                          Nobody yet — anyone the crew should message taps Start on the bot once.
+                        </p>
+                      )}
+                      {audience.map((person) => (
+                        <div key={person.id} className="aud-row">
+                          <span className="aud-av" aria-hidden="true">
+                            {person.name.charAt(0).toUpperCase()}
+                          </span>
+                          <span className="aud-nm">{person.name}</span>
+                          <span className="aud-id">{person.id}</span>
+                          <span className="aud-src dim">
+                            {person.viaStart ? 'tapped start' : ''}
+                            {person.viaStart && person.sends > 0 ? ' · ' : ''}
+                            {person.sends > 0 ? `sent ${person.sends}` : ''}
+                          </span>
+                          <button
+                            type="button"
+                            className="aud-x"
+                            aria-label={`Forget ${person.name}`}
+                            title="Forget them — they reappear if they say hello again"
+                            onClick={() => void unknow(person.id)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ))}

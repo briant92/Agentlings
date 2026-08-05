@@ -17,6 +17,10 @@ export interface SendRecord {
   jobId: string;
   channel: string;
   to: string;
+  /** Who this was, as the reviewed outbox named them (D-092) — the audit
+   *  should not need a phonebook to be readable, and the audience roster
+   *  reads names back from here for people who never tapped Start. */
+  name?: string;
   ok: boolean;
   /** The channel's own sentence for a failure ("chat not found"). */
   reason?: string;

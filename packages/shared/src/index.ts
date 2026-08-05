@@ -167,6 +167,24 @@ export interface ConnectionInfo {
   enabled: boolean;
 }
 
+/**
+ * One person a sending channel knows (D-092): the opt-in audience,
+ * persisted. Present means reachable — on Telegram, they tapped Start on
+ * the bot, or a reviewed send already went to them. No contact book is
+ * ever imported; absent means unreachable, which is the channel's rule.
+ */
+export interface AudiencePerson {
+  /** The channel's own address for them — a chat id, later an email. */
+  id: string;
+  /** Their name as the channel shows it, else the id itself. */
+  name: string;
+  username?: string;
+  /** They messaged the bot themselves — the strongest opt-in. */
+  viaStart: boolean;
+  /** Reviewed sends already delivered to them. */
+  sends: number;
+}
+
 /** One row of the channels Settings lists beyond the wired ones (D-088). */
 export interface ChannelShelfRow {
   channel: string;

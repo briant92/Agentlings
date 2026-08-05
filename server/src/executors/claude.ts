@@ -11,7 +11,7 @@ import {
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import type { Agentling, Job, JobAttachment, JobMeter } from '@agentlings/shared';
+import type { Agentling, AudiencePerson, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { channelBrief } from '../channel';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
@@ -691,6 +691,8 @@ export class ClaudeAgentExecutor implements Executor {
     private connections: () => Connection[] = () => [],
     /** History, for turning a money ceiling into a turn budget. */
     private ledger: () => LedgerEntry[] = () => [],
+    /** The channel's opted-in audience, for the brief's legend (D-092). */
+    private audience: (channel: string) => AudiencePerson[] = () => [],
   ) {}
 
   /** Live sessions by job id, so one can be stopped on request. */
@@ -807,7 +809,9 @@ export class ClaudeAgentExecutor implements Executor {
           // The same number the SDK is capped at, so the brief and the runner
           // cannot disagree about how long the run has.
           turnBudget,
-          job.channel ? (channelBrief(job.channel) ?? undefined) : undefined,
+          job.channel
+            ? (channelBrief(job.channel, this.audience(job.channel)) ?? undefined)
+            : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

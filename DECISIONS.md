@@ -105,6 +105,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-093 — 2026-08-05 — The near-miss is a question, and the review says when approving sends nothing](#d-093--2026-08-05--the-near-miss-is-a-question-and-the-review-says-when-approving-sends-nothing)
 - [D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words](#d-094--2026-08-05--a-known-name-prefills-to-and-the-same-again-means-the-audited-words)
 - [D-095 — 2026-08-05 — The leash is bounded by its own budget, and a run it cut may say so](#d-095--2026-08-05--the-leash-is-bounded-by-its-own-budget-and-a-run-it-cut-may-say-so)
+- [D-096 — 2026-08-05 — The first tool earned end to end, and what the ledger says about the run that built it](#d-096--2026-08-05--the-first-tool-earned-end-to-end-and-what-the-ledger-says-about-the-run-that-built-it)
 
 ## By theme
 
@@ -144,7 +145,12 @@ entry updates one file rather than two.
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
-- **The fourth tier, in service** — D-043, D-044, D-045
+- **The fourth tier, in service** — D-043, D-044, D-045; and D-096, the first
+  tool earned end to end on real recurring work with nothing seeded — five
+  hand-done runs on five different real datasets, a compile whose verifier was
+  mutated against five wrong answers before installing, then the job served at
+  0 turns and $0. It also records what the ledger makes of the compile: cut at
+  the cap, so filed a failure and absorbed, while the tool it built is live
 - **Outside access, continued again** — the knowledge store: options in D-046,
   settled as sync-and-index by D-047, built in D-048
 - **The free tier's honesty** — the recall tier scoring on its own asking
@@ -5285,3 +5291,68 @@ an independent recompute exactly. The recipe went `successes: 1 → 2`,
 `completions: 1 → 2`, `completedInTurns` unchanged at 6: the first
 movement on that counter since the recipe was learned, and the ladder is
 walking again.
+
+## D-096 — 2026-08-05 — The first tool earned end to end, and what the ledger says about the run that built it
+
+The question F4 was opened to answer — is the compiled-tool tier worth
+having, on evidence rather than hope — now has a live answer. The ladder
+was walked with nothing seeded at any step: five hand-done runs of one
+real recurring job, a compile requested only once `successes` reached
+three, both generated scripts read before installing, and a sixth run
+that the tool served.
+
+**The job.** "Summarise the attached expenses.csv into SUMMARY.md: a
+markdown table with the total per category and a grand total", queued
+verbatim six times with `web` the only named connection, so the banked
+surface stayed `conn:web` alone and D-044's gate passed on the first ask.
+Every run carried a *different* real slice of this project's own ledger —
+cost by level, by job class, by level×class; charged price by level and
+by tier×class; then spend by day — which is D-045's cache test built into
+the training data rather than asserted afterwards.
+
+**The compile.** $1.06 against a predicted $0.95–1.35, cut at the turn cap
+(11 of 10, D-025) holding two finished scripts. That is the ordinary
+ending for a compile and not a shortfall — the rule that says so was
+already written down. `run.mjs` is node built-ins only, with a real
+RFC4180 parser, BigInt arithmetic in the smallest unit the file uses, and
+a grouping column chosen by a written-down priority rule that it
+discloses in the output. `verify.mjs` trusts none of it: its own parser,
+its own column picks, its own sum, plus a naive float cross-check as a
+net for a dropped or double-counted row, and it compares every published
+figure against what it computed.
+
+**Proved before installing, which is the whole point of previewing
+generated code (D-011, D-021).** Offline, free: the pair ran correctly on
+three CSVs it had never seen, including run 1's — where it reproduced
+43.68, the figure a session had worked out by hand five runs earlier,
+minutes after producing 22.47 from a different file. It cannot be
+replaying an answer. And `verify.mjs` was mutated against five wrong
+outputs — a category off by one cent, the grand total off by one cent, a
+category row deleted, the row count misstated, no SUMMARY.md at all — and
+exited non-zero on every one, zero on the correct output. A verifier that
+never fails proves nothing, so this was checked rather than assumed. (The
+first attempt at that check read `$?` after a pipe and reported the exit
+code of `head`; every case looked like a pass.)
+
+**Then the payoff, live.** A seventh CSV, 116 rows grouped by day: job
+1882e54b came back `tier: tool`, `tooled: true`, **0 turns, $0**, every
+figure matching an independent recompute — and it disclosed the rounding
+residual (the displayed parts sum to 50.32 against a grand total of
+50.31, because each is rounded independently from the exact integer sum)
+rather than burying it in a category. `runs: 1, failures: 0`.
+
+**The finding nobody was looking for.** That compile is recorded in the
+ledger as `outcome: failed`, `priceUsd: 0` — cut at the wall, so the user
+was charged nothing and the app absorbed the $1.06 (D-012). Correct by
+every existing rule, and worth writing down anyway: **a working tool cost
+the user nothing, and the run that built it is filed as a failure.** Any
+future "how often do compiles succeed" read off the ledger will say 0%
+while the tool it produced is in service. The house rule applies to our
+own records — ask what the population was before trusting the rate.
+
+**What it is worth.** The five hand-done runs cost $2.20 in total and
+rose over time rather than falling (24.8c → 47.0c → 69.2c → 58.4c, the
+ratchet: each run meets the standard the last one banked). Every run of
+this sentence from here costs nothing at all. The tier pays back on the
+third or fourth reuse at these prices, which is roughly what D-021
+guessed when it had no data.

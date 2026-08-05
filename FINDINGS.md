@@ -40,7 +40,11 @@ The dev server was left running from that session.
       became the first leashed run ever to complete (3 calls, 23.3c): the tier
       works precisely where jobs fit ≤4 calls. The old ~55% headline was mostly
       the method. Residue moved to F7; refinement is just more pairs.
-- [ ] **F4 — First real repeat demand points at the blocked tool tier.**
+- [x] **F4 — First real repeat demand points at the blocked tool tier.**
+      **Done 2026-08-05 — D-096.** The ladder was walked end to end on real
+      recurring work: five hand-done runs, a compile, a reviewed promote, and
+      a sixth run served by `summarise-attach-expense-csv` at `tooled: true`,
+      0 turns, $0. The account below is what it took to get there.
       T6 ("summarise expenses.csv into SUMMARY.md") has now run four times,
       all delivered, on a recipe whose surface is verified `conn:web` alone —
       compile-clean for D-044. It was blocked for one afternoon and is not
@@ -97,17 +101,17 @@ The dev server was left running from that session.
 
 ## The board — pick up here
 
-1. **The T6 compile** (F4's milestone). Five runs are in — 24.8c, 47.0c,
-   20.4c-absorbed, 69.2c, 58.4c — and the recipe stands at `successes: 3`
-   with a surface of `conn:web` alone, so D-044 should pass and the promote
-   route's own bar is met. Ask for it (~$1.15–1.58, one-off), then **read
-   `run.mjs` before promoting**: D-045's cache test is the point, and the
-   five runs deliberately carried five different real slices of the ledger,
-   so a tool that cached an answer would be visibly wrong on the sixth.
-   Watch for one thing on the way in — `tool-candidates.jsonl` still has no
-   T6 line, because the candidate check reads the recipe as loaded at run
-   start and lands a run late. Cosmetic here; it means the UI's candidate
-   list is one run behind the promote route's own bar.
+1. **Two things the compile turned up**, neither urgent, both cheap to note
+   and easy to mis-read later:
+   - `tool-candidates.jsonl` still has no T6 line. The candidate check reads
+     the recipe as loaded at run *start*, so it lands a run late — the UI's
+     candidate list is one run behind the promote route's own bar, which
+     reads `successes` directly. Cosmetic; the compile went through anyway.
+   - **A compile that produces a working tool is recorded as a failure.**
+     T6's hit the turn cap holding two finished scripts, so it filed
+     `failed` and was absorbed — right by D-012, and it means any future
+     "compile success rate" read off the ledger says 0% while the tool it
+     built is live. Ask what the population was before trusting that figure.
 2. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
    promote and watch D-044 refuse with the reason. The gate's negative case,
    live. Worth re-reading its recipe first — T4 completed in 4 turns, so it

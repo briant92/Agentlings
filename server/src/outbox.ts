@@ -3,10 +3,13 @@ import path from 'node:path';
 import {
   MAX_OUTBOX_BODY_CHARS,
   MAX_OUTBOX_MESSAGES,
+  MAX_OUTBOX_PARAM_CHARS,
+  MAX_OUTBOX_PARAMS,
   MAX_OUTBOX_SUBJECT_CHARS,
   MAX_OUTBOX_TO_CHARS,
   type Outbox,
   type OutboxMessage,
+  type OutboxTemplate,
 } from '@agentlings/shared';
 
 /**
@@ -32,10 +35,11 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
-  const { to, name, subject, body } = raw as {
+  const { to, name, subject, params, body } = raw as {
     to?: unknown;
     name?: unknown;
     subject?: unknown;
+    params?: unknown;
     body?: unknown;
   };
   if (typeof to !== 'string' || to.trim() === '') {
@@ -59,6 +63,28 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (typeof subject === 'string' && subject.length > MAX_OUTBOX_SUBJECT_CHARS) {
     return { error: `message ${n}: "subject" is over ${MAX_OUTBOX_SUBJECT_CHARS} characters` };
   }
+  let cleanParams: string[] | undefined;
+  if (params !== undefined) {
+    if (!Array.isArray(params) || params.some((p) => typeof p !== 'string')) {
+      return { error: `message ${n}: "params" must be an array of strings when present` };
+    }
+    if (params.length > MAX_OUTBOX_PARAMS) {
+      return { error: `message ${n}: ${params.length} params — the cap is ${MAX_OUTBOX_PARAMS}` };
+    }
+    for (const p of params as string[]) {
+      if (p.trim() === '' || p.length > MAX_OUTBOX_PARAM_CHARS) {
+        return {
+          error: `message ${n}: every param must be 1–${MAX_OUTBOX_PARAM_CHARS} characters`,
+        };
+      }
+      // Meta refuses newlines and tabs inside template parameters; better the
+      // run hears that at parse time than the whole batch at send time.
+      if (/[\n\r\t]/.test(p)) {
+        return { error: `message ${n}: params may not contain line breaks or tabs` };
+      }
+    }
+    cleanParams = (params as string[]).map((p) => p.trim());
+  }
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {
@@ -67,8 +93,26 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
       body,
       ...(name && name.trim() ? { name: name.trim() } : {}),
       ...(subject && subject.trim() ? { subject: subject.trim() } : {}),
+      ...(cleanParams && cleanParams.length > 0 ? { params: cleanParams } : {}),
     },
   };
+}
+
+/** The template block, when the outbox carries one — Meta's own shapes. */
+function checkTemplate(raw: unknown): { template?: OutboxTemplate; error?: string } {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return { error: '"template" must be an object with "name" and "language"' };
+  }
+  const { name, language } = raw as { name?: unknown; language?: unknown };
+  if (typeof name !== 'string' || !/^[a-z0-9_]{1,512}$/.test(name)) {
+    return {
+      error: '"template.name" must be lowercase letters, digits and underscores — the name Meta approved',
+    };
+  }
+  if (typeof language !== 'string' || !/^[a-z]{2}(_[A-Z]{2})?$/.test(language)) {
+    return { error: '"template.language" must be a code like "es" or "en_US"' };
+  }
+  return { template: { name, language } };
 }
 
 /** Parses OUTBOX.json from a sandbox: null when absent, the reason when invalid. */
@@ -84,9 +128,19 @@ export function readOutbox(dir: string): OutboxRead | null {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { error: 'not an object with "channel" and "messages"' };
   }
-  const { channel, messages } = parsed as { channel?: unknown; messages?: unknown };
+  const { channel, template, messages } = parsed as {
+    channel?: unknown;
+    template?: unknown;
+    messages?: unknown;
+  };
   if (typeof channel !== 'string' || channel.trim() === '') {
     return { error: '"channel" must be a non-empty string' };
+  }
+  let cleanTemplate: OutboxTemplate | undefined;
+  if (template !== undefined) {
+    const checked = checkTemplate(template);
+    if (checked.error) return { error: checked.error };
+    cleanTemplate = checked.template;
   }
   if (!Array.isArray(messages) || messages.length === 0) {
     return { error: '"messages" must be a non-empty array' };
@@ -108,5 +162,11 @@ export function readOutbox(dir: string): OutboxRead | null {
     seen.add(message!.to);
     out.push(message!);
   }
-  return { outbox: { channel: channel.trim().toLowerCase(), messages: out } };
+  return {
+    outbox: {
+      channel: channel.trim().toLowerCase(),
+      ...(cleanTemplate ? { template: cleanTemplate } : {}),
+      messages: out,
+    },
+  };
 }

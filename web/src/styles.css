@@ -1522,6 +1522,12 @@ button.danger:hover {
   margin-top: 3px;
   white-space: pre-wrap;
 }
+.rv-msg-params {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10.5px;
+  color: #8d86a3;
+  margin-top: 3px;
+}
 
 .hire-quote {
   font-size: 12px;

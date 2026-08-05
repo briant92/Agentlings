@@ -90,6 +90,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-078 — 2026-08-05 — The token drawer: one store, one real call, one inbound crossing](#d-078--2026-08-05--the-token-drawer-one-store-one-real-call-one-inbound-crossing)
 - [D-079 — 2026-08-05 — The desk notices a send, and asks at the only moment asking is free](#d-079--2026-08-05--the-desk-notices-a-send-and-asks-at-the-only-moment-asking-is-free)
 - [D-080 — 2026-08-05 — Google connects by loopback, against the user's own client](#d-080--2026-08-05--google-connects-by-loopback-against-the-users-own-client)
+- [D-081 — 2026-08-05 — WhatsApp Business sends templates, and the audit records a declared price or none](#d-081--2026-08-05--whatsapp-business-sends-templates-and-the-audit-records-a-declared-price-or-none)
 
 ## By theme
 
@@ -194,7 +195,9 @@ entry updates one file rather than two.
   contract — with the parked-job status refused a second time: D-079; and
   the first Connect button — Google by loopback OAuth against the user's own
   client, the gmail channel that sends as them, and the 7-day trap given a
-  sentence at both ends: D-080
+  sentence at both ends: D-080; and WhatsApp Business as templates with the
+  drawer learning to validate a secret *set* whole, and the audit taking a
+  declared price or none: D-081
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4456,3 +4459,61 @@ refused with Google's own sentence and never the secret), the refresh (the
 the running server — the start endpoint minted a correct consent URL, a
 bogus-state callback answered 400 with the stale-link page, and "email the
 summary to the team" now asks connectable-Gmail at the desk.
+
+## D-081 — 2026-08-05 — WhatsApp Business sends templates, and the audit records a declared price or none
+
+Slice 5 of M5.11, the last Tier-1 sender wired — the channel the whole
+batch was asked about first. Same shape as its siblings: empty tool grant
+asserted in tests, sends only at approval, a switch that stays the user's.
+The two facts that make WhatsApp different are handled head-on rather than
+smoothed over.
+
+**Business-initiated WhatsApp is templates, and the contract says so.**
+Meta owns a template's text; what travels is its name, its language and
+per-recipient parameters. So the outbox gains an outbox-level `template`
+— {name, language}, one per outbox, because a batch is one message in N
+mailboxes — and per-message `params`, validated in Meta's own shapes:
+template names lowercase_underscore, language codes like `es` or `en_US`,
+params without line breaks, which Meta refuses late and this refuses
+early. `body` stays required and is the message as review reads it — a
+claimed rendering — while the card also prints the template line and the
+exact params, so what is *transmitted* is on the card even though Meta
+holds the words. The brief tells a run: exactly the approved template name
+the user gave, never an invented one, and RESULT.md when none was given.
+
+**Two secrets can only be validated whole, which reworked the drawer's
+contract.** Meta's one real check — the phone number id asked for its
+display number, which is also the identity the card then shows — needs the
+token *and* the id. The secret route now takes every missing value in one
+submission: a partial paste is refused before any call is made, unknown
+names are refused, every value passes the same guards, one validation
+covers the set, and only then does anything store. "Validated before
+stored" now holds for the *set*, not per field (D-078, amended by this).
+The drawer became fill-everything-then-one-Check for every connection;
+telegram's single field reads exactly as before.
+
+**The audit records the user's declared price, or none — never a guess.**
+Meta prices per delivered template by category and country and does not
+say so in the send response; the true figure lives in webhooks and
+invoices this app does not read. `WHATSAPP_USD_PER_MESSAGE`, set by the
+user from their own rate card, is stamped on each delivered send in
+`sends.jsonl` as their declared figure; unset records no price at all. A
+guessed price in an audit file is worse than an absent one — D-039's
+ledger rule, arriving from the other direction.
+
+**The guide leads with the free on-ramp.** Meta gives every Business app a
+test number that can message up to five verified numbers, free — the whole
+demo loop with no business verification and no spend. The six setup steps
+on the drawer start there and end at the permanent System User token.
+
+**Evidence.** 15 new tests: the template block and params in Meta's
+shapes; the client posting template-name-language-params and never the
+body; the no-template refusal before any call; Meta's own refusal sentence
+surfaced; the declared-rate function refusing garbage, zero, and every
+other channel; `executeOutbox` handing the template to each send; the
+validator proving both halves with one call. Live against the running
+server: the whatsapp fork's three alternatives all show live states now,
+"on whatsapp business" is its own connectable ask, a junk two-value paste
+answered "Meta rejected the token" off a real graph.facebook.com call, a
+partial paste was refused before any call was made, and `.env` gained
+nothing from either.

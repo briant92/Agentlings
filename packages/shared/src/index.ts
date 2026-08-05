@@ -237,10 +237,30 @@ export interface OutboxMessage {
   name?: string;
   /** Mail-shaped channels want one; chat-shaped channels ignore it. */
   subject?: string;
+  /**
+   * Template body parameters, for channels that send pre-approved templates
+   * (WhatsApp Business). What is actually transmitted; `body` is the rendered
+   * text as review shows it.
+   */
+  params?: string[];
   body: string;
 }
 
 export const MAX_OUTBOX_SUBJECT_CHARS = 200;
+export const MAX_OUTBOX_PARAMS = 10;
+export const MAX_OUTBOX_PARAM_CHARS = 500;
+
+/**
+ * The pre-approved template a template-shaped outbox sends — one per outbox,
+ * because a batch is one message in N mailboxes. Meta owns the template's
+ * actual text; review shows the name, the language and every parameter, so
+ * what is transmitted is on the card even though the rendering is a claim.
+ */
+export interface OutboxTemplate {
+  name: string;
+  /** Meta's language code — "es", "en_US". */
+  language: string;
+}
 
 /**
  * What a run asks to send: one channel, up to MAX_OUTBOX_MESSAGES messages,
@@ -249,6 +269,8 @@ export const MAX_OUTBOX_SUBJECT_CHARS = 200;
  */
 export interface Outbox {
   channel: string;
+  /** Required by template-shaped channels (WhatsApp Business); absent elsewhere. */
+  template?: OutboxTemplate;
   messages: OutboxMessage[];
 }
 

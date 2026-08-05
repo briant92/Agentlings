@@ -20,6 +20,13 @@ const google: Connection = {
     GOOGLE_OAUTH_REFRESH_TOKEN: 'why',
   },
 };
+const whatsappBusiness: Connection = {
+  name: 'whatsapp-business',
+  label: 'Send WhatsApp Business messages',
+  transport: 'builtin',
+  tools: [],
+  secrets: { WHATSAPP_TOKEN: 'why', WHATSAPP_PHONE_NUMBER_ID: 'why' },
+};
 const CONNECTED = { connections: { telegram: true } };
 const TOKEN = { TELEGRAM_BOT_TOKEN: 't' };
 
@@ -27,7 +34,7 @@ const ask = (
   prompt: string,
   settings: { connections?: Record<string, boolean> } = {},
   env: Record<string, string | undefined> = {},
-) => detectChannelAsk(prompt, [telegram, google], settings, env);
+) => detectChannelAsk(prompt, [telegram, google, whatsappBusiness], settings, env);
 
 /**
  * Detection follows the router's rule: claim only what is unmistakably a
@@ -84,10 +91,17 @@ describe('detectChannelAsk — what the card says', () => {
       'gmail',
     ]);
     expect(got?.options[0].state).toBe('ready');
-    expect(got?.options[1].state).toBe('planned');
+    // Both alternatives are wired now (D-080, D-081) — live states, not promises.
+    expect(got?.options[1].state).toBe('connectable');
     expect(got?.options[1].detail).toContain('business number');
-    // Gmail is wired now (D-080) — its row carries a live state, not a promise.
     expect(got?.options[2].state).toBe('connectable');
+  });
+
+  it('"on whatsapp business" is its own wired ask, not the personal refusal', () => {
+    const got = ask('send the padel reminder on whatsapp business', CONNECTED, TOKEN);
+    expect(got?.asked).toBe('whatsapp-business');
+    expect(got?.state).toBe('connectable');
+    expect(got?.channel).toBe('whatsapp-business');
   });
 
   it('an email ask is connectable once google is in the catalog', () => {
@@ -132,6 +146,15 @@ describe('channelBrief', () => {
     expect(brief).toContain('email address');
     expect(brief).toContain("user's own address");
     expect(brief).toContain('do not invent');
+  });
+
+  it('tells a whatsapp job templates-only, params-in-order, and never to invent either', () => {
+    const brief = channelBrief('whatsapp-business')!;
+    expect(brief).toContain('"template"');
+    expect(brief).toContain('pre-approved template');
+    expect(brief).toContain('"params"');
+    expect(brief).toContain('country code');
+    expect(brief).toContain('do not invent one');
   });
 
   it('says nothing for a channel that does not exist', () => {

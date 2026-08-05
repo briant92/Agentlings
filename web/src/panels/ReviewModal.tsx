@@ -69,6 +69,8 @@ export function ReviewModal({
               <div className="sect">
                 outbox · {job.outbox.messages.length} message
                 {job.outbox.messages.length === 1 ? '' : 's'} via {job.outbox.channel}
+                {job.outbox.template &&
+                  ` · template ${job.outbox.template.name} (${job.outbox.template.language})`}
                 {unsent.length > 0 ? ' — approving sends them' : ' — all sent'}
               </div>
               <ul className="rv-outbox">
@@ -86,6 +88,11 @@ export function ReviewModal({
                       </div>
                       {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
                       <div className="rv-msg-body">{m.body}</div>
+                      {m.params && m.params.length > 0 && (
+                        // What is actually transmitted for a template send —
+                        // the body above is the claimed rendering.
+                        <div className="rv-msg-params">sends: [{m.params.join(' · ')}]</div>
+                      )}
                     </li>
                   );
                 })}

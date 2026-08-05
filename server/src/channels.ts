@@ -1,4 +1,4 @@
-import type { Outbox, OutboxMessage } from '@agentlings/shared';
+import type { Outbox, OutboxMessage, OutboxTemplate } from '@agentlings/shared';
 import { missingSecrets, type Connection } from './connections';
 import { accessTokenFromRefresh, base64url } from './google';
 import { connectionEnabled, type StoredSettings } from './settings';
@@ -16,6 +16,8 @@ export interface ChannelDeps {
   env: Record<string, string | undefined>;
   /** Injectable for tests; the real one is global fetch. */
   fetchFn?: typeof fetch;
+  /** The outbox's template, for template-shaped channels; set by executeOutbox. */
+  template?: OutboxTemplate;
 }
 
 export interface ChannelClient {
@@ -127,7 +129,88 @@ const gmail: ChannelClient = {
   },
 };
 
-export const CHANNELS: Record<string, ChannelClient> = { telegram, gmail };
+const GRAPH_VERSION = 'v20.0';
+
+/**
+ * WhatsApp Business Cloud API (D-081). Business-initiated messages are
+ * pre-approved templates — Meta owns the template's text, so what travels is
+ * the template name, its language and the per-recipient parameters, all of
+ * which review shows. `to` is the recipient's number with country code.
+ */
+const whatsappBusiness: ChannelClient = {
+  connection: 'whatsapp-business',
+  async send(message, deps) {
+    const token = deps.env.WHATSAPP_TOKEN;
+    const phoneNumberId = deps.env.WHATSAPP_PHONE_NUMBER_ID;
+    if (!token || !phoneNumberId) throw new Error('WhatsApp Business is not connected');
+    if (!deps.template) {
+      throw new Error('WhatsApp sends need a pre-approved template — this outbox carries none');
+    }
+    const doFetch = deps.fetchFn ?? fetch;
+    const res = await doFetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: message.to.replace(/^\+/, ''),
+          type: 'template',
+          template: {
+            name: deps.template.name,
+            language: { code: deps.template.language },
+            ...(message.params?.length
+              ? {
+                  components: [
+                    {
+                      type: 'body',
+                      parameters: message.params.map((text) => ({ type: 'text', text })),
+                    },
+                  ],
+                }
+              : {}),
+          },
+        }),
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      },
+    );
+    if (!res.ok) {
+      let reason = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { error?: { message?: string } };
+        if (body?.error?.message) reason = body.error.message;
+      } catch {
+        // keep the status
+      }
+      throw new Error(reason);
+    }
+  },
+};
+
+export const CHANNELS: Record<string, ChannelClient> = {
+  telegram,
+  gmail,
+  'whatsapp-business': whatsappBusiness,
+};
+
+/**
+ * What one send costs on this channel, when the user has declared their rate.
+ *
+ * Meta prices per delivered template by category and country and does not
+ * say so in the send response — the true figure lives in their webhooks and
+ * invoices. So this is deliberately the user's own declared figure
+ * (`WHATSAPP_USD_PER_MESSAGE`, from their rate card), stamped on the audit
+ * as such, and nothing is recorded when they have declared none: a guessed
+ * price in an audit file is worse than an absent one (D-081).
+ */
+export function sendPriceUsd(
+  channel: string,
+  env: Record<string, string | undefined>,
+): number | undefined {
+  if (channel !== 'whatsapp-business') return undefined;
+  const rate = Number(env.WHATSAPP_USD_PER_MESSAGE);
+  return Number.isFinite(rate) && rate > 0 ? rate : undefined;
+}
 
 /**
  * Why a reviewed outbox may not be sent right now, or null when it may.
@@ -188,10 +271,11 @@ export async function executeOutbox(
     return run;
   }
   const done = new Set(alreadySentTo);
+  const perSend: ChannelDeps = { ...deps, template: outbox.template };
   for (const message of outbox.messages) {
     if (done.has(message.to)) continue;
     try {
-      await client.send(message, deps);
+      await client.send(message, perSend);
       run.sentTo.push(message.to);
     } catch (err) {
       run.failed.push({

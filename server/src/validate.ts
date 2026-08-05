@@ -87,8 +87,34 @@ const search: Validator = async (env, fetchFn) => {
   return { ok: false, reason: `Brave answered HTTP ${res.status}` };
 };
 
+const whatsappBusiness: Validator = async (env, fetchFn) => {
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID ?? '';
+  const { res, reason } = await call(
+    fetchFn,
+    'Meta',
+    `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=display_phone_number`,
+    { authorization: `Bearer ${env.WHATSAPP_TOKEN}` },
+  );
+  if (!res) return { ok: false, reason };
+  if (res.ok) {
+    const body = (await res.json().catch(() => null)) as { display_phone_number?: string } | null;
+    const phone = body?.display_phone_number;
+    return { ok: true, ...(phone ? { identity: phone } : {}) };
+  }
+  if (res.status === 401) return { ok: false, reason: 'Meta rejected the token' };
+  if (res.status === 404 || res.status === 400) {
+    return { ok: false, reason: 'Meta found no phone number with that id — check both values' };
+  }
+  return { ok: false, reason: `Meta answered HTTP ${res.status}` };
+};
+
 /** By connection name, deliberately — a validator knows its whole connection. */
-export const VALIDATORS: Record<string, Validator> = { telegram, github, search };
+export const VALIDATORS: Record<string, Validator> = {
+  telegram,
+  github,
+  search,
+  'whatsapp-business': whatsappBusiness,
+};
 
 export async function validateConnectionSecret(
   connectionName: string,

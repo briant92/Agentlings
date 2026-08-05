@@ -801,8 +801,17 @@ tried, measured and rejected is in `DECISIONS.md`:
           optional `subject` on outbox messages); testing-mode's 7-day
           expiry is named in the setup steps and again by the send-time
           reconnect sentence. Cards now say who connected (D-080).
-    - [ ] **The WhatsApp Business guide + channel.** Meta setup walkthrough,
-          template sends, per-message cost into `sends.jsonl`.
+    - [x] **The WhatsApp Business guide + channel.** Six Meta setup steps on
+          the drawer, leading with the free test number (messages 5 verified
+          numbers, no business verification). Business-initiated sends are
+          pre-approved templates: the outbox carries `template`
+          {name, language} once and per-message `params` — validated in
+          Meta's own shapes — while `body` stays the reviewed rendering and
+          the card prints exactly what is transmitted. Two secrets validate
+          *whole* with one real call (the drawer submits the set; partial
+          pastes refuse before any call). Sends stamp the user's declared
+          `WHATSAPP_USD_PER_MESSAGE` into `sends.jsonl`, or no price at all
+          — never a guess (D-081).
     - [ ] **The leash.** Standing approval per job + recipients + wording
           after N clean reviews; any change drops back to review (D-075).
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real

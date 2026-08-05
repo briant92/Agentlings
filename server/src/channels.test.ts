@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHANNELS, emailRaw, executeOutbox, outboxRefusal } from './channels';
+import { CHANNELS, emailRaw, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import type { Connection } from './connections';
 
 /** A fetch stand-in that records calls and answers from a script. */
@@ -147,6 +147,80 @@ describe('the gmail channel', () => {
   });
 });
 
+describe('the whatsapp-business channel', () => {
+  const ENV = { WHATSAPP_TOKEN: 'wt', WHATSAPP_PHONE_NUMBER_ID: '123456' };
+  const TEMPLATE = { name: 'padel_reminder', language: 'es' };
+
+  function capture(res: { ok: boolean; status?: number; body?: unknown } = { ok: true }) {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fn = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      return {
+        ok: res.ok,
+        status: res.status ?? (res.ok ? 200 : 500),
+        json: async () => res.body ?? {},
+      };
+    }) as unknown as typeof fetch;
+    return { fn, calls };
+  }
+
+  it('posts the template, its language and the params — never the body', async () => {
+    const { fn, calls } = capture();
+    await CHANNELS['whatsapp-business'].send(
+      { to: '+34600111222', params: ['Ana', 'jueves 9:00'], body: 'Hola Ana — pádel el jueves' },
+      { env: ENV, fetchFn: fn, template: TEMPLATE },
+    );
+    expect(calls[0].url).toBe('https://graph.facebook.com/v20.0/123456/messages');
+    const sent = JSON.parse(String(calls[0].init?.body)) as {
+      to: string;
+      type: string;
+      template: { name: string; language: { code: string }; components?: unknown[] };
+    };
+    expect(sent.to).toBe('34600111222'); // the + is Meta's to drop, not ours to send
+    expect(sent.type).toBe('template');
+    expect(sent.template.name).toBe('padel_reminder');
+    expect(sent.template.language.code).toBe('es');
+    expect(JSON.stringify(sent)).not.toContain('Hola Ana'); // body is review-only
+    expect(JSON.stringify(sent.template.components)).toContain('jueves 9:00');
+  });
+
+  it('refuses an outbox with no template rather than inventing a message type', async () => {
+    const { fn, calls } = capture();
+    await expect(
+      CHANNELS['whatsapp-business'].send({ to: '1', body: 'x' }, { env: ENV, fetchFn: fn }),
+    ).rejects.toThrow('pre-approved template');
+    expect(calls).toHaveLength(0);
+  });
+
+  it("surfaces Meta's own refusal sentence", async () => {
+    const { fn } = capture({
+      ok: false,
+      status: 400,
+      body: { error: { message: 'Template name does not exist in the translation' } },
+    });
+    await expect(
+      CHANNELS['whatsapp-business'].send(
+        { to: '1', params: ['x'], body: 'x' },
+        { env: ENV, fetchFn: fn, template: TEMPLATE },
+      ),
+    ).rejects.toThrow('does not exist in the translation');
+  });
+});
+
+describe('sendPriceUsd', () => {
+  it('is the user’s declared rate, and only that', () => {
+    expect(sendPriceUsd('whatsapp-business', { WHATSAPP_USD_PER_MESSAGE: '0.025' })).toBe(0.025);
+    expect(sendPriceUsd('whatsapp-business', {})).toBeUndefined();
+    expect(sendPriceUsd('whatsapp-business', { WHATSAPP_USD_PER_MESSAGE: 'garbage' })).toBeUndefined();
+    expect(sendPriceUsd('whatsapp-business', { WHATSAPP_USD_PER_MESSAGE: '0' })).toBeUndefined();
+  });
+
+  it('prices no other channel — telegram and gmail sends cost nothing extra', () => {
+    expect(sendPriceUsd('telegram', { WHATSAPP_USD_PER_MESSAGE: '0.025' })).toBeUndefined();
+    expect(sendPriceUsd('gmail', { WHATSAPP_USD_PER_MESSAGE: '0.025' })).toBeUndefined();
+  });
+});
+
 describe('executeOutbox', () => {
   const outbox = {
     channel: 'telegram',
@@ -156,6 +230,25 @@ describe('executeOutbox', () => {
       { to: '3', body: 'c' },
     ],
   };
+
+  it('hands the outbox template to every send', async () => {
+    const seen: unknown[] = [];
+    const fn = (async (url: string, init?: RequestInit) => {
+      seen.push(JSON.parse(String(init?.body)));
+      return { ok: true, status: 200, json: async () => ({}) };
+    }) as unknown as typeof fetch;
+    const run = await executeOutbox(
+      {
+        channel: 'whatsapp-business',
+        template: { name: 'padel_reminder', language: 'es' },
+        messages: [{ to: '1', params: ['Ana'], body: 'x' }],
+      },
+      [],
+      { env: { WHATSAPP_TOKEN: 't', WHATSAPP_PHONE_NUMBER_ID: '9' }, fetchFn: fn },
+    );
+    expect(run.sentTo).toEqual(['1']);
+    expect(JSON.stringify(seen[0])).toContain('padel_reminder');
+  });
 
   it('skips recipients already sent to — approving twice never messages twice', async () => {
     const { fn, calls } = fakeFetch(() => ({ ok: true }));

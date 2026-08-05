@@ -60,6 +60,32 @@ describe('validateConnectionSecret', () => {
     expect(verdict.reason).toContain('wait a minute');
   });
 
+  it('whatsapp-business: one call proves both halves and answers with the number', async () => {
+    const { fn, calls } = fakeFetch(() => ({
+      ok: true,
+      body: { display_phone_number: '+1 555 025 3483' },
+    }));
+    const verdict = await validateConnectionSecret(
+      'whatsapp-business',
+      { WHATSAPP_TOKEN: 'wt', WHATSAPP_PHONE_NUMBER_ID: '123456' },
+      fn,
+    );
+    expect(verdict).toEqual({ ok: true, identity: '+1 555 025 3483' });
+    expect(calls[0].url).toContain('/123456?fields=display_phone_number');
+    expect(calls[0].headers.authorization).toBe('Bearer wt');
+  });
+
+  it('whatsapp-business: a wrong id reads as both-values advice, not an HTTP number', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 404 }));
+    const verdict = await validateConnectionSecret(
+      'whatsapp-business',
+      { WHATSAPP_TOKEN: 'wt', WHATSAPP_PHONE_NUMBER_ID: 'nope' },
+      fn,
+    );
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('check both values');
+  });
+
   it('a network failure names the provider, never the value', async () => {
     const fn = (async () => {
       throw new Error('getaddrinfo ENOTFOUND');

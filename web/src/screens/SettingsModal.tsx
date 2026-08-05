@@ -41,8 +41,12 @@ export function SettingsModal({
     setDrawerError(null);
   };
 
-  /** Validated by one real call server-side; stored only when it answered. */
-  const submitSecret = async (name: string, secret: string) => {
+  /**
+   * All of a connection's missing secrets in one submission, validated
+   * together by one real call server-side and stored only when it answered —
+   * a two-secret connection (WhatsApp Business) can only be checked whole.
+   */
+  const submitSecrets = async (name: string, secrets: string[]) => {
     setChecking(true);
     setDrawerError(null);
     try {
@@ -51,7 +55,9 @@ export function SettingsModal({
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ secret, value: values[secret] ?? '' }),
+          body: JSON.stringify({
+            values: Object.fromEntries(secrets.map((s) => [s, values[s] ?? ''])),
+          }),
         },
       );
       setSettings((prev) => (prev ? { ...prev, connections: reply.connections } : prev));
@@ -253,26 +259,35 @@ export function SettingsModal({
                       )}
                     </>
                   ) : (
-                    connection.missingSecrets.map((secret) => (
-                      <div key={secret} className="secret-row">
-                        <input
-                          type="password"
-                          placeholder={secret}
-                          value={values[secret] ?? ''}
-                          autoComplete="off"
-                          spellCheck={false}
-                          onChange={(e) =>
-                            setValues((prev) => ({ ...prev, [secret]: e.target.value }))
-                          }
-                        />
+                    <>
+                      {connection.missingSecrets.map((secret) => (
+                        <div key={secret} className="secret-row">
+                          <input
+                            type="password"
+                            placeholder={secret}
+                            value={values[secret] ?? ''}
+                            autoComplete="off"
+                            spellCheck={false}
+                            onChange={(e) =>
+                              setValues((prev) => ({ ...prev, [secret]: e.target.value }))
+                            }
+                          />
+                        </div>
+                      ))}
+                      <div className="secret-row">
                         <button
-                          disabled={checking || !(values[secret] ?? '').trim()}
-                          onClick={() => void submitSecret(connection.name, secret)}
+                          disabled={
+                            checking ||
+                            connection.missingSecrets.some((s) => !(values[s] ?? '').trim())
+                          }
+                          onClick={() =>
+                            void submitSecrets(connection.name, connection.missingSecrets)
+                          }
                         >
                           {checking ? 'Checking…' : 'Check'}
                         </button>
                       </div>
-                    ))
+                    </>
                   )}
                   {drawerError && <p className="error">{drawerError}</p>}
                   <p className="dim secret-note">

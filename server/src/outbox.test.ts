@@ -60,6 +60,40 @@ describe('readOutbox', () => {
     expect(read?.outbox?.messages[1].subject).toBeUndefined();
   });
 
+  it('keeps a template outbox whole: name, language, per-message params', () => {
+    write(
+      JSON.stringify({
+        channel: 'whatsapp-business',
+        template: { name: 'padel_reminder', language: 'es' },
+        messages: [
+          { to: '+34600111222', name: 'Ana', params: [' Ana ', 'jueves 9:00'], body: 'Hola Ana…' },
+        ],
+      }),
+    );
+    const read = readOutbox(dir);
+    expect(read?.error).toBeUndefined();
+    expect(read?.outbox?.template).toEqual({ name: 'padel_reminder', language: 'es' });
+    expect(read?.outbox?.messages[0].params).toEqual(['Ana', 'jueves 9:00']);
+  });
+
+  it.each([
+    ['a template name Meta would refuse', { name: 'Padel Reminder!', language: 'es' }, 'template.name'],
+    ['a language that is not a code', { name: 'padel_reminder', language: 'spanish' }, 'template.language'],
+  ])('refuses %s', (_, template, reason) => {
+    write(JSON.stringify({ channel: 'whatsapp-business', template, messages: [{ to: '1', body: 'x' }] }));
+    expect(readOutbox(dir)?.error).toContain(reason);
+  });
+
+  it('refuses params with line breaks — Meta would refuse the whole batch later', () => {
+    write(
+      JSON.stringify({
+        channel: 'whatsapp-business',
+        messages: [{ to: '1', params: ['ok', 'bad\nparam'], body: 'x' }],
+      }),
+    );
+    expect(readOutbox(dir)?.error).toContain('line breaks');
+  });
+
   it('refuses a subject that is not a string, or longer than any subject line', () => {
     write(JSON.stringify({ channel: 'gmail', messages: [{ to: 'a@b.c', subject: 7, body: 'x' }] }));
     expect(readOutbox(dir)?.error).toContain('"subject"');

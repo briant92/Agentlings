@@ -25,8 +25,8 @@ import {
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { capabilityTokens, connectionsIn } from './capability';
-import { CHANNELS, executeOutbox, outboxRefusal } from './channels';
-import { describe, readConnections } from './connections';
+import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
+import { describe, missingSecrets, readConnections } from './connections';
 import {
   enabledNames,
   grantedTools,
@@ -409,19 +409,39 @@ app.post('/api/settings/connections/:name/secret', async (c) => {
   const name = c.req.param('name');
   const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === name);
   if (!connection) return c.json({ error: 'no such connection' }, 404);
-  const body = await c.req.json<{ secret?: string; value?: string }>();
-  const secretName = body.secret ?? '';
-  if (!Object.hasOwn(connection.secrets ?? {}, secretName)) {
-    return c.json({ error: `"${name}" declares no secret named "${secretName}"` }, 400);
+  const body = await c.req.json<{
+    secret?: string;
+    value?: string;
+    values?: Record<string, unknown>;
+  }>();
+  // One submission carries every value the connection still needs. A
+  // two-secret connection (WhatsApp Business) can only be validated whole —
+  // its one real call needs both halves — and "validated before stored"
+  // has to hold for the set, not per field (D-078, D-081).
+  const offered = body.values ?? (body.secret ? { [body.secret]: body.value } : {});
+  const values: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(offered)) {
+    if (!Object.hasOwn(connection.secrets ?? {}, key)) {
+      return c.json({ error: `"${name}" declares no secret named "${key}"` }, 400);
+    }
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    const problem = secretValueProblem(value);
+    if (problem) return c.json({ error: `${key}: ${problem}` }, 400);
+    values[key] = value;
   }
-  const value = typeof body.value === 'string' ? body.value.trim() : '';
-  const problem = secretValueProblem(value);
-  if (problem) return c.json({ error: problem }, 400);
-  // Validated against an env view that carries the candidate value; nothing
-  // is stored until the provider has answered for it.
-  const verdict = await validateConnectionSecret(name, { ...process.env, [secretName]: value });
+  if (Object.keys(values).length === 0) return c.json({ error: 'paste the token first' }, 400);
+  const stillMissing = missingSecrets(connection, { ...process.env, ...values });
+  if (stillMissing.length > 0) {
+    return c.json(
+      { error: `still needs ${stillMissing.join(', ')} — fill every field, then Check` },
+      400,
+    );
+  }
+  const verdict = await validateConnectionSecret(name, { ...process.env, ...values });
   if (!verdict.ok) return c.json({ error: verdict.reason ?? 'the key did not validate' }, 400);
-  storeSecret(ENV_FILE, secretName, value, process.env);
+  for (const [key, value] of Object.entries(values)) {
+    storeSecret(ENV_FILE, key, value, process.env);
+  }
   if (verdict.identity) {
     writeSettings(SANDBOX_ROOT, setIdentity(readSettings(SANDBOX_ROOT), name, verdict.identity));
   }
@@ -1026,6 +1046,9 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       if (refusal) return c.json({ error: `outbox not sent — ${refusal}` }, 400);
       const run = await executeOutbox(outbox, alreadySent, { env: process.env });
       const at = Date.now();
+      // The user's own declared rate, when they set one — never a guess
+      // (D-081). Only sends that happened carry it.
+      const usd = sendPriceUsd(outbox.channel, process.env);
       appendSends(SANDBOX_ROOT, [
         ...run.sentTo.map((to) => ({
           at,
@@ -1034,6 +1057,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           channel: outbox.channel,
           to,
           ok: true,
+          ...(usd ? { usd } : {}),
         })),
         ...run.failed.map((f) => ({
           at,

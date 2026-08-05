@@ -263,6 +263,7 @@ off, so the app's fetch was gated and this second door was not.
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 | `google` — send Gmail as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client (D-080) |
+| `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -1287,7 +1288,10 @@ list per channel (D-077; SPEC M5.11 has the slices):
       outboxes as the user (D-080)
 - [ ] **Create an event** — rides the consent already given; the calendar
       outbox type is the remaining work
-- [ ] **WhatsApp Business and Slack** — the rest of Tier 1 (D-077)
+- [x] **WhatsApp Business** — template sends through Meta's Cloud API, the
+      free-test-number on-ramp in the guide, and the audit taking the user's
+      declared per-message rate or none (D-081)
+- [ ] **Slack** — the last of Tier 1 (D-077)
 - [ ] **Comment, open a PR** — GitHub write scopes as outbox entry types
 - [ ] **Standing approval (the leash)** — auto-send per job + recipients +
       wording after N clean reviews; any change drops back to review (D-075)

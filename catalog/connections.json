@@ -95,7 +95,18 @@
     "Google's own page. One consent covers gmail.send, calendar.events and",
     "contacts.readonly, so later capabilities need no re-consent. The consent",
     "screen must be PUBLISHED to production — left in Testing, Google expires",
-    "the refresh token every 7 days and sends refuse with a reconnect message."
+    "the refresh token every 7 days and sends refuse with a reconnect message.",
+    "",
+    "'whatsapp-business' is the third sender (D-081), same shape: empty tool",
+    "grant, sends only at approval. Business-initiated WhatsApp is",
+    "pre-approved templates — Meta owns the template's text, so an outbox",
+    "carries the template name + language once and per-recipient params, and",
+    "review shows all of it. Two secrets, validated together with one real",
+    "call, because the call needs both. Per-message pricing is Meta's, by",
+    "category and country; the optional WHATSAPP_USD_PER_MESSAGE in .env is",
+    "the user's own declared rate and is stamped on sends.jsonl as such —",
+    "never a guess. Start with the free test number Meta gives every app: it",
+    "messages up to 5 numbers you verify, which is the whole demo loop."
   ],
   "connections": [
     {
@@ -202,6 +213,25 @@
         "OAuth consent screen: External, add yourself, then PUBLISH to production — an app left in Testing logs you out every 7 days",
         "Credentials → Create credentials → OAuth client ID → application type: Desktop app",
         "Paste the client id and secret here and press Connect — your password is typed on Google's page, never here"
+      ]
+    },
+    {
+      "name": "whatsapp-business",
+      "label": "Send WhatsApp Business messages",
+      "description": "Sends pre-approved template messages through Meta's Cloud API when you approve an outbox. Arrives from your business number, priced per message by Meta. The crew gets no tools from it.",
+      "transport": "builtin",
+      "tools": [],
+      "secrets": {
+        "WHATSAPP_TOKEN": "a permanent System User access token from Meta Business with whatsapp_business_messaging permission",
+        "WHATSAPP_PHONE_NUMBER_ID": "the sender number's id from the app's WhatsApp settings — an id, not the phone number itself"
+      },
+      "setup": [
+        "Create an app of type Business at developers.facebook.com and add the WhatsApp product",
+        "Start with the free test number Meta gives the app — it can message up to 5 numbers you verify",
+        "Business settings → System users → generate a permanent token with whatsapp_business_messaging",
+        "Copy the Phone number ID from the app's WhatsApp → API Setup page",
+        "Create a message template and wait for Meta to approve it — business-initiated sends are templates only",
+        "Paste the token and the phone number id here, then Check — one real call proves both"
       ]
     }
   ]

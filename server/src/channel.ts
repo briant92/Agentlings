@@ -36,6 +36,9 @@ const SEND_VERBS = /\b(send|remind|message|notify|text|ping|dm|e-?mail)\b/;
  */
 const CHANNEL_WORDS: [RegExp, string][] = [
   [/\btelegram\b/, 'telegram'],
+  // Before plain whatsapp: same match position, and on a tie the earlier
+  // entry wins — "on whatsapp business" is a different, wired ask.
+  [/\bwhats\s?app business\b/, 'whatsapp-business'],
   [/\bwhats\s?app\b/, 'whatsapp'],
   [/\b(gmail|e-?mail)\b/, 'gmail'],
   [/\bslack\b/, 'slack'],
@@ -73,12 +76,15 @@ const WIRED_COPY: Record<string, { ready: string; connectable: string }> = {
     ready: 'Arrives as you, from your own address — every message waits for your review',
     connectable: 'Arrives as you, from your own address. Connect Google in Settings.',
   },
+  'whatsapp-business': {
+    ready: 'Real WhatsApp, from your business number — every message waits for your review',
+    connectable:
+      'Real WhatsApp — pre-approved templates, per-message pricing, arrives from a business number. The Meta walkthrough is in Settings.',
+  },
 };
 
 /** Decided in D-077 and wired in later slices; the card says so plainly. */
 const PLANNED: Record<string, string> = {
-  'whatsapp-business':
-    'Real WhatsApp, ≈$0.03 a message, arrives from a business number — planned, needs Meta setup first',
   slack: 'Posts in your workspace as your own bot — planned',
   sms: 'Reaches phones with no apps, ≈1¢ a message — planned',
   discord: 'Posts as a bot in your server — planned',
@@ -222,7 +228,9 @@ export function channelBrief(channel: string): string | null {
   const shape =
     channel === 'gmail'
       ? `{"channel":"gmail","messages":[{"to":"<email address>","name":"<who this is, shown at review>","subject":"<short subject>","body":"..."}]}`
-      : `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`;
+      : channel === 'whatsapp-business'
+        ? `{"channel":"whatsapp-business","template":{"name":"<approved template name>","language":"es"},"messages":[{"to":"<number with country code>","name":"<who this is, shown at review>","params":["<template parameter>","..."],"body":"<the message as it will read, for review>"}]}`
+        : `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`;
   return [
     '## Sending messages',
     `This job sends messages via ${LABELS[channel] ?? channel}. No tool sends anything — composing is your job; sending is not.`,
@@ -238,6 +246,12 @@ export function channelBrief(channel: string): string | null {
       ? [
           '- "to" is the recipient\'s email address, and every message wants a short "subject". If the user named people but gave no addresses, do not invent any — leave those messages out and say in RESULT.md which addresses are missing.',
           '- The mail arrives from the user\'s own address, so write it in their voice.',
+        ]
+      : []),
+    ...(channel === 'whatsapp-business'
+      ? [
+          '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',
+          '- "params" are the template\'s body parameters, in order; "body" is the message as it will read, so the review shows real words. "to" is the number with country code. Do not invent numbers — report the missing ones in RESULT.md.',
         ]
       : []),
     '- The user reviews every message and approves before anything is sent.',

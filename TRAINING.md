@@ -156,8 +156,8 @@ server work, and a future compile candidate of the same family as
 | T1·1 | 2026-08-05 | 44a7c682 | 46c | 40c | **61.0c** | 61.0c | 9 | done | 92s; 5 sources, figures cross-checked. Both guesses low: ~6.2c/call with 219k cache-read and all four connections' tool definitions riding — the app's 46c is a class mean over lighter jobs, mine under-weighted search tokens. Ceiling never close. One lesson line banked, no copies (D-073's first live outing) |
 | T1·2 | | | | 28c | | | | | hint, full cap |
 | T1·3 | | | | 24c | | | | | leash expected |
-| T2·1 | | | 46c | 25c | | | | | |
-| T2·2 | | | | 20c | | | | | |
+| T2·1 | 2026-08-05 | a4885b22 | 46c | 25c | **$1.50** | $1.50 | 21 | done | **6× my guess, and the miss is the finding**: I attached the repo's largest doc (AGENTLING.md, 74KB) against a prediction written for a modest one — 1.29M cache-read tokens rode 21 calls (~7.1c/call, 202s). First hard number for the "quote does not know attachments" gap; the $2.00 clamp absorbed it with 50c to spare. Deliverable good: headed one-pager via a generator script. **T2·2: attach a normal-sized document, and compare per-call, not totals** |
+| T2·2 | | | | 20c | | | | | hint expected; smaller attachment |
 | T2·3 | | | | 17c | | | | | leash expected |
 | T3·1 | | | 46c | 30c | | | | | |
 | T3·2 | | | | 23c | | | | | |

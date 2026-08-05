@@ -133,6 +133,7 @@ export function LevelView({
         <WorldCanvas
           world={world}
           theme={level.theme}
+          events={events}
           onSelect={setProfileId}
           onOpenCrew={() => setCrewOpen(true)}
           onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EXIT_X, MAX_STATIONS, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
-import { doorBox, OUTLINE_OFFSETS, stationBox } from './hover';
+import { doorBox, OUTLINE_OFFSETS, parcelsBox, stationBox } from './hover';
 
 const GROUND_Y = 258;
 
@@ -56,5 +56,24 @@ describe('doorBox', () => {
   it('is clear of the last station, so the two never fight for the pointer', () => {
     const last = stationBox(MAX_STATIONS - 1, GROUND_Y);
     expect(last.x + last.w).toBeLessThan(doorBox(GROUND_Y).x);
+  });
+});
+
+describe('parcelsBox', () => {
+  it('sits between the last station and the doorway, touching neither', () => {
+    const pile = parcelsBox(GROUND_Y);
+    const last = stationBox(MAX_STATIONS - 1, GROUND_Y);
+    expect(last.x + last.w).toBeLessThan(pile.x);
+    expect(pile.x + pile.w).toBeLessThanOrEqual(doorBox(GROUND_Y).x);
+  });
+
+  it('contains the drawn pile: glow, four crates, and the count tag', () => {
+    const pile = parcelsBox(GROUND_Y);
+    // The renderer draws the glow at EXIT_X-64 for 30 wide, crates from
+    // EXIT_X-62 up two rows, and the count tag centred at GROUND_Y-38.
+    expect(pile.x).toBeLessThanOrEqual(EXIT_X - 64);
+    expect(pile.x + pile.w).toBeGreaterThanOrEqual(EXIT_X - 34);
+    expect(pile.y).toBeLessThanOrEqual(GROUND_Y - 38 - 5);
+    expect(pile.y + pile.h).toBe(GROUND_Y);
   });
 });

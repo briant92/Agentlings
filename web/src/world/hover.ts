@@ -22,6 +22,7 @@ export type HoverTarget =
   | { kind: 'agentling'; id: string }
   | { kind: 'door' }
   | { kind: 'station'; slot: number }
+  | { kind: 'parcels' }
   | null;
 
 /**
@@ -57,4 +58,13 @@ export function doorBox(groundY: number): Box {
 export function stationBox(slot: number, groundY: number): Box {
   const x = STATION_BASE_X + slot * STATION_SPACING;
   return { x: x - 12, y: groundY - 53, w: 28, h: 53 };
+}
+
+/**
+ * The parcel pile beside the exit — deliveries waiting for review. Ends
+ * exactly where the doorway's box begins, so the two never fight for the
+ * pointer.
+ */
+export function parcelsBox(groundY: number): Box {
+  return { x: EXIT_X - 66, y: groundY - 44, w: 32, h: 44 };
 }

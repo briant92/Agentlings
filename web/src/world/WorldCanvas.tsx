@@ -1,9 +1,10 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, type Texture } from 'pixi.js';
 import { useEffect, useRef } from 'react';
-import type { Job, ThemeKey, WorldState } from '@agentlings/shared';
+import type { Job, JobEvent, ThemeKey, WorldState } from '@agentlings/shared';
 import {
   EXIT_X,
   MAX_STATIONS,
+  outcomeOf,
   SPAWN_X,
   STATION_BASE_X,
   STATION_SPACING,
@@ -12,7 +13,14 @@ import {
 import { createAmbience } from './ambience';
 import { type Frames, loadAtlasArt } from './atlas';
 import { createEmotes } from './emotes';
-import { type Box, doorBox, type HoverTarget, OUTLINE_OFFSETS, stationBox } from './hover';
+import {
+  type Box,
+  doorBox,
+  type HoverTarget,
+  OUTLINE_OFFSETS,
+  parcelsBox,
+  stationBox,
+} from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
 import { type Anchors, drawScene, pixiSurface } from './scene';
@@ -138,6 +146,22 @@ function jobAtSlot(world: WorldState | null, slot: number): Job | undefined {
   );
 }
 
+/** Deliveries waiting by the exit, oldest first — the parcel pile. */
+function waitingReview(world: WorldState | null): Job[] {
+  return (world?.jobs ?? [])
+    .filter((j) => outcomeOf(j.status) === 'to review')
+    .sort((a, b) => (a.finishedAt ?? a.createdAt) - (b.finishedAt ?? b.createdAt));
+}
+
+/** One delivery crate, drawn in the theme's own timbers. */
+function drawCrate(g: Graphics, T: Theme, x: number, y: number): void {
+  g.rect(x, y, 12, 9).fill(T.wood);
+  g.rect(x, y, 12, 2).fill({ color: T.rockLight, alpha: 0.7 });
+  g.rect(x + 5, y, 2, 9).fill(T.woodDark);
+  g.rect(x, y + 7, 12, 2).fill(T.woodDark);
+  g.rect(x + 8, y + 1, 3, 3).fill(T.accentLight);
+}
+
 /**
  * Where the art comes from. The frames built into the app answer immediately;
  * the spritesheet replaces them once it has loaded. Both can hand back the
@@ -162,6 +186,9 @@ function outlineBox(g: Graphics, box: Box, color: number, t = 2): void {
  * The signpost. Being drawn from primitives rather than from a texture, it can
  * take a real silhouette like the sprites do — the same shapes, offset, in one
  * flat colour — instead of settling for a box around it.
+ *
+ * The pennant is the status: flying in the flame colour while the job runs,
+ * hanging in the grass colour while it waits its turn.
  */
 function drawSign(
   g: Graphics,
@@ -175,9 +202,11 @@ function drawSign(
   g.rect(x - 1.5, y - 30, 3, 30).fill(flat ?? T.woodDark);
   g.rect(x - 11, y - 40, 22, 11).fill(flat ?? T.wood);
   g.rect(x - 11, y - 40, 22, 2).fill(flat ?? T.woodDark);
-  g.poly([x - 1, y - 52, x - 1, y - 41, x + 13 + wave, y - 46.5]).fill(
-    flat ?? (running ? T.flame : T.grass),
-  );
+  if (running) {
+    g.poly([x - 1, y - 52, x - 1, y - 41, x + 13 + wave, y - 46.5]).fill(flat ?? T.flame);
+  } else {
+    g.poly([x - 1, y - 52, x - 1, y - 41, x + 5 + wave, y - 36]).fill(flat ?? T.grass);
+  }
 }
 
 /**
@@ -188,6 +217,7 @@ function drawSign(
 export function WorldCanvas({
   world,
   theme,
+  events,
   onSelect,
   onOpenCrew,
   onOpenReview,
@@ -196,6 +226,8 @@ export function WorldCanvas({
 }: {
   world: WorldState | null;
   theme: ThemeKey;
+  /** The level's event feed — the running signposts blink on tool calls. */
+  events: JobEvent[];
   onSelect: (agentlingId: string) => void;
   onOpenCrew: () => void;
   /** A signpost was clicked — show that job's work. */
@@ -208,6 +240,8 @@ export function WorldCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<WorldState | null>(null);
   worldRef.current = world;
+  const eventsRef = useRef<JobEvent[]>(events);
+  eventsRef.current = events;
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   const onOpenCrewRef = useRef(onOpenCrew);
@@ -357,6 +391,21 @@ export function WorldCanvas({
         portal.on('pointerout', () => clearHover((t) => t.kind === 'door'));
         app.stage.addChild(portal);
 
+        // The parcel pile beside the exit: clickable while deliveries wait,
+        // opening the oldest one's review.
+        const pBox = parcelsBox(GROUND_Y);
+        const parcelZone = new Container();
+        parcelZone.eventMode = 'none';
+        parcelZone.cursor = 'pointer';
+        parcelZone.hitArea = new Rectangle(pBox.x, pBox.y, pBox.w, pBox.h);
+        parcelZone.on('pointerdown', () => {
+          const oldest = waitingReview(worldRef.current)[0];
+          if (oldest) onOpenReviewRef.current(oldest.id);
+        });
+        parcelZone.on('pointerover', () => setHover({ kind: 'parcels' }));
+        parcelZone.on('pointerout', () => clearHover((target) => target.kind === 'parcels'));
+        app.stage.addChild(parcelZone);
+
         // Signposts stand at fixed slots, so their hit areas are built once
         // and only switched on while a slot actually holds a job.
         const zones: Container[] = [];
@@ -400,6 +449,22 @@ export function WorldCanvas({
         const emotes = createEmotes({ headY: HEAD_Y });
         const labelLayer = new Container();
         app.stage.addChild(labelLayer);
+
+        // Past four parcels the pile stops growing and counts instead.
+        const parcelCount = new Text({
+          text: '',
+          style: { fill: DB.white, fontSize: 9, fontFamily: 'monospace' },
+        });
+        parcelCount.anchor.set(0.5);
+        parcelCount.visible = false;
+        labelLayer.addChild(parcelCount);
+
+        // The work lamp: lit for half a second after each tool call. The
+        // replayed backlog on connect is absorbed silently — a lamp blinking
+        // for history would claim work that already happened.
+        const lampUntil = new Map<string, number>();
+        let lastEventId = -1;
+        let eventsPrimed = false;
 
         app.ticker.add((ticker) => {
           const w = worldRef.current;
@@ -449,7 +514,18 @@ export function WorldCanvas({
             dynamic.rect(tx - 1 - sway, base - 11, 2, 3).fill(T.flame);
           }
 
-          // Work stations: wooden signposts with a status pennant.
+          // New tool calls light the lamp of the signpost they ran at.
+          const evs = eventsRef.current;
+          for (let i = evs.length - 1; i >= 0; i--) {
+            const e = evs[i];
+            if (e.id <= lastEventId) break;
+            if (eventsPrimed && e.type === 'progress') lampUntil.set(e.jobId, t + 0.5);
+          }
+          if (evs.length > 0) lastEventId = Math.max(lastEventId, evs[evs.length - 1].id);
+          eventsPrimed = true;
+
+          // Work stations: wooden signposts with a status pennant — flying
+          // while the job runs, hanging while it queues — and a work lamp.
           for (let slot = 0; slot < MAX_STATIONS; slot++) {
             const job = jobAtSlot(w, slot);
             const mode = job ? 'static' : 'none';
@@ -460,13 +536,48 @@ export function WorldCanvas({
             }
             const x = STATION_BASE_X + slot * STATION_SPACING;
             const running = job.status === 'running';
-            const wave = Math.floor(t * 6 + slot) % 2 === 0 ? 0 : 2;
+            const wave = running
+              ? Math.floor(t * 6 + slot) % 2 === 0
+                ? 0
+                : 2
+              : Math.floor(t * 3 + slot) % 2 === 0
+                ? 0
+                : 1;
             if (hover?.kind === 'station' && hover.slot === slot) {
               for (const [dx, dy] of OUTLINE_OFFSETS) {
                 drawSign(dynamic, T, x + dx * 2, GROUND_Y + dy * 2, running, wave, T.hover);
               }
             }
             drawSign(dynamic, T, x, GROUND_Y, running, wave);
+            if (running) {
+              const lit = (lampUntil.get(job.id) ?? 0) > t;
+              dynamic.rect(x - 4, GROUND_Y - 25, 3, 2).fill(T.woodDark);
+              dynamic.rect(x - 8, GROUND_Y - 27, 4, 4).fill(lit ? T.flameCore : T.stoneDark);
+              if (lit) {
+                dynamic.rect(x - 9, GROUND_Y - 28, 6, 6).fill({ color: T.flameCore, alpha: 0.25 });
+              }
+            }
+          }
+
+          // Deliveries pile up beside the exit until someone reviews them.
+          const waiting = waitingReview(w);
+          const parcelMode = waiting.length > 0 ? 'static' : 'none';
+          if (parcelZone.eventMode !== parcelMode) parcelZone.eventMode = parcelMode;
+          if (waiting.length === 0) {
+            clearHover((target) => target.kind === 'parcels');
+          } else {
+            dynamic
+              .rect(EXIT_X - 64, GROUND_Y - 26, 30, 26)
+              .fill({ color: T.flameCore, alpha: 0.1 + 0.06 * Math.sin(t * 2.5) });
+            waiting.slice(0, 4).forEach((_, i) => {
+              drawCrate(dynamic, T, EXIT_X - 62 + (i % 2) * 14, GROUND_Y - 10 - Math.floor(i / 2) * 10);
+            });
+            if (hover?.kind === 'parcels') outlineBox(dynamic, pBox, T.hover);
+          }
+          parcelCount.visible = waiting.length > 4;
+          if (parcelCount.visible) {
+            parcelCount.text = `×${waiting.length}`;
+            parcelCount.position.set(EXIT_X - 47, GROUND_Y - 38);
           }
 
           // Agentlings: smoothed positions driving pixel-art sprite frames.

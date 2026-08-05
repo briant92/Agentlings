@@ -40,12 +40,21 @@ function fileSize(bytes: number): string {
 export function WorkBar({
   levelId,
   onFindAbility,
+  onOpenSettings,
 }: {
   levelId: string;
   onFindAbility: (text: string) => void;
+  /** The ask-card's connect button lands in Settings, where the drawer is. */
+  onOpenSettings: () => void;
 }) {
   const [text, setText] = useState('');
   const [plan, setPlan] = useState<WorkPlan | null>(null);
+  /**
+   * A channel picked on the ask-card — only ever one of the options the
+   * server offered (D-079). Null means the server's own default applies:
+   * the asked channel when it is usable, otherwise none (a draft job).
+   */
+  const [channel, setChannel] = useState<string | null>(null);
   /** Answers by question id. Empty is always a valid state — Start never waits. */
   const [answers, setAnswers] = useState<Record<string, string>>({});
   /** Files dropped on the box, read once and sent with the job that uses them. */
@@ -72,7 +81,11 @@ export function WorkBar({
     }
     const timer = window.setTimeout(() => {
       void api<WorkPlan>(lvl(levelId, '/work/plan'), postJson({ text: query }))
-        .then(setPlan)
+        .then((next) => {
+          setPlan(next);
+          // A pick belongs to the card it was made on; a new plan is a new card.
+          setChannel(null);
+        })
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
@@ -91,10 +104,14 @@ export function WorkBar({
           ...(files.length > 0
             ? { files: files.map((f) => ({ name: f.name, data: f.data })) }
             : {}),
+          // Only an explicit pick rides; with none the server settles the
+          // channel itself from the same detection the card came from.
+          ...(channel ? { channel } : {}),
         }),
       );
       setText('');
       setPlan(null);
+      setChannel(null);
       setAnswers({});
       setFiles([]);
       setAskingRepo(false);
@@ -245,6 +262,50 @@ export function WorkBar({
             <span className="dim">Nobody works here yet — hire someone first.</span>
           )}
         </p>
+      )}
+
+      {plan?.channelAsk && !askingRepo && plan.channelAsk.state === 'ready' && (
+        <p className="work-gaps work-channel-ready">
+          sends via {plan.channelAsk.askedLabel} · every message waits for your review
+        </p>
+      )}
+      {plan?.channelAsk && !askingRepo && plan.channelAsk.state !== 'ready' && (
+        <div className="work-channel">
+          {channel ? (
+            <p className="work-channel-note">
+              Sends via{' '}
+              {plan.channelAsk.options.find((o) => o.channel === channel)?.label ?? channel}{' '}
+              instead — every message waits for your review.{' '}
+              <button type="button" className="work-link" onClick={() => setChannel(null)}>
+                undo
+              </button>
+            </p>
+          ) : (
+            <>
+              <p className="work-channel-note">{plan.channelAsk.note}</p>
+              {plan.channelAsk.options.map((option) => (
+                <div key={option.channel} className="work-channel-opt">
+                  <span className="work-channel-name">{option.label}</span>
+                  <span className="dim work-channel-detail">{option.detail}</span>
+                  {option.state === 'ready' && option.channel !== plan.channelAsk?.asked && (
+                    <button
+                      type="button"
+                      className="work-chip"
+                      onClick={() => setChannel(option.channel)}
+                    >
+                      use {option.label}
+                    </button>
+                  )}
+                  {option.state === 'connectable' && (
+                    <button type="button" className="work-chip" onClick={onOpenSettings}>
+                      connect
+                    </button>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       )}
 
       {plan && !askingRepo && plan.questions.length > 0 && (

@@ -1056,6 +1056,7 @@ flowchart LR
     A["role system prompt"]
     B["job rules — sandbox only, RESULT.md out"]
     B2["its turn budget, and to write before it runs out"]
+    B3["the outbox contract, when the job sends (D-079)"]
     C["attachments in ./input"]
     D["document libraries + call shapes"]
     E["repo listing, up to 40 files"]
@@ -1274,9 +1275,11 @@ the `waiting` status stays refused (D-030). What was one blocker is a task
 list per channel (D-077; SPEC M5.11 has the slices):
 
 - [x] **Send a message** — the outbox contract, per-recipient replay,
-      `sends.jsonl`, telegram as the first channel. Live — though a run is
-      not yet *told* the contract, which lands with intake detection (D-031's
-      rule: a capability nobody is told about is not one)
+      `sends.jsonl`, telegram as the first channel. Live end to end: intake
+      detects a send (verb + channel word, never less), the ask-card offers
+      what the catalog can honestly offer, and a job that carries a channel
+      is *told* the OUTBOX.json contract in its brief — D-031's rule,
+      closed by D-079
 - [ ] **Send mail, create an event** — the Google connection: Connect button,
       one consent across Gmail, Calendar, Contacts (D-076)
 - [ ] **WhatsApp Business and Slack** — the rest of Tier 1 (D-077)

@@ -261,6 +261,32 @@ export const MAX_OUTBOX_MESSAGES = 20;
 export const MAX_OUTBOX_TO_CHARS = 200;
 export const MAX_OUTBOX_BODY_CHARS = 2000;
 
+/** One channel the ask-card offers, with its honest one-liner. */
+export interface ChannelOption {
+  channel: string;
+  label: string;
+  state: 'ready' | 'connectable' | 'planned' | 'never';
+  detail: string;
+}
+
+/**
+ * The intake noticed this sentence wants to send on a channel (D-079).
+ * Everything the card says is decided server-side from the catalog and
+ * Settings; the client renders it and picks — it can neither invent a
+ * channel nor promote one past its state.
+ */
+export interface ChannelAsk {
+  /** The channel the prompt asked for, normalised ("whatsapp"). */
+  asked: string;
+  askedLabel: string;
+  state: 'ready' | 'connectable' | 'planned' | 'never';
+  /** Set when the asked channel itself can carry the job now or after connecting. */
+  channel?: string;
+  /** The card's header sentence. */
+  note: string;
+  options: ChannelOption[];
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -273,6 +299,12 @@ export interface Job {
   tools?: string[];
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
+  /**
+   * The channel this job sends on, when intake detected one (D-079). The
+   * session is told the outbox contract for it and nothing else changes —
+   * composing happens in the run, sending stays at approval (D-075).
+   */
+  channel?: string;
   /**
    * The job this one answers. Its sandbox is carried forward, so a reply picks
    * up where that run stopped instead of paying to redo it.
@@ -731,6 +763,8 @@ export interface WorkPlan {
   gaps: string[];
   /** Worth settling before it runs; always optional to answer. */
   questions: ClarifyQuestion[];
+  /** Present when the sentence wants to send on a channel (D-079). */
+  channelAsk?: ChannelAsk;
 }
 
 export interface WorldState {

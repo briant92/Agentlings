@@ -30,6 +30,8 @@ export interface NewJobSpec {
   continues?: string;
   /** Standing instructions for the session, kept out of the prompt (D-074). */
   brief?: string;
+  /** The channel this job sends on, when intake detected one (D-079). */
+  channel?: string;
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -149,6 +151,7 @@ export class JobQueue {
       ...(spec.compile ? { compile: true } : {}),
       ...(spec.continues ? { continues: spec.continues } : {}),
       ...(spec.brief ? { brief: spec.brief } : {}),
+      ...(spec.channel ? { channel: spec.channel } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

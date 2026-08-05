@@ -273,6 +273,21 @@ describe('queuedJobSpec', () => {
       queuedJobSpec({ title: 't', prompt: 'p', tools: ['web'], plan, quote: quote(0.1) }).tools,
     ).toEqual(['web']);
   });
+
+  // The newest field through the same trap the ceiling fell into (D-033): the
+  // one function that specs a job is exactly where a field silently goes
+  // missing, and a send job whose channel is dropped runs as a session that
+  // was never told it sends.
+  it('carries the channel a send job rides on, and only then', () => {
+    const plan = planFor('remind them on telegram');
+    expect(
+      queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1), channel: 'telegram' })
+        .channel,
+    ).toBe('telegram');
+    expect('channel' in queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1) })).toBe(
+      false,
+    );
+  });
 });
 
 /**

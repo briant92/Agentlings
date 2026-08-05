@@ -88,6 +88,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-076 — 2026-08-04 — Credentials: a Connect button for the OAuth pair, paste-a-token for the rest, passwords never](#d-076--2026-08-04--credentials-a-connect-button-for-the-oauth-pair-paste-a-token-for-the-rest-passwords-never)
 - [D-077 — 2026-08-04 — The connection batch: four now, nine later, six never](#d-077--2026-08-04--the-connection-batch-four-now-nine-later-six-never)
 - [D-078 — 2026-08-05 — The token drawer: one store, one real call, one inbound crossing](#d-078--2026-08-05--the-token-drawer-one-store-one-real-call-one-inbound-crossing)
+- [D-079 — 2026-08-05 — The desk notices a send, and asks at the only moment asking is free](#d-079--2026-08-05--the-desk-notices-a-send-and-asks-at-the-only-moment-asking-is-free)
 
 ## By theme
 
@@ -187,7 +188,9 @@ entry updates one file rather than two.
   credential shapes and the never-a-password rule: D-076; the researched
   batch, its tiers and its refusals, WhatsApp personal among them: D-077;
   and the token drawer that keeps `.env` the only store and validates every
-  paste with one real call before storing it: D-078
+  paste with one real call before storing it: D-078; the intake ask-card that
+  notices a send, forks honestly, and finally tells the session the outbox
+  contract — with the parked-job status refused a second time: D-079
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4334,3 +4337,61 @@ Then verified against the running server and the real Telegram API: a
 garbage token answered "Telegram rejected the token — check what @BotFather
 sent", `has spaces` was refused before any call was made, and `.env` gained
 no line from either.
+
+## D-079 — 2026-08-05 — The desk notices a send, and asks at the only moment asking is free
+
+Slice 3 of M5.11. Intake now detects that a sentence wants to message
+someone — a send verb and a channel word together, nothing less — and the
+plan carries a `channelAsk` card decided entirely server-side from the
+catalog and Settings. A connected channel is a quiet chip ("sends via
+Telegram · every message waits for your review"); an unconnected wired one
+offers the drawer and queue-anyway; a planned one names the roadmap; and
+WhatsApp personal states its refusal with the fork D-077 promised —
+Telegram now, WhatsApp Business planned with the business-number caveat,
+Gmail planned next. The card can offer and the client can pick; neither can
+invent a channel nor promote one past its state.
+
+**The job parks at the desk, not in the queue — a deviation from the
+slice's sketch, decided rather than drifted into.** The sketch said "parks
+as `needs-connection` and the agentling raises the bubble". A parked job
+status is the `waiting` shape D-030 already refused, back for a second
+audition: a new status through `outcomeOf`, persistence, the sim, and a
+resume path — all to hold a job the user is still looking at. The intake is
+where "nothing is quoted or billed until you pick" is already true, so the
+ask renders as a card on the work bar and Start does what the card says:
+carries the channel when one is usable, queues a draft job that sends
+nothing when none is. Queue-anyway is honest *because of the earlier
+slices* — the approve gate refuses an unconnected channel with the reason
+(D-075) and the drawer connects mid-review (D-078) — so a job queued before
+connecting is never stuck, only reviewed later. The bubble drawn over the
+agentling's head stays presentation polish: the card is the mechanism, the
+world is presentation, and nothing behavioural waits on it.
+
+**Detection follows the router's own rule — never guess, and under-fire.**
+Word-only ("summarise the whatsapp export") and verb-only fire nothing;
+"send a signal to the process" is code talk and stays quiet while "notify
+me on signal" gets Signal's refusal; the earliest mention wins, so "on
+WhatsApp or Telegram" asks for WhatsApp. And the first test run caught the
+detector missing the plainest phrasing there is: "email the summary to the
+team" carries its channel in its verb, so `email` joined the verb list —
+the test was written from the copy, and the copy was right.
+
+**The session is finally told the contract — D-031's rule, closing the
+deferral D-075 recorded.** A job that carries a channel gets an outbox
+section in its brief: the exact OUTBOX.json shape, the caps, that "to" is a
+numeric chat id and a missing id is reported in RESULT.md rather than
+invented, and that the user reviews before anything sends. Told only when a
+channel rides, because every prompt line is input tokens on every turn and
+a job that does not send should not pay to hear about sending. The channel
+is server-settled at queue time — the caller's pick counts only if the
+channel exists, no pick means the detection's own default — and the field
+crosses both spec seams with a test pinning each, which is D-033's trap
+paid forward: `closeOutUsd` went missing in exactly that kind of function
+for 79 jobs.
+
+**Evidence.** 20 new tests across the detector, the brief, both spec seams
+and the executor append; typecheck clean, 951 server and 91 web tests
+green. Verified live against the running server: the original WhatsApp
+sentence that started this whole batch returns the fork above verbatim,
+"send the padel reminder on telegram" returns connectable with the channel
+riding, and "summarise the whatsapp export file" returns nothing at all.

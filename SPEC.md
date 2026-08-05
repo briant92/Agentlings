@@ -778,10 +778,18 @@ tried, measured and rejected is in `DECISIONS.md`:
           and the live `process.env` in the same move, no restart. Nothing
           stores unvalidated, refusals never echo the value, and storing
           never switches anything on (D-078).
-    - [ ] **Intake detection + the ask-bubble.** Channel words resolve to
-          connections in the free matcher; a job that needs an unconnected
-          channel parks as `needs-connection` and the agentling raises the
-          bubble with the honest fork (Business API vs Telegram vs Gmail).
+    - [x] **Intake detection + the ask-card.** A send verb plus a channel
+          word — nothing less — resolves in the free intake, and the plan
+          carries a server-decided `channelAsk`: a connected channel is a
+          quiet chip, an unconnected wired one offers the drawer and
+          queue-anyway, a planned one names the roadmap, and WhatsApp
+          personal states its refusal with the honest fork (Telegram /
+          Business API / Gmail). Start carries a usable channel or queues a
+          draft job that sends nothing; a job with a channel is told the
+          OUTBOX.json contract in its brief (D-031). Parked at the desk
+          rather than as a `needs-connection` status — that is D-030's
+          `waiting` shape, refused a second time; reasoning in D-079. The
+          bubble drawn over the agentling stays presentation polish.
     - [ ] **The Google Connect flow.** Loopback OAuth against the user's own
           client; one consent covers Gmail, Calendar, Contacts; the guidance
           walks past testing-mode's 7-day expiry.

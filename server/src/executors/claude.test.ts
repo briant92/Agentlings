@@ -474,6 +474,32 @@ describe('buildAppend', () => {
     });
   });
 
+  // D-031's rule, applied to sending: a capability nobody is told about is
+  // not one. Without this section a send job has no way to know OUTBOX.json
+  // exists — and with no channel, no session should hear about sending.
+  describe('the outbox brief', () => {
+    it('rides when the job sends on a channel', () => {
+      const text = buildAppend(
+        undefined,
+        [],
+        [],
+        false,
+        [],
+        undefined,
+        [],
+        [],
+        10,
+        '## Sending messages\nWrite OUTBOX.json…',
+      );
+      expect(text).toContain('## Sending messages');
+      expect(text).toContain('OUTBOX.json');
+    });
+
+    it('is absent for every job without one', () => {
+      expect(buildAppend(undefined, [], [], false)).not.toContain('OUTBOX.json');
+    });
+  });
+
   // A recipe run has three turns. Spending one of them writing down the
   // method it was just handed is the difference between finishing and not.
   describe('a run that came from a recipe', () => {

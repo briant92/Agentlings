@@ -67,6 +67,7 @@ export default function App() {
           key={screen.level.id}
           level={screen.level}
           onExit={() => go({ name: 'select' })}
+          onOpenSettings={() => setSettingsOpen(true)}
           onMissing={() => {
             // Forget it as well as leaving it, or Continue walks straight back
             // into the level that just turned out not to exist.

@@ -19,10 +19,13 @@ import type { LevelEntry } from './SelectScreen';
 export function LevelView({
   level,
   onExit,
+  onOpenSettings,
   onMissing,
 }: {
   level: LevelEntry;
   onExit: () => void;
+  /** The ask-card's connect button lands in Settings, where the drawer is. */
+  onOpenSettings: () => void;
   /** The level no longer exists — go somewhere that does, and stop offering it. */
   onMissing: () => void;
 }) {
@@ -142,6 +145,7 @@ export function LevelView({
             setLibraryQuery(text);
             setRolesOpen(true);
           }}
+          onOpenSettings={onOpenSettings}
         />
       </main>
       <aside className="side">

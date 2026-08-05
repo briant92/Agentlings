@@ -136,6 +136,8 @@ export function queuedJobSpec(args: {
   continues?: string;
   /** Standing instructions for the session, kept out of the prompt (D-074). */
   brief?: string;
+  /** The channel this job sends on, when intake detected one (D-079). */
+  channel?: string;
 }): {
   title: string;
   prompt: string;
@@ -147,6 +149,7 @@ export function queuedJobSpec(args: {
   attachments?: { name: string; data: Buffer }[];
   continues?: string;
   brief?: string;
+  channel?: string;
 } {
   return {
     title: args.title,
@@ -158,6 +161,7 @@ export function queuedJobSpec(args: {
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
     ...(args.continues ? { continues: args.continues } : {}),
     ...(args.brief ? { brief: args.brief } : {}),
+    ...(args.channel ? { channel: args.channel } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never
     // spend, and every paying tier is bounded below at a cent. So a job that

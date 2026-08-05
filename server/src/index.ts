@@ -25,7 +25,7 @@ import {
 } from '@agentlings/shared';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import { capabilityTokens, connectionsIn } from './capability';
-import { executeOutbox, outboxRefusal } from './channels';
+import { CHANNELS, executeOutbox, outboxRefusal } from './channels';
 import { describe, readConnections } from './connections';
 import {
   enabledNames,
@@ -36,6 +36,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
+import { detectChannelAsk } from './channel';
 import { secretValueProblem, storeSecret } from './env';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
@@ -501,10 +502,19 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     runnerRole(draft),
     rt.meta.repoPath || undefined,
   );
+  // Derived at ask time from the catalog and Settings, so the same sentence
+  // gets a different card once a channel is connected (D-079).
+  const channelAsk = detectChannelAsk(
+    text,
+    readConnections(CONNECTIONS_FILE),
+    readSettings(SANDBOX_ROOT),
+    process.env,
+  );
   return c.json({
     ...draft,
     quote,
     questions: questionsFor(text, { hasRepo: !!rt.meta.repoPath, tier: quote.tier }),
+    ...(channelAsk ? { channelAsk } : {}),
   });
 });
 
@@ -552,6 +562,8 @@ app.post('/api/levels/:lid/work', async (c) => {
     tools?: string[];
     answers?: Record<string, string>;
     files?: { name?: string; data?: string }[];
+    /** The channel picked on the ask-card, when there was one (D-079). */
+    channel?: string;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -585,6 +597,26 @@ app.post('/api/levels/:lid/work', async (c) => {
     runnerRole(plan),
     rt.meta.repoPath || undefined,
   );
+  // The channel a job sends on is server-settled: the caller's pick counts
+  // only if the channel actually exists, and with no pick the detected ask's
+  // own channel rides — so typing "remind them on telegram" and pressing
+  // Start carries it without the card ever being touched (D-079). A channel
+  // can neither be invented by the client nor promoted past what exists.
+  const requestedChannel = typeof body.channel === 'string' ? body.channel : undefined;
+  const channelAsk = requestedChannel
+    ? null
+    : detectChannelAsk(
+        text,
+        readConnections(CONNECTIONS_FILE),
+        readSettings(SANDBOX_ROOT),
+        process.env,
+      );
+  const channel =
+    requestedChannel && CHANNELS[requestedChannel]
+      ? requestedChannel
+      : channelAsk?.channel && CHANNELS[channelAsk.channel]
+        ? channelAsk.channel
+        : undefined;
   const job = rt.queue.add(
     queuedJobSpec({
       title: plan.title,
@@ -602,6 +634,7 @@ app.post('/api/levels/:lid/work', async (c) => {
         body.answers,
       ),
       attachments,
+      channel,
     }),
   );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });

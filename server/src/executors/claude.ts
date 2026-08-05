@@ -13,6 +13,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { Agentling, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
+import { channelBrief } from '../channel';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
@@ -456,6 +457,12 @@ export function buildAppend(
   attachments: JobAttachment[] = [],
   /** What the run is actually allowed, after the role cap and the quote. */
   turns?: number,
+  /**
+   * The outbox contract, when this job sends on a channel (D-079). Told here
+   * because a capability nobody is told about is not one (D-031) — without
+   * this section a send job has no way to know OUTBOX.json exists.
+   */
+  outboxBrief?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -487,6 +494,7 @@ export function buildAppend(
         : []),
     ].join('\n'),
   );
+  if (outboxBrief) parts.push(outboxBrief);
   if (attachments.length > 0) {
     parts.push(
       [
@@ -799,6 +807,7 @@ export class ClaudeAgentExecutor implements Executor {
           // The same number the SDK is capped at, so the brief and the runner
           // cannot disagree about how long the run has.
           turnBudget,
+          job.channel ? (channelBrief(job.channel) ?? undefined) : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

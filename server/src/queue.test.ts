@@ -96,6 +96,13 @@ describe('JobQueue', () => {
     expect(failed.outbox?.messages).toHaveLength(1);
   });
 
+  it('carries the channel a send job rides on, and only then', () => {
+    expect(queue.add({ title: 'Remind', prompt: 'x', channel: 'telegram' }).channel).toBe(
+      'telegram',
+    );
+    expect(queue.add({ title: 'Plain', prompt: 'x' }).channel).toBeUndefined();
+  });
+
   it('merges send results so a retry skips everyone already messaged', () => {
     const job = queue.add({ title: 'Remind', prompt: 'remind them' });
     queue.assign(job.id, 'a1');

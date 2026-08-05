@@ -15,6 +15,11 @@ import { missingSecrets, type Connection } from './connections';
 export interface StoredSettings {
   /** Connection name → the user's answer. */
   connections?: Record<string, boolean>;
+  /**
+   * Connection name → who it turned out to be ("brian@gmail.com"), recorded
+   * when a connect flow learns it. Display only — never part of any gate.
+   */
+  identities?: Record<string, string>;
 }
 
 const FILE = 'settings.json';
@@ -41,6 +46,15 @@ export function setConnection(
   enabled: boolean,
 ): StoredSettings {
   return { ...settings, connections: { ...settings.connections, [name]: enabled } };
+}
+
+/** Records who a connection turned out to be, for its card to say. */
+export function setIdentity(
+  settings: StoredSettings,
+  name: string,
+  identity: string,
+): StoredSettings {
+  return { ...settings, identities: { ...settings.identities, [name]: identity } };
 }
 
 /**

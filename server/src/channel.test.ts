@@ -9,6 +9,17 @@ const telegram: Connection = {
   tools: [],
   secrets: { TELEGRAM_BOT_TOKEN: 'why' },
 };
+const google: Connection = {
+  name: 'google',
+  label: 'Send Gmail, as you',
+  transport: 'builtin',
+  tools: [],
+  secrets: {
+    GOOGLE_OAUTH_CLIENT_ID: 'why',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'why',
+    GOOGLE_OAUTH_REFRESH_TOKEN: 'why',
+  },
+};
 const CONNECTED = { connections: { telegram: true } };
 const TOKEN = { TELEGRAM_BOT_TOKEN: 't' };
 
@@ -16,7 +27,7 @@ const ask = (
   prompt: string,
   settings: { connections?: Record<string, boolean> } = {},
   env: Record<string, string | undefined> = {},
-) => detectChannelAsk(prompt, [telegram], settings, env);
+) => detectChannelAsk(prompt, [telegram, google], settings, env);
 
 /**
  * Detection follows the router's rule: claim only what is unmistakably a
@@ -75,14 +86,24 @@ describe('detectChannelAsk — what the card says', () => {
     expect(got?.options[0].state).toBe('ready');
     expect(got?.options[1].state).toBe('planned');
     expect(got?.options[1].detail).toContain('business number');
+    // Gmail is wired now (D-080) — its row carries a live state, not a promise.
+    expect(got?.options[2].state).toBe('connectable');
+  });
+
+  it('an email ask is connectable once google is in the catalog', () => {
+    const got = ask('email the summary to the team every friday', CONNECTED, TOKEN);
+    expect(got?.asked).toBe('gmail');
+    expect(got?.state).toBe('connectable');
+    expect(got?.channel).toBe('gmail');
+    expect(got?.options[0].detail).toContain('Connect Google');
   });
 
   it('a planned channel says roadmap and offers what works today', () => {
-    const got = ask('email the summary to the team every friday', CONNECTED, TOKEN);
-    expect(got?.asked).toBe('gmail');
+    const got = ask('message the team on slack about the launch', CONNECTED, TOKEN);
+    expect(got?.asked).toBe('slack');
     expect(got?.state).toBe('planned');
     expect(got?.note).toContain('roadmap');
-    expect(got?.options.map((o) => o.channel)).toEqual(['telegram', 'gmail']);
+    expect(got?.options.map((o) => o.channel)).toEqual(['telegram', 'slack']);
   });
 
   it('a never channel states its reason on the card', () => {
@@ -104,8 +125,17 @@ describe('channelBrief', () => {
     expect(brief).toContain('do not invent');
   });
 
+  it('tells a gmail job about addresses, subjects and whose voice it writes in', () => {
+    const brief = channelBrief('gmail')!;
+    expect(brief).toContain('"channel":"gmail"');
+    expect(brief).toContain('"subject"');
+    expect(brief).toContain('email address');
+    expect(brief).toContain("user's own address");
+    expect(brief).toContain('do not invent');
+  });
+
   it('says nothing for a channel that does not exist', () => {
-    expect(channelBrief('gmail')).toBeNull();
+    expect(channelBrief('slack')).toBeNull();
     expect(channelBrief('carrier-pigeon')).toBeNull();
   });
 });

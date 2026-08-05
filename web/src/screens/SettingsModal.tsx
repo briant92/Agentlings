@@ -19,8 +19,8 @@ export function SettingsModal({
   const [values, setValues] = useState<Record<string, string>>({});
   const [checking, setChecking] = useState(false);
   const [drawerError, setDrawerError] = useState<string | null>(null);
-  /** "connected as @bot" lines, kept after the drawer closes. */
-  const [connectedAs, setConnectedAs] = useState<Record<string, string>>({});
+  /** A Google sign-in tab is open; the server flips ready when it comes back. */
+  const [googlePending, setGooglePending] = useState(false);
 
   useEffect(() => {
     void api<SettingsInfo>('/api/settings').then(setSettings);
@@ -55,10 +55,6 @@ export function SettingsModal({
         },
       );
       setSettings((prev) => (prev ? { ...prev, connections: reply.connections } : prev));
-      setConnectedAs((prev) => ({
-        ...prev,
-        [name]: reply.identity ? `connected as ${reply.identity}` : 'key accepted — connected',
-      }));
       openDrawer(null);
     } catch (err) {
       setDrawerError(err instanceof Error ? err.message : String(err));
@@ -66,6 +62,53 @@ export function SettingsModal({
       setChecking(false);
     }
   };
+
+  /**
+   * The Google Connect flow (D-080): the consent happens on Google's page in
+   * a fresh tab, so this side only opens it and then watches Settings until
+   * the loopback callback has stored the tokens and flipped `ready`.
+   */
+  const connectGoogle = async () => {
+    setChecking(true);
+    setDrawerError(null);
+    try {
+      const { url } = await api<{ url: string }>('/api/settings/connections/google/oauth/start', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: values.clientId ?? '',
+          clientSecret: values.clientSecret ?? '',
+        }),
+      });
+      window.open(url, '_blank', 'noopener');
+      setGooglePending(true);
+    } catch (err) {
+      setDrawerError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!googlePending) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      void api<SettingsInfo>('/api/settings')
+        .then((next) => {
+          if (next.connections.find((c) => c.name === 'google')?.ready) {
+            setSettings(next);
+            setGooglePending(false);
+            setDrawer(null);
+            setValues({});
+          } else if (Date.now() - startedAt > 5 * 60_000) {
+            setGooglePending(false);
+            setDrawerError('The sign-in never came back — press Connect to try again.');
+          }
+        })
+        .catch(() => undefined);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [googlePending]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -167,35 +210,80 @@ export function SettingsModal({
                       ))}
                     </ol>
                   )}
-                  {connection.missingSecrets.map((secret) => (
-                    <div key={secret} className="secret-row">
-                      <input
-                        type="password"
-                        placeholder={secret}
-                        value={values[secret] ?? ''}
-                        autoComplete="off"
-                        spellCheck={false}
-                        onChange={(e) =>
-                          setValues((prev) => ({ ...prev, [secret]: e.target.value }))
-                        }
-                      />
-                      <button
-                        disabled={checking || !(values[secret] ?? '').trim()}
-                        onClick={() => void submitSecret(connection.name, secret)}
-                      >
-                        {checking ? 'Checking…' : 'Check'}
-                      </button>
-                    </div>
-                  ))}
+                  {connection.name === 'google' ? (
+                    <>
+                      {(['clientId', 'clientSecret'] as const).map((field) => (
+                        <div key={field} className="secret-row">
+                          <input
+                            type="password"
+                            placeholder={field === 'clientId' ? 'client id' : 'client secret'}
+                            value={values[field] ?? ''}
+                            autoComplete="off"
+                            spellCheck={false}
+                            disabled={googlePending}
+                            onChange={(e) =>
+                              setValues((prev) => ({ ...prev, [field]: e.target.value }))
+                            }
+                          />
+                        </div>
+                      ))}
+                      <div className="secret-row">
+                        <button
+                          disabled={
+                            checking ||
+                            googlePending ||
+                            !(values.clientId ?? '').trim() ||
+                            !(values.clientSecret ?? '').trim()
+                          }
+                          onClick={() => void connectGoogle()}
+                        >
+                          {googlePending ? 'Waiting for Google…' : 'Connect Google'}
+                        </button>
+                        {googlePending && (
+                          <button className="ghost" onClick={() => setGooglePending(false)}>
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                      {googlePending && (
+                        <p className="dim secret-note">
+                          Approve in the tab that just opened — your password goes to Google,
+                          never here. This card flips the moment the sign-in comes back.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    connection.missingSecrets.map((secret) => (
+                      <div key={secret} className="secret-row">
+                        <input
+                          type="password"
+                          placeholder={secret}
+                          value={values[secret] ?? ''}
+                          autoComplete="off"
+                          spellCheck={false}
+                          onChange={(e) =>
+                            setValues((prev) => ({ ...prev, [secret]: e.target.value }))
+                          }
+                        />
+                        <button
+                          disabled={checking || !(values[secret] ?? '').trim()}
+                          onClick={() => void submitSecret(connection.name, secret)}
+                        >
+                          {checking ? 'Checking…' : 'Check'}
+                        </button>
+                      </div>
+                    ))
+                  )}
                   {drawerError && <p className="error">{drawerError}</p>}
                   <p className="dim secret-note">
-                    Checked with one real call before it is saved. Saved to .env; it never
-                    appears on screen again. Connecting does not switch anything on.
+                    {connection.name === 'google'
+                      ? 'Nothing is saved until Google confirms the sign-in. Connecting does not switch anything on.'
+                      : 'Checked with one real call before it is saved. Saved to .env; it never appears on screen again. Connecting does not switch anything on.'}
                   </p>
                 </div>
               )}
-              {connection.ready && connectedAs[connection.name] && (
-                <p className="stat-done conn-note">✓ {connectedAs[connection.name]}</p>
+              {connection.ready && connection.identity && (
+                <p className="stat-done conn-note">✓ connected as {connection.identity}</p>
               )}
               {connection.ready && connection.defaultOn && !connection.enabled && (
                 <p className="dim conn-note">

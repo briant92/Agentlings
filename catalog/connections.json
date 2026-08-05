@@ -84,7 +84,18 @@
     "credentialed connection: off, or missing its secret, means Approve",
     "refuses with the reason. 'to' in an outbox message is a numeric chat id —",
     "a bot can only message people who tapped Start on it once, which makes",
-    "the reachable audience exactly the people who opted in."
+    "the reachable audience exactly the people who opted in.",
+    "",
+    "'google' is the second sender and the first OAuth connection (D-080). It",
+    "grants a session nothing, exactly like telegram — the gmail channel sends",
+    "an approved outbox as the user, from their own address. Its secrets are",
+    "the user's OWN OAuth client (never a shared one: restricted Gmail scopes",
+    "on a shared client mean Google verification and a paid audit, D-076) plus",
+    "the refresh token the Connect flow stores after consent happens on",
+    "Google's own page. One consent covers gmail.send, calendar.events and",
+    "contacts.readonly, so later capabilities need no re-consent. The consent",
+    "screen must be PUBLISHED to production — left in Testing, Google expires",
+    "the refresh token every 7 days and sends refuse with a reconnect message."
   ],
   "connections": [
     {
@@ -173,6 +184,24 @@
         "Send /newbot and pick a name — it answers with a token",
         "Paste the token here",
         "Anyone the crew should message taps Start on your bot once"
+      ]
+    },
+    {
+      "name": "google",
+      "label": "Send Gmail, as you",
+      "description": "Connects your Google account by OAuth and sends approved outbox mail from your own address. The crew gets no tools from it; calendar and contacts will ride the same consent later.",
+      "transport": "builtin",
+      "tools": [],
+      "secrets": {
+        "GOOGLE_OAUTH_CLIENT_ID": "your own OAuth client's id — created once in Google Cloud, steps in Settings",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "that client's secret — Google treats a desktop-app secret as non-confidential",
+        "GOOGLE_OAUTH_REFRESH_TOKEN": "stored by the Connect flow after you approve on Google's own page"
+      },
+      "setup": [
+        "Create a project at console.cloud.google.com (free) and enable the Gmail API",
+        "OAuth consent screen: External, add yourself, then PUBLISH to production — an app left in Testing logs you out every 7 days",
+        "Credentials → Create credentials → OAuth client ID → application type: Desktop app",
+        "Paste the client id and secret here and press Connect — your password is typed on Google's page, never here"
       ]
     }
   ]

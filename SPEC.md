@@ -790,9 +790,17 @@ tried, measured and rejected is in `DECISIONS.md`:
           rather than as a `needs-connection` status — that is D-030's
           `waiting` shape, refused a second time; reasoning in D-079. The
           bubble drawn over the agentling stays presentation polish.
-    - [ ] **The Google Connect flow.** Loopback OAuth against the user's own
-          client; one consent covers Gmail, Calendar, Contacts; the guidance
-          walks past testing-mode's 7-day expiry.
+    - [x] **The Google Connect flow.** Loopback OAuth against the user's own
+          client (never a shared one, D-076): the drawer takes client id +
+          secret, Google's consent page opens in a fresh tab — one consent
+          across gmail.send, calendar.events, contacts.readonly plus
+          identity — and the 127.0.0.1 callback exchanges the code with
+          PKCE. The exchange succeeding is the validation; a flow that
+          never returns stores nothing. The gmail channel sends approved
+          outboxes as the user (RFC 822 raw, accented subjects encoded,
+          optional `subject` on outbox messages); testing-mode's 7-day
+          expiry is named in the setup steps and again by the send-time
+          reconnect sentence. Cards now say who connected (D-080).
     - [ ] **The WhatsApp Business guide + channel.** Meta setup walkthrough,
           template sends, per-message cost into `sends.jsonl`.
     - [ ] **The leash.** Standing approval per job + recipients + wording

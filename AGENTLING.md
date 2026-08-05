@@ -262,6 +262,7 @@ off, so the app's fetch was gated and this second door was not.
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
+| `google` — send Gmail as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client (D-080) |
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -1280,8 +1281,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       what the catalog can honestly offer, and a job that carries a channel
       is *told* the OUTBOX.json contract in its brief — D-031's rule,
       closed by D-079
-- [ ] **Send mail, create an event** — the Google connection: Connect button,
-      one consent across Gmail, Calendar, Contacts (D-076)
+- [x] **Send mail** — the Google connection is live: Connect button,
+      loopback OAuth against the user's own client, one consent across
+      Gmail, Calendar and Contacts, and a gmail channel that sends approved
+      outboxes as the user (D-080)
+- [ ] **Create an event** — rides the consent already given; the calendar
+      outbox type is the remaining work
 - [ ] **WhatsApp Business and Slack** — the rest of Tier 1 (D-077)
 - [ ] **Comment, open a PR** — GitHub write scopes as outbox entry types
 - [ ] **Standing approval (the leash)** — auto-send per job + recipients +

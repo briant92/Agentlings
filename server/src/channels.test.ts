@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHANNELS, executeOutbox, outboxRefusal } from './channels';
+import { CHANNELS, emailRaw, executeOutbox, outboxRefusal } from './channels';
 import type { Connection } from './connections';
 
 /** A fetch stand-in that records calls and answers from a script. */
@@ -53,6 +53,97 @@ describe('the telegram channel', () => {
     await expect(
       CHANNELS.telegram.send({ to: '1', body: 'x' }, { env: { TELEGRAM_BOT_TOKEN: 't' }, fetchFn: fn }),
     ).rejects.toThrow('HTTP 502');
+  });
+});
+
+describe('emailRaw', () => {
+  const decode = (raw: string) =>
+    Buffer.from(raw.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+
+  it('is a real RFC 822 message, base64url round-trippable', () => {
+    const text = decode(
+      emailRaw({ to: 'ana@example.com', subject: 'Padel Thursday', body: 'See you at 9:00' }),
+    );
+    expect(text).toContain('To: ana@example.com');
+    expect(text).toContain('Subject: Padel Thursday');
+    expect(text).toContain('charset="UTF-8"');
+    expect(text.endsWith('See you at 9:00')).toBe(true);
+  });
+
+  it('encodes a subject with accents rather than mangling it', () => {
+    const text = decode(emailRaw({ to: 'a@b.c', subject: 'Pádel el jueves', body: 'x' }));
+    expect(text).toContain('Subject: =?UTF-8?B?');
+    expect(text).not.toContain('Pádel'); // encoded, not raw, in the header
+  });
+
+  it('a message without a subject has no Subject header, not an invented one', () => {
+    expect(decode(emailRaw({ to: 'a@b.c', body: 'x' }))).not.toContain('Subject:');
+  });
+});
+
+describe('the gmail channel', () => {
+  const ENV = {
+    GOOGLE_OAUTH_CLIENT_ID: 'id',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'sec',
+    GOOGLE_OAUTH_REFRESH_TOKEN: 'rt',
+  };
+
+  /** Scripted responses in call order: the token refresh, then the send. */
+  function scripted(responses: { ok: boolean; status?: number; body?: unknown }[]) {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fn = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      const res = responses[Math.min(calls.length - 1, responses.length - 1)];
+      return {
+        ok: res.ok,
+        status: res.status ?? (res.ok ? 200 : 500),
+        json: async () => res.body ?? {},
+      };
+    }) as unknown as typeof fetch;
+    return { fn, calls };
+  }
+
+  it('buys one short-lived token, then posts the raw message as the user', async () => {
+    const { fn, calls } = scripted([
+      { ok: true, body: { access_token: 'at-1' } },
+      { ok: true, body: { id: 'm1' } },
+    ]);
+    await CHANNELS.gmail.send(
+      { to: 'ana@example.com', subject: 'Padel', body: 'Thursday 9:00' },
+      { env: ENV, fetchFn: fn },
+    );
+    expect(calls).toHaveLength(2);
+    expect(calls[0].url).toBe('https://oauth2.googleapis.com/token');
+    expect(calls[1].url).toBe('https://gmail.googleapis.com/gmail/v1/users/me/messages/send');
+    const headers = calls[1].init?.headers as Record<string, string>;
+    expect(headers.authorization).toBe('Bearer at-1');
+    const sent = JSON.parse(String(calls[1].init?.body)) as { raw: string };
+    expect(sent.raw).toBe(emailRaw({ to: 'ana@example.com', subject: 'Padel', body: 'Thursday 9:00' }));
+  });
+
+  it('refuses to run half-connected', async () => {
+    const { fn } = scripted([{ ok: true }]);
+    await expect(
+      CHANNELS.gmail.send({ to: 'a@b.c', body: 'x' }, { env: {}, fetchFn: fn }),
+    ).rejects.toThrow('not connected');
+  });
+
+  it("a dead refresh token surfaces the reconnect sentence, and the send never happens", async () => {
+    const { fn, calls } = scripted([{ ok: false, status: 400, body: { error: 'invalid_grant' } }]);
+    await expect(
+      CHANNELS.gmail.send({ to: 'a@b.c', body: 'x' }, { env: ENV, fetchFn: fn }),
+    ).rejects.toThrow('Connect Google again');
+    expect(calls).toHaveLength(1);
+  });
+
+  it("surfaces Gmail's own refusal sentence", async () => {
+    const { fn } = scripted([
+      { ok: true, body: { access_token: 'at' } },
+      { ok: false, status: 403, body: { error: { message: 'Request had insufficient authentication scopes.' } } },
+    ]);
+    await expect(
+      CHANNELS.gmail.send({ to: 'a@b.c', body: 'x' }, { env: ENV, fetchFn: fn }),
+    ).rejects.toThrow('insufficient authentication scopes');
   });
 });
 

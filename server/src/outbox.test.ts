@@ -45,6 +45,33 @@ describe('readOutbox', () => {
     });
   });
 
+  it('keeps a mail-shaped subject, trimmed, and only when it says something', () => {
+    write(
+      JSON.stringify({
+        channel: 'gmail',
+        messages: [
+          { to: 'ana@example.com', subject: ' Padel Thursday ', body: 'See you' },
+          { to: 'luis@example.com', subject: '  ', body: 'See you' },
+        ],
+      }),
+    );
+    const read = readOutbox(dir);
+    expect(read?.outbox?.messages[0].subject).toBe('Padel Thursday');
+    expect(read?.outbox?.messages[1].subject).toBeUndefined();
+  });
+
+  it('refuses a subject that is not a string, or longer than any subject line', () => {
+    write(JSON.stringify({ channel: 'gmail', messages: [{ to: 'a@b.c', subject: 7, body: 'x' }] }));
+    expect(readOutbox(dir)?.error).toContain('"subject"');
+    write(
+      JSON.stringify({
+        channel: 'gmail',
+        messages: [{ to: 'a@b.c', subject: 'x'.repeat(201), body: 'x' }],
+      }),
+    );
+    expect(readOutbox(dir)?.error).toContain('over 200');
+  });
+
   it.each([
     ['not JSON at all', 'nope{', 'not valid JSON'],
     ['a bare array', '[]', 'not an object'],

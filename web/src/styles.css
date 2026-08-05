@@ -1510,6 +1510,11 @@ button.danger:hover {
   color: #d04648;
   font-size: 11px;
 }
+.rv-msg-subject {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 3px;
+}
 .rv-msg-body {
   font-size: 12px;
   line-height: 1.55;

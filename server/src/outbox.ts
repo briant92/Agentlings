@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   MAX_OUTBOX_BODY_CHARS,
   MAX_OUTBOX_MESSAGES,
+  MAX_OUTBOX_SUBJECT_CHARS,
   MAX_OUTBOX_TO_CHARS,
   type Outbox,
   type OutboxMessage,
@@ -31,7 +32,12 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
-  const { to, name, body } = raw as { to?: unknown; name?: unknown; body?: unknown };
+  const { to, name, subject, body } = raw as {
+    to?: unknown;
+    name?: unknown;
+    subject?: unknown;
+    body?: unknown;
+  };
   if (typeof to !== 'string' || to.trim() === '') {
     return { error: `message ${n}: "to" must be a non-empty string` };
   }
@@ -47,6 +53,12 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (name !== undefined && typeof name !== 'string') {
     return { error: `message ${n}: "name" must be a string when present` };
   }
+  if (subject !== undefined && typeof subject !== 'string') {
+    return { error: `message ${n}: "subject" must be a string when present` };
+  }
+  if (typeof subject === 'string' && subject.length > MAX_OUTBOX_SUBJECT_CHARS) {
+    return { error: `message ${n}: "subject" is over ${MAX_OUTBOX_SUBJECT_CHARS} characters` };
+  }
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {
@@ -54,6 +66,7 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
       to: to.trim(),
       body,
       ...(name && name.trim() ? { name: name.trim() } : {}),
+      ...(subject && subject.trim() ? { subject: subject.trim() } : {}),
     },
   };
 }

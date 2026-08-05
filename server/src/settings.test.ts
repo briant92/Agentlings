@@ -9,6 +9,7 @@ import {
   grantedTools,
   readSettings,
   setConnection,
+  setIdentity,
   writeSettings,
 } from './settings';
 
@@ -82,6 +83,23 @@ describe('grantedTools', () => {
   it('drops a name nobody has heard of', () => {
     expect(grantedTools(['nope'], all, {}, env)).toEqual([]);
     expect(grantedTools(['web', 'nope'], all, {}, env)).toEqual(['web']);
+  });
+});
+
+describe('setIdentity', () => {
+  it('records who a connection turned out to be, without touching the switches', () => {
+    const settings = setIdentity(
+      setConnection({}, 'google', true),
+      'google',
+      'brian@gmail.com',
+    );
+    expect(settings.identities?.google).toBe('brian@gmail.com');
+    expect(settings.connections?.google).toBe(true);
+  });
+
+  it('a reconnect as someone else replaces the old identity', () => {
+    const twice = setIdentity(setIdentity({}, 'google', 'old@gmail.com'), 'google', 'new@gmail.com');
+    expect(twice.identities?.google).toBe('new@gmail.com');
   });
 });
 

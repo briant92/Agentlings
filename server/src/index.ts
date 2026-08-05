@@ -32,12 +32,14 @@ import {
   grantedTools,
   readSettings,
   setConnection,
+  setIdentity,
   writeSettings,
 } from './settings';
 import { clarificationLines, questionsFor } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { detectChannelAsk } from './channel';
 import { secretValueProblem, storeSecret } from './env';
+import { exchangeCode, FlowStore, GOOGLE_SECRETS } from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
@@ -365,6 +367,7 @@ function connectionList(): ConnectionInfo[] {
     connections,
     process.env,
     new Set(enabledNames(connections, settings, process.env)),
+    settings.identities ?? {},
   );
 }
 
@@ -419,7 +422,86 @@ app.post('/api/settings/connections/:name/secret', async (c) => {
   const verdict = await validateConnectionSecret(name, { ...process.env, [secretName]: value });
   if (!verdict.ok) return c.json({ error: verdict.reason ?? 'the key did not validate' }, 400);
   storeSecret(ENV_FILE, secretName, value, process.env);
+  if (verdict.identity) {
+    writeSettings(SANDBOX_ROOT, setIdentity(readSettings(SANDBOX_ROOT), name, verdict.identity));
+  }
   return c.json({ connections: connectionList(), identity: verdict.identity ?? null });
+});
+
+/**
+ * Google's Connect flow (D-080): the two-field start, then the loopback
+ * callback. The client id and secret live only in the pending flow until the
+ * exchange succeeds — a flow that never comes back stores nothing anywhere,
+ * which is D-078's rule stretched over two requests.
+ */
+const googleFlows = new FlowStore();
+const GOOGLE_REDIRECT = `http://127.0.0.1:${PORT}/api/oauth/google/callback`;
+
+app.post('/api/settings/connections/google/oauth/start', async (c) => {
+  const body = await c.req.json<{ clientId?: string; clientSecret?: string }>();
+  const clientId = body.clientId?.trim() ?? '';
+  const clientSecret = body.clientSecret?.trim() ?? '';
+  for (const [label, value] of [
+    ['client id', clientId],
+    ['client secret', clientSecret],
+  ] as const) {
+    const problem = secretValueProblem(value);
+    if (problem) return c.json({ error: `${label}: ${problem}` }, 400);
+  }
+  const { url } = googleFlows.begin(clientId, clientSecret, GOOGLE_REDIRECT, Date.now());
+  return c.json({ url });
+});
+
+/** A whole page, because this tab is Google's redirect and not the app. */
+function oauthPage(title: string, detail: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return [
+    '<!doctype html><html><head><meta charset="utf-8"><title>Agentlings</title>',
+    '<style>body{font:15px/1.6 system-ui,sans-serif;background:#10131a;color:#d8dce6;display:grid;place-items:center;min-height:100vh;margin:0}main{max-width:34rem;padding:2rem;text-align:center}h1{font-size:1.15rem}</style>',
+    `</head><body><main><h1>${esc(title)}</h1><p>${esc(detail)}</p></main></body></html>`,
+  ].join('');
+}
+
+app.get('/api/oauth/google/callback', async (c) => {
+  const { code, state, error } = c.req.query();
+  if (error) {
+    return c.html(oauthPage('Not connected', `Google said: ${error}. You can close this tab.`), 400);
+  }
+  const flow = googleFlows.take(state ?? '', Date.now());
+  if (!flow || !code) {
+    return c.html(
+      oauthPage(
+        'Not connected',
+        'This sign-in link is stale or already used — go back to Agentlings and press Connect again.',
+      ),
+      400,
+    );
+  }
+  const got = await exchangeCode({
+    code,
+    verifier: flow.verifier,
+    clientId: flow.clientId,
+    clientSecret: flow.clientSecret,
+    redirectUri: GOOGLE_REDIRECT,
+  });
+  if ('error' in got) {
+    return c.html(oauthPage('Not connected', `${got.error} You can close this tab.`), 400);
+  }
+  // The exchange succeeding is the validation (D-078): only now does
+  // anything land in .env, all three in one move.
+  storeSecret(ENV_FILE, GOOGLE_SECRETS.clientId, flow.clientId, process.env);
+  storeSecret(ENV_FILE, GOOGLE_SECRETS.clientSecret, flow.clientSecret, process.env);
+  storeSecret(ENV_FILE, GOOGLE_SECRETS.refreshToken, got.refreshToken, process.env);
+  if (got.email) {
+    writeSettings(SANDBOX_ROOT, setIdentity(readSettings(SANDBOX_ROOT), 'google', got.email));
+  }
+  return c.html(
+    oauthPage(
+      'Connected',
+      `${got.email ?? 'Your Google account'} is connected. Close this tab and return to Agentlings — the switch in Settings is still yours to flip.`,
+    ),
+  );
 });
 
 app.get('/api/levels', (c) =>

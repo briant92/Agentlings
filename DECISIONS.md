@@ -89,6 +89,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-077 — 2026-08-04 — The connection batch: four now, nine later, six never](#d-077--2026-08-04--the-connection-batch-four-now-nine-later-six-never)
 - [D-078 — 2026-08-05 — The token drawer: one store, one real call, one inbound crossing](#d-078--2026-08-05--the-token-drawer-one-store-one-real-call-one-inbound-crossing)
 - [D-079 — 2026-08-05 — The desk notices a send, and asks at the only moment asking is free](#d-079--2026-08-05--the-desk-notices-a-send-and-asks-at-the-only-moment-asking-is-free)
+- [D-080 — 2026-08-05 — Google connects by loopback, against the user's own client](#d-080--2026-08-05--google-connects-by-loopback-against-the-users-own-client)
 
 ## By theme
 
@@ -190,7 +191,10 @@ entry updates one file rather than two.
   and the token drawer that keeps `.env` the only store and validates every
   paste with one real call before storing it: D-078; the intake ask-card that
   notices a send, forks honestly, and finally tells the session the outbox
-  contract — with the parked-job status refused a second time: D-079
+  contract — with the parked-job status refused a second time: D-079; and
+  the first Connect button — Google by loopback OAuth against the user's own
+  client, the gmail channel that sends as them, and the 7-day trap given a
+  sentence at both ends: D-080
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -4395,3 +4399,60 @@ green. Verified live against the running server: the original WhatsApp
 sentence that started this whole batch returns the fork above verbatim,
 "send the padel reminder on telegram" returns connectable with the channel
 riding, and "summarise the whatsapp export file" returns nothing at all.
+
+## D-080 — 2026-08-05 — Google connects by loopback, against the user's own client
+
+Slice 4 of M5.11, and the first Connect button — D-076's OAuth shape,
+built. The `google` connection joins the catalog exactly as telegram did:
+builtin, an empty tool grant asserted in tests, ships off. The `gmail`
+channel sends an approved outbox *as the user, from their own address* —
+what D-077 called the only channel that arrives as them.
+
+**The flow.** The Settings drawer takes the user's own client id and secret
+— D-076's rule: never a shared client, because restricted Gmail scopes on
+one make Agentlings a verified-app matter with a paid assessment — and
+opens Google's consent page in a fresh tab. Five scopes in one consent
+(gmail.send now; calendar.events and contacts.readonly so later slices need
+no re-consent; openid email for identity), PKCE S256, and
+`access_type=offline&prompt=consent` so a *re*connect still yields a
+refresh token. The loopback callback on 127.0.0.1:4600 exchanges the code,
+and **the exchange succeeding is the validation** — D-078's rule stretched
+over two requests: the pending flow holds the id and secret in memory only,
+keyed by a single-use ten-minute `state`, and a flow that never comes back
+stores nothing anywhere. On success all three values land in `.env` in one
+move, and the card says who connected — read out of the id_token, no extra
+call, no extra scope.
+
+**The 7-day trap gets a sentence at both ends.** The setup steps say
+publish-to-production out loud, and `invalid_grant` at send time — which is
+what a Testing-mode expiry looks like — surfaces as "Google has revoked
+this connection — open Settings and Connect Google again. An OAuth app left
+in Testing does this every 7 days", never as an HTTP status.
+
+**The gmail channel.** The refresh token buys a short-lived access token
+per send and keeps nothing. The message is real RFC 822 in the API's `raw`
+field: UTF-8 body, RFC 2047-encoded subject when it carries accents — this
+crew writes Spanish — and no Subject header at all when the outbox had
+none, rather than an invented one. `OutboxMessage` gains an optional
+`subject`, validated like every other field and shown at review; the gmail
+outbox brief says addresses-not-chat-ids, write in the user's own voice,
+and report a missing address rather than inventing it.
+
+**Identity joined Settings for every connection, not only this one.**
+`StoredSettings.identities` records who a connection turned out to be, the
+token drawer now writes it too (telegram's card keeps its @bot), and a
+ready card reads "connected as brian@gmail.com". Display only — never part
+of any gate.
+
+**What this slice cannot verify itself, said plainly.** The full circle —
+consent on Google's page, the callback, a real mail — needs the user's own
+GCP client and their own yes. That is the design working, not a gap in it:
+the app cannot test a flow whose whole point is that only the user can
+approve it. What is verified: 26 new tests across the flow store
+(single-use, expiring, the challenge really being S256 of the verifier it
+keeps), the exchange (refresh token present, absent with the fix named,
+refused with Google's own sentence and never the secret), the refresh (the
+7-day sentence), the raw message and the channel client; and live against
+the running server — the start endpoint minted a correct consent URL, a
+bogus-state callback answered 400 with the stale-link page, and "email the
+summary to the team" now asks connectable-Gmail at the desk.

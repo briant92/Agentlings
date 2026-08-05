@@ -1,5 +1,6 @@
 import type { Outbox, OutboxMessage } from '@agentlings/shared';
 import { missingSecrets, type Connection } from './connections';
+import { accessTokenFromRefresh, base64url } from './google';
 import { connectionEnabled, type StoredSettings } from './settings';
 
 /**
@@ -57,7 +58,76 @@ const telegram: ChannelClient = {
   },
 };
 
-export const CHANNELS: Record<string, ChannelClient> = { telegram };
+/** RFC 2047, for a subject with anything beyond printable ASCII in it. */
+function subjectHeader(subject: string): string {
+  if (!/[^\x20-\x7e]/.test(subject)) return `Subject: ${subject}`;
+  return `Subject: =?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`;
+}
+
+/**
+ * The Gmail API's `raw` field: the whole RFC 822 message, base64url-encoded.
+ * Body stays UTF-8 — the API takes bytes, so no transfer encoding is needed —
+ * and a message without a subject simply has no Subject header rather than an
+ * invented one.
+ */
+export function emailRaw(message: OutboxMessage): string {
+  const lines = [
+    `To: ${message.to}`,
+    ...(message.subject ? [subjectHeader(message.subject)] : []),
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    '',
+    message.body,
+  ];
+  return base64url(Buffer.from(lines.join('\r\n'), 'utf8'));
+}
+
+/**
+ * Gmail, through the user's own OAuth client (D-076, D-080). `to` is an email
+ * address, and the mail arrives from the user's own account — the one channel
+ * that sends *as* them. The refresh token buys a short-lived access token per
+ * send and nothing is kept.
+ */
+const gmail: ChannelClient = {
+  connection: 'google',
+  async send(message, deps) {
+    const clientId = deps.env.GOOGLE_OAUTH_CLIENT_ID;
+    const clientSecret = deps.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    const refreshToken = deps.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+    if (!clientId || !clientSecret || !refreshToken) {
+      throw new Error('Google is not connected');
+    }
+    const doFetch = deps.fetchFn ?? fetch;
+    const access = await accessTokenFromRefresh({
+      clientId,
+      clientSecret,
+      refreshToken,
+      fetchFn: doFetch,
+    });
+    if ('error' in access) throw new Error(access.error);
+    const res = await doFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${access.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ raw: emailRaw(message) }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      let reason = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { error?: { message?: string } };
+        if (body?.error?.message) reason = body.error.message;
+      } catch {
+        // keep the status
+      }
+      throw new Error(reason);
+    }
+  },
+};
+
+export const CHANNELS: Record<string, ChannelClient> = { telegram, gmail };
 
 /**
  * Why a reviewed outbox may not be sent right now, or null when it may.

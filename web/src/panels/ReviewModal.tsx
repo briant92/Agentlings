@@ -84,6 +84,7 @@ export function ReviewModal({
                         {sentTo.includes(m.to) && <span className="rv-msg-sent">sent</span>}
                         {failure && <span className="rv-msg-failed">{failure.reason}</span>}
                       </div>
+                      {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
                       <div className="rv-msg-body">{m.body}</div>
                     </li>
                   );

@@ -75,6 +75,8 @@ export function describe(
   connections: Connection[],
   env: Record<string, string | undefined>,
   enabled: Set<string> = new Set(),
+  /** Who each connection turned out to be, where a connect flow learned it. */
+  identities: Record<string, string> = {},
 ): ConnectionInfo[] {
   return connections.map((c) => {
     const missing = missingSecrets(c, env);
@@ -86,6 +88,7 @@ export function describe(
       ready: missing.length === 0,
       missingSecrets: missing,
       ...(c.setup ? { setup: c.setup } : {}),
+      ...(identities[c.name] ? { identity: identities[c.name] } : {}),
       defaultOn: c.defaultOn === true,
       enabled: enabled.has(c.name),
     };

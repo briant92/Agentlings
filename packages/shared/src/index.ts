@@ -159,6 +159,8 @@ export interface ConnectionInfo {
   missingSecrets: string[];
   /** Plain-words steps for getting the secret — what the settings drawer shows. */
   setup?: string[];
+  /** Who this connection turned out to be ("brian@gmail.com"), once known. */
+  identity?: string;
   /** What it is before anyone changes it. */
   defaultOn: boolean;
   /** Whether jobs can reach it right now — the default unless Settings says otherwise. */
@@ -233,8 +235,12 @@ export interface OutboxMessage {
   to: string;
   /** Display name for the review card; never sent to the channel. */
   name?: string;
+  /** Mail-shaped channels want one; chat-shaped channels ignore it. */
+  subject?: string;
   body: string;
 }
+
+export const MAX_OUTBOX_SUBJECT_CHARS = 200;
 
 /**
  * What a run asks to send: one channel, up to MAX_OUTBOX_MESSAGES messages,

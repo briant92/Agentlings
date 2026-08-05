@@ -63,11 +63,22 @@ const LABELS: Record<string, string> = {
   messenger: 'Messenger / Instagram',
 };
 
+/** Per-channel one-liners for the states the drawer can change (D-078). */
+const WIRED_COPY: Record<string, { ready: string; connectable: string }> = {
+  telegram: {
+    ready: 'Free — every message waits for your review before anything sends',
+    connectable: 'Free — each person taps Start on your bot once. Connect it in Settings.',
+  },
+  gmail: {
+    ready: 'Arrives as you, from your own address — every message waits for your review',
+    connectable: 'Arrives as you, from your own address. Connect Google in Settings.',
+  },
+};
+
 /** Decided in D-077 and wired in later slices; the card says so plainly. */
 const PLANNED: Record<string, string> = {
   'whatsapp-business':
     'Real WhatsApp, ≈$0.03 a message, arrives from a business number — planned, needs Meta setup first',
-  gmail: 'Arrives as you, from your own address — planned next',
   slack: 'Posts in your workspace as your own bot — planned',
   sms: 'Reaches phones with no apps, ≈1¢ a message — planned',
   discord: 'Posts as a bot in your server — planned',
@@ -95,19 +106,16 @@ function wiredState(
   if (!connection) return null;
   const usable =
     missingSecrets(connection, env).length === 0 && connectionEnabled(connection, settings, env);
-  return usable
-    ? {
-        channel,
-        label: LABELS[channel] ?? channel,
-        state: 'ready',
-        detail: 'Free — every message waits for your review before anything sends',
-      }
-    : {
-        channel,
-        label: LABELS[channel] ?? channel,
-        state: 'connectable',
-        detail: 'Free — each person taps Start on your bot once. Connect it in Settings.',
-      };
+  const copy = WIRED_COPY[channel] ?? {
+    ready: 'Every message waits for your review before anything sends',
+    connectable: 'Connect it in Settings.',
+  };
+  return {
+    channel,
+    label: LABELS[channel] ?? channel,
+    state: usable ? 'ready' : 'connectable',
+    detail: usable ? copy.ready : copy.connectable,
+  };
 }
 
 function optionFor(
@@ -211,15 +219,25 @@ export function detectChannelAsk(
  */
 export function channelBrief(channel: string): string | null {
   if (!CHANNELS[channel]) return null;
+  const shape =
+    channel === 'gmail'
+      ? `{"channel":"gmail","messages":[{"to":"<email address>","name":"<who this is, shown at review>","subject":"<short subject>","body":"..."}]}`
+      : `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`;
   return [
     '## Sending messages',
     `This job sends messages via ${LABELS[channel] ?? channel}. No tool sends anything — composing is your job; sending is not.`,
     'Write OUTBOX.json in the working directory, exactly this shape:',
-    `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`,
+    shape,
     `- Up to ${MAX_OUTBOX_MESSAGES} messages, one per recipient, each body under ${MAX_OUTBOX_BODY_CHARS} characters.`,
     ...(channel === 'telegram'
       ? [
           '- "to" is the numeric Telegram chat id. If the user named people but gave no chat ids, do not invent any — leave those messages out and say in RESULT.md which ids are missing.',
+        ]
+      : []),
+    ...(channel === 'gmail'
+      ? [
+          '- "to" is the recipient\'s email address, and every message wants a short "subject". If the user named people but gave no addresses, do not invent any — leave those messages out and say in RESULT.md which addresses are missing.',
+          '- The mail arrives from the user\'s own address, so write it in their voice.',
         ]
       : []),
     '- The user reviews every message and approves before anything is sent.',

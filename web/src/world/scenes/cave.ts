@@ -46,6 +46,8 @@ function ditherRow(row: number): SceneOp {
 
 export const CAVE: Scene = {
   name: 'cave',
+  // Water off the stalactites the ceiling actually grew, and a rare bat.
+  ambient: [{ fx: 'drips' }, { fx: 'flyer' }],
   ops: [
     // Distant accent pillars: capital, banded shaft, base.
     {

@@ -171,10 +171,51 @@ export type SceneOp =
       };
     };
 
+/**
+ * Idle life over the painting, in the same spirit as the ops: parameterised
+ * idioms, not a language. Each one is a small looping effect the renderer
+ * knows how to run; a scene says which it wants and where they hang. They are
+ * live-only — a thumbnail is a snapshot, and a snapshot of dust is a stain.
+ */
+export type AmbientOp =
+  /** Water gathering and falling from the stalactite tips the draw reported. */
+  | { fx: 'drips' }
+  /** A small winged silhouette crossing the open air, rarely. */
+  | { fx: 'flyer' }
+  /** Slow dust drifting down through a region. */
+  | ({ fx: 'motes'; count: number } & { x: Coord; y: Coord; w: Coord; h: Coord })
+  /** A slanted shaft of light with dust drifting inside it. */
+  | {
+      fx: 'beam';
+      topLeft: Coord;
+      topRight: Coord;
+      topY: Coord;
+      botLeft: Coord;
+      botRight: Coord;
+      botY: Coord;
+      count: number;
+    }
+  /** Sparkles on gilding: named points, plus random spots along strips. */
+  | { fx: 'glints'; points: [Coord, Coord][]; strips: { x: Coord; y: Coord; w: Coord }[] }
+  /** Live clock hands over a painted face, telling the actual time. */
+  | { fx: 'clock'; x: Coord; y: Coord; r: number };
+
 export interface Scene {
   /** Named so a pack can say what it is, and the app can show it. */
   name: string;
   ops: SceneOp[];
+  /** Idle life over the painting; omitted, a scene simply holds still. */
+  ambient?: AmbientOp[];
+}
+
+/**
+ * What the draw noticed on the way: positions only the seeded geometry knows,
+ * reported so the ambient effects can hang on the same picture the player
+ * sees rather than on a guess at it.
+ */
+export interface SceneMarks {
+  /** Bottom-centre of each stalactite the ceiling hung. */
+  spikeTips: [number, number][];
 }
 
 /** Deterministic PRNG so a scene looks the same every time it is drawn. */
@@ -195,6 +236,7 @@ function drawOp(
   anchors: Anchors,
   rng: () => number,
   dx: number,
+  marks: SceneMarks,
 ): void {
   const n = (value: Coord): number => resolveCoord(value, anchors);
   /** The one place a scene's colour name becomes a number. */
@@ -223,7 +265,7 @@ function drawOp(
 
     case 'repeat':
       for (const at of op.at) {
-        for (const child of op.of) drawOp(s, child, theme, anchors, rng, dx + n(at));
+        for (const child of op.of) drawOp(s, child, theme, anchors, rng, dx + n(at), marks);
       }
       return;
 
@@ -233,8 +275,8 @@ function drawOp(
       for (let at = n(op.from); at < to; at += op.step) {
         // A child says `y: 0` (or `x: 0`) and means "wherever this row is".
         for (const child of op.of) {
-          if (alongX) drawOp(s, child, theme, anchors, rng, dx + at);
-          else drawOp(s, shiftY(child, at), theme, anchors, rng, dx);
+          if (alongX) drawOp(s, child, theme, anchors, rng, dx + at, marks);
+          else drawOp(s, shiftY(child, at), theme, anchors, rng, dx, marks);
         }
       }
       return;
@@ -289,7 +331,7 @@ function drawOp(
     }
 
     case 'ceiling':
-      drawCeiling(s, op, theme, anchors, rng, c);
+      drawCeiling(s, op, theme, anchors, rng, c, marks);
       return;
   }
 }
@@ -308,6 +350,7 @@ function drawCeiling(
   anchors: Anchors,
   rng: () => number,
   c: (name: Paint) => number,
+  marks: SceneMarks,
 ): void {
   const n = (value: Coord): number => resolveCoord(value, anchors);
   const minY = n(op.minY);
@@ -327,13 +370,32 @@ function drawCeiling(
 
   const hang = op.hang;
   if (!hang) return;
-  for (const [ex, ey] of edge) {
+  const drawSpike = (ex: number, ey: number, spike: NonNullable<typeof hang.spike>): void => {
+    s.rect(ex - 6, ey - 2, 12, 6, c(spike.color));
+    s.rect(ex - 4, ey + 4, 8, 5, c(spike.color));
+    s.rect(ex - 2, ey + 9, 4, 5, c(spike.tip));
+    marks.spikeTips.push([ex, ey + 14]);
+  };
+  for (const [i, [ex, ey]] of edge.entries()) {
     if ((hang.clearOf ?? []).some((clear) => Math.abs(ex - n(clear.at)) < clear.within)) continue;
+    // A deep point — lower than both neighbours, past the spike bar — always
+    // grows a stalactite. "Spikes at the deep points" was pure dice before,
+    // and the shipped cave's seed rolled none anywhere: a comment the picture
+    // did not keep. Endpoints sit over the side walls and never qualify.
+    if (
+      hang.spike &&
+      i > 0 &&
+      i < edge.length - 1 &&
+      ey > n(hang.spike.below) &&
+      ey > edge[i - 1][1] &&
+      ey > edge[i + 1][1]
+    ) {
+      drawSpike(ex, ey, hang.spike);
+      continue;
+    }
     const roll = rng();
     if (hang.spike && roll < hang.spike.chance && ey > n(hang.spike.below)) {
-      s.rect(ex - 6, ey - 2, 12, 6, c(hang.spike.color));
-      s.rect(ex - 4, ey + 4, 8, 5, c(hang.spike.color));
-      s.rect(ex - 2, ey + 9, 4, 5, c(hang.spike.tip));
+      drawSpike(ex, ey, hang.spike);
     } else if (hang.vine && roll < (hang.spike?.chance ?? 0) + hang.vine.chance) {
       const len = hang.vine.min + rng() * (hang.vine.max - hang.vine.min);
       s.rect(ex - 1, ey, 2, len, c(hang.vine.color), 0.95);
@@ -360,8 +422,10 @@ export function drawScene(
   theme: Theme,
   anchors: Anchors,
   seed = 0xa9e27,
-): void {
+): SceneMarks {
+  const marks: SceneMarks = { spikeTips: [] };
   scene.ops.forEach((op, i) => {
-    drawOp(s, op, theme, anchors, mulberry32(seed + i * 0x9e3779b1), 0);
+    drawOp(s, op, theme, anchors, mulberry32(seed + i * 0x9e3779b1), 0, marks);
   });
+  return marks;
 }

@@ -11,6 +11,12 @@
       "name": "agentlings-attached",
       "url": "http://localhost:5173",
       "port": 5173
+    },
+    {
+      "name": "agentlings-web-second",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "web", "--", "--port", "5273", "--strictPort"],
+      "port": 5273
     }
   ]
 }

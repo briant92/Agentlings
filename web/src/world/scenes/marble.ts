@@ -41,6 +41,28 @@ function column(x: number): SceneOp {
 
 export const MARBLE: Scene = {
   name: 'marble',
+  // The gilding glints: the column capitals and keystone by name, plus
+  // random spots along the gold rails the scene lays below.
+  ambient: [
+    {
+      fx: 'glints',
+      points: [
+        [270, 90],
+        [330, 90],
+        [470, 90],
+        [530, 90],
+        [670, 90],
+        [730, 90],
+        ['exitX', 'groundY-146'],
+      ],
+      strips: [
+        { x: 0, y: 56, w: 'worldWidth' },
+        { x: 0, y: 'groundY-68', w: 'worldWidth' },
+        { x: 0, y: 'groundY-2', w: 'worldWidth' },
+        { x: 'exitX-46', y: 'groundY-144', w: 92 },
+      ],
+    },
+  ],
   ops: [
     // Back wall in dressed stone, with a gold dado.
     { op: 'rect', x: 0, y: 0, w: 'worldWidth', h: 'groundY', color: 'rock' },

@@ -39,6 +39,20 @@ function shelf(x: number, w: number, top: number): SceneOp[] {
 
 export const HOUSEHOLD: Scene = {
   name: 'household',
+  // Afternoon light through the window, dust adrift in the beam. The quad
+  // hangs off the window at (300,96)–(408,180); move one, move both.
+  ambient: [
+    {
+      fx: 'beam',
+      topLeft: 308,
+      topRight: 400,
+      topY: 100,
+      botLeft: 380,
+      botRight: 560,
+      botY: 'groundY',
+      count: 16,
+    },
+  ],
   ops: [
     // Back wall, papered, with a dado rail low down.
     { op: 'rect', x: 0, y: 0, w: 'worldWidth', h: 'groundY', color: 'void' },

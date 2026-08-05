@@ -9,6 +9,7 @@ import {
   STATION_SPACING,
   WORLD_WIDTH,
 } from '@agentlings/shared';
+import { createAmbience } from './ambience';
 import { type Frames, loadAtlasArt } from './atlas';
 import { type Box, doorBox, type HoverTarget, OUTLINE_OFFSETS, stationBox } from './hover';
 import { DB } from './palette';
@@ -313,8 +314,18 @@ export function WorldCanvas({
         });
 
         const scenery = new Graphics();
-        drawScene(pixiSurface(scenery), SCENES[theme], T, ANCHORS);
+        const marks = drawScene(pixiSurface(scenery), SCENES[theme], T, ANCHORS);
         app.stage.addChild(scenery);
+
+        // The scene's idle life: above the painting, below everything that
+        // works for a living.
+        const ambientLayer = new Graphics();
+        app.stage.addChild(ambientLayer);
+        const ambience = createAmbience(SCENES[theme].ambient ?? [], {
+          anchors: ANCHORS,
+          theme: T,
+          marks,
+        });
 
         // What the pointer is over. Held here rather than in React state so
         // the ticker can read it without the effect being torn down and the
@@ -383,10 +394,12 @@ export function WorldCanvas({
           const w = worldRef.current;
           dynamic.clear();
           fxLayer.clear();
+          ambientLayer.clear();
           for (const ghost of ghosts) ghost.visible = false;
           if (!w) return;
           const t = performance.now() / 1000;
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
+          ambience.tick(ambientLayer, dt, t);
 
           // The rail and the world point at the same crew, so hovering either
           // one lights up both.

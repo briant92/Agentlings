@@ -50,6 +50,12 @@ function chalkMarks(x: number, y: number, widths: number[]): SceneOp[] {
 
 export const CHALKBOARD: Scene = {
   name: 'chalkboard',
+  // Chalk dust hanging in front of the board, and the clock telling the
+  // real time — the classroom clock you watch, watching back.
+  ambient: [
+    { fx: 'motes', x: 130, y: 84, w: 600, h: 100, count: 24 },
+    { fx: 'clock', x: 830, y: 116, r: 21 },
+  ],
   ops: [
     // Panelled wall behind everything.
     { op: 'rect', x: 0, y: 0, w: 'worldWidth', h: 'groundY', color: 'rock' },
@@ -101,11 +107,11 @@ export const CHALKBOARD: Scene = {
     { op: 'rect', x: 430, y: 'groundY-102', w: 30, h: 10, color: 'accentDark' },
     { op: 'rect', x: 430, y: 'groundY-96', w: 30, h: 4, color: 'woodDark' },
 
-    // A clock, because every classroom has one you are watching.
+    // A clock, because every classroom has one you are watching. The hands
+    // are not painted here — the ambient clock draws them live, at the
+    // actual time of day.
     { op: 'circle', x: 830, y: 116, r: 26, color: 'wood' },
     { op: 'circle', x: 830, y: 116, r: 21, color: 'accentLight' },
-    { op: 'rect', x: 829, y: 100, w: 3, h: 18, color: 'rockEdge' },
-    { op: 'rect', x: 830, y: 115, w: 14, h: 3, color: 'rockEdge' },
 
     // Floorboards and skirting.
     { op: 'rect', x: 0, y: 'groundY-12', w: 'worldWidth', h: 12, color: 'wood' },

@@ -166,6 +166,38 @@ describe('drawing a scene', () => {
   });
 });
 
+describe('scene marks', () => {
+  it('reports the stalactite tips the cave hangs, the same every draw', () => {
+    const a = drawScene(recorder().surface, CAVE, THEMES.cave, ANCHORS);
+    const b = drawScene(recorder().surface, CAVE, THEMES.cave, ANCHORS);
+    expect(a.spikeTips.length).toBeGreaterThan(0);
+    expect(a.spikeTips).toEqual(b.spikeTips);
+  });
+
+  // A tip is 14 below a ceiling edge that must sit under the spike bar (66)
+  // and above the ceiling's own maxY (84) — anywhere else and the drips
+  // would fall from empty air.
+  it('puts every tip where a stalactite can actually be', () => {
+    const { spikeTips } = drawScene(recorder().surface, CAVE, THEMES.cave, ANCHORS);
+    for (const [x, y] of spikeTips) {
+      // Clear of both side walls, the hatch, and the exit arch.
+      expect(x).toBeGreaterThan(22);
+      expect(x).toBeLessThan(ANCHORS.worldWidth - 26);
+      expect(y).toBeGreaterThan(80);
+      expect(y).toBeLessThan(98);
+      expect(Math.abs(x - ANCHORS.spawnX)).toBeGreaterThanOrEqual(60);
+      expect(Math.abs(x - ANCHORS.exitX)).toBeGreaterThanOrEqual(40);
+    }
+  });
+
+  it('reports no tips for the indoor scenes', () => {
+    for (const key of ['household', 'chalkboard', 'marble'] as ThemeKey[]) {
+      const marks = drawScene(recorder().surface, SCENES[key], THEMES[key], ANCHORS);
+      expect(marks.spikeTips, key).toEqual([]);
+    }
+  });
+});
+
 describe('the shipped scenes', () => {
   const keys = Object.keys(SCENES) as ThemeKey[];
 

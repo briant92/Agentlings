@@ -159,7 +159,7 @@ server work, and a future compile candidate of the same family as
 | T2·1 | 2026-08-05 | a4885b22 | 46c | 25c | **$1.50** | $1.50 | 21 | done | **6× my guess, and the miss is the finding**: I attached the repo's largest doc (AGENTLING.md, 74KB) against a prediction written for a modest one — 1.29M cache-read tokens rode 21 calls (~7.1c/call, 202s). First hard number for the "quote does not know attachments" gap; the $2.00 clamp absorbed it with 50c to spare. Deliverable good: headed one-pager via a generator script. **T2·2: attach a normal-sized document, and compare per-call, not totals** |
 | T2·2 | | | | 20c | | | | | hint expected; smaller attachment |
 | T2·3 | | | | 17c | | | | | leash expected |
-| T3·1 | | | 46c | 30c | | | | | |
+| T3·1 | 2026-08-05 | dde3c87b | 46c | 30c | **60.7c** | 60.7c | 7 | done | 85s. Totals verified independently to 4 decimals; "category" ambiguity handled by stating the choice and totalling all three readings. 2× my guess with a *small* (5.9KB) attachment — which isolates the real driver: **this level's standing context (4 connections' tool definitions + knowledge + library brief) floors every call at ~7–8c**, while the class rate pooling cheaper hq rows priced the quote. D-067's rate residual, showing up per level |
 | T3·2 | | | | 23c | | | | | |
 | T3·3 | | | | 19c | | | | | leash expected |
 | T4·1 | | | 46c | 22c | | | | | |

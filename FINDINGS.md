@@ -8,12 +8,12 @@ review conversation and, once acted on, in `DECISIONS.md`.
 This file is a working list, not a record: when every row is settled, the
 substance lives in `DECISIONS.md` and this file can go.
 
-**State at last session (2026-08-05, pushed `9b66959`):** training waves 1–2
-ran — 15 runs, 15 deliveries, $8.83 spent — and the actuals plus the wave
-findings live in `TRAINING.md`'s prediction ledger and wave-2 "Measured"
-block. Read that file before queueing anything; prompts repeat **verbatim**
-(the recipe key is the prompt) and runs go **sequentially** while F5 is open.
-The dev server was left running from that session.
+**State (2026-08-05, pushed `f26fa39`):** five of the seven rows below are
+settled; **F5 and F6 are all that is left**, and both are cheap. Training has
+run waves 1–4 — 21 runs and the first compiled tool, actuals in `TRAINING.md`'s
+prediction ledger. Read that file before queueing anything: prompts repeat
+**verbatim** (the recipe key is the prompt) and runs go **sequentially** while
+F5 is open. The dev server was left running.
 
 - [x] **F1 — The learning loop has no dedup.** A recurring job banks the same
       lesson every run: 11 near-identical lines in training-ground's
@@ -44,19 +44,12 @@ The dev server was left running from that session.
       **Done 2026-08-05 — D-096.** The ladder was walked end to end on real
       recurring work: five hand-done runs, a compile, a reviewed promote, and
       a sixth run served by `summarise-attach-expense-csv` at `tooled: true`,
-      0 turns, $0. The account below is what it took to get there.
-      T6 ("summarise expenses.csv into SUMMARY.md") has now run four times,
-      all delivered, on a recipe whose surface is verified `conn:web` alone —
-      compile-clean for D-044. It was blocked for one afternoon and is not
-      any more: `successes` counts reuse only, so three runs left it at 1 of
-      3, and run 3 was then leashed → cut → uncredited, which no further run
-      could have escaped. D-095 fixed the gate; **T6·4 ran un-leashed and
-      credited `successes: 2`**. One more delivery reaches the three a
-      compile needs — then request it and review `run.mjs` for D-045's cache
-      test. Counter-case still queued behind it: a third T4 delivery makes a
-      candidate whose compile D-044 should visibly refuse (method needs the
-      live code host). The doors/libraries decision still waits for that
-      evidence; do not build first.
+      0 turns, $0. It was blocked for one afternoon on the way — `successes`
+      counts reuse only, so "three runs" was five, and the leash then froze
+      the recipe (F7) — which is the account in D-095 and D-096. The
+      counter-case is now board item 2: a third T4 delivery makes a candidate
+      whose compile D-044 should visibly *refuse*. The doors/libraries
+      decision still waits for that evidence; do not build first.
 - [ ] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
       reads recipes at run start and writes at end; two jobs on different
       stations lose one another's counts, and the counters now gate leashes and
@@ -71,30 +64,12 @@ The dev server was left running from that session.
       leashed pair)*. **Done 2026-08-05 — D-095**, both halves: the bound is
       the leash's own budget, and a leashed run cut at the wall raises the
       need it disproved. Verified live by T6·4 refusing the leash it had
-      taken the run before, and by the mutations recorded in the entry. T2·4 and T3·4 both leashed, both cut at 5 turns holding
-      their deliverables (their matured standard needs 5–7 calls), both
-      charged $0 and absorbed — and a cut run cannot revise `completions` or
-      `completedInTurns` (D-068, deliberately), so both recipes stay
-      leash-eligible and every future repeat loops leash → cut → deliver →
-      absorb: free for the user, unbounded absorption for the app. Decision
-      direction, not code: a *leashed* run cut at the wall has proved need >
-      leash, and its `toolCalls` is a lower bound — letting that raise
-      `completedInTurns` would retire the leash for jobs it demonstrably does
-      not fit. Reopens D-068's counter semantics; wants its own D-entry
-      before any counter moves.
-
-      *Sharpened 2026-08-05 by T6·3, and now the top of the board.* The loop
-      is not only unbounded absorption — it **freezes the recipe**. A cut run
-      credits neither counter, so a leashed-and-cut recipe can never reach
-      `successes: 3` and can never be compiled: the tool tier is unreachable
-      for exactly the jobs the leash grabs (F4, live). And the arming
-      condition is looser than this row assumed — `canShortenLeash` asks
-      `completions >= 1` and `completedInTurns <= 10`, so **one** completing
-      run recorded at **6** turns armed a **5**-turn leash. The recipe's own
-      record said it did not fit. Two questions for the entry, then: may a cut
-      leashed run raise `completedInTurns`, and should the gate compare that
-      field against the leash's actual budget rather than
-      `LEASH_CREDIBLE_UP_TO`.
+      taken the run before, and by the mutations recorded in the entry.
+      T6·3 sharpened the row before it closed: the loop was not only
+      unbounded absorption, it **froze the recipe** — a cut run credits
+      neither counter, so a leashed-and-cut recipe could never reach
+      `successes: 3` and could never be compiled, which made the tool tier
+      unreachable for exactly the jobs the leash grabbed.
 - [x] **Next step — a second real job through training-ground.** Done and then
       some: waves 1–2 of `TRAINING.md` are five distinct real jobs across 15
       runs. Superseded by the board below.

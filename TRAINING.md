@@ -189,8 +189,12 @@ Two things were wrong in the plan above, both discovered by running it:
 This is F7 with a sharper edge: not just unbounded absorption, but a recipe
 that can no longer climb. It is also the fourth time a gate that verified one
 thing was read as licensing another (D-064, D-065, D-068 — and the warning is
-written in `recipes.ts` directly above the code that did it). F7's decision
-entry is now a **prerequisite** for wave 4, not a parallel item.
+written in `recipes.ts` directly above the code that did it).
+
+**Settled the same day by D-095**, which was a prerequisite for this wave
+rather than a parallel item: the bound became the leash's own budget, a
+leashed run cut at the wall may raise it, and T6·4 then ran un-leashed and
+credited `successes: 2`. One more delivery reaches the three a compile needs.
 
 ### Wave 5 — the knowledge store on its best case *(needs a folder from Brian)*
 
@@ -235,7 +239,9 @@ server work, and a future compile candidate of the same family as
 | T6·1 | 2026-08-05 | 87934cf1 | 49c live | 20c | **24.8c** | 24.8c | 4 | done | 37s. Totals match an independent recompute exactly (grand 43.6750 over 104 real spend rows). **The banked recipe's surface is `conn:web` alone** — compile-clean, D-044 will pass. Best prediction landing yet (+24%) |
 | T6·2 | 2026-08-05 | e1296348 | 48c class ("44 jobs like it") | 15c | **47.0c** | 47.0c | 5 | done | 48s, 111 rows (cost by job class). All four figures match an independent recompute exactly. **Cost nearly doubled run-over-run** (24.8 → 47.0c) — the ratchet again: run 1's method matured into a `summarise.mjs` generator plus an exact-figures section, and the CSV grew 4.2→4.5KB. My 15c guess low for the third time on this job. **The quote was still class-priced**: one prior run does not key it — the recipe only credits on *reuse*, so run 1 left `successes: 0` |
 | T6·3 | 2026-08-05 | 8ef1063a | **56.7c keyed** | 15c | 20.4c | **$0** | 5 | partial | **leashed on its second reuse and cut at the wall** — `oneShot`, `turnsAllowed: 5`, `error_max_turns` at turn 6, SUMMARY.md correct anyway (D-063; all five figures match my recompute), charged $0, 20.4c absorbed. The gate armed off `completions: 1` with `completedInTurns: 6` on file — **the recipe's own record said six turns and the leash granted five**. D-072's keyed quote fired here, one credited run in |
-| T6·compile | | | ~$1.58 | $1.15 | | | | | **blocked** — see the arithmetic below |
+| T6·4 | 2026-08-05 | 074d7d73 | 93.9c keyed | 45c | **69.2c** | 69.2c | 9 | done | **the first run under D-095** — the leash refused itself (`turnsAllowed: 40`, no `oneShot`) where run 3 had taken it, and the recipe credited `successes: 1 → 2`, its first movement since being learned. 107s, all seven figures matching an independent recompute; a 6-category composite axis and the biggest CSV yet (5.3KB), which is most of the rise over run 2 |
+| T6·5 | | | | 50c | | | | | needed for `successes: 3` — then the compile |
+| T6·compile | | | ~$1.58 | $1.15 | | | | | after T6·5 |
 | T6·tool | | | free | $0.00 | | | | | verify must pass |
 | T7·recalls | | | free | $0.00 | | | | | |
 | T7·session | | | | 38c | | | | | |

@@ -465,6 +465,62 @@ describe('RoutedExecutor', () => {
       expect(readRecipes(levelDir)[0].hits).toBe(1);
     });
 
+    /**
+     * The leash un-learning, at the seam where it is decided (D-095). The unit
+     * tests pin what `creditRecipe` does with `leashCutFrom`; these two pin
+     * when it is passed at all, which is the part a mutation walked straight
+     * through — deleting the `oneShot` check broke nothing.
+     */
+    function armed(over: Partial<Recipe> = {}): void {
+      writeRecipes(levelDir, [
+        {
+          key: 'add a test for formatusd',
+          terms: ['add', 'test', 'formatusd'],
+          role: 'worker',
+          approach: 'the old way',
+          hits: 2,
+          successes: 1,
+          completions: 1,
+          completedInTurns: 4,
+          capabilities: [],
+          learnedAt: 1,
+          ...over,
+        },
+      ]);
+    }
+
+    const cutAt = (turnsAllowed: number) =>
+      new DyingSession(new SessionFailure('ran out of turns', { outOfTurns: true, turnsAllowed }));
+
+    it('lets a leashed run cut at the wall retire the leash it disproved', async () => {
+      armed();
+      const session = cutAt(5);
+      await expect(
+        run(build(session), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow('ran out of turns');
+
+      // It was leashed: a recipe recorded at 4 is strong, so the router hands
+      // the run a one-shot rather than merely the method. `DyingSession` keeps
+      // only the job it was given, so the tier is read off what the run
+      // announced — the two lines are distinct on purpose.
+      expect(progress.join(' ')).toContain('less exploring');
+      expect(readRecipes(levelDir)[0].completedInTurns).toBe(6);
+    });
+
+    // A long run dying is not the leash being wrong about anything, and D-068
+    // still holds for it: 33 stands, rather than becoming 41.
+    it('leaves the bound alone when the run that died was never leashed', async () => {
+      armed({ completedInTurns: 33 });
+      const session = cutAt(40);
+      await expect(
+        run(build(session), job({ prompt: 'add a test for formatUsd' }), PIP),
+      ).rejects.toThrow('ran out of turns');
+
+      expect(progress.join(' ')).toContain('starting from that method');
+      expect(progress.join(' ')).not.toContain('less exploring');
+      expect(readRecipes(levelDir)[0].completedInTurns).toBe(33);
+    });
+
     it('writes down how it worked, from the notes it did manage', async () => {
       await expect(
         run(build(dying('the way that worked')), job({ prompt: 'Name three colours' }), PIP),

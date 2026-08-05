@@ -41,15 +41,15 @@ The dev server was left running from that session.
       works precisely where jobs fit ≤4 calls. The old ~55% headline was mostly
       the method. Residue moved to F7; refinement is just more pairs.
 - [ ] **F4 — First real repeat demand points at the blocked tool tier.**
-      T6 ("summarise expenses.csv into SUMMARY.md") has now run three times,
+      T6 ("summarise expenses.csv into SUMMARY.md") has now run four times,
       all delivered, on a recipe whose surface is verified `conn:web` alone —
-      compile-clean for D-044. **Blocked, and not by demand (2026-08-05):**
-      the promote is refused at `successes: 1` of 3, because `successes`
-      counts reuse only *and* run 3 was leashed → cut → uncredited. Every
-      further run repeats that, so the counter cannot move. **F7 is now a
-      prerequisite** — no more T6 runs until it is settled; they would cost
-      ~20c each, deliver correctly, charge $0 and teach nothing new.
-      Counter-case still queued behind it: a third T4 delivery makes a
+      compile-clean for D-044. It was blocked for one afternoon and is not
+      any more: `successes` counts reuse only, so three runs left it at 1 of
+      3, and run 3 was then leashed → cut → uncredited, which no further run
+      could have escaped. D-095 fixed the gate; **T6·4 ran un-leashed and
+      credited `successes: 2`**. One more delivery reaches the three a
+      compile needs — then request it and review `run.mjs` for D-045's cache
+      test. Counter-case still queued behind it: a third T4 delivery makes a
       candidate whose compile D-044 should visibly refuse (method needs the
       live code host). The doors/libraries decision still waits for that
       evidence; do not build first.
@@ -63,8 +63,11 @@ The dev server was left running from that session.
       tier table carry 17.9c/39.9c over "106 jobs"; live is 17.9c/49.0c over
       115. The docs' own rule (regenerate, don't trust prose) covers it; apply
       the mechanical resync when next in those files.
-- [ ] **F7 — The leash cannot un-learn** *(added 2026-08-05, from Wave 2's
-      leashed pair)*. T2·4 and T3·4 both leashed, both cut at 5 turns holding
+- [x] **F7 — The leash cannot un-learn** *(added 2026-08-05, from Wave 2's
+      leashed pair)*. **Done 2026-08-05 — D-095**, both halves: the bound is
+      the leash's own budget, and a leashed run cut at the wall raises the
+      need it disproved. Verified live by T6·4 refusing the leash it had
+      taken the run before, and by the mutations recorded in the entry. T2·4 and T3·4 both leashed, both cut at 5 turns holding
       their deliverables (their matured standard needs 5–7 calls), both
       charged $0 and absorbed — and a cut run cannot revise `completions` or
       `completedInTurns` (D-068, deliberately), so both recipes stay
@@ -94,21 +97,19 @@ The dev server was left running from that session.
 
 ## The board — pick up here
 
-1. **F7's decision entry** — now first, because wave 4 cannot move until it
-   lands: whether a leashed run cut at the wall may raise `completedInTurns`,
-   and whether `canShortenLeash` should read that field against the leash's
-   own budget. A counters change — take it through a D-entry first.
-2. **T6's fourth run, then promote** (F4's milestone) — *only after 1*. Fresh
-   expenses CSV, verbatim prompt, **name only `web`**; it must complete
-   un-leashed to credit `successes: 2`, so a fifth run follows before the
-   compile request. Then review `run.mjs` for D-045's cache test before
-   promoting. Runs 1–3 are on the board at 24.8c, 47.0c and 20.4c-absorbed.
-3. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
+1. **T6's fifth run, then promote** (F4's milestone). Fresh expenses CSV,
+   verbatim prompt, **name only `web`**; it credits `successes: 3`, which is
+   the compile candidate. Then review `run.mjs` for D-045's cache test before
+   promoting. Runs so far: 24.8c, 47.0c, 20.4c-absorbed, 69.2c — the ratchet
+   is real on this job, so budget ~70c rather than the 15c the plan assumed.
+2. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
    promote and watch D-044 refuse with the reason. The gate's negative case,
-   live.
-4. **T5 in September**, on its real cadence — not before.
-5. **Wave 5** needs Brian to pick a real documents folder for the store.
-6. Two measured gaps now sized for whoever reopens them: the quote is blind to
+   live. Worth re-reading its recipe first — T4 completed in 4 turns, so it
+   is one of the few still leash-eligible under D-095, and the run will be a
+   one-shot.
+3. **T5 in September**, on its real cadence — not before.
+4. **Wave 5** needs Brian to pick a real documents folder for the store.
+5. Two measured gaps now sized for whoever reopens them: the quote is blind to
    attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
    per-call floor here vs the pooled class rate) — both have ledger rows
    behind them now, neither is worth code before more traffic.

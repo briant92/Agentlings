@@ -5253,14 +5253,35 @@ licensing another (D-064, D-065, D-068), and the warning was written in
 `recipes.ts` directly above the code that did it. The rule that keeps
 catching it: ask what the counter's own doc comment says it measured.
 
-**Evidence.** `npm test` 1056 + 109 green, typecheck clean. Six new tests
-on the un-learn (raises past the failed budget; retires a leash a recipe
-had fitted; credits no counter; yields to a real completion; leaves the
-bound alone with no leashed cut) and the eligibility bound re-pinned at
-4/5 pass and 6 refuse, including T6·3's exact record. Two of those tests
-first passed for the wrong reason — seeded through `rememberRecipe`
-without a capability surface, they died on `sameCapabilities` and never
-reached the bound; stated surfaces fixed it, which is the same class of
-fault as a scripted check matching a string that already existed.
-Mutation proof and the live run follow this commit, and are recorded
-below rather than promised.
+**Evidence.** `npm test` 1057 + 109 green, typecheck clean. The
+eligibility bound is re-pinned at 4/5 pass and 6 refuse — including
+T6·3's exact record — and six tests cover the un-learn across both files.
+
+The tests needed three rounds, and the two that failed are the useful
+part. Two first passed *for the wrong reason*: seeded through
+`rememberRecipe` with no capability surface, they died on
+`sameCapabilities` and never reached the bound they claimed to test.
+Then three more proved tautological — they seeded the recipe at six
+turns, where T6 actually stood, and the raise is a `Math.max` to `5 + 1`,
+so every assertion held whatever the code did. Deleting the raise killed
+one test of four. Reseeding at four — the only state a leashed cut can
+now arise from, since a recipe at six can no longer be leashed at all —
+made them discriminate. Both faults are the house one: a check that
+passes on something already true.
+
+Mutation-proved after committing, on the restored file each time.
+Bound back to `* 2`: 5 fail (both eligibility cases, two un-learn cases,
+the join test). Raise deleted: 2 fail. Dropping `hint?.oneShot` at the
+call site — so *any* cut run would revise the bound, well past what this
+entry allows — killed **nothing**, because no test reached that seam; two
+`RoutedExecutor` tests now do, one leashed and one not, and the second
+fails under that mutation.
+
+Live, and the point of the exercise. T6·4 (job 074d7d73, a fourth real
+CSV): `oneShot` absent, `turnsAllowed: 40` — **the leash refused itself
+on the new bound**, where run 3 had taken it — done in 10 turns and 9
+calls, 107s, 69.2c against a 93.9c keyed quote. All seven figures match
+an independent recompute exactly. The recipe went `successes: 1 → 2`,
+`completions: 1 → 2`, `completedInTurns` unchanged at 6: the first
+movement on that counter since the recipe was learned, and the ladder is
+walking again.

@@ -372,27 +372,26 @@ describe('a leashed run cut at the wall raises the bound it disproved', () => {
   const seed = () =>
     rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1, capabilities: [] });
 
+  /**
+   * A recipe that completed in four turns, so the leash is armed — the only
+   * state a leashed cut can arise from now that the bound is the leash itself.
+   *
+   * Seeding this at six (where T6 actually stood) makes every assertion below
+   * pass whatever the code does: the raise is a `Math.max` to `5 + 1`, which is
+   * six again. Three of these tests were written that way first and caught
+   * nothing when the raise was deleted.
+   */
   const armed = () => {
-    // Where T6 stood after run 2: one completion, recorded at six turns.
-    const out = creditRecipe(seed(), 'x', 2, true, true, 40, 5);
-    expect(out[0].completedInTurns).toBe(6);
+    const out = creditRecipe(seed(), 'x', 2, true, true, undefined, 3);
+    expect(out[0].completedInTurns).toBe(4);
+    expect(canShortenLeash(out[0], [])).toBe(true);
     return out;
   };
 
-  it('raises the bound past the budget that failed', () => {
+  it('raises the bound past the budget that failed, and retires the leash', () => {
     const out = creditRecipe(armed(), 'x', 3, false, false, undefined, undefined, 5);
     expect(out[0].completedInTurns).toBe(6);
     expect(canShortenLeash(out[0], [])).toBe(false);
-  });
-
-  it('retires the leash for a recipe that had fitted it', () => {
-    // A recipe recorded at 4 is leash-eligible; one cut run at that budget is
-    // the ratchet catching up, and it must be able to say so.
-    const fits = creditRecipe(seed(), 'x', 2, true, true, undefined, 3);
-    expect(canShortenLeash(fits[0], [])).toBe(true);
-    const cut = creditRecipe(fits, 'x', 3, false, false, undefined, undefined, 5);
-    expect(cut[0].completedInTurns).toBe(6);
-    expect(canShortenLeash(cut[0], [])).toBe(false);
   });
 
   it('credits nothing else — it is a failure, not a completion', () => {
@@ -403,16 +402,17 @@ describe('a leashed run cut at the wall raises the bound it disproved', () => {
   });
 
   // Evidence of fitting outranks a bound inferred from a failure: a run that
-  // genuinely completes inside a shorter budget pulls it back down.
+  // genuinely completes inside a shorter budget pulls it back down and re-arms.
   it('yields to a later run that actually completes in less', () => {
     const cut = creditRecipe(armed(), 'x', 3, false, false, undefined, undefined, 5);
+    expect(cut[0].completedInTurns).toBe(6);
     const out = creditRecipe(cut, 'x', 4, true, true, undefined, 3);
     expect(out[0].completedInTurns).toBe(4);
     expect(canShortenLeash(out[0], [])).toBe(true);
   });
 
   it('leaves the bound alone when no leashed run was cut', () => {
-    expect(creditRecipe(armed(), 'x', 3, true, false, 10)[0].completedInTurns).toBe(6);
+    expect(creditRecipe(armed(), 'x', 3, true, false, 10)[0].completedInTurns).toBe(4);
   });
 });
 

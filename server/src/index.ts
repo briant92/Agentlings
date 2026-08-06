@@ -33,7 +33,7 @@ import {
   setAuto,
 } from './approvals';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
-import { capabilityTokens, connectionsIn, connectionsUsed } from './capability';
+import { capabilityTokens, compileBlockers } from './capability';
 import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import { describe, missingSecrets, readConnections } from './connections';
 import {
@@ -1921,11 +1921,7 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
    * as such would approve a compile that cannot exist — the one thing D-044
    * was built to stop.
    */
-  const catalog = readConnections(CONNECTIONS_FILE);
-  const ambient = catalog.filter((conn) => conn.defaultOn === true).map((conn) => conn.name);
-  const needs = recipe.usedTools?.length
-    ? connectionsUsed(recipe.usedTools, catalog)
-    : connectionsIn(recipe.capabilities, ambient);
+  const needs = compileBlockers(recipe, readConnections(CONNECTIONS_FILE));
   if (needs.length > 0) {
     return c.json(
       {

@@ -94,6 +94,28 @@ export function connectionsUsed(
     .map((conn) => conn.name);
 }
 
+/**
+ * The connections that stop a method becoming a plain-node script, or none.
+ *
+ * The compile gate's whole question, in one place rather than inline in the
+ * route — route wiring is not tested, and every fault of the last two days
+ * has been a correct function nobody exercised.
+ *
+ * Use first, availability second, and the fallback is the careful half: a
+ * recipe whose runs all predate the recording (D-100) has told us nothing
+ * about what it reached, and absent evidence is not evidence of absence.
+ * Reading it as "used nothing" would approve a compile that cannot exist,
+ * which is the one thing D-044 was built to stop.
+ */
+export function compileBlockers(
+  recipe: { capabilities?: string[]; usedTools?: string[] },
+  connections: { name: string; tools?: string[]; defaultOn?: boolean }[],
+): string[] {
+  if (recipe.usedTools?.length) return connectionsUsed(recipe.usedTools, connections);
+  const ambient = connections.filter((conn) => conn.defaultOn === true).map((conn) => conn.name);
+  return connectionsIn(recipe.capabilities, ambient);
+}
+
 /** Whether two surfaces are the same one. */
 export function sameSurface(a: string[] | undefined, b: string[] | undefined): boolean {
   if (!a || !b) return false;

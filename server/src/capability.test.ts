@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { capabilityTokens, connectionsIn, connectionsUsed, sameSurface } from './capability';
+import {
+  capabilityTokens,
+  compileBlockers,
+  connectionsIn,
+  connectionsUsed,
+  sameSurface,
+} from './capability';
 
 describe('connectionsIn', () => {
   const surface = capabilityTokens({
@@ -176,5 +182,65 @@ describe('connectionsUsed', () => {
   it('says nothing at all when the runs predate the recording', () => {
     expect(connectionsUsed(undefined, CATALOG)).toEqual([]);
     expect(connectionsUsed([], CATALOG)).toEqual([]);
+  });
+});
+
+/**
+ * The compile gate's question, extracted from the route so it is testable at
+ * all (D-100). Both halves matter: reading use where there is use, and
+ * refusing to read silence as innocence where there is not.
+ */
+describe('compileBlockers', () => {
+  const CATALOG = [
+    { name: 'web', tools: ['fetch_page'], defaultOn: true },
+    { name: 'github', tools: ['list_commits'] },
+    { name: 'browser', tools: ['navigate'] },
+  ];
+
+  /** The case that bought D-100: the surface says browser, the run says no. */
+  it('clears a method that carried a connection it never touched', () => {
+    expect(
+      compileBlockers(
+        { capabilities: ['conn:browser', 'conn:github', 'conn:web'], usedTools: ['Read', 'Write'] },
+        CATALOG,
+      ),
+    ).toEqual([]);
+  });
+
+  it('still refuses a method that really did reach outside', () => {
+    expect(
+      compileBlockers(
+        { capabilities: ['conn:github', 'conn:web'], usedTools: ['Read', 'list_commits'] },
+        CATALOG,
+      ),
+    ).toEqual(['github']);
+  });
+
+  /**
+   * D-044's other stated limit, now closed: a job that genuinely fetched with
+   * nothing but the ambient `web` used to pass the gate and produce a failing
+   * compile, because ambient is subtracted from a *surface*.
+   */
+  it('refuses a method that only ever used the ambient connection', () => {
+    expect(compileBlockers({ capabilities: ['conn:web'], usedTools: ['fetch_page'] }, CATALOG)).toEqual(
+      ['web'],
+    );
+    // The old question, for contrast — it would have let this through.
+    expect(compileBlockers({ capabilities: ['conn:web'] }, CATALOG)).toEqual([]);
+  });
+
+  // Silence is not innocence: a recipe whose runs predate the recording gets
+  // the old, careful answer rather than a free pass.
+  it('falls back to the surface when no run ever reported', () => {
+    expect(compileBlockers({ capabilities: ['conn:browser', 'conn:web'] }, CATALOG)).toEqual([
+      'browser',
+    ]);
+    expect(compileBlockers({ capabilities: ['conn:browser'], usedTools: [] }, CATALOG)).toEqual([
+      'browser',
+    ]);
+  });
+
+  it('clears a method that reached nothing and was learned reaching nothing', () => {
+    expect(compileBlockers({ capabilities: ['conn:web'], usedTools: ['Read'] }, CATALOG)).toEqual([]);
   });
 });

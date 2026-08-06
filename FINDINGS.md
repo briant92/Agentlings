@@ -8,12 +8,14 @@ review conversation and, once acted on, in `DECISIONS.md`.
 This file is a working list, not a record: when every row is settled, the
 substance lives in `DECISIONS.md` and this file can go.
 
-**State (2026-08-05, pushed `f26fa39`):** five of the seven rows below are
-settled; **F5 and F6 are all that is left**, and both are cheap. Training has
-run waves 1–4 — 21 runs and the first compiled tool, actuals in `TRAINING.md`'s
-prediction ledger. Read that file before queueing anything: prompts repeat
-**verbatim** (the recipe key is the prompt) and runs go **sequentially** while
-F5 is open. The dev server was left running.
+**State (2026-08-06, pushed `5e26112`):** six of the seven rows below are
+settled and **F5 is the only one left** — latent, and cheap when it stops
+being. Training has run waves 1–4 — 21 runs and the first compiled tool,
+actuals in `TRAINING.md`'s prediction ledger. Read that file before queueing
+anything: prompts repeat **verbatim** (the recipe key is the prompt) and runs
+go **sequentially** while F5 is open — which now matters more than the row
+says, since two chat sessions share this tree and one queued a real send here
+while the other was working. The dev server was left running.
 
 - [x] **F1 — The learning loop has no dedup.** A recurring job banks the same
       lesson every run: 11 near-identical lines in training-ground's
@@ -56,10 +58,17 @@ F5 is open. The dev server was left running.
       compiles. Cheap direction: re-read and merge before write. Becomes real
       the day two stations run at once — all 15 training runs were queued
       sequentially to avoid it; keep doing that until fixed.
-- [ ] **F6 — Doc figures have drifted again.** AGENTLING.md §7/§8 and SPEC's
-      tier table carry 17.9c/39.9c over "106 jobs"; live is 17.9c/49.0c over
-      115. The docs' own rule (regenerate, don't trust prose) covers it; apply
-      the mechanical resync when next in those files.
+- [x] **F6 — Doc figures have drifted again.** AGENTLING.md §7/§8 and SPEC's
+      tier table carried 17.9c/39.9c over "106 jobs". **Done 2026-08-06:**
+      resynced from `npm run ledger:report` rather than from the prose —
+      **19.1c one-shot / 51.5c session over 148 jobs**, with the spend split
+      ($50.94 spent, $30.46 charged, $19.78 absorbed), the one-shot record
+      (9 done against 24 failed), the avoided-cost counterfactual and the
+      ladder's step-downs (63% / 100%) all re-read from the same run. The
+      same pass added the `compose` tier to both tier tables, which had six
+      rows for a router that has seven — a capability landed the day before
+      and documented nowhere, which is the fault this file's own rule about
+      AGENTLING.md exists to catch.
 - [x] **F7 — The leash cannot un-learn** *(added 2026-08-05, from Wave 2's
       leashed pair)*. **Done 2026-08-05 — D-095**, both halves: the bound is
       the leash's own budget, and a leashed run cut at the wall raises the
@@ -87,14 +96,24 @@ F5 is open. The dev server was left running.
      `failed` and was absorbed — right by D-012, and it means any future
      "compile success rate" read off the ledger says 0% while the tool it
      built is live. Ask what the population was before trusting that figure.
-2. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
+2. **The Warzone recipe is mis-credited**, and nothing on this board said so
+   until now. "I need to send a Telegram to Pepo" matched
+   `send pepo the current warzone meta summary on telegram.` by *similarity*
+   and credited it with a 3-turn completion — work its own siblings measured
+   at 14–15. It is leash-eligible on that number, so the next real run of
+   that sentence gets 5 turns and is cut. D-095's un-learn then retires the
+   leash automatically, so the cost is one wasted run, not a loop. The wider
+   question — whether a similarity match should credit `completedInTurns` at
+   all, or only an exact one — is the entry someone should write before
+   touching the counter.
+3. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
    promote and watch D-044 refuse with the reason. The gate's negative case,
    live. Worth re-reading its recipe first — T4 completed in 4 turns, so it
    is one of the few still leash-eligible under D-095, and the run will be a
    one-shot.
-3. **T5 in September**, on its real cadence — not before.
-4. **Wave 5** needs Brian to pick a real documents folder for the store.
-5. Two measured gaps now sized for whoever reopens them: the quote is blind to
+4. **T5 in September**, on its real cadence — not before.
+5. **Wave 5** needs Brian to pick a real documents folder for the store.
+6. Two measured gaps now sized for whoever reopens them: the quote is blind to
    attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
    per-call floor here vs the pooled class rate) — both have ledger rows
    behind them now, neither is worth code before more traffic.

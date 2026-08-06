@@ -489,10 +489,11 @@ without the agent is an answer nobody checked.
 | `fetch` | A bare "read this page" — addresses plus words that only mean *fetch* | free | Plain code |
 | `search` | A bare "find me pages about X" — a search instruction and a subject, with nothing asked *about* the results | free | One API call |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
-| `oneshot` | A recipe matches strongly (≥ 0.65) **and has landed before** — the method, on a 5-turn leash | 18c | A short session |
-| `agent` | Everything else. A weak match (≥ 0.3), or a strong one nobody has landed yet, still lends its method | 40c | A full session |
+| `compose` | A send whose recipient **and** message the desk already holds — the words go as written, so there is nothing to decide | free | Plain code |
+| `oneshot` | A recipe matches strongly (≥ 0.65) **and has landed before** — the method, on a 5-turn leash | 19c | A short session |
+| `agent` | Everything else. A weak match (≥ 0.3), or a strong one nobody has landed yet, still lends its method | 52c | A full session |
 
-Those two figures are measured over 106 jobs, not estimated — §8 has the
+Those two figures are measured over 148 jobs, not estimated — §8 has the
 workings and the command that regenerates them.
 
 Guards that keep the free tiers honest:
@@ -521,7 +522,7 @@ npm run ledger:report
 ```
 
 Run it rather than trusting what is printed below. The numbers here were taken
-on **2026-08-04, over 106 jobs spanning 2026-07-30 to 2026-08-04** — and the
+on **2026-08-06, over 148 jobs spanning 2026-07-30 to 2026-08-06** — and the
 reason the command exists is that `SPEC.md` carried "~13c / ~50c" for the two
 paid tiers long after the real figures had moved — they were 19.2c and 39.2c
 when that was first noticed on 2026-08-02, and the table still said "~13c /
@@ -547,10 +548,10 @@ different acts. A cost written into prose is a cost nobody recomputes.
 
 | Process | Measured | Notes |
 |---|---|---|
-| `oneshot` — a recipe on a 5-turn leash | **17.9c** mean, 47c max | 4.5c per turn with a repo, 4.0c without |
-| `agent` — a full session | **39.9c** mean, $1.32 max | 5.0c per turn with a repo, 3.4c without |
-| The close-out write-up | ~2c | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died |
-| A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. Four so far |
+| `oneshot` — a recipe on a 5-turn leash | **19.1c** mean, 47.3c max | 4.5c per turn with a repo, 4.7c without |
+| `agent` — a full session | **51.5c** mean, $1.96 max | 5.0c per turn with a repo, 2.1c without |
+| The close-out write-up | ~3.9c | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died. $2.67 over 68 rows |
+| A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. Five so far, one of which produced the tool now in service |
 | The optional refine tier on intake | fractions of a cent | One Haiku turn, no tools. Every failure path falls back to the local answer |
 
 **Free to run, but it puts tokens in a paid session.** The trap worth naming:
@@ -574,10 +575,12 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 106 jobs that came to: **spent $26.57, chargeable $9.79, absorbed
-$16.45.** Sixty-two per cent of all money spent was never charged for.
+Over those 148 jobs that came to: **spent $50.94, chargeable $30.46, absorbed
+$19.78.** Thirty-nine per cent of all money spent was never charged for — a
+share that has halved as real repeat work replaced the mechanism-exercising
+runs the earlier figure was mostly made of.
 
-Most of that is failed work, driven by the one-shot tier at 8 done against 21
+Most of that is failed work, driven by the one-shot tier at 9 done against 24
 failed — a fact about a short leash rather than a fault, since a leashed run
 trades the write-up for a much cheaper run, and `partial` exists because
 calling the result a failure hides work that is ready to promote. That ratio is
@@ -622,8 +625,8 @@ then holds it there. There are exactly two step-downs, and both are discrete:
 
 | Step | Fires when | Measured |
 |---|---|---|
-| session → one-shot | A recipe matches strongly, and has landed once | 39.9c → 17.9c, **55% off** |
-| one-shot → tool | Three deliveries, then you approve a compile | 17.9c → free, **100% off** |
+| session → one-shot | A recipe matches strongly, and has landed once | 51.5c → 19.1c, **63% off** |
+| one-shot → tool | Three deliveries, then you approve a compile | 19.1c → free, **100% off** |
 
 **That first figure is a population average across two whole tiers, and the
 per-job saving is about half of it.** Five jobs have now been run on both
@@ -674,18 +677,20 @@ ladder in one line: **78.2c session → 46.6c leashed → free, twice.**
 So the number that tracks the intent is **what share of work has descended the
 ladder, and what the descent avoided** — not any average.
 
-**Avoided so far: about $10.55, against $26.57 actually spent.** 28 one-shot
-runs saved ~$6.16 and 11 free runs saved ~$4.39, pricing each at what a session
+**Avoided so far: about $18.09, against $50.94 actually spent.** 32 one-shot
+runs saved ~$10.36 and 15 free runs saved ~$7.73, pricing each at what a session
 would have cost. It is a counterfactual and the report says so: the assumption
 is that each would otherwise have run as an ordinary session, which is what the
 router's fall-through would have made it.
 
-**The honest caveat, which applies to this whole section.** 106 jobs over six
-days is a small and mostly synthetic sample — nearly every one was queued to
-exercise a mechanism rather than to get work done, and there has been about one
-genuine repeat. The machinery for the fourth tier was built ahead of the demand
-deliberately and with that known (D-021). These figures describe a test bench,
-not a workload.
+**The honest caveat, which applies to this whole section.** 148 jobs over eight
+days is a small and mostly synthetic sample — most were queued to exercise a
+mechanism rather than to get work done. It is less synthetic than it was: the
+training programme has since put five distinct real jobs through one level, and
+one of them walked the whole ladder to a compiled tool that now serves it for
+nothing (D-096). The machinery for the fourth tier was built ahead of the demand
+deliberately and with that known (D-021). These figures describe a test bench
+that has started to see real traffic, not yet a workload.
 
 ### The write-up is priced apart from the session — Live
 
@@ -964,7 +969,19 @@ can never message anyone twice; a partial failure leaves the job reviewable
 with the channel's own reason per recipient, and a second Approve retries only
 those. The session never holds a send tool or a token — the telegram
 connection grants an **empty tool list**, and `catalog.test.ts` asserts it
-stays that way.
+stays that way. Since D-097 a job is not granted the channel at all: it is
+declared `sendsOnly`, `grantedTools` drops it, and the job carries the
+channel on its own field. The connection stays switched on — that switch is
+what the *server* consults before replaying — but a run cannot reach it, and
+the surface it used to pollute was what refused every send job a compile.
+
+**And a send the desk already holds whole never reaches a session** (D-097).
+When a sentence names no message — nothing left after the send words, the
+channel words and the roster's names are struck out — the desk asks for the
+**Words** rather than a gist, promises to send them as written, and then
+builds `OUTBOX.json` in code. Free, instant, no model: the same file, held to
+the same contract, and **approval is still the send**. What changed is who
+composed it, not when it goes.
 
 The structural argument survives intact. Every guarantee rests on one shape —
 **work in a sandbox, review, promote** — and a send now goes *through*
@@ -1297,8 +1314,11 @@ list per channel (D-077; SPEC M5.11 has the slices):
       detects a send (verb + channel word, never less), the ask-card offers
       what the catalog can honestly offer, and a job that carries a channel
       is *told* the OUTBOX.json contract in its brief — D-031's rule,
-      closed by D-079. The desk also asks the send's two facts (recipient,
-      gist) on the card, Start arrests a knowably doomed queue for one
+      closed by D-079. The desk also asks the send's two facts on the card
+      — the recipient, and either a gist or, when the sentence names no
+      message at all, the **words themselves**, sent as written and
+      composed for free without a session (D-097) — Start arrests a
+      knowably doomed queue for one
       extra press — including a recipient the channel's contract cannot
       reach, like a name where a chat id belongs (D-091) — and a failed
       run's question carries a reply box that continues the same job,

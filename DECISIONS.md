@@ -5444,7 +5444,37 @@ field is free text. It now reads an en-dash and a spaced hyphen, splits at
 the *last* one (names carry hyphens; addresses rarely do), and treats a
 trailing separator as part of the name rather than an empty address.
 
-**Evidence.** 1085 + 109 green, typecheck clean. Mutations: `bareSend`
+**And the channel a send job is about is not a tool.** Taken the same
+day, from the same review. `grantedTools` handed every enabled connection
+to every job, so a send carried `telegram` — which is `builtin` with no
+branch in the executor and no MCP server, and therefore grants a session
+*nothing*. The catalog had been saying so in prose all along: telegram's
+own description reads "Grants the crew no tools at all — sends happen at
+review, never inside a run." The cost was never tokens. It was that
+`conn:telegram` landed in the recipe's capability surface, where D-044
+reads any deliberately-enabled connection as a method that reached
+outside and refuses the compile — so **the most repetitive job shape in
+the product was locked out of the free tool tier by the channel it was
+about**, permanently and invisibly.
+
+Connections now declare `sendsOnly` (telegram, google, whatsapp-business),
+and `grantedTools` drops them. Declared rather than inferred from the
+name, because a connection and its channel need not share one: `google`
+is the connection, `gmail` is the channel. Excluded in `grantedTools`
+rather than at the surface, so the quote, the router and the run keep
+getting their one answer from the one function. The connection stays
+*enabled* — that switch is what the server consults before replaying an
+approved outbox, and this only says a run cannot reach it.
+
+That removed a guard nobody had noticed was load-bearing. A send could
+never bank a replayable answer, because the channel kept `job.tools`
+non-empty and the "nothing outside fed into it" test failed on it. With
+channels gone from tools, a send narrowed to its channel alone would have
+banked "one Telegram is composed and waiting" and served it free on the
+next identical sentence with no outbox behind it — job 57bbff81's PDF,
+one channel over. The job's own `channel` now says it explicitly.
+
+**Evidence.** 1089 + 109 green, typecheck clean. Mutations: `bareSend`
 forced false kills 5, forced true kills 4, dropping the `write it out`
 escape kills 1, bypassing the outbox contract kills 4, dropping `send` in
 either builder kills 1 each, and restoring the free-tier guard kills 1.
@@ -5457,3 +5487,14 @@ Queued for real, it came back `costUsd 0, turns 0, routed`, wrote
 and RESULT.md that reads as a review. Debugging cost 30.2¢ across two
 sessions; the four test jobs were discarded and `sends.jsonl` is untouched
 at three rows — nothing was sent to prove any of this.
+
+For the channel half: dropping the `sendsOnly` filter kills 2, dropping
+the `!job.channel` guard kills 1. Live, a queued send now carries
+`tools: ["web","github","search","browser"]` with `channel: "telegram"`
+riding on its own field — the channel gone, everything else untouched.
+Against the real gate's ambient set (`web` alone), the same job reads
+`REFUSED — used telegram` before and **`COMPILABLE`** after when narrowed
+to `web`, while an un-narrowed one still refuses on github, search and
+browser, which it genuinely reached. The tier is now open to send work
+that stays inside; it is not open to send work that researched first, and
+that distinction is D-044 doing its job rather than being worked around.

@@ -5474,7 +5474,38 @@ banked "one Telegram is composed and waiting" and served it free on the
 next identical sentence with no outbox behind it — job 57bbff81's PDF,
 one channel over. The job's own `channel` now says it explicitly.
 
-**Evidence.** 1089 + 109 green, typecheck clean. Mutations: `bareSend`
+**Last, the brief says whose words these are.** A send that falls through
+to a session — the outbox contract refusing what the desk held, in
+practice a body over the channel's limit — hands a run the user's own
+message with nothing saying so, which is precisely the condition that
+turned "A DARLE" into "A DARLE 💪". `channelBrief` now carries an
+own-words block: the message verbatim, *"it is not a brief for a message;
+it is the message"*, and what to do when it will not fit, because an
+instruction to send it exactly as written and nothing else would be one
+the run cannot follow in the very case that produced it.
+
+Deliberately narrow, and the obvious wider readings are wrong. A
+continuation holds no send facts — the reply route takes only text, and
+carrying the old ones forward would let a brief insist on words the reply
+may have just superseded, which is guessing at intent that D-091 and
+D-094 both refused. A content-bearing send has no own-words to protect:
+there the user gave a direction and writing the message *is* the job.
+
+`draftingAsk` was written and tested in the same sitting and called by
+nothing — speculative code by the project's own rule, now wired. "Write
+it out" is addressed to the desk; once it has sent the job to a session
+instead of composing it, the phrase is noise in the brief and worse than
+noise, since it reads as part of what to write. Stripped as a leading
+phrase only, so "tell him to write it out before Friday" survives whole.
+
+And a third instance of the same fault as the two builders: deleting the
+line that handed a job's own words to `channelBrief` broke **no test**,
+while `channelBrief` itself was covered from three directions. A correct
+function reached by nobody. The which-blocks-ride decisions now live in
+`briefForJob` and are tested there, which incidentally pins D-094's reuse
+wiring — equally unpinned until now.
+
+**Evidence.** 1101 + 109 green, typecheck clean. Mutations: `bareSend`
 forced false kills 5, forced true kills 4, dropping the `write it out`
 escape kills 1, bypassing the outbox contract kills 4, dropping `send` in
 either builder kills 1 each, and restoring the free-tier guard kills 1.
@@ -5498,3 +5529,10 @@ to `web`, while an un-narrowed one still refuses on github, search and
 browser, which it genuinely reached. The tier is now open to send work
 that stays inside; it is not open to send work that researched first, and
 that distinction is D-044 doing its job rather than being worked around.
+
+For the brief: dropping the own-words block kills 3, un-wiring it from
+`briefForJob` kills 2, and dropping the escape-phrase strip kills 1.
+
+**Noticed while tracing these paths, not fixed and not new:** the redo
+route ("do it properly") carries neither `channel` nor `send`, so redoing
+a send job produces one with no outbox contract in its brief at all.

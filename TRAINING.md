@@ -247,6 +247,17 @@ Real maintenance (SPEC drifts silently — memory), recurring after any batch of
 server work, and a future compile candidate of the same family as
 `list-every-server-module`.
 
+**Measured 2026-08-06 (T8·1, first run).** The demand is real — SPEC had
+drifted by **eight** unnamed modules (approvals, audience, channel, env,
+google, pickFolder, validate, executors/simulated) — and so is the case for
+compiling it: the scout's delivery was 70% right at full confidence, with
+three phantom files, one miss and a self-contradicting census, while the
+seven true findings cost 14.3c. Cross-checked both ways before crediting
+either list: my first grep was the worse instrument on named-vs-mentioned
+(prose words passed channel/env/validate), the scout's memory was the worse
+one on existence. A compiled tool would enumerate rather than remember —
+this job stays on its cadence and should compile once its runs earn it.
+
 ## Prediction ledger — fill as runs land
 
 | Run | Date | Job id | Quoted | Predicted | Actual cost | Charged | Calls | Outcome | Note |
@@ -277,7 +288,7 @@ server work, and a future compile candidate of the same family as
 | T6·tool | 2026-08-05 | 1882e54b | free | $0.00 | **$0** | **$0** | 0 | done | **`tooled: true`, 0 turns, no session** — a seventh CSV (by day, 116 rows) it had never seen, every figure matching an independent recompute, and it disclosed the rounding residual (parts 50.32 vs grand 50.31) rather than hiding it. `runs: 1, failures: 0` |
 | T7·recalls | 2026-08-06 | 535e8aea, 2c89a2dc | free | $0.00 | **$0** | $0 | 0 | done | both routed, both citing `[file, synced 2026-08-06]`; the thin one exposed the junk-text-layer boundary and a term-match stray, each visible in its citation |
 | T7·session | 2026-08-06 | 60298461 | $2.00 ceiling | 38c | **50.6c** | 50.6c | 7 | done | 114s; one-page .docx + md twin, deck figures verbatim, honest Gaps section for the agenda items its 12 recalled lines never carried. +33% on the guess — the level's per-call floor again |
-| T8·1 | | | 10c | 15c | | | | | hq |
+| T8·1 | 2026-08-06 | ad4f1356 | 28.6c ceiling (10c class) | 12–18c | **14.3c** | 14.3c | 8 | done | 37s, scout, prediction landed. **The list is 70% right and reads 100% confident**: 7 findings confirmed by exact-filename recompute, **3 phantom files** (catalog/pack/palette.ts — none exists in server/src), **1 miss** (executors/simulated.ts, real and unnamed), and a census whose own numbers don't reconcile (47+10≠57, 39 names listed as 47). True drift: **8 modules SPEC does not name**. Both instruments erred first — my bare-basename grep passed channel/env/validate off prose words — and the compile-candidate argument made itself: a script enumerates, a memory invents |
 
 Programme total, predicted: **~$4.50–6.50 spent** across ~19 runs plus one
 ~$1.15 compile; chargeable less (failures and quote caps absorb). Regenerate

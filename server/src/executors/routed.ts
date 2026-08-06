@@ -7,6 +7,7 @@ import {
   TOOL_CANDIDATE_RUNS,
   creditRecipe,
   noteToolCandidate,
+  normalise,
   readRecipes,
   rememberRecipe,
   updateRecipes,
@@ -491,20 +492,41 @@ export class RoutedExecutor implements Executor {
       const cutMeter = failure instanceof SessionFailure ? failure.meter : undefined;
       const leashCutFrom =
         hint?.oneShot && cutMeter?.outOfTurns && !midFlight ? cutMeter.turnsAllowed : undefined;
+      /**
+       * Whether this run *is* the job the recipe is about, or merely resembles
+       * it (D-099).
+       *
+       * A recipe is matched two ways: the same sentence, or a similar one. The
+       * second is right for lending a method — that is what similarity is for
+       * — and wrong for saying anything about the job the key names. Measured:
+       * "I need to send a Telegram to Pepo" scored close enough to the recipe
+       * for "Send Pepo the current Warzone meta summary on Telegram", ran three
+       * turns because it had two words to put in an outbox, and credited that
+       * recipe with a 3-turn completion. Its siblings that actually did the
+       * research measured 14 and 15. The leash then armed on the 3.
+       *
+       * So a resembling run credits *usage* and nothing else — exactly what a
+       * continuation is already allowed (D-074), for exactly the same reason:
+       * it did not do this job.
+       */
+      const exact = normalise(job.prompt) === usedKey;
       // Turns *granted*, never the count the SDK reports: job 653f8c2e was
       // capped at 33 and came back saying 40, and this number is about to
       // decide whether a five-turn leash is credible (D-022, D-052).
       const key = usedKey;
+      const ownWork = !midFlight && exact;
       changes.push((fresh) =>
         creditRecipe(
           fresh,
           key,
           Date.now(),
-          delivered && !midFlight,
-          fitted && !midFlight,
+          delivered && ownWork,
+          fitted && ownWork,
           result?.meter?.turnsAllowed,
           result?.meter?.toolCalls,
-          leashCutFrom,
+          // The bound a cut leash disproved is a fact about the run that was
+          // cut, so it only speaks for the keyed job when it *is* that job.
+          ownWork ? leashCutFrom : undefined,
         ),
       );
     }

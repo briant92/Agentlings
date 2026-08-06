@@ -7,8 +7,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import type { Agentling, Job } from '@agentlings/shared';
 import {
   TOOL_CANDIDATE_RUNS,
+  normalise,
   readRecipes,
   readToolCandidates,
+  terms,
   writeRecipes,
   type Recipe,
 } from '../recipes';
@@ -323,6 +325,85 @@ describe('RoutedExecutor', () => {
     // rebased, so the method the last run wrote is the one on file.
     it('lets the last run to finish own the method it wrote', async () => {
       expect((await overlap(true)).approach).toBe('the way that worked');
+    });
+  });
+
+  /**
+   * A resembling run credits usage and nothing else (D-099). Similarity is
+   * how a method gets lent to a related job, and that is all it is evidence
+   * of — the counters describe the job the *key* names, and a run that merely
+   * resembles it did not do that job.
+   *
+   * The 3-turn send that credited a 15-turn research recipe is the case: it
+   * scored close enough on "send / pepo / telegram", had two words to put in
+   * an outbox, and armed a five-turn leash on work its own siblings measured
+   * at 14 and 15.
+   */
+  describe('a run that only resembles the recipe it matched', () => {
+    // Shares "summarise", "commits" and "note" with the prompt below — enough
+    // to match, nowhere near the same job.
+    const KEY = 'summarise the last 15 commits and write a status note';
+
+    function stored(): void {
+      writeRecipes(levelDir, [
+        {
+          key: KEY,
+          terms: terms(KEY),
+          role: 'worker',
+          approach: 'read the commits, group them, write it up',
+          hits: 0,
+          capabilities: [],
+          learnedAt: 1,
+        },
+      ]);
+    }
+
+    /** A different sentence that matches the stored recipe by similarity. */
+    const RESEMBLES = 'summarise the commits and write a note';
+
+    it('matches it at all — otherwise this describes nothing', async () => {
+      stored();
+      const session = new FakeSession({ summary: 'done', approach: 'a way' });
+      await run(build(session), job({ prompt: RESEMBLES }), PIP);
+      expect(session.runs).toHaveLength(1);
+      expect(readRecipes(levelDir).find((r) => r.key === KEY)?.hits).toBe(1);
+    });
+
+    it('credits usage, and none of the counters that describe the job', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'note.md'), 'the work\n');
+      await run(build(new FakeSession({ summary: 'done', approach: 'a way' })), job({ prompt: RESEMBLES }), PIP);
+
+      const matched = readRecipes(levelDir).find((r) => r.key === KEY)!;
+      expect(matched.hits).toBe(1);
+      expect(matched.successes).toBeUndefined();
+      expect(matched.completions).toBeUndefined();
+      expect(matched.completedInTurns).toBeUndefined();
+    });
+
+    // The same run against its own sentence credits everything, so this is a
+    // rule about whose job it is rather than a tightening of the bar.
+    it('credits the lot when the run is the job the key names', async () => {
+      stored();
+      writeFileSync(path.join(sandboxDir, 'note.md'), 'the work\n');
+      await run(
+        build(new FakeSession({ summary: 'done', approach: 'a way', meter: { toolCalls: 3 } })),
+        job({ prompt: KEY }),
+        PIP,
+      );
+
+      const matched = readRecipes(levelDir).find((r) => r.key === KEY)!;
+      expect(matched.successes).toBe(1);
+      expect(matched.completions).toBe(1);
+      expect(matched.completedInTurns).toBe(4);
+    });
+
+    // It still writes down its own method under its own key — the resembling
+    // run is not silenced, only kept from speaking for someone else.
+    it('still banks the resembling job as its own recipe', async () => {
+      stored();
+      await run(build(new FakeSession({ summary: 'done', approach: 'a way' })), job({ prompt: RESEMBLES }), PIP);
+      expect(readRecipes(levelDir).map((r) => r.key)).toContain(normalise(RESEMBLES));
     });
   });
 

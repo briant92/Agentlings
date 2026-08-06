@@ -9,7 +9,8 @@ import {
   noteToolCandidate,
   readRecipes,
   rememberRecipe,
-  writeRecipes,
+  updateRecipes,
+  type Recipe,
 } from '../recipes';
 import { OUTBOX_FILE, composeOutbox } from '../outbox';
 import { deliveredFiles, producedArtefacts } from '../outputs';
@@ -259,7 +260,8 @@ export class RoutedExecutor implements Executor {
     if (decision.kind === 'answer') {
       writeFileSync(path.join(sandboxDir, 'RESULT.md'), `${decision.body}\n`);
       if (decision.recipeKey) {
-        writeRecipes(this.levelDir, creditRecipe(recipes, decision.recipeKey, Date.now()));
+        const key = decision.recipeKey;
+        updateRecipes(this.levelDir, (fresh) => creditRecipe(fresh, key, Date.now()));
       }
       onProgress?.(`answered without a session — ${decision.reason}`);
       return {
@@ -421,6 +423,17 @@ export class RoutedExecutor implements Executor {
         ? result.summary
         : undefined;
 
+    /**
+     * What this run has to record, held until the write rather than applied to
+     * the snapshot it started from (F5, D-098).
+     *
+     * The decisions below are still made from what the run could see — that is
+     * the honest basis for them — but each is kept as a change to apply, so it
+     * lands on whatever is on disk when the run ends rather than on a picture
+     * of the recipes taken before the session began. A job finishing inside
+     * that window used to have its increments erased.
+     */
+    const changes: ((recipes: Recipe[]) => Recipe[])[] = [];
     let updated = recipes;
     if (usedKey) {
       // Did the work, not exited cleanly — the same test `partial` uses, so
@@ -481,15 +494,18 @@ export class RoutedExecutor implements Executor {
       // Turns *granted*, never the count the SDK reports: job 653f8c2e was
       // capped at 33 and came back saying 40, and this number is about to
       // decide whether a five-turn leash is credible (D-022, D-052).
-      updated = creditRecipe(
-        updated,
-        usedKey,
-        Date.now(),
-        delivered && !midFlight,
-        fitted && !midFlight,
-        result?.meter?.turnsAllowed,
-        result?.meter?.toolCalls,
-        leashCutFrom,
+      const key = usedKey;
+      changes.push((fresh) =>
+        creditRecipe(
+          fresh,
+          key,
+          Date.now(),
+          delivered && !midFlight,
+          fitted && !midFlight,
+          result?.meter?.turnsAllowed,
+          result?.meter?.toolCalls,
+          leashCutFrom,
+        ),
       );
     }
     if (approach && agentling && !midFlight) {
@@ -508,18 +524,20 @@ export class RoutedExecutor implements Executor {
       // contract" would replay contract A's summary for contract B. The words
       // were true once, about a file this job has never seen.
       const madeSomething = producedArtefacts(sandboxDir) || !!job.attachments?.length;
-      updated = rememberRecipe(updated, {
+      const entry = {
         prompt: job.prompt,
         role: agentling.role,
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
-        at: Date.now(),
         capabilities: this.capabilities(job, agentling?.role),
-      });
+      };
+      changes.push((fresh) => rememberRecipe(fresh, { ...entry, at: Date.now() }));
       onProgress?.('noted how to do this next time');
     }
-    if (updated !== recipes || usedKey) {
-      writeRecipes(this.levelDir, updated);
+    if (changes.length > 0) {
+      updated = updateRecipes(this.levelDir, (fresh) =>
+        changes.reduce((carried, change) => change(carried), fresh),
+      );
     }
 
     // Measured here rather than at the row builder because this is the only

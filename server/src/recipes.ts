@@ -232,6 +232,34 @@ export function writeRecipes(levelDir: string, recipes: Recipe[]): void {
 }
 
 /**
+ * Apply a change to the recipes on disk, against what is on disk *now*.
+ *
+ * The counters were read once at the start of a run and written back at the
+ * end of it, so a second job finishing in between had its increments erased —
+ * a whole session's window in which to lose someone else's work. Harmless
+ * while the counters were bookkeeping; not harmless since, because they decide
+ * whether a run is leashed (D-095) and whether a recipe can be compiled at all
+ * (D-021's three successes). A lost `successes` is a tool that never gets
+ * built, and a lost `completedInTurns` is a leash that arms on the wrong
+ * number.
+ *
+ * Re-reading here closes it completely rather than narrowly: the read, the
+ * change and the write are one synchronous block, and the runtime is single
+ * threaded, so no other job can interleave inside it. What the caller decided
+ * from its own snapshot still stands — the decision was made on what the run
+ * could see — but what it *records* lands on top of everything since.
+ *
+ * A run may have more than one thing to record, so `mutate` takes them all at
+ * once: the array it is handed is the fresh one, and both `creditRecipe` and
+ * `rememberRecipe` are happy to work on it in turn.
+ */
+export function updateRecipes(levelDir: string, mutate: (recipes: Recipe[]) => Recipe[]): Recipe[] {
+  const next = mutate(readRecipes(levelDir));
+  writeRecipes(levelDir, next);
+  return next;
+}
+
+/**
  * The best recipe for a prompt: an exact repeat first, then the same shape.
  *
  * `strong` says whether the match is good enough to shorten the run, not

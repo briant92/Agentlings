@@ -82,6 +82,36 @@ class FakeSession implements Executor {
   }
 }
 
+/** A session the test decides when to finish, so two runs can overlap. */
+class GatedSession implements Executor {
+  private release!: () => void;
+  readonly started: Promise<void>;
+  private began!: () => void;
+  private gate = new Promise<void>((resolve) => {
+    this.release = resolve;
+  });
+
+  constructor() {
+    this.started = new Promise<void>((resolve) => {
+      this.began = resolve;
+    });
+  }
+
+  async run(j: Job, sandboxDir: string): Promise<ExecutorResult> {
+    this.began();
+    await this.gate;
+    // Leaves something behind, so the run counts as delivered — `successes` is
+    // the counter a compile is gated on, and only a run that produced
+    // something earns one.
+    writeFileSync(path.join(sandboxDir, `${j.id}.md`), 'the work\n');
+    return { summary: 'a session did it', approach: 'the way that worked' };
+  }
+
+  finish(): void {
+    this.release();
+  }
+}
+
 /** A session that spent its turns and died still holding what it wrote down. */
 class DyingSession implements Executor {
   runs: Job[] = [];
@@ -217,6 +247,82 @@ describe('RoutedExecutor', () => {
       const session = new FakeSession();
       await run(build(session), job({ prompt: 'I need to send a Telegram to Pepo', channel: 'telegram' }), PIP);
       expect(session.runs).toHaveLength(1);
+    });
+  });
+
+  /**
+   * Two stations at once (F5, D-098). The counters were read at the start of a
+   * run and written back at the end, so a job finishing inside that window had
+   * its increments erased by whoever started first. Harmless while they were
+   * bookkeeping; not harmless since, because they decide whether a run is
+   * leashed (D-095) and whether a recipe can be compiled at all — a lost
+   * `successes` is a tool that never gets built.
+   */
+  describe('two jobs crediting the same recipe at once', () => {
+    const PROMPT = 'add a test for formatUsd';
+
+    function stored(): void {
+      writeRecipes(levelDir, [
+        {
+          key: 'add a test for formatusd',
+          terms: ['add', 'test', 'formatusd'],
+          role: 'worker',
+          approach: 'the old way',
+          hits: 0,
+          capabilities: [],
+          learnedAt: 1,
+        },
+      ]);
+    }
+
+    /** Starts both, finishes them in the given order, returns the recipe. */
+    async function overlap(finishFirstLast: boolean): Promise<Recipe> {
+      stored();
+      const first = new GatedSession();
+      const second = new GatedSession();
+
+      const a = run(build(first), job({ id: 'j-a', prompt: PROMPT }), PIP);
+      await first.started;
+      const b = run(build(second), job({ id: 'j-b', prompt: PROMPT }), PIP);
+      await second.started;
+
+      if (finishFirstLast) {
+        second.finish();
+        await b;
+        first.finish();
+        await a;
+      } else {
+        first.finish();
+        await a;
+        second.finish();
+        await b;
+      }
+      return readRecipes(levelDir)[0];
+    }
+
+    /**
+     * The overlap that loses work: A reads, B reads, **B writes, then A
+     * writes**. A's write is the stale one, so it used to put back a count
+     * that had never seen B at all.
+     */
+    it('keeps both increments when the first to start is the last to finish', async () => {
+      expect((await overlap(true)).hits).toBe(2);
+    });
+
+    it('keeps them the other way round too', async () => {
+      expect((await overlap(false)).hits).toBe(2);
+    });
+
+    // The counter a compile is gated on: three of these make a tool, so losing
+    // one is a tool that never gets built.
+    it('keeps both successes, which is what a compile is counted in', async () => {
+      expect((await overlap(true)).successes).toBe(2);
+    });
+
+    // A run still decides from what it could see; only what it *records* is
+    // rebased, so the method the last run wrote is the one on file.
+    it('lets the last run to finish own the method it wrote', async () => {
+      expect((await overlap(true)).approach).toBe('the way that worked');
     });
   });
 

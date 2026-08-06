@@ -6030,7 +6030,13 @@ block and the recipient shapes; 1,212 server + 115 web green, typecheck
 clean. Three pre-existing tests moved because the world did: slack left
 the planned shelf, stopped being the "no brief" example, and gained a
 recipient shape — each repointed at a channel that still holds the old
-role. Not yet live-fired: no SLACK_BOT_TOKEN exists yet, and the first
-event and first comment wait for real use — each will land as an ordinary
-reviewed outbox, and standing approval (D-082) composes unchanged for all
-three.
+role. Mutated after committing (D-021's rule): making slack trust
+`res.ok` killed exactly the 200-body test; dropping the one-event rule
+killed exactly its test; and removing the verb gate killed **five** —
+the original verb-plus-word test, the bare-"mail" rule and all three
+scoped-claim guards — which is the over-fire protection measured as
+load-bearing. No survivors, restored from the commit. Not yet
+live-fired: no SLACK_BOT_TOKEN exists yet, and the first event and
+first comment wait for real use — each will land as an ordinary
+reviewed outbox, and standing approval (D-082) composes unchanged for
+all three.

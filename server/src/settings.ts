@@ -108,7 +108,16 @@ export function grantedTools(
   settings: StoredSettings,
   env: Record<string, string | undefined>,
 ): string[] {
-  const on = enabledNames(connections, settings, env);
+  // A sending channel is not something a job can reach, so it is not a tool
+  // (D-097). Sends happen at approval, replayed by the server (D-075) — the
+  // session gets no door here whether or not the connection is on, and the
+  // job carries the channel on `Job.channel` rather than in this list.
+  //
+  // Excluded here rather than at the surface, so one answer serves the quote,
+  // the router and the run: what a job may reach is asked in exactly one
+  // place, which is the whole point of this function.
+  const sending = new Set(connections.filter((c) => c.sendsOnly).map((c) => c.name));
+  const on = enabledNames(connections, settings, env).filter((name) => !sending.has(name));
   if (!requested?.length) return on;
   return on.filter((name) => requested.includes(name));
 }

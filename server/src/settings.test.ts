@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Connection } from './connections';
 import {
   connectionEnabled,
+  enabledNames,
   grantedTools,
   readSettings,
   setConnection,
@@ -78,6 +79,45 @@ describe('grantedTools', () => {
     const both = { connections: { tracker: true } };
     expect(grantedTools(undefined, all, both, env)).toEqual(['web', 'tracker']);
     expect(grantedTools(['tracker'], all, both, env)).toEqual(['tracker']);
+  });
+
+  /**
+   * A sending channel is not a tool (D-097). Sends happen at approval,
+   * replayed by the server (D-075), so a session gets no door here at all —
+   * and the catalog said so in prose ("grants the crew no tools") while the
+   * code handed it over anyway. The cost was not the tokens: it landed in the
+   * recipe's capability surface, where D-044 reads any deliberately-enabled
+   * connection as a method that reached outside and refuses the compile. The
+   * most repetitive job shape in the product was locked out of the free tool
+   * tier by the channel it was about.
+   */
+  describe('sending channels', () => {
+    const TELEGRAM = {
+      name: 'telegram',
+      label: 'Send Telegram messages',
+      transport: 'builtin' as const,
+      sendsOnly: true,
+      defaultOn: true,
+    };
+    const withChannel = [WEB, TELEGRAM];
+
+    it('never hands a job the channel, however on it is', () => {
+      expect(grantedTools(undefined, withChannel, {}, env)).toEqual(['web']);
+      expect(grantedTools(undefined, withChannel, { connections: { telegram: true } }, env)).toEqual(
+        ['web'],
+      );
+    });
+
+    it('will not hand it over even when the job asks by name', () => {
+      expect(grantedTools(['telegram'], withChannel, {}, env)).toEqual([]);
+      expect(grantedTools(['web', 'telegram'], withChannel, {}, env)).toEqual(['web']);
+    });
+
+    // The switch still means something — it is what the *server* consults
+    // before replaying an approved outbox. This only says a run cannot reach it.
+    it('leaves the connection itself enabled, since sending still uses it', () => {
+      expect(enabledNames(withChannel, {}, env)).toContain('telegram');
+    });
   });
 
   it('drops a name nobody has heard of', () => {

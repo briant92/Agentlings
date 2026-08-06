@@ -21,6 +21,25 @@ export interface Connection {
   transport: 'builtin' | 'stdio';
   /** On for every job unless the user turns it off in Settings. */
   defaultOn?: boolean;
+  /**
+   * This connection exists so the *server* can send at approval, and grants a
+   * running session nothing at all (D-097).
+   *
+   * Sends never happen in a session (D-075): a run writes OUTBOX.json and the
+   * server replays it through the channel's own client when the user
+   * approves. So there is no door here for a session to reach — `telegram` is
+   * `builtin` with no branch in the executor, and the same is true of the
+   * other two. Granting one to a job was therefore inert in every way but the
+   * one that mattered: it landed in the recipe's capability surface, where
+   * D-044 reads it as a method that reached outside and refuses the compile.
+   * The most repetitive job shape in the product was locked out of the free
+   * tool tier by the channel it was *about*.
+   *
+   * Declared rather than inferred from the name, because a connection and the
+   * channel it provides need not share one: `google` is the connection,
+   * `gmail` is the channel.
+   */
+  sendsOnly?: boolean;
   /** builtin 'web' only. */
   allow?: string[];
   maxChars?: number;

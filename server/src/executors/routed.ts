@@ -408,8 +408,16 @@ export class RoutedExecutor implements Executor {
     // the sandbox fed into it. A failed run's summary is its error message,
     // and an answer is replayed to the user word for word. A mid-flight run's
     // summary describes the remainder it picked up, not the job.
+    //
+    // A send is never an answer, and this used to be true by accident: the
+    // channel sat in `job.tools`, so `!tools.length` was false and a send
+    // could not reach here. Taking channels out of a job's tools (D-097)
+    // removed that guard, and a send job narrowed to its channel alone would
+    // have started banking "one Telegram is composed and waiting" as a
+    // replayable answer — served for free on the next identical sentence,
+    // with no outbox behind it. Exactly job 57bbff81's PDF, one channel over.
     const answer =
-      result && !job.repoPath && !job.tools?.length && !midFlight
+      result && !job.repoPath && !job.channel && !job.tools?.length && !midFlight
         ? result.summary
         : undefined;
 

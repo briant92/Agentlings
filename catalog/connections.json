@@ -183,6 +183,7 @@
     },
     {
       "name": "telegram",
+      "sendsOnly": true,
       "label": "Send Telegram messages",
       "description": "Sends messages through your Telegram bot when you approve a reviewed outbox. Grants the crew no tools at all — sends happen at review, never inside a run.",
       "transport": "builtin",
@@ -199,6 +200,7 @@
     },
     {
       "name": "google",
+      "sendsOnly": true,
       "label": "Send Gmail, as you",
       "description": "Connects your Google account by OAuth and sends approved outbox mail from your own address. The crew gets no tools from it; calendar and contacts will ride the same consent later.",
       "transport": "builtin",
@@ -217,6 +219,7 @@
     },
     {
       "name": "whatsapp-business",
+      "sendsOnly": true,
       "label": "Send WhatsApp Business messages",
       "description": "Sends pre-approved template messages through Meta's Cloud API when you approve an outbox. Arrives from your business number, priced per message by Meta. The crew gets no tools from it.",
       "transport": "builtin",

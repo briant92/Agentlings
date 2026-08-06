@@ -645,6 +645,33 @@ describe('RoutedExecutor', () => {
       expect(recipe.approach).toBeDefined(); // the method is still worth keeping
     });
 
+    /**
+     * A send is never an answer, and this was true by accident until D-097:
+     * the channel sat in `job.tools`, so the "nothing outside fed into it"
+     * test failed and a send could not reach here. Channels are not tools any
+     * more, so the job's own channel has to say it — otherwise a send job
+     * narrowed to its channel alone banks "one Telegram is composed and
+     * waiting" as a replayable answer, and the next identical sentence is
+     * served that for free with no outbox behind it. Job 57bbff81's PDF, one
+     * channel over.
+     */
+    it('never banks an answer from a run that was sending', async () => {
+      await run(
+        build(
+          new FakeSession({
+            summary: 'Done. One Telegram is composed and waiting.',
+            approach: 'resolve the recipient, then write OUTBOX.json',
+          }),
+        ),
+        job({ prompt: 'send the reminder', channel: 'telegram' }),
+        PIP,
+      );
+
+      const [recipe] = readRecipes(levelDir);
+      expect(recipe.answer).toBeUndefined();
+      expect(recipe.approach).toBeDefined(); // the method is still worth keeping
+    });
+
     it('never banks an answer from a run that failed', async () => {
       await expect(
         run(build(dying('the way that worked')), job({ prompt: 'Name three colours' }), PIP),

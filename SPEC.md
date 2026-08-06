@@ -893,6 +893,10 @@ tried, measured and rejected is in `DECISIONS.md`:
     backlog; pause resumes from now; attachments do not repeat. A scheduled
     pure send under a standing approval (D-082) closes the loop whole:
     it queues itself, sends itself, and audits every body to `sends.jsonl`.
+    The repeat row can also **schedule only** — no run today, for jobs whose
+    first run belongs on the cadence — and the confirmation says the first
+    firing's date, computed by the server, never re-derived at the desk
+    (D-106).
   - **M5.13 — the acting surface finished (built).** D-104. Three channels,
     no new idea about acting — every one is an outbox replayed at Approve.
     **Slack** is telegram's shape wholesale (paste-a-token, empty grant),

@@ -115,6 +115,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-103 — 2026-08-06 — The recurrence timer: a sentence queued again on its cadence, through the same door](#d-103--2026-08-06--the-recurrence-timer-a-sentence-queued-again-on-its-cadence-through-the-same-door)
 - [D-104 — 2026-08-06 — The acting surface finished: Slack, calendar events and GitHub comments, one outbox](#d-104--2026-08-06--the-acting-surface-finished-slack-calendar-events-and-github-comments-one-outbox)
 - [D-105 — 2026-08-06 — Composite work: split where the user said "then", each step its own job](#d-105--2026-08-06--composite-work-split-where-the-user-said-then-each-step-its-own-job)
+- [D-106 — 2026-08-06 — Schedule only: the repeat row can decline today's run, and says the first date](#d-106--2026-08-06--schedule-only-the-repeat-row-can-decline-todays-run-and-says-the-first-date)
 
 ## By theme
 
@@ -318,7 +319,9 @@ entry updates one file rather than two.
   an ordinary job with its own recipe key, tier and quote, files flowing
   forward as the next step's input/ and a failed step halting the chain:
   D-105, the review's G3 — with open-ended goal decomposition deliberately
-  still parked in M6
+  still parked in M6; and D-106, where the repeat row learned to schedule
+  **without** running today and to say the first firing's date, found by
+  T5's own rule the first evening anyone used the timer
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -6115,3 +6118,36 @@ survivors, file restored from the commit. Not yet live-fired — the first
 real chain waits for the dev server restart, and the natural first
 customer is exactly the expenses-then-telegram shape the tool tier
 already serves half of for nothing.
+
+## D-106 — 2026-08-06 — Schedule only: the repeat row can decline today's run, and says the first date
+
+Found by the timer's first real user on its first real evening. Brian set
+T5's sentence to monthly-on-the-1st and looked for a way to choose
+September — which the arithmetic had already chosen for him: `nextDueAt`
+is the next occurrence *strictly after now* (D-103's own pinned rule), so
+a monthly-day-1 schedule created on Aug 6 first fires Sep 1. Two things
+were genuinely missing, and neither was the month picker it looked like:
+
+- **Nothing showed the computed date.** The desk said "queued again then"
+  without saying when *then* was, leaving the user to trust arithmetic
+  the server had already done.
+- **Start always ran the job today as well.** D-103 chose "Start queues
+  now and schedules the rest" as the default — right for most jobs, wrong
+  for exactly T5, whose own programme rule is *not before September*. A
+  job on a real cadence may want its first run **on** the cadence.
+
+So the repeat row gains **schedule only — no run today**: it POSTs the
+schedule through the existing route and nothing else, and the
+confirmation line shows the server's own answer — "scheduled — monthly on
+the 1st at 09:00, first run Mon, Sep 1, 09:00" — rather than a
+client-side recomputation, because the one implementation of the cadence
+arithmetic lives in `schedules.ts` and the desk only repeats what it
+said. The link hides behind the same arrest that gates Start on a doomed
+send, and the confirmation retires the moment a new sentence is typed or
+a Start lands.
+
+Client-only by design — the tested seam is the route and the cadence
+math, both already pinned; the desk gained one caller of each. 115 web
+tests green, typecheck clean. T5 can now be scheduled tonight and run
+first on September 1st, which closes the training programme's last open
+task without anyone having to remember it.

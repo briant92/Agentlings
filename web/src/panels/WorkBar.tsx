@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { AudiencePerson, Cadence, ConnectionInfo, WorkPlan } from '@agentlings/shared';
+import type {
+  AudiencePerson,
+  Cadence,
+  ConnectionInfo,
+  ScheduleInfo,
+  WorkPlan,
+} from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
@@ -77,6 +83,8 @@ export function WorkBar({
   const [files, setFiles] = useState<Attached[]>([]);
   /** "Run as one job" — the escape from a split the user didn't mean (D-105). */
   const [single, setSingle] = useState(false);
+  /** The schedule just made without a run, so its first firing is visible (D-106). */
+  const [scheduled, setScheduled] = useState<ScheduleInfo | null>(null);
   /** Repeat this sentence on a cadence (D-103). 'off' queues once, as ever. */
   const [repeatKind, setRepeatKind] = useState<'off' | 'daily' | 'weekly' | 'monthly'>('off');
   const [repeatDow, setRepeatDow] = useState(1);
@@ -222,6 +230,42 @@ export function WorkBar({
     };
   };
 
+  /**
+   * Schedule without running now (D-106): the first firing is the cadence's
+   * own next occurrence — created on Aug 6, "monthly on the 1st" first fires
+   * Sep 1 — which is exactly what a job on a real cadence wants, and what
+   * Start (which also runs today) cannot offer. The server computes the
+   * date; this only shows it.
+   */
+  const scheduleOnly = async () => {
+    const repeat = cadence();
+    if (!repeat || !text.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const made = await api<ScheduleInfo>(
+        lvl(levelId, '/schedules'),
+        postJson({
+          text: text.trim(),
+          cadence: repeat,
+          ...(channel ? { channel } : {}),
+          ...(Object.keys(answers).length > 0 ? { answers } : {}),
+        }),
+      );
+      setScheduled(made);
+      setText('');
+      setPlan(null);
+      setChannel(null);
+      setAnswers({});
+      setRepeatKind('off');
+      setSingle(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const queue = async (folder?: string) => {
     setBusy(true);
     setError(null);
@@ -263,6 +307,7 @@ export function WorkBar({
       setFiles([]);
       setRepeatKind('off');
       setSingle(false);
+      setScheduled(null);
       setAskingRepo(false);
       setRepoPath('');
     } catch (err) {
@@ -351,7 +396,11 @@ export function WorkBar({
           data-tour="work"
           placeholder="What do you need done?"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            // A new sentence retires the last schedule-only confirmation.
+            if (scheduled) setScheduled(null);
+          }}
         />
         <label className="work-clip" title="Attach a document">
           <input
@@ -517,6 +566,14 @@ export function WorkBar({
                     />
                   </label>
                   <span className="dim">· queued again then, reviewed like any job</span>
+                  {/* Start runs today as well; a job on a real cadence may
+                      want its first run ON the cadence (D-106). Hidden on a
+                      doomed send — the arrest owns that conversation. */}
+                  {!arrest && (
+                    <button className="work-link" disabled={busy} onClick={() => void scheduleOnly()}>
+                      schedule only — no run today
+                    </button>
+                  )}
                 </>
               )}
             </>
@@ -698,6 +755,20 @@ export function WorkBar({
             Asked once per level. Nothing is written there until you approve the result.
           </p>
         </div>
+      )}
+
+      {scheduled && !text.trim() && (
+        <p className="work-gaps work-scheduled">
+          scheduled — {scheduled.cadenceLabel}, first run{' '}
+          {new Date(scheduled.nextDueAt).toLocaleString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+          <span className="dim"> · it lands in review like any job · manage in crew → backoffice</span>
+        </p>
       )}
 
       {error && <p className="error">{error}</p>}

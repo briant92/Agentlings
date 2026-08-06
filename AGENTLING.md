@@ -1410,7 +1410,9 @@ list per channel (D-077; SPEC M5.11 has the slices):
       30-second server sweep through the same quoted glue `/work` uses.
       Downtime collapses to one catch-up firing, pause resumes from now
       rather than firing a backlog, attachments do not repeat, and a firing
-      job says so on its queued line (D-103)
+      job says so on its queued line (D-103). The repeat row can also
+      **schedule only** — no run today — with the first firing's date said
+      from the server's own arithmetic (D-106)
 - [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
       editing without destroying formatting does not, because Node has no good
       round-tripper. *Blocked on: a second runtime. Python would do it and was

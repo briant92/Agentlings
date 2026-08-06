@@ -110,6 +110,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-098 — 2026-08-06 — A run's counters land on what is on disk, not on the picture it started from](#d-098--2026-08-06--a-runs-counters-land-on-what-is-on-disk-not-on-the-picture-it-started-from)
 - [D-099 — 2026-08-06 — A run that only resembles a recipe credits usage, and nothing else](#d-099--2026-08-06--a-run-that-only-resembles-a-recipe-credits-usage-and-nothing-else)
 - [D-100 — 2026-08-06 — The compile gate asks what a method used, not what it could reach](#d-100--2026-08-06--the-compile-gate-asks-what-a-method-used-not-what-it-could-reach)
+- [D-101 — 2026-08-06 — Standing approval fired, and the desk arrests a send with no words](#d-101--2026-08-06--standing-approval-fired-and-the-desk-arrests-a-send-with-no-words)
 
 ## By theme
 
@@ -288,7 +289,14 @@ entry updates one file rather than two.
   so the desk now asks for the **words** instead of a gist whenever
   stripping the send words, the channel words and the roster's names
   leaves nothing behind, and a send it holds whole is composed in code for
-  nothing rather than paying a session to copy two strings
+  nothing rather than paying a session to copy two strings; and D-101,
+  standing approval's first firing — three $0 compose approvals, the
+  grant ten seconds after the third earned the offer, then a fourth run
+  sent 906 ms after finishing with no review — plus the wall on the way
+  there: a ready channel renders no send card, so the Words fell to an
+  optional-looking loose row, a skipped field queued a 26.8¢ session that
+  could only block on "what to say", and Start now arrests "no message"
+  beside D-091's shape check
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5764,3 +5772,64 @@ on its recipe, so the field travels the whole path — runner to meter to recipe
 compile request then went from *"that method used **browser and github and
 search**"* to *"that method used **github**"*. Still refused, which is right:
 that job does reach the code host. Refused for the one reason that is true.
+
+## D-101 — 2026-08-06 — Standing approval fired, and the desk arrests a send with no words
+
+M5.11's last built-but-unproven piece, TRAINING.md's open item 3: nothing had
+ever earned the three unchanged reviews, so the one path that sends without a
+human in the moment (D-082) had never once run. Proving it took five queues
+of one sentence — and the first found a wall.
+
+**The wall cost 26.8¢ and taught the desk nothing it didn't already know.**
+"Send a Telegram to Brian" is a bare send — the server said so itself: its
+plan carried the **Words** question with D-097's sent-as-written promise, and
+the live `bareSend` probed against the real roster returns true. But on a
+*ready* channel the send card never renders (`WorkBar` mounts it only while
+the channel ask still needs deciding), so both facts fell to the loose
+clarification rows under "Optional — Start works either way", To prefilled
+itself through D-094's alias match, and the Words row read as one more
+skippable field. It was skipped — and Start let the queue through, because
+the arrest guarded "no recipient" (D-087) and the recipient's shape (D-091)
+but never the message. The 26.8¢ session then obeyed the outbox contract to
+the letter: five turns, refused to invent the words, wrote an outbox the
+validator rejected (`"messages" must be a non-empty array`) and delivered
+*"Blocked on one thing: what to say."* Charged, for the question the desk had
+been holding on screen. (Recipe hygiene held: the run credited a `hit` on the
+old resembling key and moved nothing else — D-099 doing its job the day it
+landed.)
+
+**The fix is D-087's own sentence, finished.** The comment above the send
+questions already said a run without either fact "can only spend money asking
+for them"; the arrest now covers the second fact. `missingWords` joins
+`recipientProblem` (D-091) and `matchRecipient` (D-094) in `askFacts`: when
+the say question carries the **Words** label — the server's own marker for a
+bare send, and the label's documented reason to exist (D-097) — and the field
+is empty, Start relabels to "Queue anyway — no message". A content-bearing
+send's empty Say still queues silently, because writing the message is that
+job; typed words always clear it, "write it out" included — that session is
+chosen deliberately. Evidence: 1140 + 113 green; committed first (D-021),
+then both mutations — dropping the label check, weakening the emptiness test
+— each killed by a named test.
+
+**The proof ran clean, and free.** Four queues of the verbatim sentence with
+the desk holding the words, every one composed in code: 0 turns, $0.00 total.
+
+- `9ad35c4c` approved → approvals 1, recipients locked to `[8633678680]`.
+- `03005cac` approved → 2. The body was retyped lowercase between runs and
+  the count grew anyway — bodies sit outside the signature by design (a
+  weekly reminder's words change), and this exercised it.
+- `f798582b` approved → 3; the review modal made the offer and the grant
+  landed ten seconds later (`grantedAt`).
+- 105 seconds after the grant, the fourth queue: finished in 2.4 s, and
+  **sent 906 ms after finishing** — no review, resolved `promoted`,
+  approvals 4, the row's `lastAt` equal to the send stamp to the
+  millisecond, and `sends.jsonl` holding all four name-stamped bodies.
+
+Everything D-082 designed fired in order on its first real outing:
+`recordApproval` counting only unchanged signatures, the offer surfacing on
+the third promote (the grant before it is refused in code), `autoBlocker`'s
+pure-send guards passing a compose job, `autoSendable`'s allowlist answering
+yes, and the auto path crediting its own approval so the count stays honest.
+Left to the unit tests rather than live proof, deliberately: revocation on a
+changed signature, the stranger-blocks-it subset rule, and the refusal
+fallback at send time. M5.11 has no unproven pieces left.

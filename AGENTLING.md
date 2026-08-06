@@ -1004,6 +1004,8 @@ job without the review click — after three unchanged reviews, only if you
 granted it, locked to the recipient allowlist a human approved, and revocable
 in one click. It is review amortised, not review removed: any new recipient,
 template, channel, code change or extra file drops straight back to you.
+Fired live for the first time on 2026-08-06: the fourth run of a $0 compose
+job sent itself 906 ms after finishing, no reviewer in the loop (D-101).
 
 ### Personal data — Partial, and the gap is worth naming
 
@@ -1329,7 +1331,9 @@ list per channel (D-077; SPEC M5.11 has the slices):
       composed for free without a session (D-097) — Start arrests a
       knowably doomed queue for one
       extra press — including a recipient the channel's contract cannot
-      reach, like a name where a chat id belongs (D-091) — and a failed
+      reach, like a name where a chat id belongs (D-091), and a bare
+      send whose Words were left empty, the 26.8¢ lesson of a session
+      that could only block on "what to say" (D-101) — and a failed
       run's question carries a reply box that continues the same job,
       channel and all (D-087). The channel's opted-in audience is
       persisted by name (Live, D-092): merged from the bot's own
@@ -1362,7 +1366,8 @@ list per channel (D-077; SPEC M5.11 has the slices):
       auto-send is locked to the approved channel, recipients and template
       (subset allowed, one stranger blocks it, any change resets the count
       and revokes the grant), fires only on a pure send job through the
-      same gates as a manual approve, and is revocable in one click (D-082)
+      same gates as a manual approve, and is revocable in one click
+      (D-082; fired live 2026-08-06, 906 ms after the run's finish — D-101)
 - [ ] **Click, type, fill a form** — still refused in-session; no channel
       needs it, and reopening it is a D-034-sized decision, not a wiring task
 

@@ -298,10 +298,17 @@ each one rests on already is.
    *"github"*. **Narrowing at the desk still helps, but no longer decides**:
    a method is judged by what it reached, so a job queued with everything on
    and using none of it can now compile.
-3. **Standing approval has never fired.** The last built-but-unproven piece of
-   M5.11: it needs one send sentence approved unchanged three times, and
-   nothing has earned it. Not a training job, but the only way to prove it is
-   to run one.
+3. ~~**Standing approval has never fired.**~~ **Done 2026-08-06 — D-101.**
+   Proven end to end on "Send a Telegram to Brian": three $0 compose runs
+   approved unchanged (the third's modal offered the grant, taken ten
+   seconds later), then the fourth ran and **sent itself 906 ms after
+   finishing** — no review, approvals 4, all four bodies in the audit. The
+   attempt also found and fixed a wall: on a ready channel the desk shows
+   no send card, the Words fell to an optional-looking loose row, and a
+   skipped field queued a 26.8¢ session that could only block on "what to
+   say" — so Start now arrests "no message", mutation-proved, beside
+   D-091's shape check. Left to unit tests deliberately: revocation,
+   the stranger-blocks-it rule, and the send-time refusal fallback.
 4. **T5 in September**, on its real monthly cadence — not before. **Wave 5**
    needs Brian to pick a real documents folder.
 5. **Two measured gaps, deliberately unbuilt.** The quote is blind to

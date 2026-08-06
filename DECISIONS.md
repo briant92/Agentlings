@@ -107,6 +107,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-095 — 2026-08-05 — The leash is bounded by its own budget, and a run it cut may say so](#d-095--2026-08-05--the-leash-is-bounded-by-its-own-budget-and-a-run-it-cut-may-say-so)
 - [D-096 — 2026-08-05 — The first tool earned end to end, and what the ledger says about the run that built it](#d-096--2026-08-05--the-first-tool-earned-end-to-end-and-what-the-ledger-says-about-the-run-that-built-it)
 - [D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing](#d-097--2026-08-05--the-desk-asks-for-the-words-and-a-send-it-already-holds-costs-nothing)
+- [D-098 — 2026-08-06 — A run's counters land on what is on disk, not on the picture it started from](#d-098--2026-08-06--a-runs-counters-land-on-what-is-on-disk-not-on-the-picture-it-started-from)
 
 ## By theme
 
@@ -201,7 +202,10 @@ entry updates one file rather than two.
   then **finished**, on the fifth run, which settled that it was never too big;
   and the completion promptly armed the next failure, since fitting a 33-turn
   budget was about to license a five-turn leash: D-068, the third reading of a
-  gate as licensing something it never verified — and D-095, the fourth, where
+  gate as licensing something it never verified — and D-098, where the counters
+  those gates read stopped being written from a picture taken before the run
+  began, so a job finishing inside another's window no longer erases its
+  increments — and D-095, the fourth, where
   a bound of *twice* the leash let one completion recorded at six turns arm a
   five-turn one, until three cut runs and a leashed completion put the bound at
   the leash itself and let a run the leash cut raise the need it disproved
@@ -5562,3 +5566,55 @@ stated reason — route wiring is not tested — and `attachedFiles` reads the
 bytes back by the job's own record rather than by listing the directory,
 so a file the *run* wrote into `input/` cannot ride into the next job as
 an attachment the user never sent.
+
+## D-098 — 2026-08-06 — A run's counters land on what is on disk, not on the picture it started from
+
+The last row of the 2026-08-04 review (F5), and the one that had been
+sitting longest because it was filed as latent. `RoutedExecutor` read
+`recipes.json` at the start of a run and wrote it back at the end, so any
+job that finished inside that window had its increments erased by whoever
+started first — a whole session's width of opportunity to lose someone
+else's work, and the wider the session the wider the window.
+
+**It was latent when it was written down and is not any more.** The
+counters were bookkeeping in July. Since then they decide whether a run is
+leashed (`completions`, `completedInTurns` — D-095) and whether a recipe
+can ever be compiled (`successes`, D-021's three). A lost `successes` is a
+tool that never gets built; a lost `completedInTurns` is a leash arming on
+the wrong number. The workaround — queue everything sequentially — held
+for 21 training runs by discipline, and stopped being purely discipline
+the day two chat sessions began sharing this tree and one queued a real
+send while the other was working.
+
+`updateRecipes(levelDir, mutate)` reads, applies and writes in one
+synchronous block. That closes the window completely rather than narrowing
+it: the runtime is single threaded, so nothing can interleave between the
+read and the write, and there is no remaining race to reason about within
+a process. Across two *processes* there would still be one — which is a
+second reason two servers must never share a tree, now enforced by
+`autoPort: false` and the attach config rather than by hoping.
+
+The executor keeps its decisions where they were and moves only the
+recording. It collects what it has to write as a list of changes and
+applies them at the end, so `delivered`, `fitted` and the rest are still
+judged from the snapshot the run could see — which is the honest basis for
+them, since that is what the run had — while what it *records* lands on
+top of everything that happened since.
+
+**Evidence.** 1118 + 109 green, typecheck clean. Four tests drive two
+overlapping runs through the real executor with a gated session, in both
+finish orders. Reverting to the stale-snapshot write fails three of them,
+including both orders — the increment is lost either way, because both
+runs read the same picture at the start; and making `updateRecipes` skip
+its re-read fails 17 across the suite. The fourth test, that the last run
+to finish owns the method it wrote, passes under the mutation too and is
+documentation rather than a discriminator: an approach is not a counter,
+and both writes set it to the same string.
+
+**And the way this entry nearly did not get written.** The fix was
+complete, tested and green — and uncommitted — when a mutation script
+aborted and the `git checkout server/src` chained after it with `;` ran
+anyway and destroyed the lot. That is D-021's own hard-won rule, the one
+written into `PROJECT.md` as "mutation-test after committing", walked into
+by chaining the restore to a command that could fail. Redone from context,
+committed *first*, and every restore since issued as its own command.

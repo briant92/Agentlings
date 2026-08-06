@@ -8,14 +8,19 @@ review conversation and, once acted on, in `DECISIONS.md`.
 This file is a working list, not a record: when every row is settled, the
 substance lives in `DECISIONS.md` and this file can go.
 
-**State (2026-08-06, pushed `5e26112`):** six of the seven rows below are
-settled and **F5 is the only one left** — latent, and cheap when it stops
-being. Training has run waves 1–4 — 21 runs and the first compiled tool,
-actuals in `TRAINING.md`'s prediction ledger. Read that file before queueing
-anything: prompts repeat **verbatim** (the recipe key is the prompt) and runs
-go **sequentially** while F5 is open — which now matters more than the row
-says, since two chat sessions share this tree and one queued a real send here
-while the other was working. The dev server was left running.
+**State (2026-08-06):** **every row below is settled.** By this file's own
+rule — "a working list, not a record: when every row is settled, the substance
+lives in `DECISIONS.md` and this file can go" — what remains here is the board
+of open *work*, not open findings, and this file has earned its retirement
+once that board finds a home. The findings themselves are D-073, D-074, D-095,
+D-096, D-097 and D-098, plus F3's measurements in `TRAINING.md`.
+
+Training has run waves 1–4 — 22 runs, one compiled tool in service and one
+compile correctly refused; actuals in `TRAINING.md`'s prediction ledger. Read
+that file before queueing anything: prompts repeat **verbatim**, because the
+recipe key is the prompt. Sequential queueing is no longer required (D-098),
+but two servers on one tree still must never happen. The dev server was left
+running.
 
 - [x] **F1 — The learning loop has no dedup.** A recurring job banks the same
       lesson every run: 11 near-identical lines in training-ground's
@@ -58,12 +63,18 @@ while the other was working. The dev server was left running.
       whether a compiled tool should ever be granted the doors (`fetch`,
       `github`, `search`) rather than being refused for needing them is what
       that evidence was gathered to answer. Still: do not build first.
-- [ ] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
-      reads recipes at run start and writes at end; two jobs on different
-      stations lose one another's counts, and the counters now gate leashes and
-      compiles. Cheap direction: re-read and merge before write. Becomes real
-      the day two stations run at once — all 15 training runs were queued
-      sequentially to avoid it; keep doing that until fixed.
+- [x] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
+      read recipes at run start and wrote at end; two jobs on different
+      stations lost one another's counts, and the counters gate leashes and
+      compiles. **Done 2026-08-06 — D-098**, by the cheap direction this row
+      named: `updateRecipes` reads, applies and writes in one synchronous
+      block, and the executor holds what it has to record as changes applied
+      at the end rather than to the snapshot it began with. Its *decisions*
+      still come from what the run could see. Four tests overlap two real runs
+      in both finish orders; the old write loses an increment either way.
+      **Sequential queueing is no longer load-bearing** — though two servers
+      on one tree still must never happen, which `autoPort: false` and the
+      attach config now enforce rather than hope for.
 - [x] **F6 — Doc figures have drifted again.** AGENTLING.md §7/§8 and SPEC's
       tier table carried 17.9c/39.9c over "106 jobs". **Done 2026-08-06:**
       resynced from `npm run ledger:report` rather than from the prose —

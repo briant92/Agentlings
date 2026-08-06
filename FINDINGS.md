@@ -49,9 +49,15 @@ while the other was working. The dev server was left running.
       0 turns, $0. It was blocked for one afternoon on the way — `successes`
       counts reuse only, so "three runs" was five, and the leash then froze
       the recipe (F7) — which is the account in D-095 and D-096. The
-      counter-case is now board item 2: a third T4 delivery makes a candidate
-      whose compile D-044 should visibly *refuse*. The doors/libraries
-      decision still waits for that evidence; do not build first.
+      counter-case is now settled too (board item 3, 2026-08-06): T4 reached
+      `successes: 3` and its compile was **refused live** by D-044, naming
+      browser, github and search, before any session was queued. Both sides
+      of the gate are now proven on real work — one method compiled, one
+      turned away with its reason. **The doors/libraries decision has its
+      evidence and is the open question**: the refusal is correct today, and
+      whether a compiled tool should ever be granted the doors (`fetch`,
+      `github`, `search`) rather than being refused for needing them is what
+      that evidence was gathered to answer. Still: do not build first.
 - [ ] **F5 — Recipe counters lose concurrent increments.** `RoutedExecutor`
       reads recipes at run start and writes at end; two jobs on different
       stations lose one another's counts, and the counters now gate leashes and
@@ -106,11 +112,18 @@ while the other was working. The dev server was left running.
    question — whether a similarity match should credit `completedInTurns` at
    all, or only an exact one — is the entry someone should write before
    touching the counter.
-3. **T4·4** (cheap, one run): third delivery makes it a candidate; then ask
-   promote and watch D-044 refuse with the reason. The gate's negative case,
-   live. Worth re-reading its recipe first — T4 completed in 4 turns, so it
-   is one of the few still leash-eligible under D-095, and the run will be a
-   one-shot.
+3. ~~**T4·4** — the gate's negative case.~~ **Done 2026-08-06.** The run went
+   as predicted: leashed on `completedInTurns: 4`, completed in 4 turns of 5
+   for 28.7c — the **second leashed completion ever**, and the first under
+   D-095's tighter bound — and credited `successes: 3`. The promote was then
+   refused, live and for nothing: *"that method used browser and github and
+   search, and a compiled tool is plain node with no network."* D-044 turned
+   away ~$1 of compile before a session was queued. Two things worth keeping:
+   the gate names the surface a method was **learned with**, not what it used
+   (`browser` and `search` were almost certainly never touched), so
+   **narrowing at the desk is what makes a compile reachable** — T6 compiled
+   because it was queued naming only `web`. And the candidate line lagged
+   again exactly as board item 1 says it would.
 4. **T5 in September**, on its real cadence — not before.
 5. **Wave 5** needs Brian to pick a real documents folder for the store.
 6. Two measured gaps now sized for whoever reopens them: the quote is blind to

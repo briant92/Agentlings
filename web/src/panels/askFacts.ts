@@ -22,6 +22,24 @@ export function recipientProblem(channel: string, to: string): string | null {
   return `“${shown}” isn’t ${shape.wants}`;
 }
 
+/**
+ * A bare send whose words are still in the user's head — D-087's second
+ * fact, arrested like the first. The server marks the bare case by
+ * labelling the say question "Words", its promise to send verbatim; a
+ * content-bearing sentence gets "Say", and an empty Say is fine because
+ * writing the message is the job. With the "Words" label there and the
+ * field empty, the queue is doomed the way "no recipient" is: the outbox
+ * contract forbids inventing the message, so the run can only spend money
+ * asking for what the desk was already holding — a real 26.8¢ session
+ * did exactly that, and its whole delivery was "what to say."
+ */
+export function missingWords(
+  questions: { id: string; label?: string }[],
+  say: string | undefined,
+): boolean {
+  return questions.some((q) => q.id === 'send-say' && q.label === 'Words') && !say?.trim();
+}
+
 /** A person as the matcher needs them — the roster row's naming half. */
 interface Nameable {
   id: string;

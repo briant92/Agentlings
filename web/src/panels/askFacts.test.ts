@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchRecipient, recipientProblem } from './askFacts';
+import { matchRecipient, missingWords, recipientProblem } from './askFacts';
 
 const BRIAN = { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 };
 const JOSE = {
@@ -69,5 +69,30 @@ describe('recipientProblem (D-091)', () => {
     const problem = recipientProblem('telegram', long)!;
     expect(problem).toContain('…');
     expect(problem.length).toBeLessThan(long.length + 20);
+  });
+});
+
+describe('missingWords — the contract’s other un-inventable fact (D-087)', () => {
+  const WORDS = [{ id: 'send-say', label: 'Words' }];
+  const SAY = [{ id: 'send-say', label: 'Say' }];
+
+  it('a bare send with the field empty is a doomed queue — the 26.8¢ wall', () => {
+    expect(missingWords(WORDS, undefined)).toBe(true);
+    expect(missingWords(WORDS, '   ')).toBe(true);
+  });
+
+  it('typed words clear it — “write it out” included, that session is chosen', () => {
+    expect(missingWords(WORDS, 'A DARLE 💪')).toBe(false);
+    expect(missingWords(WORDS, 'write it out: something warm')).toBe(false);
+  });
+
+  it('a content-bearing sentence (“Say”) may stay empty — writing it is the job', () => {
+    expect(missingWords(SAY, '')).toBe(false);
+    expect(missingWords(SAY, undefined)).toBe(false);
+  });
+
+  it('no say question asked, nothing to miss', () => {
+    expect(missingWords([{ id: 'send-to' }], undefined)).toBe(false);
+    expect(missingWords([], '')).toBe(false);
   });
 });

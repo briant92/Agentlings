@@ -3,7 +3,7 @@ import type { AudiencePerson, ConnectionInfo, WorkPlan } from '@agentlings/share
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
-import { matchRecipient, recipientProblem } from './askFacts';
+import { matchRecipient, missingWords, recipientProblem } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { RecipientPicker } from './RecipientPicker';
@@ -161,9 +161,9 @@ export function WorkBar({
 
   /**
    * What turns the first Start press into a warning instead of a queue: a run
-   * the desk already knows is doomed — no recipient, or nothing that can
-   * send. Recomputed each render, so fixing the reason turns Start back into
-   * Start, armed or not.
+   * the desk already knows is doomed — no recipient, no message on a bare
+   * send, or nothing that can send. Recomputed each render, so fixing the
+   * reason turns Start back into Start, armed or not.
    */
   /** A near-miss the user confirmed (D-093) — a send by their say-so. */
   const mentionPicked = !plan?.channelAsk && !!channel && !!plan?.channelMention;
@@ -180,6 +180,9 @@ export function WorkBar({
       const problem = recipientProblem(effective, to);
       if (problem) parts.push(problem);
     }
+    // The message is the contract's other un-inventable fact: a bare send
+    // queued without it can only spend a session asking for it (D-087).
+    if (missingWords(sendQuestions, answers['send-say'])) parts.push('no message');
     if (ask) {
       if (!effective) parts.push('a draft that sends nothing');
       else {

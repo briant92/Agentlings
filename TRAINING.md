@@ -287,15 +287,17 @@ each one rests on already is.
    still matches, still lends its method, and the real sentence now plans as
    `session` where it would have been `oneshot`. **Nothing left to do here —
    and no wasted run to pay for.**
-2. **The doors, and the libraries.** T4·4 proved D-044's refusal live and for
-   nothing — *"that method used browser and github and search, and a compiled
-   tool is plain node with no network"* — which is the evidence this decision
-   was waiting for. It refuses correctly today. Whether a compiled tool should
-   ever be *granted* the doors (`fetch`, `github`, `search`) rather than
-   refused for needing them is now answerable, and unanswered. Note what makes
-   it live: the gate judges the surface a method was **learned with**, not what
-   it used, so **narrowing connections at the desk is what makes a compile
-   reachable at all** — T6 compiled only because it was queued naming `web`.
+2. ~~**The doors, and the libraries.**~~ **Done 2026-08-06 — D-100**, and the
+   measurement answered a different question than the one asked. Granting the
+   doors would have unlocked **nothing**: every refused recipe also carries
+   `browser`, which no plain-node script can run whatever doors it holds. What
+   actually bound was the limit D-044 named about itself — the gate read what
+   a method *could* reach. Runs now record the tools they call, the gate reads
+   that, and old recipes keep the old answer because silence is not innocence.
+   Live: T4's refusal went from *"browser and github and search"* to
+   *"github"*. **Narrowing at the desk still helps, but no longer decides**:
+   a method is judged by what it reached, so a job queued with everything on
+   and using none of it can now compile.
 3. **Standing approval has never fired.** The last built-but-unproven piece of
    M5.11: it needs one send sentence approved unchanged three times, and
    nothing has earned it. Not a training job, but the only way to prove it is

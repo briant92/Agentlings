@@ -856,8 +856,13 @@ favicon note, free and verified. **If the answer is a literal in `run.mjs`, it
 compiled a cache.** Discarded on review, which is what review is for (D-045).
 
 A tool is a directory holding a manifest and two plain-node ES modules,
-`run.mjs` and `verify.mjs` — no shell, no dependencies, no network. Nothing
-about it is trusted:
+`run.mjs` and `verify.mjs`. "No shell, no dependencies, no network" is the
+**brief the compile is given, and measured 2026-08-06, not a sandbox**: a
+script in a tool directory can resolve `exceljs` from the project root and can
+reach the localhost doors, which carry no auth. The compiles so far have
+honoured the brief without being held to it, and enforcing it was weighed and
+declined (D-100) — the promise the tier actually keeps is `verify.mjs`, which
+runs every time. Nothing about a tool is trusted:
 
 - It matches on the **strong bar only**, and on **shape** as well as words. A
   script written against a clone is simply wrong where there is no clone, and
@@ -882,9 +887,13 @@ because a retry that is not is an identical first try at the same price.
 a method is repeatable; it does not say it is compilable, and the first recipe
 to reach the gate on its own was one that could not be — "list the last 10
 commits on GitHub" earned its deliveries through the code-host connection, and
-a tool is plain node with no network. Promotion now reads the connections the
-recipe was learned with, minus the ones that are on by default, and refuses
-with the reason. Caught before it spent the dollar (D-044).
+a tool is plain node with no network. Promotion refuses with the reason,
+caught before it spent the dollar (D-044) — and since D-100 it asks the better
+question: **which connections the method actually *reached***, taken from the
+tools its runs called, rather than which it was merely allowed. A recipe whose
+runs predate that recording still gets the old answer, since silence about
+what a run touched is not proof it touched nothing. Measured live: the same
+refusal went from "browser and github and search" to "github".
 
 ### Level knowledge — Live
 
@@ -1389,8 +1398,13 @@ list per channel (D-077; SPEC M5.11 has the slices):
       read by nobody, because a tool is Node built-ins only and so cannot today
       be invalidated by a surface that moved (D-050). The day tools get the
       doors, that field is load-bearing — and it could not have been added
-      backwards. *Blocked on: a decision that the doors, not the network, are
-      what a tool may have.*
+      backwards. **Decided 2026-08-06 and the answer was no, on measurement
+      (D-100):** granting the doors would have unlocked *nothing*, because all
+      three compile-eligible recipes it would have helped also carry `browser`,
+      which no plain-node script can run whatever doors it holds. The real
+      blocker was the gate reading availability rather than use, and that is
+      what changed. *Reopen when a recipe is refused for a door it genuinely
+      used and nothing else — the first one has yet to exist.*
 - [ ] **A job that waits for a specialist, or times out to anyone free** — one
       scribe currently serialises every document job while others idle.
       *Blocked on: choosing which behaviour is right; both are defensible.*

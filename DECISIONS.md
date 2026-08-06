@@ -109,6 +109,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing](#d-097--2026-08-05--the-desk-asks-for-the-words-and-a-send-it-already-holds-costs-nothing)
 - [D-098 — 2026-08-06 — A run's counters land on what is on disk, not on the picture it started from](#d-098--2026-08-06--a-runs-counters-land-on-what-is-on-disk-not-on-the-picture-it-started-from)
 - [D-099 — 2026-08-06 — A run that only resembles a recipe credits usage, and nothing else](#d-099--2026-08-06--a-run-that-only-resembles-a-recipe-credits-usage-and-nothing-else)
+- [D-100 — 2026-08-06 — The compile gate asks what a method used, not what it could reach](#d-100--2026-08-06--the-compile-gate-asks-what-a-method-used-not-what-it-could-reach)
 
 ## By theme
 
@@ -148,7 +149,12 @@ entry updates one file rather than two.
 - **Outside access, continued** — D-040
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
-- **The fourth tier, in service** — D-043, D-044, D-045; and D-096, the first
+- **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
+  answers the doors-and-libraries question by measuring it away: granting the
+  doors would have unlocked nothing, because every refused recipe also carried
+  a browser it never opened, so the gate learned to ask what a method *used*
+  rather than what it could reach — closing both limits D-044 named about
+  itself; and D-096, the first
   tool earned end to end on real recurring work with nothing seeded — five
   hand-done runs on five different real datasets, a compile whose verifier was
   mutated against five wrong answers before installing, then the job served at
@@ -5689,3 +5695,72 @@ else, `findRecipe` still matches it exactly and still lends its approach, and
 `canShortenLeash` is now false. Planning the real sentence through the running
 server quotes **`tier: session`** where it would have been `oneshot` — the trap
 disarmed, and the method kept.
+
+## D-100 — 2026-08-06 — The compile gate asks what a method used, not what it could reach
+
+The doors-and-libraries question, which the roadmap had carried since D-021
+and T4·4 was supposed to settle: should a compiled tool be granted the doors
+(`fetch`, `github`, `search`) and the document libraries, rather than refused
+for needing them?
+
+**Measuring it answered a different question.** Granting the doors would have
+unlocked **nothing**. Seven recipes are eligible to compile by count; four
+already do; all three that D-044 refuses also carry **`browser`** — an stdio
+MCP server, which a plain-node script can never run whatever doors it is
+given. The doors were never the binding constraint.
+
+What binds is the limit D-044 named about itself and could not then fix:
+*"closing it needs the run to record which tools it actually called — which
+the ledger does not carry and no measurement yet demands."* A measurement now
+demands it. Those three recipes are refused for a browser none of them
+plausibly opened; it is simply switched on at that level, so it lands on every
+surface learned since.
+
+**Two facts worth having measured rather than assumed**, both established with
+a script in the tools directory: a compiled tool can already `import('exceljs')`
+— node resolves it from the repo root — and can already reach
+`http://127.0.0.1:4600/internal/fetch`, which is localhost-bound with no auth
+and answered HTTP 200. "No dependencies, no shell commands, no network" is a
+**brief the compile is asked to follow, not a sandbox**. The manifest's own
+comment said as much — "the contract is a brief, not a jail" — and Brian's
+call is to say so plainly rather than build the jail: the tier has honoured
+the brief without being forced to, and enforcing it would cost real work to
+buy a guarantee nothing has yet needed.
+
+**So the gate learns to ask about use.** The executor already saw every tool
+name and kept only the last; it keeps the set, as `toolsUsed` on the meter. A
+recipe accumulates them as `usedTools` — the **union** across runs, never the
+latest, because a method that ever needed the code host needs it however many
+later runs happened not to reach for it, and under-claiming here approves a
+script that cannot exist. `connectionsUsed` joins those names to the catalog's
+own per-connection tool lists, matching both bare and `mcp__name__` forms.
+Taken from a failed run's meter too: a run that died having called the code
+host has still proved the method reaches outside.
+
+`compileBlockers` asks use first and availability second. **The fallback is
+the careful half.** A recipe whose runs all predate the recording has said
+nothing about what it reached, and absent evidence is not evidence of absence
+— reading silence as innocence would approve exactly the compile D-044 exists
+to refuse. So old recipes get the old answer, and the sharper one is earned by
+running again.
+
+It also closes D-044's *other* stated limit. Ambient is subtracted from a
+surface because `web` is on everywhere and carries no information; but a run
+that genuinely **called** `fetch_page` has said something, and use reports it.
+The job that "genuinely fetched a page with nothing but `web`" and would have
+produced a failing compile is now refused.
+
+**Evidence.** 1140 + 109 green, typecheck clean. Seventeen tests across
+`connectionsUsed`, `compileBlockers` and the recipe union. Mutations: making
+the union a replacement fails 1, and ignoring use in the gate failed
+**nothing** until `compileBlockers` was extracted from the route to be
+testable — the sixth untested-wiring fault in two days, and the third fixed by
+moving a decision out of a route.
+
+Live, and worth the 31.2c it cost. T4·5 recorded
+`["ToolSearch","Write","mcp__github__list_commits"]` on its meter and the same
+on its recipe, so the field travels the whole path — runner to meter to recipe
+— which is the hop that silently swallowed a field twice this week. The
+compile request then went from *"that method used **browser and github and
+search**"* to *"that method used **github**"*. Still refused, which is right:
+that job does reach the code host. Refused for the one reason that is true.

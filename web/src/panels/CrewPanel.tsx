@@ -263,6 +263,7 @@ export function CrewPanel({
           )}
           {tab === 'backoffice' && (
             <Backoffice
+              levelId={levelId}
               jobs={jobs}
               crew={crew ?? []}
               productivity={productivity}

@@ -348,7 +348,10 @@ each one rests on already is.
    the stranger-blocks-it rule, and the send-time refusal fallback.
 4. **T5 in September**, on its real monthly cadence — not before. ~~Wave 5
    needs Brian to pick a real documents folder.~~ **Wave 5 ran 2026-08-06**
-   — picked through D-102's dialog, measured above; only T5 remains.
+   — picked through D-102's dialog, measured above; only T5 remains. The
+   recurrence timer (D-103) can now hold the cadence: schedule the sentence
+   monthly and September's firing is the run — the timer's first live
+   outing, on the job the programme was already waiting on.
 5. **Three measured gaps, deliberately unbuilt.** The quote is blind to
    attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
    per-call floor here against the pooled class rate). And the store trusts

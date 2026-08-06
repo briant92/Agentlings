@@ -247,6 +247,9 @@ function EventEntry({
           {time}
           <span className="ev-queued">▸ queued</span>
           <span className="t-text">{event.title}</span>
+          {/* How the job came to exist, when it was not a person — a firing
+              schedule says so here (D-103). */}
+          {event.detail && <span className="dim"> · {event.detail}</span>}
           {stop('queued')}
         </div>
       );

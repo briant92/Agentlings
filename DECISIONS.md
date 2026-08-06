@@ -112,6 +112,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-100 — 2026-08-06 — The compile gate asks what a method used, not what it could reach](#d-100--2026-08-06--the-compile-gate-asks-what-a-method-used-not-what-it-could-reach)
 - [D-101 — 2026-08-06 — Standing approval fired, and the desk arrests a send with no words](#d-101--2026-08-06--standing-approval-fired-and-the-desk-arrests-a-send-with-no-words)
 - [D-102 — 2026-08-06 — The folder is picked in the OS's own dialog, served by the server that has the folders](#d-102--2026-08-06--the-folder-is-picked-in-the-oss-own-dialog-served-by-the-server-that-has-the-folders)
+- [D-103 — 2026-08-06 — The recurrence timer: a sentence queued again on its cadence, through the same door](#d-103--2026-08-06--the-recurrence-timer-a-sentence-queued-again-on-its-cadence-through-the-same-door)
 
 ## By theme
 
@@ -301,6 +302,11 @@ entry updates one file rather than two.
   optional-looking loose row, a skipped field queued a 26.8¢ session that
   could only block on "what to say", and Start now arrests "no message"
   beside D-091's shape check
+- **Recurrence** — the timer that queues a sentence again on its own cadence,
+  fired by a server sweep through the same glue `/work` uses so the new way
+  in is quoted like every other, with downtime collapsing to a single
+  catch-up firing: D-103, the first row ticked off the 2026-08-06 capability
+  review's `GAPS.md`
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5880,3 +5886,71 @@ last, and a stuck gate) after committing first, per D-021. 1147 + 113 green.
 **Served live within the hour**: the first "+" picked `Training Ground
 Workout`, the sync read 55 passages from two PDFs for $0, and Wave 5 ran on
 it end to end — the record and its two boundary findings are TRAINING.md's.
+
+## D-103 — 2026-08-06 — The recurrence timer: a sentence queued again on its cadence, through the same door
+
+The 2026-08-06 capability review's first-ranked gap (`GAPS.md` G1), built on
+Brian's instruction the same day. The engine rewards recurring work
+everywhere — a recipe wants the same sentence verbatim (D-072), the leash
+arms on completions, a tool needs three deliveries, standing approval sends
+a proven job by itself (D-101) — and yet nothing re-queued anything: T5
+waits for a person to remember September, and the weekly reminder D-082 was
+designed around could not exist as a weekly fact. Every job was queued by
+hand.
+
+**Three ways to fire it were weighed:**
+
+1. **The OS's scheduler** (Task Scheduler / cron hitting the API) — no code,
+   but it fires when the server may be off, is set up per machine outside
+   the app, and puts the recurrence rules outside the thing that owns
+   quotes, channels and the queue.
+2. **A session that re-queues itself** — refused on sight: a run granting
+   itself future runs is the autonomy §14 exists to refuse. A schedule is a
+   standing instruction a *person* wrote, like a standing approval.
+3. **A server sweep** — chosen. `schedules.json` per level beside the
+   level's other stores, a 30-second interval plus a boot sweep, calendar
+   cadences in the machine's local time.
+
+**The shape inherits its rules rather than inventing them:**
+
+- A schedule stores the sentence **verbatim** plus what Start carried — the
+  channel pick and the card's answers — because the recipe key is the
+  prompt and a reworded repeat is a different job to the crew. Never the
+  files: attachments ride one run only, and the repeat row says so.
+- **Firing goes through the same glue `/work` uses.** The route's body from
+  plan to queued event was lifted into `queueSentence` and both call it: a
+  scheduled job is planned, channel-settled, quoted and specced identically
+  to a hand-queued one. A new way in without a quote is D-027 over again; a
+  second hand-rolled job builder is D-097 over again. The lift is the
+  route-wiring lesson applied in advance — one body, two callers, no copy
+  to drift.
+- **Advance-then-attempt.** `nextDueAt` moves past the occurrence *before*
+  queueing is tried, so a firing that throws records `lastError` on the row
+  instead of retrying every thirty seconds — and "next" is computed from
+  now rather than from the missed slot, which is what collapses downtime:
+  a server off for three weeks fires a weekly schedule **once**, not three
+  times. Boot runs the same sweep, so a missed occurrence fires promptly
+  rather than waiting out the first interval.
+- **Pause means not-while-paused; resume recomputes from now** — a
+  schedule paused past its moment never fires a backlog on the way back in.
+- Cadences are **words, not cron** — every day / every Thursday / monthly
+  on the 23rd, at HH:MM local, with a monthly day clamped to short months
+  (the 31st fires on Feb 28) — because this is M3's app and the person it
+  is for says "every Thursday at 9", not `0 9 * * 4`.
+- What fires lands as an **ordinary job**: quoted, reviewed, promoted, and
+  standing-approval-eligible. A scheduled pure send under a D-082 grant is
+  the first fully closed loop — it queues itself, sends itself, and every
+  body still lands in `sends.jsonl`. The terminal says a firing job was
+  `queued by its schedule` on the queued line itself.
+
+**Evidence.** 26 unit tests pin the cadence math (strictly-after semantics,
+the Jan-31 → Feb-28 clamp, the December year-roll), the store, the
+single-catch-up collapse, error-recorded-then-cleared, and resume-from-now;
+the suites read 1,173 server + 113 web green with typecheck clean. One test
+failed on the way and it was the test's own fixture — the "future" schedule
+was due at the probe moment — which is worth recording because the module
+survived its author's first misreading. Not yet seen: a live firing. The
+running dev server belongs to the other session and two servers on one tree
+never happen, so the first live proof is deliberately T5's September firing
+— or any weekly Brian sets before then — with the sweep's call site being
+one call to the same glue every hand-queued job already exercises.

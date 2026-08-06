@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { AudiencePerson, ConnectionInfo, WorkPlan } from '@agentlings/shared';
+import type { AudiencePerson, Cadence, ConnectionInfo, WorkPlan } from '@agentlings/shared';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
@@ -9,6 +9,8 @@ import { ChannelAskCard } from './ChannelAskCard';
 import { RecipientPicker } from './RecipientPicker';
 
 const DEBOUNCE_MS = 250;
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /** A file waiting to go with the next job, already read into memory. */
 interface Attached {
@@ -73,6 +75,11 @@ export function WorkBar({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   /** Files dropped on the box, read once and sent with the job that uses them. */
   const [files, setFiles] = useState<Attached[]>([]);
+  /** Repeat this sentence on a cadence (D-103). 'off' queues once, as ever. */
+  const [repeatKind, setRepeatKind] = useState<'off' | 'daily' | 'weekly' | 'monthly'>('off');
+  const [repeatDow, setRepeatDow] = useState(1);
+  const [repeatDay, setRepeatDay] = useState(1);
+  const [repeatTime, setRepeatTime] = useState('09:00');
   const [dragging, setDragging] = useState(false);
   const [askingRepo, setAskingRepo] = useState(false);
   const [repoPath, setRepoPath] = useState('');
@@ -195,6 +202,19 @@ export function WorkBar({
     return parts.length ? parts.join(' · ') : null;
   })();
 
+  /** The cadence the controls describe, or null when this runs once. */
+  const cadence = (): Cadence | null => {
+    if (repeatKind === 'off') return null;
+    const [h, m] = repeatTime.split(':').map(Number);
+    return {
+      kind: repeatKind,
+      ...(repeatKind === 'weekly' ? { dow: repeatDow } : {}),
+      ...(repeatKind === 'monthly' ? { day: repeatDay } : {}),
+      hour: Number.isFinite(h) ? h : 9,
+      minute: Number.isFinite(m) ? m : 0,
+    };
+  };
+
   const queue = async (folder?: string) => {
     setBusy(true);
     setError(null);
@@ -213,11 +233,27 @@ export function WorkBar({
           ...(channel ? { channel } : {}),
         }),
       );
+      // The schedule stores what Start carried — the sentence verbatim (the
+      // recipe key is the prompt, D-072), the pick and the card's answers —
+      // and never the files: attachments ride one run only (D-103).
+      const repeat = files.length === 0 ? cadence() : null;
+      if (repeat) {
+        await api(
+          lvl(levelId, '/schedules'),
+          postJson({
+            text: text.trim(),
+            cadence: repeat,
+            ...(channel ? { channel } : {}),
+            ...(Object.keys(answers).length > 0 ? { answers } : {}),
+          }),
+        );
+      }
       setText('');
       setPlan(null);
       setChannel(null);
       setAnswers({});
       setFiles([]);
+      setRepeatKind('off');
       setAskingRepo(false);
       setRepoPath('');
     } catch (err) {
@@ -374,6 +410,76 @@ export function WorkBar({
             </>
           ) : (
             <span className="dim">Nobody works here yet — hire someone first.</span>
+          )}
+        </p>
+      )}
+
+      {/* Repeats (D-103): the same sentence queued again on a cadence. The
+          schedule is created beside the job at Start, so the first run is
+          now and the next is on the calendar. */}
+      {plan && !askingRepo && (
+        <p className="work-gaps work-repeat">
+          {files.length > 0 ? (
+            <span className="dim">runs once — attached files ride one run only</span>
+          ) : (
+            <>
+              <span className="dim">repeats:</span>
+              {(['off', 'daily', 'weekly', 'monthly'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={repeatKind === k ? 'work-chip on' : 'work-chip'}
+                  onClick={() => setRepeatKind(k)}
+                >
+                  {k === 'off' ? 'no' : k}
+                </button>
+              ))}
+              {repeatKind === 'weekly' && (
+                <select
+                  className="work-q-text work-repeat-pick"
+                  value={repeatDow}
+                  onChange={(e) => setRepeatDow(Number(e.target.value))}
+                  aria-label="Which day of the week"
+                >
+                  {DAY_NAMES.map((d, i) => (
+                    <option key={d} value={i}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {repeatKind === 'monthly' && (
+                <label className="dim">
+                  on day{' '}
+                  <input
+                    className="work-q-text work-repeat-day"
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={repeatDay}
+                    onChange={(e) =>
+                      setRepeatDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))
+                    }
+                    aria-label="Which day of the month"
+                  />
+                </label>
+              )}
+              {repeatKind !== 'off' && (
+                <>
+                  <label className="dim">
+                    at{' '}
+                    <input
+                      className="work-q-text work-repeat-time"
+                      type="time"
+                      value={repeatTime}
+                      onChange={(e) => setRepeatTime(e.target.value)}
+                      aria-label="At what time"
+                    />
+                  </label>
+                  <span className="dim">· queued again then, reviewed like any job</span>
+                </>
+              )}
+            </>
           )}
         </p>
       )}

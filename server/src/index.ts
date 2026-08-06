@@ -8,6 +8,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type {
   Agentling,
   AgentlingProfile,
+  Cadence,
   CrewMember,
   Job,
   LevelInfo,
@@ -33,6 +34,18 @@ import {
   setAuto,
 } from './approvals';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
+import {
+  createSchedule,
+  describeCadence,
+  describeSchedule,
+  dueNow,
+  markFired,
+  readSchedules,
+  removeSchedule,
+  SCHEDULE_SWEEP_MS,
+  setPaused,
+  validCadence,
+} from './schedules';
 import { capabilityTokens, compileBlockers } from './capability';
 import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import { describe, missingSecrets, readConnections } from './connections';
@@ -882,48 +895,34 @@ function decodeAttachments(
   });
 }
 
-app.post('/api/levels/:lid/work', async (c) => {
-  const rt = getLevel(c.req.param('lid'));
-  if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{
-    text?: string;
-    repoPath?: string;
+/**
+ * One sentence becomes one queued job — the body every way in shares.
+ *
+ * The /work route and the schedule sweep both call this (D-103), for
+ * queuedJobSpec's reason one level down: three separate faults in one day
+ * were a field the route knew about and the thing building the object did
+ * not (D-097), and a second hand-rolled copy of this glue is where the
+ * fourth would live. The title is derived and the repository is the
+ * level's; the channel is server-settled — a caller's pick counts only if
+ * the channel exists, else the detected ask's own channel rides — and
+ * every caller is quoted, because a scheduled firing is a new way in and
+ * an unquoted way in is the D-027 bug.
+ */
+function queueSentence(
+  rt: LevelRuntime,
+  text: string,
+  opts: {
     tools?: string[];
-    answers?: Record<string, string>;
-    files?: { name?: string; data?: string }[];
-    /** The channel picked on the ask-card, when there was one (D-079). */
     channel?: string;
-  }>();
-  const text = body.text?.trim();
-  if (!text) return c.json({ error: 'text is required' }, 400);
-
-  let attachments: { name: string; data: Buffer }[];
-  try {
-    attachments = decodeAttachments(body.files);
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : 'bad attachment' }, 400);
-  }
-
-  if (body.repoPath !== undefined) {
-    const repoPath = body.repoPath.trim();
-    if (repoPath && !existsSync(repoPath)) {
-      return c.json({ error: `no folder at "${repoPath}"` }, 400);
-    }
-    rt.meta = { ...rt.meta, repoPath };
-    writeMeta(rt.dir, rt.meta);
-  }
-
-  // The title is derived here and the repository is the level's; everything
-  // else about how a job is specced — the ceiling that binds it, the role that
-  // will run it — is shared with the other way in, so the two cannot drift.
+    answers?: Record<string, string>;
+    attachments?: { name: string; data: Buffer }[];
+    /** How this job came to exist, said on the queued event's line. */
+    note?: string;
+  } = {},
+): Job {
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
-  const tools = granted(body.tools);
-  // The channel a job sends on is server-settled: the caller's pick counts
-  // only if the channel actually exists, and with no pick the detected ask's
-  // own channel rides — so typing "remind them on telegram" and pressing
-  // Start carries it without the card ever being touched (D-079). A channel
-  // can neither be invented by the client nor promoted past what exists.
-  const requestedChannel = typeof body.channel === 'string' ? body.channel : undefined;
+  const tools = granted(opts.tools);
+  const requestedChannel = opts.channel;
   const channelAsk = requestedChannel
     ? null
     : detectChannelAsk(
@@ -942,7 +941,7 @@ app.post('/api/levels/:lid/work', async (c) => {
   // through the one function both ways in share — a desk that promised free
   // and a queue that then billed a session would be the worst of both (D-097).
   const names = rosterNames(channel ?? channelAsk?.asked);
-  const send = sendFacts(text, { channel, names }, body.answers);
+  const send = sendFacts(text, { channel, names }, opts.answers);
   const quote = quoteFor_(
     QUOTE_CTX,
     rt.dir,
@@ -977,9 +976,9 @@ app.post('/api/levels/:lid/work', async (c) => {
           channel: channel ?? channelAsk?.asked,
           names,
         },
-        body.answers,
+        opts.answers,
       ),
-      attachments,
+      attachments: opts.attachments ?? [],
       channel,
       ...(send ? { send } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
@@ -995,8 +994,105 @@ app.post('/api/levels/:lid/work', async (c) => {
           })()),
     }),
   );
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({
+    type: 'queued',
+    jobId: job.id,
+    title: job.title,
+    ...(opts.note ? { detail: opts.note } : {}),
+  });
+  return job;
+}
+
+app.post('/api/levels/:lid/work', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{
+    text?: string;
+    repoPath?: string;
+    tools?: string[];
+    answers?: Record<string, string>;
+    files?: { name?: string; data?: string }[];
+    /** The channel picked on the ask-card, when there was one (D-079). */
+    channel?: string;
+  }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+
+  let attachments: { name: string; data: Buffer }[];
+  try {
+    attachments = decodeAttachments(body.files);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'bad attachment' }, 400);
+  }
+
+  if (body.repoPath !== undefined) {
+    const repoPath = body.repoPath.trim();
+    if (repoPath && !existsSync(repoPath)) {
+      return c.json({ error: `no folder at "${repoPath}"` }, 400);
+    }
+    rt.meta = { ...rt.meta, repoPath };
+    writeMeta(rt.dir, rt.meta);
+  }
+
+  // Everything from the plan to the queued event is the shared glue above —
+  // one body for every way a sentence becomes a job, so the ways in cannot
+  // drift. The schedule sweep is the other caller (D-103).
+  const job = queueSentence(rt, text, {
+    tools: body.tools,
+    channel: typeof body.channel === 'string' ? body.channel : undefined,
+    answers: body.answers,
+    attachments,
+  });
   return c.json(job, 201);
+});
+
+/** The recurrence timer (D-103): the sentences this level queues again on a cadence. */
+app.get('/api/levels/:lid/schedules', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json({ schedules: readSchedules(rt.dir).map(describeSchedule) });
+});
+
+app.post('/api/levels/:lid/schedules', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{
+    text?: string;
+    cadence?: Cadence;
+    channel?: string;
+    answers?: Record<string, string>;
+  }>();
+  const text = body.text?.trim();
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  const cadence = body.cadence;
+  const bad = validCadence(cadence);
+  if (bad || !cadence) return c.json({ error: bad ?? 'a cadence is required' }, 400);
+  // The same server-settling rule as queueing: a channel that does not exist
+  // is dropped, never stored — a firing replays what Start carried rather
+  // than re-detecting (D-079's shape, frozen at creation).
+  const channel =
+    typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
+  const answers = body.answers && Object.keys(body.answers).length ? body.answers : undefined;
+  const schedule = createSchedule(rt.dir, { prompt: text, cadence, channel, answers }, Date.now());
+  return c.json(describeSchedule(schedule), 201);
+});
+
+app.post('/api/levels/:lid/schedules/:sid/pause', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ paused?: boolean }>().catch(() => ({ paused: true }));
+  const schedule = setPaused(rt.dir, c.req.param('sid'), body.paused !== false, Date.now());
+  if (!schedule) return c.json({ error: 'unknown schedule' }, 404);
+  return c.json(describeSchedule(schedule));
+});
+
+app.delete('/api/levels/:lid/schedules/:sid', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  if (!removeSchedule(rt.dir, c.req.param('sid'))) {
+    return c.json({ error: 'unknown schedule' }, 404);
+  }
+  return c.json({ ok: true });
 });
 
 /**
@@ -2381,3 +2477,34 @@ setInterval(() => {
     if (withJobs) sentJobsRev.set(rt.meta.id, rev);
   }
 }, TICK_MS);
+
+/**
+ * The recurrence sweep (D-103). Due schedules fire through the same glue
+ * `/work` uses, so a scheduled job is quoted, channel-settled and specced
+ * exactly like a hand-queued one. Advance-then-attempt: the schedule moves
+ * past its occurrence before the queueing is tried, so a firing that throws
+ * is an error on the row and not a retry every thirty seconds — and a
+ * server that slept through occurrences fires each schedule once on boot,
+ * never a backlog.
+ */
+function sweepSchedules(now = Date.now()): void {
+  for (const rt of levels.values()) {
+    for (const schedule of dueNow(readSchedules(rt.dir), now)) {
+      markFired(rt.dir, schedule.id, now);
+      try {
+        queueSentence(rt, schedule.prompt, {
+          channel: schedule.channel,
+          answers: schedule.answers,
+          note: `queued by its schedule — ${describeCadence(schedule.cadence)}`,
+        });
+      } catch (err) {
+        markFired(rt.dir, schedule.id, now, err instanceof Error ? err.message : String(err));
+      }
+    }
+  }
+}
+
+setInterval(sweepSchedules, SCHEDULE_SWEEP_MS);
+// Boot is a sweep too: whatever came due while the server was off fires
+// once, now, rather than waiting out the first interval.
+sweepSchedules();

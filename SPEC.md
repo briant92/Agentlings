@@ -152,6 +152,10 @@ the loop runs end to end without one.
 - `match.ts` — the local, deterministic concept matcher. Works with no auth
   and no network, always.
 - `work.ts` — turning a sentence into a plan: title, role, who will run it.
+- `schedules.ts` — the recurrence timer (D-103): sentences queued again on a
+  calendar cadence, per level, fired by a server sweep through the same glue
+  `/work` uses so a scheduled job is quoted like a hand-queued one. Downtime
+  collapses to a single catch-up firing; pause never builds a backlog.
 - `clarify.ts` — the questions worth asking before any money moves. Local and
   deterministic like the matcher, never on free work, never more than three,
   and never required: Start must always work.
@@ -211,6 +215,7 @@ the app's memory is not the repository's.
     level.json              name, project, theme, repo path
     roster.json             everyone hired here, resting crew included
     jobs.json               the queue, so a restart resumes
+    schedules.json          sentences queued again on a cadence (D-103)
     KNOWLEDGE.md            what this level's crew has learned
     recipes.json            approaches worth reusing, and how often they land
     store-index.json        your own notes, indexed — source and date per entry
@@ -237,6 +242,8 @@ catalog, settings and spend are global because they are.
 | `POST /api/levels/:lid/jobs/:id/redo` | "Do it properly" — re-queue with the router's shortcut switched off |
 | `POST /api/levels/:lid/jobs/:id/reply` | Answer an agentling. A new job that carries the old sandbox forward, quoted and billed like the session it is |
 | `POST /api/levels/:lid/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
+| `GET` · `POST /api/levels/:lid/schedules` | The recurrence timer (D-103): list the sentences this level queues again on a cadence, and create one — made beside Start, so the first run is now and the next is on the calendar |
+| `POST .../schedules/:sid/pause` · `DELETE .../schedules/:sid` | Pause (resume recomputes from now, never a backlog) and stop repeating |
 
 **What came back.**
 
@@ -365,6 +372,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.9 reading the crew record → D-056, D-057
 - M5.10 reading what you keep → D-058–D-062
 - M5.11 connections that send → D-075–D-077, D-097
+- M5.12 the recurrence timer → D-103
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
@@ -869,6 +877,16 @@ tried, measured and rejected is in `DECISIONS.md`:
           change: it grants a session nothing (sends are replayed by the
           server), and its presence in the capability surface was what
           refused every send job a compile.
+  - **M5.12 — the recurrence timer (built).** D-103. A schedule is a
+    sentence queued again on its cadence — verbatim, because the recipe key
+    is the prompt — created beside Start on the intake's repeat row, listed
+    with its next firing in the backoffice, fired by a 30-second server
+    sweep plus a boot sweep **through the same glue `/work` uses**, so every
+    firing is planned, channel-settled, quoted and reviewed exactly like a
+    hand-queued job. Downtime collapses to one catch-up firing, never a
+    backlog; pause resumes from now; attachments do not repeat. A scheduled
+    pure send under a standing approval (D-082) closes the loop whole:
+    it queues itself, sends itself, and audits every body to `sends.jsonl`.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

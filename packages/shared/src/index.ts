@@ -342,6 +342,39 @@ export const MAX_OUTBOX_TO_CHARS = 200;
 export const MAX_OUTBOX_BODY_CHARS = 2000;
 
 /**
+ * When a schedule fires: a calendar cadence in the machine's own local time
+ * (D-103). Not cron syntax — the person this app is for says "every
+ * Thursday at 9", not "0 9 * * 4".
+ */
+export interface Cadence {
+  kind: 'daily' | 'weekly' | 'monthly';
+  /** Weekly only: 0–6, Sunday 0 — `Date.getDay()`'s own numbering. */
+  dow?: number;
+  /** Monthly only: 1–31, clamped to the month's last day at fire time. */
+  day?: number;
+  hour: number;
+  minute: number;
+}
+
+/**
+ * A schedule as the UI sees it (D-103): a sentence queued again on its
+ * cadence, and how the last firing went. `cadenceLabel` is worded by the
+ * server so every surface says a cadence the same way.
+ */
+export interface ScheduleInfo {
+  id: string;
+  prompt: string;
+  cadence: Cadence;
+  cadenceLabel: string;
+  channel?: string;
+  createdAt: number;
+  nextDueAt: number;
+  lastFiredAt?: number;
+  lastError?: string;
+  paused: boolean;
+}
+
+/**
  * Standing approval for one recurring send job, as the UI sees it (D-082).
  * `eligible` means the offer may be shown: enough unchanged approvals and
  * not yet granted. The recipient list is the allowlist auto-send is locked

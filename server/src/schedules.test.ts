@@ -1,0 +1,228 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Cadence } from '@agentlings/shared';
+import {
+  computeNextDue,
+  createSchedule,
+  describeCadence,
+  describeSchedule,
+  dueNow,
+  markFired,
+  readSchedules,
+  removeSchedule,
+  schedulesFile,
+  setPaused,
+  validCadence,
+} from './schedules';
+
+// Local-time fixtures, built the way the implementation builds them so the
+// assertions say "same calendar moment" rather than repeating the arithmetic.
+const at = (y: number, mo: number, d: number, h: number, mi: number) =>
+  new Date(y, mo, d, h, mi, 0, 0).getTime();
+
+const daily = (hour: number, minute: number): Cadence => ({ kind: 'daily', hour, minute });
+const weekly = (dow: number, hour: number, minute: number): Cadence => ({
+  kind: 'weekly',
+  dow,
+  hour,
+  minute,
+});
+const monthly = (day: number, hour: number, minute: number): Cadence => ({
+  kind: 'monthly',
+  day,
+  hour,
+  minute,
+});
+
+describe('computeNextDue', () => {
+  // 2026-08-06 is a Thursday (getDay() === 4).
+  const thursday0800 = at(2026, 7, 6, 8, 0);
+
+  it('daily: later today when the time has not passed', () => {
+    expect(computeNextDue(daily(9, 30), thursday0800)).toBe(at(2026, 7, 6, 9, 30));
+  });
+
+  it('daily: tomorrow when the time has passed', () => {
+    expect(computeNextDue(daily(7, 0), thursday0800)).toBe(at(2026, 7, 7, 7, 0));
+  });
+
+  it('daily: strictly after — exactly on the moment rolls to tomorrow', () => {
+    expect(computeNextDue(daily(8, 0), thursday0800)).toBe(at(2026, 7, 7, 8, 0));
+  });
+
+  it('weekly: today when the day matches and the time is still ahead', () => {
+    expect(computeNextDue(weekly(4, 9, 0), thursday0800)).toBe(at(2026, 7, 6, 9, 0));
+  });
+
+  it('weekly: next week when today matched but the time has passed', () => {
+    expect(computeNextDue(weekly(4, 7, 0), thursday0800)).toBe(at(2026, 7, 13, 7, 0));
+  });
+
+  it('weekly: the coming occurrence of another day', () => {
+    // Monday after Thursday 2026-08-06 is 2026-08-10.
+    expect(computeNextDue(weekly(1, 18, 30), thursday0800)).toBe(at(2026, 7, 10, 18, 30));
+  });
+
+  it('monthly: this month when the day is still ahead', () => {
+    expect(computeNextDue(monthly(15, 9, 0), thursday0800)).toBe(at(2026, 7, 15, 9, 0));
+  });
+
+  it('monthly: next month when the day has passed', () => {
+    expect(computeNextDue(monthly(1, 9, 0), thursday0800)).toBe(at(2026, 8, 1, 9, 0));
+  });
+
+  it('monthly: day 31 lands on the last day of a short month', () => {
+    // From April 1: April has 30 days, so the 31st clamps to the 30th.
+    expect(computeNextDue(monthly(31, 9, 0), at(2026, 3, 1, 0, 0))).toBe(at(2026, 3, 30, 9, 0));
+  });
+
+  it('monthly: day 31 from late January clamps into February', () => {
+    // 2026 is not a leap year.
+    expect(computeNextDue(monthly(31, 9, 0), at(2026, 0, 31, 10, 0))).toBe(at(2026, 1, 28, 9, 0));
+  });
+
+  it('monthly: December rolls the year', () => {
+    expect(computeNextDue(monthly(5, 9, 0), at(2026, 11, 20, 0, 0))).toBe(at(2027, 0, 5, 9, 0));
+  });
+});
+
+describe('describeCadence', () => {
+  it('words each shape, zero-padded', () => {
+    expect(describeCadence(daily(7, 5))).toBe('every day at 07:05');
+    expect(describeCadence(weekly(4, 18, 30))).toBe('every Thursday at 18:30');
+    expect(describeCadence(monthly(1, 9, 0))).toBe('monthly on the 1st at 09:00');
+  });
+
+  it('gets the awkward ordinals right', () => {
+    expect(describeCadence(monthly(2, 9, 0))).toContain('2nd');
+    expect(describeCadence(monthly(3, 9, 0))).toContain('3rd');
+    expect(describeCadence(monthly(11, 9, 0))).toContain('11th');
+    expect(describeCadence(monthly(23, 9, 0))).toContain('23rd');
+  });
+});
+
+describe('validCadence', () => {
+  it('requires a cadence and a known kind', () => {
+    expect(validCadence(undefined)).toMatch(/required/);
+    expect(validCadence({ kind: 'hourly' } as unknown as Cadence)).toMatch(/daily, weekly/);
+  });
+
+  it('bounds the clock fields', () => {
+    expect(validCadence({ kind: 'daily', hour: 24, minute: 0 })).toMatch(/hour/);
+    expect(validCadence({ kind: 'daily', hour: 9, minute: 60 })).toMatch(/minute/);
+  });
+
+  it('weekly needs a day of the week, monthly a day of the month', () => {
+    expect(validCadence({ kind: 'weekly', hour: 9, minute: 0 })).toMatch(/day of the week/);
+    expect(validCadence({ kind: 'monthly', hour: 9, minute: 0 })).toMatch(/day of the month/);
+    expect(validCadence({ kind: 'monthly', day: 32, hour: 9, minute: 0 })).toMatch(
+      /day of the month/,
+    );
+  });
+
+  it('accepts the three real shapes', () => {
+    expect(validCadence(daily(9, 0))).toBeNull();
+    expect(validCadence(weekly(0, 23, 59))).toBeNull();
+    expect(validCadence(monthly(31, 0, 0))).toBeNull();
+  });
+});
+
+describe('the store', () => {
+  let dir: string;
+  const now = at(2026, 7, 6, 8, 0);
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'sched-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('creates with the next occurrence already computed, and persists the send facts', () => {
+    const s = createSchedule(
+      dir,
+      {
+        prompt: 'Send a Telegram to Brian',
+        cadence: weekly(4, 9, 0),
+        channel: 'telegram',
+        answers: { 'send-to': 'Brian — 8633678680', 'send-say': 'padel tonight' },
+      },
+      now,
+    );
+    expect(s.nextDueAt).toBeGreaterThan(now);
+    const read = readSchedules(dir);
+    expect(read).toHaveLength(1);
+    expect(read[0].channel).toBe('telegram');
+    expect(read[0].answers?.['send-to']).toBe('Brian — 8633678680');
+  });
+
+  it('drops empty answers rather than storing an empty object', () => {
+    const s = createSchedule(dir, { prompt: 'x', cadence: daily(9, 0), answers: {} }, now);
+    expect(readSchedules(dir)[0].answers).toBeUndefined();
+    expect(s.answers).toBeUndefined();
+  });
+
+  it('a torn file reads as empty, not as a crash', () => {
+    writeFileSync(schedulesFile(dir), '{ not json', 'utf8');
+    expect(readSchedules(dir)).toEqual([]);
+  });
+
+  it('dueNow takes only the unpaused past-due', () => {
+    const past = createSchedule(dir, { prompt: 'a', cadence: daily(9, 0) }, now);
+    const paused = createSchedule(dir, { prompt: 'b', cadence: daily(9, 0) }, now);
+    setPaused(dir, paused.id, true, now);
+    createSchedule(dir, { prompt: 'c', cadence: daily(23, 0) }, now); // still ahead at 09:01
+    const later = at(2026, 7, 6, 9, 1);
+    const due = dueNow(readSchedules(dir), later);
+    expect(due.map((s) => s.id)).toEqual([past.id]);
+  });
+
+  it('markFired advances past downtime in one step — a missed month fires once', () => {
+    const s = createSchedule(dir, { prompt: 'monthly note', cadence: monthly(1, 9, 0) }, now);
+    // The server slept through September's firing and wakes mid-October.
+    const wake = at(2026, 9, 15, 12, 0);
+    const fired = markFired(dir, s.id, wake);
+    expect(fired?.lastFiredAt).toBe(wake);
+    // One step: the next occurrence is November's, not September's backlog.
+    expect(fired?.nextDueAt).toBe(at(2026, 10, 1, 9, 0));
+    expect(dueNow(readSchedules(dir), wake)).toEqual([]);
+  });
+
+  it('markFired records a firing error, and a clean firing clears it', () => {
+    const s = createSchedule(dir, { prompt: 'x', cadence: daily(9, 0) }, now);
+    markFired(dir, s.id, at(2026, 7, 6, 9, 0), 'the level was busy');
+    expect(readSchedules(dir)[0].lastError).toBe('the level was busy');
+    markFired(dir, s.id, at(2026, 7, 7, 9, 0));
+    expect(readSchedules(dir)[0].lastError).toBeUndefined();
+  });
+
+  it('resume recomputes from now — a pause is never a backlog', () => {
+    const s = createSchedule(dir, { prompt: 'x', cadence: weekly(4, 9, 0) }, now);
+    setPaused(dir, s.id, true, now);
+    // Resumed three weeks later: the next firing is the coming Thursday,
+    // not the three that were slept through.
+    const resumeAt = at(2026, 7, 27, 10, 0); // a Thursday, after 09:00
+    const resumed = setPaused(dir, s.id, false, resumeAt);
+    expect(resumed?.paused).toBeUndefined();
+    expect(resumed?.nextDueAt).toBe(at(2026, 8, 3, 9, 0));
+    expect(dueNow(readSchedules(dir), resumeAt)).toEqual([]);
+  });
+
+  it('removeSchedule removes, and says so honestly for a stranger', () => {
+    const s = createSchedule(dir, { prompt: 'x', cadence: daily(9, 0) }, now);
+    expect(removeSchedule(dir, 'nope')).toBe(false);
+    expect(removeSchedule(dir, s.id)).toBe(true);
+    expect(readSchedules(dir)).toEqual([]);
+  });
+
+  it('describeSchedule carries the wording and a real boolean', () => {
+    const s = createSchedule(dir, { prompt: 'x', cadence: weekly(1, 18, 30) }, now);
+    const info = describeSchedule(s);
+    expect(info.cadenceLabel).toBe('every Monday at 18:30');
+    expect(info.paused).toBe(false);
+    expect(info.lastError).toBeUndefined();
+  });
+});

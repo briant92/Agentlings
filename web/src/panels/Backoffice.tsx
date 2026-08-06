@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import type { CrewMember, Job, LevelProductivity } from '@agentlings/shared';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CrewMember, Job, LevelProductivity, ScheduleInfo } from '@agentlings/shared';
+import { api, lvl, postJson } from '../api';
 import { entriesFor, type Outcome, tally } from './ledger';
 
 /**
@@ -34,11 +35,13 @@ function money(usd: number): string {
 }
 
 export function Backoffice({
+  levelId,
   jobs,
   crew,
   productivity,
   onOpenReview,
 }: {
+  levelId: string;
   jobs: Job[];
   crew: CrewMember[];
   /** The level's real lifetime spend. Null until the first fetch lands. */
@@ -48,6 +51,17 @@ export function Backoffice({
 }) {
   const [filter, setFilter] = useState<Outcome | 'all'>('all');
   const [who, setWho] = useState<string>('everyone');
+
+  /** Sentences this level queues again on a cadence (D-103). */
+  const [schedules, setSchedules] = useState<ScheduleInfo[]>([]);
+  const loadSchedules = useCallback(() => {
+    void api<{ schedules: ScheduleInfo[] }>(lvl(levelId, '/schedules'))
+      .then((reply) => setSchedules(reply.schedules))
+      .catch(() => setSchedules([]));
+  }, [levelId]);
+  useEffect(() => {
+    loadSchedules();
+  }, [loadSchedules]);
 
   const all = useMemo(() => entriesFor(jobs, crew), [jobs, crew]);
   const shown = all.filter(
@@ -93,6 +107,48 @@ export function Backoffice({
           {money(productivity.priceUsd)} billable
           {productivity.unmeasured > 0 && ` · ${productivity.unmeasured} unmeasured`}
         </p>
+      )}
+
+      {schedules.length > 0 && (
+        <div className="back-schedules">
+          <p className="dim back-sched-head">on a schedule — fired jobs land above like any other</p>
+          {schedules.map((s) => (
+            <div key={s.id} className="back-row back-sched">
+              <span className="back-main">
+                <span className="back-title">{s.prompt}</span>
+                <span className="dim back-made">
+                  {s.cadenceLabel}
+                  {s.paused ? ' · paused' : ` · next ${when(s.nextDueAt)}`}
+                  {s.lastError ? ` · last firing failed: ${s.lastError}` : ''}
+                </span>
+              </span>
+              <span className="back-sched-acts">
+                <button
+                  onClick={() =>
+                    void api(
+                      lvl(levelId, `/schedules/${s.id}/pause`),
+                      postJson({ paused: !s.paused }),
+                    )
+                      .then(loadSchedules)
+                      .catch(() => {})
+                  }
+                >
+                  {s.paused ? 'resume' : 'pause'}
+                </button>
+                <button
+                  aria-label={`Stop repeating "${s.prompt}"`}
+                  onClick={() =>
+                    void api(lvl(levelId, `/schedules/${s.id}`), { method: 'DELETE' })
+                      .then(loadSchedules)
+                      .catch(() => {})
+                  }
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
 
       <p className="dim back-tally">

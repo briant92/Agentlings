@@ -2634,6 +2634,29 @@ button.danger:hover {
   font-size: 12px;
   margin: 0 0 10px;
 }
+/* Schedules on the backoffice (D-103): same row dress, div not button. */
+.back-schedules {
+  margin-bottom: 8px;
+}
+.back-sched-head {
+  margin: 4px 0 2px;
+}
+.back-sched-acts {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.back-sched-acts button {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+/* The repeat row's pickers reuse .work-q-text; only the widths differ. */
+.work-repeat .work-q-text {
+  min-width: 0;
+}
+.work-repeat-day {
+  width: 3.6em;
+}
 .back-row {
   display: flex;
   align-items: center;

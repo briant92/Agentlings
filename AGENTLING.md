@@ -1224,6 +1224,7 @@ untouched until you press Approve.
 | `TICK_MS` | 100 | Sim tick — 10 Hz on the wire |
 | `SERVER_PORT` | 4600 | API and WebSocket; the runner calls back here for fetches |
 | `WORLD_WIDTH` | 1000 | Logical units the client scales |
+| `SCHEDULE_SWEEP_MS` | 30 s | How often due schedules are looked for; boot is a sweep too (D-103) |
 
 ### Authentication
 
@@ -1238,11 +1239,14 @@ without an API key.
 
 ## 14. What an agentling is not
 
-- **Not autonomous.** It takes one job, does it, and stops. There is no
-  schedule and no self-started work. The one standing instruction that
-  exists is a **standing approval** (D-082): after three unchanged reviews
-  of a send job you may grant auto-send, locked to the approved recipient
-  set — and even then the job runs only when you queue it.
+- **Not autonomous.** It takes one job, does it, and stops — it never
+  grants itself future work. Two standing instructions exist, and a person
+  wrote both: a **schedule** (D-103) re-queues a sentence on the cadence
+  *you* set, created beside Start and revocable in the backoffice; and a
+  **standing approval** (D-082) auto-sends a pure send job after three
+  unchanged reviews, locked to the approved recipient set. A scheduled
+  send holding both is the loop closed whole — it queues itself and sends
+  itself, audited — and everything else runs only when you queue it.
 - **Not a pipeline.** Jobs are independent. Decomposition and pipelines are
   parked in M6.
 - **Not a chat.** A reply is a new job that carries the previous sandbox
@@ -1382,6 +1386,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
 ### Runtime and executor
 
 - [x] Whole-folder skill installs — 200 files, 2 MB, same commit as `SKILL.md`
+- [x] **A recurrence timer** — a sentence queued again on its own cadence
+      (daily / weekly / monthly at HH:MM, local time), per level, fired by a
+      30-second server sweep through the same quoted glue `/work` uses.
+      Downtime collapses to one catch-up firing, pause resumes from now
+      rather than firing a backlog, attachments do not repeat, and a firing
+      job says so on its queued line (D-103)
 - [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
       editing without destroying formatting does not, because Node has no good
       round-tripper. *Blocked on: a second runtime. Python would do it and was

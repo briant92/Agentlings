@@ -1,4 +1,5 @@
 import type { ClarifyQuestion, Quote } from '@agentlings/shared';
+import { terms } from './recipes';
 
 /**
  * Questions worth asking before any money moves.
@@ -56,6 +57,26 @@ const PRONOUN = /\b(it|this|that|these|those|them)\b/i;
  * itself never does, so the queue-time recompute matches whatever card the
  * user answered on even when a fork changed the channel between the two.
  */
+/**
+ * Words that only ever say *that* something is sent, never what (D-097).
+ * Every inflection, for the reason D-090 gave: a verb that claims one form
+ * and misses the rest lets the same sentence read two ways on two screens.
+ */
+const SEND_WORDS =
+  /\b(send|sends|sending|sent|text|texts|texting|texted|message|messages|messaging|messaged|dm|dms|shoot|ping|write|writes|writing|drop|forward|reply)\b/gi;
+
+/** Channel names, which are addresses rather than subjects. */
+const CHANNEL_WORDS =
+  /\b(telegram|whatsapp|gmail|email|e-mail|mail|slack|sms|discord|signal|imessage)\b/gi;
+
+/**
+ * The user asking, in the words the hint offers them, to have it drafted
+ * after all. A fixed opening rather than a fuzzy read of intent: D-093
+ * refused fuzzy verb matching on the way in, and this is the same judgement
+ * on the way out — "test" and "text" are one letter apart.
+ */
+const WRITE_IT_OUT = /^\s*write it out\b[:,\s-]*/i;
+
 const SEND_TO_HINTS: Record<string, string> = {
   gmail: 'A name and email address — no run may invent one.',
   telegram: 'A numeric chat id — each person taps Start on your bot once.',
@@ -98,9 +119,66 @@ function contentless(text: string): boolean {
   );
 }
 
+/**
+ * A send with no message anywhere in it — "send a Telegram to Pepo".
+ *
+ * The test is what is *left*, not what is there. Asking whether the sentence
+ * has a subject cannot work: "on Telegram" and "with a summary" are the same
+ * preposition, so the channel supplies the very evidence being looked for,
+ * while "Send Pepo the current Warzone meta summary" carries real content
+ * with no preposition at all. Strip the send words, the channel words and the
+ * people this channel knows, then ask the recipe matcher's own stemmer what
+ * survives. Nothing surviving means the message exists only in the user's
+ * head, and the desk has to ask for it in their words (D-097).
+ *
+ * Names come from the roster because a recipient is not a subject. An unknown
+ * one leaves a residue and reads as content-bearing — the old wording, which
+ * is the safe way to be wrong: the desk asks for a gist where it could have
+ * asked for the words, exactly as it did before this existed.
+ */
+export function bareSend(text: string, names: string[] = []): boolean {
+  const known = new Set(names.flatMap((name) => terms(name)));
+  const rest = text.replace(SEND_WORDS, ' ').replace(CHANNEL_WORDS, ' ');
+  return terms(rest).every((token) => known.has(token));
+}
+
+/**
+ * The send this job can be composed from without a session, or null.
+ *
+ * One function because the desk and the queue must agree: the plan prices it
+ * free and the queue then has to actually route it free, and the two reading
+ * the same sentence differently is the drift `clarificationLines` already
+ * guards against.
+ */
+export function sendFacts(
+  text: string,
+  { channel, names }: { channel?: string; names?: string[] },
+  answers: Record<string, string> | undefined,
+): { to: string; words: string } | null {
+  if (!channel || !answers) return null;
+  if (!bareSend(text, names)) return null;
+  const to = answers['send-to']?.trim();
+  const said = answers['send-say']?.trim();
+  if (!to || !said) return null;
+  // Asked for a draft after all: hand it back to a session, which is the one
+  // thing this path must not do quietly.
+  if (WRITE_IT_OUT.test(said)) return null;
+  return { to, words: said };
+}
+
+/** The drafting request stripped, so a session is briefed with the direction alone. */
+export function draftingAsk(said: string): string | null {
+  return WRITE_IT_OUT.test(said) ? said.replace(WRITE_IT_OUT, '').trim() : null;
+}
+
 export function questionsFor(
   text: string,
-  { hasRepo, tier, channel }: { hasRepo: boolean; tier: Quote['tier']; channel?: string },
+  {
+    hasRepo,
+    tier,
+    channel,
+    names,
+  }: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
 ): ClarifyQuestion[] {
   if (!text.trim() || !costsMoney(tier)) return [];
   const asked: ClarifyQuestion[] = [];
@@ -118,13 +196,31 @@ export function questionsFor(
       options: [],
       freeText: true,
     });
-    asked.push({
-      id: 'send-say',
-      ask: 'What should it say, roughly?',
-      hint: 'A line is enough — they write it out properly.',
-      options: [],
-      freeText: true,
-    });
+    // Two promises, and the wording is the whole difference. A sentence that
+    // carries content is asking for a message to be *written*, so a rough
+    // direction is the right ask and steering it is the job. A sentence that
+    // carries none has no message anywhere but in the user's head, and asking
+    // for it "roughly" both mislabels it and licenses a rewrite — which is
+    // where "A DARLE" acquired an emoji nobody asked for (D-097).
+    asked.push(
+      bareSend(text, names)
+        ? {
+            id: 'send-say',
+            ask: 'What should the message say?',
+            hint: 'Sent as written. Say “write it out” if you’d rather they draft it.',
+            label: 'Words',
+            options: [],
+            freeText: true,
+          }
+        : {
+            id: 'send-say',
+            ask: 'What should it say, roughly?',
+            hint: 'A line is enough — they write it out properly.',
+            label: 'Say',
+            options: [],
+            freeText: true,
+          },
+    );
   }
 
   if (dangling(text)) {
@@ -201,7 +297,7 @@ export function questionsFor(
  */
 export function clarificationLines(
   text: string,
-  context: { hasRepo: boolean; tier: Quote['tier']; channel?: string },
+  context: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
   answers: Record<string, string> | undefined,
 ): string[] {
   if (!answers) return [];

@@ -11,6 +11,7 @@ import {
   rememberRecipe,
   writeRecipes,
 } from '../recipes';
+import { OUTBOX_FILE, composeOutbox } from '../outbox';
 import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide, recallSignal } from '../router';
 import type { SearchResult } from '../search';
@@ -210,6 +211,51 @@ export class RoutedExecutor implements Executor {
           capabilities: this.capabilities(job, agentling?.role),
         });
 
+    // The message is already written and the recipient already resolved, so
+    // composing is writing the file the session would have written — the same
+    // OUTBOX.json, held to the same contract, read by the same queue on the
+    // way out. Nothing is sent here: approval is still the send (D-075).
+    //
+    // A refusal falls through to a session rather than failing the job. The
+    // contract can still object — a body over the cap, an address the split
+    // could not find — and when it does, the honest move is to pay for the
+    // run that can explain itself, which is what happened before this tier
+    // existed (D-097).
+    if (decision.kind === 'compose') {
+      const composed = composeOutbox(decision.channel, decision.to, decision.words);
+      if (composed.outbox) {
+        writeFileSync(
+          path.join(sandboxDir, OUTBOX_FILE),
+          `${JSON.stringify(composed.outbox, null, 2)}\n`,
+        );
+        const [message] = composed.outbox.messages;
+        writeFileSync(
+          path.join(sandboxDir, 'RESULT.md'),
+          [
+            '# Ready to send',
+            '',
+            `One ${decision.channel} message is addressed and waiting for your approval.`,
+            '',
+            `**To** ${message.name ? `${message.name} — ` : ''}\`${message.to}\``,
+            '',
+            '**Message**',
+            '',
+            `> ${message.body.split('\n').join('\n> ')}`,
+            '',
+            'These are your own words, sent exactly as you wrote them — nothing was',
+            'rewritten and no agentling session was needed. Approving sends it.',
+            '',
+          ].join('\n'),
+        );
+        onProgress?.(`composed without a session — ${decision.reason}`);
+        return {
+          summary: `Ready to send on ${decision.channel} — your words, unchanged.`,
+          meter: { costUsd: 0, turns: 0, routed: true },
+        };
+      }
+      onProgress?.(`could not compose it (${composed.error}) — doing it properly instead`);
+    }
+
     if (decision.kind === 'answer') {
       writeFileSync(path.join(sandboxDir, 'RESULT.md'), `${decision.body}\n`);
       if (decision.recipeKey) {
@@ -292,9 +338,12 @@ export class RoutedExecutor implements Executor {
     }
     // Whichever way the method arrived, the recipe was used. A `search` only
     // reaches here when the search itself failed and the job fell through, and
-    // it carries no recipe either way.
+    // a `compose` only when the outbox contract refused what the desk held —
+    // neither carries a recipe either way.
     const usedKey =
-      decision.kind === 'tool' || decision.kind === 'search' ? undefined : decision.recipeKey;
+      decision.kind === 'tool' || decision.kind === 'search' || decision.kind === 'compose'
+        ? undefined
+        : decision.recipeKey;
 
     let result: ExecutorResult | undefined;
     let failure: unknown;

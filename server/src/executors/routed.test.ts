@@ -138,6 +138,86 @@ describe('RoutedExecutor', () => {
   const run = (executor: RoutedExecutor, j: Job, agentling?: Agentling) =>
     executor.run(j, sandboxDir, (detail) => progress.push(detail), agentling);
 
+  /**
+   * The send the desk already holds whole (D-097). Both facts are in hand and
+   * the words were promised to go as written, so composing is copying two
+   * strings into the file a session would have written — and the job must
+   * never reach one. Measured on job 470d7389: 32.4¢ and two minutes to put
+   * "A DARLE" in an outbox, with an emoji added on the way through.
+   */
+  describe('a send the desk holds whole', () => {
+    const composed = () =>
+      job({
+        prompt: 'I need to send a Telegram to Pepo',
+        channel: 'telegram',
+        send: { to: 'Jose Dussaillant — 6783316106', words: 'A DARLE' },
+      });
+    const outbox = () => JSON.parse(readFileSync(path.join(sandboxDir, 'OUTBOX.json'), 'utf8'));
+
+    it('writes the outbox and never starts a session', async () => {
+      const session = new FakeSession();
+      const out = await run(build(session), composed(), PIP);
+
+      expect(session.runs).toHaveLength(0);
+      expect(out.meter).toEqual({ costUsd: 0, turns: 0, routed: true });
+      expect(outbox()).toEqual({
+        channel: 'telegram',
+        messages: [{ to: '6783316106', body: 'A DARLE', name: 'Jose Dussaillant' }],
+      });
+    });
+
+    /** The whole point: what goes out is what was typed, to the character. */
+    it('sends the words unchanged', async () => {
+      await run(build(new FakeSession()), composed(), PIP);
+      expect(outbox().messages[0].body).toBe('A DARLE');
+    });
+
+    it('shows the message in RESULT.md, so review reads without opening a file', async () => {
+      await run(build(new FakeSession()), composed(), PIP);
+      expect(result()).toContain('A DARLE');
+      expect(result()).toContain('6783316106');
+    });
+
+    it('says why it needed no session', async () => {
+      await run(build(new FakeSession()), composed(), PIP);
+      expect(progress.join(' ')).toContain('composed without a session');
+    });
+
+    /**
+     * Nothing here sends. The outbox is written exactly as a run writes one,
+     * and approval remains the send (D-075) — this tier changes who composed
+     * it, not when it goes.
+     */
+    it('leaves the sending to approval', async () => {
+      const out = await run(build(new FakeSession()), composed(), PIP);
+      expect(out.summary).toContain('Ready to send');
+      expect(existsSync(path.join(sandboxDir, 'sent.json'))).toBe(false);
+    });
+
+    // A contract the composer cannot satisfy is a reason to pay for a run
+    // that can explain itself, not a reason to fail the job.
+    it('falls through to a session when the contract refuses', async () => {
+      const session = new FakeSession();
+      await run(
+        build(session),
+        job({
+          prompt: 'I need to send a Telegram to Pepo',
+          channel: 'telegram',
+          send: { to: 'Pepo — ', words: 'A DARLE' },
+        }),
+        PIP,
+      );
+      expect(session.runs).toHaveLength(1);
+      expect(progress.join(' ')).toContain('could not compose it');
+    });
+
+    it('stays a session when the desk holds only half of it', async () => {
+      const session = new FakeSession();
+      await run(build(session), job({ prompt: 'I need to send a Telegram to Pepo', channel: 'telegram' }), PIP);
+      expect(session.runs).toHaveLength(1);
+    });
+  });
+
   describe('work the router answers itself', () => {
     const recall = () => job({ prompt: 'what did we learn about the payment flow?' });
 

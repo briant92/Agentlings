@@ -72,7 +72,7 @@ export function ChannelAskCard({
         {questions.map((q) => (
           <div key={q.id} className="ask-fact">
             <label className="ask-fact-label" htmlFor={`ask-${q.id}`}>
-              {FACT_LABELS[q.id] ?? q.ask}
+              {q.label ?? FACT_LABELS[q.id] ?? q.ask}
             </label>
             {factInput(q, 'ask-fact-input')}
           </div>
@@ -82,7 +82,7 @@ export function ChannelAskCard({
       <>
         {questions.map((q) => (
           <div key={q.id} className="work-channel-opt">
-            <span className="work-channel-name">{FACT_LABELS[q.id] ?? q.ask}</span>
+            <span className="work-channel-name">{q.label ?? FACT_LABELS[q.id] ?? q.ask}</span>
             {factInput(q, 'work-q-text')}
           </div>
         ))}

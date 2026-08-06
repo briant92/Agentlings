@@ -91,6 +91,12 @@ export function WorkBar({
    *  the same sentence (confirming a near-miss re-plans, D-093) and dies
    *  with a new one, which is D-079's "a pick belongs to its card". */
   const plannedFor = useRef('');
+  // The two send answers re-plan as they are typed, because whether this job
+  // is free depends on them: with both in hand a bare send is composed in
+  // code, and the card has to say "Free" while the user is still deciding
+  // rather than after they have paid (D-097). Debounced like the sentence.
+  const sendTo = answers['send-to'] ?? '';
+  const sendSay = answers['send-say'] ?? '';
   useEffect(() => {
     const query = text.trim();
     if (!query) {
@@ -100,7 +106,11 @@ export function WorkBar({
     const timer = window.setTimeout(() => {
       void api<WorkPlan>(
         lvl(levelId, '/work/plan'),
-        postJson({ text: query, ...(channel ? { channel } : {}) }),
+        postJson({
+          text: query,
+          ...(channel ? { channel } : {}),
+          answers: { 'send-to': sendTo, 'send-say': sendSay },
+        }),
       )
         .then((next) => {
           setPlan(next);
@@ -111,7 +121,7 @@ export function WorkBar({
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId, channel]);
+  }, [text, levelId, channel, sendTo, sendSay]);
 
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];

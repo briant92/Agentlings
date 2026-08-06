@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MAX_OUTBOX_MESSAGES } from '@agentlings/shared';
-import { OUTBOX_FILE, readOutbox } from './outbox';
+import { OUTBOX_FILE, composeOutbox, readOutbox, splitRecipient } from './outbox';
 
 describe('readOutbox', () => {
   let dir: string;
@@ -154,5 +154,41 @@ describe('readOutbox', () => {
   it('refuses a body over the cap', () => {
     write(JSON.stringify({ channel: 'telegram', messages: [{ to: '1', body: 'x'.repeat(2001) }] }));
     expect(readOutbox(dir)?.error).toContain('over 2000');
+  });
+});
+
+/** The desk's own recipient field, split back into what the channel needs (D-097). */
+describe('splitRecipient', () => {
+  it('takes the address the picker wrote after the em-dash', () => {
+    expect(splitRecipient('Jose Dussaillant — 6783316106')).toEqual({
+      to: '6783316106',
+      name: 'Jose Dussaillant',
+    });
+  });
+
+  it('takes a pasted address whole, since nobody named it', () => {
+    expect(splitRecipient('6783316106')).toEqual({ to: '6783316106' });
+    expect(splitRecipient(' brian@example.com ')).toEqual({ to: 'brian@example.com' });
+  });
+});
+
+describe('composeOutbox', () => {
+  it('builds the same object a session would have written', () => {
+    const { outbox } = composeOutbox('telegram', 'Jose Dussaillant — 6783316106', 'A DARLE');
+    expect(outbox).toEqual({
+      channel: 'telegram',
+      messages: [{ to: '6783316106', body: 'A DARLE', name: 'Jose Dussaillant' }],
+    });
+  });
+
+  /**
+   * Held to the contract rather than trusted for being ours: the composer's
+   * inputs are user text, and an outbox built in code that skipped the checks
+   * would be a second, weaker contract for the same file.
+   */
+  it('is refused by the contract exactly as a session file would be', () => {
+    expect(composeOutbox('telegram', 'Pepo — ', 'A DARLE').error).toMatch(/"to"/);
+    expect(composeOutbox('telegram', '6783316106', '   ').error).toMatch(/"body"/);
+    expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(/over/);
   });
 });

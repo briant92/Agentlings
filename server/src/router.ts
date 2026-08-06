@@ -22,6 +22,8 @@ export type Decision =
   | { kind: 'oneshot'; approach: string; reason: string; recipeKey: string }
   /** Work compiled into a script; runs in code, for nothing. */
   | { kind: 'tool'; toolName: string; reason: string }
+  /** A send the desk holds whole — recipient and words both (D-097). */
+  | { kind: 'compose'; channel: string; to: string; words: string; reason: string }
   /** A full session, optionally started from a method that half-fits. */
   | { kind: 'agent'; approach?: string; recipeKey?: string };
 
@@ -234,6 +236,22 @@ export function decide(job: Job, context: RouterContext): Decision {
     return found
       ? { kind: 'agent', approach: found.recipe.approach, recipeKey: found.recipe.key }
       : { kind: 'agent' };
+  }
+
+  // Both facts of a send, already in hand, and words the desk promised to
+  // send as written. Composing them is copying two strings into a file — the
+  // clearest case in the product of work that never needed a model, and it
+  // sat in the paid tier because the desk asked for a gist instead of the
+  // message. Sending is still not happening here: this writes the outbox the
+  // session would have written, and approval remains the send (D-075, D-097).
+  if (job.send && job.channel) {
+    return {
+      kind: 'compose',
+      channel: job.channel,
+      to: job.send.to,
+      words: job.send.words,
+      reason: 'you wrote the message yourself',
+    };
   }
 
   // A question about what the crew already knows is answerable from the file

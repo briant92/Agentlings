@@ -44,7 +44,7 @@ import {
   setIdentity,
   writeSettings,
 } from './settings';
-import { clarificationLines, questionsFor } from './clarify';
+import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { channelShelf, detectChannelAsk, mentionsChannel } from './channel';
 import { secretValueProblem, storeSecret } from './env';
@@ -518,6 +518,25 @@ app.get('/api/settings', (c) =>
 app.get('/api/channels', (c) => c.json(channelShelf()));
 
 /**
+ * Every name this channel could be asked to send to, aliases included.
+ *
+ * The bare-send test needs them because a recipient is not a subject (D-097):
+ * "send a Telegram to Pepo" names a person, and without knowing that "Pepo"
+ * is a person it reads as a topic. Names come from the same roster the picker
+ * offers, so the two agree by construction — and a channel with nobody on it
+ * simply contributes none, which reads every send as content-bearing and is
+ * the old behaviour.
+ */
+function rosterNames(channel: string | undefined): string[] {
+  if (!channel) return [];
+  return readAudience(SANDBOX_ROOT, channel).flatMap((person) => [
+    person.name,
+    ...(person.username ? [person.username] : []),
+    ...(person.aliases ?? []),
+  ]);
+}
+
+/**
  * The channel's opted-in audience (D-092), refreshed on every read — this
  * GET is both the garage's "check for new people" and the picker's quiet
  * refresh, one call doing both by decision. Telegram's getUpdates retains
@@ -756,7 +775,17 @@ app.post('/api/levels/:lid/jobs', async (c) => {
 app.post('/api/levels/:lid/work/plan', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ text?: string; tools?: string[]; channel?: string }>();
+  const body = await c.req.json<{
+    text?: string;
+    tools?: string[];
+    channel?: string;
+    /**
+     * What the card has been filled in with so far. The desk re-plans as the
+     * user types, so the send facts arriving here are what let the quote flip
+     * to free the moment both are in hand (D-097).
+     */
+    answers?: Record<string, string>;
+  }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   // A near-miss the user confirmed (D-093): the client re-plans naming the
@@ -765,6 +794,20 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   const confirmed =
     typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
   const draft = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  // Derived at ask time from the catalog and Settings, so the same sentence
+  // gets a different card once a channel is connected (D-079).
+  const channelAsk = detectChannelAsk(
+    text,
+    readConnections(CONNECTIONS_FILE),
+    readSettings(SANDBOX_ROOT),
+    process.env,
+  );
+  // Settled before the quote now, because whether this is free depends on it:
+  // a send the desk holds whole is composed in code (D-097), and the card has
+  // to say so while the user is still deciding.
+  const askChannel = channelAsk?.channel ?? channelAsk?.asked ?? confirmed;
+  const names = rosterNames(askChannel);
+  const send = sendFacts(text, { channel: askChannel, names }, body.answers);
   // The quote decides whether asking is worth it at all, and the quote needs
   // the role the draft settles — so the questions are filled in last.
   const quote = quoteFor_(
@@ -774,14 +817,10 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     granted(body.tools),
     runnerRole(draft),
     rt.meta.repoPath || undefined,
-  );
-  // Derived at ask time from the catalog and Settings, so the same sentence
-  // gets a different card once a channel is connected (D-079).
-  const channelAsk = detectChannelAsk(
-    text,
-    readConnections(CONNECTIONS_FILE),
-    readSettings(SANDBOX_ROOT),
-    process.env,
+    false,
+    undefined,
+    send ?? undefined,
+    askChannel,
   );
   return c.json({
     ...draft,
@@ -792,7 +831,8 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     questions: questionsFor(text, {
       hasRepo: !!rt.meta.repoPath,
       tier: quote.tier,
-      channel: channelAsk?.channel ?? channelAsk?.asked ?? confirmed,
+      channel: askChannel,
+      names,
     }),
     ...(channelAsk ? { channelAsk } : {}),
     // The near-miss itself, when no ask fired: a channel word with no send
@@ -876,14 +916,6 @@ app.post('/api/levels/:lid/work', async (c) => {
   // will run it — is shared with the other way in, so the two cannot drift.
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
   const tools = granted(body.tools);
-  const quote = quoteFor_(
-    QUOTE_CTX,
-    rt.dir,
-    text,
-    tools,
-    runnerRole(plan),
-    rt.meta.repoPath || undefined,
-  );
   // The channel a job sends on is server-settled: the caller's pick counts
   // only if the channel actually exists, and with no pick the detected ask's
   // own channel rides — so typing "remind them on telegram" and pressing
@@ -904,6 +936,23 @@ app.post('/api/levels/:lid/work', async (c) => {
       : channelAsk?.channel && CHANNELS[channelAsk.channel]
         ? channelAsk.channel
         : undefined;
+  // Read from the same sentence and the same answers the card was quoted on,
+  // through the one function both ways in share — a desk that promised free
+  // and a queue that then billed a session would be the worst of both (D-097).
+  const names = rosterNames(channel ?? channelAsk?.asked);
+  const send = sendFacts(text, { channel, names }, body.answers);
+  const quote = quoteFor_(
+    QUOTE_CTX,
+    rt.dir,
+    text,
+    tools,
+    runnerRole(plan),
+    rt.meta.repoPath || undefined,
+    false,
+    undefined,
+    send ?? undefined,
+    channel,
+  );
   const job = rt.queue.add(
     queuedJobSpec({
       title: plan.title,
@@ -924,11 +973,13 @@ app.post('/api/levels/:lid/work', async (c) => {
           hasRepo: !!rt.meta.repoPath,
           tier: quote.tier,
           channel: channel ?? channelAsk?.asked,
+          names,
         },
         body.answers,
       ),
       attachments,
       channel,
+      ...(send ? { send } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.

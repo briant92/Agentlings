@@ -62,6 +62,15 @@ export function quoteFor_(
    * bill, the exact shape D-027 and D-049 each closed once (D-074).
    */
   continues?: string,
+  /**
+   * The send the desk already holds, when it holds one (D-097). Carried for
+   * the same reason `continues` is: without it the probe cannot see the tier
+   * the run is about to take, and the card would quote a session for work
+   * that is about to be composed in code and cost nothing — a bill arriving
+   * where a promise of free belonged, which is D-049's mismatch inverted.
+   */
+  send?: { to: string; words: string },
+  channel?: string,
 ): Quote {
   const probe: Job = {
     id: '',
@@ -73,6 +82,7 @@ export function quoteFor_(
     ...(repoPath ? { repoPath } : {}),
     ...(tools?.length ? { tools } : {}),
     ...(continues ? { continues } : {}),
+    ...(send && channel ? { send, channel } : {}),
   };
   const decision: Decision = noRouter
     ? { kind: 'agent' }
@@ -94,7 +104,10 @@ export function quoteFor_(
         capabilities: ctx.surfaceFor(probe, role),
       });
   const tier: Tier =
-    decision.kind === 'answer' || decision.kind === 'fetch' || decision.kind === 'search'
+    decision.kind === 'answer' ||
+    decision.kind === 'fetch' ||
+    decision.kind === 'search' ||
+    decision.kind === 'compose'
       ? 'routed'
       : decision.kind === 'tool'
         ? 'tool'
@@ -131,7 +144,9 @@ export function quoteFor_(
       ? 'Free — just reading the pages you named'
       : decision.kind === 'search'
         ? 'Free — just looking for pages'
-        : undefined;
+        : decision.kind === 'compose'
+          ? 'Free — nothing to work out'
+          : undefined;
 
   return quoteFor(tier, jobClass, ledger, {
     // Only a recipe key is this exact job; a role is a kind of work. `quoteFor`

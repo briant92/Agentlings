@@ -391,6 +391,17 @@ export interface Job {
    */
   channel?: string;
   /**
+   * A send the desk already holds whole (D-097): the recipient and the words
+   * themselves, from a sentence that named no message for a run to write.
+   *
+   * Only ever set when the desk asked for the words *as written* rather than
+   * roughly, which is what makes composing deterministic — there is nothing
+   * left to decide, so the outbox is built in code and the job never reaches
+   * a session. Absent on every send that has something to work out, and those
+   * behave exactly as before.
+   */
+  send?: { to: string; words: string };
+  /**
    * A channel the prompt mentioned that the job never carried (D-093) —
    * stamped at queue time so the review can say plainly that approving
    * sends nothing, with the reply path as the way out.
@@ -854,6 +865,13 @@ export interface ClarifyQuestion {
   ask: string;
   /** Why it is being asked, when that is not obvious. */
   hint?: string;
+  /**
+   * The field's own short name, when the question decides it rather than the
+   * client. "Say" and "Words" are different promises about what happens to
+   * what you type, so the label has to come from whoever chose the wording
+   * or the two can disagree (D-097).
+   */
+  label?: string;
   /** Suggested answers; `answer` is what the session is actually told. */
   options: { label: string; answer: string }[];
   /** The user may type something instead of picking. */

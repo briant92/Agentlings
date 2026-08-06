@@ -98,6 +98,37 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   };
 }
 
+/**
+ * The desk's recipient field split back into an address and a display name.
+ *
+ * `RecipientPicker` writes "Name — id" when someone is picked off the roster
+ * and the bare address when one is pasted, so those are the two shapes this
+ * has to read — and the em-dash is the picker's own separator, not a guess.
+ * A name with no address behind it never reaches here: the Start arrest
+ * refuses a To the channel's contract cannot reach (D-091).
+ */
+export function splitRecipient(value: string): { to: string; name?: string } {
+  const at = value.indexOf('—');
+  if (at === -1) return { to: value.trim() };
+  const name = value.slice(0, at).trim();
+  const to = value.slice(at + 1).trim();
+  return { to, ...(name ? { name } : {}) };
+}
+
+/**
+ * The outbox a job the desk already holds whole (D-097) — one recipient, the
+ * user's own words, nothing decided. Returns the contract's own error rather
+ * than throwing, because the caller's fallback is a session and a refusal
+ * here has to be able to say why.
+ */
+export function composeOutbox(channel: string, recipient: string, words: string): OutboxRead {
+  const { to, name } = splitRecipient(recipient);
+  return checkOutbox({
+    channel,
+    messages: [{ to, body: words, ...(name ? { name } : {}) }],
+  });
+}
+
 /** The template block, when the outbox carries one — Meta's own shapes. */
 function checkTemplate(raw: unknown): { template?: OutboxTemplate; error?: string } {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -125,6 +156,19 @@ export function readOutbox(dir: string): OutboxRead | null {
   } catch {
     return { error: 'not valid JSON' };
   }
+  return checkOutbox(parsed);
+}
+
+/**
+ * The contract itself, over an already-parsed value.
+ *
+ * Split out from `readOutbox` so the deterministic composer (D-097) is held
+ * to exactly the same contract as a session's own file — the caps, the
+ * one-message-per-recipient rule, the fields that survive parsing. An outbox
+ * built in code and an outbox written by a model must be the same object or
+ * review and replay are looking at two different things.
+ */
+export function checkOutbox(parsed: unknown): OutboxRead {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { error: 'not an object with "channel" and "messages"' };
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clarificationLines, questionsFor } from './clarify';
+import { bareSend, clarificationLines, draftingAsk, questionsFor, sendFacts } from './clarify';
 
 const REPO = { hasRepo: true, tier: 'session' as const };
 const NO_REPO = { hasRepo: false, tier: 'session' as const };
@@ -249,5 +249,107 @@ describe('clarificationLines', () => {
     });
     expect(lines[0]).toContain('the retry loop');
     expect(lines[lines.length - 1]).toContain('clearest cases');
+  });
+});
+
+/**
+ * The bare send (D-097). A sentence that names no message has none anywhere,
+ * so the desk asks for the words themselves rather than a gist — and the
+ * test is what is *left* after the send words, the channel words and the
+ * people this channel knows, because a subject test cannot work: "on
+ * Telegram" and "with a summary" are the same preposition.
+ */
+describe('telling a bare send from one that carries content', () => {
+  const NAMES = ['Brian Thornton', 'Jose Dussaillant', 'Jose Dussaillant (Pepo)'];
+  const SEND = { hasRepo: false, tier: 'session' as const, channel: 'telegram', names: NAMES };
+  const say = (text: string) => questionsFor(text, SEND).find((q) => q.id === 'send-say');
+
+  it('asks for the words when the sentence names no message', () => {
+    for (const text of [
+      'I need to send a Telegram to Pepo',
+      'Send a message to Pepo on Telegram',
+      'shoot Pepo a telegram',
+    ]) {
+      expect(bareSend(text, NAMES), text).toBe(true);
+      expect(say(text)?.ask, text).toBe('What should the message say?');
+      expect(say(text)?.label, text).toBe('Words');
+      expect(say(text)?.hint, text).toContain('as written');
+    }
+  });
+
+  it('keeps the rough direction when there is something to write', () => {
+    for (const text of [
+      'Send Pepo the current Warzone meta summary on Telegram.',
+      'Send me a Telegram with the latest Call of Duty: Warzone meta',
+      'Text Pepo about dinner on Telegram',
+      'Email Brian the Q3 numbers',
+    ]) {
+      expect(bareSend(text, NAMES), text).toBe(false);
+      expect(say(text)?.ask, text).toBe('What should it say, roughly?');
+      expect(say(text)?.label, text).toBe('Say');
+    }
+  });
+
+  /**
+   * The channel is an address, not a subject — this is the case that kills a
+   * subject-preposition test, since "on Telegram" supplies the very evidence
+   * such a test looks for.
+   */
+  it('does not read the channel word as the message', () => {
+    expect(bareSend('Send a message to Pepo on Telegram', NAMES)).toBe(true);
+  });
+
+  /** A recipient is not a subject either — but only a known one can be told apart. */
+  it('reads an unknown recipient as content, which is the old wording', () => {
+    expect(bareSend('Send a telegram to Marcelo', NAMES)).toBe(false);
+    expect(bareSend('Send a telegram to Marcelo', [...NAMES, 'Marcelo Rios'])).toBe(true);
+  });
+
+  it('asks nothing extra when no channel is in play', () => {
+    expect(questionsFor('I need to send a Telegram to Pepo', NO_REPO)).toEqual([]);
+  });
+});
+
+describe('the send the desk can compose without a session', () => {
+  const NAMES = ['Jose Dussaillant (Pepo)'];
+  const ctx = { channel: 'telegram', names: NAMES };
+  const BARE = 'I need to send a Telegram to Pepo';
+  const answers = { 'send-to': 'Jose Dussaillant — 6783316106', 'send-say': 'A DARLE' };
+
+  it('holds both facts of a bare send', () => {
+    expect(sendFacts(BARE, ctx, answers)).toEqual({
+      to: 'Jose Dussaillant — 6783316106',
+      words: 'A DARLE',
+    });
+  });
+
+  it('refuses when there is a message to write', () => {
+    expect(sendFacts('Text Pepo about dinner on Telegram', ctx, answers)).toBeNull();
+  });
+
+  it('refuses on a missing fact, since half a send composes nothing', () => {
+    expect(sendFacts(BARE, ctx, { 'send-to': answers['send-to'] })).toBeNull();
+    expect(sendFacts(BARE, ctx, { 'send-say': 'A DARLE' })).toBeNull();
+    expect(sendFacts(BARE, ctx, { ...answers, 'send-say': '   ' })).toBeNull();
+  });
+
+  it('refuses without a channel, which is what makes it a send at all', () => {
+    expect(sendFacts(BARE, { names: NAMES }, answers)).toBeNull();
+  });
+
+  /**
+   * The hint's own escape hatch, matched as a fixed opening rather than a
+   * fuzzy read of intent — D-093 refused fuzzy verb matching on the way in
+   * and this is the same judgement on the way out.
+   */
+  it('hands it back to a session when the user asks for a draft', () => {
+    expect(sendFacts(BARE, ctx, { ...answers, 'send-say': 'write it out: tell him I am late' })).toBeNull();
+    expect(draftingAsk('write it out: tell him I am late')).toBe('tell him I am late');
+  });
+
+  it('leaves words that merely contain the phrase alone', () => {
+    const said = 'tell him to write it out before Friday';
+    expect(draftingAsk(said)).toBeNull();
+    expect(sendFacts(BARE, ctx, { ...answers, 'send-say': said })?.words).toBe(said);
   });
 });

@@ -114,6 +114,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-102 — 2026-08-06 — The folder is picked in the OS's own dialog, served by the server that has the folders](#d-102--2026-08-06--the-folder-is-picked-in-the-oss-own-dialog-served-by-the-server-that-has-the-folders)
 - [D-103 — 2026-08-06 — The recurrence timer: a sentence queued again on its cadence, through the same door](#d-103--2026-08-06--the-recurrence-timer-a-sentence-queued-again-on-its-cadence-through-the-same-door)
 - [D-104 — 2026-08-06 — The acting surface finished: Slack, calendar events and GitHub comments, one outbox](#d-104--2026-08-06--the-acting-surface-finished-slack-calendar-events-and-github-comments-one-outbox)
+- [D-105 — 2026-08-06 — Composite work: split where the user said "then", each step its own job](#d-105--2026-08-06--composite-work-split-where-the-user-said-then-each-step-its-own-job)
 
 ## By theme
 
@@ -313,6 +314,11 @@ entry updates one file rather than two.
   in is quoted like every other, with downtime collapsing to a single
   catch-up firing: D-103, the first row ticked off the 2026-08-06 capability
   review's `GAPS.md`
+- **Composite work** — sentences split where the user said "then", each step
+  an ordinary job with its own recipe key, tier and quote, files flowing
+  forward as the next step's input/ and a failed step halting the chain:
+  D-105, the review's G3 — with open-ended goal decomposition deliberately
+  still parked in M6
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -6040,3 +6046,68 @@ live-fired: no SLACK_BOT_TOKEN exists yet, and the first event and
 first comment wait for real use — each will land as an ordinary
 reviewed outbox, and standing approval (D-082) composes unchanged for
 all three.
+
+## D-105 — 2026-08-06 — Composite work: split where the user said "then", each step its own job
+
+G3 of the capability review's list (`GAPS.md`), reopened by Brian the same
+day G1 and G2 shipped. The row itself said "reopen when a real job wants a
+second stage" — the demand evidence is the engine's own economics: tiers
+are per job, so a composite sentence falls through to a full session even
+when its parts are each free. "Summarise the expenses CSV, then telegram
+Brian the total" is a compiled tool and a cheap send wearing a 50c
+session's clothes, and splitting is what lets the ladder apply to the
+parts.
+
+**The design fork that mattered: steps are ordinary jobs, not
+continuations.** A continuation would carry the sandbox forward for free,
+but D-074's rules would then bind — the router refuses every shortcut to
+mid-flight work, so every step after the first would be a paid session,
+killing the point. Instead a delivered step's files ride into the next
+step's `input/` exactly as attachments do, and each step keeps its own
+prompt as its recipe key, its own tier, its own quote through the same
+`queueSentence` glue as every way in. Recurring pipelines therefore
+converge per step — a step that lands three times is a compile candidate
+like any other job — and the attachment rule keeps every step's answers
+honestly unbankable.
+
+**The split is governed by the router's own rule: never guess.**
+- Only explicit sequence markers split — ", then", "; then", ". Then",
+  "and then" — and nothing else; "and" alone never does.
+- A conditional lead before the first marker refuses whole: "if the tests
+  pass, then commit" is one instruction, not two. After the first marker a
+  conditional belongs to its step and splits fine.
+- A torn-off fragment refuses whole ("…and then some"), as does anything
+  past MAX_STEPS = 3 — beyond that the box has become a script.
+- The desk shows the split before Start — "runs as 2 steps", each step
+  quoted on its own sentence — with **run as one job** one click away. A
+  wrong split is visible, never silent, and the choice belongs to its
+  sentence like a channel pick.
+
+**No waiting status, for the fifth time.** The next step does not exist
+until the previous one delivers: the chain rides the job (`Job.steps` +
+`Job.step`), and the completion hook — the same seam that runs the
+close-out and the standing-approval auto-send — queues the next step as a
+fresh job with the forwarded files, the position on its card, and "queued
+by step N's delivery" on its terminal line. A failed step halts the chain
+with the reason in the feed; a partial one forwards, because the statuses
+classify delivery (D-041) and partial delivered. The previous step's
+RESULT.md travels under the alias `input/previous-step.md` — the handover
+its own D-063 brief already wrote — and the step brief names what rode,
+what stayed behind (the attachment caps bind, and say so), and that later
+steps run as their own jobs.
+
+**What composes for free.** A scheduled composite sentence splits at fire
+time, because the split lives inside the glue; a redone step keeps its
+tail, because `redoJobSpec` names the fields; a step that is a pure send
+under a standing approval still auto-sends. And what stays parked is
+named: open-ended goal decomposition — the app inventing steps the user
+never wrote — is M6's question and remains there.
+
+**Evidence.** 14 new tests: the splits made and refused (the conditional
+guard, the fragment guard, the cap), the forwarding filter (paperwork,
+outbox and patch never ride; the caps report what stayed), the step brief,
+and both spec builders carrying the chain. 1,226 server + 115 web green,
+typecheck clean. Mutations after committing: recorded below once run. Not
+yet live-fired — the first real chain waits for the dev server restart,
+and the natural first customer is exactly the expenses-then-telegram shape
+the tool tier already serves half of for nothing.

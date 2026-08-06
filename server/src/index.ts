@@ -46,6 +46,7 @@ import {
   setPaused,
   validCadence,
 } from './schedules';
+import { pickForwards, splitSteps, stepBrief } from './steps';
 import { capabilityTokens, compileBlockers } from './capability';
 import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import { describe, missingSecrets, readConnections } from './connections';
@@ -326,6 +327,10 @@ function makeLevel(dir: string): LevelRuntime {
       // The one path that sends without review, gated hard (D-082). Fire and
       // forget: a send must never block the finish bookkeeping around it.
       void autoSendIfApproved(dir, queue, eventLog, meta.id, job);
+      // A delivered step queues the next through the same glue; a failed
+      // one halts the chain with the reason in the feed (D-105).
+      const chainRuntime = levels.get(meta.id);
+      if (chainRuntime) queueNextStep(chainRuntime, job);
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
       if (runtime) {
@@ -800,9 +805,38 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
      * to free the moment both are in hand (D-097).
      */
     answers?: Record<string, string>;
+    /** The user chose "run as one job" — plan it unsplit (D-105). */
+    single?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
+  // The split Start will queue (D-105), previewed like every other plan
+  // fact — each step quoted on its own sentence, because per-step tiers
+  // are the point of splitting at all.
+  const split = body.single === true ? null : splitSteps(text);
+  const stepPlans = split
+    ? split.map((sentence) => {
+        const stepDraft = planWork(
+          matcher(),
+          registry.list(),
+          rt.sim.agentlings,
+          rt.meta.repoPath,
+          sentence,
+        );
+        return {
+          sentence,
+          title: stepDraft.title,
+          quote: quoteFor_(
+            QUOTE_CTX,
+            rt.dir,
+            sentence,
+            granted(body.tools),
+            runnerRole(stepDraft),
+            rt.meta.repoPath || undefined,
+          ),
+        };
+      })
+    : null;
   // A near-miss the user confirmed (D-093): the client re-plans naming the
   // channel, so the send questions come from the server like any other —
   // honoured only for channels that exist, like every pick.
@@ -840,6 +874,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   return c.json({
     ...draft,
     quote,
+    ...(stepPlans ? { steps: stepPlans } : {}),
     // A detected send asks its facts even when the ask fell to a fork — the
     // asked name stands in for the channel so the hint has something to say,
     // and a confirmed near-miss (D-093) counts like a detection.
@@ -910,7 +945,7 @@ function decodeAttachments(
  */
 function queueSentence(
   rt: LevelRuntime,
-  text: string,
+  fullText: string,
   opts: {
     tools?: string[];
     channel?: string;
@@ -918,8 +953,30 @@ function queueSentence(
     attachments?: { name: string; data: Buffer }[];
     /** How this job came to exist, said on the queued event's line. */
     note?: string;
+    /** The chain, when the caller is the chain itself (D-105). */
+    steps?: string[];
+    step?: { n: number; of: number };
+    /** Standing instructions for the session, rides Job.brief. */
+    brief?: string;
+    /** The user chose "run as one job" — the split is skipped. */
+    noSplit?: boolean;
   } = {},
 ): Job {
+  // The split happens inside the glue (D-105), so every way in composes:
+  // a scheduled composite sentence splits at fire time exactly as a typed
+  // one splits at Start. A chain-queued step arrives with its chain already
+  // decided and is never re-split.
+  let text = fullText;
+  let steps = opts.steps;
+  let step = opts.step;
+  if (!opts.noSplit && steps === undefined && step === undefined) {
+    const split = splitSteps(fullText);
+    if (split) {
+      text = split[0];
+      steps = split.slice(1);
+      step = { n: 1, of: split.length };
+    }
+  }
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
   const tools = granted(opts.tools);
   const requestedChannel = opts.channel;
@@ -981,6 +1038,9 @@ function queueSentence(
       attachments: opts.attachments ?? [],
       channel,
       ...(send ? { send } : {}),
+      ...(opts.brief ? { brief: opts.brief } : {}),
+      ...(steps?.length ? { steps } : {}),
+      ...(step ? { step } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.
@@ -1003,6 +1063,71 @@ function queueSentence(
   return job;
 }
 
+/**
+ * A delivered step queues the next one (D-105) — through the same glue as
+ * every way in, as an ordinary job whose input/ holds this step's output.
+ * A failed step halts the chain with the reason in the feed; there is no
+ * waiting job anywhere, because the next step does not exist until here.
+ */
+function queueNextStep(rt: LevelRuntime, job: Job): void {
+  if (!job.steps?.length || !job.step) return;
+  const n = job.step.n + 1;
+  const of = job.step.of;
+  if (job.status === 'failed') {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `step ${n} of ${of} not queued — step ${job.step.n} delivered nothing`,
+    });
+    return;
+  }
+  const dir = rt.queue.sandboxDir(job.id);
+  const { take, leftBehind } = pickForwards(outputNames(dir));
+  const attachments: { name: string; data: Buffer }[] = [];
+  const oversize: string[] = [];
+  // The report travels under an alias so it cannot collide with the next
+  // step's own RESULT.md, and it rides first — it is the handover.
+  const report = path.join(dir, 'RESULT.md');
+  if (existsSync(report)) {
+    const data = readFileSync(report);
+    if (data.length <= MAX_ATTACHMENT_BYTES) {
+      attachments.push({ name: 'previous-step.md', data });
+    }
+  }
+  for (const name of take) {
+    const data = readFileSync(path.join(dir, name));
+    if (data.length > MAX_ATTACHMENT_BYTES) {
+      oversize.push(name);
+      continue;
+    }
+    attachments.push({ name, data });
+  }
+  try {
+    queueSentence(rt, job.steps[0], {
+      attachments,
+      steps: job.steps.slice(1),
+      step: { n, of },
+      brief: stepBrief({
+        previousPrompt: job.prompt,
+        n,
+        of,
+        forwarded: attachments.filter((a) => a.name !== 'previous-step.md').map((a) => a.name),
+        leftBehind: [...leftBehind, ...oversize],
+        hadReport: attachments.some((a) => a.name === 'previous-step.md'),
+      }),
+      note: `step ${n} of ${of} — queued by step ${job.step.n}'s delivery`,
+    });
+  } catch (err) {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `step ${n} of ${of} could not queue — ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
+}
+
 app.post('/api/levels/:lid/work', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
@@ -1014,6 +1139,8 @@ app.post('/api/levels/:lid/work', async (c) => {
     files?: { name?: string; data?: string }[];
     /** The channel picked on the ask-card, when there was one (D-079). */
     channel?: string;
+    /** The user chose "run as one job" on the steps row (D-105). */
+    single?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -1042,6 +1169,7 @@ app.post('/api/levels/:lid/work', async (c) => {
     channel: typeof body.channel === 'string' ? body.channel : undefined,
     answers: body.answers,
     attachments,
+    ...(body.single === true ? { noSplit: true } : {}),
   });
   return c.json(job, 201);
 });

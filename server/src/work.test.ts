@@ -431,3 +431,45 @@ describe('redoJobSpec', () => {
     expect(redoJobSpec(job(), [], 0, undefined).quotedUsd).toBeUndefined();
   });
 });
+
+/**
+ * The chain rides the specs (D-105) — named fields, because a spread past
+ * this builder is exactly how a field went missing three times in one day
+ * (D-097).
+ */
+describe('steps ride the specs (D-105)', () => {
+  const team = crew(['Pip', 'mason', 'idle']);
+  const plan = planWork(index, ROLES, team, undefined, 'summarise the expenses csv');
+  const quote: Quote = {
+    tier: 'session',
+    ceilingUsd: 0.5,
+    samples: 3,
+    certainty: 'high',
+    wording: 'about 50c',
+  };
+
+  it('queuedJobSpec carries the remaining steps and the position', () => {
+    const spec = queuedJobSpec({
+      title: 'T',
+      prompt: 'summarise the expenses csv',
+      plan,
+      quote,
+      steps: ['telegram Brian the total'],
+      step: { n: 1, of: 2 },
+    });
+    expect(spec.steps).toEqual(['telegram Brian the total']);
+    expect(spec.step).toEqual({ n: 1, of: 2 });
+  });
+
+  it('redoJobSpec keeps the chain — redoing a step must not orphan its tail', () => {
+    const previous = {
+      title: 'T',
+      prompt: 'p q',
+      steps: ['write it up properly'],
+      step: { n: 1, of: 2 },
+    } as unknown as Job;
+    const spec = redoJobSpec(previous, [], 0.5, 'mason');
+    expect(spec.steps).toEqual(['write it up properly']);
+    expect(spec.step).toEqual({ n: 1, of: 2 });
+  });
+});

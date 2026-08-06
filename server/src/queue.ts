@@ -36,6 +36,10 @@ export interface NewJobSpec {
   send?: { to: string; words: string };
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
+  /** The sentences still to run after this one (D-105). */
+  steps?: string[];
+  /** Which step this job is, for the cards. */
+  step?: { n: number; of: number };
 }
 
 export function jobsFile(sandboxRoot: string): string {
@@ -156,6 +160,8 @@ export class JobQueue {
       ...(spec.channel ? { channel: spec.channel } : {}),
       ...(spec.send ? { send: spec.send } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
+      ...(spec.steps?.length ? { steps: spec.steps } : {}),
+      ...(spec.step ? { step: spec.step } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

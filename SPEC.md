@@ -23,7 +23,7 @@ runs longer than a sentence belongs there, not here.
 | Platform | Web UI in the browser + local Node server |
 | Agent brains | Hybrid: deterministic sim for world behavior; LLM only for real job execution |
 | Jobs (v1) | Coding tasks against local repositories |
-| Goal shape | Independent jobs in a queue (decomposition/pipelines later) |
+| Goal shape | Independent jobs in a queue; explicit "then" sequences split into steps since M5.14 (D-105) — open-ended decomposition still later |
 | World | Literal side-view 2D world (stations, exit); hazards later |
 | Outputs | Per-job sandbox + in-app review; promote what you keep |
 
@@ -156,6 +156,10 @@ the loop runs end to end without one.
   calendar cadence, per level, fired by a server sweep through the same glue
   `/work` uses so a scheduled job is quoted like a hand-queued one. Downtime
   collapses to a single catch-up firing; pause never builds a backlog.
+- `steps.ts` — composite work (D-105): the split where the user said "then",
+  what a delivered step forwards into the next step's input/, and the step
+  brief. Each step is an ordinary job — its own recipe key, tier and quote —
+  and a failed step halts the chain.
 - `clarify.ts` — the questions worth asking before any money moves. Local and
   deterministic like the matcher, never on free work, never more than three,
   and never required: Start must always work.
@@ -374,6 +378,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.11 connections that send → D-075–D-077, D-097
 - M5.12 the recurrence timer → D-103
 - M5.13 the acting surface finished → D-104
+- M5.14 composite work → D-105
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
@@ -903,9 +908,22 @@ tried, measured and rejected is in `DECISIONS.md`:
     channel's own verbs count only beside its word — so "add it to my
     calendar" is heard while "create a test for the telegram module" stays
     a coding sentence.
+  - **M5.14 — composite work (built).** D-105. A sentence splits where the
+    user said "then" — explicit markers only, a conditional lead refuses,
+    at most three steps — shown at the desk with each step quoted on its
+    own sentence and "run as one job" one click away. Each step is an
+    ordinary job (own recipe key, own tier, own quote, through the same
+    glue every way in shares); a delivered step's files ride into the next
+    step's input/ with its report as previous-step.md, and a failed step
+    halts the chain with the reason in the feed. The next step never exists
+    before the previous delivers — no waiting status, again. Scheduled
+    composite sentences split at fire time; open-ended goal decomposition
+    stays parked in M6.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
-  (paused queues), goal decomposition, job pipelines.
+  (paused queues), goal decomposition — the open-ended kind, where the app
+  invents steps the user never wrote. Job pipelines left this list in
+  M5.14.
 
 ## Non-goals (v1)
 

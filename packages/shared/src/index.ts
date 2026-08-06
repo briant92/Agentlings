@@ -448,6 +448,15 @@ export interface Job {
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
   /**
+   * Composite work (D-105): the sentences still to run after this one. A
+   * delivered step queues the next as its own ordinary job — its own recipe
+   * key, its own tier, its own quote — with this step's deliverables waiting
+   * in its input/. A failed step halts the chain with the reason in the feed.
+   */
+  steps?: string[];
+  /** Which step this job is, for the cards: 2 of 3. */
+  step?: { n: number; of: number };
+  /**
    * The channel this job sends on, when intake detected one (D-079). The
    * session is told the outbox contract for it and nothing else changes —
    * composing happens in the run, sending stays at approval (D-075).
@@ -949,6 +958,12 @@ export interface WorkPlan {
   role: string | null;
   /** Who will pick it up, once the sim gets to it. */
   agentling: { id: string; name: string; role: string } | null;
+  /**
+   * The split Start will queue (D-105), shown before anything runs like
+   * every other plan fact. Absent means one job; each step carries the
+   * quote its own sentence earns today.
+   */
+  steps?: { sentence: string; title: string; quote: Quote }[];
   /** True when nobody in this level's crew holds the matched role. */
   noOneHasRole: boolean;
   confidence: number;

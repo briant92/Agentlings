@@ -104,6 +104,12 @@ export function ReviewModal({
       <div className="modal review" onClick={(e) => e.stopPropagation()}>
         <div className="m-head">
           <span className={`badge ${job.status}`}>{job.status}</span>
+          {/* Which step of its sequence this was (D-105). */}
+          {job.step && (
+            <span className="badge">
+              step {job.step.n} of {job.step.of}
+            </span>
+          )}
           <span className="m-title">{job.title}</span>
           <button onClick={onClose}>✕</button>
         </div>

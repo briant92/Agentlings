@@ -75,6 +75,8 @@ export function WorkBar({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   /** Files dropped on the box, read once and sent with the job that uses them. */
   const [files, setFiles] = useState<Attached[]>([]);
+  /** "Run as one job" — the escape from a split the user didn't mean (D-105). */
+  const [single, setSingle] = useState(false);
   /** Repeat this sentence on a cadence (D-103). 'off' queues once, as ever. */
   const [repeatKind, setRepeatKind] = useState<'off' | 'daily' | 'weekly' | 'monthly'>('off');
   const [repeatDow, setRepeatDow] = useState(1);
@@ -116,19 +118,24 @@ export function WorkBar({
         postJson({
           text: query,
           ...(channel ? { channel } : {}),
+          ...(single ? { single: true } : {}),
           answers: { 'send-to': sendTo, 'send-say': sendSay },
         }),
       )
         .then((next) => {
           setPlan(next);
-          if (plannedFor.current !== query) setChannel(null);
+          if (plannedFor.current !== query) {
+            setChannel(null);
+            // A one-job choice belongs to its sentence, like a channel pick.
+            setSingle(false);
+          }
           plannedFor.current = query;
           setArmed(false);
         })
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId, channel, sendTo, sendSay]);
+  }, [text, levelId, channel, sendTo, sendSay, single]);
 
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
@@ -231,6 +238,7 @@ export function WorkBar({
           // Only an explicit pick rides; with none the server settles the
           // channel itself from the same detection the card came from.
           ...(channel ? { channel } : {}),
+          ...(single ? { single: true } : {}),
         }),
       );
       // The schedule stores what Start carried — the sentence verbatim (the
@@ -254,6 +262,7 @@ export function WorkBar({
       setAnswers({});
       setFiles([]);
       setRepeatKind('off');
+      setSingle(false);
       setAskingRepo(false);
       setRepoPath('');
     } catch (err) {
@@ -411,6 +420,37 @@ export function WorkBar({
           ) : (
             <span className="dim">Nobody works here yet — hire someone first.</span>
           )}
+        </p>
+      )}
+
+      {/* Steps (D-105): the split Start will queue, shown before anything
+          runs — each step quoted on its own sentence, with "run as one job"
+          one click away because a wrong split must be visible, never
+          silent. */}
+      {plan?.steps && !askingRepo && (
+        <p className="work-gaps work-steps">
+          <span className="dim">runs as {plan.steps.length} steps:</span>
+          {plan.steps.map((s, i) => (
+            <span key={s.sentence} className="work-step">
+              {i + 1}. {s.title}
+              <span className={s.quote.ceilingUsd === 0 ? ' quote-free' : ' quote-cost'}>
+                {' '}
+                {s.quote.wording}
+              </span>
+            </span>
+          ))}
+          <button className="work-link" onClick={() => setSingle(true)}>
+            run as one job
+          </button>
+        </p>
+      )}
+      {single && plan && !askingRepo && (
+        <p className="work-gaps work-steps">
+          <span className="dim">running as one job</span>
+          {' · '}
+          <button className="work-link" onClick={() => setSingle(false)}>
+            split into steps
+          </button>
         </p>
       )}
 

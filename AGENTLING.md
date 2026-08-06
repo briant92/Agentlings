@@ -1207,6 +1207,7 @@ untouched until you press Approve.
 | Constant | Value | Where | What it does |
 |---|---|---|---|
 | `MIN_CONFIDENCE` | 0.35 | `match.ts` | Below it the app says so instead of guessing |
+| `MAX_STEPS` | 3 | `steps.ts` | "Then"-steps one sentence may split into; past it the box is a script (D-105) |
 | `INTENT_WEIGHT` / `DOMAIN_WEIGHT` | 1.5 / 0.55 | `match.ts` | The verb decides the role, not the noun |
 | `MAX_QUESTIONS` | 3 | `clarify.ts` | Above this the box has become a form |
 | `MAX_ATTACHMENTS` | 5 | `shared` | Per job |
@@ -1248,8 +1249,11 @@ without an API key.
   unchanged reviews, locked to the approved recipient set. A scheduled
   send holding both is the loop closed whole — it queues itself and sends
   itself, audited — and everything else runs only when you queue it.
-- **Not a pipeline.** Jobs are independent. Decomposition and pipelines are
-  parked in M6.
+- **Not a planner.** A sentence splits into steps only where *you* wrote
+  "then" (D-105) — shown before Start, at most three, each step an ordinary
+  job whose delivery queues the next with its files. The app never invents
+  steps you did not write; that open-ended decomposition stays parked in
+  M6.
 - **Not a chat.** A reply is a new job that carries the previous sandbox
   forward; there is no live conversation with a running session.
 - **Not shared.** No multi-user, no auth, no hosting — localhost only.
@@ -1449,8 +1453,14 @@ list per channel (D-077; SPEC M5.11 has the slices):
 
 ### Product shape (M6)
 
-- [ ] **Goal decomposition** — one sentence becomes several jobs
-- [ ] **Job pipelines** — output of one feeds the next
+- [ ] **Goal decomposition** — one sentence becomes several jobs the app
+      invents. *Deliberately apart from the built kind: D-105 splits only
+      where the user wrote "then", and inventing steps is a different
+      trust question.*
+- [x] **Job pipelines** — output of one feeds the next: explicit "then"
+      steps, each an ordinary job with its own tier and quote, files
+      forwarded as the next step's input/, a failed step halting the
+      chain (D-105)
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

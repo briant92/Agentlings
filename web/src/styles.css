@@ -2660,6 +2660,10 @@ button.danger:hover {
 .work-repeat .work-q-text {
   min-width: 0;
 }
+/* The steps row (D-105): the split, one glance wide. */
+.work-steps .work-step {
+  margin-right: 10px;
+}
 .work-repeat-day {
   width: 3.6em;
 }

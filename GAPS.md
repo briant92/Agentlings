@@ -29,12 +29,19 @@ capability roadmap; this is the short list of what matters most, in order.
       contract, scoped claim verbs; sends still happen only at Approve.
       Deliberately remaining: opening a PR (promote-flow work, its §15 row
       stays open), and each channel's first live firing awaits real use.
-- [ ] **G3 — Composite work.** One sentence is one job; real problems
+- [x] **G3 — Composite work.** One sentence is one job; real problems
       decompose into research → draft → send. M6's decomposition and
       pipelines are the tracked shape, and `continues:` already carries a
       sandbox forward, so the primitive exists. Parked deliberately until
       the crew does more real work — reopen when a real job wants a second
       stage, not before.
+      **Done 2026-08-06 — D-105** (reopened by Brian; the demand was the
+      engine's own economics — tiers are per job, so a composite sentence
+      wore a session's price while its parts were each free). Explicit
+      "then" splits, each step an ordinary job, files forward as input/,
+      failed steps halt. Deliberately remaining: open-ended goal
+      decomposition stays parked in M6 — inventing steps is a different
+      trust question.
 - [ ] **G4 — A data control plane.** §11 is honest about what does not
       exist: no retention policy, no redaction, no audit of what a session
       *fetched*, and the sandbox is an instruction rather than a jail.

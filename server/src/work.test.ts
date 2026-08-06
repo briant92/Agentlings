@@ -230,6 +230,26 @@ describe('queuedJobSpec', () => {
     expect(spec.quotedUsd).toBeUndefined();
   });
 
+  /**
+   * The field this function does not name does not exist, however correct
+   * every other layer is. `send` was added to the type, the route, the router
+   * and the executor, and jobs still reached the queue without it — because
+   * spreading it into this call slips past excess-property checking, so
+   * nothing complained anywhere. Two live sessions paid to compose a message
+   * the desk was already holding before it was noticed (D-097).
+   */
+  it('carries the send the desk already holds', () => {
+    const spec = queuedJobSpec({
+      title: 'Telegram to Brian',
+      prompt: 'I need to send a Telegram to Brian',
+      plan: planFor('I need to send a Telegram to Brian'),
+      quote: quote(0),
+      channel: 'telegram',
+      send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
+    });
+    expect(spec.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
+  });
+
   it('settles the role rather than leaving it to whoever is free', () => {
     const spec = queuedJobSpec({
       title: 'Write it up',

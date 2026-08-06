@@ -23,6 +23,25 @@ describe('JobQueue', () => {
     rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
   );
 
+  /**
+   * The second builder that constructs a job field by field, and the second
+   * one to drop `send` in silence (D-097). Both are pinned now, because the
+   * layers between a route and a job are exactly where a change complete
+   * everywhere else reaches nothing — and the router cannot compose what the
+   * queue never stored.
+   */
+  it('keeps the send the desk handed it', () => {
+    const job = queue.add({
+      title: 'Telegram to Brian',
+      prompt: 'I need to send a Telegram to Brian',
+      channel: 'telegram',
+      send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
+    });
+    expect(job.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
+    // And survives the round trip to disk, since the run reads it back.
+    expect(new JobQueue(root).get(job.id)?.send).toEqual(job.send);
+  });
+
   it('runs a job through its lifecycle', async () => {
     const job = queue.add({ title: 'Test job', prompt: 'do the thing' });
     expect(job.status).toBe('queued');

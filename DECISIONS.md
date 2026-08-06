@@ -6107,7 +6107,11 @@ never wrote — is M6's question and remains there.
 guard, the fragment guard, the cap), the forwarding filter (paperwork,
 outbox and patch never ride; the caps report what stayed), the step brief,
 and both spec builders carrying the chain. 1,226 server + 115 web green,
-typecheck clean. Mutations after committing: recorded below once run. Not
-yet live-fired — the first real chain waits for the dev server restart,
-and the natural first customer is exactly the expenses-then-telegram shape
-the tool tier already serves half of for nothing.
+typecheck clean. Mutated after committing (D-021's rule): dropping the
+conditional guard killed exactly its test, disarming the fragment guard
+killed exactly its test, and letting paperwork through the forwarding
+filter killed exactly the filter's — three mutations, three kills, no
+survivors, file restored from the commit. Not yet live-fired — the first
+real chain waits for the dev server restart, and the natural first
+customer is exactly the expenses-then-telegram shape the tool tier
+already serves half of for nothing.

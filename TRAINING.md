@@ -7,9 +7,13 @@ schedule, and **priced twice before anything runs**: the app's own quote
 predicted actual cost. Fill the Actuals column as runs land and compare —
 "predict, then measure" is the house method, applied to the curriculum itself.
 
-`FINDINGS.md` is the review this comes from; F3 (the leash's own value) and
-F4 (the tool tier's demand) are measured *by* this programme rather than
-before it.
+It began as the answer to a 2026-08-04 architecture review, whose checklist
+lived in `FINDINGS.md`: F3 (the leash's own value) and F4 (the tool tier's
+demand) were measured *by* this programme rather than before it. Every row of
+that review is settled — D-073, D-074, D-095, D-096, D-097, D-098, plus F3's
+measurements below — so the file was retired on 2026-08-06 by its own rule
+("a working list, not a record"), and what it still carried is **What's open**
+at the foot of this one.
 
 ## What the outside evidence says, in four lines
 
@@ -265,3 +269,51 @@ the real figures with `npm run ledger:report` after each wave.
 - **Every wave** feeds the D-073 check: lesson files should hold one telling
   of each fact however many runs land, and the close-out's `known` decline
   gets its first live outings.
+
+## What's open
+
+Inherited from `FINDINGS.md` when it was retired (2026-08-06). Its findings
+are all settled and live in `DECISIONS.md`; these are the open *jobs* that had
+collected on its board, and they sit here because this is where the evidence
+each one rests on already is.
+
+1. **The Warzone recipe is mis-credited.** "I need to send a Telegram to Pepo"
+   matched `send pepo the current warzone meta summary on telegram.` by
+   *similarity* and credited it with a 3-turn completion — work its own
+   siblings measured at 14–15. It is leash-eligible on that number, so the next
+   real run of that sentence gets 5 turns and is cut; D-095's un-learn then
+   retires the leash by itself, making the cost one wasted run rather than a
+   loop. The question underneath it is the one worth an entry before anyone
+   touches a counter: **should a similarity match credit `completedInTurns` at
+   all, or only an exact one?**
+2. **The doors, and the libraries.** T4·4 proved D-044's refusal live and for
+   nothing — *"that method used browser and github and search, and a compiled
+   tool is plain node with no network"* — which is the evidence this decision
+   was waiting for. It refuses correctly today. Whether a compiled tool should
+   ever be *granted* the doors (`fetch`, `github`, `search`) rather than
+   refused for needing them is now answerable, and unanswered. Note what makes
+   it live: the gate judges the surface a method was **learned with**, not what
+   it used, so **narrowing connections at the desk is what makes a compile
+   reachable at all** — T6 compiled only because it was queued naming `web`.
+3. **Standing approval has never fired.** The last built-but-unproven piece of
+   M5.11: it needs one send sentence approved unchanged three times, and
+   nothing has earned it. Not a training job, but the only way to prove it is
+   to run one.
+4. **T5 in September**, on its real monthly cadence — not before. **Wave 5**
+   needs Brian to pick a real documents folder.
+5. **Two measured gaps, deliberately unbuilt.** The quote is blind to
+   attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
+   per-call floor here against the pooled class rate). Both have ledger rows
+   behind them; neither is worth code before more traffic.
+6. **Two ledger blind spots, recorded rather than fixed** (both in D-096).
+   `tool-candidates.jsonl` lands a run late, because the candidate check reads
+   the recipe as loaded at run *start* — the UI's list is one run behind the
+   promote route's own bar. And **a compile that produces a working tool is
+   filed `outcome: failed` and charged $0**, because it hit the turn cap
+   holding two finished scripts: right by D-012, and it means any "compile
+   success rate" read off the ledger says 0% while the tool it built is live.
+
+Deliberately **not** here, so nobody reopens them: the quote ceiling pinned at
+the $2.00 clamp (D-072), the compile turn cap (D-025), the compile rate split
+(D-029), Google Custom Search (D-054), browser acting tools (D-034/D-035), and
+the tool-surface gate (D-050).

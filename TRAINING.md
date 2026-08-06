@@ -277,15 +277,16 @@ are all settled and live in `DECISIONS.md`; these are the open *jobs* that had
 collected on its board, and they sit here because this is where the evidence
 each one rests on already is.
 
-1. **The Warzone recipe is mis-credited.** "I need to send a Telegram to Pepo"
-   matched `send pepo the current warzone meta summary on telegram.` by
-   *similarity* and credited it with a 3-turn completion — work its own
-   siblings measured at 14–15. It is leash-eligible on that number, so the next
-   real run of that sentence gets 5 turns and is cut; D-095's un-learn then
-   retires the leash by itself, making the cost one wasted run rather than a
-   loop. The question underneath it is the one worth an entry before anyone
-   touches a counter: **should a similarity match credit `completedInTurns` at
-   all, or only an exact one?**
+1. ~~**The Warzone recipe is mis-credited.**~~ **Done 2026-08-06 — D-099.**
+   The question underneath it turned out to have one answer: a run that only
+   *resembles* a recipe credits usage and nothing else, which is the rule a
+   continuation already lived under (D-074). Sweeping every credit ever made
+   found **five** resembling credits across four recipes rather than the one
+   that was noticed; three were repaired by identification and the fourth had
+   never earned counters at all. Live: the Warzone recipe reads `hits: 1`,
+   still matches, still lends its method, and the real sentence now plans as
+   `session` where it would have been `oneshot`. **Nothing left to do here —
+   and no wasted run to pay for.**
 2. **The doors, and the libraries.** T4·4 proved D-044's refusal live and for
    nothing — *"that method used browser and github and search, and a compiled
    tool is plain node with no network"* — which is the evidence this decision

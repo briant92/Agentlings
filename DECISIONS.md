@@ -108,6 +108,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-096 — 2026-08-05 — The first tool earned end to end, and what the ledger says about the run that built it](#d-096--2026-08-05--the-first-tool-earned-end-to-end-and-what-the-ledger-says-about-the-run-that-built-it)
 - [D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing](#d-097--2026-08-05--the-desk-asks-for-the-words-and-a-send-it-already-holds-costs-nothing)
 - [D-098 — 2026-08-06 — A run's counters land on what is on disk, not on the picture it started from](#d-098--2026-08-06--a-runs-counters-land-on-what-is-on-disk-not-on-the-picture-it-started-from)
+- [D-099 — 2026-08-06 — A run that only resembles a recipe credits usage, and nothing else](#d-099--2026-08-06--a-run-that-only-resembles-a-recipe-credits-usage-and-nothing-else)
 
 ## By theme
 
@@ -202,7 +203,10 @@ entry updates one file rather than two.
   then **finished**, on the fifth run, which settled that it was never too big;
   and the completion promptly armed the next failure, since fitting a 33-turn
   budget was about to license a five-turn leash: D-068, the third reading of a
-  gate as licensing something it never verified — and D-098, where the counters
+  gate as licensing something it never verified — and D-099, where the counters
+  those gates read were being credited by runs that merely *resembled* the job,
+  so a three-turn send armed a five-turn leash on fifteen turns of research —
+  and D-098, where the counters
   those gates read stopped being written from a picture taken before the run
   began, so a job finishing inside another's window no longer erases its
   increments — and D-095, the fourth, where
@@ -5618,3 +5622,70 @@ anyway and destroyed the lot. That is D-021's own hard-won rule, the one
 written into `PROJECT.md` as "mutation-test after committing", walked into
 by chaining the restore to a command that could fail. Redone from context,
 committed *first*, and every restore since issued as its own command.
+
+## D-099 — 2026-08-06 — A run that only resembles a recipe credits usage, and nothing else
+
+A recipe is matched two ways: the same sentence, or a similar one. Both
+credited everything, and the second should never have. Similarity exists to
+lend a *method* to a related job — that is the whole point of scoring shapes
+rather than strings — and lending a method is not evidence about the job the
+key names.
+
+**What it did.** "I need to send a Telegram to Pepo" scored close enough to
+the recipe for "Send Pepo the current Warzone meta summary on Telegram" —
+they share *send*, *pepo*, *telegram* — ran three turns because it had two
+words to put in an outbox, and credited that recipe with a **3-turn
+completion**. The siblings that actually did the research measured 14 and 15.
+`canShortenLeash` then read the 3 and armed a five-turn leash, so the next
+real run of that sentence was going to be cut at the wall. D-095's un-learn
+would have retired the leash afterwards, which bounds the damage at one wasted
+run rather than a loop — but a run wasted for no reason at all.
+
+**The rule.** `successes`, `completions` and `completedInTurns` now require an
+exact match, and a cut leash may only raise the bound of the job it actually
+cut. `hits` still credits: the method genuinely was used, that is what `hits`
+means, and nothing reads it anyway. This is precisely the rule a continuation
+already lives under (D-074) — *usage only* — for precisely the same reason: it
+did not do this job. Each counter answers its own question and so needs its
+own evidence, which is D-065's principle applied to a third case.
+
+**The cost, stated rather than buried.** A repeat phrased differently no
+longer accumulates toward the leash or a compile; it banks its own recipe
+under its own key instead. `TRAINING.md` has said "run every sentence
+verbatim on repeats" since the programme began, and the engine now agrees with
+its own instructions rather than quietly rewarding near-misses. If that ever
+bites, the fix is a *deliberate* one — merging near-identical keys — not the
+accidental crediting it replaces.
+
+**The sweep, which found four rather than one.** Rather than repair the recipe
+that was noticed, every credit ever made was classified: the ledger records
+which `recipeKey` each run credited, and `jobs.json` records what that job
+actually asked, so exact and resembling can be told apart for all 52 credited
+rows. Five resembling credits across four recipes — the Warzone research
+recipe credited twice by neighbouring send jobs, the typo'd "Sen me a
+Telegram" recipe credited by its corrected twin, the Nike price recipe by a
+differently-worded ask, and the one that started this.
+
+Three were repaired and one needed nothing. `scripts/drop-nonexact-credits.ts`
+touches a recipe only when **every** credit it ever received was resembling —
+then the counters are known in their entirety to be other people's work and
+can be removed rather than adjusted. A recipe with any exact credit mixed in
+is left alone and says so on the way past: `completedInTurns` is a `min()`,
+and undoing one contribution to a minimum cannot be done by identification.
+This project does not backfill by guess (D-026, D-030, D-033, D-036). The
+fourth recipe was already correct because its resembling run had failed and
+delivered nothing, so it had never earned the counters in the first place.
+
+**Evidence.** 1123 + 109 green, typecheck clean. Six tests: a resembling run
+matches and credits `hits` alone, the same run against its own sentence
+credits all three counters, a resembling run cut on the leash does not raise
+the bound, and the resembling job still banks its own recipe. Mutations:
+dropping the exactness requirement fails 1, and ungating `leashCutFrom` failed
+**nothing** until the fifth test was written for it — the wiring untested
+again, for the fifth time in two days.
+
+Live, on the repaired record: the Warzone recipe reads `hits: 1` and nothing
+else, `findRecipe` still matches it exactly and still lends its approach, and
+`canShortenLeash` is now false. Planning the real sentence through the running
+server quotes **`tier: session`** where it would have been `oneshot` — the trap
+disarmed, and the method kept.

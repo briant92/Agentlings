@@ -264,12 +264,13 @@ off, so the app's fetch was gated and this second door was not.
 | Connection | Transport | Default | Status |
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
-| `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only |
+| `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only in a session; its one write is a reviewed comment, replayed at approval (D-104) |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
-| `google` — send Gmail as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client (D-080) |
+| `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
+| `slack` — send messages, at approval only | builtin | off, needs `SLACK_BOT_TOKEN` | Live; grants a session **no tools** — posts as your own bot (D-104) |
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -1367,13 +1368,27 @@ list per channel (D-077; SPEC M5.11 has the slices):
       loopback OAuth against the user's own client, one consent across
       Gmail, Calendar and Contacts, and a gmail channel that sends approved
       outboxes as the user (D-080)
-- [ ] **Create an event** — rides the consent already given; the calendar
-      outbox type is the remaining work
+- [x] **Create an event** — the calendar channel on the consent already
+      given (D-080 covered `calendar.events` from the first Connect): one
+      event per outbox, validated at the seam, invitations by Google's own
+      mail, reviewed and replayed like every send. The desk asks no
+      To/Words for it — a calendar job's facts are a title and a time, and
+      the brief carries the event contract instead (D-104)
 - [x] **WhatsApp Business** — template sends through Meta's Cloud API, the
       free-test-number on-ramp in the guide, and the audit taking the user's
       declared per-message rate or none (D-081)
-- [ ] **Slack** — the last of Tier 1 (D-077)
-- [ ] **Comment, open a PR** — GitHub write scopes as outbox entry types
+- [x] **Slack** — the last of Tier 1 (D-077), wired as telegram's shape
+      wholesale: paste-a-token, empty tool grant, and the Web API's
+      200-with-`{ok:false}` verdict read in the body rather than trusted
+      from the status (D-104)
+- [x] **Comment on an issue or PR** — the first write on the reading
+      connection: `to` is `owner/repo#123`, the session keeps its seven
+      read tools so reading the thread and drafting the comment is one
+      job, and the comment posts from the user's own account at approval
+      (D-104)
+- [ ] **Open a PR** — needs a pushed branch, which is promote-flow work
+      rather than an outbox entry; deliberately left, with the reason in
+      D-104
 - [x] **Standing approval** — three unchanged reviews earn the offer;
       auto-send is locked to the approved channel, recipients and template
       (subset allowed, one stranger blocks it, any change resets the count

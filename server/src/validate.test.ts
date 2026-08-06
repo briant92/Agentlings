@@ -103,3 +103,30 @@ describe('validateConnectionSecret', () => {
     expect(verdict.reason).toContain('no validator');
   });
 });
+
+describe('slack validation (D-104)', () => {
+  it('reads the verdict out of the 200 body and names bot and workspace', async () => {
+    const { fn, calls } = fakeFetch(() => ({
+      ok: true,
+      body: { ok: true, user: 'agentlings', team: 'Thornton HQ' },
+    }));
+    const verdict = await validateConnectionSecret('slack', { SLACK_BOT_TOKEN: 'xoxb-1' }, fn);
+    expect(verdict).toEqual({ ok: true, identity: 'agentlings in Thornton HQ' });
+    expect(calls[0].url).toBe('https://slack.com/api/auth.test');
+    expect(calls[0].headers.authorization).toBe('Bearer xoxb-1');
+  });
+
+  it('a bad token is a 200 too — the body says invalid_auth and the reason points at the xoxb token', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: { ok: false, error: 'invalid_auth' } }));
+    const verdict = await validateConnectionSecret('slack', { SLACK_BOT_TOKEN: 'bad' }, fn);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('xoxb');
+  });
+
+  it('a non-200 answer falls back to the status', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 503 }));
+    const verdict = await validateConnectionSecret('slack', { SLACK_BOT_TOKEN: 't' }, fn);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('503');
+  });
+});

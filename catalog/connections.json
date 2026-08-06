@@ -122,7 +122,7 @@
     {
       "name": "github",
       "label": "Read a code host",
-      "description": "Reads issues, pull requests, commits and files from GitHub. Reads only — it cannot open, comment, merge or push anything.",
+      "description": "Reads issues, pull requests, commits and files from GitHub. A run reads and cannot act — the one write is a comment you approved at review, replayed by the server like every send (D-104).",
       "transport": "builtin",
       "tools": [
         "list_pull_requests",
@@ -134,7 +134,7 @@
         "get_file_contents"
       ],
       "secrets": {
-        "GITHUB_TOKEN": "a GitHub token with read access to the repositories the crew should see"
+        "GITHUB_TOKEN": "a GitHub token with read access to the repositories the crew should see — add Issues write access if you want approved comments to post"
       },
       "setup": [
         "Open github.com → Settings → Developer settings → Fine-grained personal access tokens",
@@ -202,7 +202,7 @@
       "name": "google",
       "sendsOnly": true,
       "label": "Send Gmail, as you",
-      "description": "Connects your Google account by OAuth and sends approved outbox mail from your own address. The crew gets no tools from it; calendar and contacts will ride the same consent later.",
+      "description": "Connects your Google account by OAuth. Sends approved outbox mail from your own address, and creates approved calendar events on your own calendar — both on the one consent. The crew gets no tools from it.",
       "transport": "builtin",
       "tools": [],
       "secrets": {
@@ -235,6 +235,24 @@
         "Copy the Phone number ID from the app's WhatsApp → API Setup page",
         "Create a message template and wait for Meta to approve it — business-initiated sends are templates only",
         "Paste the token and the phone number id here, then Check — one real call proves both"
+      ]
+    },
+    {
+      "name": "slack",
+      "sendsOnly": true,
+      "label": "Send Slack messages",
+      "description": "Posts messages as your own Slack bot when you approve a reviewed outbox. The crew gets no tools from it — sends happen at review, never inside a run.",
+      "transport": "builtin",
+      "tools": [],
+      "secrets": {
+        "SLACK_BOT_TOKEN": "the Bot User OAuth Token (xoxb-…) from your own Slack app — it can only post where the bot has been invited"
+      },
+      "setup": [
+        "Create a Slack app at api.slack.com/apps — From scratch, pick your workspace",
+        "Under OAuth & Permissions, add the bot scope chat:write (add chat:write.public to post in public channels without an invite)",
+        "Install the app to the workspace — it answers with a Bot User OAuth Token (xoxb-…)",
+        "Paste the token here, then Check — one real call says which bot and workspace it is",
+        "For private channels, /invite the bot in Slack first"
       ]
     }
   ]

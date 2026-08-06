@@ -204,3 +204,26 @@ describe('the search connection', () => {
     );
   });
 });
+
+/**
+ * Slack is the fourth sender (D-104) and holds telegram's whole shape: a
+ * paste-a-token connection that grants a session nothing and sends only at
+ * approval.
+ */
+describe('the slack connection sends only at approval', () => {
+  const slack = all.find((c) => c.name === 'slack');
+
+  it('is in the catalog and ships off, like everything credentialed', () => {
+    expect(slack).toBeDefined();
+    expect(slack?.defaultOn).not.toBe(true);
+  });
+
+  it('grants a session no tools at all', () => {
+    expect(slack?.tools).toEqual([]);
+    expect(slack?.sendsOnly).toBe(true);
+  });
+
+  it('declares the bot token it can never be live without', () => {
+    expect(Object.keys(slack?.secrets ?? {})).toEqual(['SLACK_BOT_TOKEN']);
+  });
+});

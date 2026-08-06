@@ -295,6 +295,12 @@ export interface OutboxMessage {
    * text as review shows it.
    */
   params?: string[];
+  /**
+   * The calendar channel's event (D-104): `subject` is its title, `body` its
+   * description, `to` the calendar it lands on ("primary"). Refused on every
+   * other channel.
+   */
+  event?: OutboxEvent;
   body: string;
 }
 
@@ -340,6 +346,19 @@ export interface OutboxSent {
 export const MAX_OUTBOX_MESSAGES = 20;
 export const MAX_OUTBOX_TO_CHARS = 200;
 export const MAX_OUTBOX_BODY_CHARS = 2000;
+
+/**
+ * The calendar channel's event block (D-104): what a message describes when
+ * the channel creates an event instead of delivering words. Times are
+ * date-times as the user meant them — a bare local time gets the machine's
+ * own zone at send; an explicit offset rides through untouched.
+ */
+export interface OutboxEvent {
+  start: string;
+  end: string;
+  /** Email addresses, never invented — the same rule as every recipient. */
+  attendees?: string[];
+}
 
 /**
  * When a schedule fires: a calendar cadence in the machine's own local time

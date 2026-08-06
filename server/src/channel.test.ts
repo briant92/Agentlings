@@ -34,6 +34,20 @@ const whatsappBusiness: Connection = {
   tools: [],
   secrets: { WHATSAPP_TOKEN: 'why', WHATSAPP_PHONE_NUMBER_ID: 'why' },
 };
+const slackConn: Connection = {
+  name: 'slack',
+  label: 'Send Slack messages',
+  transport: 'builtin',
+  tools: [],
+  secrets: { SLACK_BOT_TOKEN: 'why' },
+};
+const githubConn: Connection = {
+  name: 'github',
+  label: 'Read a code host',
+  transport: 'builtin',
+  tools: ['list_issues'],
+  secrets: { GITHUB_TOKEN: 'why' },
+};
 const CONNECTED = { connections: { telegram: true } };
 const TOKEN = { TELEGRAM_BOT_TOKEN: 't' };
 
@@ -41,7 +55,13 @@ const ask = (
   prompt: string,
   settings: { connections?: Record<string, boolean> } = {},
   env: Record<string, string | undefined> = {},
-) => detectChannelAsk(prompt, [telegram, google, whatsappBusiness], settings, env);
+) =>
+  detectChannelAsk(
+    prompt,
+    [telegram, google, whatsappBusiness, slackConn, githubConn],
+    settings,
+    env,
+  );
 
 /**
  * Detection follows the router's rule: claim only what is unmistakably a
@@ -148,11 +168,11 @@ describe('detectChannelAsk — what the card says', () => {
   });
 
   it('a planned channel says roadmap and offers what works today', () => {
-    const got = ask('message the team on slack about the launch', CONNECTED, TOKEN);
-    expect(got?.asked).toBe('slack');
+    const got = ask('message the team on discord about the launch', CONNECTED, TOKEN);
+    expect(got?.asked).toBe('discord');
     expect(got?.state).toBe('planned');
     expect(got?.note).toContain('roadmap');
-    expect(got?.options.map((o) => o.channel)).toEqual(['telegram', 'slack']);
+    expect(got?.options.map((o) => o.channel)).toEqual(['telegram', 'discord']);
   });
 
   it('a never channel states its reason on the card', () => {
@@ -181,7 +201,9 @@ describe('mentionsChannel (D-093)', () => {
 describe('channelShelf', () => {
   it('serves the planned tier and the refusals with their reasons, labelled', () => {
     const shelf = channelShelf();
-    expect(shelf.planned.map((r) => r.channel)).toContain('slack');
+    expect(shelf.planned.map((r) => r.channel)).toContain('sms');
+    // Wired in D-104 — a channel must leave the planned shelf the day it works.
+    expect(shelf.planned.map((r) => r.channel)).not.toContain('slack');
     const whatsapp = shelf.never.find((r) => r.channel === 'whatsapp');
     expect(whatsapp?.label).toBe('WhatsApp');
     expect(whatsapp?.detail).toContain('no API');
@@ -193,7 +215,7 @@ describe('channelShelf', () => {
 
   it('never lists a wired channel on either shelf', () => {
     const shelf = channelShelf();
-    for (const wired of ['telegram', 'gmail', 'whatsapp-business']) {
+    for (const wired of ['telegram', 'gmail', 'whatsapp-business', 'slack', 'calendar', 'github']) {
       expect(shelf.planned.map((r) => r.channel)).not.toContain(wired);
       expect(shelf.never.map((r) => r.channel)).not.toContain(wired);
     }
@@ -231,7 +253,7 @@ describe('channelBrief', () => {
   });
 
   it('says nothing for a channel that does not exist', () => {
-    expect(channelBrief('slack')).toBeNull();
+    expect(channelBrief('sms')).toBeNull();
     expect(channelBrief('carrier-pigeon')).toBeNull();
   });
 
@@ -374,5 +396,87 @@ describe('briefForJob', () => {
     )!;
     expect(brief).toContain('A DARLE');
     expect(brief).toContain('the last thing sent on this channel');
+  });
+});
+
+/**
+ * The scoped claims (D-104): a channel's own verbs claim only beside its
+ * word, so the calendar can hear "add" and "book" without every coding
+ * sentence that says "create" becoming a send.
+ */
+describe('scoped claims — calendar and github', () => {
+  const GOOGLE_ENV = {
+    GOOGLE_OAUTH_CLIENT_ID: 'id',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'sec',
+    GOOGLE_OAUTH_REFRESH_TOKEN: 'rt',
+  };
+
+  it('calendar claims on its own verbs beside its word', () => {
+    expect(ask('add the dentist to my calendar thursday at 4pm')?.asked).toBe('calendar');
+    expect(ask('put the padel game on my calendar')?.asked).toBe('calendar');
+    expect(ask('book a table friday and add it to the calendar')?.asked).toBe('calendar');
+  });
+
+  it('the scoped verbs claim nothing away from their word', () => {
+    // The over-fire this design exists to refuse: an everyday coding verb
+    // beside an unrelated channel word must stay a mention, not a send.
+    expect(ask('create a test for the telegram module')).toBeNull();
+    expect(ask('add retries to the slack fetcher')).toBeNull();
+  });
+
+  it('a calendar word with no verb at all stays a question, not a claim', () => {
+    expect(ask('what is on my calendar this week')).toBeNull();
+    expect(mentionsChannel('what is on my calendar this week')?.channel).toBe('calendar');
+  });
+
+  it('calendar rides the google connection: ready exactly when google is', () => {
+    const ready = ask('add the dentist to my calendar', { connections: { google: true } }, GOOGLE_ENV);
+    expect(ready?.state).toBe('ready');
+    expect(ready?.channel).toBe('calendar');
+    expect(ask('add the dentist to my calendar')?.state).toBe('connectable');
+  });
+
+  it('github claims on "comment on", and the plural stays a read', () => {
+    const got = ask('comment on briant92/Agentlings#12 on github saying the census matches', {
+      connections: { github: true },
+    }, { GITHUB_TOKEN: 'g' });
+    expect(got?.asked).toBe('github');
+    expect(got?.state).toBe('ready');
+    expect(ask('read the comments on github issue 5')).toBeNull();
+    expect(mentionsChannel('read the comments on github issue 5')?.channel).toBe('github');
+  });
+
+  it('slack is wired now: ready with a token, connectable without', () => {
+    expect(
+      ask('message the team on slack about the launch', { connections: { slack: true } }, {
+        SLACK_BOT_TOKEN: 'xoxb',
+      })?.state,
+    ).toBe('ready');
+    expect(ask('message the team on slack about the launch')?.state).toBe('connectable');
+  });
+});
+
+describe('the three new briefs (D-104)', () => {
+  it('slack names the channel shape and the invite rule', () => {
+    const brief = channelBrief('slack')!;
+    expect(brief).toContain('#general');
+    expect(brief).toContain('private channel');
+    expect(brief).toContain('Do not invent channels');
+  });
+
+  it('calendar carries the event contract whole', () => {
+    const brief = channelBrief('calendar')!;
+    expect(brief).toContain('"event"');
+    expect(brief).toContain('primary');
+    expect(brief).toContain('One event per outbox');
+    expect(brief).toContain('never invent one');
+    expect(brief).toContain('2026-08-13T18:00:00');
+  });
+
+  it('github wants the reference shape and the user voice', () => {
+    const brief = channelBrief('github')!;
+    expect(brief).toContain('owner/repo#number');
+    expect(brief).toContain('Never invent a number');
+    expect(brief).toContain('their voice');
   });
 });

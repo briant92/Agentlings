@@ -13,6 +13,10 @@ const SHAPES: Record<string, { test: RegExp; wants: string }> = {
   telegram: { test: /\d/, wants: 'a chat id' },
   'whatsapp-business': { test: /\d/, wants: 'a number' },
   gmail: { test: /@/, wants: 'an email address' },
+  // One token, optional #/@ prefix — "Brian Thornton" and an email both fail,
+  // which is exactly what Slack's own API would refuse less legibly (D-104).
+  slack: { test: /^[#@]?[\w-]+$/, wants: 'a channel like #general or a member id' },
+  github: { test: /^[\w.-]+\/[\w.-]+#\d+$/, wants: 'an issue as owner/repo#123' },
 };
 
 export function recipientProblem(channel: string, to: string): string | null {

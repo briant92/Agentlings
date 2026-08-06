@@ -20,11 +20,15 @@ capability roadmap; this is the short list of what matters most, in order.
       managed in the backoffice, downtime collapsing to one catch-up firing.
       First live firing deliberately left to T5's September cadence, or any
       earlier weekly Brian sets.
-- [ ] **G2 — Finish the acting surface.** Slack (the last of Tier 1, D-077),
+- [x] **G2 — Finish the acting surface.** Slack (the last of Tier 1, D-077),
       the calendar-event outbox type (rides the Google consent already
       given, D-080), GitHub writes as outbox entries. All three ride the
       proven outbox-replayed-at-approval machinery — wiring, not decisions.
       Tracked as §15 rows.
+      **Done 2026-08-06 — D-104.** Three clients, one event block on the
+      contract, scoped claim verbs; sends still happen only at Approve.
+      Deliberately remaining: opening a PR (promote-flow work, its §15 row
+      stays open), and each channel's first live firing awaits real use.
 - [ ] **G3 — Composite work.** One sentence is one job; real problems
       decompose into research → draft → send. M6's decomposition and
       pipelines are the tracked shape, and `continues:` already carries a

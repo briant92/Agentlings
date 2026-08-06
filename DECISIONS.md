@@ -113,6 +113,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-101 — 2026-08-06 — Standing approval fired, and the desk arrests a send with no words](#d-101--2026-08-06--standing-approval-fired-and-the-desk-arrests-a-send-with-no-words)
 - [D-102 — 2026-08-06 — The folder is picked in the OS's own dialog, served by the server that has the folders](#d-102--2026-08-06--the-folder-is-picked-in-the-oss-own-dialog-served-by-the-server-that-has-the-folders)
 - [D-103 — 2026-08-06 — The recurrence timer: a sentence queued again on its cadence, through the same door](#d-103--2026-08-06--the-recurrence-timer-a-sentence-queued-again-on-its-cadence-through-the-same-door)
+- [D-104 — 2026-08-06 — The acting surface finished: Slack, calendar events and GitHub comments, one outbox](#d-104--2026-08-06--the-acting-surface-finished-slack-calendar-events-and-github-comments-one-outbox)
 
 ## By theme
 
@@ -301,7 +302,12 @@ entry updates one file rather than two.
   there: a ready channel renders no send card, so the Words fell to an
   optional-looking loose row, a skipped field queued a 26.8¢ session that
   could only block on "what to say", and Start now arrests "no message"
-  beside D-091's shape check
+  beside D-091's shape check; and D-104, the surface finished — Slack on
+  telegram's whole shape (the Web API's 200-with-ok:false verdict read in
+  the body), calendar events on D-080's already-given consent through the
+  contract's one event block, GitHub comments as the first write on the
+  reading connection, and scoped claim verbs that widen detection without
+  loosening it
 - **Recurrence** — the timer that queues a sentence again on its own cadence,
   fired by a server sweep through the same glue `/work` uses so the new way
   in is quoted like every other, with downtime collapsing to a single
@@ -5959,3 +5965,72 @@ running dev server belongs to the other session and two servers on one tree
 never happen, so the first live proof is deliberately T5's September firing
 — or any weekly Brian sets before then — with the sweep's call site being
 one call to the same glue every hand-queued job already exercises.
+
+## D-104 — 2026-08-06 — The acting surface finished: Slack, calendar events and GitHub comments, one outbox
+
+G2 of the capability review's list (`GAPS.md`), built on Brian's instruction
+the same day G1 shipped. Three additions and no new idea about *how* the app
+acts: a run writes OUTBOX.json, review shows it, **Approve is the send**
+(D-075). The whole build is three channel clients, one contract block and
+the detection to match — which is what "wiring, not decisions" was supposed
+to mean when G2 claimed it.
+
+**Slack** is telegram's shape wholesale: a `sendsOnly` connection with an
+empty tool grant, a pasted bot token validated by one real call
+(`auth.test`), replay through `chat.postMessage`, the audience roster
+growing from reviewed sends like every channel's. The one thing it taught:
+**Slack answers HTTP 200 with `{ok:false}`** — the body is the verdict, and
+reading `res.ok` alone would call every failure a success, the same trap as
+grading the exit code of `head` (D-096). The client and the validator both
+read the body, and a test pins each. Off the planned shelf the day it
+works, and the shelf test now asserts the leaving too.
+
+**Calendar events** ride the consent already given: D-080's one Connect
+covered `calendar.events` from the first day, so the channel's connection
+is `google` and no new credential exists anywhere. The contract grows its
+one new block — `event: {start, end, attendees?}`, with `subject` as the
+title — validated at the seam like everything a model writes: parseable
+date-times, the end after the start, attendees only as real addresses, and
+**one event per outbox**, because sends are idempotent *by recipient* and
+two events land on one calendar — an outbox that could double-book is
+refused whole rather than half-replayed. The block is refused on every
+other channel: a field that parses and silently does nothing is how a
+review card and a send end up describing different things. A bare local
+time gets the machine's own zone at send and an explicit offset rides
+untouched; attendees get Google's own invitation mail (`sendUpdates=all`).
+The desk deliberately asks no To/Words for a calendar job — its facts are
+a title and a time, and the send questions would be the desk talking past
+the user. The session's brief carries the event contract instead.
+
+**GitHub comments** are the first write on a connection that reads. `to`
+is the reference itself — `owner/repo#123` — so per-recipient idempotency
+means "posts once per thread"; the comment goes from the user's own
+account; and because `github` is not `sendsOnly`, the session keeps its
+seven read tools — "read the thread, then draft the comment" is one job.
+A 404 names both readings (no such issue, or a token that cannot write),
+because GitHub's own answer does not and the fixes differ. **Opening a PR
+is deliberately absent**: it needs a pushed branch, which is promote-flow
+work, not an outbox entry — the §15 row stays open and says exactly that.
+
+**Detection widened without loosening — the scoped claims.** "Add",
+"create" and "book" are everyday coding words; as global send verbs they
+would read "create a test for the telegram module" as a send. So a channel
+may declare verbs that claim **only beside its own word**: add / put /
+create / book / schedule / invite beside "calendar", and "comment on" —
+singular on purpose, so "read the commentS on github issue 5" stays a
+read — beside "github". Global verbs still claim everywhere, the near-miss
+question (D-093) covers bare mentions unchanged, and the tests pin the
+refused over-fires as firmly as the made claims.
+
+**Evidence.** 65 new tests across seven suites — the contract's event
+cases, all three clients (the ok:false trap, the timezone attach, the
+reference parse refused before any call), the scoped claims firing and
+staying quiet, the briefs, the hints, the validator, the catalog's slack
+block and the recipient shapes; 1,212 server + 115 web green, typecheck
+clean. Three pre-existing tests moved because the world did: slack left
+the planned shelf, stopped being the "no brief" example, and gained a
+recipient shape — each repointed at a channel that still holds the old
+role. Not yet live-fired: no SLACK_BOT_TOKEN exists yet, and the first
+event and first comment wait for real use — each will land as an ordinary
+reviewed outbox, and standing approval (D-082) composes unchanged for all
+three.

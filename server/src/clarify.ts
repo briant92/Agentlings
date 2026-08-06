@@ -81,6 +81,8 @@ const SEND_TO_HINTS: Record<string, string> = {
   gmail: 'A name and email address — no run may invent one.',
   telegram: 'A numeric chat id — each person taps Start on your bot once.',
   'whatsapp-business': 'A number with country code — no run may invent one.',
+  slack: 'A channel like #general, or a member id — the bot must be in private channels.',
+  github: 'The issue or PR as owner/repo#123 — no run may invent one.',
 };
 
 /** Free work has nothing to narrow: a routed answer and a tool both cost zero. */
@@ -188,7 +190,13 @@ export function questionsFor(
   // spend money asking for them — which a real 6¢ run did, and its whole
   // delivery was the question (D-087). Still never required: the arrest at
   // Start is the client's honesty, not a server gate.
-  if (channel) {
+  //
+  // The calendar channel is the exception (D-104): its facts are a title and
+  // a time, not a recipient and a message, and asking "who should this go
+  // to?" about a dentist appointment is the desk talking past the user. The
+  // sentence usually carries the when and what; the session's brief holds
+  // the event contract, and review is where the event is checked.
+  if (channel && channel !== 'calendar') {
     asked.push({
       id: 'send-to',
       ask: 'Who should this go to?',

@@ -58,7 +58,23 @@ const CHANNEL_WORDS: [RegExp, string][] = [
   [/\blinkedin\b/, 'linkedin'],
   [/\bwechat\b/, 'wechat'],
   [/\b(messenger|instagram)\b/, 'messenger'],
+  [/\bcalendar\b/, 'calendar'],
+  [/\bgithub\b/, 'github'],
 ];
+
+/**
+ * Verbs that claim only beside their own channel's word (D-104). "Create",
+ * "add" and "book" are everyday coding words — as global send verbs they
+ * would read "create a test for the telegram module" as a send — but next
+ * to "calendar" they are exactly how a person asks for an event. GitHub's
+ * are phrases, and singular on purpose: "comment on" claims while "read the
+ * comments on github issue 5" does not, because \b refuses the plural.
+ */
+const SCOPED_CLAIMS: Record<string, RegExp> = {
+  calendar:
+    /\b(add(?:s|ed|ing)?|put(?:s|ting)?|creat(?:e[sd]?|ing)|book(?:s|ed|ing)?|schedul(?:e[sd]?|ing)|invit(?:e[sd]?|ing))\b/,
+  github: /\b(comment on|repl(?:y|ies|ied|ying)\s+(?:to|on)|post(?:s|ed|ing)?\s+a\s+comment)\b/,
+};
 
 const LABELS: Record<string, string> = {
   telegram: 'Telegram',
@@ -66,6 +82,8 @@ const LABELS: Record<string, string> = {
   'whatsapp-business': 'WhatsApp Business',
   gmail: 'Gmail',
   slack: 'Slack',
+  calendar: 'Google Calendar',
+  github: 'GitHub',
   sms: 'SMS',
   discord: 'Discord',
   signal: 'Signal',
@@ -90,11 +108,24 @@ const WIRED_COPY: Record<string, { ready: string; connectable: string }> = {
     connectable:
       'Real WhatsApp — pre-approved templates, per-message pricing, arrives from a business number. The Meta walkthrough is in Settings.',
   },
+  slack: {
+    ready: 'Posts as your own bot — every message waits for your review',
+    connectable: 'Posts as your own bot in your workspace. Create the app and paste its token in Settings.',
+  },
+  calendar: {
+    ready: 'Creates the event on your own Google Calendar when you approve it',
+    connectable:
+      'Creates events on your own calendar. Connect Google in Settings — the one consent covers Gmail and Calendar.',
+  },
+  github: {
+    ready: 'Posts the comment from your own account when you approve it',
+    connectable:
+      'Posts comments as you, at approval only. Needs your GitHub token in Settings, with issue write access.',
+  },
 };
 
 /** Decided in D-077 and wired in later slices; the card says so plainly. */
 const PLANNED: Record<string, string> = {
-  slack: 'Posts in your workspace as your own bot — planned',
   sms: 'Reaches phones with no apps, ≈1¢ a message — planned',
   discord: 'Posts as a bot in your server — planned',
 };
@@ -215,7 +246,6 @@ export function detectChannelAsk(
   env: Record<string, string | undefined>,
 ): ChannelAsk | null {
   const p = prompt.toLowerCase();
-  if (!SEND_VERBS.test(p)) return null;
   let asked: string | null = null;
   let at = Infinity;
   for (const [re, channel] of CHANNEL_WORDS) {
@@ -226,6 +256,10 @@ export function detectChannelAsk(
     }
   }
   if (!asked) return null;
+  // The global send verbs claim for every channel; a channel's own scoped
+  // verbs claim only beside its word (D-104). Anything less is a mention,
+  // and mentions are D-093's question, never a claim.
+  if (!SEND_VERBS.test(p) && !SCOPED_CLAIMS[asked]?.test(p)) return null;
 
   const askedLabel = LABELS[asked] ?? asked;
   const own = optionFor(asked, connections, settings, env);
@@ -344,7 +378,13 @@ export function channelBrief(
       ? `{"channel":"gmail","messages":[{"to":"<email address>","name":"<who this is, shown at review>","subject":"<short subject>","body":"..."}]}`
       : channel === 'whatsapp-business'
         ? `{"channel":"whatsapp-business","template":{"name":"<approved template name>","language":"es"},"messages":[{"to":"<number with country code>","name":"<who this is, shown at review>","params":["<template parameter>","..."],"body":"<the message as it will read, for review>"}]}`
-        : `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`;
+        : channel === 'slack'
+          ? `{"channel":"slack","messages":[{"to":"#general or a member id","name":"<who this is, shown at review>","body":"..."}]}`
+          : channel === 'calendar'
+            ? `{"channel":"calendar","messages":[{"to":"primary","subject":"<the event title>","body":"<a short description, shown at review>","event":{"start":"2026-08-13T18:00:00","end":"2026-08-13T19:00:00","attendees":["ana@example.com"]}}]}`
+            : channel === 'github'
+              ? `{"channel":"github","messages":[{"to":"owner/repo#123","body":"<the comment, exactly as it will post — markdown is fine>"}]}`
+              : `{"channel":"${channel}","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"..."}]}`;
   return [
     '## Sending messages',
     `This job sends messages via ${LABELS[channel] ?? channel}. No tool sends anything — composing is your job; sending is not.`,
@@ -366,6 +406,24 @@ export function channelBrief(
       ? [
           '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',
           '- "params" are the template\'s body parameters, in order; "body" is the message as it will read, so the review shows real words. "to" is the number with country code. Do not invent numbers — report the missing ones in RESULT.md.',
+        ]
+      : []),
+    ...(channel === 'slack'
+      ? [
+          '- "to" is a channel like #general or a Slack member id. The bot must already be in a private channel to post there. Do not invent channels — report missing ones in RESULT.md.',
+        ]
+      : []),
+    ...(channel === 'calendar'
+      ? [
+          '- One event per outbox, exactly. "to" is the calendar — write "primary" unless the user named another. "subject" is the event title; "body" is a short description the review shows.',
+          '- "event.start" and "event.end" are date-times like 2026-08-13T18:00:00, written in the user\'s own local time exactly as they said it — never converted, and the end after the start.',
+          '- "attendees" are email addresses and invitations go out to them at approval. Only addresses the user gave or the known-recipients list carries — never invent one; leave attendees out and say so in RESULT.md instead.',
+        ]
+      : []),
+    ...(channel === 'github'
+      ? [
+          '- "to" is the issue or pull request as owner/repo#number — from the user\'s words or the thread you read. Never invent a number; report a missing one in RESULT.md.',
+          '- The comment posts from the user\'s own account, so write it in their voice, exactly as it should appear.',
         ]
       : []),
     // The user's own words (D-097). Before the desk learned to ask for them,

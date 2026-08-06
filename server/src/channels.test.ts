@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHANNELS, emailRaw, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
+import { CHANNELS, emailRaw, eventTime, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import type { Connection } from './connections';
 
 /** A fetch stand-in that records calls and answers from a script. */
@@ -321,5 +321,166 @@ describe('outboxRefusal', () => {
 
   it('is null when the connection is ready and on', () => {
     expect(outboxRefusal(outbox, [telegram], { connections: { telegram: true } }, TOKEN)).toBeNull();
+  });
+});
+
+/**
+ * Slack answers HTTP 200 with {ok:false} on refusals — the body is the
+ * verdict, and reading res.ok alone would grade the wrong thing (D-104,
+ * the same trap as the piped exit code in D-096).
+ */
+describe('the slack channel', () => {
+  it('posts channel and text with the bot token', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true, body: { ok: true } }));
+    await CHANNELS.slack.send(
+      { to: '#general', name: 'the team', body: 'launch is live' },
+      { env: { SLACK_BOT_TOKEN: 'xoxb-1' }, fetchFn: fn },
+    );
+    expect(calls[0].url).toBe('https://slack.com/api/chat.postMessage');
+    expect(calls[0].payload).toEqual({ channel: '#general', text: 'launch is live' });
+  });
+
+  it('reads the refusal out of a 200 body', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: { ok: false, error: 'channel_not_found' } }));
+    await expect(
+      CHANNELS.slack.send({ to: '#nope', body: 'x' }, { env: { SLACK_BOT_TOKEN: 't' }, fetchFn: fn }),
+    ).rejects.toThrow('channel_not_found');
+  });
+
+  it('refuses to run without its token', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: { ok: true } }));
+    await expect(
+      CHANNELS.slack.send({ to: '#g', body: 'x' }, { env: {}, fetchFn: fn }),
+    ).rejects.toThrow('SLACK_BOT_TOKEN');
+  });
+});
+
+describe('eventTime', () => {
+  it('passes an explicit offset through untouched', () => {
+    expect(eventTime('2026-08-13T18:00:00Z')).toEqual({ dateTime: '2026-08-13T18:00:00Z' });
+    expect(eventTime('2026-08-13T18:00:00-04:00')).toEqual({
+      dateTime: '2026-08-13T18:00:00-04:00',
+    });
+  });
+
+  it('gives a bare local time the machine own zone', () => {
+    const got = eventTime('2026-08-13T18:00:00');
+    expect(got.dateTime).toBe('2026-08-13T18:00:00');
+    expect(got.timeZone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+});
+
+describe('the calendar channel', () => {
+  const ENV = {
+    GOOGLE_OAUTH_CLIENT_ID: 'id',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'sec',
+    GOOGLE_OAUTH_REFRESH_TOKEN: 'rt',
+  };
+  const MESSAGE = {
+    to: 'primary',
+    subject: 'Dentist',
+    body: 'Cleaning, Dr. Soto',
+    event: {
+      start: '2026-08-13T16:00:00',
+      end: '2026-08-13T17:00:00',
+      attendees: ['ana@example.com'],
+    },
+  };
+
+  /** The token call's body is form-encoded, so store init raw and parse per assertion. */
+  function scripted(responses: { ok: boolean; status?: number; body?: unknown }[]) {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fn = (async (url: string, init?: RequestInit) => {
+      const res = responses[Math.min(calls.length, responses.length - 1)];
+      calls.push({ url, init });
+      return {
+        ok: res.ok,
+        status: res.status ?? (res.ok ? 200 : 500),
+        json: async () => res.body ?? {},
+      };
+    }) as unknown as typeof fetch;
+    return { fn, calls };
+  }
+
+  it('inserts the event on the named calendar, invitations riding', async () => {
+    const { fn, calls } = scripted([
+      { ok: true, body: { access_token: 'at', expires_in: 3600 } },
+      { ok: true, body: { id: 'evt' } },
+    ]);
+    await CHANNELS.calendar.send(MESSAGE, { env: ENV, fetchFn: fn });
+    expect(calls).toHaveLength(2);
+    expect(calls[1].url).toContain('/calendars/primary/events');
+    expect(calls[1].url).toContain('sendUpdates=all');
+    const payload = JSON.parse(String(calls[1].init?.body)) as Record<string, unknown>;
+    expect(payload.summary).toBe('Dentist');
+    expect(payload.description).toBe('Cleaning, Dr. Soto');
+    expect(payload.start).toEqual({
+      dateTime: '2026-08-13T16:00:00',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+    expect(payload.attendees).toEqual([{ email: 'ana@example.com' }]);
+  });
+
+  it('refuses a message with no event block', async () => {
+    const { fn } = scripted([{ ok: true, body: { access_token: 'at' } }]);
+    await expect(
+      CHANNELS.calendar.send({ to: 'primary', subject: 'x', body: 'y' }, { env: ENV, fetchFn: fn }),
+    ).rejects.toThrow('"event" block');
+  });
+
+  it('refuses to run without the Google connection', async () => {
+    const { fn } = scripted([{ ok: true }]);
+    await expect(CHANNELS.calendar.send(MESSAGE, { env: {}, fetchFn: fn })).rejects.toThrow(
+      'Google is not connected',
+    );
+  });
+
+  it('surfaces the Google refusal sentence', async () => {
+    const { fn } = scripted([
+      { ok: true, body: { access_token: 'at' } },
+      { ok: false, status: 403, body: { error: { message: 'Calendar usage limits exceeded.' } } },
+    ]);
+    await expect(CHANNELS.calendar.send(MESSAGE, { env: ENV, fetchFn: fn })).rejects.toThrow(
+      'Calendar usage limits exceeded.',
+    );
+  });
+});
+
+describe('the github comment channel', () => {
+  it('posts the comment to the issue the reference names', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true, body: { id: 1 } }));
+    await CHANNELS.github.send(
+      { to: 'briant92/Agentlings#12', body: 'LGTM.' },
+      { env: { GITHUB_TOKEN: 'gp' }, fetchFn: fn },
+    );
+    expect(calls[0].url).toBe(
+      'https://api.github.com/repos/briant92/Agentlings/issues/12/comments',
+    );
+    expect(calls[0].payload).toEqual({ body: 'LGTM.' });
+  });
+
+  it('refuses a reference that is not owner-repo-number, before any call', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true }));
+    await expect(
+      CHANNELS.github.send({ to: 'issue 12', body: 'x' }, { env: { GITHUB_TOKEN: 'g' }, fetchFn: fn }),
+    ).rejects.toThrow('owner/repo#123');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('a 404 names both readings — missing issue, or a token that cannot write', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 404, body: { message: 'Not Found' } }));
+    await expect(
+      CHANNELS.github.send(
+        { to: 'briant92/Agentlings#999', body: 'x' },
+        { env: { GITHUB_TOKEN: 'g' }, fetchFn: fn },
+      ),
+    ).rejects.toThrow('lacks write access');
+  });
+
+  it('refuses to run without its token', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true }));
+    await expect(
+      CHANNELS.github.send({ to: 'a/b#1', body: 'x' }, { env: {}, fetchFn: fn }),
+    ).rejects.toThrow('GITHUB_TOKEN');
   });
 });

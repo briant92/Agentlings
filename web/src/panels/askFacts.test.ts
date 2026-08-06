@@ -61,7 +61,8 @@ describe('recipientProblem (D-091)', () => {
   });
 
   it('a channel with no declared shape objects to nothing', () => {
-    expect(recipientProblem('slack', 'the team')).toBeNull();
+    // Slack held this role until D-104 gave it a shape; discord is still bare.
+    expect(recipientProblem('discord', 'the team')).toBeNull();
   });
 
   it('a long wrong value is quoted truncated, not in full', () => {
@@ -94,5 +95,20 @@ describe('missingWords — the contract’s other un-inventable fact (D-087)', (
   it('no say question asked, nothing to miss', () => {
     expect(missingWords([{ id: 'send-to' }], undefined)).toBe(false);
     expect(missingWords([], '')).toBe(false);
+  });
+});
+
+describe('recipientProblem — slack and github (D-104)', () => {
+  it('slack wants one token: a name with spaces and an email both arrest', () => {
+    expect(recipientProblem('slack', '#general')).toBeNull();
+    expect(recipientProblem('slack', 'C08ABCDEF')).toBeNull();
+    expect(recipientProblem('slack', 'Brian Thornton')).toContain('#general');
+    expect(recipientProblem('slack', 'me@example.com')).toContain('member id');
+  });
+
+  it('github wants the full reference', () => {
+    expect(recipientProblem('github', 'briant92/Agentlings#12')).toBeNull();
+    expect(recipientProblem('github', 'issue 12')).toContain('owner/repo#123');
+    expect(recipientProblem('github', 'Agentlings#12')).toContain('owner/repo#123');
   });
 });

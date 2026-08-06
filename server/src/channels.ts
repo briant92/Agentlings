@@ -187,10 +187,167 @@ const whatsappBusiness: ChannelClient = {
   },
 };
 
+/**
+ * Slack's Web API answers HTTP 200 with `{ok:false}` on refusals, so the
+ * body is the verdict — reading `res.ok` alone would call every failure a
+ * success, the same trap as grading the exit code of `head` (D-096). `to`
+ * is a channel like #general or a member id; the bot must be invited to a
+ * private channel before it can post there, and Slack's own error says so.
+ */
+const slack: ChannelClient = {
+  connection: 'slack',
+  async send(message, deps) {
+    const token = deps.env.SLACK_BOT_TOKEN;
+    if (!token) throw new Error('SLACK_BOT_TOKEN is not set');
+    const doFetch = deps.fetchFn ?? fetch;
+    const res = await doFetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify({ channel: message.to, text: message.body }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: string;
+    } | null;
+    if (!body?.ok) throw new Error(body?.error ?? 'Slack refused the message');
+  },
+};
+
+/**
+ * RFC3339 carries its own offset; a bare local time gets the machine's own
+ * zone — the user said "18:00" meaning their clock, and shipping it zoneless
+ * would let Google guess.
+ */
+export function eventTime(value: string): { dateTime: string; timeZone?: string } {
+  const hasOffset = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value);
+  return hasOffset
+    ? { dateTime: value }
+    : { dateTime: value, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+}
+
+/**
+ * Google Calendar, on the same consent Gmail rides (D-080 covered
+ * calendar.events from the first Connect). One event per outbox by contract;
+ * `to` is the calendar id — "primary" in practice — and attendees get
+ * Google's own invitation mail via sendUpdates.
+ */
+const calendar: ChannelClient = {
+  connection: 'google',
+  async send(message, deps) {
+    const clientId = deps.env.GOOGLE_OAUTH_CLIENT_ID;
+    const clientSecret = deps.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    const refreshToken = deps.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+    if (!clientId || !clientSecret || !refreshToken) {
+      throw new Error('Google is not connected');
+    }
+    if (!message.event) {
+      throw new Error('a calendar send needs its "event" block — this outbox carries none');
+    }
+    const doFetch = deps.fetchFn ?? fetch;
+    const access = await accessTokenFromRefresh({
+      clientId,
+      clientSecret,
+      refreshToken,
+      fetchFn: doFetch,
+    });
+    if ('error' in access) throw new Error(access.error);
+    const res = await doFetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(message.to)}/events?sendUpdates=all`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${access.token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          summary: message.subject,
+          ...(message.body ? { description: message.body } : {}),
+          start: eventTime(message.event.start),
+          end: eventTime(message.event.end),
+          ...(message.event.attendees?.length
+            ? { attendees: message.event.attendees.map((email) => ({ email })) }
+            : {}),
+        }),
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      },
+    );
+    if (!res.ok) {
+      let reason = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { error?: { message?: string } };
+        if (body?.error?.message) reason = body.error.message;
+      } catch {
+        // keep the status
+      }
+      throw new Error(reason);
+    }
+  },
+};
+
+const GITHUB_REF = /^([\w.-]+)\/([\w.-]+)#(\d+)$/;
+
+/**
+ * A comment on an issue or PR, posted from the user's own account at
+ * approval (D-104). `to` is the reference itself — owner/repo#123 — which
+ * is also what makes per-recipient idempotency mean "this comment posts
+ * once per thread". Reading stays the connection's seven tools; this is the
+ * first write, and it goes through review like every send. Opening a PR is
+ * deliberately not here: it needs a pushed branch, which is promote-flow
+ * work, not an outbox entry.
+ */
+const githubComment: ChannelClient = {
+  connection: 'github',
+  async send(message, deps) {
+    const token = deps.env.GITHUB_TOKEN;
+    if (!token) throw new Error('GITHUB_TOKEN is not set');
+    const ref = GITHUB_REF.exec(message.to);
+    if (!ref) throw new Error(`"${message.to}" is not an issue reference like owner/repo#123`);
+    const [, owner, repo, number] = ref;
+    const doFetch = deps.fetchFn ?? fetch;
+    const res = await doFetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`,
+      {
+        method: 'POST',
+        headers: {
+          accept: 'application/vnd.github+json',
+          'user-agent': 'agentlings',
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ body: message.body }),
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      },
+    );
+    if (!res.ok) {
+      let reason = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { message?: string };
+        if (body?.message) reason = body.message;
+      } catch {
+        // keep the status
+      }
+      // GitHub's 404 covers both "no such issue" and "the token cannot see
+      // or write here" — say so, because the fix differs and the API won't.
+      if (res.status === 404) {
+        reason = `${reason} — no such issue, or the token lacks write access to ${owner}/${repo}`;
+      }
+      throw new Error(reason);
+    }
+  },
+};
+
 export const CHANNELS: Record<string, ChannelClient> = {
   telegram,
   gmail,
   'whatsapp-business': whatsappBusiness,
+  slack,
+  calendar,
+  github: githubComment,
 };
 
 /**

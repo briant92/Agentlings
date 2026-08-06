@@ -10,6 +10,8 @@ const TILE: Record<string, { letter: string; fill: string }> = {
   sms: { letter: 'S', fill: '#c8102e' },
   discord: { letter: 'D', fill: '#5865f2' },
   github: { letter: 'GH', fill: '#24292f' },
+  slack: { letter: '#', fill: '#4a154b' },
+  calendar: { letter: '31', fill: '#4285f4' },
 };
 
 /** Plain names for the channels a job can carry, for client-side copy. */
@@ -17,6 +19,9 @@ export const CHANNEL_LABELS: Record<string, string> = {
   telegram: 'Telegram',
   gmail: 'Gmail',
   'whatsapp-business': 'WhatsApp Business',
+  slack: 'Slack',
+  calendar: 'Google Calendar',
+  github: 'GitHub',
 };
 
 export function ChannelLogo({ channel }: { channel: string }) {

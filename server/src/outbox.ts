@@ -8,6 +8,7 @@ import {
   MAX_OUTBOX_SUBJECT_CHARS,
   MAX_OUTBOX_TO_CHARS,
   type Outbox,
+  type OutboxEvent,
   type OutboxMessage,
   type OutboxTemplate,
 } from '@agentlings/shared';
@@ -31,15 +32,69 @@ export type OutboxRead =
   | { outbox: Outbox; error?: undefined }
   | { outbox?: undefined; error: string };
 
+const MAX_EVENT_ATTENDEES = 20;
+
+/**
+ * The event block, when a message carries one (D-104). Dates only have to
+ * parse and run forwards — the channel client decides the timezone story,
+ * because "when" is a send-time question and this is a parse-time gate.
+ */
+function checkEvent(raw: unknown, n: number): { event?: OutboxEvent; error?: string } {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return { error: `message ${n}: "event" must be an object with "start" and "end"` };
+  }
+  const { start, end, attendees } = raw as {
+    start?: unknown;
+    end?: unknown;
+    attendees?: unknown;
+  };
+  if (typeof start !== 'string' || Number.isNaN(Date.parse(start))) {
+    return {
+      error: `message ${n}: "event.start" must be a date-time like 2026-08-13T18:00:00`,
+    };
+  }
+  if (typeof end !== 'string' || Number.isNaN(Date.parse(end))) {
+    return { error: `message ${n}: "event.end" must be a date-time like 2026-08-13T19:00:00` };
+  }
+  if (Date.parse(end) <= Date.parse(start)) {
+    return { error: `message ${n}: the event ends before it starts` };
+  }
+  let cleanAttendees: string[] | undefined;
+  if (attendees !== undefined) {
+    if (!Array.isArray(attendees) || attendees.some((a) => typeof a !== 'string')) {
+      return { error: `message ${n}: "event.attendees" must be an array of email addresses` };
+    }
+    if (attendees.length > MAX_EVENT_ATTENDEES) {
+      return {
+        error: `message ${n}: ${attendees.length} attendees — the cap is ${MAX_EVENT_ATTENDEES}`,
+      };
+    }
+    for (const a of attendees as string[]) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.trim())) {
+        return { error: `message ${n}: "${a}" is not an email address` };
+      }
+    }
+    cleanAttendees = (attendees as string[]).map((a) => a.trim());
+  }
+  return {
+    event: {
+      start: start.trim(),
+      end: end.trim(),
+      ...(cleanAttendees && cleanAttendees.length > 0 ? { attendees: cleanAttendees } : {}),
+    },
+  };
+}
+
 function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error?: string } {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
-  const { to, name, subject, params, body } = raw as {
+  const { to, name, subject, params, event, body } = raw as {
     to?: unknown;
     name?: unknown;
     subject?: unknown;
     params?: unknown;
+    event?: unknown;
     body?: unknown;
   };
   if (typeof to !== 'string' || to.trim() === '') {
@@ -85,6 +140,12 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
     }
     cleanParams = (params as string[]).map((p) => p.trim());
   }
+  let cleanEvent: OutboxEvent | undefined;
+  if (event !== undefined) {
+    const checked = checkEvent(event, n);
+    if (checked.error) return { error: checked.error };
+    cleanEvent = checked.event;
+  }
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {
@@ -94,6 +155,7 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
       ...(name && name.trim() ? { name: name.trim() } : {}),
       ...(subject && subject.trim() ? { subject: subject.trim() } : {}),
       ...(cleanParams && cleanParams.length > 0 ? { params: cleanParams } : {}),
+      ...(cleanEvent ? { event: cleanEvent } : {}),
     },
   };
 }
@@ -211,9 +273,29 @@ export function checkOutbox(parsed: unknown): OutboxRead {
     seen.add(message!.to);
     out.push(message!);
   }
+  // The calendar channel's own rules (D-104): one event per outbox — sends
+  // are idempotent by recipient, and two events land on one calendar, so the
+  // outbox that could double-book is refused rather than half-replayed. The
+  // event block is likewise refused anywhere else, where no client reads it:
+  // a field that parses and then silently does nothing is how a review card
+  // and a send end up describing different things.
+  const channelName = channel.trim().toLowerCase();
+  if (channelName === 'calendar') {
+    if (out.length !== 1) {
+      return { error: 'the calendar channel takes exactly one event per outbox' };
+    }
+    if (!out[0].event) {
+      return { error: 'a calendar outbox needs an "event" block with "start" and "end"' };
+    }
+    if (!out[0].subject) {
+      return { error: 'a calendar event needs a "subject" — the event title' };
+    }
+  } else if (out.some((m) => m.event)) {
+    return { error: `only the calendar channel takes an "event" block, not "${channelName}"` };
+  }
   return {
     outbox: {
-      channel: channel.trim().toLowerCase(),
+      channel: channelName,
       ...(cleanTemplate ? { template: cleanTemplate } : {}),
       messages: out,
     },

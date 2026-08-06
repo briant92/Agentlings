@@ -4,6 +4,21 @@ import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
 
+/**
+ * A calendar event's when, as the card shows it (D-104). A zoneless string
+ * parses as local time, which is exactly the semantics the send gives it;
+ * one that will not parse is shown as written rather than hidden.
+ */
+function eventSpan(start: string, end: string): string {
+  const s = new Date(start);
+  const e = new Date(end);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return `${start} → ${end}`;
+  const sameDay = s.toDateString() === e.toDateString();
+  const time = (d: Date) => d.toTimeString().slice(0, 5);
+  const day = (d: Date) => d.toDateString().slice(0, 10);
+  return `${day(s)} ${time(s)} → ${sameDay ? '' : `${day(e)} `}${time(e)}`;
+}
+
 /** Full sandbox contents in an overlay; Esc, backdrop, or Close dismisses. */
 export function ReviewModal({
   levelId,
@@ -144,6 +159,16 @@ export function ReviewModal({
                           {failure && <span className="rv-msg-failed">{failure.reason}</span>}
                         </div>
                         {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
+                        {m.event && (
+                          // The event as it will land (D-104): the when, and
+                          // who gets an invitation — approving creates it.
+                          <div className="rv-msg-event">
+                            📅 {eventSpan(m.event.start, m.event.end)}
+                            {m.event.attendees?.length
+                              ? ` · invites ${m.event.attendees.join(', ')}`
+                              : ''}
+                          </div>
+                        )}
                         <div className="rv-msg-body">{m.body}</div>
                         {m.params && m.params.length > 0 && (
                           // What is actually transmitted for a template send —

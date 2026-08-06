@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MAX_OUTBOX_MESSAGES } from '@agentlings/shared';
-import { OUTBOX_FILE, composeOutbox, readOutbox, splitRecipient } from './outbox';
+import { OUTBOX_FILE, checkOutbox, composeOutbox, readOutbox, splitRecipient } from './outbox';
 
 describe('readOutbox', () => {
   let dir: string;
@@ -212,5 +212,94 @@ describe('composeOutbox', () => {
     // The one refusal a real desk can produce: the words are free text, and
     // nothing upstream caps their length.
     expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(/over/);
+  });
+});
+
+/**
+ * The calendar channel's event contract (D-104): one event per outbox, the
+ * block that describes it validated at the seam, and the block refused on
+ * every channel that has no client to read it.
+ */
+describe('the event block', () => {
+  const event = (over: Record<string, unknown> = {}) => ({
+    channel: 'calendar',
+    messages: [
+      {
+        to: 'primary',
+        subject: 'Dentist',
+        body: 'Cleaning, Dr. Soto',
+        event: { start: '2026-08-13T16:00:00', end: '2026-08-13T17:00:00' },
+        ...over,
+      },
+    ],
+  });
+
+  it('parses a whole calendar outbox, attendees trimmed', () => {
+    const got = checkOutbox(
+      event({
+        event: {
+          start: '2026-08-13T16:00:00',
+          end: '2026-08-13T17:00:00',
+          attendees: [' ana@example.com '],
+        },
+      }),
+    );
+    expect(got.error).toBeUndefined();
+    expect(got.outbox?.messages[0].event?.attendees).toEqual(['ana@example.com']);
+  });
+
+  it('takes exactly one event per outbox', () => {
+    const two = event();
+    two.messages = [two.messages[0], { ...two.messages[0], to: 'work' }];
+    expect(checkOutbox(two).error).toContain('exactly one event');
+  });
+
+  it('a calendar outbox without its event block is refused', () => {
+    const bare = event();
+    delete (bare.messages[0] as Record<string, unknown>).event;
+    expect(checkOutbox(bare).error).toContain('"event" block');
+  });
+
+  it('a calendar event needs its title', () => {
+    const untitled = event();
+    delete (untitled.messages[0] as Record<string, unknown>).subject;
+    expect(checkOutbox(untitled).error).toContain('"subject"');
+  });
+
+  it('an event that ends before it starts is refused', () => {
+    const backwards = event({
+      event: { start: '2026-08-13T17:00:00', end: '2026-08-13T16:00:00' },
+    });
+    expect(checkOutbox(backwards).error).toContain('ends before it starts');
+  });
+
+  it('a date that does not parse is refused with the example shape', () => {
+    const vague = event({ event: { start: 'someday soon', end: '2026-08-13T17:00:00' } });
+    expect(checkOutbox(vague).error).toContain('2026-08-13T18:00:00');
+  });
+
+  it('an attendee that is not an email address is refused', () => {
+    const named = event({
+      event: {
+        start: '2026-08-13T16:00:00',
+        end: '2026-08-13T17:00:00',
+        attendees: ['Pepo Dussaillant'],
+      },
+    });
+    expect(checkOutbox(named).error).toContain('not an email address');
+  });
+
+  it('the event block is refused on any other channel', () => {
+    const got = checkOutbox({
+      channel: 'telegram',
+      messages: [
+        {
+          to: '123',
+          body: 'x',
+          event: { start: '2026-08-13T16:00:00', end: '2026-08-13T17:00:00' },
+        },
+      ],
+    });
+    expect(got.error).toContain('only the calendar channel');
   });
 });

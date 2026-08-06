@@ -108,12 +108,40 @@ const whatsappBusiness: Validator = async (env, fetchFn) => {
   return { ok: false, reason: `Meta answered HTTP ${res.status}` };
 };
 
+const slack: Validator = async (env, fetchFn) => {
+  // Slack answers HTTP 200 with {ok:false} on a bad token — the body is the
+  // verdict, same as its send call (D-104).
+  const { res, reason } = await call(fetchFn, 'Slack', 'https://slack.com/api/auth.test', {
+    authorization: `Bearer ${env.SLACK_BOT_TOKEN}`,
+  });
+  if (!res) return { ok: false, reason };
+  if (!res.ok) return { ok: false, reason: `Slack answered HTTP ${res.status}` };
+  const body = (await res.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    user?: string;
+    team?: string;
+  } | null;
+  if (!body?.ok) {
+    return {
+      ok: false,
+      reason:
+        body?.error === 'invalid_auth'
+          ? 'Slack rejected the token — paste the Bot User OAuth Token (xoxb-…)'
+          : `Slack refused: ${body?.error ?? 'no reason given'}`,
+    };
+  }
+  const who = [body.user, body.team].filter(Boolean).join(' in ');
+  return { ok: true, ...(who ? { identity: who } : {}) };
+};
+
 /** By connection name, deliberately — a validator knows its whole connection. */
 export const VALIDATORS: Record<string, Validator> = {
   telegram,
   github,
   search,
   'whatsapp-business': whatsappBusiness,
+  slack,
 };
 
 export async function validateConnectionSecret(

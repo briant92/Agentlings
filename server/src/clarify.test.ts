@@ -414,3 +414,35 @@ describe('clarificationLines: the drafting request is spent at the desk', () => 
     expect(lines[1]).toBe(`What should the message say? ${said}`);
   });
 });
+
+/**
+ * The calendar exception (D-104): its facts are a title and a time, not a
+ * recipient and a message — the send questions would be the desk talking
+ * past the user.
+ */
+describe('questionsFor: the calendar channel', () => {
+  it('asks no send facts for a calendar job', () => {
+    const got = ids('add the dentist to my calendar thursday 4pm', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'calendar',
+    });
+    expect(got).not.toContain('send-to');
+    expect(got).not.toContain('send-say');
+  });
+
+  it('slack and github asks carry their own To hints', () => {
+    const slackQs = questionsFor('message the team on slack', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'slack',
+    });
+    expect(slackQs.find((q) => q.id === 'send-to')?.hint).toContain('#general');
+    const ghQs = questionsFor('comment on the issue on github', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'github',
+    });
+    expect(ghQs.find((q) => q.id === 'send-to')?.hint).toContain('owner/repo#123');
+  });
+});

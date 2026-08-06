@@ -373,6 +373,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.10 reading what you keep → D-058–D-062
 - M5.11 connections that send → D-075–D-077, D-097
 - M5.12 the recurrence timer → D-103
+- M5.13 the acting surface finished → D-104
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`
@@ -887,6 +888,21 @@ tried, measured and rejected is in `DECISIONS.md`:
     backlog; pause resumes from now; attachments do not repeat. A scheduled
     pure send under a standing approval (D-082) closes the loop whole:
     it queues itself, sends itself, and audits every body to `sends.jsonl`.
+  - **M5.13 — the acting surface finished (built).** D-104. Three channels,
+    no new idea about acting — every one is an outbox replayed at Approve.
+    **Slack** is telegram's shape wholesale (paste-a-token, empty grant),
+    with the Web API's 200-with-`{ok:false}` verdict read in the body.
+    **Calendar events** ride the Google consent already given: the outbox
+    contract gains its one event block — `event: {start, end, attendees?}`,
+    `subject` as the title, one event per outbox, validated at the seam,
+    refused on every other channel — and invitations go out by Google's own
+    mail. **GitHub comments** are the first write on the reading connection:
+    `to` is `owner/repo#123`, the session keeps its seven read tools, and
+    opening a PR deliberately stays out (a pushed branch is promote-flow
+    work, not an outbox entry). Detection widens by **scoped claims** — a
+    channel's own verbs count only beside its word — so "add it to my
+    calendar" is heard while "create a test for the telegram module" stays
+    a coding sentence.
 - **M6 — deepen the metaphor (parked ideas).** Hazards mapped to real
   failure modes (rate-limit fire pits, error chasms), blocker agentlings
   (paused queues), goal decomposition, job pipelines.

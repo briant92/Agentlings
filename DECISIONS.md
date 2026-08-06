@@ -106,6 +106,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words](#d-094--2026-08-05--a-known-name-prefills-to-and-the-same-again-means-the-audited-words)
 - [D-095 — 2026-08-05 — The leash is bounded by its own budget, and a run it cut may say so](#d-095--2026-08-05--the-leash-is-bounded-by-its-own-budget-and-a-run-it-cut-may-say-so)
 - [D-096 — 2026-08-05 — The first tool earned end to end, and what the ledger says about the run that built it](#d-096--2026-08-05--the-first-tool-earned-end-to-end-and-what-the-ledger-says-about-the-run-that-built-it)
+- [D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing](#d-097--2026-08-05--the-desk-asks-for-the-words-and-a-send-it-already-holds-costs-nothing)
 
 ## By theme
 
@@ -268,7 +269,12 @@ entry updates one file rather than two.
   real sends — "to Pepo" prefills To through an alias a reviewed send
   taught the roster (unique match or nothing), and "send the same again"
   reuses the audited body verbatim, since sends.jsonl now records what
-  was said
+  was said; and D-097, from reviewing that run as a user rather than as
+  its author — a send carrying no content had nowhere to put the message,
+  so the desk now asks for the **words** instead of a gist whenever
+  stripping the send words, the channel words and the roster's names
+  leaves nothing behind, and a send it holds whole is composed in code for
+  nothing rather than paying a session to copy two strings
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -5356,3 +5362,98 @@ ratchet: each run meets the standard the last one banked). Every run of
 this sentence from here costs nothing at all. The tier pays back on the
 third or fourth reuse at these prices, which is roughly what D-021
 guessed when it had no data.
+
+## D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing
+
+Brian's observation, reviewing the "I need to send a Telegram to Pepo" run
+(job 470d7389, 32.4¢, 2m06s): the prompt is an *instruction*, and `Say`
+was framed as a *direction* — "what should it say, roughly? / a line is
+enough, they write it out properly". So a send that carries no content had
+nowhere to put the message, and the message got typed into a box that
+promised to reword it. It did: "A DARLE" went out as "A DARLE 💪".
+
+**The emoji was the specification being obeyed, not a model taking
+liberties.** Three layers agreed: the hint promised a rewrite, the brief
+carried a verbatim clause only for resends (D-094) and said nothing about
+fidelity for a fresh one, and the recipe the run matched had banked "add
+minimal embellishment only for tone". Nothing was misbehaving.
+
+**Two shapes, and only one of them wants a gist.** "Send Pepo the current
+Warzone meta summary" has a message to *write*, so a rough direction is
+the right ask and steering it is the job. "Send a Telegram to Pepo" has no
+message anywhere but in the user's head. The distinction had to be narrow
+or it would break the case it was never about — Brian scoped it exactly
+that way, and the scoping is the rule.
+
+**Telling them apart by what is *left*.** A subject test cannot do it:
+"on Telegram" and "with a summary" are the same preposition, so the
+channel supplies the very evidence being looked for, while "Send Pepo the
+current Warzone meta summary" carries real content with no preposition at
+all. Instead strip the send words, the channel words and the roster's own
+names, then ask `terms()` — the recipe matcher's stemmer — what survives.
+Empty residue means the message exists nowhere. Eight for eight on the
+real sentences in training-ground, and it introduces no new machinery. A
+recipient is not a subject, which is why the names are needed; an unknown
+one leaves a residue and reads as content-bearing, which is the old
+wording and the safe way to be wrong.
+
+The question then changes shape: **"What should the message say?"**,
+labelled **Words** (the pill is what made it read as a setting), promising
+"sent as written", with `write it out` as a fixed opening that hands it
+back to a session — a literal prefix rather than a fuzzy read of intent,
+which is D-093's judgement applied on the way out. The label rides on the
+question because the wording and the label are one promise and must not be
+able to disagree.
+
+**And then it costs nothing.** With both facts in hand and the words
+promised verbatim, there is nothing left to decide: composing is copying
+two strings into the file a session would have written. A `compose` tier
+does it in code, held to the outbox contract itself — `checkOutbox` split
+out of `readOutbox` so an outbox built by us and one written by a model
+are the same object — and a contract refusal falls through to a session
+rather than failing the job. **Sending is untouched: approval is still the
+send (D-075).** This changes who composed it, not when it goes. The quote
+sees the same thing through the one `sendFacts` both ways in call, so the
+card reads "Free — nothing to work out" while the user is still deciding.
+32.4¢ and two minutes becomes $0 and instant.
+
+**Three faults, none of which the tests found.** They are the entry.
+
+*The field two builders dropped.* `send` was added to the type, the route,
+the router and the executor, and jobs still reached the queue without it:
+`queuedJobSpec` and `queue.add` each construct a job field by field, and
+neither named it. Spreading `...(send ? { send } : {})` into the call slips
+past excess-property checking, so nothing complained. Two live sessions ran
+at 16.7¢ and 13.4¢ composing a message the desk was already holding.
+PROJECT.md's own hard-won rule — "complete in the type, the spec and the
+route and still reach nothing" — twice in one sitting, and the mutation
+that re-introduces it killed **nothing** until tests were added at both
+builders.
+
+*The guard that hid the fix.* `questionsFor` withheld every question on a
+free tier — right when free meant "the router already knows the answer",
+wrong for a tier whose freeness *depends* on the answers. The moment both
+facts were in hand the quote flipped to free and the fields vanished under
+the user mid-type. Only a live run shows that; every unit test passed. The
+send's two facts are the job's content, not a narrowing of a paid run, so
+they are now asked at any price. An existing test asserted the old rule and
+now asserts the new one with the reason.
+
+*The separator.* `splitRecipient` knew only the picker's em-dash, and the
+field is free text. It now reads an en-dash and a spaced hyphen, splits at
+the *last* one (names carry hyphens; addresses rarely do), and treats a
+trailing separator as part of the name rather than an empty address.
+
+**Evidence.** 1085 + 109 green, typecheck clean. Mutations: `bareSend`
+forced false kills 5, forced true kills 4, dropping the `write it out`
+escape kills 1, bypassing the outbox contract kills 4, dropping `send` in
+either builder kills 1 each, and restoring the free-tier guard kills 1.
+Live, through the running server: the bare sentence asks **Words** and
+quotes a session; both facts in hand flip it to "Free — nothing to work
+out" *with the fields still there*; asking for a draft returns it to a
+session; the content-bearing sentence is untouched at "roughly"/**Say**.
+Queued for real, it came back `costUsd 0, turns 0, routed`, wrote
+`to: 8633678680` with the name kept and the body **"A DARLE"** unchanged,
+and RESULT.md that reads as a review. Debugging cost 30.2¢ across two
+sessions; the four test jobs were discarded and `sends.jsonl` is untouched
+at three rows — nothing was sent to prove any of this.

@@ -1,6 +1,7 @@
-import type { Agentling, Quote, RoleInfo, WorkPlan } from '@agentlings/shared';
+import type { Agentling, Job, Quote, RoleInfo, WorkPlan } from '@agentlings/shared';
 import { questionsFor } from './clarify';
 import { MatchIndex, suggestSetup } from './match';
+import type { NewJobSpec } from './queue';
 
 /** Used by tests that are about routing rather than pricing. */
 const NO_QUOTE: Quote = {
@@ -180,6 +181,53 @@ export function queuedJobSpec(args: {
     // spend, and every paying tier is bounded below at a cent. So a job that
     // costs money always has one.
     ...(args.quote.ceilingUsd ? { quotedUsd: args.quote.ceilingUsd } : {}),
+  };
+}
+
+/**
+ * The same request again, without the shortcut — "do it properly" (D-097).
+ *
+ * Pure and here rather than inline in the route, for `queuedJobSpec`'s
+ * reason: route wiring is not tested, and three separate faults in one day
+ * were a field the route knew about and the thing building the object did
+ * not. Only `noRouter` should differ from the job this redoes; everything
+ * that *specced* it rides again.
+ *
+ * Four things silently did not, and each made the redone job unable to do the
+ * work it was redoing: without `channel` a send has no outbox contract in its
+ * brief at all, without `clarifications` it has lost the recipient and the
+ * message the user typed, without `brief` it has lost its standing
+ * instructions, and without its files "summarise the attached expenses.csv"
+ * comes back to an empty `input/`.
+ *
+ * `send` is the exception, and deliberately. It is the input the shortcut
+ * consumed: carrying it would hand the run a brief insisting on the user's
+ * words verbatim, which is precisely what the free compose already produced —
+ * so the redo would cost money to write the same file. Asking for it properly
+ * is asking for a person's judgement on the wording, and the words themselves
+ * still ride as the clarification the user answered.
+ */
+export function redoJobSpec(
+  previous: Job,
+  /** The previous job's attached files, re-read from its sandbox. */
+  attachments: { name: string; data: Buffer }[],
+  /** Quoted as a session, since `noRouter` means the router is never asked. */
+  quotedUsd: number | undefined,
+  /** The role to fall back on when the previous job settled none. */
+  fallbackRole: string | undefined,
+): NewJobSpec {
+  return {
+    title: previous.title,
+    prompt: previous.prompt,
+    repoPath: previous.repoPath,
+    preferredRole: previous.preferredRole ?? fallbackRole,
+    tools: previous.tools,
+    noRouter: true,
+    ...(previous.clarifications?.length ? { clarifications: previous.clarifications } : {}),
+    ...(previous.brief ? { brief: previous.brief } : {}),
+    ...(previous.channel ? { channel: previous.channel } : {}),
+    ...(attachments.length ? { attachments } : {}),
+    ...(quotedUsd ? { quotedUsd } : {}),
   };
 }
 

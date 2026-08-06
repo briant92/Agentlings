@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  attachedFiles,
   contentTypeFor,
   describeOutputs,
   isBinary,
@@ -208,5 +209,59 @@ describe('opensInBrowser', () => {
     for (const name of ['notes.docx', 'sheet.xlsx', 'deck.pptx', 'DIFF.patch', 'archive.zip']) {
       expect(opensInBrowser(name)).toBe(false);
     }
+  });
+});
+
+/**
+ * Re-attaching a job's files to another job (D-097). The bytes only ever live
+ * in the sandbox, so a redo that did not read them back produced a job with
+ * an empty `input/` — able only to fail, having been paid for.
+ */
+describe('attachedFiles', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'agentlings-input-'));
+  });
+  afterEach(() =>
+    rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
+
+  it('reads the bytes back under the same names', () => {
+    writeFileSync(path.join(dir, 'expenses.csv'), 'date,category\n2026-08-05,hq\n');
+    const files = attachedFiles(dir, [{ name: 'expenses.csv' }]);
+    expect(files).toHaveLength(1);
+    expect(files[0].name).toBe('expenses.csv');
+    expect(files[0].data.toString()).toContain('2026-08-05,hq');
+  });
+
+  /**
+   * Names come from the job's record, never a listing — otherwise a file the
+   * *run* wrote into `input/` would ride into the next job as an attachment
+   * the user never sent.
+   */
+  it('takes only what the job says it was given', () => {
+    writeFileSync(path.join(dir, 'expenses.csv'), 'real');
+    writeFileSync(path.join(dir, 'notes-the-run-wrote.txt'), 'not the user’s');
+    expect(attachedFiles(dir, [{ name: 'expenses.csv' }]).map((f) => f.name)).toEqual([
+      'expenses.csv',
+    ]);
+  });
+
+  // A missing file is one the run can report; a throw here would lose the
+  // whole redo over it.
+  it('skips what it cannot read rather than failing the lot', () => {
+    writeFileSync(path.join(dir, 'here.csv'), 'x');
+    const files = attachedFiles(dir, [{ name: 'gone.csv' }, { name: 'here.csv' }]);
+    expect(files.map((f) => f.name)).toEqual(['here.csv']);
+  });
+
+  it('refuses a name that would climb out of the directory', () => {
+    expect(attachedFiles(dir, [{ name: '../../etc/passwd' }])).toEqual([]);
+  });
+
+  it('has nothing to do for a job that was given nothing', () => {
+    expect(attachedFiles(dir, undefined)).toEqual([]);
+    expect(attachedFiles(dir, [])).toEqual([]);
   });
 });

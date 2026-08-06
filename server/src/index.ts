@@ -107,6 +107,7 @@ import {
   contentTypeFor,
   describeOutputs,
   opensInBrowser,
+  attachedFiles,
   outputNames,
   safeOutputPath,
 } from './outputs';
@@ -150,7 +151,7 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callSearch } from './search';
 import { fetchPage } from './web';
-import { continuationBrief, planWork, queuedJobSpec, runnerRole } from './work';
+import { continuationBrief, planWork, queuedJobSpec, redoJobSpec, runnerRole } from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -1022,23 +1023,24 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
     previous.repoPath,
     previous.prompt,
   );
-  const job = rt.queue.add({
-    title: previous.title,
-    prompt: previous.prompt,
-    repoPath: previous.repoPath,
-    preferredRole: previous.preferredRole,
-    tools: previous.tools,
-    noRouter: true,
-    quotedUsd: quoteFor_(
-      QUOTE_CTX,
-      rt.dir,
-      previous.prompt,
-      previous.tools,
-      previous.preferredRole ?? runnerRole(plan),
-      previous.repoPath,
-      true,
-    ).ceilingUsd,
-  });
+  const job = rt.queue.add(
+    redoJobSpec(
+      previous,
+      // The bytes live in the previous sandbox: a new job gets a new one, and
+      // `attachments` on the old job is only ever names and sizes.
+      attachedFiles(rt.queue.inputDir(previous.id), previous.attachments),
+      quoteFor_(
+        QUOTE_CTX,
+        rt.dir,
+        previous.prompt,
+        previous.tools,
+        previous.preferredRole ?? runnerRole(plan),
+        previous.repoPath,
+        true,
+      ).ceilingUsd,
+      runnerRole(plan) ?? undefined,
+    ),
+  );
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });

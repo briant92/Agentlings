@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { Agentling, Quote, RoleInfo } from '@agentlings/shared';
+import type { Agentling, Job, Quote, RoleInfo } from '@agentlings/shared';
 import { MatchIndex } from './match';
 import {
   continuationBrief,
   planWork,
   pickAgentling,
   queuedJobSpec,
+  redoJobSpec,
   runnerRole,
   titleFrom,
 } from './work';
@@ -345,5 +346,88 @@ describe('continuationBrief', () => {
   // one saves its write-up for an ending it may not reach either.
   it('asks the next run to keep RESULT.md updated too', () => {
     expect(continuationBrief(noRepo)).toContain('keep RESULT.md updated');
+  });
+});
+
+/**
+ * "Do it properly" (D-097). Only `noRouter` should differ from the job it
+ * redoes — four things silently did, and each one left the redone job unable
+ * to do the work it was redoing. Tested here rather than through the route
+ * for `queuedJobSpec`'s reason: route wiring is not tested, and route wiring
+ * is exactly where the day's faults were.
+ */
+describe('redoJobSpec', () => {
+  const job = (over: Partial<Job> = {}): Job => ({
+    id: 'j1',
+    title: 'Telegram to Brian',
+    prompt: 'I need to send a Telegram to Brian',
+    status: 'done',
+    slot: -1,
+    createdAt: 0,
+    ...over,
+  });
+
+  it('switches the router off — the whole point of asking again', () => {
+    expect(redoJobSpec(job(), [], 2, undefined).noRouter).toBe(true);
+  });
+
+  // Without it the redone send has no outbox contract in its brief at all,
+  // so the run cannot even know it is supposed to be sending.
+  it('carries the channel', () => {
+    expect(redoJobSpec(job({ channel: 'telegram' }), [], 2, undefined).channel).toBe('telegram');
+  });
+
+  it('carries the answers the user already gave', () => {
+    const spec = redoJobSpec(
+      job({ clarifications: ['Who should this go to? Brian — 8633678680'] }),
+      [],
+      2,
+      undefined,
+    );
+    expect(spec.clarifications).toEqual(['Who should this go to? Brian — 8633678680']);
+  });
+
+  it('carries the standing brief', () => {
+    expect(redoJobSpec(job({ brief: 'keep going from what is here' }), [], 2, undefined).brief).toBe(
+      'keep going from what is here',
+    );
+  });
+
+  // "Summarise the attached expenses.csv" with no CSV is a job that can only
+  // fail, having been paid for.
+  it('carries the attached files, as bytes for the new sandbox', () => {
+    const files = [{ name: 'expenses.csv', data: Buffer.from('date,category\n') }];
+    expect(redoJobSpec(job(), files, 2, undefined).attachments).toEqual(files);
+  });
+
+  /**
+   * The one thing that deliberately does not ride. `send` is the input the
+   * shortcut consumed: carried, it would brief the run to keep the user's
+   * words verbatim — which is what the free compose already did, making the
+   * redo a paid way to produce the identical file.
+   */
+  it('drops the send, so asking properly asks for judgement', () => {
+    const spec = redoJobSpec(
+      job({ channel: 'telegram', send: { to: '8633678680', words: 'A DARLE' } }),
+      [],
+      2,
+      undefined,
+    );
+    expect(spec.send).toBeUndefined();
+    expect(spec.channel).toBe('telegram');
+  });
+
+  it('keeps the role that ran it, and falls back when there was none', () => {
+    expect(redoJobSpec(job({ preferredRole: 'scribe' }), [], 2, 'worker').preferredRole).toBe(
+      'scribe',
+    );
+    expect(redoJobSpec(job(), [], 2, 'worker').preferredRole).toBe('worker');
+  });
+
+  // Free work carries no ceiling; a redo is never free, so this is really a
+  // guard that the quote reached the spec at all (D-027, D-049).
+  it('carries the ceiling it was quoted', () => {
+    expect(redoJobSpec(job(), [], 1.42, undefined).quotedUsd).toBe(1.42);
+    expect(redoJobSpec(job(), [], 0, undefined).quotedUsd).toBeUndefined();
   });
 });

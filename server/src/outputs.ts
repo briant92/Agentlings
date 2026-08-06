@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { DeliveryFile } from '@agentlings/shared';
 
@@ -158,6 +158,38 @@ export function safeAttachmentName(name: string): string | null {
   // one the review panel reads — a file the user attached and then cannot see.
   if (trimmed.startsWith('.')) return null;
   return trimmed;
+}
+
+/**
+ * The files a job was given, read back off its sandbox so another job can be
+ * handed the same ones (D-097).
+ *
+ * `Job.attachments` is names and sizes; the bytes only ever live in the
+ * sandbox's `input/`. A redo is a fresh job with a fresh sandbox, so without
+ * this "summarise the attached expenses.csv" comes back with nothing to
+ * summarise — and says so having been paid for.
+ *
+ * Names come from the job's own record rather than a directory listing, so a
+ * file the *run* wrote into `input/` cannot smuggle itself in as an
+ * attachment the user never sent. Anything unreadable is skipped rather than
+ * failing the whole redo: a run that can say which file is missing is worth
+ * more than a 500.
+ */
+export function attachedFiles(
+  dir: string,
+  attachments: { name: string }[] | undefined,
+): { name: string; data: Buffer }[] {
+  const files: { name: string; data: Buffer }[] = [];
+  for (const attachment of attachments ?? []) {
+    const name = safeAttachmentName(attachment.name);
+    if (!name) continue;
+    try {
+      files.push({ name, data: readFileSync(path.join(dir, name)) });
+    } catch {
+      continue;
+    }
+  }
+  return files;
 }
 
 /**

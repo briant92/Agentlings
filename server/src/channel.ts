@@ -286,6 +286,27 @@ export function channelBrief(
   audience: AudiencePerson[] = [],
   /** The last body sent on this channel, when the prompt asked for the same. */
   lastSentBody?: string,
+  /**
+   * The message the user wrote themselves, when the desk asked for the words
+   * rather than a gist (D-097).
+   *
+   * Reaches a session by exactly one route today: the outbox contract refused
+   * what the desk held — in practice a body over the channel's limit — and
+   * the job fell through to a run that can explain itself. Everything else
+   * carrying the user's own words is composed in code and never gets here.
+   *
+   * Narrow on purpose, and stated plainly because the obvious wider readings
+   * are wrong. A *continuation* holds no send facts (the reply route takes
+   * only text, and carrying the old ones forward would let a brief insist on
+   * words the reply may have just superseded — guessing which, this project
+   * does not do). A *content-bearing* send has no own-words to protect: there
+   * the user gave a direction and writing the message is the job.
+   *
+   * Without it a fall-through has nothing telling it whose words these are,
+   * which is how "A DARLE" acquired an emoji — every instruction that run had
+   * invited a rewrite (D-097).
+   */
+  ownWords?: string,
 ): string | null {
   if (!CHANNELS[channel]) return null;
   const shape =
@@ -315,6 +336,25 @@ export function channelBrief(
       ? [
           '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',
           '- "params" are the template\'s body parameters, in order; "body" is the message as it will read, so the review shows real words. "to" is the number with country code. Do not invent numbers — report the missing ones in RESULT.md.',
+        ]
+      : []),
+    // The user's own words (D-097). Before the desk learned to ask for them,
+    // it asked what the message should say *roughly* and promised the crew
+    // would "write it out properly" — so "A DARLE" went out as "A DARLE 💪",
+    // with every layer agreeing that a rewrite was wanted. Where the words
+    // are already the user's, say so plainly and once.
+    //
+    // The limit is named in the same breath because the commonest way a
+    // session sees this at all is a body the contract refused for length: an
+    // instruction to send it exactly as written and nothing else would be an
+    // instruction it cannot follow.
+    ...(ownWords
+      ? [
+          '- The user wrote this message themselves. Use it as the body exactly as written — do not reword it, expand it, shorten it, or add anything to it, an emoji included. It is not a brief for a message; it is the message:',
+          '```',
+          ownWords,
+          '```',
+          `- If it will not fit the ${MAX_OUTBOX_BODY_CHARS}-character limit, keep their wording and split it across messages to the same person only if the channel allows; otherwise say in RESULT.md what had to give, and why. Never quietly improve it.`,
         ]
       : []),
     // The reuse block (D-094): "send the same again" means this text, not a

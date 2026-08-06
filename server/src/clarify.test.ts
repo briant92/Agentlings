@@ -372,3 +372,45 @@ describe('the send the desk can compose without a session', () => {
     expect(sendFacts(BARE, ctx, { ...answers, 'send-say': said })?.words).toBe(said);
   });
 });
+
+/**
+ * The escape hatch is addressed to the desk, not to the crew (D-097). Once
+ * it has done its work — sending the job to a session instead of composing
+ * it — the phrase is noise in the brief, and reads as part of what to write.
+ */
+describe('clarificationLines: the drafting request is spent at the desk', () => {
+  const CTX = {
+    hasRepo: false,
+    tier: 'session' as const,
+    channel: 'telegram',
+    names: ['Jose Dussaillant (Pepo)'],
+  };
+  const BARE = 'I need to send a Telegram to Pepo';
+
+  it('forwards the direction without the phrase that requested it', () => {
+    const lines = clarificationLines(BARE, CTX, {
+      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-say': 'write it out: tell him I am running late',
+    });
+    expect(lines[1]).toBe('What should the message say? tell him I am running late');
+    expect(lines[1]).not.toContain('write it out');
+  });
+
+  it('leaves an ordinary answer exactly as typed', () => {
+    const lines = clarificationLines(BARE, CTX, {
+      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-say': 'A DARLE',
+    });
+    expect(lines[1]).toBe('What should the message say? A DARLE');
+  });
+
+  // The words only *contain* the phrase — stripping there would eat the message.
+  it('does not strip it from the middle of a message', () => {
+    const said = 'tell him to write it out before Friday';
+    const lines = clarificationLines(BARE, CTX, {
+      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-say': said,
+    });
+    expect(lines[1]).toBe(`What should the message say? ${said}`);
+  });
+});

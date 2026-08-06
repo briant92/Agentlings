@@ -818,6 +818,10 @@ export class ClaudeAgentExecutor implements Executor {
                 // "The same again" reuses the audited body instead of
                 // rebuilding and drifting (D-094).
                 RESEND_WORDS.test(job.prompt) ? this.lastSend(job.channel) : undefined,
+                // Words the desk already holds, reaching a session anyway —
+                // the contract refused them, or this continues a job and
+                // every shortcut is off (D-074, D-097).
+                job.send?.words,
               ) ?? undefined)
             : undefined,
         ),

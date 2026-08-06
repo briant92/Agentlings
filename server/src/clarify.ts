@@ -319,7 +319,12 @@ export function clarificationLines(
     const given = answers[question.id]?.trim();
     if (!given) continue;
     const chosen = question.options.find((o) => o.label === given);
-    lines.push(`${question.ask} ${chosen ? chosen.answer : given}`);
+    // "write it out" is the hint's escape hatch, addressed to the desk rather
+    // than to the crew (D-097). Once it has done its work — sending the job
+    // to a session instead of composing it — the phrase is noise in the
+    // brief, and worse than noise: it reads as part of what to write.
+    const said = chosen ? chosen.answer : (draftingAsk(given) ?? given);
+    lines.push(`${question.ask} ${said}`);
   }
   return lines;
 }

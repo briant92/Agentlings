@@ -246,6 +246,46 @@ describe('channelBrief', () => {
     expect(brief).toContain('never invent one');
   });
 
+  /**
+   * The fidelity clause (D-097). A session only ever sees the user's own
+   * words when the contract refused what the desk held, and before this it
+   * was told nothing about whose words they were — the run that turned
+   * "A DARLE" into "A DARLE 💪" had every instruction inviting a rewrite.
+   */
+  describe('words the user wrote themselves', () => {
+    const brief = () => channelBrief('telegram', [], undefined, 'A DARLE')!;
+
+    it('carries them verbatim and says they are the message', () => {
+      expect(brief()).toContain('wrote this message themselves');
+      expect(brief()).toContain('exactly as written');
+      expect(brief()).toContain('A DARLE');
+      expect(brief()).toContain('It is not a brief for a message; it is the message');
+    });
+
+    // The instruction has to be followable. The commonest way a session sees
+    // this at all is a body the contract refused for length, so "send it
+    // exactly" and nothing else would be an order it cannot obey.
+    it('says what to do when the words will not fit', () => {
+      expect(brief()).toContain('keep their wording');
+      expect(brief()).toContain('what had to give');
+    });
+
+    it('adds nothing when the words are not the user’s', () => {
+      const plain = channelBrief('telegram')!;
+      expect(plain).not.toContain('wrote this message themselves');
+      expect(plain).not.toContain('exactly as written');
+    });
+
+    // Two different promises about two different texts: one is what the user
+    // just typed, the other is what was sent last time (D-094).
+    it('is not the reuse block, and both can ride together', () => {
+      const both = channelBrief('telegram', [], 'the last thing sent', 'A DARLE')!;
+      expect(both).toContain('wrote this message themselves');
+      expect(both).toContain('asked to send the same thing again');
+      expect(both).toContain('the last thing sent');
+    });
+  });
+
   it('an empty roster adds no legend at all', () => {
     expect(channelBrief('telegram', [])).not.toContain('Known recipients');
     expect(channelBrief('telegram')).not.toContain('Known recipients');

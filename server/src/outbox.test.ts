@@ -170,6 +170,26 @@ describe('splitRecipient', () => {
     expect(splitRecipient('6783316106')).toEqual({ to: '6783316106' });
     expect(splitRecipient(' brian@example.com ')).toEqual({ to: 'brian@example.com' });
   });
+
+  // The field is free text, so the shape gets typed by hand as well as picked.
+  it('reads the separators a person types for the same shape', () => {
+    expect(splitRecipient('Brian Thornton – 8633678680').to).toBe('8633678680');
+    expect(splitRecipient('Brian Thornton - 8633678680').to).toBe('8633678680');
+  });
+
+  /** Names carry hyphens; addresses rarely do. */
+  it('splits at the last separator, not the first', () => {
+    expect(splitRecipient('Jean-Luc Picard — 1701')).toEqual({
+      to: '1701',
+      name: 'Jean-Luc Picard',
+    });
+  });
+
+  // Otherwise the contract refuses with "to must be a non-empty string" for
+  // what is really a missing address.
+  it('treats a trailing separator as part of the name, not a split', () => {
+    expect(splitRecipient('Pepo — ')).toEqual({ to: 'Pepo —' });
+  });
 });
 
 describe('composeOutbox', () => {
@@ -187,8 +207,10 @@ describe('composeOutbox', () => {
    * would be a second, weaker contract for the same file.
    */
   it('is refused by the contract exactly as a session file would be', () => {
-    expect(composeOutbox('telegram', 'Pepo — ', 'A DARLE').error).toMatch(/"to"/);
+    expect(composeOutbox('telegram', '   ', 'A DARLE').error).toMatch(/"to"/);
     expect(composeOutbox('telegram', '6783316106', '   ').error).toMatch(/"body"/);
+    // The one refusal a real desk can produce: the words are free text, and
+    // nothing upstream caps their length.
     expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(/over/);
   });
 });

@@ -32,6 +32,8 @@ export interface NewJobSpec {
   brief?: string;
   /** The channel this job sends on, when intake detected one (D-079). */
   channel?: string;
+  /** Recipient and words both, when the desk holds the whole send (D-097). */
+  send?: { to: string; words: string };
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
 }
@@ -152,6 +154,7 @@ export class JobQueue {
       ...(spec.continues ? { continues: spec.continues } : {}),
       ...(spec.brief ? { brief: spec.brief } : {}),
       ...(spec.channel ? { channel: spec.channel } : {}),
+      ...(spec.send ? { send: spec.send } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       status: 'queued',
       slot: this.freeSlot(),

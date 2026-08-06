@@ -180,7 +180,7 @@ export function questionsFor(
     names,
   }: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
 ): ClarifyQuestion[] {
-  if (!text.trim() || !costsMoney(tier)) return [];
+  if (!text.trim()) return [];
   const asked: ClarifyQuestion[] = [];
 
   // A send job asks its two facts first: the outbox contract refuses to
@@ -222,6 +222,19 @@ export function questionsFor(
           },
     );
   }
+
+  // Everything below narrows what a *paid* run will do, so free work has
+  // nothing to save by asking. The send's two facts above are not that: they
+  // are the job's own content, and an outbox with no recipient and no message
+  // cannot be composed at all, at any price.
+  //
+  // Found live, not in the tests (D-097). Once both facts were in hand the
+  // quote flipped to free — correctly — and this guard then withheld the very
+  // questions the user had just answered, so the fields vanished under them
+  // as they finished typing. The rule was written when free meant "the router
+  // already knows the answer"; a tier whose freeness *depends* on the answers
+  // breaks that assumption.
+  if (!costsMoney(tier)) return asked.slice(0, MAX_QUESTIONS);
 
   if (dangling(text)) {
     asked.push({

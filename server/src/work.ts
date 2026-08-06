@@ -138,6 +138,8 @@ export function queuedJobSpec(args: {
   brief?: string;
   /** The channel this job sends on, when intake detected one (D-079). */
   channel?: string;
+  /** Recipient and words both, when the desk holds the whole send (D-097). */
+  send?: { to: string; words: string };
   /** A mentioned channel the job never carried (D-093), for the review. */
   channelMention?: { channel: string; label: string };
 }): {
@@ -152,6 +154,7 @@ export function queuedJobSpec(args: {
   continues?: string;
   brief?: string;
   channel?: string;
+  send?: { to: string; words: string };
   channelMention?: { channel: string; label: string };
 } {
   return {
@@ -165,6 +168,12 @@ export function queuedJobSpec(args: {
     ...(args.continues ? { continues: args.continues } : {}),
     ...(args.brief ? { brief: args.brief } : {}),
     ...(args.channel ? { channel: args.channel } : {}),
+    // Dropped here once, and the route, the type and the router were all
+    // correct while the job reached the queue without it — the field this
+    // function does not name does not exist, and spreading it into the call
+    // slips past excess-property checking. The 16.7¢ session that composed a
+    // message the desk was already holding is the receipt (D-097).
+    ...(args.send ? { send: args.send } : {}),
     ...(args.channelMention ? { channelMention: args.channelMention } : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never

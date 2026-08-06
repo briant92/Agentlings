@@ -203,7 +203,9 @@ describe('RoutedExecutor', () => {
         job({
           prompt: 'I need to send a Telegram to Pepo',
           channel: 'telegram',
-          send: { to: 'Pepo — ', words: 'A DARLE' },
+          // Over the body cap — the one refusal a real desk can produce,
+          // since the words are free text and nothing upstream limits them.
+          send: { to: '6783316106', words: 'x'.repeat(5000) },
         }),
         PIP,
       );

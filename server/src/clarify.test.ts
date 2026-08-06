@@ -4,7 +4,8 @@ import { bareSend, clarificationLines, draftingAsk, questionsFor, sendFacts } fr
 const REPO = { hasRepo: true, tier: 'session' as const };
 const NO_REPO = { hasRepo: false, tier: 'session' as const };
 
-const ids = (text: string, ctx = REPO) => questionsFor(text, ctx).map((q) => q.id);
+const ids = (text: string, ctx: Parameters<typeof questionsFor>[1] = REPO) =>
+  questionsFor(text, ctx).map((q) => q.id);
 
 describe('questionsFor: when it stays quiet', () => {
   it('says nothing about free work, however vague', () => {
@@ -68,8 +69,26 @@ describe('questionsFor: a send job asks its two facts first', () => {
     expect(got.slice(0, 2)).toEqual(['send-to', 'send-say']);
   });
 
-  it('stays quiet on free tiers like every other question', () => {
-    expect(questionsFor('send the reminder', { hasRepo: false, tier: 'tool', channel: 'gmail' })).toEqual([]);
+  /**
+   * Was "stays quiet on free tiers like every other question", and the
+   * exception is the point (D-097). The other questions narrow what a *paid*
+   * run will do, so free work has nothing to save by asking. These two are
+   * the job's own content: an outbox with no recipient and no message cannot
+   * be composed at any price, free included.
+   *
+   * Found live rather than here. A bare send goes free precisely *because*
+   * both facts are in hand, so the old rule withheld the questions the user
+   * had just answered and the fields vanished under them mid-type.
+   */
+  it('still asks its two facts when the work is free, because they are the work', () => {
+    expect(ids('send the reminder', { hasRepo: false, tier: 'tool', channel: 'gmail' })).toEqual([
+      'send-to',
+      'send-say',
+    ]);
+  });
+
+  it('asks nothing else on a free tier, since there is no run to narrow', () => {
+    expect(questionsFor('just improve it', { hasRepo: true, tier: 'tool' })).toEqual([]);
   });
 });
 

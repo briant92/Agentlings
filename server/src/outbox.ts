@@ -108,11 +108,16 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
  * refuses a To the channel's contract cannot reach (D-091).
  */
 export function splitRecipient(value: string): { to: string; name?: string } {
-  const at = value.indexOf('—');
+  // The picker's em-dash, plus the two a person typing the same shape by hand
+  // reaches for. The *last* separator, because names carry hyphens far more
+  // often than addresses do — "Jean-Luc Picard — 123" splits once, correctly.
+  const at = Math.max(value.lastIndexOf('—'), value.lastIndexOf('–'), value.lastIndexOf(' - '));
   if (at === -1) return { to: value.trim() };
   const name = value.slice(0, at).trim();
-  const to = value.slice(at + 1).trim();
-  return { to, ...(name ? { name } : {}) };
+  const to = value.slice(at + (value.startsWith(' - ', at) ? 3 : 1)).trim();
+  // A separator with nothing after it is not a split, it is a name — leaving
+  // `to` empty here would be refused by the contract with a confusing reason.
+  return to ? { to, ...(name ? { name } : {}) } : { to: value.trim() };
 }
 
 /**

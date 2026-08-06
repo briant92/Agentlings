@@ -5531,8 +5531,34 @@ that stays inside; it is not open to send work that researched first, and
 that distinction is D-044 doing its job rather than being worked around.
 
 For the brief: dropping the own-words block kills 3, un-wiring it from
-`briefForJob` kills 2, and dropping the escape-phrase strip kills 1.
+`briefForJob` kills 2, and dropping the escape-phrase strip kills 1. For
+the redo: dropping the channel kills 2, and the clarifications, the brief
+and the attachments kill 1 each — as does the inverse, letting `send` ride
+after all, which is the decision worth pinning in both directions.
 
-**Noticed while tracing these paths, not fixed and not new:** the redo
-route ("do it properly") carries neither `channel` nor `send`, so redoing
-a send job produces one with no outbox contract in its brief at all.
+**And the redo route, which the tracing turned up.** "Do it properly"
+should differ from the job it redoes in exactly one way — the router is
+not asked. Four things silently differed, and each left the redone job
+unable to do the work it was redoing: no `channel`, so a redone send had
+no outbox contract in its brief and could not know it was sending at all;
+no `clarifications`, so it had lost the recipient and the message the user
+typed; no `brief`; and no attached files, because `Job.attachments` is
+names and sizes while the bytes live in the sandbox a redo does not
+inherit — "summarise the attached expenses.csv" came back to an empty
+`input/` and could only fail, having been paid for. Reachable throughout:
+the button shows on any routed job, which now includes every free composed
+send.
+
+`send` is the one thing that deliberately does not ride, and the reasoning
+is the same as everywhere else here — it is the input the shortcut
+consumed, so carrying it would brief the run to keep the words verbatim,
+which is exactly what the free compose already produced. The redo would
+then be a paid way to write the identical file. Asking for it properly is
+asking for a person's judgement on the wording; the words themselves still
+ride, as the clarification the user answered.
+
+Extracted to `redoJobSpec` beside `queuedJobSpec`, for that function's own
+stated reason — route wiring is not tested — and `attachedFiles` reads the
+bytes back by the job's own record rather than by listing the directory,
+so a file the *run* wrote into `input/` cannot ride into the next job as
+an attachment the user never sent.

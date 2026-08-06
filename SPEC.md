@@ -89,6 +89,8 @@ the loop runs end to end without one.
   allowlist, model, skills, memory, turn budget, and the close-out pass.
 - `executors/agent-runner.mjs` — the child process. Plain JS, spawned with
   plain node, with a laundered env.
+- `executors/simulated.ts` — the stand-in from the diagram above: pretends to
+  work, then writes a RESULT.md, so the loop runs end to end with no key.
 - `gitwork.ts` — clone, diff, apply. Repo work never touches the real
   repository until you promote it.
 
@@ -119,6 +121,15 @@ the loop runs end to end without one.
 - `connections.ts` — what a job may reach outside its sandbox; `settings.ts`
   decides which of those are live. Reading the web is on by default, everything
   credentialed is not.
+- `env.ts` — the one secrets store is `.env`, loaded at boot and read through
+  `process.env` at call time; the drawer writes it and patches the live env in
+  the same call. A second store was considered and refused (D-078).
+- `validate.ts` — one real call per connection at paste time, so a bad key
+  fails in the drawer and not in a job (D-076). What comes back is an identity
+  worth showing or the provider's own refusal — never the secret.
+- `google.ts` — the loopback OAuth flow against the user's own client (D-076,
+  D-080): the password is typed on Google's page, a refresh token is what
+  lands, and nothing stores unvalidated.
 
 **Understanding the request.**
 
@@ -132,9 +143,12 @@ the loop runs end to end without one.
   returns rows and lines and never a preview or a passage. The libraries are
   installed at the project root for the sandboxes and imported lazily.
 - `ocr.ts` — reading words off a picture of words, using the OCR engine
-  Windows already has. The only Windows-only file in the project, which is why
+  Windows already has. The first Windows-only file in the project, which is why
   it is a file: everything above it asks `ocrAvailable()` and gets `false`
   elsewhere.
+- `pickFolder.ts` — the native Select Folder dialog, served by this process
+  because a browser never reveals an absolute path (D-102). The second
+  Windows-only file, on `ocr.ts`'s precedent; the typed path is the fallback.
 - `match.ts` — the local, deterministic concept matcher. Works with no auth
   and no network, always.
 - `work.ts` — turning a sentence into a plan: title, role, who will run it.
@@ -148,6 +162,18 @@ the loop runs end to end without one.
 - `browse.ts` — the catalog arranged for someone with no query. Categories are
   read off the sources' own file paths, never inferred from the descriptions:
   a taxonomy derived from prose is a plausible answer nobody can check.
+
+**Sending, at approval only.**
+
+- `channel.ts` — does this sentence want to message someone, and what can the
+  app honestly offer (D-079)? A send verb plus a channel word claims; a bare
+  mention does not. Under-firing is the safe direction.
+- `audience.ts` — the people a channel can actually reach, persisted by name
+  (D-092). Two sources and no other: whoever tapped Start on the bot, and
+  whoever a reviewed send already went to. No contact book is imported.
+- `approvals.ts` — standing approval for a recurring send (D-082): unchanged
+  reviews counted, the grant refused until earned, the recipient set as the
+  security boundary, and any signature change starting the count over.
 
 **Showing what happened.**
 

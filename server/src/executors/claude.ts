@@ -13,7 +13,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { Agentling, AudiencePerson, Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
-import { channelBrief, RESEND_WORDS } from '../channel';
+import { briefForJob } from '../channel';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
@@ -811,19 +811,11 @@ export class ClaudeAgentExecutor implements Executor {
           // The same number the SDK is capped at, so the brief and the runner
           // cannot disagree about how long the run has.
           turnBudget,
-          job.channel
-            ? (channelBrief(
-                job.channel,
-                this.audience(job.channel),
-                // "The same again" reuses the audited body instead of
-                // rebuilding and drifting (D-094).
-                RESEND_WORDS.test(job.prompt) ? this.lastSend(job.channel) : undefined,
-                // Words the desk already holds, reaching a session anyway —
-                // the contract refused them, or this continues a job and
-                // every shortcut is off (D-074, D-097).
-                job.send?.words,
-              ) ?? undefined)
-            : undefined,
+          briefForJob(
+            job,
+            (channel) => this.audience(channel),
+            (channel) => this.lastSend(channel),
+          ),
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

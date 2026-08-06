@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  briefForJob,
   channelBrief,
   channelShelf,
   detectChannelAsk,
@@ -315,5 +316,63 @@ describe('RESEND_WORDS (D-094)', () => {
   it('stays quiet on a fresh request', () => {
     expect(RESEND_WORDS.test('Send me a Telegram with the latest Warzone meta')).toBe(false);
     expect(RESEND_WORDS.test('send a sample loadout to Ana')).toBe(false);
+  });
+});
+
+/**
+ * The wiring, not the brief (D-097). Deleting the line that handed a job's
+ * own words to `channelBrief` broke no test at all, while the brief itself
+ * was covered from three directions — a correct function reached by nobody,
+ * which is the same fault as the two job builders that dropped a field in
+ * silence. So the decisions about *which* blocks ride are tested here.
+ */
+describe('briefForJob', () => {
+  const audience = () => [];
+  const lastSend = () => 'the last thing sent on this channel';
+  const job = (over: Partial<{ channel: string; prompt: string; send: { words: string } }> = {}) => ({
+    prompt: 'send the reminder',
+    ...over,
+  });
+
+  it('says nothing at all for a job with no channel', () => {
+    expect(briefForJob(job(), audience, lastSend)).toBeUndefined();
+  });
+
+  it('hands the words to the brief when the desk held them', () => {
+    const brief = briefForJob(
+      job({ channel: 'telegram', send: { words: 'A DARLE' } }),
+      audience,
+      lastSend,
+    )!;
+    expect(brief).toContain('wrote this message themselves');
+    expect(brief).toContain('A DARLE');
+  });
+
+  it('leaves the block out when it held none', () => {
+    const brief = briefForJob(job({ channel: 'telegram' }), audience, lastSend)!;
+    expect(brief).not.toContain('wrote this message themselves');
+  });
+
+  // D-094's wiring, which was equally unpinned: the audited body rides only
+  // when the sentence asked for the same thing again.
+  it('reaches for the last body only when the prompt asks for the same', () => {
+    const asked = briefForJob(
+      job({ channel: 'telegram', prompt: 'send the same again to Pepo' }),
+      audience,
+      lastSend,
+    )!;
+    expect(asked).toContain('the last thing sent on this channel');
+    const plain = briefForJob(job({ channel: 'telegram' }), audience, lastSend)!;
+    expect(plain).not.toContain('the last thing sent on this channel');
+  });
+
+  it('carries both when the sentence asks for the same and the desk holds words', () => {
+    const brief = briefForJob(
+      job({ channel: 'telegram', prompt: 'send the same again', send: { words: 'A DARLE' } }),
+      audience,
+      lastSend,
+    )!;
+    expect(brief).toContain('A DARLE');
+    expect(brief).toContain('the last thing sent on this channel');
   });
 });

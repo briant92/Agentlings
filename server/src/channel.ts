@@ -276,6 +276,36 @@ export function detectChannelAsk(
 export const RESEND_WORDS = /\b(same|again|resend|re-send|like (?:the )?last|previous)\b/i;
 
 /**
+ * The send brief this particular job should hear, or nothing.
+ *
+ * Every decision about *which* of the optional blocks ride lives here rather
+ * than at the call site, because that wiring is where the faults have been:
+ * removing the line that hands a job's own words to the brief broke no test
+ * at all, while `channelBrief` itself was covered from three directions. Same
+ * shape as the two job builders that dropped a field in silence (D-097) — a
+ * correct function reached by nobody.
+ */
+export function briefForJob(
+  job: { channel?: string; prompt: string; send?: { words: string } },
+  audience: (channel: string) => AudiencePerson[],
+  lastSend: (channel: string) => string | undefined,
+): string | undefined {
+  if (!job.channel) return undefined;
+  return (
+    channelBrief(
+      job.channel,
+      audience(job.channel),
+      // "The same again" reuses the audited body instead of rebuilding and
+      // drifting (D-094).
+      RESEND_WORDS.test(job.prompt) ? lastSend(job.channel) : undefined,
+      // Words the desk already holds, reaching a session anyway — the outbox
+      // contract refused them and the job fell through (D-097).
+      job.send?.words,
+    ) ?? undefined
+  );
+}
+
+/**
  * The outbox contract, told to the session (closing D-075's deferral by
  * D-031's rule: a capability nobody is told about is not one). Only for
  * channels that exist — a job whose ask fell to "draft" carries no channel

@@ -5946,7 +5946,12 @@ hand.
 **Evidence.** 26 unit tests pin the cadence math (strictly-after semantics,
 the Jan-31 → Feb-28 clamp, the December year-roll), the store, the
 single-catch-up collapse, error-recorded-then-cleared, and resume-from-now;
-the suites read 1,173 server + 113 web green with typecheck clean. One test
+the suites read 1,173 server + 113 web green with typecheck clean. Both
+load-bearing seams were then mutated after committing (D-021's rule): `>`
+became `>=` on the daily candidate and killed exactly the strictly-after
+test; computing "next" from the missed slot rather than from now killed
+exactly the catch-up-collapse and resume-from-now tests. One and two kills,
+no survivors, file restored from the commit. One test
 failed on the way and it was the test's own fixture — the "future" schedule
 was due at the probe moment — which is worth recording because the module
 survived its author's first misreading. Not yet seen: a live firing. The

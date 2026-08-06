@@ -111,6 +111,7 @@ import {
   outputNames,
   safeOutputPath,
 } from './outputs';
+import { pickFolder } from './pickFolder';
 import { previewFile } from './preview';
 import { isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
@@ -1772,6 +1773,18 @@ app.post('/api/levels/:lid/knowledge/sources', async (c) => {
     scanCut: index.scanCut ?? 0,
     unscanned: index.unscanned ?? 0,
   });
+});
+
+/**
+ * The native Select Folder dialog, served by the machine that has the
+ * folders — a browser never reveals an absolute path, this process can.
+ * Machine-level rather than level-scoped: the dialog belongs to the desk,
+ * and whichever level asked saves the answer through its own sources route.
+ */
+app.post('/api/pick-folder', async (c) => {
+  const picked = await pickFolder();
+  if ('error' in picked) return c.json(picked, 400);
+  return c.json(picked);
 });
 
 /** Re-read the folders. The crew reads the index, so nothing changes until this runs. */

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KnowledgeStatus } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 
@@ -22,19 +22,43 @@ function ago(at?: number): string {
   return `${Math.round(hours / 24)} d ago`;
 }
 
-export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose: () => void }) {
+export function KnowledgeModal({
+  levelId,
+  onClose,
+  pickOnOpen,
+}: {
+  levelId: string;
+  onClose: () => void;
+  /** Open the native folder dialog immediately — the header's "+" (D-102). */
+  pickOnOpen?: boolean;
+}) {
   const [status, setStatus] = useState<KnowledgeStatus | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** StrictMode mounts twice; a second native dialog must not open over the first. */
+  const pickedOnMount = useRef(false);
 
-  const load = async (): Promise<void> => {
-    setStatus(await api<KnowledgeStatus>(lvl(levelId, '/knowledge')));
+  const load = async (): Promise<KnowledgeStatus> => {
+    const fresh = await api<KnowledgeStatus>(lvl(levelId, '/knowledge'));
+    setStatus(fresh);
+    return fresh;
   };
 
   useEffect(() => {
-    void load().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+    void (async () => {
+      try {
+        const fresh = await load();
+        if (pickOnOpen && !pickedOnMount.current) {
+          pickedOnMount.current = true;
+          await browse(fresh.sources);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levelId]);
 
@@ -77,6 +101,27 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
     if (!path || !status) return;
     setDraft('');
     await save([...status.sources, path]);
+  };
+
+  /**
+   * The native Select Folder dialog, asked of the server — the machine that
+   * has the folders. The answer lands through the same save as a typed path,
+   * deduplicated because "+" twice on the same folder would index it twice.
+   */
+  const browse = async (existing: string[]): Promise<void> => {
+    setPicking(true);
+    setError(null);
+    setNote(null);
+    try {
+      const picked = await api<{ path?: string; cancelled?: boolean }>('/api/pick-folder', {
+        method: 'POST',
+      });
+      if (picked.path) await save([...new Set([...existing, picked.path])]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPicking(false);
+    }
   };
 
   const remove = async (path: string): Promise<void> => {
@@ -144,6 +189,16 @@ export function KnowledgeModal({ levelId, onClose }: { levelId: string; onClose:
           })}
 
           <div className="sect">add a folder</div>
+          <p className="lib-status">
+            <button
+              className="work-link"
+              disabled={busy || picking}
+              onClick={() => void browse(status?.sources ?? [])}
+            >
+              {picking ? 'waiting for the folder window…' : 'choose a folder…'}
+            </button>
+            {' · or type a path below'}
+          </p>
           <input
             className="lib-search"
             placeholder="C:\Users\you\Documents"

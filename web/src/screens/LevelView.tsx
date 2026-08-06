@@ -39,6 +39,8 @@ export function LevelView({
   const [libraryQuery, setLibraryQuery] = useState('');
   const [crewOpen, setCrewOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  /** "+" beside reading: open the panel already asking for a folder (D-102). */
+  const [knowledgePick, setKnowledgePick] = useState(false);
   const [hired, setHired] = useState<Agentling | null>(null);
   const [tour, setTour] = useState(false);
   // Pointing at someone in the rail lights them up in the world and the other
@@ -130,6 +132,16 @@ export function LevelView({
           <button className="ghost" onClick={() => setKnowledgeOpen(true)}>
             reading
           </button>
+          <button
+            className="ghost"
+            title="Add a folder for this level to read"
+            onClick={() => {
+              setKnowledgePick(true);
+              setKnowledgeOpen(true);
+            }}
+          >
+            +
+          </button>
         </span>
       </header>
       <main>
@@ -202,7 +214,14 @@ export function LevelView({
         <RolesModal initialQuery={libraryQuery} onClose={() => setRolesOpen(false)} />
       )}
       {knowledgeOpen && (
-        <KnowledgeModal levelId={level.id} onClose={() => setKnowledgeOpen(false)} />
+        <KnowledgeModal
+          levelId={level.id}
+          pickOnOpen={knowledgePick}
+          onClose={() => {
+            setKnowledgeOpen(false);
+            setKnowledgePick(false);
+          }}
+        />
       )}
       {tour && !hired && !reviewJob && !profileId && !rolesOpen && !knowledgeOpen && (
         <Tour onDone={() => setTour(false)} />

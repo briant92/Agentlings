@@ -398,6 +398,36 @@ describe('RoutedExecutor', () => {
       expect(matched.completedInTurns).toBe(4);
     });
 
+    /**
+     * The un-learn is a fact about the run that was cut (D-095), so it speaks
+     * for the keyed job only when it *is* that job. A resembling run cut at
+     * the wall would otherwise retire a leash the keyed job may well fit.
+     */
+    it('does not raise the bound when a resembling run is cut at the wall', async () => {
+      writeRecipes(levelDir, [
+        {
+          key: KEY,
+          terms: terms(KEY),
+          role: 'worker',
+          approach: 'read the commits, group them, write it up',
+          hits: 2,
+          successes: 1,
+          completions: 1,
+          completedInTurns: 4,
+          capabilities: [],
+          learnedAt: 1,
+        },
+      ]);
+      const session = new DyingSession(
+        new SessionFailure('ran out of turns', { outOfTurns: true, turnsAllowed: 5 }),
+      );
+      await expect(run(build(session), job({ prompt: RESEMBLES }), PIP)).rejects.toThrow();
+
+      // It was leashed — otherwise this asserts nothing about the gate.
+      expect(progress.join(' ')).toContain('less exploring');
+      expect(readRecipes(levelDir).find((r) => r.key === KEY)?.completedInTurns).toBe(4);
+    });
+
     // It still writes down its own method under its own key — the resembling
     // run is not silenced, only kept from speaking for someone else.
     it('still banks the resembling job as its own recipe', async () => {

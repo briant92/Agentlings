@@ -111,6 +111,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-099 — 2026-08-06 — A run that only resembles a recipe credits usage, and nothing else](#d-099--2026-08-06--a-run-that-only-resembles-a-recipe-credits-usage-and-nothing-else)
 - [D-100 — 2026-08-06 — The compile gate asks what a method used, not what it could reach](#d-100--2026-08-06--the-compile-gate-asks-what-a-method-used-not-what-it-could-reach)
 - [D-101 — 2026-08-06 — Standing approval fired, and the desk arrests a send with no words](#d-101--2026-08-06--standing-approval-fired-and-the-desk-arrests-a-send-with-no-words)
+- [D-102 — 2026-08-06 — The folder is picked in the OS's own dialog, served by the server that has the folders](#d-102--2026-08-06--the-folder-is-picked-in-the-oss-own-dialog-served-by-the-server-that-has-the-folders)
 
 ## By theme
 
@@ -162,7 +163,10 @@ entry updates one file rather than two.
   0 turns and $0. It also records what the ledger makes of the compile: cut at
   the cap, so filed a failure and absorbed, while the tool it built is live
 - **Outside access, continued again** — the knowledge store: options in D-046,
-  settled as sync-and-index by D-047, built in D-048
+  settled as sync-and-index by D-047, built in D-048; and D-102, where the
+  folder it reads is picked in the OS's own Select Folder dialog served by
+  the server (a browser never reveals an absolute path), the second
+  deliberately Windows-only file — its first serving picked Wave 5's folder
 - **The free tier's honesty** — the recall tier scoring on its own asking
   words: D-048
 - **The store measured on real work, and quoting `noRouter`** — D-049, which
@@ -5833,3 +5837,46 @@ yes, and the auto path crediting its own approval so the count stays honest.
 Left to the unit tests rather than live proof, deliberately: revocation on a
 changed signature, the stranger-blocks-it subset rule, and the refusal
 fallback at send time. M5.11 has no unproven pieces left.
+
+## D-102 — 2026-08-06 — The folder is picked in the OS's own dialog, served by the server that has the folders
+
+Wave 5 needed a folder from Brian, and typing a path was the friction. The
+browser cannot remove it: both `webkitdirectory` and `showDirectoryPicker()`
+deliberately never reveal an absolute path, so no web-side picker can hand
+the server a folder to sync. What can is the server itself — it runs on the
+user's own machine, in the user's own session.
+
+**Chosen from three options** (an in-app folder tree over a list-folders
+API; the native dialog; native now with the tree as an eventual fallback):
+the native dialog, Brian's pick and the recommendation. "+" beside *reading*
+opens Windows' modern IFileOpenDialog in folder mode — Quick Access,
+OneDrive, search — owned by the foreground window, which is the browser the
+user just clicked in, so it fronts above the click instead of flashing in
+the taskbar. The chosen path saves through the same sources route as a typed
+one, deduplicated, and the reading panel opens on the sync's own report. The
+typed path stays as the fallback, and the panel grew "choose a folder…" for
+later additions.
+
+**The second deliberately Windows-only file**, on the OCR engine's precedent
+(D-059): COM interop compiled by `Add-Type` in a spawned `powershell.exe
+-Sta -EncodedCommand` — the encoding sidesteps every quoting rule a heredoc
+dies on — with `[Console]::OutputEncoding` forced to UTF-8, because PS 5.1's
+redirected stdout otherwise speaks the OEM codepage and mangles accented
+folder names on this locale. One dialog at a time, five minutes of patience,
+and a cancel is an answer: a `CANCELLED` sentinel no absolute path can
+collide with.
+
+**Probed before wiring, and the probe paid.** The C# was compiled headlessly
+through the exact spawn the server uses, before the route existed — and the
+probe showed PS 5.1 writing CLIXML progress noise to stderr **on success**,
+which is why `parsePickOutput` reads stderr only off a non-zero exit; keyed
+on "stderr non-empty" it would have failed every healthy pick. Tests pin the
+seams the two sides share — the last-non-empty-line rule (Add-Type chats
+above the answer), the sentinel, and the gate that refuses a second dialog
+and reopens after any answer — while the dialog itself is a person and a
+window, left to the person. Both mutations killed (first-line-instead-of-
+last, and a stuck gate) after committing first, per D-021. 1147 + 113 green.
+
+**Served live within the hour**: the first "+" picked `Training Ground
+Workout`, the sync read 55 passages from two PDFs for $0, and Wave 5 ran on
+it end to end — the record and its two boundary findings are TRAINING.md's.

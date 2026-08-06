@@ -211,6 +211,32 @@ D-059–D-061 material. Then:
 | Sync + 2 recalls | "what do we know about ⟨specific thing in the folder⟩" | **$0** (routed; each answer cites `[file, synced date]`) |
 | One grounded session | "Using the notes on file, draft a ⟨checklist/letter/summary⟩ for ⟨thing the documents cover⟩" | **~30–45c**; the store's measured best case is material with no other route (D-049) |
 
+**Measured 2026-08-06 — the wave ran end to end, and the best case held.**
+Brian picked the folder through D-102's new "+" dialog (its first live
+serving): `Training Ground Workout`, two real PDFs — a confidential Enerlink
+board deck from that morning and a 2022 balance sheet — 55 passages, nothing
+skipped, $0.
+
+- **Both recalls routed at $0 with the promised citations** (`[file, synced
+  2026-08-06]`). "What do we know about MGI" came back precise — the alert
+  engine's own numbers off the deck. The store's win on no-other-route
+  material is exactly as D-049 called it: not a percentage.
+- **The thin recall found a boundary worth having.** The balance PDF is a
+  scan that arrived with a junk text layer baked in ("BALANCE GENERAL
+  zo22…"), and D-059's text-layer-wins rule trusted it — `scanned: 0`, so
+  the good Windows OCR never fired. The rule assumes any text layer beats
+  OCR; this file breaks the assumption. Recorded, not fixed (What's open).
+  The same recall's second citation matched the *word* "balances" from the
+  other file — term-scoring being term-scoring, disclosed by the citation.
+- **The grounded session delivered above prediction, for the usual reason**:
+  50.6c against the 38c guess (7 calls × the level's ~7c standing-context
+  floor, D-067's residual — the fifth prediction this level has pushed low
+  the same way). The briefing itself is the standard matured elsewhere
+  turning up here: deck figures verbatim, risks generalised from the one
+  incident, and a **Gaps** section naming the four agenda items its 12
+  recalled lines never covered — the recall hands a scored selection, not
+  the index, and the run said so instead of papering over it.
+
 ### Wave 6 — hq repo maintenance (optional, real, recurring)
 
 | ID | Prompt (verbatim) | App quote | My predicted actual |
@@ -249,8 +275,8 @@ server work, and a future compile candidate of the same family as
 | T6·5 | 2026-08-05 | e5874fce | $1.16 keyed | 50c | **58.4c** | 58.4c | 9 | done | **`successes: 3` — the compile threshold, reached on real recurring work with nothing seeded**. 118s, un-leashed, all seven figures matching an independent recompute; it also named the second plausible grouping (`description`, by level) and said why it did not use it — T3's "state the interpretation" standard turning up in a different job. Closest prediction on this job yet (+17%). *Note: `tool-candidates.jsonl` has no T6 line yet — the check reads the recipe as loaded at run start, so it lands one run later; the promote route reads `successes` directly and does not wait for it* |
 | T6·compile | 2026-08-05 | 3cc1634b | $2.00 ceiling | $1.15 | **$1.06** | **$0** | 11 | partial→promoted | **the prediction landed** ($0.95–1.35 called, $1.06 actual). Cut at the compile cap (11 of 10 turns, D-025) holding two finished scripts — the ordinary ending for a compile, not a shortfall. Filed `failed`, so the user was charged nothing and the app absorbed it (D-012): **a working tool cost $0 and the ledger records the run that built it as a failure** |
 | T6·tool | 2026-08-05 | 1882e54b | free | $0.00 | **$0** | **$0** | 0 | done | **`tooled: true`, 0 turns, no session** — a seventh CSV (by day, 116 rows) it had never seen, every figure matching an independent recompute, and it disclosed the rounding residual (parts 50.32 vs grand 50.31) rather than hiding it. `runs: 1, failures: 0` |
-| T7·recalls | | | free | $0.00 | | | | | |
-| T7·session | | | | 38c | | | | | |
+| T7·recalls | 2026-08-06 | 535e8aea, 2c89a2dc | free | $0.00 | **$0** | $0 | 0 | done | both routed, both citing `[file, synced 2026-08-06]`; the thin one exposed the junk-text-layer boundary and a term-match stray, each visible in its citation |
+| T7·session | 2026-08-06 | 60298461 | $2.00 ceiling | 38c | **50.6c** | 50.6c | 7 | done | 114s; one-page .docx + md twin, deck figures verbatim, honest Gaps section for the agenda items its 12 recalled lines never carried. +33% on the guess — the level's per-call floor again |
 | T8·1 | | | 10c | 15c | | | | | hq |
 
 Programme total, predicted: **~$4.50–6.50 spent** across ~19 runs plus one
@@ -309,12 +335,17 @@ each one rests on already is.
    say" — so Start now arrests "no message", mutation-proved, beside
    D-091's shape check. Left to unit tests deliberately: revocation,
    the stranger-blocks-it rule, and the send-time refusal fallback.
-4. **T5 in September**, on its real monthly cadence — not before. **Wave 5**
-   needs Brian to pick a real documents folder.
-5. **Two measured gaps, deliberately unbuilt.** The quote is blind to
+4. **T5 in September**, on its real monthly cadence — not before. ~~Wave 5
+   needs Brian to pick a real documents folder.~~ **Wave 5 ran 2026-08-06**
+   — picked through D-102's dialog, measured above; only T5 remains.
+5. **Three measured gaps, deliberately unbuilt.** The quote is blind to
    attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
-   per-call floor here against the pooled class rate). Both have ledger rows
-   behind them; neither is worth code before more traffic.
+   per-call floor here against the pooled class rate). And the store trusts
+   an embedded text layer even when it is junk — a scan that arrived with
+   bad OCR baked in reads "zo22" and our better engine never fires, because
+   D-059's rule assumes any text layer beats OCR (Wave 5's balance PDF, the
+   one passage it yielded). All three have ledger rows behind them; none is
+   worth code before more traffic.
 6. **Two ledger blind spots, recorded rather than fixed** (both in D-096).
    `tool-candidates.jsonl` lands a run late, because the candidate check reads
    the recipe as loaded at run *start* — the UI's list is one run behind the

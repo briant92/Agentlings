@@ -103,6 +103,17 @@ export interface JobMeter {
   /** Tool calls the session made, and the last one it made. Measurement only. */
   toolCalls?: number;
   lastTool?: string;
+  /**
+   * Every tool this run actually called, by name, deduped and sorted.
+   *
+   * Not measurement — the compile gate reads it (D-100). D-044 had to judge
+   * whether a method could become a plain-node script from the surface it was
+   * *learned with*, because what it *used* was recorded nowhere, and said so:
+   * "closing it needs the run to record which tools it actually called".
+   * Absent means a run from before this existed, which the gate must be able
+   * to tell apart from a run that reached nothing.
+   */
+  toolsUsed?: string[];
   /** The prompt was question-shaped. Measurement only — see LedgerEntry. */
   asked?: boolean;
   /** How many of the level's own notes bear on the prompt. Measurement only. */

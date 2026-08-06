@@ -552,6 +552,13 @@ export class RoutedExecutor implements Executor {
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
         capabilities: this.capabilities(job, agentling?.role),
+        // What it reached for, against what it could have (D-100). Taken from
+        // the failure's meter too: a run that died having called the code host
+        // still proves the method reaches outside, and that is exactly what
+        // the compile gate needs to know.
+        usedTools:
+          result?.meter?.toolsUsed ??
+          (failure instanceof SessionFailure ? failure.meter.toolsUsed : undefined),
       };
       changes.push((fresh) => rememberRecipe(fresh, { ...entry, at: Date.now() }));
       onProgress?.('noted how to do this next time');

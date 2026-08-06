@@ -37,6 +37,22 @@ export interface Recipe {
    * unknown, which is treated as changed rather than assumed to match.
    */
   capabilities?: string[];
+  /**
+   * Every tool the runs of this method actually called, accumulated across
+   * them — what it *used*, against `capabilities`' what it *could reach*.
+   *
+   * The union rather than the latest, and the two fields differ on purpose.
+   * `capabilities` is a fact about the present: what was available when the
+   * method was last learned, which is why a moved surface demotes a recipe
+   * (D-036). This is evidence, and evidence accumulates — a method that ever
+   * needed the code host needs it, however many later runs happened not to
+   * reach for it. Under-claiming here would let the compile gate approve a
+   * script that cannot exist, which is the one thing D-044 was built to stop.
+   *
+   * Absent means every run of this method predates the recording (D-100), so
+   * the gate falls back to the surface and behaves exactly as it did before.
+   */
+  usedTools?: string[];
   hits: number;
   /**
    * Times a run using this recipe actually landed. Separate from `hits`
@@ -395,6 +411,8 @@ export function rememberRecipe(
     answer?: string;
     at: number;
     capabilities?: string[];
+    /** Tools this run actually called, unioned into what the method has used. */
+    usedTools?: string[];
   },
 ): Recipe[] {
   const key = normalise(entry.prompt);
@@ -402,14 +420,22 @@ export function rememberRecipe(
   // capabilities stops being demoted after one full-length run rather than for
   // ever. It is also how every recipe written before this field heals itself.
   const capabilities = entry.capabilities ? [...entry.capabilities].sort() : undefined;
+  /** Accumulated, never replaced — see `usedTools` on the Recipe (D-100). */
+  const union = (before: string[] | undefined): string[] | undefined => {
+    const all = [...(before ?? []), ...(entry.usedTools ?? [])];
+    return all.length > 0 ? [...new Set(all)].sort() : undefined;
+  };
   const existing = recipes.find((r) => r.key === key);
   if (existing) {
     existing.approach = entry.approach;
     existing.role = entry.role;
     existing.capabilities = capabilities;
+    const used = union(existing.usedTools);
+    if (used) existing.usedTools = used;
     if (entry.answer !== undefined) existing.answer = entry.answer;
     return recipes;
   }
+  const used = union(undefined);
   return [
     ...recipes,
     {
@@ -418,6 +444,7 @@ export function rememberRecipe(
       role: entry.role,
       approach: entry.approach,
       ...(capabilities ? { capabilities } : {}),
+      ...(used ? { usedTools: used } : {}),
       ...(entry.answer !== undefined ? { answer: entry.answer } : {}),
       hits: 0,
       learnedAt: entry.at,

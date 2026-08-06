@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capabilityTokens, connectionsIn, sameSurface } from './capability';
+import { capabilityTokens, connectionsIn, connectionsUsed, sameSurface } from './capability';
 
 describe('connectionsIn', () => {
   const surface = capabilityTokens({
@@ -115,5 +115,66 @@ describe('sameSurface', () => {
 
   it('is true for two runs that could both do nothing', () => {
     expect(sameSurface([], [])).toBe(true);
+  });
+});
+
+/**
+ * Which connections a method actually reached (D-100). D-044 could only ask
+ * what was *available* — "the surface cannot say whether it did" — and named
+ * the price: a connection somebody switched on rides every recipe learned
+ * since. Measured before this existed, three of the seven recipes eligible to
+ * compile were refused for carrying `browser`, and none had opened one.
+ */
+describe('connectionsUsed', () => {
+  const CATALOG = [
+    { name: 'web', tools: ['fetch_page'] },
+    { name: 'github', tools: ['list_commits', 'read_file'] },
+    { name: 'search', tools: ['search_web'] },
+    { name: 'browser', tools: ['navigate', 'read_page'] },
+    { name: 'telegram', tools: [] },
+  ];
+
+  it('reports nothing when a run reached for nothing', () => {
+    expect(connectionsUsed(['Read', 'Write', 'Bash'], CATALOG)).toEqual([]);
+  });
+
+  it('names a builtin connection from the tool it lends', () => {
+    expect(connectionsUsed(['Read', 'list_commits', 'Write'], CATALOG)).toEqual(['github']);
+  });
+
+  // An stdio connection's tools arrive under the SDK's own prefix.
+  it('names a connection through its mcp prefix', () => {
+    expect(connectionsUsed(['mcp__browser__navigate'], CATALOG)).toEqual(['browser']);
+  });
+
+  it('names every one that was reached, not just the first', () => {
+    expect(connectionsUsed(['fetch_page', 'search_web', 'Read'], CATALOG)).toEqual([
+      'web',
+      'search',
+    ]);
+  });
+
+  /**
+   * The gain over reading availability, stated as a test: `web` is subtracted
+   * from a *surface* because it is on everywhere and says nothing. A run that
+   * genuinely called `fetch_page` has said something, and this reports it —
+   * which closes D-044's own stated limit, that a job fetching a page with
+   * nothing but `web` passed the gate and produced a failing compile.
+   */
+  it('reports an ambient connection when it was really used', () => {
+    expect(connectionsUsed(['fetch_page'], CATALOG)).toEqual(['web']);
+    expect(connectionsIn(['conn:web'], ['web'])).toEqual([]); // the old question
+  });
+
+  // The case that bought this: the surface says browser, the run says no.
+  it('clears a method that carried a connection it never touched', () => {
+    const surface = ['conn:browser', 'conn:github', 'conn:web'];
+    expect(connectionsIn(surface, ['web'])).toEqual(['browser', 'github']);
+    expect(connectionsUsed(['Read', 'Write', 'Bash'], CATALOG)).toEqual([]);
+  });
+
+  it('says nothing at all when the runs predate the recording', () => {
+    expect(connectionsUsed(undefined, CATALOG)).toEqual([]);
+    expect(connectionsUsed([], CATALOG)).toEqual([]);
   });
 });

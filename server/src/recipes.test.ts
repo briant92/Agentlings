@@ -511,3 +511,51 @@ describe('successes, kept apart from uses', () => {
     expect(credited[0]).toMatchObject({ hits: 1, successes: 1 });
   });
 });
+
+/**
+ * What a method reached, accumulated across its runs (D-100). Evidence, not a
+ * fact about the present: `capabilities` records what was available last time
+ * and is replaced, this records what was ever *used* and is unioned.
+ */
+describe('rememberRecipe records the tools a method actually used', () => {
+  const learn = (recipes: Recipe[], usedTools?: string[]) =>
+    rememberRecipe(recipes, {
+      prompt: 'x',
+      role: 'worker',
+      approach: 'y',
+      at: 1,
+      capabilities: [],
+      ...(usedTools ? { usedTools } : {}),
+    });
+
+  it('records what the first run called', () => {
+    expect(learn([], ['Read', 'list_commits'])[0].usedTools).toEqual(['Read', 'list_commits']);
+  });
+
+  it('sorts and dedupes, so two runs that used the same tools compare equal', () => {
+    expect(learn([], ['Write', 'Read', 'Read'])[0].usedTools).toEqual(['Read', 'Write']);
+  });
+
+  /**
+   * The union is the point. A method that ever needed the code host needs it,
+   * however many later runs happened not to reach for it — under-claiming
+   * would let the compile gate approve a script that cannot exist.
+   */
+  it('accumulates across runs rather than replacing', () => {
+    let out = learn([], ['list_commits']);
+    out = learn(out, ['Read', 'Write']);
+    expect(out[0].usedTools).toEqual(['Read', 'Write', 'list_commits']);
+  });
+
+  it('leaves what it knows alone when a run reports nothing', () => {
+    let out = learn([], ['list_commits']);
+    out = learn(out);
+    expect(out[0].usedTools).toEqual(['list_commits']);
+  });
+
+  // Absent, never empty: the gate must tell "predates the recording" apart
+  // from "provably reached nothing".
+  it('records nothing at all when no run has reported', () => {
+    expect(learn([]) [0].usedTools).toBeUndefined();
+  });
+});

@@ -33,7 +33,7 @@ import {
   setAuto,
 } from './approvals';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
-import { capabilityTokens, connectionsIn } from './capability';
+import { capabilityTokens, connectionsIn, connectionsUsed } from './capability';
 import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
 import { describe, missingSecrets, readConnections } from './connections';
 import {
@@ -1906,10 +1906,26 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
    * are on by default — those appear on nearly every surface and so carry no
    * information. What remains was switched on deliberately.
    */
-  const ambient = readConnections(CONNECTIONS_FILE)
-    .filter((conn) => conn.defaultOn === true)
-    .map((conn) => conn.name);
-  const needs = connectionsIn(recipe.capabilities, ambient);
+  /**
+   * What the method actually reached, when the runs recorded it (D-100).
+   *
+   * D-044 judged this from availability and named the cost: a surface says
+   * what a run *could* touch, so a connection somebody switched on rides every
+   * recipe learned since, used or not. Measured before this changed, that was
+   * not theoretical — three of the seven recipes eligible to compile were
+   * refused for carrying `browser`, and none of them plausibly opened one.
+   *
+   * Use is the better question and now answerable, so it is asked first.
+   * Availability remains the answer for recipes learned before runs recorded
+   * their tools: absent evidence is not evidence of absence, and treating it
+   * as such would approve a compile that cannot exist — the one thing D-044
+   * was built to stop.
+   */
+  const catalog = readConnections(CONNECTIONS_FILE);
+  const ambient = catalog.filter((conn) => conn.defaultOn === true).map((conn) => conn.name);
+  const needs = recipe.usedTools?.length
+    ? connectionsUsed(recipe.usedTools, catalog)
+    : connectionsIn(recipe.capabilities, ambient);
   if (needs.length > 0) {
     return c.json(
       {

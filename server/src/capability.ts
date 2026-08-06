@@ -59,6 +59,41 @@ export function connectionsIn(
     .filter((name) => !ambient.includes(name));
 }
 
+/**
+ * The connections a method actually *reached*, from the tools it called.
+ *
+ * D-044 had to judge compilability from availability, and said plainly why:
+ * "the surface cannot say whether it did [reach one]". It can now — a run
+ * records the tools it called (D-100), and the catalog already declares which
+ * tools belong to which connection, so the two join.
+ *
+ * Ambient plays no part here, and that is the whole gain. `web` was subtracted
+ * from a surface because it is on everywhere and so carries no information;
+ * a run that genuinely *called* `fetch_page` has told us something, and this
+ * reports it. D-044's own stated limit — "a job that genuinely fetched a page
+ * with nothing but `web` still passes this gate and will produce a failing
+ * compile" — closes here.
+ *
+ * Names are matched both bare and MCP-prefixed, because a stdio connection's
+ * tools reach the session as `mcp__<name>__<tool>` while a builtin's arrive
+ * under their own name.
+ */
+export function connectionsUsed(
+  usedTools: string[] | undefined,
+  connections: { name: string; tools?: string[] }[],
+): string[] {
+  if (!usedTools?.length) return [];
+  const used = new Set(usedTools);
+  return connections
+    .filter(
+      (conn) =>
+        used.has(conn.name) ||
+        [...used].some((tool) => tool.startsWith(`mcp__${conn.name}__`)) ||
+        (conn.tools ?? []).some((tool) => used.has(tool) || used.has(`mcp__${conn.name}__${tool}`)),
+    )
+    .map((conn) => conn.name);
+}
+
 /** Whether two surfaces are the same one. */
 export function sameSurface(a: string[] | undefined, b: string[] | undefined): boolean {
   if (!a || !b) return false;

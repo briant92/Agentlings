@@ -1058,6 +1058,18 @@ export class ClaudeAgentExecutor implements Executor {
       // (D-052).
       let toolCalls = 0;
       let lastTool: string | undefined;
+      /**
+       * Which tools this run actually called, by name (D-100).
+       *
+       * The names were already going past — `lastTool` kept the final one and
+       * dropped the rest. Keeping the set closes the limit D-044 named about
+       * itself: the compile gate reads what a method *could* reach, because
+       * what it *used* was never recorded anywhere. Measured, that costs the
+       * tier real work — three of the seven recipes eligible to compile are
+       * refused for carrying `browser` on their surface, and none of them
+       * plausibly opened one.
+       */
+      const toolsUsed = new Set<string>();
       child.stderr.on('data', (chunk: Buffer) => {
         stderr += String(chunk);
       });
@@ -1072,6 +1084,7 @@ export class ClaudeAgentExecutor implements Executor {
         if (msg.type === 'progress' && msg.name) {
           toolCalls++;
           lastTool = msg.name;
+          toolsUsed.add(msg.name);
           onProgress?.(toolLine(msg.name, msg.input));
         } else if (msg.type === 'result') {
           summary = firstLine(String(msg.summary ?? ''));
@@ -1096,7 +1109,16 @@ export class ClaudeAgentExecutor implements Executor {
         // now made twice (D-046, D-052). `toolCalls` is written even at zero —
         // a run that called nothing is an answer, and an absent field means
         // the row predates the counter.
-        meter = { ...meter, toolCalls, ...(lastTool ? { lastTool } : {}) };
+        meter = {
+          ...meter,
+          toolCalls,
+          ...(lastTool ? { lastTool } : {}),
+          // Sorted so two runs that used the same tools compare equal, and
+          // absent rather than empty when nothing was called — an absent field
+          // means the run predates this, which the compile gate must be able
+          // to tell apart from a run that provably reached nothing (D-100).
+          ...(toolsUsed.size > 0 ? { toolsUsed: [...toolsUsed].sort() } : {}),
+        };
         if (this.cancelled.delete(jobId)) {
           // Killed on purpose: say so, rather than reporting whatever the
           // dying process happened to leave on stderr. It spent money on the

@@ -194,5 +194,29 @@ the pack draws behind that spot or set \`rim\` to a slot that contrasts with it.
 
 Two things the render deliberately does not show: ambient effects, which are
 animated, and the doorway, signposts and deliveries, which the app draws on
-top of your scene.`;
+top of your scene.
+
+## When to stop, which is earlier than you think
+
+**Get a complete pack rendered and looked at well before you are halfway
+through your turns.** Not a sketch to expand — the whole scene, every layer,
+end to end. Everything after that is improving what exists.
+
+The packs installed so far are **46, 78 and 204 ops**, and the best *picture*
+of the three is not the biggest. A fourth reached 413 and was worse: palms on
+an even rhythm, one flat foliage texture, no light direction — more ops spent
+making it larger rather than better, and it ran out of turns before it could
+say anything about itself.
+
+So: **if you are past roughly 250 ops and still adding, you are elaborating,
+not improving.** Stop adding and start looking. Fix the thing your own render
+shows you — a band that reads as a stripe, a rhythm too even to be alive, a
+place where nothing draws the eye — because those are the faults that make a
+world look composed rather than generated, and none of them is fixed by
+another hundred ops.
+
+**Keep back enough turns to write \`RESULT.md\`.** A run that is cut delivers
+its pack but reports nothing: what you saw, what you chose, and what you would
+do next are lost, and those are worth more to the next run than the ops are.
+If you are running short, write the result *first* and improve afterwards.`;
 }

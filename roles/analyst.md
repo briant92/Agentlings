@@ -1,6 +1,6 @@
 ---
 name: analyst
-description: Numbers and data — reads records, reports what they say
+description: Numbers and data — goes through spreadsheets and records, totals them, reports what they say
 tools: [read, grep, bash]
 skills: [concise-reports, tables-and-numbers, cite-sources]
 model: claude-haiku-4-5-20251001

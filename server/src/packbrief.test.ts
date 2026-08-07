@@ -79,6 +79,40 @@ describe('packBrief', () => {
     expect(brief).toMatch(/signposts|doorway/i);
   });
 
+  /**
+   * Five designer runs, four of them cut at the cap, $6.75 absorbed against
+   * $0.99 charged — and the packs doubled every time: 46, 78, 204, 413 ops.
+   * The turn budget had been climbing too (10 → 12 → 16 → 23), so more turns
+   * were only ever buying more ops. The 413 was the worst picture of the four.
+   *
+   * That is a stopping problem, not a budget problem, so the fix is here and
+   * in the role rather than in the cap.
+   */
+  describe('when to stop', () => {
+    it('asks for a complete pack early, not a sketch to expand', () => {
+      expect(brief).toMatch(/complete pack rendered and looked at/i);
+      expect(brief).toMatch(/halfway/i);
+    });
+
+    it('gives the real op counts, including the one that went wrong', () => {
+      expect(brief).toContain('46, 78 and 204');
+      expect(brief).toContain('413');
+      // Whitespace-tolerant: the brief is hard-wrapped, so a phrase can carry
+      // a newline in the middle of it.
+      expect(brief).toMatch(/best \*picture\*\s+of the three is not the biggest/i);
+    });
+
+    it('names a number at which adding stops being improving', () => {
+      expect(brief).toMatch(/past roughly 250 ops/i);
+    });
+
+    /** Two cut runs in a row delivered a pack and no account of it. */
+    it('tells it to reserve turns for the result, and to write it first if short', () => {
+      expect(brief).toMatch(/Keep back enough turns/i);
+      expect(brief).toMatch(/write the result \*first\*/i);
+    });
+  });
+
   describe('given a reference picture', () => {
     const withRef = packBrief([], 'reference.png');
 

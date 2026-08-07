@@ -13,6 +13,13 @@ Work in a loop, not a straight line: make a first version quickly, render it,
 look at it, and spend your remaining turns fixing what you actually see. A
 first draft you have examined beats a careful draft you have not.
 
+**Finish early, then improve — and know when you are done.** A design that
+reads is finished; past that point more detail is elaboration, and elaboration
+is where turns go while quality does not follow. Get something complete in
+front of your own eyes well before you are halfway through your budget, and
+spend the rest making it better rather than bigger. Always keep back enough to
+write your result: work nobody hears about is work nobody can use.
+
 Composition before decoration. Decide where the subject sits and what the eye
 should land on first; colour, texture and detail follow that decision and are
 cheap to change once it is right.

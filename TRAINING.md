@@ -152,9 +152,24 @@ leash → cut → deliver → absorb. Free for the user, unbounded for the app.
 | **T4** | Using the code host connection, list the last 15 commits on briant92/Agentlings and write a short status note on what changed. | github connection + synthesis | About 46c (36 alike) | **~22c** (15–35c; hq's leashed scout did this class at 5.5–8.4c, worker on the default model costs more) |
 | **T5** | *(September, on its real cadence)* I need a summary table of this month's main economic indicators from Chile and the US | the settled method on fresh data; monthly recurrence | **About $1.09 — done this 3 times before** (keyed, high certainty) | **$1.00–1.15** |
 
-T5 is the twelfth run of that sentence but the *first on its real monthly
-cadence* — do not run it early to farm the recipe (memory: an eleventh
-synthetic run teaches nothing).
+T5 is the **tenth** job to carry that sentence and the ninth to complete —
+not the twelfth. The old number counted two continuations of `3c031419` as
+runs of their own, and they are not: a continuation is the job it continues
+(D-074). Nor do the two Telegram-bound runs of 2026-08-07 belong to it —
+*"…from Chile and the US **sent on Telegram to me**"* is a different
+sentence, so a different key, and it carries its own recipe reading
+`hits: 0`. The exact sentence's recipe reads **`hits: 8`, `successes: 6`,
+`completedInTurns: 24`**, and that is the count to trust: it is the engine's
+own, not a tally of what looked alike in `jobs.json`. Anything counting runs
+by eye will make this mistake in both directions — resembling sentences up,
+continuations up, and the real figure was on disk the whole time.
+
+It is the *first firing on the real monthly cadence*, and the schedule is
+**live** — created 2026-08-06 in `training-ground` (id `e83dc31d`), monthly
+on the 1st at 09:00, next due **Tue 1 Sep 2026 09:00**, unpaused, never
+fired. It only fires while the app is running; closed at the hour, D-103's
+boot sweep fires one catch-up when it next starts. Do not run it early to
+farm the recipe — a tenth synthetic run teaches nothing.
 
 ### Wave 4 — the compile ladder, walked legitimately
 

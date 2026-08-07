@@ -48,11 +48,15 @@ capability roadmap; this is the short list of what matters most, in order.
       Acceptable for one user on localhost by decision; each becomes a
       blocker at the first second user, as does billing (D-012's spine has
       no invoice on purpose).
-- [ ] **G5 — The quote's two blind spots.** Attachments (+$0.83 measured on
+- [ ] **G5 — The quote's three blind spots.** Attachments (+$0.83 measured on
       one 74KB file, T2·1) and per-level context weight (the ~5–8c per-call
-      floor that pushed five predictions low the same way). Both recorded in
-      TRAINING.md's "What's open", both deliberately waiting on more real
-      traffic before code.
+      floor that pushed five predictions low the same way) are residuals. The
+      third is not: a **whole job class priced wrong**. Authoring a level pack
+      quoted 50c at *high* certainty from 51 samples and cost **$1.81** —
+      3.6x over, 91% of the ceiling (D-110), because it was averaged against a
+      pooled class whose members are mostly short. All three recorded in
+      TRAINING.md's "What's open", all three deliberately waiting on more real
+      traffic before code: one run is not a rate.
 - [ ] **G6 — Robustness odds and ends.** The store trusts a junk embedded
       text layer over its own better OCR (Wave 5's "zo22" balance sheet —
       D-059's rule assumes any text layer beats OCR); the connection

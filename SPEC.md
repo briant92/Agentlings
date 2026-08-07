@@ -337,10 +337,21 @@ project — its own crew, job queue, event feed, sandboxes, memory and
 everything it has learned — stored under `.agentlings/levels/<id>/` (laid out
 under [State on disk](#state-on-disk)).
 
-- **Creation**: name + project tag + a hand-tuned palette theme (cave,
-  chalkboard, household, marble). A fresh crew of two spawns; hire more
-  from inside the level (they drop in at the hatch). Level cards on the
-  select screen render their thumbnails live from the theme palette.
+- **Creation**: name + project tag + a look. A fresh crew of two spawns;
+  hire more from inside the level (they drop in at the hatch). Level cards on
+  the select screen render their thumbnails live — the level shrunk through
+  the same interpreter that draws it, never a sketch of it.
+- **A look is one of four built in** (cave, chalkboard, household, marble)
+  **or an installed level pack**: a whole world as data — its own palette,
+  terrain, backdrop and height — dropped into `web/public/packs/` and picked
+  up on reload. A pack the checker refuses is skipped with its reason rather
+  than breaking the app, and a level whose pack has gone opens on the fallback
+  rather than not at all. `npm run pack:check` judges one before it is
+  installed; `art/LEVELPACK.md` is the contract.
+- **The crew can author a look.** Describe a world in the New Level dialog and
+  an ordinary quoted, sandboxed job writes the pack; review draws it through
+  the interpreter that will draw it for real, and **approving is what installs
+  it**. The session installs nothing and has no tool that could.
 - **Context scoping**: every finished job appends to the level's
   `KNOWLEDGE.md`, and a session is given the notes from it that are relevant
   to *its own job* — never another level's, and never simply the most recent.
@@ -379,6 +390,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.12 the recurrence timer → D-103
 - M5.13 the acting surface finished → D-104
 - M5.14 composite work → D-105
+- M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

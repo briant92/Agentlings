@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { LevelInfo, ThemeKey } from '@agentlings/shared';
+import type { LevelInfo, ThemeId } from '@agentlings/shared';
 import { api, postJson } from '../api';
-import { renderThumbnail, THEME_LABELS } from '../world/themes';
+import { allLooks, renderThumbnail } from '../world/looks';
 
 export interface LevelEntry {
   id: string;
   name: string;
-  theme: ThemeKey;
+  theme: ThemeId;
 }
 
-const THEME_KEYS: ThemeKey[] = ['cave', 'chalkboard', 'household', 'marble'];
+
 
 /** The world map: one card per level, each its own crew and context. */
 export function SelectScreen({
@@ -94,7 +94,7 @@ function NewLevelModal({
 }) {
   const [name, setName] = useState('');
   const [project, setProject] = useState('');
-  const [theme, setTheme] = useState<ThemeKey>('cave');
+  const [theme, setTheme] = useState<ThemeId>('cave');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -135,14 +135,14 @@ function NewLevelModal({
           />
           <div className="sect">palette</div>
           <div className="nl-themes">
-            {THEME_KEYS.map((key) => (
+            {allLooks().map((look) => (
               <button
-                key={key}
-                className={`nl-theme${theme === key ? ' on' : ''}`}
-                onClick={() => setTheme(key)}
+                key={look.id}
+                className={`nl-theme${theme === look.id ? ' on' : ''}`}
+                onClick={() => setTheme(look.id)}
               >
-                <img src={renderThumbnail(key)} alt="" />
-                <span>{THEME_LABELS[key]}</span>
+                <img src={renderThumbnail(look.id)} alt="" />
+                <span>{look.label}</span>
               </button>
             ))}
           </div>

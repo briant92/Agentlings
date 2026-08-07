@@ -1,7 +1,5 @@
 import type { Theme, ThemeKey } from '@agentlings/shared';
-import { css, DB } from './palette';
-import { anchorsOf, canvasSurface, drawScene } from './scene';
-import { SCENES } from './scenes';
+import { DB } from './palette';
 
 // The palette a scene paints with. Defined in shared beside the format that
 // names its slots — a second copy here would be a notion duplicated, and the
@@ -89,39 +87,3 @@ export const THEME_LABELS: Record<ThemeKey, string> = {
   household: 'Household',
   marble: 'Marble & gold',
 };
-
-const thumbCache = new Map<ThemeKey, string>();
-
-/** Tiny deterministic scene in the theme's palette — the level card image. */
-export function renderThumbnail(key: ThemeKey): string {
-  const cached = thumbCache.get(key);
-  if (cached) return cached;
-  const T = THEMES[key];
-  // The card is the level shrunk, so it scales by the level's own height —
-  // a taller scene has to shrink further, not get cropped.
-  const scene = SCENES[key];
-  const anchors = anchorsOf(scene);
-  const w = 240;
-  const h = 72;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d')!;
-
-  // The card is the level's own scene, drawn small. It used to be a second,
-  // hand-drawn cave that showed the same picture for every theme — a preview
-  // that could disagree with the thing it was previewing.
-  ctx.fillStyle = css(T.void);
-  ctx.fillRect(0, 0, w, h);
-  drawScene(
-    canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css),
-    scene,
-    T,
-    anchors,
-  );
-  ctx.globalAlpha = 1;
-
-  const url = canvas.toDataURL();
-  thumbCache.set(key, url);
-  return url;
-}

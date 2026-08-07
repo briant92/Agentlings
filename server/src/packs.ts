@@ -1,0 +1,91 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
+import { THEME_KEYS } from './levels';
+
+/**
+ * Installed level packs: whole worlds a level can be set in, alongside the
+ * four built in.
+ *
+ * They live beside the agentling art packs rather than in the sandbox because
+ * a backdrop is an image the browser has to fetch, and `web/public` is the one
+ * place already served statically in both dev and a build. Reading them here
+ * rather than letting the client list a directory is the same division as
+ * D-102's folder picker: the server has a filesystem, a browser does not.
+ */
+
+export interface InstalledPack {
+  /** The folder name, and what a level stores as its theme. */
+  slug: string;
+  pack: LevelPack;
+}
+
+export interface RejectedPack {
+  slug: string;
+  problems: PackProblem[];
+}
+
+export interface PackScan {
+  installed: InstalledPack[];
+  rejected: RejectedPack[];
+}
+
+export function packsDir(root: string): string {
+  return path.join(root, 'web', 'public', 'packs');
+}
+
+/**
+ * Reads every pack, keeping the ones that check out and reporting the rest.
+ *
+ * A bad pack is skipped rather than fatal, exactly as a bad art pack is: the
+ * app falls back to what it has built in, so a broken pack degrades the world
+ * it was for and leaves every other level alone. What it must not do is fail
+ * silently, hence `rejected` — the reason is carried, not swallowed.
+ */
+export function scanPacks(root: string): PackScan {
+  const dir = packsDir(root);
+  const installed: InstalledPack[] = [];
+  const rejected: RejectedPack[] = [];
+  if (!existsSync(dir)) return { installed, rejected };
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const slug = entry.name;
+    const file = path.join(dir, slug, 'pack.json');
+    const fail = (message: string) =>
+      rejected.push({ slug, problems: [{ level: 'error', message }] });
+
+    // A pack that shadows a built-in would make "cave" ambiguous, and which
+    // one won would depend on directory order.
+    if ((THEME_KEYS as string[]).includes(slug)) {
+      fail(`"${slug}" is the name of a built-in theme; rename the folder`);
+      continue;
+    }
+    if (!existsSync(file)) {
+      fail('no pack.json in the folder');
+      continue;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(file, 'utf8'));
+    } catch (error) {
+      fail(`pack.json is not valid JSON: ${(error as Error).message}`);
+      continue;
+    }
+
+    const problems = validateLevelPack(parsed);
+    if (problems.some((p) => p.level === 'error')) {
+      rejected.push({ slug, problems });
+      continue;
+    }
+    installed.push({ slug, pack: parsed as LevelPack });
+  }
+  return { installed, rejected };
+}
+
+/** Whether a level may be created in this look: a built-in, or an installed pack. */
+export function themeExists(root: string, theme: string): boolean {
+  if ((THEME_KEYS as string[]).includes(theme)) return true;
+  return scanPacks(root).installed.some((p) => p.slug === theme);
+}

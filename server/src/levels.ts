@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { ThemeKey } from '@agentlings/shared';
+import type { ThemeId, ThemeKey } from '@agentlings/shared';
 import { undated } from './memory';
 
 /**
@@ -13,7 +13,7 @@ export interface LevelMeta {
   id: string;
   name: string;
   project: string;
-  theme: ThemeKey;
+  theme: ThemeId;
   createdAt: number;
   /**
    * Project folder jobs in this level work against. Asked once by the work
@@ -102,7 +102,7 @@ function slugify(name: string): string {
 
 export function createLevelFiles(
   sandboxRoot: string,
-  input: { name: string; project: string; theme: ThemeKey },
+  input: { name: string; project: string; theme: ThemeId },
 ): LevelMeta {
   let id = slugify(input.name);
   let n = 2;

@@ -88,6 +88,7 @@ import {
   type CrewSeed,
   type LevelMeta,
 } from './levels';
+import { scanPacks, themeExists } from './packs';
 import { ocrAvailable } from './ocr';
 import { isStale, readIndex, storeLines, sync, writeIndex } from './store';
 import {
@@ -737,10 +738,33 @@ app.get('/api/levels', (c) =>
   ),
 );
 
+/**
+ * The level packs installed right now, whole — theme, ops and all.
+ *
+ * Sent in full rather than as a list of names the client then fetches: the
+ * server has already read and validated every one, and handing back only the
+ * names would mean the client fetching the same files again and deciding for a
+ * second time whether they are usable. Rejected packs come back too, with
+ * their reasons, so a pack that does not appear in the world can say why
+ * instead of just being absent.
+ *
+ * Read from disk per request, so dropping a folder in and reloading is the
+ * whole install; there is no cache to invalidate and no restart to remember.
+ */
+app.get('/api/packs', (c) => {
+  const scan = scanPacks(ROOT);
+  return c.json({
+    installed: scan.installed.map((p) => ({ slug: p.slug, pack: p.pack })),
+    rejected: scan.rejected,
+  });
+});
+
 app.post('/api/levels', async (c) => {
   const body = await c.req.json<{ name?: string; project?: string; theme?: string }>();
-  const theme = THEME_KEYS.find((t) => t === body.theme);
-  if (!body.name?.trim() || !theme) {
+  // A built-in, or a pack installed on disk — which is why this asks rather
+  // than matching against a fixed list.
+  const theme = body.theme?.trim();
+  if (!body.name?.trim() || !theme || !themeExists(ROOT, theme)) {
     return c.json({ error: 'name and a valid theme are required' }, 400);
   }
   const meta = createLevelFiles(SANDBOX_ROOT, {

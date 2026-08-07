@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, type Texture } from 'pixi.js';
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import type { Job, JobEvent, ThemeKey, WorldState } from '@agentlings/shared';
+import type { Job, JobEvent, ThemeId, WorldState } from '@agentlings/shared';
 import {
   EXIT_X,
   MAX_STATIONS,
@@ -25,7 +25,7 @@ import {
 import { DB } from './palette';
 import { departedIds } from './roster';
 import { anchorsOf, drawScene, paintOf, pixiSurface } from './scene';
-import { SCENES } from './scenes';
+import { lookFor } from './looks';
 import {
   buildAgentTextures,
   buildSilhouetteTextures,
@@ -33,7 +33,7 @@ import {
   SPRITE_SCALE,
   type AgentAnim,
 } from './sprites';
-import { THEMES, type Theme } from './themes';
+import type { Theme } from './themes';
 
 const MAX_PARTICLES = 400;
 
@@ -211,7 +211,7 @@ export function WorldCanvas({
   anchorFor,
 }: {
   world: WorldState | null;
-  theme: ThemeKey;
+  theme: ThemeId;
   /** The level's event feed — the running signposts blink on tool calls. */
   events: JobEvent[];
   onSelect: (agentlingId: string) => void;
@@ -248,10 +248,13 @@ export function WorldCanvas({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const T = THEMES[theme];
-    // The level's picture, and the shape of the world it implies. Both used to
-    // be constants here; the scene owns them now, so a taller level is data.
-    const scene = SCENES[theme];
+    // The level's look: its palette and its picture, whether those are one of
+    // the four built in or a pack dropped into web/public/packs. Never fails —
+    // a level whose pack is gone opens in the fallback rather than not at all.
+    const look = lookFor(theme);
+    const T = look.theme;
+    // The scene owns the shape of the world; these used to be constants here.
+    const scene = look.scene;
     const ANCHORS = anchorsOf(scene);
     const VIEW_H = scene.viewH;
     const GROUND_Y = scene.groundY;

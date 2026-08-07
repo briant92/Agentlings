@@ -4,15 +4,27 @@ export * from './pack';
 export * from './scene';
 export * from './palette';
 
-/** Visual palette a level is born with; the client owns the actual colors. */
+/** The four looks built into the app; the client owns the actual colors. */
 export type ThemeKey = 'cave' | 'chalkboard' | 'household' | 'marble';
+
+/**
+ * What a level stores as its look: a built-in `ThemeKey`, or the folder name
+ * of an installed level pack.
+ *
+ * A plain string rather than a union, because the set is no longer closed at
+ * compile time — a pack can be dropped in while the app is running. Nothing
+ * downstream may assume it resolves: a level whose pack has been deleted has
+ * to keep opening, on fallback art, the way a broken agentling pack already
+ * degrades rather than breaks.
+ */
+export type ThemeId = string;
 
 /** One card on the level-select screen. */
 export interface LevelInfo {
   id: string;
   name: string;
   project: string;
-  theme: ThemeKey;
+  theme: ThemeId;
   createdAt: number;
   crew: number;
   /** Crew sprite tints for the card's dots. */

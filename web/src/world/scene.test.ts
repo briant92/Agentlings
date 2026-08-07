@@ -6,6 +6,7 @@ import { SCENES } from './scenes';
 import {
   anchorsOf,
   drawScene,
+  paintOf,
   resolveCoord,
   type Anchors,
   type Scene,
@@ -380,5 +381,38 @@ describe('backdrop and scrim', () => {
     for (const key of Object.keys(SCENES) as ThemeKey[]) {
       expect(SCENES[key].backdrop, key).toBeUndefined();
     }
+  });
+});
+
+describe('paintOf', () => {
+  it('turns a slot name into that theme’s number', () => {
+    expect(paintOf(THEMES.cave, 'grass')).toBe(THEMES.cave.grass);
+    expect(paintOf(THEMES.marble, 'grass')).toBe(THEMES.marble.grass);
+  });
+
+  // Every caller resolves slots through here — ops, the scrim, and the rim.
+  // Returning undefined would reach a surface and paint black, which reads as
+  // a drawing mistake rather than as a name nobody defined.
+  it('refuses an unknown slot rather than painting black', () => {
+    expect(() => paintOf(THEMES.cave, 'sky' as never)).toThrow(/unknown colour/);
+  });
+
+  it('is the same lookup the scrim uses', () => {
+    const drawn = render({
+      name: 't',
+      backdrop: { scrim: { color: 'grass', alpha: 1, from: 'groundY-10', steps: 1 } },
+      ops: [],
+    });
+    expect(drawn[0].color).toBe(paintOf(THEMES.cave, 'grass'));
+  });
+
+  it('refuses an unknown scrim colour the same way an op is refused', () => {
+    expect(() =>
+      render({
+        name: 't',
+        backdrop: { scrim: { color: 'sky' as never, alpha: 1, from: 200 } },
+        ops: [],
+      }),
+    ).toThrow(/unknown colour/);
   });
 });

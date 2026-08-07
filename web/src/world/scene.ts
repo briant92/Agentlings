@@ -129,6 +129,19 @@ export interface Fill {
   alpha?: number;
 }
 
+/**
+ * The one place a scene's colour name becomes a number.
+ *
+ * Every caller that resolves a slot goes through here, so an unknown name
+ * fails the same way everywhere rather than reaching a surface as `undefined`
+ * and painting black.
+ */
+export function paintOf(theme: Theme, name: Paint): number {
+  const value = theme[name];
+  if (typeof value !== 'number') throw new Error(`unknown colour "${String(name)}"`);
+  return value;
+}
+
 interface Box {
   x: Coord;
   y: Coord;
@@ -260,6 +273,21 @@ export interface Scene {
   groundY: number;
   /** Behind everything, with the scrim over it. Omitted, there is no painting. */
   backdrop?: Backdrop;
+  /**
+   * A permanent one-pixel outline around the crew, in this slot's colour.
+   *
+   * The legibility device, and the reason it is this rather than the scrim.
+   * Measured across two backdrops (D-107): a scrim separates sprite from
+   * ground by *value*, so it only works while the ground stays on one side of
+   * the crew's own luminance. On bright sand it drags the picture through the
+   * mid-tones the gowns occupy and buried one agentling completely — its
+   * separation fell from 20.9 to 0.3. An outline separates by *contour*, which
+   * does not care what is behind it.
+   *
+   * Opt-in, because the built-in scenes were composed against untouched art
+   * and do not need it. Any pack carrying a backdrop should set it.
+   */
+  rim?: Paint;
   ops: SceneOp[];
   /** Idle life over the painting; omitted, a scene simply holds still. */
   ambient?: AmbientOp[];
@@ -314,12 +342,7 @@ function drawOp(
   marks: SceneMarks,
 ): void {
   const n = (value: Coord): number => resolveCoord(value, anchors);
-  /** The one place a scene's colour name becomes a number. */
-  const c = (name: Paint): number => {
-    const value = theme[name];
-    if (typeof value !== 'number') throw new Error(`unknown colour "${String(name)}"`);
-    return value;
-  };
+  const c = (name: Paint): number => paintOf(theme, name);
 
   switch (op.op) {
     case 'rect':
@@ -525,8 +548,7 @@ const BACKDROP_SEED = 0x5c81b;
  * fractional band height cannot leave a bright seam between two bands.
  */
 function drawScrim(s: Surface, scrim: Scrim, theme: Theme, anchors: Anchors): void {
-  const color = theme[scrim.color];
-  if (typeof color !== 'number') throw new Error(`unknown colour "${String(scrim.color)}"`);
+  const color = paintOf(theme, scrim.color);
   const from = resolveCoord(scrim.from, anchors);
   const { groundY, viewH, worldWidth } = anchors;
   const steps = Math.max(1, Math.floor(scrim.steps ?? 12));

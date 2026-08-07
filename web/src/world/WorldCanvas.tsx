@@ -24,7 +24,7 @@ import {
 } from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
-import { anchorsOf, drawScene, pixiSurface } from './scene';
+import { anchorsOf, drawScene, paintOf, pixiSurface } from './scene';
 import { SCENES } from './scenes';
 import {
   buildAgentTextures,
@@ -317,15 +317,27 @@ export function WorldCanvas({
         const tinted = new Map<number, Frames>();
         const asked = new Set<number>();
         let outline: Frames | null = null;
+        // The permanent rim, when the scene asks for one. A second silhouette
+        // set rather than a reuse of the hover ring: that one is deliberately
+        // drawn in a colour chosen to *stand out* against the theme's rock,
+        // where a rim wants to disappear into being an edge.
+        let rimFrames: Frames | null = null;
+        const rimColor = scene.rim === undefined ? null : paintOf(T, scene.rim);
 
         const useArt = (next: ArtSource) => {
           art = next;
           tinted.clear();
           asked.clear();
           outline = null;
+          rimFrames = null;
           void art.silhouette(T.hover).then((frames) => {
             if (!destroyed) outline = frames;
           });
+          if (rimColor !== null) {
+            void art.silhouette(rimColor).then((frames) => {
+              if (!destroyed) rimFrames = frames;
+            });
+          }
         };
         const framesFor = (color: number): Frames => {
           const ready = tinted.get(color);
@@ -427,6 +439,28 @@ export function WorldCanvas({
 
         const dynamic = new Graphics();
         app.stage.addChild(dynamic);
+        // The rim sits under the hover ring, which sits under the sprites, so
+        // pointing at someone still reads over their own outline.
+        //
+        // A pool rather than a fixed set: the hover ring needs eight ghosts
+        // because only one agentling is ever hovered, but a rim needs eight
+        // per agentling and the crew grows and shrinks. Entries are handed out
+        // in order each frame and the leftovers hidden, so hiring nobody costs
+        // nothing and hiring ten allocates once.
+        const rimLayer = new Container();
+        app.stage.addChild(rimLayer);
+        const rimPool: Sprite[] = [];
+        const rimGhost = (i: number): Sprite => {
+          let ghost = rimPool[i];
+          if (!ghost) {
+            ghost = new Sprite();
+            ghost.anchor.set(0.5, 1);
+            ghost.eventMode = 'none';
+            rimLayer.addChild(ghost);
+            rimPool[i] = ghost;
+          }
+          return ghost;
+        };
         // Below the sprites, so an agentling stands in front of its own ring.
         const ghostLayer = new Container();
         app.stage.addChild(ghostLayer);
@@ -473,6 +507,8 @@ export function WorldCanvas({
           ambientLayer.clear();
           emoteLayer.clear();
           for (const ghost of ghosts) ghost.visible = false;
+          for (const ghost of rimPool) ghost.visible = false;
+          let rimUsed = 0;
           if (!w) return;
           const t = performance.now() / 1000;
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
@@ -617,6 +653,21 @@ export function WorldCanvas({
             sprite.texture = seq[frame];
             sprite.scale.set(art.scale * m.face, art.scale);
             sprite.position.set(rx, GROUND_Y + 2);
+
+            // The rim: the same flat shape as the ring, but for everyone and
+            // always, offset one pixel in each of eight directions.
+            if (rimFrames) {
+              const edge: Texture | undefined = rimFrames[anim][frame % rimFrames[anim].length];
+              if (edge) {
+                for (const [ox, oy] of OUTLINE_OFFSETS) {
+                  const ghost = rimGhost(rimUsed++);
+                  ghost.texture = edge;
+                  ghost.visible = true;
+                  ghost.scale.set(art.scale * m.face, art.scale);
+                  ghost.position.set(rx + ox * art.scale, GROUND_Y + 2 + oy * art.scale);
+                }
+              }
+            }
 
             // The ring: the same frame as a flat shape, drawn once per
             // neighbouring pixel behind the sprite itself.

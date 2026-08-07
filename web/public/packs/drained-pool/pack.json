@@ -1,0 +1,971 @@
+{
+  "name": "The Drained Pool",
+  "provenance": "Drawn from scratch against art/LEVELPACK.md by an agentling, for this repository. No external source, image, font or reference pack — every op was composed here from the format's own vocabulary, and the palette is DB32 (packages/shared/src/palette.ts) plus two off-ramp near-whites for the blown-out noon surfaces. No third-party rights attach: it is the project's to keep, change or relicense.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "stoneDark",
+  "theme": {
+    "void": 3170434,
+    "rock": 13360124,
+    "rockLight": 16777215,
+    "rockDark": 10202551,
+    "rockEdge": 6908522,
+    "accent": 6278628,
+    "accentLight": 15267835,
+    "accentDark": 6527999,
+    "grass": 6995504,
+    "grassDark": 4942127,
+    "wood": 14262374,
+    "woodDark": 9072432,
+    "stoneDark": 3292217,
+    "flame": 16511542,
+    "flameCore": 16777215,
+    "hover": 14243683
+  },
+  "backdrop": {
+    "scrim": {
+      "color": "accentLight",
+      "alpha": 0.8,
+      "from": 30,
+      "steps": 10
+    },
+    "ops": [
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 0,
+        "w": "worldWidth",
+        "h": 200,
+        "color": "void"
+      },
+      {
+        "op": "circle",
+        "x": 520,
+        "y": 2,
+        "r": 72,
+        "color": "flame",
+        "alpha": 0.14
+      },
+      {
+        "op": "circle",
+        "x": 520,
+        "y": 2,
+        "r": 46,
+        "color": "flame",
+        "alpha": 0.26
+      },
+      {
+        "op": "circle",
+        "x": 520,
+        "y": 2,
+        "r": 27,
+        "color": "flameCore",
+        "alpha": 0.6
+      },
+      {
+        "op": "circle",
+        "x": 520,
+        "y": 2,
+        "r": 15,
+        "color": "flameCore"
+      },
+      {
+        "op": "rect",
+        "x": 148,
+        "y": 62,
+        "w": 214,
+        "h": 5,
+        "color": "accentLight",
+        "alpha": 0.34
+      },
+      {
+        "op": "rect",
+        "x": 192,
+        "y": 69,
+        "w": 136,
+        "h": 4,
+        "color": "accentLight",
+        "alpha": 0.22
+      },
+      {
+        "op": "rect",
+        "x": 636,
+        "y": 88,
+        "w": 182,
+        "h": 4,
+        "color": "accentLight",
+        "alpha": 0.28
+      },
+      {
+        "op": "rect",
+        "x": 676,
+        "y": 94,
+        "w": 108,
+        "h": 3,
+        "color": "accentLight",
+        "alpha": 0.18
+      },
+      {
+        "op": "repeat",
+        "at": [
+          120,
+          860
+        ],
+        "of": [
+          {
+            "op": "poly",
+            "points": [
+              [
+                -17,
+                152
+              ],
+              [
+                0,
+                92
+              ],
+              [
+                17,
+                152
+              ]
+            ],
+            "color": "grassDark"
+          },
+          {
+            "op": "poly",
+            "points": [
+              [
+                -9,
+                152
+              ],
+              [
+                0,
+                108
+              ],
+              [
+                4,
+                152
+              ]
+            ],
+            "color": "grass",
+            "alpha": 0.35
+          }
+        ]
+      },
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 150,
+        "w": "worldWidth",
+        "h": 26,
+        "color": "grassDark"
+      },
+      {
+        "op": "tufts",
+        "x": 0,
+        "y": 146,
+        "w": "worldWidth",
+        "h": 6,
+        "count": 64,
+        "height": 10,
+        "color": "grass",
+        "alt": "grassDark"
+      },
+      {
+        "op": "band",
+        "axis": "x",
+        "from": 0,
+        "to": "worldWidth",
+        "step": 7,
+        "of": [
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 112,
+            "w": 1,
+            "h": 64,
+            "color": "rockLight",
+            "alpha": 0.3
+          }
+        ]
+      },
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 112,
+        "w": "worldWidth",
+        "h": 3,
+        "color": "rockDark",
+        "alpha": 0.7
+      },
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 143,
+        "w": "worldWidth",
+        "h": 2,
+        "color": "rockDark",
+        "alpha": 0.45
+      },
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 172,
+        "w": "worldWidth",
+        "h": 3,
+        "color": "rockDark",
+        "alpha": 0.7
+      },
+      {
+        "op": "band",
+        "axis": "x",
+        "from": 0,
+        "to": "worldWidth",
+        "step": 125,
+        "of": [
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 106,
+            "w": 4,
+            "h": 70,
+            "color": "rockDark",
+            "alpha": 0.8
+          }
+        ]
+      }
+    ]
+  },
+  "ops": [
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 176,
+      "w": "worldWidth",
+      "h": 14,
+      "color": "rock"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 176,
+      "w": "worldWidth",
+      "h": 4,
+      "color": "rockLight",
+      "alpha": 0.75
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": 176,
+      "w": "worldWidth",
+      "h": 14,
+      "count": 130,
+      "light": "rockLight",
+      "dark": "rockDark"
+    },
+    {
+      "op": "rect",
+      "x": 44,
+      "y": 176,
+      "w": 196,
+      "h": 6,
+      "color": "stoneDark",
+      "alpha": 0.26
+    },
+    {
+      "op": "rect",
+      "x": 418,
+      "y": 176,
+      "w": 34,
+      "h": 5,
+      "color": "stoneDark",
+      "alpha": 0.22
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 190,
+      "w": "worldWidth",
+      "h": 9,
+      "color": "rockLight"
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 0,
+      "to": "worldWidth",
+      "step": 64,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 190,
+          "w": 1,
+          "h": 9,
+          "color": "rockEdge",
+          "alpha": 0.4
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 197,
+      "w": "worldWidth",
+      "h": 2,
+      "color": "rockEdge",
+      "alpha": 0.55
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 199,
+      "w": "worldWidth",
+      "h": 189,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 199,
+      "w": "worldWidth",
+      "h": 7,
+      "color": "stoneDark",
+      "alpha": 0.32
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 206,
+      "w": "worldWidth",
+      "h": 14,
+      "color": "accentDark"
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 0,
+      "to": "worldWidth",
+      "step": 10,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 206,
+          "w": 1,
+          "h": 14,
+          "color": "void",
+          "alpha": 0.28
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 213,
+      "w": "worldWidth",
+      "h": 1,
+      "color": "void",
+      "alpha": 0.28
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 221,
+      "w": "worldWidth",
+      "h": 2,
+      "color": "woodDark",
+      "alpha": 0.38
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": 220,
+      "w": "worldWidth",
+      "h": 7,
+      "count": 100,
+      "light": "accentLight",
+      "dark": "woodDark"
+    },
+    {
+      "op": "band",
+      "axis": "y",
+      "from": 226,
+      "to": 384,
+      "step": 20,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "worldWidth",
+          "h": 1,
+          "color": "accentLight",
+          "alpha": 0.35
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 0,
+      "to": "worldWidth",
+      "step": 20,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 226,
+          "w": 1,
+          "h": 162,
+          "color": "accentLight",
+          "alpha": 0.26
+        }
+      ]
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": 226,
+      "w": "worldWidth",
+      "h": 162,
+      "count": 150,
+      "light": "accentLight",
+      "dark": "rockDark"
+    },
+    {
+      "op": "veins",
+      "x": 0,
+      "y": 240,
+      "w": "worldWidth",
+      "h": 148,
+      "count": 5,
+      "color": "rockEdge",
+      "alpha": 0.32
+    },
+    {
+      "op": "repeat",
+      "at": [
+        150,
+        320,
+        560,
+        700,
+        870
+      ],
+      "of": [
+        {
+          "op": "rect",
+          "x": -3,
+          "y": 250,
+          "w": 6,
+          "h": 64,
+          "color": "stoneDark",
+          "alpha": 0.82
+        },
+        {
+          "op": "rect",
+          "x": -18,
+          "y": 308,
+          "w": 36,
+          "h": 6,
+          "color": "stoneDark",
+          "alpha": 0.82
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 40,
+      "y": 126,
+      "w": 196,
+      "h": 7,
+      "color": "rock"
+    },
+    {
+      "op": "rect",
+      "x": 40,
+      "y": 126,
+      "w": 196,
+      "h": 2,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 40,
+      "y": 133,
+      "w": 196,
+      "h": 2,
+      "color": "rockEdge",
+      "alpha": 0.6
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          50,
+          176
+        ],
+        [
+          72,
+          176
+        ],
+        [
+          66,
+          133
+        ],
+        [
+          56,
+          133
+        ]
+      ],
+      "color": "rockDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          50,
+          176
+        ],
+        [
+          56,
+          176
+        ],
+        [
+          56,
+          133
+        ],
+        [
+          56,
+          133
+        ]
+      ],
+      "color": "rockEdge",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 122,
+      "y": 139,
+      "r": 6,
+      "color": "rockDark"
+    },
+    {
+      "op": "rect",
+      "x": 44,
+      "y": 104,
+      "w": 3,
+      "h": 24,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 98,
+      "y": 104,
+      "w": 3,
+      "h": 24,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 44,
+      "y": 104,
+      "w": 57,
+      "h": 3,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 420,
+      "y": 160,
+      "w": 5,
+      "h": 140,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 445,
+      "y": 160,
+      "w": 5,
+      "h": 140,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 420,
+      "y": 160,
+      "w": 30,
+      "h": 5,
+      "color": "rockLight"
+    },
+    {
+      "op": "band",
+      "axis": "y",
+      "from": 212,
+      "to": 292,
+      "step": 26,
+      "of": [
+        {
+          "op": "rect",
+          "x": 422,
+          "y": 0,
+          "w": 26,
+          "h": 3,
+          "color": "rockLight"
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 425,
+      "y": 199,
+      "w": 2,
+      "h": 101,
+      "color": "stoneDark",
+      "alpha": 0.2
+    },
+    {
+      "op": "rect",
+      "x": 450,
+      "y": 199,
+      "w": 2,
+      "h": 101,
+      "color": "stoneDark",
+      "alpha": 0.2
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 62,
+      "color": "accentLight"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 5,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 0,
+      "to": "worldWidth",
+      "step": 20,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+4",
+          "w": 1,
+          "h": 58,
+          "color": "accent",
+          "alpha": 0.32
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "y",
+      "from": "groundY+12",
+      "to": 448,
+      "step": 16,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "worldWidth",
+          "h": 1,
+          "color": "accent",
+          "alpha": 0.28
+        }
+      ]
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 62,
+      "count": 120,
+      "light": "rockLight",
+      "dark": "accent"
+    },
+    {
+      "op": "veins",
+      "x": 0,
+      "y": "groundY+4",
+      "w": "worldWidth",
+      "h": 56,
+      "count": 7,
+      "color": "rockDark",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 429,
+      "w": "worldWidth",
+      "h": 5,
+      "color": "accentDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 430,
+      "w": "worldWidth",
+      "h": 2,
+      "color": "stoneDark",
+      "alpha": 0.4
+    },
+    {
+      "op": "rect",
+      "x": 418,
+      "y": "groundY",
+      "w": 6,
+      "h": 62,
+      "color": "stoneDark",
+      "alpha": 0.16
+    },
+    {
+      "op": "rect",
+      "x": 443,
+      "y": "groundY",
+      "w": 6,
+      "h": 62,
+      "color": "stoneDark",
+      "alpha": 0.16
+    },
+    {
+      "op": "circle",
+      "x": 150,
+      "y": 424,
+      "r": 12,
+      "color": "rockDark"
+    },
+    {
+      "op": "circle",
+      "x": 150,
+      "y": 424,
+      "r": 9,
+      "color": "stoneDark"
+    },
+    {
+      "op": "rect",
+      "x": 142,
+      "y": 420,
+      "w": 16,
+      "h": 2,
+      "color": "rockDark",
+      "alpha": 0.75
+    },
+    {
+      "op": "rect",
+      "x": 142,
+      "y": 426,
+      "w": 16,
+      "h": 2,
+      "color": "rockDark",
+      "alpha": 0.75
+    },
+    {
+      "op": "rect",
+      "x": 800,
+      "y": 427,
+      "w": 86,
+      "h": 4,
+      "color": "accentDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 792,
+      "y": 431,
+      "w": 100,
+      "h": 5,
+      "color": "accentDark",
+      "alpha": 0.55
+    },
+    {
+      "op": "rect",
+      "x": 804,
+      "y": 436,
+      "w": 78,
+      "h": 3,
+      "color": "accentDark",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 806,
+      "y": 429,
+      "w": 72,
+      "h": 2,
+      "color": "flameCore",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 816,
+      "y": 434,
+      "w": 50,
+      "h": 1,
+      "color": "accentLight",
+      "alpha": 0.6
+    },
+    {
+      "op": "repeat",
+      "at": [
+        90,
+        330,
+        470,
+        690,
+        862
+      ],
+      "of": [
+        {
+          "op": "poly",
+          "points": [
+            [
+              0,
+              441
+            ],
+            [
+              6,
+              437
+            ],
+            [
+              11,
+              442
+            ],
+            [
+              5,
+              445
+            ]
+          ],
+          "color": "wood"
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              13,
+              447
+            ],
+            [
+              19,
+              444
+            ],
+            [
+              23,
+              448
+            ],
+            [
+              17,
+              449
+            ]
+          ],
+          "color": "woodDark"
+        }
+      ]
+    },
+    {
+      "op": "tufts",
+      "x": 96,
+      "y": "groundY-4",
+      "w": 126,
+      "h": 4,
+      "count": 10,
+      "height": 7,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "tufts",
+      "x": 404,
+      "y": "groundY-4",
+      "w": 88,
+      "h": 4,
+      "count": 7,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "tufts",
+      "x": 556,
+      "y": 434,
+      "w": 62,
+      "h": 3,
+      "count": 5,
+      "height": 6,
+      "color": "grass",
+      "alt": "grassDark"
+    }
+  ],
+  "ambient": [
+    {
+      "fx": "motes",
+      "count": 16,
+      "x": 60,
+      "y": 210,
+      "w": 880,
+      "h": 170
+    },
+    {
+      "fx": "flyer"
+    },
+    {
+      "fx": "glints",
+      "points": [
+        [
+          422,
+          202
+        ],
+        [
+          447,
+          244
+        ],
+        [
+          422,
+          276
+        ],
+        [
+          122,
+          132
+        ],
+        [
+          236,
+          127
+        ],
+        [
+          44,
+          105
+        ]
+      ],
+      "strips": [
+        {
+          "x": 792,
+          "y": 431,
+          "w": 100
+        },
+        {
+          "x": 420,
+          "y": 160,
+          "w": 30
+        },
+        {
+          "x": 40,
+          "y": 126,
+          "w": 196
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import type { DeliveryFile, Job, PackDraft, SendApprovalInfo } from '@agentlings
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
-import { renderScenePreview } from '../world/looks';
+import { allLooks, renderScenePreview } from '../world/looks';
 
 /**
  * A calendar event's when, as the card shows it (D-104). A zoneless string
@@ -44,6 +44,8 @@ export function ReviewModal({
    */
   const [offer, setOffer] = useState<SendApprovalInfo | null>(null);
   const [granting, setGranting] = useState(false);
+  /** The name this world installs under; editable, because a clash must be fixable here. */
+  const [packSlug, setPackSlug] = useState(job.packDraft?.slug ?? '');
 
   useEffect(() => {
     let alive = true;
@@ -68,7 +70,7 @@ export function ReviewModal({
     try {
       const reply = await api<Job & { sendApproval?: SendApprovalInfo }>(
         lvl(levelId, `/jobs/${job.id}/resolve`),
-        postJson({ action }),
+        postJson({ action, ...(job.packDraft ? { packSlug } : {}) }),
       );
       if (action === 'promote' && reply.sendApproval?.eligible) {
         setOffer(reply.sendApproval);
@@ -119,7 +121,9 @@ export function ReviewModal({
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}
           {job.packDraftError && <p className="error">{job.packDraftError}</p>}
-          {job.packDraft && <PackCard draft={job.packDraft} />}
+          {job.packDraft && (
+            <PackCard draft={job.packDraft} slug={packSlug} onSlug={setPackSlug} />
+          )}
           {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
               was approved in good faith and sent nothing — this says so
               before the button does it again. */}
@@ -282,17 +286,30 @@ export function ReviewModal({
  * At true proportions rather than card-shaped: how tall a world is, is one of
  * the few things a pack decides that you cannot change afterwards.
  */
-function PackCard({ draft }: { draft: PackDraft }) {
-  const { pack, slug } = draft;
+function PackCard({
+  draft,
+  slug,
+  onSlug,
+}: {
+  draft: PackDraft;
+  slug: string;
+  onSlug: (next: string) => void;
+}) {
+  const { pack } = draft;
   const preview = renderScenePreview(pack, pack.theme, 520);
   const backdropOps = pack.backdrop?.ops?.length ?? 0;
+  // Whether this name is free, checked here rather than at Approve. The first
+  // collision surfaced only after the button, naming a folder the reviewer had
+  // never seen, with no way to change it — so a good pack was discarded for
+  // want of a rename. The clash is visible before the click now.
+  const clash = allLooks().find((l) => l.installed && l.id === slug);
 
   return (
     <div className="rv-pack">
       <div className="rv-pack-head">
         <span className="rv-pack-t">{pack.name}</span>
         <span className="dim">
-          installs as {slug} · {pack.viewH} tall, ground at {pack.groundY}
+          {pack.viewH} tall, ground at {pack.groundY}
         </span>
       </div>
       <img
@@ -310,6 +327,21 @@ function PackCard({ draft }: { draft: PackDraft }) {
         </span>
         {pack.ambient?.length ? <span>{pack.ambient.length} ambient</span> : null}
       </div>
+      <div className="rv-pack-name">
+        <label htmlFor="rv-pack-slug">Install as</label>
+        <input
+          id="rv-pack-slug"
+          value={slug}
+          onChange={(e) => onSlug(e.target.value)}
+          spellCheck={false}
+        />
+      </div>
+      {clash && (
+        <p className="rv-pack-clash">
+          That name already belongs to <strong>{clash.label}</strong> on your palette. Pick
+          another and this one installs beside it.
+        </p>
+      )}
       <p className="rv-pack-prov">{pack.provenance}</p>
       <p className="dim">
         Approving installs this world. It joins the palette for new levels; no existing level

@@ -21,6 +21,7 @@ import type {
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS,
+  slugProblem,
   SOCKET_LEVEL_GONE,
   TICK_MS,
 } from '@agentlings/shared';
@@ -1524,7 +1525,7 @@ app.get('/api/levels/:lid/jobs/:id/output/:name/preview', async (c) => {
 app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ action?: string }>();
+  const body = await c.req.json<{ action?: string; packSlug?: string }>();
   if (body.action !== 'promote' && body.action !== 'discard') {
     return c.json({ error: 'action must be "promote" or "discard"' }, 400);
   }
@@ -1643,9 +1644,22 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    */
   let installedPack: string | null = null;
   if (body.action === 'promote' && promotable && pending.packDraft && !waitingTool) {
-    const result = installPack(ROOT, pending.packDraft);
+    // The reviewer may rename it on the way through. A pack's name is the one
+    // thing about it that is not a matter of taste — it has to be unique — so
+    // colliding must be something you can fix at the review rather than a dead
+    // end that leaves discarding as the only move.
+    const renamed = body.packSlug?.trim();
+    const draft = renamed ? { ...pending.packDraft, slug: renamed } : pending.packDraft;
+    if (renamed) {
+      const says = slugProblem(renamed, scanPacks(ROOT).installed.map((p) => p.slug));
+      if (says) return c.json({ error: `pack not installed — ${says}` }, 400);
+    }
+    const result = installPack(ROOT, draft);
     if ('error' in result) return c.json({ error: `pack not installed — ${result.error}` }, 400);
-    if (!result.already) installedPack = pending.packDraft.slug;
+    if (!result.already) installedPack = draft.slug;
+    // Remember the name it went in under, so the job's record matches the
+    // world that now exists rather than the one it asked to be.
+    if (renamed) pending.packDraft = draft;
   }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script

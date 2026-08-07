@@ -122,7 +122,7 @@ describe('installPack', () => {
     installPack(root, draft());
     const before = readFileSync(path.join(packsDir(root), 'moby-dick', 'pack.json'), 'utf8');
     const result = installPack(root, draft({ pack: pack({ name: 'Something Else' }) }));
-    expect('error' in result && result.error).toMatch(/already installed as "moby-dick"/);
+    expect('error' in result && result.error).toMatch(/"moby-dick" already belongs/);
     expect(readFileSync(path.join(packsDir(root), 'moby-dick', 'pack.json'), 'utf8')).toBe(before);
   });
 
@@ -141,5 +141,37 @@ describe('installPack', () => {
     const { installed, rejected } = scanPacks(root);
     expect(rejected).toEqual([]);
     expect(installed[0].pack.viewH).toBe(450);
+  });
+});
+
+describe('renaming a pack out of a collision', () => {
+  /**
+   * The dead end this closes: the first real authoring run produced a good
+   * pack whose slug was taken, and the only move the review offered was
+   * discard. Installing the same pack under another name has to work, and has
+   * to leave the world already there untouched.
+   */
+  it('installs the same pack beside the one holding its name', () => {
+    installPack(root, draft());
+    const renamed = { ...draft(), slug: 'orlop-deck' };
+    expect(installPack(root, renamed)).toEqual({ installed: true, already: false });
+
+    const { installed, rejected } = scanPacks(root);
+    expect(rejected).toEqual([]);
+    expect(installed.map((p) => p.slug).sort()).toEqual(['moby-dick', 'orlop-deck']);
+  });
+
+  it('names the world in the way, not the folder', () => {
+    installPack(root, draft());
+    const other = installPack(root, draft({ pack: pack({ name: 'Something Else' }) }));
+    // The reviewer has seen "The Pequod" on the palette and has never seen
+    // "moby-dick" anywhere, so that is the name the refusal has to use.
+    expect('error' in other && other.error).toContain('The Pequod');
+    expect('error' in other && other.error).not.toContain('web/public/packs');
+  });
+
+  it('still refuses a rename that is itself illegal', () => {
+    expect(slugProblem('../../etc', [])).toMatch(/lower-case words/);
+    expect(slugProblem('cave', [])).toMatch(/built-in theme/);
   });
 });

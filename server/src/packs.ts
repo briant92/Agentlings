@@ -111,8 +111,20 @@ export function installPack(root: string, draft: { slug: string; pack: LevelPack
 
   if (existsSync(file)) {
     if (readFileSync(file, 'utf8') === contents) return { installed: true, already: true };
+    // Name the world the way the palette names it, not by its folder. The
+    // first time this fired, the message said only "moby-dick" — a string the
+    // user had never seen, for a world the app calls "The Pequod" — and told
+    // them to delete a directory, which the app cannot do and they should not
+    // need a terminal for. They went looking in the Level panel, where a pack
+    // never appears, and discarded a good pack for want of a way through.
+    let occupant = draft.slug;
+    try {
+      occupant = (JSON.parse(readFileSync(file, 'utf8')) as LevelPack).name || draft.slug;
+    } catch {
+      // A pack too broken to name is still a pack in the way.
+    }
     return {
-      error: `a different pack is already installed as "${draft.slug}" — remove web/public/packs/${draft.slug} or give this one another slug`,
+      error: `the name "${draft.slug}" already belongs to the world “${occupant}” on your palette. Give this one a different name and approve again.`,
     };
   }
   if ((BUILTIN_THEMES as readonly string[]).includes(draft.slug)) {

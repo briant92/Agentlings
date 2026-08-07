@@ -3660,3 +3660,26 @@ button.danger:hover {
   margin: 0;
   line-height: 1.5;
 }
+
+/* Renaming a world at the review, so a name clash is not a dead end (D-111). */
+.rv-pack-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #9badb7;
+}
+.rv-pack-name input {
+  flex: 1;
+  min-width: 0;
+}
+.rv-pack-clash {
+  margin: 0;
+  font-size: 11px;
+  color: #df7126;
+  line-height: 1.5;
+}
+.rv-pack-clash strong {
+  color: #fff;
+  font-weight: 600;
+}

@@ -1,0 +1,90 @@
+// Reduces an image to a backdrop-sized palette, and shows the crew standing on it.
+//   npm run pack:quantize -- source.png [out.png] [--colors 128] [--no-dither]
+//
+// D-108 decided the backdrop layer carries its own palette, budgeted at 128
+// and dithered, because snapping a soft-shaded render to DB32's 32 colours
+// destroys it. This makes that budget a checkable fact — and it tests D-108's
+// own predicted cost, which has never been measured: "flat 32-colour sprites
+// on a soft-shaded render will read as pasted on".
+//
+// So it writes two files: the quantized image, and a `-crew` preview with
+// gown-coloured stand-ins and the mandatory rim over it, at the seven places
+// agentlings actually stand. Looking at the second one is the point.
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { EXIT_X, MAX_STATIONS, SPAWN_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
+import { COLOR_POOL } from '../server/src/levels';
+import { applyPalette, BACKDROP_COLOURS, meanError, medianCut } from '../server/src/quantize';
+import {
+  countColours,
+  decodePng,
+  drawStandIn,
+  encodePng,
+  separationAt,
+  surfaceOn,
+} from '../server/src/raster';
+
+const args = process.argv.slice(2);
+const flag = (name: string): number => args.indexOf(name);
+const colorsAt = flag('--colors');
+const colours = colorsAt >= 0 ? Number(args[colorsAt + 1]) || BACKDROP_COLOURS : BACKDROP_COLOURS;
+const dither = flag('--no-dither') < 0;
+const positional = args.filter(
+  (a, i) => !a.startsWith('--') && !(colorsAt >= 0 && i === colorsAt + 1),
+);
+const target = positional[0];
+
+if (!target || !existsSync(target)) {
+  console.error('Usage: npm run pack:quantize -- source.png [out.png] [--colors 128] [--no-dither]');
+  process.exit(1);
+}
+
+const source = decodePng(readFileSync(target));
+const before = countColours(source);
+const palette = medianCut(source, colours);
+const quantized = applyPalette(source, palette, dither);
+const after = countColours(quantized);
+
+const out = positional[1] ?? target.replace(/\.png$/i, `.${colours}.png`);
+writeFileSync(out, encodePng(quantized));
+
+console.log(`${path.basename(target)} — ${source.w}×${source.h}`);
+console.log(`  colours ${before} → ${after}   (budget ${colours}, dither ${dither ? 'on' : 'off'})`);
+console.log(`  mean error ${meanError(source, quantized).toFixed(2)} of 255 per channel`);
+console.log(`  wrote ${out}`);
+if (after > colours) {
+  console.log(`  OVER BUDGET by ${after - colours} — this would fail a backdrop check.`);
+}
+
+// The look test: the crew, on it, with the rim D-107 made mandatory. The
+// ground line is assumed at the pack default rather than guessed from the
+// picture — a source image has no groundY until a pack gives it one.
+const groundY = Math.round(source.h * (388 / 450));
+const positions = [
+  SPAWN_X,
+  ...Array.from({ length: MAX_STATIONS }, (_, i) => STATION_BASE_X + i * STATION_SPACING),
+  EXIT_X,
+].filter((x) => x < source.w);
+const scale = source.w / 1000;
+const separations = separationAt(quantized, positions, groundY / scale, COLOR_POOL, scale);
+
+const preview = { pixels: quantized.pixels.slice(), w: quantized.w, h: quantized.h };
+const surface = surfaceOn(preview, scale);
+// A dark rim, as a pack would set: this is about whether the outline saves a
+// flat sprite on a soft ground, which is the whole of D-108's predicted cost.
+for (const [i, at] of positions.entries()) {
+  drawStandIn(surface, at, groundY / scale, COLOR_POOL[i % COLOR_POOL.length], 0x1a1a1a);
+}
+const crewOut = out.replace(/\.png$/i, '-crew.png');
+writeFileSync(crewOut, encodePng(preview));
+
+console.log('');
+console.log(`  Crew on it (ground line at y ${groundY}) — separation per standing place:`);
+for (const s of separations) {
+  const flagged = s.separation < 5 ? '  <- a gown vanishes' : s.separation < 10 ? '  <- thin' : '';
+  console.log(
+    `    x ${String(s.at).padStart(4)}   behind ${s.behind.toFixed(1).padStart(5)}` +
+      `   nearest gown ${s.separation.toFixed(1).padStart(5)}${flagged}`,
+  );
+}
+console.log(`  wrote ${crewOut} — look at this one.`);

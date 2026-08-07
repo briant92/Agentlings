@@ -1,4 +1,4 @@
-import { deflateSync } from 'node:zlib';
+import { deflateSync, inflateSync } from 'node:zlib';
 import type { Surface } from '@agentlings/shared';
 
 /**
@@ -49,6 +49,18 @@ export function bufferSurface(
     pixels[i * 3 + 2] = background & 0xff;
   }
   const raster: Raster = { pixels, w: width, h: height };
+  return { raster, surface: surfaceOn(raster, scale) };
+}
+
+/**
+ * A surface that draws onto pixels that already exist.
+ *
+ * `bufferSurface` starts from a flat colour, which is right for a scene drawn
+ * from ops. A raster backdrop is the other case: the picture is already there
+ * and the question is what the crew look like standing on it.
+ */
+export function surfaceOn(raster: Raster, scale = 1): Surface {
+  const { w: width, h: height, pixels } = raster;
 
   const blend = (px: number, py: number, color: number, alpha: number): void => {
     if (px < 0 || py < 0 || px >= width || py >= height) return;
@@ -68,9 +80,7 @@ export function bufferSurface(
   };
 
   return {
-    raster,
-    surface: {
-      rect: (x, y, rw, rh, color, alpha) => box(x, y, rw, rh, color, alpha ?? 1),
+    rect: (x, y, rw, rh, color, alpha) => box(x, y, rw, rh, color, alpha ?? 1),
       circle: (x, y, r, color, alpha) => {
         const cx = x * scale;
         const cy = y * scale;
@@ -137,7 +147,6 @@ export function bufferSurface(
           }
         }
       },
-    },
   };
 }
 
@@ -297,4 +306,140 @@ export function encodePng(r: Raster): Buffer {
     chunk('IDAT', deflateSync(raw)),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+/**
+ * A PNG back into pixels — the reverse of `encodePng`, and the half a
+ * quantizer needs.
+ *
+ * Written rather than installed for the same reason the encoder was: `zlib`
+ * is in node, and the alternative is a native dependency on a Windows machine
+ * inside OneDrive. It handles 8-bit greyscale, truecolour, palette and their
+ * alpha variants — everything an image editor or a render actually emits —
+ * and refuses interlacing and 16-bit rather than quietly producing a wrong
+ * picture.
+ *
+ * Alpha is composited onto `background` because a `Raster` is opaque RGB. A
+ * backdrop is going to sit behind a whole world, so a transparent source has
+ * to mean *something*, and saying which is better than dropping the channel
+ * and pretending the question did not arise.
+ */
+export function decodePng(buf: Buffer, background = 0x000000): Raster {
+  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (buf.length < 8 || signature.some((b, i) => buf[i] !== b)) {
+    throw new Error('not a PNG');
+  }
+  let width = 0;
+  let height = 0;
+  let depth = 0;
+  let colorType = 0;
+  let palette: Buffer | null = null;
+  let transparency: Buffer | null = null;
+  const idat: Buffer[] = [];
+
+  for (let at = 8; at + 8 <= buf.length; ) {
+    const length = buf.readUInt32BE(at);
+    const type = buf.subarray(at + 4, at + 8).toString('ascii');
+    const data = buf.subarray(at + 8, at + 8 + length);
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      depth = data[8];
+      colorType = data[9];
+      if (data[12] !== 0) throw new Error('interlaced PNGs are not supported');
+    } else if (type === 'PLTE') palette = Buffer.from(data);
+    else if (type === 'tRNS') transparency = Buffer.from(data);
+    else if (type === 'IDAT') idat.push(Buffer.from(data));
+    else if (type === 'IEND') break;
+    at += 12 + length;
+  }
+  if (depth !== 8) throw new Error(`only 8-bit PNGs are supported, this is ${depth}-bit`);
+  if (width < 1 || height < 1) throw new Error('PNG has no size');
+
+  const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[colorType];
+  if (channels === undefined) throw new Error(`unsupported PNG colour type ${colorType}`);
+  if (colorType === 3 && !palette) throw new Error('palette PNG with no PLTE chunk');
+
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = width * channels;
+  if (raw.length < (stride + 1) * height) throw new Error('PNG data is short');
+
+  // Undo the per-row filters. Each row is predicted from the one above and the
+  // pixel to the left, so this has to run in order and in place.
+  const lines = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    const src = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+    const row = lines.subarray(y * stride, (y + 1) * stride);
+    const prior = y > 0 ? lines.subarray((y - 1) * stride, y * stride) : null;
+    for (let i = 0; i < stride; i++) {
+      const a = i >= channels ? row[i - channels] : 0;
+      const b = prior ? prior[i] : 0;
+      const c = prior && i >= channels ? prior[i - channels] : 0;
+      let value = src[i];
+      switch (filter) {
+        case 0:
+          break;
+        case 1:
+          value += a;
+          break;
+        case 2:
+          value += b;
+          break;
+        case 3:
+          value += (a + b) >> 1;
+          break;
+        case 4: {
+          const p = a + b - c;
+          const pa = Math.abs(p - a);
+          const pb = Math.abs(p - b);
+          const pc = Math.abs(p - c);
+          value += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+          break;
+        }
+        default:
+          throw new Error(`unknown PNG row filter ${filter}`);
+      }
+      row[i] = value & 0xff;
+    }
+  }
+
+  const bg = [(background >> 16) & 0xff, (background >> 8) & 0xff, background & 0xff];
+  const pixels = new Uint8ClampedArray(width * height * 3);
+  for (let i = 0; i < width * height; i++) {
+    const at = i * channels;
+    let r: number;
+    let g: number;
+    let b: number;
+    let alpha = 255;
+    if (colorType === 0 || colorType === 4) {
+      r = g = b = lines[at];
+      if (colorType === 4) alpha = lines[at + 1];
+    } else if (colorType === 3) {
+      const index = lines[at];
+      r = palette![index * 3];
+      g = palette![index * 3 + 1];
+      b = palette![index * 3 + 2];
+      if (transparency && index < transparency.length) alpha = transparency[index];
+    } else {
+      r = lines[at];
+      g = lines[at + 1];
+      b = lines[at + 2];
+      if (colorType === 6) alpha = lines[at + 3];
+    }
+    const a = alpha / 255;
+    pixels[i * 3] = r * a + bg[0] * (1 - a);
+    pixels[i * 3 + 1] = g * a + bg[1] * (1 - a);
+    pixels[i * 3 + 2] = b * a + bg[2] * (1 - a);
+  }
+  return { pixels, w: width, h: height };
+}
+
+/** Every distinct colour in the raster. The budget is a fact, not a hope. */
+export function countColours(r: Raster): number {
+  const seen = new Set<number>();
+  for (let i = 0; i < r.w * r.h; i++) {
+    seen.add((r.pixels[i * 3] << 16) | (r.pixels[i * 3 + 1] << 8) | r.pixels[i * 3 + 2]);
+  }
+  return seen.size;
 }

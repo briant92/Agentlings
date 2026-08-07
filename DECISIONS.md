@@ -121,6 +121,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-109 — 2026-08-07 — M2 and M3 built: the backdrop layer, and a level pack that is a whole world](#d-109--2026-08-07--m2-and-m3-built-the-backdrop-layer-and-a-level-pack-that-is-a-whole-world)
 - [D-110 — 2026-08-07 — M4: a run authors a world, and the first one found three faults in the brief](#d-110--2026-08-07--m4-a-run-authors-a-world-and-the-first-one-found-three-faults-in-the-brief)
 - [D-111 — 2026-08-07 — A name clash was a dead end, and the crew's world replaced the hand-written one](#d-111--2026-08-07--a-name-clash-was-a-dead-end-and-the-crews-world-replaced-the-hand-written-one)
+- [D-112 — 2026-08-07 — The crew got eyes: a headless renderer, a designer, and the trap the class tag set](#d-112--2026-08-07--the-crew-got-eyes-a-headless-renderer-a-designer-and-the-trap-the-class-tag-set)
 
 ## By theme
 
@@ -141,7 +142,14 @@ entry updates one file rather than two.
   and ThemeKey opening into an installed pack; D-110 — M4, a run
   authoring a whole world, and the brief whose example became the answer; D-111 —
   a name clash that left discarding as the only move, and the first world
-  the crew drew replacing the hand-written one
+  the crew drew replacing the hand-written one; D-112 — the crew given eyes,
+  a headless renderer walking the app's own interpreter, D-107's separation
+  measure finally existing as code, and a `designer` whose class tag fixed the
+  quote while starving the turn budget
+- **Roles, skills and who a job is filed under** — D-006, and D-112, where a
+  role turns out to be a price class as much as a prompt: nobody holding it
+  means it does nothing, adding one moves the matcher underneath the roles
+  already there, and a class with no rate falls back to a standing cap
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6536,3 +6544,114 @@ built-in cards are unchanged.
 The first world in this project not drawn by hand is now the one that ships.
 
 1402 tests green, typecheck clean.
+
+## D-112 — 2026-08-07 — The crew got eyes: a headless renderer, a designer, and the trap the class tag set
+
+Brian asked whether there should be a job kind like "designer", with its own
+tools and skills, and whether published ones could be leveraged. The answer
+came in three parts, and only the first was the one he expected.
+
+**The shelf was the wrong place to look.** Roles here already *are* Claude
+Code subagent files and skills already *are* `SKILL.md` folders, so published
+templates install verbatim — the mechanism was never missing. But measured
+against the 532-entry catalogue, nothing transfers: the design-shaped entries
+(`canvas-design`, `algorithmic-art`, `frontend-design`, `ui-designer`) are
+p5.js, PNG/PDF and web UI, and everything matching *game* is engine
+programming. Our deliverable is a fixed vocabulary of nine JSON ops and no
+published skill speaks it. What transfers is judgment, and the authoring brief
+already carried most of that — writing it again as a skill would be D-030's
+duplication.
+
+**What was actually missing: the crew could not see.** A session composed a
+few hundred ops blind, and `pack:check` only ever answered "will this load".
+So `npm run pack:render` draws a pack to a PNG through **the same `drawScene`
+the app walks** — a renderer that could disagree with the app would be worse
+than none, because it would be believed. The interpreter moved
+`web/src/world/scene.ts` → `packages/shared/src/draw.ts` on D-109's precedent,
+the world constants moved with it (`index.ts` imports `draw`, so the cycle was
+real), and the raster and PNG went to the server because they need `node:zlib`
+and shared is bundled into the browser. No dependency was added. It also gave
+D-107's separation measure a home: **that number had never existed as code** —
+"20.9 → 0.3" was measured by hand and left nothing runnable behind.
+
+It found the shape of the problem on its first outing. The two installed packs
+are mirror images: The Pequod sits on a dark ground where every gown separates
+20.5–82.4 and its rim is useless (2.4), while The Drained Pool is bright, one
+crew colour in eight vanishes (`#5fcde4`, 0.5), and its rim carries them
+(47.5). **Each is saved by the device the other lacks**, so a gown that
+vanishes is only a fault when the rim cannot carry it — the first verdict told
+the pool to set a rim it already had, and the tool now reads the rim before
+judging.
+
+**The role, and why it is also the price tag.** `jobClass` is the role that
+*ran* the work, so `designer` is simultaneously the missing class tag that had
+kept authoring pooled with every short `worker` session and quoted 3x under
+(D-110's 50c against $1.81; run 2's 53c against $1.29). `forceRole` carries a
+role the *route* knows when the sentence cannot — authoring arrives by a
+button — and deliberately does not fake the crew: `noOneHasRole` is recomputed
+so `runnerRole` still prices against whoever will really run it. The desk sends
+`authoring`, never a role name, because a client that could pick the role could
+pick the price class.
+
+Two things had to be true and one of them was measured the hard way. **A role
+nobody holds does nothing**: with `designer` shipped and unheld the quote
+stayed "About 54c — from 53 jobs like it"; hiring Moss into it flipped it to
+"Up to $2.00 — first time doing this", samples 0. And **adding a role moves the
+matcher underneath the roles already there**: shipping `designer` and
+`see-your-work` sent *"look into how the payment code works"* from `scout` to
+`mason`, because BM25's idf is corpus-relative and scout had been winning that
+sentence 0.750 to 0.740 — either new document alone was enough. Rewording the
+newcomer would only postpone it until the role after next, so scout now *says*
+it explains how existing code works and owns the sentence on its own words.
+`starter.test.ts` is the canary and carries the account.
+
+### The trap the tag set, and the honest correction
+
+Giving authoring its own class fixed the quote and, in the same move, **cut the
+run's turn budget from 40 to 10**. `turnsForBudget` prices turns off the
+*class's* per-turn rate, and with `samples === 0` it falls back to the role's
+standing cap — the 40 the first two runs enjoyed had been coming from
+`worker`'s fifty-odd rows all along. D-095's shape through a new door: the tag
+meant to help took away what was helping, and the first designer run was cut
+holding a finished, valid, rather good pack.
+
+I recommended `maxTurns: 20` on the role and Brian took it. **It was
+irrelevant, and the record should say so.** A role cap binds only while the
+class has no rate, and the very run that exposed the problem gave the class its
+first row — so every run after it was funded by the quote instead: 10 → 12 →
+16, and the class now funds 19. The fix was for a wound already closing by
+another route. What is true is the weaker claim: a new class costs its first
+few runs, and `maxTurns` decides only how badly the *first* one is starved.
+
+### What proved it
+
+Three runs on "a quiet greenhouse at dawn", each cut at its cap, **charged $0
+every time** — $3.9956 absorbed, `priceUsd: 0` three times, D-012 exactly as
+designed. The first produced `world.png` in its sandbox unprompted, which is
+the loop firing. The second wrote the diagnosis. The third fixed it and was
+promoted.
+
+The diagnosis is the entry's real evidence, because it is reasoning no checker
+could reach:
+
+> **9.5 is thin, and it is thin by luck.** The eight gown luminances are 22.5,
+> 23.1, 32.2, 33.3, 40.9, 51.7, 63.4, 84.3. The pack's backdrop sits at 73.5 —
+> the midpoint of the widest *interior* gap in that ramp (lime 63.4 ↔ yellow
+> 84.3), whose best possible score is ~10.4.
+
+**A background inside the crew's luminance ramp caps the best achievable
+separation at half the widest interior gap.** No score above ~10 was available
+without moving the background out of the ramp entirely — which it then did.
+The band the crew stand on went from 72.9–74.1 to 4.0–4.9, worst separation
+from **9.5 to 17.6**, and the rim from `stoneDark` to `rockEdge`. Its own
+account of the fault was compositional as well as numeric: the brightest thing
+in a dawn picture should be the sun, not the floor the crew walk on. The pale
+haze became a dark planting bed and the composition survived.
+
+Deliberately not seen by the render, and stated in the brief so a clean picture
+is not over-read: ambient effects are animated, the crew stand-ins are
+gown-coloured blocks rather than the 18×20 art, and the doorway, signposts and
+deliveries are drawn over a pack rather than in it.
+
+1430 tests green, typecheck clean. The Long Glasshouse ships as the third
+installed world, and the first drawn by an agentling that could see it.

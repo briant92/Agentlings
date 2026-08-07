@@ -48,15 +48,24 @@ capability roadmap; this is the short list of what matters most, in order.
       Acceptable for one user on localhost by decision; each becomes a
       blocker at the first second user, as does billing (D-012's spine has
       no invoice on purpose).
-- [ ] **G5 — The quote's three blind spots.** Attachments (+$0.83 measured on
-      one 74KB file, T2·1) and per-level context weight (the ~5–8c per-call
-      floor that pushed five predictions low the same way) are residuals. The
-      third is not: a **whole job class priced wrong**. Authoring a level pack
-      quoted 50c at *high* certainty from 51 samples and cost **$1.81** —
-      3.6x over, 91% of the ceiling (D-110), because it was averaged against a
-      pooled class whose members are mostly short. All three recorded in
-      TRAINING.md's "What's open", all three deliberately waiting on more real
-      traffic before code: one run is not a rate.
+- [ ] **G5 — The quote's blind spots, one of three now closed.** Attachments
+      (+$0.83 measured on one 74KB file, T2·1) and per-level context weight
+      (the ~5–8c per-call floor that pushed five predictions low the same way)
+      are residuals, still recorded in TRAINING.md's "What's open" and still
+      deliberately waiting on more real traffic before code.
+      ~~The third is not: a **whole job class priced wrong**.~~
+      **Closed 2026-08-07 — D-112.** Authoring quoted 50c and 53c against
+      $1.81 and $1.29 because `jobClass` is the role that *ran* the work and
+      authoring ran as `worker`, pooled with every short session in the level.
+      A `designer` role is the tag, so the same change that gave the work an
+      agentling gave it a price class: the quote went from "About 54c — from
+      53 jobs like it" to "Up to $2.00 — first time doing this". **Note what
+      the fix cost**, because it is the lesson rather than a footnote: a class
+      with no rate cannot convert a ceiling into turns, so the first designer
+      run's budget fell from 40 turns to 10 and three runs were cut before the
+      class had learnt its own rate (10 → 12 → 16, now 19). All three were
+      absorbed, $3.9956, charged $0. **Tagging a class is not free — it is
+      paid for in the first few runs under the new tag.**
 - [ ] **G6 — Robustness odds and ends.** The store trusts a junk embedded
       text layer over its own better OCR (Wave 5's "zo22" balance sheet —
       D-059's rule assumes any text layer beats OCR); the connection

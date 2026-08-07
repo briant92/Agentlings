@@ -196,24 +196,32 @@ Two things the render deliberately does not show: ambient effects, which are
 animated, and the doorway, signposts and deliveries, which the app draws on
 top of your scene.
 
-## When to stop, which is earlier than you think
+## Finish early, then improve — and improve the right thing
 
 **Get a complete pack rendered and looked at well before you are halfway
 through your turns.** Not a sketch to expand — the whole scene, every layer,
 end to end. Everything after that is improving what exists.
 
-The packs installed so far are **46, 78 and 204 ops**, and the best *picture*
-of the three is not the biggest. A fourth reached 413 and was worse: palms on
-an even rhythm, one flat foliage texture, no light direction — more ops spent
-making it larger rather than better, and it ran out of turns before it could
-say anything about itself.
+**What separates the worlds that worked from the ones that did not is
+variation and light, never size.** The two best so far are a ship's
+between-decks whose lamps throw light cones down the hull, and a glasshouse
+built on one-point perspective with the sun as the brightest thing in it.
+The weakest was a jungle of identical palms at an even interval, one flat
+foliage texture, and no light direction anywhere — and it was the *largest*
+of the four. So when you look at your render, fix what a picture is judged on:
 
-So: **if you are past roughly 250 ops and still adding, you are elaborating,
-not improving.** Stop adding and start looking. Fix the thing your own render
-shows you — a band that reads as a stripe, a rhythm too even to be alive, a
-place where nothing draws the eye — because those are the faults that make a
-world look composed rather than generated, and none of them is fixed by
-another hundred ops.
+- **A rhythm too even to be alive.** Anything repeated wants its spacing,
+  size or tint varied, or it reads as wallpaper.
+- **No light.** Decide where the light comes from and let it fall — a
+  gradient, a cone, a bright edge, something darker on the far side.
+- **Nothing to look at.** One place the eye goes first, and depth behind it.
+- **A band that reads as a stripe** rather than as a thing seen from a
+  distance.
+
+None of those is fixed by adding more ops, and none of them is fixed by
+removing ops either. A count is not a target in either direction: a world was
+once cut down to a fifth of its ops on that reasoning and came back thinner
+and worse.
 
 **Keep back enough turns to write \`RESULT.md\`.** A run that is cut delivers
 its pack but reports nothing: what you saw, what you chose, and what you would

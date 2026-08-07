@@ -80,33 +80,41 @@ describe('packBrief', () => {
   });
 
   /**
-   * Five designer runs, four of them cut at the cap, $6.75 absorbed against
-   * $0.99 charged — and the packs doubled every time: 46, 78, 204, 413 ops.
-   * The turn budget had been climbing too (10 → 12 → 16 → 23), so more turns
-   * were only ever buying more ops. The 413 was the worst picture of the four.
+   * The packs had doubled every run — 46, 78, 204, 413 ops — while every run
+   * was cut at the cap, so I told the brief that past ~250 ops it was
+   * elaborating rather than improving. **That was wrong and the re-run proved
+   * it**: ops fell to 89, the world came back sparse and blobby, it was cut
+   * anyway, and it cost more ($1.77 → $2.36).
    *
-   * That is a stopping problem, not a budget problem, so the fix is here and
-   * in the role rather than in the cap.
+   * The error was targeting a proxy. The 413-op world was not bad *because*
+   * of its op count; it was bad because its palms marched at an even interval
+   * under no light at all. A count correlated with the fault and was not the
+   * fault, so the bar bought fewer ops and none of the quality.
+   *
+   * So the number is gone and what actually separates the good worlds from
+   * the bad ones is named instead — and the brief says outright that a count
+   * is not a target in either direction, because the run that produced 89 was
+   * following an instruction I wrote.
    */
-  describe('when to stop', () => {
+  describe('finishing and improving', () => {
     it('asks for a complete pack early, not a sketch to expand', () => {
       expect(brief).toMatch(/complete pack rendered and looked at/i);
       expect(brief).toMatch(/halfway/i);
     });
 
-    it('gives the real op counts, including the one that went wrong', () => {
-      expect(brief).toContain('46, 78 and 204');
-      expect(brief).toContain('413');
-      // Whitespace-tolerant: the brief is hard-wrapped, so a phrase can carry
-      // a newline in the middle of it.
-      expect(brief).toMatch(/best \*picture\*\s+of the three is not the biggest/i);
+    it('names variation and light as what separates them, not size', () => {
+      expect(brief).toMatch(/variation and light, never size/i);
+      expect(brief).toMatch(/rhythm too even to be alive/i);
+      expect(brief).toMatch(/No light/);
     });
 
-    it('names a number at which adding stops being improving', () => {
-      expect(brief).toMatch(/past roughly 250 ops/i);
+    it('sets no op-count target, in either direction', () => {
+      expect(brief).not.toMatch(/250 ops/);
+      expect(brief).toMatch(/A count is not a target in either direction/i);
+      expect(brief).toMatch(/thinner\s+and worse/i);
     });
 
-    /** Two cut runs in a row delivered a pack and no account of it. */
+    /** Three cut runs in a row delivered a pack and no account of it. */
     it('tells it to reserve turns for the result, and to write it first if short', () => {
       expect(brief).toMatch(/Keep back enough turns/i);
       expect(brief).toMatch(/write the result \*first\*/i);

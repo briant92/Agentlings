@@ -1,0 +1,2946 @@
+{
+  "name": "The Long Glasshouse",
+  "provenance": "Drawn from scratch for this format by Moss (designer, hq) on 2026-08-07. No external art, reference image or licensed source: every op was composed by hand against art/LEVELPACK.md, and the 16-slot palette is original, kept near the DB32 ramp so it sits beside the crew. The subject is a generic Victorian-style glasshouse interior at dawn — a building type, not a photograph, a plan, or any particular garden, and it carries no marks or names. Free for this project to use, modify and redistribute, without attribution.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "rockEdge",
+  "theme": {
+    "void": 1778744,
+    "rock": 6124656,
+    "rockLight": 13951224,
+    "rockDark": 3359807,
+    "rockEdge": 10466222,
+    "accent": 14715452,
+    "accentLight": 15910811,
+    "accentDark": 9393723,
+    "grass": 6995504,
+    "grassDark": 3104058,
+    "wood": 9072432,
+    "woodDark": 5393188,
+    "stoneDark": 988948,
+    "flame": 16511542,
+    "flameCore": 16776168,
+    "hover": 6278628
+  },
+  "backdrop": {
+    "scrim": {
+      "color": "rockLight",
+      "alpha": 0.42,
+      "from": 208,
+      "steps": 8
+    },
+    "ops": [
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 0,
+        "w": 1000,
+        "h": "viewH",
+        "color": "void"
+      },
+      {
+        "op": "band",
+        "axis": "y",
+        "from": 86,
+        "to": 392,
+        "step": 6,
+        "of": [
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": "viewH",
+            "color": "accentLight",
+            "alpha": 0.045
+          }
+        ]
+      },
+      {
+        "op": "circle",
+        "x": 305,
+        "y": 296,
+        "r": 92,
+        "color": "accent",
+        "alpha": 0.1
+      },
+      {
+        "op": "circle",
+        "x": 305,
+        "y": 296,
+        "r": 60,
+        "color": "accent",
+        "alpha": 0.16
+      },
+      {
+        "op": "circle",
+        "x": 305,
+        "y": 296,
+        "r": 38,
+        "color": "accentLight",
+        "alpha": 0.32
+      },
+      {
+        "op": "circle",
+        "x": 305,
+        "y": 296,
+        "r": 21,
+        "color": "flameCore",
+        "alpha": 0.92
+      },
+      {
+        "op": "rect",
+        "x": 227,
+        "y": 292,
+        "w": 156,
+        "h": 8,
+        "color": "flameCore",
+        "alpha": 0.22
+      },
+      {
+        "op": "poly",
+        "points": [
+          [
+            0,
+            356
+          ],
+          [
+            180,
+            340
+          ],
+          [
+            400,
+            350
+          ],
+          [
+            640,
+            336
+          ],
+          [
+            860,
+            348
+          ],
+          [
+            1000,
+            340
+          ],
+          [
+            1000,
+            392
+          ],
+          [
+            0,
+            392
+          ]
+        ],
+        "color": "rockDark",
+        "alpha": 0.42
+      },
+      {
+        "op": "rect",
+        "x": 228,
+        "y": 282,
+        "w": 3,
+        "h": 62,
+        "color": "rockDark",
+        "alpha": 0.4
+      },
+      {
+        "op": "circle",
+        "x": 229,
+        "y": 279,
+        "r": 17,
+        "color": "rockDark",
+        "alpha": 0.22
+      },
+      {
+        "op": "rect",
+        "x": 262,
+        "y": 304,
+        "w": 3,
+        "h": 40,
+        "color": "rockDark",
+        "alpha": 0.4
+      },
+      {
+        "op": "circle",
+        "x": 263,
+        "y": 301,
+        "r": 12,
+        "color": "rockDark",
+        "alpha": 0.22
+      },
+      {
+        "op": "rect",
+        "x": 386,
+        "y": 292,
+        "w": 3,
+        "h": 52,
+        "color": "rockDark",
+        "alpha": 0.4
+      },
+      {
+        "op": "circle",
+        "x": 387,
+        "y": 289,
+        "r": 15,
+        "color": "rockDark",
+        "alpha": 0.22
+      },
+      {
+        "op": "rect",
+        "x": 416,
+        "y": 310,
+        "w": 3,
+        "h": 34,
+        "color": "rockDark",
+        "alpha": 0.4
+      },
+      {
+        "op": "circle",
+        "x": 417,
+        "y": 307,
+        "r": 11,
+        "color": "rockDark",
+        "alpha": 0.22
+      }
+    ]
+  },
+  "ops": [
+    {
+      "op": "poly",
+      "points": [
+        [
+          -16.4,
+          73.2
+        ],
+        [
+          203.6,
+          239.2
+        ],
+        [
+          208.4,
+          232.8
+        ],
+        [
+          -11.6,
+          66.8
+        ]
+      ],
+      "color": "rock"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1012.9,
+          66.2
+        ],
+        [
+          432.9,
+          232.2
+        ],
+        [
+          435.1,
+          239.8
+        ],
+        [
+          1015.1,
+          73.8
+        ]
+      ],
+      "color": "rock"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -14.7,
+          67
+        ],
+        [
+          205.3,
+          233
+        ],
+        [
+          206.7,
+          231
+        ],
+        [
+          -13.3,
+          65
+        ]
+      ],
+      "color": "rockEdge"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1013.7,
+          64.8
+        ],
+        [
+          433.7,
+          230.8
+        ],
+        [
+          434.3,
+          233.2
+        ],
+        [
+          1014.3,
+          67.2
+        ]
+      ],
+      "color": "rockEdge"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          497,
+          -28.7
+        ],
+        [
+          317,
+          169.3
+        ],
+        [
+          323,
+          174.7
+        ],
+        [
+          503,
+          -23.3
+        ]
+      ],
+      "color": "rock"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          499.1,
+          -23.8
+        ],
+        [
+          319.1,
+          174.2
+        ],
+        [
+          320.9,
+          175.8
+        ],
+        [
+          500.9,
+          -22.2
+        ]
+      ],
+      "color": "rockEdge"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          30.3,
+          104.6
+        ],
+        [
+          464.3,
+          15
+        ],
+        [
+          463.7,
+          12.2
+        ],
+        [
+          29.7,
+          101.8
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          463.7,
+          15
+        ],
+        [
+          897.7,
+          104.6
+        ],
+        [
+          898.3,
+          101.8
+        ],
+        [
+          464.3,
+          12.2
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          78.7,
+          141.1
+        ],
+        [
+          424.7,
+          58.5
+        ],
+        [
+          424.1,
+          55.8
+        ],
+        [
+          78.1,
+          138.4
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          424.1,
+          58.5
+        ],
+        [
+          770.1,
+          141.1
+        ],
+        [
+          770.7,
+          138.4
+        ],
+        [
+          424.7,
+          55.8
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          125,
+          175.9
+        ],
+        [
+          387,
+          100.1
+        ],
+        [
+          386.2,
+          97.4
+        ],
+        [
+          124.2,
+          173.2
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          386.2,
+          100.1
+        ],
+        [
+          648.2,
+          175.9
+        ],
+        [
+          649,
+          173.2
+        ],
+        [
+          387,
+          97.4
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          166.9,
+          207.4
+        ],
+        [
+          352.9,
+          137.7
+        ],
+        [
+          351.9,
+          135
+        ],
+        [
+          165.9,
+          204.8
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          351.9,
+          137.7
+        ],
+        [
+          537.9,
+          207.4
+        ],
+        [
+          538.9,
+          204.8
+        ],
+        [
+          352.9,
+          135
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          97.9,
+          49.8
+        ],
+        [
+          229.9,
+          222.8
+        ],
+        [
+          232.3,
+          221
+        ],
+        [
+          100.3,
+          48
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          900.4,
+          47.5
+        ],
+        [
+          408.4,
+          220.5
+        ],
+        [
+          409.4,
+          223.3
+        ],
+        [
+          901.4,
+          50.3
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          210.7,
+          28.1
+        ],
+        [
+          254.7,
+          208.2
+        ],
+        [
+          257.6,
+          207.5
+        ],
+        [
+          213.6,
+          27.4
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          787.2,
+          26.4
+        ],
+        [
+          383.2,
+          206.5
+        ],
+        [
+          384.5,
+          209.2
+        ],
+        [
+          788.5,
+          29.1
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          323.8,
+          6.3
+        ],
+        [
+          279.8,
+          193.4
+        ],
+        [
+          282.7,
+          194.1
+        ],
+        [
+          326.7,
+          7
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          674,
+          5.3
+        ],
+        [
+          358,
+          192.5
+        ],
+        [
+          359.5,
+          195.1
+        ],
+        [
+          675.5,
+          7.9
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          421.6,
+          -12.4
+        ],
+        [
+          301.6,
+          180.8
+        ],
+        [
+          304.2,
+          182.4
+        ],
+        [
+          424.2,
+          -10.8
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          576.2,
+          -12.8
+        ],
+        [
+          336.2,
+          180.4
+        ],
+        [
+          338,
+          182.8
+        ],
+        [
+          578,
+          -10.4
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.7
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 70,
+      "w": 3,
+      "h": 302,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 997,
+      "y": 70,
+      "w": 3,
+      "h": 302,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 34,
+      "y": 97.39805825242719,
+      "w": 3,
+      "h": 274.6019417475728,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 963,
+      "y": 97.39805825242719,
+      "w": 3,
+      "h": 274.6019417475728,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 74,
+      "y": 129.63106796116506,
+      "w": 3,
+      "h": 242.36893203883494,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 923,
+      "y": 129.63106796116506,
+      "w": 3,
+      "h": 242.36893203883494,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 118,
+      "y": 165.0873786407767,
+      "w": 3,
+      "h": 206.9126213592233,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 879,
+      "y": 165.0873786407767,
+      "w": 3,
+      "h": 206.9126213592233,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 162,
+      "y": 200.54368932038835,
+      "w": 3,
+      "h": 171.45631067961165,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 835,
+      "y": 200.54368932038835,
+      "w": 3,
+      "h": 171.45631067961165,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 196,
+      "y": 227.94174757281553,
+      "w": 3,
+      "h": 144.05825242718447,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "rect",
+      "x": 801,
+      "y": 227.94174757281553,
+      "w": 3,
+      "h": 144.05825242718447,
+      "color": "rock",
+      "alpha": 0.95
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          203.4,
+          238.6
+        ],
+        [
+          321.4,
+          174.6
+        ],
+        [
+          318.6,
+          169.4
+        ],
+        [
+          200.6,
+          233.4
+        ]
+      ],
+      "color": "rockEdge"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          439.4,
+          233.4
+        ],
+        [
+          321.4,
+          169.4
+        ],
+        [
+          318.6,
+          174.6
+        ],
+        [
+          436.6,
+          238.6
+        ]
+      ],
+      "color": "rockEdge"
+    },
+    {
+      "op": "rect",
+      "x": 198,
+      "y": 236,
+      "w": 244,
+      "h": 5,
+      "color": "rockEdge"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          319.2,
+          174.9
+        ],
+        [
+          235.2,
+          234.9
+        ],
+        [
+          236.8,
+          237.1
+        ],
+        [
+          320.8,
+          177.1
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.85
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          319.2,
+          177.1
+        ],
+        [
+          403.2,
+          237.1
+        ],
+        [
+          404.8,
+          234.9
+        ],
+        [
+          320.8,
+          174.9
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.85
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          318.6,
+          176
+        ],
+        [
+          318.6,
+          236
+        ],
+        [
+          321.4,
+          236
+        ],
+        [
+          321.4,
+          176
+        ]
+      ],
+      "color": "rock",
+      "alpha": 0.85
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 206,
+      "to": 435,
+      "step": 25.4,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 236,
+          "w": 3,
+          "h": 152,
+          "color": "rock",
+          "alpha": 0.9
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 198,
+      "y": 300,
+      "w": 244,
+      "h": 3,
+      "color": "rock",
+      "alpha": 0.8
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -6,
+          336
+        ],
+        [
+          204,
+          302
+        ],
+        [
+          204,
+          311
+        ],
+        [
+          -6,
+          358
+        ]
+      ],
+      "color": "wood"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -6,
+          352
+        ],
+        [
+          204,
+          307
+        ],
+        [
+          204,
+          311
+        ],
+        [
+          -6,
+          358
+        ]
+      ],
+      "color": "woodDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -5.8,
+          338.5
+        ],
+        [
+          204.2,
+          304.5
+        ],
+        [
+          203.8,
+          301.5
+        ],
+        [
+          -6.2,
+          335.5
+        ]
+      ],
+      "color": "accentLight",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 13,
+      "y": 351,
+      "w": 4,
+      "h": 25,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "rect",
+      "x": 84,
+      "y": 335,
+      "w": 4,
+      "h": 21,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "rect",
+      "x": 156,
+      "y": 319,
+      "w": 4,
+      "h": 17,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1006,
+          336
+        ],
+        [
+          436,
+          302
+        ],
+        [
+          436,
+          311
+        ],
+        [
+          1006,
+          358
+        ]
+      ],
+      "color": "wood"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1006,
+          352
+        ],
+        [
+          436,
+          307
+        ],
+        [
+          436,
+          311
+        ],
+        [
+          1006,
+          358
+        ]
+      ],
+      "color": "woodDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1006.1,
+          335.5
+        ],
+        [
+          436.1,
+          301.5
+        ],
+        [
+          435.9,
+          304.5
+        ],
+        [
+          1005.9,
+          338.5
+        ]
+      ],
+      "color": "accentLight",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 947,
+      "y": 351,
+      "w": 4,
+      "h": 25,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "rect",
+      "x": 753,
+      "y": 335,
+      "w": 4,
+      "h": 21,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "rect",
+      "x": 559,
+      "y": 319,
+      "w": 4,
+      "h": 17,
+      "color": "woodDark",
+      "alpha": 0.9
+    },
+    {
+      "op": "rect",
+      "x": 2,
+      "y": 320,
+      "w": 20,
+      "h": 15,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 2,
+      "y": 320,
+      "w": 20,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 2,
+      "y": 303,
+      "w": 20,
+      "h": 17,
+      "count": 5,
+      "height": 17,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 33,
+      "y": 316,
+      "w": 18,
+      "h": 13,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 33,
+      "y": 316,
+      "w": 18,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 42,
+      "y": 305,
+      "r": 11,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 38,
+      "y": 300,
+      "r": 7,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 33,
+      "y": 290,
+      "w": 18,
+      "h": 26,
+      "count": 6,
+      "height": 26,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 60,
+      "y": 312,
+      "w": 16,
+      "h": 12,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 60,
+      "y": 312,
+      "w": 16,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 68,
+      "y": 302,
+      "r": 9,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 65,
+      "y": 298,
+      "r": 6,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 60,
+      "y": 288,
+      "w": 16,
+      "h": 24,
+      "count": 6,
+      "height": 24,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 91,
+      "y": 309,
+      "w": 14,
+      "h": 10,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 91,
+      "y": 309,
+      "w": 14,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 91,
+      "y": 297,
+      "w": 14,
+      "h": 12,
+      "count": 3,
+      "height": 12,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 116,
+      "y": 306,
+      "w": 12,
+      "h": 9,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 116,
+      "y": 306,
+      "w": 12,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 122,
+      "y": 298,
+      "r": 7,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 120,
+      "y": 295,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 116,
+      "y": 288,
+      "w": 12,
+      "h": 18,
+      "count": 4,
+      "height": 18,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 139.5,
+      "y": 303,
+      "w": 11,
+      "h": 8,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 139.5,
+      "y": 303,
+      "w": 11,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 145,
+      "y": 296,
+      "r": 6,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 143,
+      "y": 293,
+      "r": 4,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 139.5,
+      "y": 287,
+      "w": 11,
+      "h": 16,
+      "count": 4,
+      "height": 16,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 161.5,
+      "y": 300,
+      "w": 9,
+      "h": 7,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 161.5,
+      "y": 300,
+      "w": 9,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 161.5,
+      "y": 292,
+      "w": 9,
+      "h": 8,
+      "count": 2,
+      "height": 8,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 964,
+      "y": 320,
+      "w": 20,
+      "h": 15,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 964,
+      "y": 320,
+      "w": 20,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 974,
+      "y": 308,
+      "r": 12,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 970,
+      "y": 303,
+      "r": 8,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 964,
+      "y": 291,
+      "w": 20,
+      "h": 29,
+      "count": 7,
+      "height": 29,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 877,
+      "y": 316,
+      "w": 18,
+      "h": 13,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 877,
+      "y": 316,
+      "w": 18,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 886,
+      "y": 305,
+      "r": 11,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 882,
+      "y": 300,
+      "r": 7,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 877,
+      "y": 290,
+      "w": 18,
+      "h": 26,
+      "count": 6,
+      "height": 26,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 802,
+      "y": 312,
+      "w": 16,
+      "h": 12,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 802,
+      "y": 312,
+      "w": 16,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 802,
+      "y": 299,
+      "w": 16,
+      "h": 13,
+      "count": 4,
+      "height": 13,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 715,
+      "y": 309,
+      "w": 14,
+      "h": 10,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 715,
+      "y": 309,
+      "w": 14,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 722,
+      "y": 300,
+      "r": 8,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 719,
+      "y": 296,
+      "r": 6,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 715,
+      "y": 288,
+      "w": 14,
+      "h": 21,
+      "count": 5,
+      "height": 21,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 645,
+      "y": 306,
+      "w": 12,
+      "h": 9,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 645,
+      "y": 306,
+      "w": 12,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 651,
+      "y": 298,
+      "r": 7,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 649,
+      "y": 295,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 645,
+      "y": 288,
+      "w": 12,
+      "h": 18,
+      "count": 4,
+      "height": 18,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 579.5,
+      "y": 303,
+      "w": 11,
+      "h": 8,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 579.5,
+      "y": 303,
+      "w": 11,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 579.5,
+      "y": 294,
+      "w": 11,
+      "h": 9,
+      "count": 3,
+      "height": 9,
+      "color": "grass",
+      "alt": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 520.5,
+      "y": 300,
+      "w": 9,
+      "h": 7,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 520.5,
+      "y": 300,
+      "w": 9,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.55
+    },
+    {
+      "op": "circle",
+      "x": 525,
+      "y": 294,
+      "r": 6,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "circle",
+      "x": 523,
+      "y": 292,
+      "r": 4,
+      "color": "grass",
+      "alpha": 0.55
+    },
+    {
+      "op": "tufts",
+      "x": 520.5,
+      "y": 286,
+      "w": 9,
+      "h": 14,
+      "count": 3,
+      "height": 14,
+      "color": "grassDark",
+      "alt": "grass"
+    },
+    {
+      "op": "rect",
+      "x": 239,
+      "y": 67,
+      "w": 2,
+      "h": 27,
+      "color": "rockDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 229,
+      "y": 94,
+      "w": 20,
+      "h": 10,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 229,
+      "y": 94,
+      "w": 20,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 235.432,
+      "y": 106.676,
+      "r": 8,
+      "color": "grassDark",
+      "alpha": 0.85
+    },
+    {
+      "op": "circle",
+      "x": 243.46,
+      "y": 104,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.6
+    },
+    {
+      "op": "rect",
+      "x": 238,
+      "y": 104,
+      "w": 2,
+      "h": 23,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 244.352,
+      "y": 104,
+      "w": 2,
+      "h": 15,
+      "color": "grassDark",
+      "alpha": 0.7
+    },
+    {
+      "op": "rect",
+      "x": 666,
+      "y": 66,
+      "w": 2,
+      "h": 27,
+      "color": "rockDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 656,
+      "y": 93,
+      "w": 20,
+      "h": 10,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 656,
+      "y": 93,
+      "w": 20,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 662.432,
+      "y": 105.676,
+      "r": 8,
+      "color": "grassDark",
+      "alpha": 0.85
+    },
+    {
+      "op": "circle",
+      "x": 670.46,
+      "y": 103,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.6
+    },
+    {
+      "op": "rect",
+      "x": 665,
+      "y": 103,
+      "w": 2,
+      "h": 23,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 671.352,
+      "y": 103,
+      "w": 2,
+      "h": 15,
+      "color": "grassDark",
+      "alpha": 0.7
+    },
+    {
+      "op": "rect",
+      "x": 272,
+      "y": 108,
+      "w": 2,
+      "h": 23,
+      "color": "rockDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 263.5,
+      "y": 131,
+      "w": 17,
+      "h": 9,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 263.5,
+      "y": 131,
+      "w": 17,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 268.9,
+      "y": 142.325,
+      "r": 7,
+      "color": "grassDark",
+      "alpha": 0.85
+    },
+    {
+      "op": "circle",
+      "x": 275.875,
+      "y": 140,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.6
+    },
+    {
+      "op": "rect",
+      "x": 271,
+      "y": 140,
+      "w": 2,
+      "h": 20,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 276.65,
+      "y": 140,
+      "w": 2,
+      "h": 13,
+      "color": "grassDark",
+      "alpha": 0.7
+    },
+    {
+      "op": "rect",
+      "x": 554,
+      "y": 110,
+      "w": 2,
+      "h": 23,
+      "color": "rockDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 545.5,
+      "y": 133,
+      "w": 17,
+      "h": 9,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 545.5,
+      "y": 133,
+      "w": 17,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 550.9,
+      "y": 144.325,
+      "r": 7,
+      "color": "grassDark",
+      "alpha": 0.85
+    },
+    {
+      "op": "circle",
+      "x": 557.875,
+      "y": 142,
+      "r": 5,
+      "color": "grass",
+      "alpha": 0.6
+    },
+    {
+      "op": "rect",
+      "x": 553,
+      "y": 142,
+      "w": 2,
+      "h": 20,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 558.65,
+      "y": 142,
+      "w": 2,
+      "h": 13,
+      "color": "grassDark",
+      "alpha": 0.7
+    },
+    {
+      "op": "rect",
+      "x": 257,
+      "y": 149,
+      "w": 2,
+      "h": 21,
+      "color": "rockDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 249.5,
+      "y": 170,
+      "w": 15,
+      "h": 8,
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 249.5,
+      "y": 170,
+      "w": 15,
+      "h": 2,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "circle",
+      "x": 254.26,
+      "y": 180.055,
+      "r": 6,
+      "color": "grassDark",
+      "alpha": 0.85
+    },
+    {
+      "op": "circle",
+      "x": 260.425,
+      "y": 178,
+      "r": 4,
+      "color": "grass",
+      "alpha": 0.6
+    },
+    {
+      "op": "rect",
+      "x": 256,
+      "y": 178,
+      "w": 2,
+      "h": 18,
+      "color": "grassDark",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 261.11,
+      "y": 178,
+      "w": 2,
+      "h": 12,
+      "color": "grassDark",
+      "alpha": 0.7
+    },
+    {
+      "op": "band",
+      "axis": "y",
+      "from": 296,
+      "to": 372,
+      "step": 4,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 0,
+          "w": 1000,
+          "h": "viewH",
+          "color": "rockLight",
+          "alpha": 0.1
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": "viewH",
+      "color": "accentDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 5,
+      "color": "accent",
+      "alpha": 0.3
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": "groundY+4",
+      "w": 1000,
+      "h": 58,
+      "count": 170,
+      "light": "accent",
+      "dark": "woodDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -499.9,
+          453.4
+        ],
+        [
+          240.7,
+          389.4
+        ],
+        [
+          240.5,
+          386.6
+        ],
+        [
+          -500.1,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -394.9,
+          453.4
+        ],
+        [
+          249.1,
+          389.4
+        ],
+        [
+          248.9,
+          386.6
+        ],
+        [
+          -395.1,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -289.8,
+          453.4
+        ],
+        [
+          257.6,
+          389.4
+        ],
+        [
+          257.2,
+          386.6
+        ],
+        [
+          -290.2,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -184.8,
+          453.4
+        ],
+        [
+          266,
+          389.4
+        ],
+        [
+          265.6,
+          386.6
+        ],
+        [
+          -185.2,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -79.8,
+          453.4
+        ],
+        [
+          274.4,
+          389.4
+        ],
+        [
+          274,
+          386.6
+        ],
+        [
+          -80.2,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          25.3,
+          453.4
+        ],
+        [
+          282.9,
+          389.4
+        ],
+        [
+          282.3,
+          386.6
+        ],
+        [
+          24.7,
+          450.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          130.5,
+          453.3
+        ],
+        [
+          291.5,
+          389.3
+        ],
+        [
+          290.5,
+          386.7
+        ],
+        [
+          129.5,
+          450.7
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          236,
+          453
+        ],
+        [
+          300.4,
+          389
+        ],
+        [
+          298.4,
+          387
+        ],
+        [
+          234,
+          451
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          341.3,
+          451.4
+        ],
+        [
+          309.1,
+          387.4
+        ],
+        [
+          306.5,
+          388.6
+        ],
+        [
+          338.7,
+          452.6
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          445.6,
+          450.7
+        ],
+        [
+          316.8,
+          386.7
+        ],
+        [
+          315.6,
+          389.3
+        ],
+        [
+          444.4,
+          453.3
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          550.4,
+          450.7
+        ],
+        [
+          325,
+          386.7
+        ],
+        [
+          324.2,
+          389.3
+        ],
+        [
+          549.6,
+          453.3
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          655.3,
+          450.6
+        ],
+        [
+          333.3,
+          386.6
+        ],
+        [
+          332.7,
+          389.4
+        ],
+        [
+          654.7,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          760.2,
+          450.6
+        ],
+        [
+          341.6,
+          386.6
+        ],
+        [
+          341.2,
+          389.4
+        ],
+        [
+          759.8,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          865.2,
+          450.6
+        ],
+        [
+          350,
+          386.6
+        ],
+        [
+          349.6,
+          389.4
+        ],
+        [
+          864.8,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          970.1,
+          450.6
+        ],
+        [
+          358.3,
+          386.6
+        ],
+        [
+          358.1,
+          389.4
+        ],
+        [
+          969.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1075.1,
+          450.6
+        ],
+        [
+          366.7,
+          386.6
+        ],
+        [
+          366.5,
+          389.4
+        ],
+        [
+          1074.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1180.1,
+          450.6
+        ],
+        [
+          375.1,
+          386.6
+        ],
+        [
+          374.9,
+          389.4
+        ],
+        [
+          1179.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1285.1,
+          450.6
+        ],
+        [
+          383.5,
+          386.6
+        ],
+        [
+          383.3,
+          389.4
+        ],
+        [
+          1284.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1390.1,
+          450.6
+        ],
+        [
+          391.9,
+          386.6
+        ],
+        [
+          391.7,
+          389.4
+        ],
+        [
+          1389.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1495.1,
+          450.6
+        ],
+        [
+          400.3,
+          386.6
+        ],
+        [
+          400.1,
+          389.4
+        ],
+        [
+          1494.9,
+          453.4
+        ]
+      ],
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 397,
+      "w": 1000,
+      "h": 2,
+      "color": "woodDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 411,
+      "w": 1000,
+      "h": 2,
+      "color": "woodDark",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 430,
+      "w": 1000,
+      "h": 2,
+      "color": "woodDark",
+      "alpha": 0.4
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 366,
+      "w": 1000,
+      "h": 24,
+      "color": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 363,
+      "w": 1000,
+      "h": 3,
+      "color": "rockLight",
+      "alpha": 0.8
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 360,
+      "w": 1000,
+      "h": 3,
+      "color": "rockLight",
+      "alpha": 0.55
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 357,
+      "w": 1000,
+      "h": 3,
+      "color": "rockLight",
+      "alpha": 0.3
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 8,
+      "color": "rockLight",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+8",
+      "w": 1000,
+      "h": 9,
+      "color": "rockLight",
+      "alpha": 0.22
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+17",
+      "w": 1000,
+      "h": 10,
+      "color": "rockLight",
+      "alpha": 0.1
+    },
+    {
+      "op": "rect",
+      "x": 130,
+      "y": 374,
+      "w": 350,
+      "h": 20,
+      "color": "accentLight",
+      "alpha": 0.11
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -6,
+          352
+        ],
+        [
+          436,
+          366
+        ],
+        [
+          436,
+          389
+        ],
+        [
+          -6,
+          389
+        ]
+      ],
+      "color": "rockDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1006,
+          352
+        ],
+        [
+          436,
+          366
+        ],
+        [
+          436,
+          389
+        ],
+        [
+          1006,
+          389
+        ]
+      ],
+      "color": "rockDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 376,
+      "w": 1000,
+      "h": 13,
+      "color": "stoneDark",
+      "alpha": 0.3
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": 354,
+      "w": 1000,
+      "h": 34,
+      "count": 190,
+      "light": "rock",
+      "dark": "stoneDark"
+    },
+    {
+      "op": "tufts",
+      "x": 0,
+      "y": 347,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 50,
+      "y": 349,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 100,
+      "y": 350,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 150,
+      "y": 352,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 200,
+      "y": 353,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 250,
+      "y": 355,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 600,
+      "y": 355,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 650,
+      "y": 354,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 700,
+      "y": 353,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 750,
+      "y": 352,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 800,
+      "y": 350,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 850,
+      "y": 349,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 900,
+      "y": 348,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 950,
+      "y": 347,
+      "w": 50,
+      "h": 7,
+      "count": 6,
+      "height": 6,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          -6,
+          351
+        ],
+        [
+          436,
+          365
+        ],
+        [
+          436,
+          367
+        ],
+        [
+          -6,
+          353
+        ]
+      ],
+      "color": "rockEdge",
+      "alpha": 0.6
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          1006,
+          351
+        ],
+        [
+          436,
+          365
+        ],
+        [
+          436,
+          367
+        ],
+        [
+          1006,
+          353
+        ]
+      ],
+      "color": "rockEdge",
+      "alpha": 0.6
+    },
+    {
+      "op": "tufts",
+      "x": 152,
+      "y": 344,
+      "w": 42,
+      "h": 15,
+      "count": 8,
+      "height": 14,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 696,
+      "y": 345,
+      "w": 42,
+      "h": 15,
+      "count": 8,
+      "height": 14,
+      "color": "grassDark",
+      "alt": "rockDark"
+    },
+    {
+      "op": "tufts",
+      "x": 852,
+      "y": 341,
+      "w": 42,
+      "h": 15,
+      "count": 8,
+      "height": 14,
+      "color": "grassDark",
+      "alt": "rockDark"
+    }
+  ],
+  "ambient": [
+    {
+      "fx": "beam",
+      "topLeft": 560,
+      "topRight": 668,
+      "topY": 30,
+      "botLeft": 214,
+      "botRight": 402,
+      "botY": "groundY",
+      "count": 26
+    },
+    {
+      "fx": "motes",
+      "x": 0,
+      "y": 150,
+      "w": 1000,
+      "h": 238,
+      "count": 40
+    },
+    {
+      "fx": "glints",
+      "points": [
+        [
+          305,
+          236
+        ],
+        [
+          305,
+          176
+        ],
+        [
+          206,
+          236
+        ],
+        [
+          434,
+          236
+        ]
+      ],
+      "strips": [
+        {
+          "x": 40,
+          "y": 130,
+          "w": 400
+        },
+        {
+          "x": 560,
+          "y": 130,
+          "w": 400
+        }
+      ]
+    },
+    {
+      "fx": "flyer"
+    }
+  ]
+}

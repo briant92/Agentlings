@@ -368,6 +368,19 @@ each one rests on already is.
    holding two finished scripts: right by D-012, and it means any "compile
    success rate" read off the ledger says 0% while the tool it built is live.
 
+7. **The quote is wrong for a whole job class, not just low.** The first
+   real pack-authoring run (2026-08-07, D-110) quoted **50c** at *high*
+   certainty from 51 samples and cost **$1.81** — 3.6x over, and 91% of the
+   $2 ceiling. This is not the per-call floor of item 5: that is a residual
+   of a few cents, and this is a factor. Authoring a world is 17 turns of
+   composing a few hundred ops, and it was priced against a pooled class
+   whose members are mostly short. The engine behaved correctly throughout —
+   quoted before the work, ceiling held, user billed the real figure — so
+   nothing is broken; what is wrong is the estimate, and it will stay wrong
+   until this class has samples of its own. **One run is not a rate.** The
+   useful next input is a second authoring run at a different size, not a
+   tuning pass on one data point — the same discipline item 5 is waiting on.
+
 Deliberately **not** here, so nobody reopens them: the quote ceiling pinned at
 the $2.00 clamp (D-072), the compile turn cap (D-025), the compile rate split
 (D-029), Google Custom Search (D-054), browser acting tools (D-034/D-035), and

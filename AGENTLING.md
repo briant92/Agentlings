@@ -997,9 +997,21 @@ builds `OUTBOX.json` in code. Free, instant, no model: the same file, held to
 the same contract, and **approval is still the send**. What changed is who
 composed it, not when it goes.
 
+**A run can also author a world** (D-110). Given a description, it writes
+`PACK.json` at the sandbox root — a whole level pack, palette and terrain and
+backdrop, in the same op format the four built-in levels are drawn from — and
+that file is a deliverable like any other. Review draws the world from the
+pack's own data through the interpreter that will draw it for real, so the
+preview cannot flatter it, and **Approve is the install**: the server copies it
+into `web/public/packs/`, where it joins the palette for new levels. The
+session installs nothing and has no tool that could. Reached from the New Level
+dialog rather than by a sentence, deliberately — the phrasings for this do not
+exist yet, and a button cannot misfire. Measured once: $1.81 for a 17-turn run
+that produced 33 foreground ops.
+
 The structural argument survives intact. Every guarantee rests on one shape —
 **work in a sandbox, review, promote** — and a send now goes *through*
-promote. What remains refused is acting mid-session, where there is no promote
+promote, as does an install. What remains refused is acting mid-session, where there is no promote
 step: `browser_click` on "Confirm order" happens the instant the model decides
 to, which is D-034's argument, untouched. Pausing a run to ask was the obvious
 mitigation and stays refused (D-030).

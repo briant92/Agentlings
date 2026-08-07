@@ -119,6 +119,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-107 — 2026-08-07 — Backdrops: the strip grows, and the viewport becomes data](#d-107--2026-08-07--backdrops-the-strip-grows-and-the-viewport-becomes-data)
 - [D-108 — 2026-08-07 — The backdrop leaves DB32: one palette for the crew, another for the painting](#d-108--2026-08-07--the-backdrop-leaves-db32-one-palette-for-the-crew-another-for-the-painting)
 - [D-109 — 2026-08-07 — M2 and M3 built: the backdrop layer, and a level pack that is a whole world](#d-109--2026-08-07--m2-and-m3-built-the-backdrop-layer-and-a-level-pack-that-is-a-whole-world)
+- [D-110 — 2026-08-07 — M4: a run authors a world, and the first one found three faults in the brief](#d-110--2026-08-07--m4-a-run-authors-a-world-and-the-first-one-found-three-faults-in-the-brief)
 
 ## By theme
 
@@ -136,7 +137,8 @@ entry updates one file rather than two.
   into a sprite rim; D-108 — the backdrop leaving DB32 for its own
   128-colour palette; D-109 — M2 and M3 built: the
   scrim as alpha bands, the format moving to shared so a checker can see it,
-  and ThemeKey opening into an installed pack
+  and ThemeKey opening into an installed pack; D-110 — M4, a run
+  authoring a whole world, and the brief whose example became the answer
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6383,3 +6385,101 @@ been relaxed anywhere yet. M4, the job that authors a pack from a sentence.
 And the props question D-107 left open: signposts, crates and torches are
 still code-drawn from theme slots, so a pack that repurposes `void` for sky
 still gets a doorway painted with its sky.
+
+## D-110 — 2026-08-07 — M4: a run authors a world, and the first one found three faults in the brief
+
+The last of D-107's four milestones, and the only one whose evidence had to be
+bought. It works: a description goes in, a job comes back holding a whole
+world, and approving it is what installs it. The pack the first real run
+produced is good — 33 foreground ops, 10 backdrop, three ambient effects, a
+scrim in seven bands, a rim set, passing the checker with no errors and no
+warnings. Its lamps cast light cones down the hull, which is a better idea
+than anything in the hand-authored pack it was measured against.
+
+**The contract is the outbox's, not a copy of it.** A session never installs
+anything: it writes `PACK.json` at the sandbox root, review shows it, and
+Approve is the install, performed by the server exactly as a reviewed patch is
+replayed by `git apply` and a reviewed outbox by the channel client. Its own
+file rather than a field on `Outbox` — an outbox is message-shaped and a pack
+has no recipients or bodies, so collapsing them because both mean "something
+Approve performs" is D-030's mistake.
+
+The slug is a security boundary, not tidiness: it becomes a directory name, so
+`../../etc` would let a sandbox choose where on disk an approval writes.
+Refused by pattern, checked again at the write. Re-approving an identical pack
+succeeds rather than failing, so a retry is never blocked by the work the first
+attempt did — the outbox's own `sentTo` rule; anything *different* at that slug
+is refused and left untouched.
+
+**The trigger is a button, deliberately.** A sentence pattern is the on-brand
+answer and was rejected for now: both walls the send surface hit — D-090's
+inflections, D-093's typo'd verb — were found by real sentences rather than
+predicted, and the phrasings people use for authoring a world did not exist
+yet. A button cannot misfire, and the matcher can be designed later against
+sentences that have actually been typed.
+
+**The preview is drawn through the interpreter that will draw it for real**, so
+it cannot flatter the pack, and at true proportions rather than card-shaped,
+because how tall a world is is one of the few things a pack decides that cannot
+be changed afterwards. `paintTo` is now the one place a scene becomes an image;
+the four built-in cards came back byte-identical through that refactor —
+17,154 / 8,814 / 10,462 / 8,010.
+
+### What the first real run cost, and what it exposed
+
+**$1.81, 17 turns**, against a quote of 50c at *high* certainty from 51
+samples: 3.6x over and 91% of the $2 ceiling. The engine behaved correctly —
+quoted before the work, ceiling held, the real figure billed — so nothing is
+broken; the estimate is simply wrong for this job class, which was priced
+against a pooled class whose members are mostly short. Recorded as TRAINING.md
+item 7, deliberately unfixed: one run is not a rate.
+
+Three faults, all in my own scaffolding rather than in the engine:
+
+- **The brief answered its own question.** Its example carried a concrete
+  identity — `"slug": "moby-dick"`, `"name": "The Pequod"` — and the run
+  returned every one of them verbatim, from a description that said only
+  *"a whaling ship"*. It never mentioned Melville. **The example was the
+  answer.** Identity fields are placeholders now, with a line saying the
+  concrete values illustrate the format and are not defaults to adopt, and a
+  test asserts the brief contains no name or slug that could be copied.
+  Dimensions stay concrete on purpose: copying those is fine, because the
+  brief explains why they work.
+- **Nothing told it which slugs were taken**, so a flawless pack came back
+  unapprovable and only found out at Approve — after the money was spent. The
+  route passes the installed slugs now and the brief lists them.
+- **`pack:check` could not check a `PACK.json`.** The deliverable is
+  `{slug, pack}`; the CLI dispatched on a top-level `ops` and answered *"not
+  recognisably a pack"* for the one file the brief tells a session to check —
+  so the instruction was only satisfiable *before* the file reached its final
+  shape. The session had checked honestly against a bare pack and wrapped it
+  afterwards; its report was true of the file at the time. This broke the
+  project's own rule that a tool must prove its own output, in the one place
+  it most needed to.
+
+The fixes were verified against the artefact itself: the run's own `PACK.json`,
+which the CLI refused to read, now reports `a pack is already installed as
+"moby-dick"` and exits 1 — the exact failure caught where it costs nothing.
+
+On the way, two dedups the fixes forced: `BUILTIN_THEMES` replaces three copies
+of the same four names, in a leaf module because `pack.ts` needs it and
+`index.ts` imports `pack.ts`, with the same anti-drift assertion as
+`THEME_SLOTS`; and `slugProblem` moved to shared for the reason
+`validateLevelPack` already lives there — a rule the checker waves through and
+the install then refuses is a wall a session cannot see coming.
+
+### One process failure worth recording
+
+Testing the new route by *calling* it queued a real job on HQ, which the queue
+picked up immediately: a session ran for six tool calls before the cancel
+landed, at an unmeasured cost the ledger recorded as `costUnknown` and absorbed
+(D-012). Calling that route *was* the authorisation — there was nothing between
+a description and a running session, because the button had no quote step while
+every other way into the engine has one. That is now fixed (the ceiling is on
+the button), but the lesson is the older one: a route that spends money is not
+something to smoke-test by invoking it.
+
+Deliberately remaining: the sentence matcher; `PackCard`'s markup is still
+unverified in a browser, because the only job carrying a `packDraft` is the one
+whose slug collides; and the props question D-107 left open is unchanged.
+1399 tests green, typecheck clean.

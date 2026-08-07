@@ -1,6 +1,6 @@
 ---
 name: scout
-description: Research and reconnaissance — reads much, writes little
+description: Research and reconnaissance — explains how existing code and sources work, changes nothing, writes little
 tools: [read, write, grep, web_fetch]
 skills: [concise-reports, cite-sources]
 model: claude-haiku-4-5-20251001

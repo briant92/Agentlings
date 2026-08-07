@@ -58,6 +58,27 @@ describe('packBrief', () => {
     expect(brief).toMatch(/scrim/i);
   });
 
+  /**
+   * A loop nobody is told about is not a loop. The renderer exists so a
+   * session can look at what it drew, and the only way it learns that is
+   * here — the same brief that told it about the checker.
+   */
+  it('tells it to render the pack and look at it, not only to check it', () => {
+    expect(brief).toContain('npm run pack:render');
+    expect(brief).toMatch(/checking is not seeing|Open it and look/i);
+  });
+
+  it('says what the separation numbers mean and what rescues a vanishing gown', () => {
+    expect(brief).toMatch(/separation/i);
+    expect(brief).toContain('Under 5');
+    expect(brief).toContain('rim');
+  });
+
+  it('warns what the render cannot show, so a clean picture is not over-read', () => {
+    expect(brief).toMatch(/ambient/i);
+    expect(brief).toMatch(/signposts|doorway/i);
+  });
+
   it('requires provenance in the same words the checker does', () => {
     expect(brief).toContain('provenance');
     expect(validateLevelPack({}).map((p) => p.message)).toContain(

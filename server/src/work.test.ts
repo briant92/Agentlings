@@ -3,6 +3,7 @@ import type { Agentling, Job, Quote, RoleInfo } from '@agentlings/shared';
 import { MatchIndex } from './match';
 import {
   continuationBrief,
+  forceRole,
   planWork,
   pickAgentling,
   queuedJobSpec,
@@ -134,6 +135,41 @@ describe('planWork', () => {
     expect(plan.role).toBeNull();
     expect(plan.agentling).not.toBeNull();
     expect(plan.gaps).toContain('pdfs');
+  });
+});
+
+describe('forceRole', () => {
+  it('takes the role the route named over the one the sentence matched', () => {
+    const team = crew(['Pip', 'mason', 'idle'], ['Ada', 'designer', 'idle']);
+    const matched = planWork(index, ROLES, team, '/repo', 'write the documentation');
+    const forced = forceRole(matched, 'designer', team);
+    expect(matched.role).toBe('scribe');
+    expect(forced.role).toBe('designer');
+    expect(forced.agentling?.name).toBe('Ada');
+    expect(forced.noOneHasRole).toBe(false);
+    expect(forced.confidence).toBe(1);
+  });
+
+  /**
+   * The whole point of the guard. Forcing a role changes who the plan asks
+   * for; it must not change who the quote is priced against, or naming a role
+   * nobody holds would quote against a history that will never exist — the
+   * fault `runnerRole` was written for, arriving by a new door.
+   */
+  it('still prices against whoever will really run it when nobody holds the role', () => {
+    const team = crew(['Pip', 'mason', 'idle']);
+    const forced = forceRole(planWork(index, ROLES, team, '/repo', 'draw me a world'), 'designer', team);
+    expect(forced.role).toBe('designer');
+    expect(forced.noOneHasRole).toBe(true);
+    expect(forced.agentling?.name).toBe('Pip');
+    expect(runnerRole(forced)).toBe('mason');
+  });
+
+  it('leaves the plan without a taker when there is no crew at all', () => {
+    const forced = forceRole(planWork(index, ROLES, [], '/repo', 'draw me a world'), 'designer', []);
+    expect(forced.agentling).toBeNull();
+    expect(forced.noOneHasRole).toBe(true);
+    expect(runnerRole(forced)).toBe('designer');
   });
 });
 

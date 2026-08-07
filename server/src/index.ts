@@ -169,7 +169,15 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callSearch } from './search';
 import { fetchPage } from './web';
-import { continuationBrief, planWork, queuedJobSpec, redoJobSpec, runnerRole } from './work';
+import { AUTHOR_ROLE } from './packcontract';
+import {
+  continuationBrief,
+  forceRole,
+  planWork,
+  queuedJobSpec,
+  redoJobSpec,
+  runnerRole,
+} from './work';
 
 const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
@@ -833,6 +841,12 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     answers?: Record<string, string>;
     /** The user chose "run as one job" — plan it unsplit (D-105). */
     single?: boolean;
+    /**
+     * This is the New Level dialog pricing a world before its button is
+     * pressed. The desk says what kind of job it is; the server decides which
+     * role that means, so the quote shown is the quote charged.
+     */
+    authoring?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -868,7 +882,17 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // honoured only for channels that exist, like every pick.
   const confirmed =
     typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
-  const draft = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const matchedDraft = planWork(
+    matcher(),
+    registry.list(),
+    rt.sim.agentlings,
+    rt.meta.repoPath,
+    text,
+  );
+  const draft =
+    body.authoring === true && registry.get(AUTHOR_ROLE)
+      ? forceRole(matchedDraft, AUTHOR_ROLE, rt.sim.agentlings)
+      : matchedDraft;
   // Derived at ask time from the catalog and Settings, so the same sentence
   // gets a different card once a channel is connected (D-079).
   const channelAsk = detectChannelAsk(
@@ -986,6 +1010,12 @@ function queueSentence(
     brief?: string;
     /** The user chose "run as one job" — the split is skipped. */
     noSplit?: boolean;
+    /**
+     * The role this job is for, when the route knows and the sentence does
+     * not. Honoured only for a role that exists, so a caller cannot invent a
+     * class the ledger would then carry.
+     */
+    role?: string;
   } = {},
 ): Job {
   // The split happens inside the glue (D-105), so every way in composes:
@@ -1003,7 +1033,11 @@ function queueSentence(
       step = { n: 1, of: split.length };
     }
   }
-  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const plan =
+    opts.role && registry.get(opts.role)
+      ? forceRole(matched, opts.role, rt.sim.agentlings)
+      : matched;
   const tools = granted(opts.tools);
   const requestedChannel = opts.channel;
   const channelAsk = requestedChannel
@@ -1181,6 +1215,10 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).
     noSplit: true,
+    // Authoring is design work, and the sentence cannot say so — it arrives
+    // by a button. Naming the role here is also what finally gives the class
+    // a ledger of its own, after two runs priced 3x under as `worker`.
+    role: AUTHOR_ROLE,
     note: 'authoring a world',
   });
   return c.json(job, 201);

@@ -141,5 +141,26 @@ names.
     npm run pack:check -- ${PACK_FILE}
 
 It names the op and the slot for anything wrong. A pack that fails this cannot
-be installed, so a run that ends without passing it has delivered nothing.`;
+be installed, so a run that ends without passing it has delivered nothing.
+
+## And look at it — checking is not seeing
+
+    npm run pack:render -- ${PACK_FILE} world.png
+
+This draws your pack through the very interpreter the app draws it with, and
+writes a PNG. **Open it and look.** A pack can pass the checker and still be
+a picture nobody can read; the checker only knows that every colour and
+coordinate resolved.
+
+The renderer also measures what the checker cannot. It stands a crew-sized
+block at each of the places agentlings actually stand and prints the
+luminance separation between the scene behind them and each of the eight crew
+gowns, 0–100. Under 5 a gown disappears into your background; the \`rim\`
+outline is what rescues it, and the renderer says whether yours can. **Quote
+those numbers in your result**, and if something vanishes, either change what
+the pack draws behind that spot or set \`rim\` to a slot that contrasts with it.
+
+Two things the render deliberately does not show: ambient effects, which are
+animated, and the doorway, signposts and deliveries, which the app draws on
+top of your scene.`;
 }

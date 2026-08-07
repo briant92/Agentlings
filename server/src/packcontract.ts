@@ -23,6 +23,16 @@ import { slugProblem, validateLevelPack, type LevelPack } from '@agentlings/shar
  */
 export const PACK_FILE = 'PACK.json';
 
+/**
+ * The role that authors worlds.
+ *
+ * Named here rather than passed in by the client: a client that could choose
+ * the role could choose the price class, since the ledger files a job under
+ * the role that ran it. The desk says *what kind of job* this is; which role
+ * that means is the server's to decide.
+ */
+export const AUTHOR_ROLE = 'designer';
+
 /** A pack a run is offering, plus the folder name it wants to be installed under. */
 export interface PackDraft {
   slug: string;

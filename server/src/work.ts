@@ -52,6 +52,30 @@ export function pickAgentling(crew: Agentling[], role: string | null): Agentling
   );
 }
 
+/**
+ * The plan for a job whose role the *route* decides, not the sentence.
+ *
+ * Authoring a world arrives by a button rather than by words (D-110), so
+ * there is no sentence for the matcher to read and no reason to make it
+ * guess. The route names the role and this re-picks the taker for it.
+ *
+ * `confidence` becomes 1 because it describes how sure the *choice* is, and a
+ * route that names a role is certain. What it deliberately does not do is
+ * pretend the role is held: `noOneHasRole` is recomputed from the real crew,
+ * so `runnerRole` still prices the job under whoever will actually run it.
+ * Forcing a role nobody holds must change the plan's story, not its price.
+ */
+export function forceRole(plan: WorkPlan, role: string, crew: Agentling[]): WorkPlan {
+  const taker = pickAgentling(crew, role);
+  return {
+    ...plan,
+    role,
+    agentling: taker ? { id: taker.id, name: taker.name, role: taker.role } : null,
+    noOneHasRole: !crew.some((a) => a.role === role),
+    confidence: 1,
+  };
+}
+
 export function planWork(
   index: MatchIndex,
   roles: RoleInfo[],

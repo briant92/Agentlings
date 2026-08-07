@@ -135,7 +135,9 @@ function NewLevelModal({
     const timer = window.setTimeout(() => {
       void api<WorkPlan>(
         lvl(host.id, '/work/plan'),
-        postJson({ text: `Author a level pack: ${text}`, single: true }),
+        // `authoring` so the price shown is the designer's, matching what the
+        // button will queue — the desk names the kind of job, never the role.
+        postJson({ text: `Author a level pack: ${text}`, single: true, authoring: true }),
       )
         .then((plan) => alive && setQuote(plan.quote ?? null))
         // A quote that will not load must not block authoring; the button

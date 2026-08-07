@@ -24,7 +24,7 @@ import {
 } from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
-import { type Anchors, drawScene, pixiSurface } from './scene';
+import { anchorsOf, drawScene, pixiSurface } from './scene';
 import { SCENES } from './scenes';
 import {
   buildAgentTextures,
@@ -35,23 +35,7 @@ import {
 } from './sprites';
 import { THEMES, type Theme } from './themes';
 
-const VIEW_H = 320;
-const GROUND_Y = 258;
 const MAX_PARTICLES = 400;
-/**
- * Where a sprite's head tops out. Packs may draw at any resolution but the
- * on-screen height is held constant, so this is a constant too.
- */
-const HEAD_Y = GROUND_Y + 2 - SPRITE_HEIGHT * SPRITE_SCALE;
-
-/** The fixed points a scene hangs its coordinates on. */
-const ANCHORS: Anchors = {
-  worldWidth: WORLD_WIDTH,
-  viewH: VIEW_H,
-  groundY: GROUND_Y,
-  spawnX: SPAWN_X,
-  exitX: EXIT_X,
-};
 
 interface Motion {
   x: number;
@@ -80,10 +64,10 @@ function emit(fx: Particle[], p: Particle): void {
 }
 
 /** Chips of rock kicked out from under a digging agentling. */
-function digDust(fx: Particle[], T: Theme, x: number, face: number): void {
+function digDust(fx: Particle[], T: Theme, x: number, face: number, groundY: number): void {
   emit(fx, {
     x: x + face * rand(4, 9),
-    y: GROUND_Y - rand(0, 3),
+    y: groundY - rand(0, 3),
     vx: face * rand(8, 34),
     vy: rand(-52, -22),
     gravity: 150,
@@ -95,10 +79,10 @@ function digDust(fx: Particle[], T: Theme, x: number, face: number): void {
 }
 
 /** Sparks drifting up off a torch, buoyant rather than falling. */
-function ember(fx: Particle[], T: Theme, x: number): void {
+function ember(fx: Particle[], T: Theme, x: number, groundY: number): void {
   emit(fx, {
     x: x + rand(-2, 2),
-    y: GROUND_Y - 34,
+    y: groundY - 34,
     vx: rand(-9, 9),
     vy: rand(-28, -14),
     gravity: -12,
@@ -110,12 +94,12 @@ function ember(fx: Particle[], T: Theme, x: number): void {
 }
 
 /** Celebration burst over the exit when a job's diff gets promoted. */
-function confetti(fx: Particle[], T: Theme): void {
+function confetti(fx: Particle[], T: Theme, groundY: number): void {
   const colors = [T.flame, T.flameCore, T.grass, T.accentLight, DB.sky, DB.rose];
   for (let n = 0; n < 28; n++) {
     emit(fx, {
       x: EXIT_X + rand(-10, 10),
-      y: GROUND_Y - 58,
+      y: groundY - 58,
       vx: rand(-95, 95),
       vy: rand(-165, -55),
       gravity: 270,
@@ -265,6 +249,17 @@ export function WorldCanvas({
     const host = hostRef.current;
     if (!host) return;
     const T = THEMES[theme];
+    // The level's picture, and the shape of the world it implies. Both used to
+    // be constants here; the scene owns them now, so a taller level is data.
+    const scene = SCENES[theme];
+    const ANCHORS = anchorsOf(scene);
+    const VIEW_H = scene.viewH;
+    const GROUND_Y = scene.groundY;
+    /**
+     * Where a sprite's head tops out. Packs may draw at any resolution but the
+     * on-screen height is held constant, so this follows the ground line alone.
+     */
+    const HEAD_Y = GROUND_Y + 2 - SPRITE_HEIGHT * SPRITE_SCALE;
 
     let destroyed = false;
     const app = new Application();
@@ -359,14 +354,14 @@ export function WorldCanvas({
         });
 
         const scenery = new Graphics();
-        const marks = drawScene(pixiSurface(scenery), SCENES[theme], T, ANCHORS);
+        const marks = drawScene(pixiSurface(scenery), scene, T, ANCHORS);
         app.stage.addChild(scenery);
 
         // The scene's idle life: above the painting, below everything that
         // works for a living.
         const ambientLayer = new Graphics();
         app.stage.addChild(ambientLayer);
-        const ambience = createAmbience(SCENES[theme].ambient ?? [], {
+        const ambience = createAmbience(scene.ambient ?? [], {
           anchors: ANCHORS,
           theme: T,
           marks,
@@ -490,8 +485,8 @@ export function WorldCanvas({
           emberClock -= dt;
           if (emberClock <= 0) {
             emberClock = rand(0.12, 0.3);
-            ember(fx, T, EXIT_X - 27);
-            ember(fx, T, EXIT_X + 27);
+            ember(fx, T, EXIT_X - 27, GROUND_Y);
+            ember(fx, T, EXIT_X + 27, GROUND_Y);
           }
           dustClock -= dt;
           const puff = dustClock <= 0;
@@ -501,7 +496,7 @@ export function WorldCanvas({
           for (const job of w.jobs) {
             const prev = seenStatus.get(job.id);
             seenStatus.set(job.id, job.status);
-            if (prev && prev !== 'promoted' && job.status === 'promoted') confetti(fx, T);
+            if (prev && prev !== 'promoted' && job.status === 'promoted') confetti(fx, T, GROUND_Y);
           }
 
           // The doorway is scenery drawn from the level's own data, so there
@@ -599,7 +594,7 @@ export function WorldCanvas({
             if (Math.abs(dx) > 0.6) m.face = Math.sign(dx);
 
             const rx = Math.round(m.x);
-            if (puff && a.state === 'working') digDust(fx, T, rx, m.face);
+            if (puff && a.state === 'working') digDust(fx, T, rx, m.face, GROUND_Y);
             const anim = animFor(a.state);
             const seq = framesFor(a.color)[anim];
             const frame = Math.floor(t * ANIM_FPS[anim] + i * 1.7) % seq.length;

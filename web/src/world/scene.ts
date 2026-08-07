@@ -1,4 +1,5 @@
 import type { Graphics } from 'pixi.js';
+import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import type { Theme } from './themes';
 
 /**
@@ -203,9 +204,41 @@ export type AmbientOp =
 export interface Scene {
   /** Named so a pack can say what it is, and the app can show it. */
   name: string;
+  /**
+   * How tall the world is, and where the ground line sits inside it.
+   *
+   * These were constants in the renderer, which meant every level was 320
+   * pixels tall whatever it was a picture of. A scene that wants air above
+   * its ground — sky, a ceiling far overhead, a painted backdrop — has to be
+   * able to say so itself, and only the scene knows how much it needs.
+   *
+   * Only y lives here. The server sim carries x and nothing else, so vertical
+   * layout is wholly the client's business; that is what keeps this a local
+   * change rather than a migration.
+   */
+  viewH: number;
+  groundY: number;
   ops: SceneOp[];
   /** Idle life over the painting; omitted, a scene simply holds still. */
   ambient?: AmbientOp[];
+}
+
+/**
+ * The anchors a scene hangs its coordinates on.
+ *
+ * x comes from the shared constants because the server sim positions crew and
+ * stations with them; y comes from the scene. One function so the world, the
+ * thumbnail and any future pack cannot disagree about where the ground is —
+ * they used to hold separate copies of the same two numbers.
+ */
+export function anchorsOf(scene: Scene): Anchors {
+  return {
+    worldWidth: WORLD_WIDTH,
+    viewH: scene.viewH,
+    groundY: scene.groundY,
+    spawnX: SPAWN_X,
+    exitX: EXIT_X,
+  };
 }
 
 /**

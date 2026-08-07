@@ -41,6 +41,9 @@ function column(x: number): SceneOp {
 
 export const MARBLE: Scene = {
   name: 'marble',
+  // The size this scene was drawn at, now stated rather than assumed.
+  viewH: 320,
+  groundY: 258,
   // The gilding glints: the column capitals and keystone by name, plus
   // random spots along the gold rails the scene lays below.
   ambient: [

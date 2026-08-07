@@ -46,6 +46,9 @@ function ditherRow(row: number): SceneOp {
 
 export const CAVE: Scene = {
   name: 'cave',
+  // The size this scene was drawn at, now stated rather than assumed.
+  viewH: 320,
+  groundY: 258,
   // Water off the stalactites the ceiling actually grew, and a rare bat.
   ambient: [{ fx: 'drips' }, { fx: 'flyer' }],
   ops: [

@@ -50,6 +50,9 @@ function chalkMarks(x: number, y: number, widths: number[]): SceneOp[] {
 
 export const CHALKBOARD: Scene = {
   name: 'chalkboard',
+  // The size this scene was drawn at, now stated rather than assumed.
+  viewH: 320,
+  groundY: 258,
   // Chalk dust hanging in front of the board, and the clock telling the
   // real time — the classroom clock you watch, watching back.
   ambient: [

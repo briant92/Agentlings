@@ -1,17 +1,7 @@
 import type { ThemeKey } from '@agentlings/shared';
-import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import { css, DB } from './palette';
-import { type Anchors, canvasSurface, drawScene } from './scene';
+import { anchorsOf, canvasSurface, drawScene } from './scene';
 import { SCENES } from './scenes';
-
-/** The world the cards depict, so a thumbnail is the level shrunk, not a sketch. */
-const THUMB_ANCHORS: Anchors = {
-  worldWidth: WORLD_WIDTH,
-  viewH: 320,
-  groundY: 258,
-  spawnX: SPAWN_X,
-  exitX: EXIT_X,
-};
 
 /**
  * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
@@ -132,6 +122,10 @@ export function renderThumbnail(key: ThemeKey): string {
   const cached = thumbCache.get(key);
   if (cached) return cached;
   const T = THEMES[key];
+  // The card is the level shrunk, so it scales by the level's own height —
+  // a taller scene has to shrink further, not get cropped.
+  const scene = SCENES[key];
+  const anchors = anchorsOf(scene);
   const w = 240;
   const h = 72;
   const canvas = document.createElement('canvas');
@@ -145,10 +139,10 @@ export function renderThumbnail(key: ThemeKey): string {
   ctx.fillStyle = css(T.void);
   ctx.fillRect(0, 0, w, h);
   drawScene(
-    canvasSurface(ctx, w / THUMB_ANCHORS.worldWidth, h / THUMB_ANCHORS.viewH, css),
-    SCENES[key],
+    canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css),
+    scene,
     T,
-    THUMB_ANCHORS,
+    anchors,
   );
   ctx.globalAlpha = 1;
 

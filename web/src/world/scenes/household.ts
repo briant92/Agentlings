@@ -39,6 +39,9 @@ function shelf(x: number, w: number, top: number): SceneOp[] {
 
 export const HOUSEHOLD: Scene = {
   name: 'household',
+  // The size this scene was drawn at, now stated rather than assumed.
+  viewH: 320,
+  groundY: 258,
   // Afternoon light through the window, dust adrift in the beam. The quad
   // hangs off the window at (300,96)–(408,180); move one, move both.
   ambient: [

@@ -1,8 +1,9 @@
 import type { ThemeKey } from '@agentlings/shared';
+import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import { describe, expect, it } from 'vitest';
 import { CAVE } from './scenes/cave';
 import { SCENES } from './scenes';
-import { drawScene, resolveCoord, type Anchors, type Scene, type Surface } from './scene';
+import { anchorsOf, drawScene, resolveCoord, type Anchors, type Scene, type Surface } from './scene';
 import { THEMES } from './themes';
 
 const ANCHORS: Anchors = {
@@ -33,9 +34,15 @@ function recorder(): { surface: Surface; drawn: Drawn[] } {
   return { surface, drawn };
 }
 
-function render(scene: Scene, theme = THEMES.cave): Drawn[] {
+/**
+ * The op-level tests are about what a shape draws, not about how tall the
+ * world is — ANCHORS is what positions them either way — so they hand over
+ * ops alone and the world's size is filled in here. A scene must still
+ * declare `viewH` and `groundY`; this is the one place they are boilerplate.
+ */
+function render(scene: Omit<Scene, 'viewH' | 'groundY'>, theme = THEMES.cave): Drawn[] {
   const { surface, drawn } = recorder();
-  drawScene(surface, scene, theme, ANCHORS);
+  drawScene(surface, { viewH: ANCHORS.viewH, groundY: ANCHORS.groundY, ...scene }, theme, ANCHORS);
   return drawn;
 }
 
@@ -103,7 +110,7 @@ describe('drawing a scene', () => {
   });
 
   it('draws the same picture every time, and a different one per seed', () => {
-    const speckle: Scene = {
+    const speckle: Omit<Scene, 'viewH' | 'groundY'> = {
       name: 't',
       ops: [{ op: 'speckle', x: 0, y: 0, w: 100, h: 100, count: 20, light: 'rockLight', dark: 'rockDark' }],
     };
@@ -250,6 +257,35 @@ describe('the shipped scenes', () => {
       expect(widest, key).toBeGreaterThanOrEqual(ANCHORS.worldWidth);
       const lowest = Math.max(...drawn.map((d) => (d.kind === 'rect' ? d.args[1] : 0)));
       expect(lowest, key).toBeGreaterThanOrEqual(ANCHORS.groundY);
+    }
+  });
+});
+
+describe('anchorsOf', () => {
+  it('takes the height and ground line from the scene, x from the sim', () => {
+    const scene: Scene = { name: 'tall', viewH: 450, groundY: 388, ops: [] };
+    expect(anchorsOf(scene)).toEqual({
+      worldWidth: WORLD_WIDTH,
+      viewH: 450,
+      groundY: 388,
+      spawnX: SPAWN_X,
+      exitX: EXIT_X,
+    });
+  });
+
+  it('leaves every built-in level exactly where it already was', () => {
+    // Written as literals rather than as the constants they came from: these
+    // four numbers were hard-coded in the renderer before a scene could own
+    // them, and the point of the test is that moving them changed nothing. A
+    // scene quietly disagreeing would relocate a whole level's furniture.
+    for (const key of Object.keys(SCENES) as ThemeKey[]) {
+      expect(anchorsOf(SCENES[key]), key).toEqual({
+        worldWidth: 1000,
+        viewH: 320,
+        groundY: 258,
+        spawnX: 80,
+        exitX: 940,
+      });
     }
   });
 });

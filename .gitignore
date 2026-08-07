@@ -9,3 +9,10 @@ Thumbs.db
 
 # A saved browser session is a bearer token for every site in it.
 browser-state*.json
+
+# Source images dropped in by hand. A file in this repository makes its
+# licence this project's problem (LEVELPACK.md), and a drop folder fills up
+# with things nobody re-read the terms of. Inputs stay out; an installed pack
+# under web/public/packs/ is the tracked output, and carries its provenance.
+Artwork/*
+!Artwork/README.md

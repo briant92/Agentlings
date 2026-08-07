@@ -3,7 +3,15 @@ import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import { describe, expect, it } from 'vitest';
 import { CAVE } from './scenes/cave';
 import { SCENES } from './scenes';
-import { anchorsOf, drawScene, resolveCoord, type Anchors, type Scene, type Surface } from './scene';
+import {
+  anchorsOf,
+  drawScene,
+  resolveCoord,
+  type Anchors,
+  type Scene,
+  type SceneOp,
+  type Surface,
+} from './scene';
 import { THEMES } from './themes';
 
 const ANCHORS: Anchors = {
@@ -40,9 +48,14 @@ function recorder(): { surface: Surface; drawn: Drawn[] } {
  * ops alone and the world's size is filled in here. A scene must still
  * declare `viewH` and `groundY`; this is the one place they are boilerplate.
  */
-function render(scene: Omit<Scene, 'viewH' | 'groundY'>, theme = THEMES.cave): Drawn[] {
+function render(
+  scene: Omit<Scene, 'viewH' | 'groundY'>,
+  theme = THEMES.cave,
+  seed?: number,
+): Drawn[] {
   const { surface, drawn } = recorder();
-  drawScene(surface, { viewH: ANCHORS.viewH, groundY: ANCHORS.groundY, ...scene }, theme, ANCHORS);
+  const whole: Scene = { viewH: ANCHORS.viewH, groundY: ANCHORS.groundY, ...scene };
+  drawScene(surface, whole, theme, ANCHORS, seed);
   return drawn;
 }
 
@@ -118,9 +131,7 @@ describe('drawing a scene', () => {
     const b = render(speckle);
     expect(a).toEqual(b);
 
-    const { surface, drawn } = recorder();
-    drawScene(surface, speckle, THEMES.cave, ANCHORS, 12345);
-    expect(drawn).not.toEqual(a);
+    expect(render(speckle, THEMES.cave, 12345)).not.toEqual(a);
   });
 
   // Authoring means adding and removing ops constantly; if that reshuffled
@@ -286,6 +297,88 @@ describe('anchorsOf', () => {
         spawnX: 80,
         exitX: 940,
       });
+    }
+  });
+});
+
+describe('backdrop and scrim', () => {
+  const wall: SceneOp = { op: 'rect', x: 0, y: 0, w: 10, h: 10, color: 'rock' };
+  const floor: SceneOp = { op: 'rect', x: 0, y: 0, w: 20, h: 20, color: 'grass' };
+
+  it('paints the backdrop before the foreground', () => {
+    const drawn = render({ name: 't', backdrop: { ops: [wall] }, ops: [floor] });
+    expect(drawn.map((d) => d.args[2])).toEqual([10, 20]);
+  });
+
+  it('draws nothing extra when there is no backdrop', () => {
+    expect(render({ name: 't', ops: [floor] })).toHaveLength(1);
+  });
+
+  it('lands the scrim between the two layers', () => {
+    const drawn = render({
+      name: 't',
+      backdrop: { ops: [wall], scrim: { color: 'void', alpha: 0.4, from: 200, steps: 2 } },
+      ops: [floor],
+    });
+    // backdrop, then two ramp bands, then the solid remainder, then foreground
+    expect(drawn.map((d) => d.args[2])).toEqual([10, 1000, 1000, 1000, 20]);
+  });
+
+  it('ramps to exactly the stated alpha at the ground line, and holds it below', () => {
+    const drawn = render({
+      name: 't',
+      backdrop: { scrim: { color: 'void', alpha: 0.5, from: 'groundY-40', steps: 4 } },
+      ops: [],
+    });
+    expect(drawn.map((d) => d.alpha)).toEqual([0.125, 0.25, 0.375, 0.5, 0.5]);
+    // The ramp covers groundY-40..groundY, the remainder groundY..viewH.
+    expect(drawn.map((d) => [d.args[1], d.args[1] + d.args[3]])).toEqual([
+      [218, 228],
+      [228, 238],
+      [238, 248],
+      [248, 258],
+      [258, 320],
+    ]);
+  });
+
+  it('tiles the bands without gaps whatever the step count divides into', () => {
+    // 58 pixels over 7 bands does not divide evenly; rounding must still leave
+    // every row covered exactly once, or a bright seam shows through.
+    const drawn = render({
+      name: 't',
+      backdrop: { scrim: { color: 'void', alpha: 1, from: 200, steps: 7 } },
+      ops: [],
+    });
+    const ramp = drawn.slice(0, -1);
+    for (let i = 1; i < ramp.length; i++) {
+      expect(ramp[i].args[1]).toBe(ramp[i - 1].args[1] + ramp[i - 1].args[3]);
+    }
+    expect(ramp[0].args[1]).toBe(200);
+    expect(ramp[ramp.length - 1].args[1] + ramp[ramp.length - 1].args[3]).toBe(258);
+  });
+
+  it('does not reshuffle the backdrop when a foreground op is added', () => {
+    // The same reason each op gets its own seed: authoring the foreground is
+    // adding and removing things constantly, and a format where that repaints
+    // the sky is one nobody can work in.
+    const grain: SceneOp = {
+      op: 'speckle',
+      x: 0,
+      y: 0,
+      w: 100,
+      h: 100,
+      count: 12,
+      light: 'rockLight',
+      dark: 'rockDark',
+    };
+    const before = render({ name: 't', backdrop: { ops: [grain] }, ops: [] });
+    const after = render({ name: 't', backdrop: { ops: [grain] }, ops: [floor] });
+    expect(after.slice(0, before.length)).toEqual(before);
+  });
+
+  it('leaves every built-in scene exactly as it was', () => {
+    for (const key of Object.keys(SCENES) as ThemeKey[]) {
+      expect(SCENES[key].backdrop, key).toBeUndefined();
     }
   });
 });

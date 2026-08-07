@@ -201,6 +201,46 @@ export type AmbientOp =
   /** Live clock hands over a painted face, telling the actual time. */
   | { fx: 'clock'; x: Coord; y: Coord; r: number };
 
+/**
+ * The band that holds a backdrop away from the crew.
+ *
+ * Drawn as stacked bands of increasing alpha rather than as a gradient,
+ * because `Surface` has three primitives and a gradient would be a fourth
+ * that every implementation — Pixi, the thumbnail canvas, the test recorder —
+ * would have to grow. Banding is also what pixel art does anyway.
+ *
+ * It reaches `alpha` at the ground line and holds it below, so the strength
+ * is stated where it matters: the row the crew actually stand on.
+ *
+ * Worth knowing what this is and is not for. Measured across two backdrops,
+ * a scrim reliably helps only when the backdrop is darker than the crew; on a
+ * bright ground it drags the picture *through* the mid-tones the gowns live
+ * in and can bury a sprite outright (D-107). Legibility is the sprite rim's
+ * job. This is for depth.
+ */
+export interface Scrim {
+  color: Paint;
+  /** Strength at the ground line. The ramp starts from nothing. */
+  alpha: number;
+  /** Where the ramp begins — above this the backdrop is untouched. */
+  from: Coord;
+  /** How many bands the ramp is cut into. */
+  steps?: number;
+}
+
+/**
+ * What sits behind the level: the painting the foreground stands in front of.
+ *
+ * Separate from `ops` rather than merged with them because the scrim has to
+ * land *between* the two, and because a backdrop is the layer that may later
+ * be a raster file with a palette of its own (D-108) while the foreground
+ * stays on DB32.
+ */
+export interface Backdrop {
+  ops?: SceneOp[];
+  scrim?: Scrim;
+}
+
 export interface Scene {
   /** Named so a pack can say what it is, and the app can show it. */
   name: string;
@@ -218,6 +258,8 @@ export interface Scene {
    */
   viewH: number;
   groundY: number;
+  /** Behind everything, with the scrim over it. Omitted, there is no painting. */
+  backdrop?: Backdrop;
   ops: SceneOp[];
   /** Idle life over the painting; omitted, a scene simply holds still. */
   ambient?: AmbientOp[];
@@ -457,8 +499,46 @@ export function drawScene(
   seed = 0xa9e27,
 ): SceneMarks {
   const marks: SceneMarks = { spikeTips: [] };
+  const backdrop = scene.backdrop;
+  // Seeded off its own base, for the same reason each op has its own stream:
+  // adding a rock to the foreground must not reshuffle the grain of the sky.
+  backdrop?.ops?.forEach((op, i) => {
+    drawOp(s, op, theme, anchors, mulberry32(BACKDROP_SEED + i * 0x9e3779b1), 0, marks);
+  });
+  if (backdrop?.scrim) drawScrim(s, backdrop.scrim, theme, anchors);
   scene.ops.forEach((op, i) => {
     drawOp(s, op, theme, anchors, mulberry32(seed + i * 0x9e3779b1), 0, marks);
   });
   return marks;
+}
+
+/** Far enough from the foreground's default that the two never collide. */
+const BACKDROP_SEED = 0x5c81b;
+
+/**
+ * The scrim: bands of rising alpha down to the ground line, then a solid
+ * remainder beneath it.
+ *
+ * Each band is drawn once over untouched backdrop and the bands tile exactly,
+ * so the alphas never compound — the strength at any row is the one this
+ * computes, not an accumulation. Rows are snapped to whole pixels so a
+ * fractional band height cannot leave a bright seam between two bands.
+ */
+function drawScrim(s: Surface, scrim: Scrim, theme: Theme, anchors: Anchors): void {
+  const color = theme[scrim.color];
+  if (typeof color !== 'number') throw new Error(`unknown colour "${String(scrim.color)}"`);
+  const from = resolveCoord(scrim.from, anchors);
+  const { groundY, viewH, worldWidth } = anchors;
+  const steps = Math.max(1, Math.floor(scrim.steps ?? 12));
+
+  for (let i = 0; i < steps; i++) {
+    const top = Math.round(from + ((groundY - from) * i) / steps);
+    const bottom = Math.round(from + ((groundY - from) * (i + 1)) / steps);
+    if (bottom <= top) continue;
+    s.rect(0, top, worldWidth, bottom - top, color, (scrim.alpha * (i + 1)) / steps);
+  }
+  // Below the ground line the backdrop is behind the floor anyway, but a pack
+  // may leave a gap there and a half-lit strip under the crew's feet would be
+  // worse than either extreme.
+  if (viewH > groundY) s.rect(0, groundY, worldWidth, viewH - groundY, color, scrim.alpha);
 }

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { mapTools } from './executors/claude';
+import { mapTools, turnCapFor, turnsForBudget } from './executors/claude';
 import { MatchIndex, MIN_CONFIDENCE, suggestSetup } from './match';
 import { listSkills, RoleRegistry } from './roles';
 
@@ -60,6 +60,32 @@ describe('shipped starter set', () => {
       'small-diffs',
       'tables-and-numbers',
     ]);
+  });
+
+  /**
+   * A new job class has no cost history, and `turnsForBudget` falls back to
+   * the role's own cap when it cannot price a turn — so a role that states no
+   * `maxTurns` gets the 10-turn default precisely when it is newest.
+   *
+   * Found by running it (2026-08-07, job b0cfc30c). Giving authoring its own
+   * `designer` class fixed a quote that had been 3x low, and in the same move
+   * took the run's budget from 40 turns to 10, because the 40 had been coming
+   * from `worker`'s fifty-odd rows of rate. The first designer run was cut
+   * holding a finished, valid, rather good pack — D-095's shape through a new
+   * door: the tag meant to help took away what was helping.
+   *
+   * 20 is above the 17 that the one uncut authoring run took. It binds only
+   * while the class is new: `turnCapFor` returns a role cap as *not* firm, so
+   * a funded budget outranks it in both directions the moment rows exist.
+   */
+  it('gives a new role enough turns to finish the work it was made for', () => {
+    for (const role of roles) {
+      const cap = turnCapFor(role);
+      expect(cap.firm, `${role.name}'s standing cap must never outrank a quote`).toBe(false);
+      // With no rate to price a turn, the standing cap is the whole budget.
+      expect(turnsForBudget(2, { samples: 0, usd: 0 }, cap)).toBe(cap.turns);
+    }
+    expect(turnCapFor(registry.get('designer')).turns).toBe(20);
   });
 
   it('gives every job abilities that exist', () => {

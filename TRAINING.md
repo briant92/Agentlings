@@ -320,6 +320,9 @@ this job stays on its cadence and should compile once its runs earn it.
 | T7·session | 2026-08-06 | 60298461 | $2.00 ceiling | 38c | **50.6c** | 50.6c | 7 | done | 114s; one-page .docx + md twin, deck figures verbatim, honest Gaps section for the agenda items its 12 recalled lines never carried. +33% on the guess — the level's per-call floor again |
 | T8·1 | 2026-08-06 | ad4f1356 | 28.6c ceiling (10c class) | 12–18c | **14.3c** | 14.3c | 8 | done | 37s, scout, prediction landed. **The list is 70% right and reads 100% confident**: 7 findings confirmed by exact-filename recompute, **3 phantom files** (catalog/pack/palette.ts — none exists in server/src), **1 miss** (executors/simulated.ts, real and unnamed), and a census whose own numbers don't reconcile (47+10≠57, 39 names listed as 47). True drift: **8 modules SPEC does not name**. Both instruments erred first — my bare-basename grep passed channel/env/validate off prose words — and the compile-candidate argument made itself: a script enumerates, a memory invents |
 
+| Pack·1 | 2026-08-07 | 7037aeab | 50c (51 alike) | — | **$1.8134** | $1.8134 | 16 | done→discarded | the first authored world, D-110. 17 turns, 429s, 31,262 out, 881,656 cache-read. Discarded on the slug clash (D-111) and recovered from the sandbox |
+| Pack·2 | 2026-08-07 | 98942492 | **53c** (52 alike) | $0.85–1.20 | **$1.2878** | $1.2878 | 10 | done | **the quote half of the prediction landed exactly** — 53c, high certainty, one more sample, 3c of drift after a run that cost 3.6× it. The cost half missed high (+7% over the range top) and **the reasoning missed backwards**: I predicted a smaller pack, and a six-word description of a plainer place produced **78 ops against run 1's 46** (58 fg / 17 backdrop / 3 ambient, same viewH 450) for **29% less money**. Cost tracked *turns* (17→11, −35%) and cache-read (−45%), not the drawing — output tokens fell only 19% while the op count rose 70%, because ops are terse JSON and thinking is not. **Confounded on purpose-built ground**: the brief itself changed between the two runs (`9b207eb`, the three faults run 1 found, plus the taken-slug list), so −29% cannot be charged to the subject alone |
+
 Programme total, predicted: **~$4.50–6.50 spent** across ~19 runs plus one
 ~$1.15 compile; chargeable less (failures and quote caps absorb). Regenerate
 the real figures with `npm run ledger:report` after each wave.
@@ -466,6 +469,37 @@ each one rests on already is.
    short worker session in the level. Two points give the right number;
    **something has to tag the class before the quote can use it.** Cheap
    once the number exists, and not before.
+
+   **RAN 2026-08-07 — job `98942492`, $1.2878, and the premise was wrong.**
+   The quote half of the prediction landed exactly: **53c**, high certainty,
+   52 samples — 3c of drift after a run that cost 3.6x it, which is what a
+   pooled class does with one outlier. The cost half missed high ($0.85–1.20
+   called, 11 turns of the 9–12 called). **And the reasoning missed
+   backwards.** A six-word description of a plainer place did not produce a
+   smaller pack: it produced **78 ops against run 1's 46** — 58 foreground,
+   17 backdrop, 3 ambient, the same viewH 450 — for **29% less money**. The
+   experiment varied the description; the crew varied its output the other
+   way, because how much to draw was never the user's variable to set.
+
+   So *cost does not track scene size*, and the "≤$1.00 → tracks size"
+   branch of the rule is dead rather than unproven. What cost tracked was
+   **turns** (17 → 11, −35%) and cache-read (881,656 → 488,232, −45%).
+   Output tokens fell only 19% while the op count rose 70% — ops are terse
+   JSON, and what a turn buys is thinking, not drawing.
+
+   **One confound, and it is ours.** The brief changed between the runs
+   (`9b207eb`: the three faults run 1 found, plus the taken-slug list D-111
+   wanted). Run 2 had a better brief *and* a different subject, so the −29%
+   cannot be charged to the subject alone — the repo's own rule about its
+   scaffolding passing as the subject's words, turning up in a measurement
+   this time instead of a document.
+
+   **What is now solid at n=2:** both runs came in **2.4–3.6x over quote**,
+   mean actual **$1.55** against a ~52c pooled quote — call it **3x**. That
+   is a rate, and it did not need a third run to become one. The remaining
+   blocker is not samples, it is that nothing tags the class, so no number
+   of runs can reach the quote. **The next useful input is the tag, not
+   another world.**
 
 Deliberately **not** here, so nobody reopens them: the quote ceiling pinned at
 the $2.00 clamp (D-072), the compile turn cap (D-025), the compile rate split

@@ -88,7 +88,7 @@ import {
   type CrewSeed,
   type LevelMeta,
 } from './levels';
-import { scanPacks, themeExists } from './packs';
+import { installPack, scanPacks, themeExists } from './packs';
 import { ocrAvailable } from './ocr';
 import { isStale, readIndex, storeLines, sync, writeIndex } from './store';
 import {
@@ -1599,6 +1599,21 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       }
     }
   }
+  /**
+   * A reviewed pack is installed exactly as a reviewed outbox is sent and a
+   * reviewed patch applied: at Approve, by us, never by the session (M4).
+   *
+   * Refusing names its fix and returns 400 with the job still reviewable,
+   * because "promoted" stamped on a refusal is worse than refusing outright.
+   * Installing the identical pack again succeeds, so a retry after a failure
+   * further down cannot be blocked by the work the first attempt did.
+   */
+  let installedPack: string | null = null;
+  if (body.action === 'promote' && promotable && pending.packDraft && !waitingTool) {
+    const result = installPack(ROOT, pending.packDraft);
+    if ('error' in result) return c.json({ error: `pack not installed — ${result.error}` }, 400);
+    if (!result.already) installedPack = pending.packDraft.slug;
+  }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script
   // to check it worked, which left the output file in its clone, and promoting
@@ -1633,7 +1648,9 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         body.action === 'promote'
           ? sentNow > 0
             ? `promoted — sent ${sentNow} via ${pending.outbox?.channel}`
-            : 'promoted'
+            : installedPack
+              ? `promoted — installed the ${installedPack} world`
+              : 'promoted'
           : 'discarded',
     });
     return c.json({ ...job, ...(approval ? { sendApproval: approval } : {}) });

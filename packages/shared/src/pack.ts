@@ -44,6 +44,15 @@ export interface LevelPack extends Scene {
 }
 
 /**
+ * A pack a run is offering for review, and the folder name it wants to be
+ * installed under. The slug is identity: it is what a level stores.
+ */
+export interface PackDraft {
+  slug: string;
+  pack: LevelPack;
+}
+
+/**
  * Only the names matter here — the checker asks whether a coordinate *parses*
  * and names a real anchor, not where it lands.
  */

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
 import { THEME_KEYS } from './levels';
@@ -88,4 +88,38 @@ export function scanPacks(root: string): PackScan {
 export function themeExists(root: string, theme: string): boolean {
   if ((THEME_KEYS as string[]).includes(theme)) return true;
   return scanPacks(root).installed.some((p) => p.slug === theme);
+}
+
+export type InstallResult = { installed: true; already: boolean } | { error: string };
+
+/**
+ * Installs a reviewed pack — what Approve performs (M4).
+ *
+ * Writing an already-identical pack again succeeds rather than refusing, so a
+ * second Approve after a partly-failed one is safe. That is the same rule the
+ * outbox follows with `sentTo`: a retry must never be blocked by the work the
+ * first attempt already did, and must never do it twice.
+ *
+ * Anything else already at that slug is refused and left alone. Overwriting
+ * someone's installed world because a session picked the same name is not a
+ * thing an approval should be able to do silently.
+ */
+export function installPack(root: string, draft: { slug: string; pack: LevelPack }): InstallResult {
+  const dir = path.join(packsDir(root), draft.slug);
+  const file = path.join(dir, 'pack.json');
+  const contents = `${JSON.stringify(draft.pack, null, 2)}\n`;
+
+  if (existsSync(file)) {
+    if (readFileSync(file, 'utf8') === contents) return { installed: true, already: true };
+    return {
+      error: `a different pack is already installed as "${draft.slug}" — remove web/public/packs/${draft.slug} or give this one another slug`,
+    };
+  }
+  if ((THEME_KEYS as string[]).includes(draft.slug)) {
+    return { error: `"${draft.slug}" is the name of a built-in theme` };
+  }
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(file, contents);
+  return { installed: true, already: false };
 }

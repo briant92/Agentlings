@@ -6,6 +6,7 @@ import { MAX_STATIONS } from '@agentlings/shared';
 import { CANCELLED } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
+import { PACK_FILE, readPackDraft } from './packcontract';
 import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
 
@@ -351,6 +352,7 @@ export class JobQueue {
 
   private finish(job: Job): void {
     this.stampOutbox(job);
+    this.stampPackDraft(job);
     job.finishedAt = Date.now();
     job.slot = -1;
     // Hand the freed slot to the oldest job still waiting without one.
@@ -373,6 +375,20 @@ export class JobQueue {
     if (!read) return;
     if (read.error) job.outboxError = `OUTBOX.json: ${read.error}`;
     else job.outbox = read.outbox;
+  }
+
+  /**
+   * The world a run authored, if it left one (M4). Same seam and same rule as
+   * the outbox: a malformed PACK.json surfaces as its reason rather than
+   * reading as "no pack", because a job promoted while silently dropping the
+   * only thing it was for is the worst outcome available.
+   */
+  private stampPackDraft(job: Job): void {
+    if (job.compile) return;
+    const read = readPackDraft(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.error) job.packDraftError = `${PACK_FILE}: ${read.error}`;
+    else job.packDraft = read.draft;
   }
 
   /** Merges one Approve's send results; `sentTo` accumulates so retries skip them. */

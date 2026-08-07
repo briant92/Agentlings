@@ -1,6 +1,7 @@
 // Domain model shared by server (authoritative) and web (rendering).
 
 export * from './pack';
+import type { PackDraft } from './pack';
 export * from './scene';
 export * from './palette';
 
@@ -535,6 +536,14 @@ export interface Job {
   changes?: JobChanges;
   /** Parsed from OUTBOX.json when the run left a valid one. Approve executes it (D-075). */
   outbox?: Outbox;
+  /**
+   * A world this run authored, offered for review (M4). Approve installs it.
+   * The same shape of promise as `outbox`: written by the session, performed
+   * by the server, never the other way round.
+   */
+  packDraft?: PackDraft;
+  /** PACK.json existed and was not a valid pack — the reason, never a silent drop. */
+  packDraftError?: string;
   /** OUTBOX.json existed and was not a valid outbox — the reason, never a silent drop. */
   outboxError?: string;
   /** Send results so far, merged across retries. */

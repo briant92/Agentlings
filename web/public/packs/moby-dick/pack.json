@@ -1,141 +1,1176 @@
 {
   "name": "The Pequod",
-  "provenance": "Scene authored in-house for Agentlings, 2026-08-07. No third-party art: every op is drawn from the built-in format on the DB32 palette. Inspired by Melville's Moby-Dick (1851), which is in the public domain; no text, mark or image from any adaptation is used.",
+  "provenance": "Drawn from the format by an agentling of this project, 2026-08-07, from the ops vocabulary in packages/shared/src/scene.ts and nothing else. No third-party art, image, atlas or palette is included or derived from: every op here is hand-placed and every colour is either a DB32 entry (packages/shared/src/palette.ts, DawnBringer's 32-colour palette, 2012, freely usable) or one of three near-black values mixed for this pack. The setting is the between-decks of a nineteenth-century whaler at night, a scene of the kind Melville's Moby-Dick (1851, public domain) describes; the name \"The Pequod\" and the whaling furniture — gunports, oil lamps, harpoon irons, oil casks — are from that public-domain text and from the common historical record, not from any film, game or studio adaptation, whose designs and marks are deliberately not reproduced. Ours to commit, ours to change, no attribution owed to anyone outside this repository.",
   "viewH": 450,
   "groundY": 388,
   "rim": "rockEdge",
   "theme": {
-    "void": 2236468,
-    "rock": 6699313,
-    "rockLight": 9393211,
-    "rockDark": 4531772,
-    "rockEdge": 2236468,
-    "accent": 9072944,
-    "accentLight": 13360636,
-    "accentDark": 5393188,
+    "void": 985880,
+    "rock": 4532284,
+    "rockLight": 6699313,
+    "rockDark": 2236468,
+    "rockEdge": 1709350,
+    "accent": 10202551,
+    "accentLight": 13360124,
+    "accentDark": 4145012,
     "grass": 3170434,
-    "grassDark": 4145012,
-    "wood": 9393211,
-    "woodDark": 6699313,
+    "grassDark": 3292217,
+    "wood": 14262374,
+    "woodDark": 9393723,
     "stoneDark": 5854802,
     "flame": 14643494,
     "flameCore": 16511542,
-    "hover": 16511542
+    "hover": 6278628
   },
   "backdrop": {
-    "scrim": { "color": "void", "alpha": 0.38, "from": 300 },
+    "scrim": {
+      "color": "void",
+      "alpha": 0.34,
+      "from": 296,
+      "steps": 7
+    },
     "ops": [
-      { "op": "rect", "x": 0, "y": 0, "w": "worldWidth", "h": "viewH", "color": "void" },
-      { "op": "rect", "x": 0, "y": 36, "w": "worldWidth", "h": "groundY-36", "color": "rockDark" },
-
-      { "op": "repeat", "at": [38, 258, 478, 698, 918], "of": [
-        { "op": "rect", "x": 0, "y": 36, "w": 18, "h": "groundY-36", "color": "rock" },
-        { "op": "rect", "x": 3, "y": 36, "w": 5, "h": "groundY-36", "color": "rockLight", "alpha": 0.45 }
-      ] },
-
-      { "op": "repeat", "at": [110, 330, 550, 770], "of": [
-        { "op": "rect", "x": 0, "y": 150, "w": 120, "h": 96, "color": "grass" },
-        { "op": "rect", "x": 0, "y": 150, "w": 120, "h": 13, "color": "grassDark" },
-        { "op": "rect", "x": 0, "y": 163, "w": 120, "h": 3, "color": "accentLight", "alpha": 0.3 },
-        { "op": "rect", "x": 8, "y": 181, "w": 64, "h": 2, "color": "grassDark", "alpha": 0.7 },
-        { "op": "rect", "x": 54, "y": 195, "w": 56, "h": 2, "color": "grassDark", "alpha": 0.6 },
-        { "op": "rect", "x": 4, "y": 207, "w": 44, "h": 2, "color": "grassDark", "alpha": 0.6 },
-        { "op": "rect", "x": 64, "y": 218, "w": 50, "h": 2, "color": "grassDark", "alpha": 0.5 },
-        { "op": "rect", "x": 14, "y": 230, "w": 70, "h": 2, "color": "grassDark", "alpha": 0.45 },
-        { "op": "rect", "x": 38, "y": 172, "w": 36, "h": 3, "color": "accentLight", "alpha": 0.45 },
-        { "op": "rect", "x": 48, "y": 189, "w": 20, "h": 2, "color": "accentLight", "alpha": 0.3 },
-        { "op": "rect", "x": 42, "y": 203, "w": 14, "h": 2, "color": "accentLight", "alpha": 0.22 },
-        { "op": "rect", "x": -7, "y": 143, "w": 134, "h": 9, "color": "wood" },
-        { "op": "rect", "x": -7, "y": 244, "w": 134, "h": 9, "color": "woodDark" },
-        { "op": "rect", "x": -7, "y": 143, "w": 9, "h": 110, "color": "wood" },
-        { "op": "rect", "x": 118, "y": 143, "w": 9, "h": 110, "color": "wood" },
-        { "op": "rect", "x": -7, "y": 143, "w": 134, "h": 3, "color": "rockLight", "alpha": 0.5 }
-      ] },
-
-      { "op": "rect", "x": 0, "y": 0, "w": "worldWidth", "h": 40, "color": "void" },
-      { "op": "band", "axis": "x", "from": 0, "to": "worldWidth", "step": 96, "of": [
-        { "op": "rect", "x": 0, "y": 0, "w": 14, "h": 40, "color": "wood" },
-        { "op": "rect", "x": 0, "y": 0, "w": 14, "h": 5, "color": "woodDark" },
-        { "op": "rect", "x": 11, "y": 0, "w": 3, "h": 40, "color": "woodDark" }
-      ] },
-      { "op": "rect", "x": 0, "y": 36, "w": "worldWidth", "h": 5, "color": "woodDark" },
-
-      { "op": "repeat", "at": [200, 500, 800], "of": [
-        { "op": "rect", "x": -1, "y": 36, "w": 2, "h": 30, "color": "stoneDark" },
-        { "op": "rect", "x": -7, "y": 66, "w": 14, "h": 4, "color": "accentDark" },
-        { "op": "rect", "x": -6, "y": 70, "w": 12, "h": 12, "color": "accent" },
-        { "op": "rect", "x": -4, "y": 73, "w": 8, "h": 7, "color": "flameCore", "alpha": 0.85 },
-        { "op": "rect", "x": -6, "y": 82, "w": 12, "h": 3, "color": "accentDark" }
-      ] },
-
-      { "op": "rect", "x": 0, "y": 296, "w": "worldWidth", "h": 4, "color": "wood" },
-      { "op": "rect", "x": 0, "y": 300, "w": "worldWidth", "h": 2, "color": "woodDark" },
-      { "op": "band", "axis": "x", "from": 56, "to": "worldWidth", "step": 112, "of": [
-        { "op": "rect", "x": 0, "y": 302, "w": 3, "h": 14, "color": "accentDark" },
-        { "op": "circle", "x": 1, "y": 326, "r": 10, "color": "accentDark" },
-        { "op": "circle", "x": 1, "y": 326, "r": 5, "color": "rockDark" }
-      ] },
-      { "op": "band", "axis": "x", "from": 112, "to": "worldWidth", "step": 112, "of": [
-        { "op": "rect", "x": 0, "y": 302, "w": 2, "h": 20, "color": "stoneDark" },
-        { "op": "rect", "x": -8, "y": 322, "w": 17, "h": 15, "color": "wood" },
-        { "op": "rect", "x": -8, "y": 322, "w": 17, "h": 4, "color": "accent" }
-      ] },
-      { "op": "repeat", "at": [250, 420, 640, 840], "of": [
-        { "op": "rect", "x": -32, "y": "groundY-30", "w": 64, "h": 30, "color": "wood" },
-        { "op": "rect", "x": -32, "y": "groundY-30", "w": 64, "h": 5, "color": "accentLight", "alpha": 0.4 },
-        { "op": "rect", "x": -32, "y": "groundY-18", "w": 64, "h": 4, "color": "accent" },
-        { "op": "rect", "x": -4, "y": "groundY-14", "w": 8, "h": 7, "color": "accent" }
-      ] },
-
-      { "op": "speckle", "count": 170, "light": "rockLight", "dark": "void",
-        "x": 0, "y": 44, "w": "worldWidth", "h": "groundY-44" }
+      {
+        "op": "rect",
+        "x": 0,
+        "y": 0,
+        "w": "worldWidth",
+        "h": "viewH",
+        "color": "rock"
+      },
+      {
+        "op": "band",
+        "axis": "y",
+        "from": 40,
+        "to": 386,
+        "step": 13,
+        "of": [
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 0,
+            "w": "worldWidth",
+            "h": 7,
+            "color": "rockLight",
+            "alpha": 0.3
+          },
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 9,
+            "w": "worldWidth",
+            "h": 2,
+            "color": "void",
+            "alpha": 0.4
+          }
+        ]
+      },
+      {
+        "op": "speckle",
+        "x": 0,
+        "y": 40,
+        "w": "worldWidth",
+        "h": 348,
+        "count": 190,
+        "light": "rockLight",
+        "dark": "void"
+      },
+      {
+        "op": "veins",
+        "x": 60,
+        "y": 60,
+        "w": 880,
+        "h": 320,
+        "count": 5,
+        "color": "void",
+        "alpha": 0.3
+      },
+      {
+        "op": "rect",
+        "x": 798,
+        "y": 0,
+        "w": 202,
+        "h": 388,
+        "color": "rock"
+      },
+      {
+        "op": "band",
+        "axis": "x",
+        "from": 800,
+        "to": 996,
+        "step": 18,
+        "of": [
+          {
+            "op": "rect",
+            "x": 0,
+            "y": 30,
+            "w": 15,
+            "h": 358,
+            "color": "rockLight",
+            "alpha": 0.22
+          },
+          {
+            "op": "rect",
+            "x": 15,
+            "y": 30,
+            "w": 2,
+            "h": 358,
+            "color": "void",
+            "alpha": 0.5
+          }
+        ]
+      },
+      {
+        "op": "rect",
+        "x": 792,
+        "y": 24,
+        "w": 10,
+        "h": 364,
+        "color": "woodDark"
+      },
+      {
+        "op": "rect",
+        "x": 792,
+        "y": 24,
+        "w": 3,
+        "h": 364,
+        "color": "wood",
+        "alpha": 0.3
+      },
+      {
+        "op": "rect",
+        "x": 802,
+        "y": 24,
+        "w": 4,
+        "h": 364,
+        "color": "void",
+        "alpha": 0.45
+      },
+      {
+        "op": "repeat",
+        "at": [
+          305,
+          435,
+          565,
+          695
+        ],
+        "of": [
+          {
+            "op": "rect",
+            "x": -46,
+            "y": 250,
+            "w": 92,
+            "h": 98,
+            "color": "void"
+          },
+          {
+            "op": "rect",
+            "x": -38,
+            "y": 262,
+            "w": 76,
+            "h": 34,
+            "color": "accentDark"
+          },
+          {
+            "op": "rect",
+            "x": -26,
+            "y": 270,
+            "w": 2,
+            "h": 2,
+            "color": "accentLight"
+          },
+          {
+            "op": "rect",
+            "x": 4,
+            "y": 266,
+            "w": 2,
+            "h": 2,
+            "color": "accentLight"
+          },
+          {
+            "op": "rect",
+            "x": 22,
+            "y": 277,
+            "w": 2,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.7
+          },
+          {
+            "op": "rect",
+            "x": -10,
+            "y": 283,
+            "w": 2,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.6
+          },
+          {
+            "op": "rect",
+            "x": -38,
+            "y": 291,
+            "w": 76,
+            "h": 5,
+            "color": "accentLight",
+            "alpha": 0.22
+          },
+          {
+            "op": "rect",
+            "x": -38,
+            "y": 296,
+            "w": 76,
+            "h": 42,
+            "color": "grass"
+          },
+          {
+            "op": "band",
+            "axis": "y",
+            "from": 301,
+            "to": 335,
+            "step": 7,
+            "of": [
+              {
+                "op": "rect",
+                "x": -38,
+                "y": 0,
+                "w": 76,
+                "h": 3,
+                "color": "grassDark",
+                "alpha": 0.5
+              }
+            ]
+          },
+          {
+            "op": "tufts",
+            "x": -38,
+            "y": 300,
+            "w": 76,
+            "h": 6,
+            "count": 9,
+            "height": 3,
+            "color": "grassDark",
+            "alt": "accentLight"
+          },
+          {
+            "op": "rect",
+            "x": -8,
+            "y": 303,
+            "w": 16,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.65
+          },
+          {
+            "op": "rect",
+            "x": -14,
+            "y": 312,
+            "w": 22,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.45
+          },
+          {
+            "op": "rect",
+            "x": -6,
+            "y": 321,
+            "w": 14,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.3
+          },
+          {
+            "op": "rect",
+            "x": -12,
+            "y": 330,
+            "w": 20,
+            "h": 2,
+            "color": "accentLight",
+            "alpha": 0.2
+          },
+          {
+            "op": "rect",
+            "x": -44,
+            "y": 256,
+            "w": 88,
+            "h": 6,
+            "color": "woodDark"
+          },
+          {
+            "op": "rect",
+            "x": -44,
+            "y": 338,
+            "w": 88,
+            "h": 7,
+            "color": "woodDark"
+          },
+          {
+            "op": "rect",
+            "x": -44,
+            "y": 256,
+            "w": 6,
+            "h": 89,
+            "color": "woodDark"
+          },
+          {
+            "op": "rect",
+            "x": 38,
+            "y": 256,
+            "w": 6,
+            "h": 89,
+            "color": "woodDark"
+          },
+          {
+            "op": "rect",
+            "x": -44,
+            "y": 338,
+            "w": 88,
+            "h": 2,
+            "color": "wood",
+            "alpha": 0.5
+          },
+          {
+            "op": "rect",
+            "x": -44,
+            "y": 345,
+            "w": 88,
+            "h": 3,
+            "color": "void",
+            "alpha": 0.5
+          },
+          {
+            "op": "poly",
+            "points": [
+              [
+                -44,
+                256
+              ],
+              [
+                44,
+                256
+              ],
+              [
+                52,
+                230
+              ],
+              [
+                -36,
+                230
+              ]
+            ],
+            "color": "rockLight"
+          },
+          {
+            "op": "poly",
+            "points": [
+              [
+                -44,
+                256
+              ],
+              [
+                44,
+                256
+              ],
+              [
+                44,
+                252
+              ],
+              [
+                -44,
+                252
+              ]
+            ],
+            "color": "void",
+            "alpha": 0.4
+          },
+          {
+            "op": "rect",
+            "x": -36,
+            "y": 230,
+            "w": 88,
+            "h": 2,
+            "color": "wood",
+            "alpha": 0.35
+          },
+          {
+            "op": "poly",
+            "points": [
+              [
+                -34,
+                348
+              ],
+              [
+                34,
+                348
+              ],
+              [
+                54,
+                "groundY"
+              ],
+              [
+                -54,
+                "groundY"
+              ]
+            ],
+            "color": "accentLight",
+            "alpha": 0.09
+          }
+        ]
+      }
     ]
   },
   "ops": [
-    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 62, "color": "wood" },
-    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 3, "color": "accentLight", "alpha": 0.35 },
-    { "op": "rect", "x": 0, "y": "groundY+3", "w": "worldWidth", "h": 3, "color": "woodDark" },
-    { "op": "band", "axis": "x", "from": 0, "to": "worldWidth", "step": 52, "of": [
-      { "op": "rect", "x": 0, "y": "groundY+6", "w": 2, "h": 56, "color": "woodDark" }
-    ] },
-    { "op": "speckle", "count": 150, "light": "rockLight", "dark": "woodDark",
-      "x": 0, "y": "groundY+6", "w": "worldWidth", "h": 56 },
-
-    { "op": "repeat", "at": [150, 322, 690], "of": [
-      { "op": "rect", "x": -15, "y": "groundY-36", "w": 30, "h": 36, "color": "wood" },
-      { "op": "rect", "x": -15, "y": "groundY-36", "w": 30, "h": 4, "color": "accentLight", "alpha": 0.55 },
-      { "op": "rect", "x": -15, "y": "groundY-30", "w": 30, "h": 5, "color": "accent" },
-      { "op": "rect", "x": -15, "y": "groundY-13", "w": 30, "h": 5, "color": "accent" },
-      { "op": "rect", "x": -4, "y": "groundY-25", "w": 2, "h": 12, "color": "woodDark" },
-      { "op": "rect", "x": 6, "y": "groundY-25", "w": 2, "h": 12, "color": "woodDark" }
-    ] },
-
-    { "op": "repeat", "at": [430], "of": [
-      { "op": "circle", "x": 0, "y": "groundY-7", "r": 15, "color": "accentDark" },
-      { "op": "circle", "x": 0, "y": "groundY-9", "r": 9, "color": "accent", "alpha": 0.8 },
-      { "op": "circle", "x": 0, "y": "groundY-9", "r": 4, "color": "rockDark" }
-    ] },
-
-    { "op": "repeat", "at": [588], "of": [
-      { "op": "rect", "x": -22, "y": "groundY-8", "w": 46, "h": 8, "color": "woodDark" },
-      { "op": "rect", "x": -16, "y": "groundY-52", "w": 3, "h": 44, "color": "stoneDark" },
-      { "op": "rect", "x": -17, "y": "groundY-58", "w": 5, "h": 8, "color": "accentLight" },
-      { "op": "rect", "x": -2, "y": "groundY-48", "w": 3, "h": 40, "color": "stoneDark" },
-      { "op": "rect", "x": -3, "y": "groundY-54", "w": 5, "h": 8, "color": "accentLight" },
-      { "op": "rect", "x": 12, "y": "groundY-55", "w": 3, "h": 47, "color": "stoneDark" },
-      { "op": "rect", "x": 11, "y": "groundY-61", "w": 5, "h": 8, "color": "accentLight" }
-    ] },
-
-    { "op": "repeat", "at": ["spawnX"], "of": [
-      { "op": "rect", "x": -30, "y": 36, "w": 60, "h": 10, "color": "woodDark" },
-      { "op": "rect", "x": -26, "y": 46, "w": 52, "h": 6, "color": "void" },
-      { "op": "rect", "x": -3, "y": 52, "w": 6, "h": "groundY-98", "color": "accentDark", "alpha": 0.5 },
-      { "op": "band", "from": 60, "to": "groundY-40", "step": 16, "of": [
-        { "op": "rect", "x": -11, "y": 0, "w": 22, "h": 4, "color": "wood" }
-      ] }
-    ] }
+    {
+      "op": "ceiling",
+      "step": 46,
+      "minY": 40,
+      "maxY": 58,
+      "flatNear": {
+        "at": "exitX",
+        "within": 110,
+        "y": 50
+      },
+      "fill": "rockDark",
+      "edge": "rockEdge"
+    },
+    {
+      "op": "repeat",
+      "at": [
+        90,
+        240,
+        390,
+        540,
+        690,
+        840
+      ],
+      "of": [
+        {
+          "op": "rect",
+          "x": -16,
+          "y": 58,
+          "w": 32,
+          "h": 18,
+          "color": "rockLight"
+        },
+        {
+          "op": "rect",
+          "x": -16,
+          "y": 58,
+          "w": 32,
+          "h": 3,
+          "color": "wood",
+          "alpha": 0.3
+        },
+        {
+          "op": "rect",
+          "x": -16,
+          "y": 74,
+          "w": 32,
+          "h": 4,
+          "color": "void",
+          "alpha": 0.55
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              -16,
+              76
+            ],
+            [
+              -16,
+              96
+            ],
+            [
+              -8,
+              76
+            ]
+          ],
+          "color": "woodDark"
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              16,
+              76
+            ],
+            [
+              16,
+              96
+            ],
+            [
+              8,
+              76
+            ]
+          ],
+          "color": "woodDark"
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 78,
+      "w": "worldWidth",
+      "h": 11,
+      "color": "woodDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 78,
+      "w": "worldWidth",
+      "h": 3,
+      "color": "wood",
+      "alpha": 0.35
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": 89,
+      "w": "worldWidth",
+      "h": 5,
+      "color": "void",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 352,
+      "y": 148,
+      "w": 9,
+      "h": 30,
+      "color": "woodDark"
+    },
+    {
+      "op": "rect",
+      "x": 611,
+      "y": 148,
+      "w": 9,
+      "h": 30,
+      "color": "woodDark"
+    },
+    {
+      "op": "rect",
+      "x": 360,
+      "y": 155,
+      "w": 252,
+      "h": 3,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 360,
+      "y": 163,
+      "w": 252,
+      "h": 3,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 360,
+      "y": 171,
+      "w": 252,
+      "h": 3,
+      "color": "accent"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          360,
+          154
+        ],
+        [
+          338,
+          157
+        ],
+        [
+          360,
+          160
+        ]
+      ],
+      "color": "accent"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          360,
+          162
+        ],
+        [
+          338,
+          165
+        ],
+        [
+          360,
+          168
+        ]
+      ],
+      "color": "accent"
+    },
+    {
+      "op": "poly",
+      "points": [
+        [
+          360,
+          170
+        ],
+        [
+          338,
+          173
+        ],
+        [
+          360,
+          176
+        ]
+      ],
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 360,
+      "y": 158,
+      "w": 252,
+      "h": 1,
+      "color": "void",
+      "alpha": 0.5
+    },
+    {
+      "op": "repeat",
+      "at": [
+        118,
+        762
+      ],
+      "of": [
+        {
+          "op": "rect",
+          "x": -2,
+          "y": 182,
+          "w": 4,
+          "h": 16,
+          "color": "stoneDark"
+        },
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 214,
+          "r": 29,
+          "color": "woodDark"
+        },
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 214,
+          "r": 19,
+          "color": "rock"
+        },
+        {
+          "op": "rect",
+          "x": -29,
+          "y": 206,
+          "w": 58,
+          "h": 3,
+          "color": "wood",
+          "alpha": 0.3
+        },
+        {
+          "op": "rect",
+          "x": -29,
+          "y": 224,
+          "w": 58,
+          "h": 3,
+          "color": "void",
+          "alpha": 0.4
+        }
+      ]
+    },
+    {
+      "op": "repeat",
+      "at": [
+        165,
+        500,
+        835
+      ],
+      "of": [
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 134,
+          "r": 46,
+          "color": "flame",
+          "alpha": 0.07
+        },
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 134,
+          "r": 28,
+          "color": "flame",
+          "alpha": 0.1
+        },
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 133,
+          "r": 14,
+          "color": "flameCore",
+          "alpha": 0.14
+        },
+        {
+          "op": "rect",
+          "x": -1,
+          "y": 92,
+          "w": 3,
+          "h": 24,
+          "color": "accent"
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              -11,
+              116
+            ],
+            [
+              11,
+              116
+            ],
+            [
+              8,
+              124
+            ],
+            [
+              -8,
+              124
+            ]
+          ],
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": -9,
+          "y": 124,
+          "w": 18,
+          "h": 22,
+          "color": "flame",
+          "alpha": 0.5
+        },
+        {
+          "op": "rect",
+          "x": -9,
+          "y": 124,
+          "w": 3,
+          "h": 22,
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": 6,
+          "y": 124,
+          "w": 3,
+          "h": 22,
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": -3,
+          "y": 130,
+          "w": 6,
+          "h": 11,
+          "color": "flame"
+        },
+        {
+          "op": "rect",
+          "x": -1,
+          "y": 133,
+          "w": 2,
+          "h": 6,
+          "color": "flameCore"
+        },
+        {
+          "op": "rect",
+          "x": -11,
+          "y": 146,
+          "w": 22,
+          "h": 5,
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": -7,
+          "y": 151,
+          "w": 14,
+          "h": 4,
+          "color": "stoneDark"
+        },
+        {
+          "op": "rect",
+          "x": -11,
+          "y": 150,
+          "w": 22,
+          "h": 2,
+          "color": "void",
+          "alpha": 0.5
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY-2",
+      "w": "worldWidth",
+      "h": 2,
+      "color": "rockEdge"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 62,
+      "color": "rockDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 6,
+      "color": "woodDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 2,
+      "color": "wood",
+      "alpha": 0.4
+    },
+    {
+      "op": "band",
+      "axis": "y",
+      "from": 396,
+      "to": 446,
+      "step": 9,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "worldWidth",
+          "h": 6,
+          "color": "woodDark",
+          "alpha": 0.5
+        },
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 6,
+          "w": "worldWidth",
+          "h": 2,
+          "color": "void",
+          "alpha": 0.5
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 30,
+      "to": 990,
+      "step": 60,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 394,
+          "w": 2,
+          "h": 56,
+          "color": "void",
+          "alpha": 0.45
+        }
+      ]
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": 394,
+      "w": "worldWidth",
+      "h": 56,
+      "count": 160,
+      "light": "wood",
+      "dark": "void"
+    },
+    {
+      "op": "repeat",
+      "at": [
+        200,
+        460,
+        720
+      ],
+      "of": [
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 406,
+          "r": 6,
+          "color": "stoneDark"
+        },
+        {
+          "op": "circle",
+          "x": 0,
+          "y": 406,
+          "r": 3,
+          "color": "void"
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 98,
+      "y": 382,
+      "w": 114,
+      "h": 6,
+      "color": "void",
+      "alpha": 0.45
+    },
+    {
+      "op": "repeat",
+      "at": [
+        106,
+        156
+      ],
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 336,
+          "w": 46,
+          "h": 52,
+          "color": "woodDark"
+        },
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 336,
+          "w": 8,
+          "h": 52,
+          "color": "wood",
+          "alpha": 0.28
+        },
+        {
+          "op": "rect",
+          "x": 40,
+          "y": 336,
+          "w": 6,
+          "h": 52,
+          "color": "void",
+          "alpha": 0.4
+        },
+        {
+          "op": "rect",
+          "x": -1,
+          "y": 344,
+          "w": 48,
+          "h": 4,
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": -1,
+          "y": 372,
+          "w": 48,
+          "h": 4,
+          "color": "accent"
+        },
+        {
+          "op": "rect",
+          "x": -1,
+          "y": 334,
+          "w": 48,
+          "h": 3,
+          "color": "rockEdge"
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 128,
+      "y": 298,
+      "w": 52,
+      "h": 38,
+      "color": "woodDark"
+    },
+    {
+      "op": "rect",
+      "x": 128,
+      "y": 298,
+      "w": 8,
+      "h": 38,
+      "color": "wood",
+      "alpha": 0.28
+    },
+    {
+      "op": "rect",
+      "x": 174,
+      "y": 298,
+      "w": 6,
+      "h": 38,
+      "color": "void",
+      "alpha": 0.4
+    },
+    {
+      "op": "rect",
+      "x": 127,
+      "y": 304,
+      "w": 54,
+      "h": 4,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 127,
+      "y": 326,
+      "w": 54,
+      "h": 4,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 127,
+      "y": 296,
+      "w": 54,
+      "h": 3,
+      "color": "rockEdge"
+    },
+    {
+      "op": "repeat",
+      "at": [
+        165,
+        500,
+        835
+      ],
+      "of": [
+        {
+          "op": "poly",
+          "points": [
+            [
+              -26,
+              150
+            ],
+            [
+              26,
+              150
+            ],
+            [
+              78,
+              "groundY"
+            ],
+            [
+              -78,
+              "groundY"
+            ]
+          ],
+          "color": "flame",
+          "alpha": 0.06
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              -14,
+              150
+            ],
+            [
+              14,
+              150
+            ],
+            [
+              44,
+              "groundY"
+            ],
+            [
+              -44,
+              "groundY"
+            ]
+          ],
+          "color": "flameCore",
+          "alpha": 0.04
+        }
+      ]
+    }
   ],
   "ambient": [
-    { "fx": "motes", "count": 14, "x": 120, "y": 80, "w": 760, "h": 280 }
+    {
+      "fx": "motes",
+      "count": 30,
+      "x": 120,
+      "y": 100,
+      "w": 760,
+      "h": 280
+    },
+    {
+      "fx": "beam",
+      "topLeft": 528,
+      "topRight": 602,
+      "topY": 298,
+      "botLeft": 452,
+      "botRight": 560,
+      "botY": "groundY",
+      "count": 16
+    },
+    {
+      "fx": "glints",
+      "points": [
+        [
+          344,
+          157
+        ],
+        [
+          344,
+          165
+        ],
+        [
+          344,
+          173
+        ],
+        [
+          165,
+          149
+        ],
+        [
+          500,
+          149
+        ],
+        [
+          835,
+          149
+        ]
+      ],
+      "strips": [
+        {
+          "x": 267,
+          "y": 310,
+          "w": 76
+        },
+        {
+          "x": 397,
+          "y": 310,
+          "w": 76
+        },
+        {
+          "x": 527,
+          "y": 310,
+          "w": 76
+        },
+        {
+          "x": 657,
+          "y": 310,
+          "w": 76
+        }
+      ]
+    }
   ]
 }

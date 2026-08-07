@@ -120,6 +120,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-108 — 2026-08-07 — The backdrop leaves DB32: one palette for the crew, another for the painting](#d-108--2026-08-07--the-backdrop-leaves-db32-one-palette-for-the-crew-another-for-the-painting)
 - [D-109 — 2026-08-07 — M2 and M3 built: the backdrop layer, and a level pack that is a whole world](#d-109--2026-08-07--m2-and-m3-built-the-backdrop-layer-and-a-level-pack-that-is-a-whole-world)
 - [D-110 — 2026-08-07 — M4: a run authors a world, and the first one found three faults in the brief](#d-110--2026-08-07--m4-a-run-authors-a-world-and-the-first-one-found-three-faults-in-the-brief)
+- [D-111 — 2026-08-07 — A name clash was a dead end, and the crew's world replaced the hand-written one](#d-111--2026-08-07--a-name-clash-was-a-dead-end-and-the-crews-world-replaced-the-hand-written-one)
 
 ## By theme
 
@@ -138,7 +139,9 @@ entry updates one file rather than two.
   128-colour palette; D-109 — M2 and M3 built: the
   scrim as alpha bands, the format moving to shared so a checker can see it,
   and ThemeKey opening into an installed pack; D-110 — M4, a run
-  authoring a whole world, and the brief whose example became the answer
+  authoring a whole world, and the brief whose example became the answer; D-111 —
+  a name clash that left discarding as the only move, and the first world
+  the crew drew replacing the hand-written one
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6483,3 +6486,53 @@ Deliberately remaining: the sentence matcher; `PackCard`'s markup is still
 unverified in a browser, because the only job carrying a `packDraft` is the one
 whose slug collides; and the props question D-107 left open is unchanged.
 1399 tests green, typecheck clean.
+
+## D-111 — 2026-08-07 — A name clash was a dead end, and the crew's world replaced the hand-written one
+
+Found by Brian in ordinary use, one turn after D-110 shipped. He approved
+Pip's pack and got back:
+
+> a different pack is already installed as "moby-dick" — remove
+> web/public/packs/moby-dick or give this one another slug
+
+He went looking for a level called `moby-dick`, could not find one, and
+discarded a good $1.81 pack because the message left him nowhere to go.
+
+**Four faults in one sentence, all in my own copy.** It named a slug he had
+never seen — the app calls that world "The Pequod" wherever it appears. It
+said "pack", but the only packs he had ever seen were palette entries, so the
+Level panel was the reasonable place to look and a pack never appears there.
+It told him to delete a directory, which the app cannot do and he should not
+need a terminal for. And it proposed giving this one another slug while
+offering no way whatever to do that.
+
+The wording was the smaller half. The real fault is that **a collision was a
+dead end**: the review offered Approve and Discard, Approve refused, so
+Discard was the only move left, and it threw away work that was already paid
+for. A constraint the user cannot act on is not a guard, it is a trap.
+
+So the refusal names the world the way the palette names it and drops the
+filesystem instruction, and the review gains an **Install as** field. The
+clash is shown *before* the button, checked against the packs the client
+already holds and naming what occupies the name; approving under a new one
+installs the pack beside it. The route takes the override and re-checks it
+with the same `slugProblem`, because a client that can rename must not be able
+to rename into `cave` or `../../etc`.
+
+Nothing was lost. Discarding leaves `PACK.json` in the sandbox and `packDraft`
+on the job, so the world survived its own rejection — which is worth knowing
+the next time a review ends badly.
+
+**And the crew's pack replaced the hand-written one**, keeping the
+`moby-dick` name, at Brian's decision. Pip's is the better picture: 33
+foreground ops against 9, lamps casting light cones down the hull, gunports
+onto a starred sky. Its provenance is also better than the one I wrote — it
+separates Melville's public-domain text from studio adaptations, which is
+exactly the distinction `LEVELPACK.md` asks for, and it discloses that three
+near-black values sit off the DB32 ramp rather than claiming a purity it does
+not have. The palette entry went from 16,334 bytes to 24,094; the four
+built-in cards are unchanged.
+
+The first world in this project not drawn by hand is now the one that ships.
+
+1402 tests green, typecheck clean.

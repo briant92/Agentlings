@@ -3,6 +3,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { syncRoster } from './crew';
 import type { Executor, ExecutorResult } from './executors/executor';
 import { JobQueue } from './queue';
 import { Sim, stationX } from './sim';
@@ -32,6 +33,23 @@ describe('Sim', () => {
   afterEach(() =>
     rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
   );
+
+  it('a restart keeps the careers the roster holds', () => {
+    // The constructor used to zero these while addAgentling seeded them, and
+    // syncRoster then wrote the zeros back over the roster on disk — so every
+    // restart erased the record M4.0 persisted (D-115).
+    const roster = [{ ...CREW[0], jobsDone: 50, jobsFailed: 9 }, CREW[1]];
+    const rebuilt = new Sim(roster, queue, stuckExecutor);
+    expect(rebuilt.agentlings[0].jobsDone).toBe(50);
+    expect(rebuilt.agentlings[0].jobsFailed).toBe(9);
+    // A crew member with no record yet starts at zero, not undefined.
+    expect(rebuilt.agentlings[1].jobsDone).toBe(0);
+    expect(rebuilt.agentlings[1].jobsFailed).toBe(0);
+    // The full restart round-trip: what syncRoster writes back is what came in.
+    const synced = syncRoster(roster, rebuilt.agentlings);
+    expect(synced[0].jobsDone).toBe(50);
+    expect(synced[0].jobsFailed).toBe(9);
+  });
 
   it('patrols in idle: everyone keeps moving and bounces at the walls', () => {
     const before = sim.agentlings.map((a) => a.x);

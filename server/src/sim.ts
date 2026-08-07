@@ -55,8 +55,8 @@ export class Sim {
         state: 'idle' as const,
         x,
         targetX: x,
-        jobsDone: 0,
-        jobsFailed: 0,
+        jobsDone: seed.jobsDone ?? 0,
+        jobsFailed: seed.jobsFailed ?? 0,
       };
     });
     this.agentlings.forEach((a, i) => this.dirs.set(a.id, i % 2 === 0 ? 1 : -1));

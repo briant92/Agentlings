@@ -1,37 +1,12 @@
-import type { ThemeKey } from '@agentlings/shared';
+import type { Theme, ThemeKey } from '@agentlings/shared';
 import { css, DB } from './palette';
 import { anchorsOf, canvasSurface, drawScene } from './scene';
 import { SCENES } from './scenes';
 
-/**
- * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
- * stays identical across all four.
- */
-export interface Theme {
-  void: number;
-  rock: number;
-  rockLight: number;
-  rockDark: number;
-  rockEdge: number;
-  accent: number;
-  accentLight: number;
-  accentDark: number;
-  grass: number;
-  grassDark: number;
-  wood: number;
-  woodDark: number;
-  stoneDark: number;
-  flame: number;
-  flameCore: number;
-  /**
-   * The hover outline on anything clickable. Its own slot rather than a reuse
-   * of `accentLight`, which is drawn from the same family as the rock in every
-   * theme — cave's is DB.tan against DB.tan walls, so the outline half
-   * vanished into the scenery it was meant to lift a sprite off. Chosen per
-   * theme for contrast against that theme's rock.
-   */
-  hover: number;
-}
+// The palette a scene paints with. Defined in shared beside the format that
+// names its slots — a second copy here would be a notion duplicated, and the
+// two would drift the first time a slot was added.
+export type { Theme };
 
 export const THEMES: Record<ThemeKey, Theme> = {
   cave: {

@@ -1,6 +1,7 @@
 // Domain model shared by server (authoritative) and web (rendering).
 
 export * from './pack';
+export * from './scene';
 export * from './palette';
 
 /** Visual palette a level is born with; the client owns the actual colors. */

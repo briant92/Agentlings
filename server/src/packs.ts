@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
-import { THEME_KEYS } from './levels';
+import { BUILTIN_THEMES } from '@agentlings/shared';
 
 /**
  * Installed level packs: whole worlds a level can be set in, alongside the
@@ -57,7 +57,7 @@ export function scanPacks(root: string): PackScan {
 
     // A pack that shadows a built-in would make "cave" ambiguous, and which
     // one won would depend on directory order.
-    if ((THEME_KEYS as string[]).includes(slug)) {
+    if ((BUILTIN_THEMES as readonly string[]).includes(slug)) {
       fail(`"${slug}" is the name of a built-in theme; rename the folder`);
       continue;
     }
@@ -86,7 +86,7 @@ export function scanPacks(root: string): PackScan {
 
 /** Whether a level may be created in this look: a built-in, or an installed pack. */
 export function themeExists(root: string, theme: string): boolean {
-  if ((THEME_KEYS as string[]).includes(theme)) return true;
+  if ((BUILTIN_THEMES as readonly string[]).includes(theme)) return true;
   return scanPacks(root).installed.some((p) => p.slug === theme);
 }
 
@@ -115,7 +115,7 @@ export function installPack(root: string, draft: { slug: string; pack: LevelPack
       error: `a different pack is already installed as "${draft.slug}" — remove web/public/packs/${draft.slug} or give this one another slug`,
     };
   }
-  if ((THEME_KEYS as string[]).includes(draft.slug)) {
+  if ((BUILTIN_THEMES as readonly string[]).includes(draft.slug)) {
     return { error: `"${draft.slug}" is the name of a built-in theme` };
   }
 

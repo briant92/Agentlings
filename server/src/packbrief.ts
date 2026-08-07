@@ -21,12 +21,19 @@ import { PACK_FILE } from './packcontract';
  * whaling deck should look like is the session's job; what will fail the
  * checker is ours, and every rule below is one the checker actually enforces.
  */
-export function packBrief(): string {
+export function packBrief(taken: readonly string[] = []): string {
   const slots = THEME_SLOTS.join(', ');
   const stations = Array.from(
     { length: MAX_STATIONS },
     (_, i) => STATION_BASE_X + i * STATION_SPACING,
   ).join(', ');
+  // What is already installed. The first real run picked a slug that was
+  // taken, and nothing told it until Approve refused — after the money was
+  // spent. A list is cheaper than a wall.
+  const inUse =
+    taken.length > 0
+      ? `\n\nAlready installed, so **not available**: ${taken.map((s) => `\`${s}\``).join(', ')}.`
+      : '';
 
   return `You are authoring a LEVEL PACK: a whole world for a level to be set in.
 
@@ -34,12 +41,18 @@ export function packBrief(): string {
 
 Write **${PACK_FILE}** at the root of your working directory:
 
-    { "slug": "moby-dick", "pack": { …the pack… } }
+    { "slug": "<your-slug>", "pack": { …the pack… } }
 
 \`slug\` is the folder name it installs under: lower-case words joined by
 hyphens. Nothing else installs the pack — you do not copy it anywhere, and you
 have no tool that could. The user reviews what you wrote and approving it is
 what installs it.
+
+**Name it from the description you were given, never from the examples in
+this brief.** Every placeholder below written as \`<like this>\` is yours to
+fill in; the concrete values are illustrations of the *format*, not defaults
+to adopt. A world called what the example is called, installing where the
+example installs, is the one outcome this brief is not asking for.${inUse}
 
 Write nothing else at the top level except a short RESULT.md saying what you
 made and why it looks the way it does.
@@ -47,10 +60,10 @@ made and why it looks the way it does.
 ## The pack
 
     {
-      "name": "The Pequod",          // shown on the level card
+      "name": "<Your World>",        // shown on the level card
       "provenance": "…",             // required — see below
       "viewH": 450, "groundY": 388,  // world height, and the ground line
-      "rim": "rockEdge",             // set this — see Legibility
+      "rim": "<a dark slot>",        // set this — see Legibility
       "theme": { …16 slots… },
       "backdrop": { "scrim": {…}, "ops": [ … ] },   // optional
       "ops": [ … ],                  // the foreground; required, non-empty

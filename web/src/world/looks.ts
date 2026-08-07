@@ -1,5 +1,5 @@
 import type { LevelPack, PackProblem, Scene, Theme, ThemeId, ThemeKey } from '@agentlings/shared';
-import { WORLD_WIDTH } from '@agentlings/shared';
+import { BUILTIN_THEMES, WORLD_WIDTH } from '@agentlings/shared';
 import { api } from '../api';
 import { css } from './palette';
 import { anchorsOf, canvasSurface, drawScene } from './scene';
@@ -24,10 +24,8 @@ export interface Look {
   installed: boolean;
 }
 
-const BUILTIN: ThemeKey[] = ['cave', 'chalkboard', 'household', 'marble'];
-
 const looks = new Map<ThemeId, Look>(
-  BUILTIN.map((key) => [
+  BUILTIN_THEMES.map((key) => [
     key,
     { id: key, label: THEME_LABELS[key], theme: THEMES[key], scene: SCENES[key], installed: false },
   ]),

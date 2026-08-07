@@ -3,8 +3,8 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { THEME_SLOTS, type LevelPack } from '@agentlings/shared';
-import { checkPackDraft, PACK_FILE, readPackDraft, slugProblem } from './packcontract';
+import { slugProblem, THEME_SLOTS, type LevelPack } from '@agentlings/shared';
+import { checkPackDraft, PACK_FILE, readPackDraft } from './packcontract';
 import { installPack, packsDir, scanPacks } from './packs';
 
 const theme = Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233]));

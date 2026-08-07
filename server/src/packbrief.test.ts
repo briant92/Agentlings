@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_STATIONS, STATION_BASE_X, THEME_SLOTS, validateLevelPack } from '@agentlings/shared';
+import {
+  MAX_STATIONS,
+  slugProblem,
+  STATION_BASE_X,
+  THEME_SLOTS,
+  validateLevelPack,
+} from '@agentlings/shared';
 import { packBrief } from './packbrief';
 
 const brief = packBrief();
@@ -57,5 +63,39 @@ describe('packBrief', () => {
     expect(validateLevelPack({}).map((p) => p.message)).toContain(
       'provenance must be a non-empty string',
     );
+  });
+});
+
+describe('the brief does not answer its own question', () => {
+  /**
+   * The first real authoring run copied the example's identity wholesale —
+   * name "The Pequod", slug "moby-dick" — from a description that said only
+   * "a whaling ship". The example was the answer. So the identity fields are
+   * placeholders now, and this is the test that keeps them that way.
+   */
+  it('offers no concrete name or slug to copy', () => {
+    expect(brief).toContain('"slug": "<your-slug>"');
+    expect(brief).toContain('"name": "<Your World>"');
+    expect(brief).not.toContain('moby-dick');
+    expect(brief).not.toContain('The Pequod');
+  });
+
+  it('says plainly that the examples are format, not defaults', () => {
+    expect(brief).toMatch(/never from the examples/i);
+  });
+
+  it('names what is already installed, so a taken slug is not a surprise', () => {
+    const withTaken = packBrief(['moby-dick', 'arrakis']);
+    expect(withTaken).toContain('not available');
+    expect(withTaken).toContain('moby-dick');
+    expect(withTaken).toContain('arrakis');
+    // ...and says nothing about availability when nothing is installed.
+    expect(packBrief([])).not.toContain('not available');
+  });
+
+  it('rejects the slug it would have chosen, once told', () => {
+    expect(slugProblem('moby-dick', ['moby-dick'])).toMatch(/already installed/);
+    expect(slugProblem('moby-dick', [])).toBeNull();
+    expect(slugProblem('orlop-deck', ['moby-dick'])).toBeNull();
   });
 });

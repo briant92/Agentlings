@@ -1174,7 +1174,9 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
   if (!description) return c.json({ error: 'say what the world should be' }, 400);
 
   const job = queueSentence(rt, `Author a level pack: ${description}`, {
-    brief: packBrief(),
+    // What is already installed, so the session is told what is taken
+    // rather than finding out at Approve (M4, first real run).
+    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug)),
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).
     noSplit: true,

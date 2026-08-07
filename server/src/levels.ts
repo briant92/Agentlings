@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { ThemeId, ThemeKey } from '@agentlings/shared';
+import { BUILTIN_THEMES, type ThemeId, type ThemeKey } from '@agentlings/shared';
 import { undated } from './memory';
 
 /**
@@ -47,7 +47,8 @@ export interface CrewSeed {
   resting?: boolean;
 }
 
-export const THEME_KEYS: ThemeKey[] = ['cave', 'chalkboard', 'household', 'marble'];
+/** The built-in looks. One list, defined in shared (M4). */
+export const THEME_KEYS: readonly ThemeKey[] = BUILTIN_THEMES;
 
 const NAME_POOL = [
   'Pip', 'Dot', 'Moss', 'Bea', 'Fen', 'Ivy', 'Sol', 'Tam',

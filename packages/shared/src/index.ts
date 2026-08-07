@@ -8,6 +8,8 @@ export * from './palette';
 /** The four looks built into the app; the client owns the actual colors. */
 export type ThemeKey = 'cave' | 'chalkboard' | 'household' | 'marble';
 
+export * from './themes';
+
 /**
  * What a level stores as its look: a built-in `ThemeKey`, or the folder name
  * of an installed level pack.

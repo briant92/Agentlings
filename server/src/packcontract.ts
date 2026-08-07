@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { validateLevelPack, type LevelPack } from '@agentlings/shared';
-import { THEME_KEYS } from './levels';
+import { slugProblem, validateLevelPack, type LevelPack } from '@agentlings/shared';
 
 /**
  * The pack contract: how a run hands over a world it has authored (M4).
@@ -34,27 +33,6 @@ export type PackDraftRead =
   | { draft: PackDraft; error?: undefined }
   | { draft?: undefined; error: string };
 
-/**
- * A slug becomes a directory name, so this is a security boundary as well as
- * a tidiness one: anything with a separator, a drive letter or a `..` in it
- * would let a sandbox choose where on disk Approve writes.
- */
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const MAX_SLUG = 40;
-
-export function slugProblem(slug: unknown): string | null {
-  if (typeof slug !== 'string' || slug.trim() === '') {
-    return '"slug" is required — the folder name the pack installs under';
-  }
-  if (slug.length > MAX_SLUG) return `"slug" is longer than ${MAX_SLUG} characters`;
-  if (!SLUG_RE.test(slug)) {
-    return `"slug" must be lower-case words joined by hyphens, like "moby-dick" — got "${slug}"`;
-  }
-  if ((THEME_KEYS as string[]).includes(slug)) {
-    return `"${slug}" is the name of a built-in theme; choose another`;
-  }
-  return null;
-}
 
 /** The contract over an already-parsed value, so a draft built in code meets it too. */
 export function checkPackDraft(parsed: unknown): PackDraftRead {

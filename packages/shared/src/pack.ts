@@ -7,6 +7,7 @@
  * and can be checked before anyone is paid or anything is merged.
  */
 
+import { BUILTIN_THEMES } from './themes';
 import {
   resolveCoord,
   THEME_SLOTS,
@@ -51,6 +52,39 @@ export interface PackDraft {
   slug: string;
   pack: LevelPack;
 }
+
+/**
+ * A slug becomes a directory name, so this is a security boundary as well as a
+ * tidiness one: anything with a separator, a drive letter or a `..` in it would
+ * let a sandbox choose where on disk an approval writes.
+ *
+ * Here rather than in the server because the CLI checker has to apply exactly
+ * the same rule — a slug the checker waves through and the install then refuses
+ * is a wall a session cannot see coming.
+ *
+ * `taken` is the slugs already installed. Optional, because the CLI checking a
+ * loose file does not know; where it is known, saying so early is the whole
+ * point — the alternative is finding out at Approve, after the money is spent.
+ */
+export function slugProblem(slug: unknown, taken: readonly string[] = []): string | null {
+  if (typeof slug !== 'string' || slug.trim() === '') {
+    return '"slug" is required — the folder name the pack installs under';
+  }
+  if (slug.length > MAX_SLUG) return `"slug" is longer than ${MAX_SLUG} characters`;
+  if (!SLUG_RE.test(slug)) {
+    return `"slug" must be lower-case words joined by hyphens, like "orlop-deck" — got "${slug}"`;
+  }
+  if ((BUILTIN_THEMES as readonly string[]).includes(slug)) {
+    return `"${slug}" is the name of a built-in theme; choose another`;
+  }
+  if (taken.includes(slug)) {
+    return `a pack is already installed as "${slug}"; choose a slug nothing is using yet`;
+  }
+  return null;
+}
+
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_SLUG = 40;
 
 /**
  * Only the names matter here — the checker asks whether a coordinate *parses*

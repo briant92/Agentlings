@@ -79,6 +79,47 @@ describe('packBrief', () => {
     expect(brief).toMatch(/signposts|doorway/i);
   });
 
+  describe('given a reference picture', () => {
+    const withRef = packBrief([], 'reference.png');
+
+    it('names the file and says to look at it', () => {
+      expect(withRef).toContain('input/reference.png');
+      expect(withRef).toMatch(/Open it and look at it/i);
+    });
+
+    /**
+     * The half that stops the run wasting its turns. D-108 settled that the
+     * ops vocabulary cannot reproduce a rendered painting at any budget, so a
+     * session told to work from a picture has to be told that tracing it is
+     * the wrong job — measured at 32 colours destroying the source, and at
+     * 128 needing a raster the format has no field for.
+     */
+    it('says plainly that the picture cannot be reproduced, and what to take instead', () => {
+      expect(withRef).toMatch(/cannot reproduce it/i);
+      expect(withRef).toMatch(/staging|palette|depth/i);
+    });
+
+    it('makes the reference a provenance question, because it is one', () => {
+      expect(withRef).toMatch(/name the reference in `provenance`/i);
+    });
+
+    /**
+     * D-113's other finding: a session handed an image wrote its own PNG
+     * decoder inside a sandbox that already contained ours, spending a third
+     * of its turns on it. Nothing had told it the capability was there.
+     */
+    it('points at the decoder the repository already has', () => {
+      expect(withRef).toContain('decodePng');
+      expect(withRef).toContain('server/src/raster.ts');
+    });
+
+    it('says none of it when there is no reference', () => {
+      const plain = packBrief([]);
+      expect(plain).not.toMatch(/reference/i);
+      expect(plain).not.toContain('decodePng');
+    });
+  });
+
   it('requires provenance in the same words the checker does', () => {
     expect(brief).toContain('provenance');
     expect(validateLevelPack({}).map((p) => p.message)).toContain(

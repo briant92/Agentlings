@@ -21,7 +21,39 @@ import { PACK_FILE } from './packcontract';
  * whaling deck should look like is the session's job; what will fail the
  * checker is ours, and every rule below is one the checker actually enforces.
  */
-export function packBrief(taken: readonly string[] = []): string {
+export function packBrief(taken: readonly string[] = [], reference?: string): string {
+  // A picture to work from changes the job enough to be said up front, and
+  // says what the format cannot do with it. D-113 measured both halves: a
+  // session reads an image accurately and reasons about it, and the ops
+  // vocabulary cannot reproduce a rendered painting at any budget.
+  const fromReference = reference
+    ? `
+
+## You have been given a picture to work from
+
+\`input/${reference}\` is a reference image. **Open it and look at it** before
+you write anything — it is the best statement of what is wanted, better than
+the sentence.
+
+**You cannot reproduce it, and you are not being asked to.** The ops are a
+fixed set of idioms, not a drawing language: soft shading, photographic
+texture and painted detail are not expressible, and a pack that tries to
+trace the picture will come out worse than one that reads it. Take from it
+the things the format *can* carry — the staging and where the ground sits,
+the palette and how light and dark are distributed, the depth layers, the
+shapes that repeat and at what rhythm — and compose your own scene from those.
+
+Say in \`RESULT.md\` what you took from the reference and what you knowingly
+left, and **name the reference in \`provenance\`**: a pack drawn from someone
+else's picture inherits a question about that picture's licence, and the file
+is the only place that question can be answered later.
+
+There is a PNG decoder in the repository already — \`decodePng\` and
+\`countColours\` in \`server/src/raster.ts\`, run with \`npx tsx\`. Use it to
+crop or measure the reference rather than writing your own; the last run that
+needed one spent a third of its turns rebuilding it beside the copy it had.`
+    : '';
+
   const slots = THEME_SLOTS.join(', ');
   const stations = Array.from(
     { length: MAX_STATIONS },
@@ -52,7 +84,7 @@ what installs it.
 this brief.** Every placeholder below written as \`<like this>\` is yours to
 fill in; the concrete values are illustrations of the *format*, not defaults
 to adopt. A world called what the example is called, installing where the
-example installs, is the one outcome this brief is not asking for.${inUse}
+example installs, is the one outcome this brief is not asking for.${inUse}${fromReference}
 
 Write nothing else at the top level except a short RESULT.md saying what you
 made and why it looks the way it does.

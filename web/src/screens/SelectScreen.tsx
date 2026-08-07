@@ -86,6 +86,24 @@ export function SelectScreen({
   );
 }
 
+/**
+ * A file as base64, in chunks.
+ *
+ * `String.fromCharCode(...bytes)` spreads one argument per byte, so a picture
+ * of any real size overflows the call stack — the reference that prompted all
+ * this is 1.5 MB, which is 1.5 million arguments. 32KB at a time is well
+ * inside every engine's limit.
+ */
+async function base64Of(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
 function NewLevelModal({
   levels,
   onClose,
@@ -102,6 +120,9 @@ function NewLevelModal({
   /** A world the crew author rather than one already on the palette (M4). */
   const [world, setWorld] = useState('');
   const [authoring, setAuthoring] = useState(false);
+  /** How the world is meant to look, and the picture behind it (D-113). */
+  const [kind, setKind] = useState<'pixel' | 'pre-rendered'>('pixel');
+  const [reference, setReference] = useState<File | null>(null);
   const [authored, setAuthored] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   // The crew doing the work. A pack is not owned by a level — it installs for
@@ -155,7 +176,16 @@ function NewLevelModal({
     setError(null);
     setAuthoring(true);
     try {
-      await api(lvl(host.id, '/author-pack'), postJson({ description: world }));
+      // Read here rather than in the route: the server takes base64 like every
+      // other attachment, and the browser is where a File becomes bytes.
+      const picture =
+        kind === 'pre-rendered' && reference
+          ? { name: reference.name, data: await base64Of(reference) }
+          : undefined;
+      await api(
+        lvl(host.id, '/author-pack'),
+        postJson({ description: world, ...(picture ? { reference: picture } : {}) }),
+      );
       setAuthored(world);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -220,8 +250,40 @@ function NewLevelModal({
                     value={world}
                     onChange={(e) => setWorld(e.target.value)}
                   />
+                  {/*
+                    The two ways a world of this kind has ever been made: drawn
+                    by hand, or rendered and then reduced. Pre-rendered asks for
+                    the picture, because the crew works from it — it does not
+                    become the backdrop, which the ops format cannot carry
+                    (D-108, D-113).
+                  */}
+                  <div className="nl-kind">
+                    {(['pixel', 'pre-rendered'] as const).map((k) => (
+                      <button
+                        key={k}
+                        className={`nl-kind-pick${kind === k ? ' on' : ''}`}
+                        onClick={() => setKind(k)}
+                      >
+                        {k === 'pixel' ? 'Pixel' : 'Pre-rendered'}
+                      </button>
+                    ))}
+                  </div>
+                  {kind === 'pre-rendered' && (
+                    <label className="nl-ref">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(e) => setReference(e.target.files?.[0] ?? null)}
+                      />
+                      <span className="dim">
+                        {reference
+                          ? `${reference.name} — ${host.name} will look at it and compose a world from it, not copy it.`
+                          : 'Pick a picture to work from. It is a reference, not the backdrop.'}
+                      </span>
+                    </label>
+                  )}
                   <button
-                    disabled={!world.trim() || authoring}
+                    disabled={!world.trim() || authoring || (kind === 'pre-rendered' && !reference)}
                     onClick={() => void authorWorld()}
                   >
                     {authoring

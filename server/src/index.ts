@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -183,6 +183,8 @@ const PORT = 4600;
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
 const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
 const ROLES_DIR = path.join(ROOT, 'roles');
+/** Source images dropped in by hand, and references uploaded here. Untracked. */
+const ARTWORK_DIR = path.join(ROOT, 'Artwork');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
@@ -1204,14 +1206,38 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
 app.post('/api/levels/:lid/author-pack', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
-  const body = await c.req.json<{ description?: string }>();
+  const body = await c.req.json<{
+    description?: string;
+    /** A picture to work from, when the user picked "pre-rendered" (D-113). */
+    reference?: { name?: string; data?: string };
+  }>();
   const description = body.description?.trim();
   if (!description) return c.json({ error: 'say what the world should be' }, 400);
+
+  // The reference rides as an ordinary attachment, so it lands in the
+  // sandbox's `input/` like any other supplied material — measured at 88s
+  // against 616s for making a session go and find things. A copy is kept in
+  // Artwork/ because the picture outlives the job that used it: the pack it
+  // inspires has to name it in `provenance`, and a reference nobody can find
+  // again cannot be named honestly.
+  let attachments: { name: string; data: Buffer }[] = [];
+  let reference: string | undefined;
+  if (body.reference?.data) {
+    try {
+      attachments = decodeAttachments([body.reference]);
+      reference = attachments[0].name;
+      mkdirSync(ARTWORK_DIR, { recursive: true });
+      writeFileSync(path.join(ARTWORK_DIR, path.basename(reference)), attachments[0].data);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'bad reference image' }, 400);
+    }
+  }
 
   const job = queueSentence(rt, `Author a level pack: ${description}`, {
     // What is already installed, so the session is told what is taken
     // rather than finding out at Approve (M4, first real run).
-    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug)),
+    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug), reference),
+    attachments,
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).
     noSplit: true,

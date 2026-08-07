@@ -1410,14 +1410,43 @@ select {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-/* Describe a world and the crew author it — the palette's other half (M4). */
+/* Describe a world and the crew author it — the palette's other half (M4).
+   Wraps to a column since D-113 added the look and the reference beneath. */
 .nl-author {
   display: flex;
+  flex-direction: column;
   gap: 8px;
 }
-.nl-author input {
-  flex: 1;
+.nl-author > input {
   min-width: 0;
+}
+/* Pixel or pre-rendered: the two ways this kind of world was ever made. */
+.nl-kind {
+  display: flex;
+  gap: 6px;
+}
+.nl-kind-pick {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #8a91a3;
+  padding: 5px 8px;
+}
+.nl-kind-pick.on {
+  border-color: var(--db-lime-light);
+  color: var(--db-lime-light);
+}
+.nl-ref {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+.nl-ref input[type='file'] {
+  font-size: 11px;
+  color: #8a91a3;
 }
 .nl-theme {
   display: flex;

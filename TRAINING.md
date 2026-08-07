@@ -150,7 +150,7 @@ leash → cut → deliver → absorb. Free for the user, unbounded for the app.
 | ID | Prompt (verbatim) | Trains | App quote | My predicted actual |
 |---|---|---|---|---|
 | **T4** | Using the code host connection, list the last 15 commits on briant92/Agentlings and write a short status note on what changed. | github connection + synthesis | About 46c (36 alike) | **~22c** (15–35c; hq's leashed scout did this class at 5.5–8.4c, worker on the default model costs more) |
-| **T5** | *(September, on its real cadence)* I need a summary table of this month's main economic indicators from Chile and the US | the settled method on fresh data; monthly recurrence | **About $1.09 — done this 3 times before** (keyed, high certainty) | **$1.00–1.15** |
+| **T5** | *(on its real cadence — fires itself 12 Aug)* I need a summary table of this month's main economic indicators from Chile and the US | the settled method on fresh data; monthly recurrence | **About $1.09 — done this 3 times before** (keyed, high certainty) | **$1.00–1.15** |
 
 T5 is the **tenth** job to carry that sentence and the ninth to complete —
 not the twelfth. The old number counted two continuations of `3c031419` as
@@ -165,11 +165,26 @@ by eye will make this mistake in both directions — resembling sentences up,
 continuations up, and the real figure was on disk the whole time.
 
 It is the *first firing on the real monthly cadence*, and the schedule is
-**live** — created 2026-08-06 in `training-ground` (id `e83dc31d`), monthly
-on the 1st at 09:00, next due **Tue 1 Sep 2026 09:00**, unpaused, never
-fired. It only fires while the app is running; closed at the hour, D-103's
-boot sweep fires one catch-up when it next starts. Do not run it early to
-farm the recipe — a tenth synthetic run teaches nothing.
+**live**: `training-ground`, id `c639d84a`, **monthly on the 12th at 09:00**,
+next due **Wed 12 Aug 2026 09:00**, unpaused, never fired. It only fires
+while the app is running; closed at the hour, D-103's boot sweep fires one
+catch-up when it next starts.
+
+**The row's title is wrong and the wave is not**: the first firing is August,
+not September. The day moved from the 1st on 2026-08-07 because the sentence
+asks for *this month's* indicators and day 1 could not answer it — Chile's
+IPC lands around the 8th and US CPI around the 10th–13th, so a firing on the
+1st reports the month before last under this month's name. The 12th clears
+both. It fires in August rather than September only because August's 12th
+had not yet passed when the cadence changed, where the 1st's had —
+`computeNextDue` was run rather than reasoned about, and returned
+`Wed Aug 12 2026 09:00` against the 1st's `Tue Sep 01`.
+
+That is **not** the early run this row warns against. The rule is: do not
+*hand-queue* extra runs to farm the recipe — a tenth synthetic run teaches
+nothing. A firing on its own cadence is the opposite of synthetic, and it is
+what the row exists to observe; it simply arrives 20 days sooner, with
+September's following on the 12th.
 
 ### Wave 4 — the compile ladder, walked legitimately
 
@@ -293,7 +308,7 @@ this job stays on its cadence and should compile once its runs earn it.
 | T4·3 | 2026-08-05 | 39be00b2 | 57c oneshot | ~18c | **23.3c** | 23.3c | 3 | done→promoted | **the first leashed completion in the engine's history** — oneshot, 3 calls inside 5 turns, 42s, and it credited a leashed completion back to the recipe. T4 arc: 29.6 → 25.5 → 23.3c |
 | T4·4 | 2026-08-06 | 5dd552df | 23c keyed (ceiling 46.7c) | ~23c | **28.7c** | 28.7c | 3 | done | **second leashed completion ever**, and the first under D-095's tighter bound — oneshot, 4 turns of 5, 52.9s. Credited `successes: 2 → 3`, which makes it a candidate. Cost *rose* on the fourth run (arc 29.6 → 25.5 → 23.3 → 28.7c): the leash is not a downward ratchet, it is a floor the job wanders above. The note itself read this repo's last 15 commits and got the day right — the D-097 arc, the "fix, then record, then pin" rhythm, and that three subjects admit a fault no test caught |
 | T4·compile | 2026-08-06 | — | **free** | free | **$0** | **$0** | 0 | **refused** | **D-044's negative case, proven live and for nothing**: *"that method used browser and github and search, and a compiled tool is plain node with no network — it could never do this job."* The gate refused before a compile session was queued, so the ~$1 D-044 exists to save was saved. Note what it named: `web` is ambient so it is excluded, and `browser`/`search` were almost certainly never touched — the gate judges the surface a method was *learned with*, not what it used, because the surface cannot tell. **The practical rule this makes concrete: narrowing the connections at the desk is what makes a compile reachable at all** — T6 compiled because it was queued naming only `web` |
-| T5·Sep | | | $1.09 | $1.08 | | | | | real cadence |
+| T5·Aug | | | $1.09 | $1.08 | | | | | real cadence — fires itself Wed 12 Aug 09:00, schedule `c639d84a` (was T5·Sep; the day moved to the 12th so the sentence's *this month* has figures to find) |
 | T6·1 | 2026-08-05 | 87934cf1 | 49c live | 20c | **24.8c** | 24.8c | 4 | done | 37s. Totals match an independent recompute exactly (grand 43.6750 over 104 real spend rows). **The banked recipe's surface is `conn:web` alone** — compile-clean, D-044 will pass. Best prediction landing yet (+24%) |
 | T6·2 | 2026-08-05 | e1296348 | 48c class ("44 jobs like it") | 15c | **47.0c** | 47.0c | 5 | done | 48s, 111 rows (cost by job class). All four figures match an independent recompute exactly. **Cost nearly doubled run-over-run** (24.8 → 47.0c) — the ratchet again: run 1's method matured into a `summarise.mjs` generator plus an exact-figures section, and the CSV grew 4.2→4.5KB. My 15c guess low for the third time on this job. **The quote was still class-priced**: one prior run does not key it — the recipe only credits on *reuse*, so run 1 left `successes: 0` |
 | T6·3 | 2026-08-05 | 8ef1063a | **56.7c keyed** | 15c | 20.4c | **$0** | 5 | partial | **leashed on its second reuse and cut at the wall** — `oneShot`, `turnsAllowed: 5`, `error_max_turns` at turn 6, SUMMARY.md correct anyway (D-063; all five figures match my recompute), charged $0, 20.4c absorbed. The gate armed off `completions: 1` with `completedInTurns: 6` on file — **the recipe's own record said six turns and the leash granted five**. D-072's keyed quote fired here, one credited run in |
@@ -361,12 +376,15 @@ each one rests on already is.
    say" — so Start now arrests "no message", mutation-proved, beside
    D-091's shape check. Left to unit tests deliberately: revocation,
    the stranger-blocks-it rule, and the send-time refusal fallback.
-4. **T5 in September**, on its real monthly cadence — not before. ~~Wave 5
+4. **T5 fires itself on Wed 12 Aug 2026 at 09:00**, on its real monthly
+   cadence — moved from the 1st on 2026-08-07 so *this month's* indicators
+   have been published by the time it asks (Wave 3's row has the reasoning
+   and the schedule id). Still not to be hand-queued before then. ~~Wave 5
    needs Brian to pick a real documents folder.~~ **Wave 5 ran 2026-08-06**
    — picked through D-102's dialog, measured above; only T5 remains. The
-   recurrence timer (D-103) can now hold the cadence: schedule the sentence
-   monthly and September's firing is the run — the timer's first live
-   outing, on the job the programme was already waiting on.
+   recurrence timer (D-103) now holds the cadence, so **August's firing is
+   the run** — the timer's first live outing, on the job the programme was
+   already waiting on, and nobody has to remember it.
 5. **Three measured gaps, deliberately unbuilt.** The quote is blind to
    attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
    per-call floor here against the pooled class rate). And the store trusts

@@ -29,60 +29,35 @@ function meterLine(job: Job): string | null {
   return bits.length > 0 ? bits.join(' · ') : null;
 }
 
-/** What approving would actually do to the project, in one line. */
-function changeLine(job: Job): string {
-  const c = job.changes;
-  if (!c || c.files === 0) {
-    return job.repoPath
-      ? 'nothing to apply — no files were changed'
-      : 'a report only — nothing to apply to a project';
-  }
-  const files = c.files === 1 ? '1 file' : `${c.files} files`;
-  return `would change ${files} · +${c.added} −${c.removed}`;
-}
-
 /**
- * Say something back.
+ * One way in (D-114).
  *
- * An agentling that asks a question used to be a dead end: the card offered
- * approve or discard, so the only way to answer was to retype the whole
- * request and pay for the work again. Sending queues a follow-up that carries
- * this run's sandbox forward, so the answer continues the work rather than
- * restarting it.
+ * The card used to carry four controls and a text box, and left them live in a
+ * scrolling log after they had been used — so the feed filled with rows you
+ * could still act on by mistake, and the decision itself happened in a strip
+ * a few characters tall. Everything moved to the review panel, which has room
+ * for what the run actually produced; this is the door to it.
+ *
+ * The meter moves up beside the outcome, because what a run cost is context
+ * for the decision rather than something you act on.
  */
-function ReplyBox({
-  jobId,
-  onReply,
+function ReviewCard({
+  job,
+  say,
+  onOpenReview,
 }: {
-  jobId: string;
-  onReply: (jobId: string, text: string) => Promise<void>;
+  job: Job;
+  say?: string;
+  onOpenReview: (jobId: string, file?: string) => void;
 }) {
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const send = async () => {
-    const answer = text.trim();
-    if (!answer || busy) return;
-    setBusy(true);
-    try {
-      await onReply(jobId, answer);
-      setText('');
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
-    <div className="t-reply">
-      <input
-        value={text}
-        placeholder="Answer, or say what to do next…"
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') void send();
-        }}
-      />
-      <button disabled={busy || !text.trim()} onClick={() => void send()}>
-        {busy ? 'sending…' : 'Send'}
-      </button>
+    <div className="t-card">
+      {say && <div className="summary">{say}</div>}
+      <div className="actions">
+        <button className="t-review" onClick={() => onOpenReview(job.id)}>
+          REVIEW
+        </button>
+      </div>
     </div>
   );
 }
@@ -144,28 +119,15 @@ export function Terminal({
     if (el && !paused) el.scrollTop = el.scrollHeight;
   }, [display, paused]);
 
-  const resolve = async (jobId: string, action: 'promote' | 'discard') => {
-    await api(lvl(levelId, `/jobs/${jobId}/resolve`), postJson({ action }));
-  };
-
-  /** The router answered without a session and the user disagrees. */
-  const redo = async (jobId: string) => {
-    await api(lvl(levelId, `/jobs/${jobId}/redo`), { method: 'POST' });
-  };
-
-  /** Stop work that is no longer wanted; the session is killed, not abandoned. */
+  /**
+   * Stop work that is no longer wanted; the session is killed, not abandoned.
+   *
+   * The only thing the feed still does to a job. Approve, discard, carry on
+   * and answering all moved into the review panel (D-114) — the feed opens
+   * the decision, it does not make it.
+   */
   const cancel = async (jobId: string) => {
     await api(lvl(levelId, `/jobs/${jobId}/cancel`), { method: 'POST' });
-  };
-
-  /** Pick a cut-off run back up: same sandbox, its own quote and turns. */
-  const carryOn = async (jobId: string) => {
-    await api(lvl(levelId, `/jobs/${jobId}/continue`), { method: 'POST' });
-  };
-
-  /** Answer the agentling: a new job that carries this one's sandbox forward. */
-  const reply = async (jobId: string, text: string) => {
-    await api(lvl(levelId, `/jobs/${jobId}/reply`), postJson({ text }));
   };
 
   return (
@@ -193,11 +155,7 @@ export function Terminal({
             event={e}
             job={jobById(world, e.jobId)}
             onOpenReview={onOpenReview}
-            onResolve={resolve}
-            onRedo={redo}
-            onReply={reply}
             onCancel={cancel}
-            onContinue={carryOn}
           />
         ))}
       </div>
@@ -214,20 +172,12 @@ function EventEntry({
   event,
   job,
   onOpenReview,
-  onResolve,
-  onRedo,
-  onReply,
   onCancel,
-  onContinue,
 }: {
   event: JobEvent;
   job: Job | undefined;
   onOpenReview: (jobId: string) => void;
-  onResolve: (jobId: string, action: 'promote' | 'discard') => Promise<void>;
-  onRedo: (jobId: string) => Promise<void>;
-  onReply: (jobId: string, text: string) => Promise<void>;
   onCancel: (jobId: string) => Promise<void>;
-  onContinue: (jobId: string) => Promise<void>;
 }) {
   // Driven by the job's live status rather than the event's, so it vanishes
   // the moment the work ends. Each line offers it only for its own phase:
@@ -280,29 +230,11 @@ function EventEntry({
             <span className="t-text">
               {event.agentling} · {event.title}
             </span>
+            {job && meterLine(job) && (
+              <span className="t-meter t-meter-right">{meterLine(job)}</span>
+            )}
           </div>
-          {job?.status === 'done' && (
-            <div className="t-card">
-              <div className="summary">{event.detail}</div>
-              <div className="t-changes">
-                {changeLine(job)}
-                {meterLine(job) && <span className="t-meter"> · {meterLine(job)}</span>}
-              </div>
-              <div className="actions">
-                <button onClick={() => void onResolve(event.jobId, 'promote')}>Approve</button>
-                <button onClick={() => void onResolve(event.jobId, 'discard')}>Discard</button>
-                <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
-                  See the changes
-                </button>
-                {job.meter?.routed && (
-                  <button className="ghost" onClick={() => void onRedo(event.jobId)}>
-                    Do it properly
-                  </button>
-                )}
-              </div>
-              <ReplyBox jobId={event.jobId} onReply={onReply} />
-            </div>
-          )}
+          {job?.status === 'done' && <ReviewCard job={job} onOpenReview={onOpenReview} />}
         </>
       );
     case 'failed':
@@ -317,33 +249,19 @@ function EventEntry({
               <span className="t-text">
                 {event.agentling} · {event.title}
               </span>
+              {meterLine(job) && (
+                <span className="t-meter t-meter-right">{meterLine(job)}</span>
+              )}
             </div>
-            <div className="t-card">
-              <div className="summary">
-                {job.meter?.outOfTurns
+            <ReviewCard
+              job={job}
+              onOpenReview={onOpenReview}
+              say={
+                job.meter?.outOfTurns
                   ? 'Ran out of turns, but what it got done is ready to review.'
-                  : 'Stopped early, but what it got done is ready to review.'}
-              </div>
-              <div className="t-changes">
-                {changeLine(job)}
-                {meterLine(job) && <span className="t-meter"> · {meterLine(job)}</span>}
-              </div>
-              <div className="actions">
-                <button onClick={() => void onResolve(event.jobId, 'promote')}>Approve</button>
-                <button onClick={() => void onResolve(event.jobId, 'discard')}>Discard</button>
-                <button className="ghost" onClick={() => onOpenReview(event.jobId)}>
-                  See the changes
-                </button>
-                {/* Only when the run was cut off — the server refuses the rest,
-                    and a button that is going to be refused is worse than none. */}
-                {job.meter?.outOfTurns && (
-                  <button className="ghost" onClick={() => void onContinue(event.jobId)}>
-                    Carry on
-                  </button>
-                )}
-              </div>
-              <ReplyBox jobId={event.jobId} onReply={onReply} />
-            </div>
+                  : 'Stopped early, but what it got done is ready to review.'
+              }
+            />
           </>
         );
       }
@@ -357,18 +275,22 @@ function EventEntry({
             {time}
             <span className="ev-failed">✖ failed</span>
             <span className="t-text">{event.title}</span>
+            {job && meterLine(job) && (
+              <span className="t-meter t-meter-right">{meterLine(job)}</span>
+            )}
           </div>
-          <div className="t-card">
-            {event.detail && <div className="summary">{event.detail}</div>}
-            <ReplyBox jobId={event.jobId} onReply={onReply} />
-          </div>
+          {job && <ReviewCard job={job} onOpenReview={onOpenReview} say={event.detail} />}
         </>
       );
     case 'resolved':
+      // Whose decision it was, kept apart on purpose: an auto-send is the one
+      // case nobody looked at, and it must not wear the user's verb (D-114).
       return (
         <div className="t-line">
           {time}
-          <span className="ev-resolved">★ {event.detail}</span>
+          <span className={event.by === 'app' ? 'ev-auto' : 'ev-resolved'}>
+            {event.by === 'app' ? '◈' : '★'} {event.detail}
+          </span>
           <span className="t-text">{event.title}</span>
         </div>
       );

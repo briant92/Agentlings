@@ -826,6 +826,24 @@ button.ghost {
   gap: 6px;
   flex-wrap: wrap;
 }
+/* One way into the decision (D-114). DB32's own lime pair rather than a
+   generic primary, so the button belongs to the world it opens. */
+.t-review {
+  background: var(--db-green);
+  border-color: var(--db-lime-light);
+  color: #eaffd6;
+  letter-spacing: 0.08em;
+  padding: 3px 14px;
+}
+.t-review:hover {
+  background: #5d8339;
+}
+/* What it cost, pushed to the end of its own line: context for the decision,
+   not something you act on. */
+.t-meter-right {
+  margin-left: auto;
+  flex-shrink: 0;
+}
 .t-card button {
   padding: 2px 8px;
   font-size: 11px;
@@ -922,6 +940,11 @@ button.ghost {
   padding: 10px 14px;
   border-top: 1px solid #262b36;
   justify-content: flex-end;
+  /* The review's footer now carries the whole decision — approve, discard,
+     more turns and a way to answer — so it wraps rather than overflowing on a
+     narrow window (D-114). */
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -1865,6 +1888,63 @@ button.danger:hover {
   max-height: 260px;
   overflow-y: auto;
   font-size: 11px;
+}
+
+/* What the run got to and what it left (D-114) — the block that makes More
+   turns a judgement rather than a coin flip. */
+.rv-pending {
+  margin: 10px 0 4px;
+}
+.rv-pending-state {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.rv-pending-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rv-pending-list li {
+  font-size: 12.5px;
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-left: 3px solid var(--db-orange);
+  border-radius: 3px;
+  padding: 6px 9px;
+}
+/* The asymmetry that decides it: a cut run is filed failed and priced at
+   zero, so only a landing costs anything. */
+.rv-free {
+  font-size: 11px;
+  color: #8a91a3;
+}
+.btn-more {
+  background: #241c14;
+  border-color: #56412a;
+  color: #ffb86c;
+}
+.btn-more:hover {
+  background: #2f2418;
+}
+.rv-clarify {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  gap: 6px;
+}
+.rv-clarify input {
+  flex: 1;
+  min-width: 0;
+  background: #0b0d14;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  color: #d8dce6;
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 9px;
 }
 
 .rv-summary {

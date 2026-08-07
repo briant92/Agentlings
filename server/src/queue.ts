@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Job, JobAttachment, JobMeter } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
-import { CANCELLED } from './executors/claude';
+import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
 import { PACK_FILE, readPackDraft } from './packcontract';
@@ -353,6 +353,7 @@ export class JobQueue {
   private finish(job: Job): void {
     this.stampOutbox(job);
     this.stampPackDraft(job);
+    this.stampPending(job);
     job.finishedAt = Date.now();
     job.slot = -1;
     // Hand the freed slot to the oldest job still waiting without one.
@@ -383,6 +384,22 @@ export class JobQueue {
    * reading as "no pack", because a job promoted while silently dropping the
    * only thing it was for is the worst outcome available.
    */
+  /**
+   * Where the run got to and what it left (D-114), read off the sandbox at the
+   * same seam as the outbox and the pack.
+   *
+   * Read here rather than threaded back through the executor because the
+   * close-out writes `PENDING.md` before either completion path returns, and
+   * because this seam already fires on *every* ending — the review of a
+   * cancelled run deserves the account as much as a finished one.
+   */
+  private stampPending(job: Job): void {
+    const file = path.join(this.sandboxDir(job.id), 'PENDING.md');
+    if (!existsSync(file)) return;
+    const pending = parsePending(readFileSync(file, 'utf8'));
+    if (pending) job.pending = pending;
+  }
+
   private stampPackDraft(job: Job): void {
     if (job.compile) return;
     const read = readPackDraft(this.sandboxDir(job.id));

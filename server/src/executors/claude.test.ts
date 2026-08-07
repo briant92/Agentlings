@@ -188,6 +188,7 @@ import {
   gateOutside,
   mapTools,
   parseLesson,
+  parsePending,
   sessionPrompt,
   toolLine,
 } from './claude';
@@ -560,6 +561,53 @@ describe('parseLesson', () => {
   });
 });
 
+/**
+ * The account the review shows when it offers More turns (D-114). Written by
+ * the close-out because that is the one errand running *after* the session
+ * dies — three of the first six cut runs wrote nothing of their own at all.
+ */
+describe('parsePending', () => {
+  it('takes the first prose line as where it got to, and the bullets as what is left', () => {
+    const pending = parsePending(
+      'It composed the whole world and rendered it once.\n' +
+        '- The crew stand on the brightest band in the picture.\n' +
+        '- The floor is too red for the glass above it.',
+    );
+    expect(pending?.state).toBe('It composed the whole world and rendered it once.');
+    expect(pending?.items).toEqual([
+      'The crew stand on the brightest band in the picture.',
+      'The floor is too red for the glass above it.',
+    ]);
+  });
+
+  // The same sentinel idiom as `known` in parseLesson, and for the same
+  // reason: a model asked for a list writes one, so "nothing" needs a word.
+  it('reads "done" as finished, which is not the same as never asked', () => {
+    expect(parsePending('done')).toEqual({ state: 'Finished.', items: [] });
+    expect(parsePending('Done.\n')).toEqual({ state: 'Finished.', items: [] });
+    expect(parsePending('   \n')).toBeUndefined();
+  });
+
+  it('ignores headings and accepts either bullet marker', () => {
+    const pending = parsePending('# Pending\nStopped at the checker.\n* fix the slug\n- add a rim');
+    expect(pending?.state).toBe('Stopped at the checker.');
+    expect(pending?.items).toEqual(['fix the slug', 'add a rim']);
+  });
+
+  it('still answers when the close-out only listed items', () => {
+    const pending = parsePending('- write the report');
+    expect(pending?.items).toEqual(['write the report']);
+    expect(pending?.state).toMatch(/where it got to/i);
+  });
+
+  /** The brief asks for at most five; a close-out that ignores that cannot
+      flood the panel. */
+  it('keeps at most five items', () => {
+    const many = Array.from({ length: 9 }, (_, i) => `- item ${i}`).join('\n');
+    expect(parsePending(`Got somewhere.\n${many}`)?.items).toHaveLength(5);
+  });
+});
+
 describe('closeOutBrief', () => {
   const job = { prompt: 'summarise the monthly indicators' };
 
@@ -583,6 +631,30 @@ describe('closeOutBrief', () => {
     const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
     expect(brief.prompt).toContain('summarise the monthly indicators');
     expect(brief.prompt).toContain('Done.');
+  });
+
+  /**
+   * The third file (D-114). Nothing else in the system can produce it: the
+   * runs whose account is most worth having are the ones cut before they
+   * could write anything, and this errand is the only thing that runs after.
+   */
+  it('asks for what is left, and for the sentinel when nothing is', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
+    expect(brief.append).toContain('PENDING.md');
+    expect(brief.append).toContain('three files');
+    expect(brief.append).toMatch(/exactly the word "done"/i);
+  });
+
+  /**
+   * The guard against the failure mode this invites. A two-turn errand reading
+   * a dead sandbox will be asked to describe work it never saw, and an invented
+   * plan is worse than "it had barely started" — the same honesty the scout's
+   * 70%-right-at-full-confidence survey cost us (D-113, T8·1).
+   */
+  it('tells it to say so when the run got nowhere, rather than inventing a plan', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
+    expect(brief.append).toMatch(/barely started/i);
+    expect(brief.append).toMatch(/only what the evidence above supports/i);
   });
 });
 

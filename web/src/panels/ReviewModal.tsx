@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { DeliveryFile, Job, PackDraft, SendApprovalInfo } from '@agentlings/shared';
+import { useEffect, useRef, useState } from 'react';
+import type { DeliveryFile, Job, PackDraft, Quote, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
@@ -46,6 +46,12 @@ export function ReviewModal({
   const [granting, setGranting] = useState(false);
   /** The name this world installs under; editable, because a clash must be fixable here. */
   const [packSlug, setPackSlug] = useState(job.packDraft?.slug ?? '');
+  /** What carrying on would cost, fetched from the route that will charge it. */
+  const [carryQuote, setCarryQuote] = useState<Quote | null>(null);
+  const [clarify, setClarify] = useState('');
+  const [busy, setBusy] = useState(false);
+  const approveRef = useRef<HTMLButtonElement>(null);
+  const canCarryOn = Boolean(job.meter?.outOfTurns);
 
   useEffect(() => {
     let alive = true;
@@ -65,6 +71,30 @@ export function ReviewModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  /**
+   * What More turns costs, from the route that will actually charge it.
+   * Fetched rather than guessed for D-097's reason: a desk that quotes one
+   * number and a queue that bills another is the worst of both.
+   */
+  useEffect(() => {
+    if (!canCarryOn) return;
+    let alive = true;
+    void api<{ quote: Quote }>(lvl(levelId, `/jobs/${job.id}/continue/quote`))
+      .then((data) => alive && setCarryQuote(data.quote))
+      // A quote that will not load must not hide the button: carrying on is
+      // still the right move, it just stops claiming a price it does not have.
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [levelId, job.id, canCarryOn]);
+
+  // Approve takes focus, so a run you already trust is one keystroke after
+  // REVIEW — the speed the terminal's bare Approve used to give (D-114).
+  useEffect(() => {
+    if (!offer) approveRef.current?.focus();
+  }, [offer]);
+
   const resolve = async (action: 'promote' | 'discard') => {
     setRefusal(null);
     try {
@@ -79,6 +109,36 @@ export function ReviewModal({
       onClose();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  /** Buy the run more turns: same sandbox, its own quote, charged only if it lands. */
+  const carryOn = async () => {
+    setRefusal(null);
+    setBusy(true);
+    try {
+      await api(lvl(levelId, `/jobs/${job.id}/continue`), { method: 'POST' });
+      onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Answer the agentling: a new job carrying this one's sandbox forward. */
+  const send = async () => {
+    const text = clarify.trim();
+    if (!text || busy) return;
+    setRefusal(null);
+    setBusy(true);
+    try {
+      await api(lvl(levelId, `/jobs/${job.id}/reply`), postJson({ text }));
+      onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -207,6 +267,29 @@ export function ReviewModal({
               </ul>
             </>
           )}
+          {/* Where it got to and what it did not, so granting turns is a
+              judgement rather than a coin flip (D-114). Absent means the
+              close-out never ran — said plainly, never as "nothing left". */}
+          {job.pending && (
+            <div className="rv-pending">
+              <div className="sect">What is left</div>
+              <p className="rv-pending-state">{job.pending.state}</p>
+              {job.pending.items.length > 0 ? (
+                <ul className="rv-pending-list">
+                  {job.pending.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="dim">Nothing — it believed the work finished.</p>
+              )}
+            </div>
+          )}
+          {!job.pending && canCarryOn && (
+            <p className="dim">
+              No account of what is left — the write-up did not run, so carrying on is a guess.
+            </p>
+          )}
           {files === null && <p className="dim">Loading…</p>}
           {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
           {refusal && <p className="error">{refusal}</p>}
@@ -257,6 +340,7 @@ export function ReviewModal({
           {!offer && (job.status === 'done' || job.status === 'partial') && (
             <>
               <button
+                ref={approveRef}
                 className={unsent.length > 0 ? 'btn-send' : undefined}
                 onClick={() => void resolve('promote')}
               >
@@ -266,6 +350,35 @@ export function ReviewModal({
                 Discard
               </button>
             </>
+          )}
+          {/* Only for a run the server will actually let continue — a button
+              certain to be refused is worse than none. */}
+          {!offer && canCarryOn && (
+            <>
+              <button className="btn-more" disabled={busy} onClick={() => void carryOn()}>
+                More turns
+                {carryQuote ? ` · up to $${carryQuote.ceilingUsd.toFixed(2)}` : ''}
+              </button>
+              {/* The asymmetry that makes this an easy call: a cut run is
+                  filed failed and priced at zero, so only a landing costs. */}
+              <span className="rv-free">charged only if it finishes</span>
+            </>
+          )}
+          {!offer && (
+            <span className="rv-clarify">
+              <input
+                value={clarify}
+                placeholder="Or tell them what to do differently…"
+                aria-label="Tell the agentling what to do"
+                onChange={(e) => setClarify(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void send();
+                }}
+              />
+              <button disabled={!clarify.trim() || busy} onClick={() => void send()}>
+                Send
+              </button>
+            </span>
           )}
           <button onClick={onClose}>Close</button>
         </div>

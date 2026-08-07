@@ -17,6 +17,7 @@ import type {
   ServerMessage,
   ConnectionInfo,
   SettingsInfo,
+  WorkPlan,
 } from '@agentlings/shared';
 import {
   MAX_ATTACHMENT_BYTES,
@@ -435,7 +436,8 @@ async function autoSendIfApproved(
       type: 'resolved',
       jobId: job.id,
       title: job.title,
-      detail: `auto-sent ${run.sentTo.length} via ${outbox.channel} — standing approval`,
+      detail: `sent automatically — ${run.sentTo.length} via ${outbox.channel}, standing approval`,
+      by: 'app',
     });
   } catch (err) {
     eventLog.emit({
@@ -1482,6 +1484,47 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
     return c.json({ error: 'that run did not stop for want of turns' }, 400);
   }
 
+  const { prompt, tools, plan, ranAs, quote } = continuationSpec(rt, previous);
+  const job = rt.queue.add(
+    queuedJobSpec({
+      title: previous.title,
+      prompt,
+      repoPath: previous.repoPath,
+      tools,
+      plan: { ...plan, role: ranAs ?? plan.role },
+      quote,
+      continues: previous.id,
+      brief: continuationBrief(previous),
+    }),
+  );
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  return c.json(job, 201);
+});
+
+/**
+ * What carrying on would cost, before you commit to it (D-114).
+ *
+ * The review shows this on the More turns button, so it has to be the number
+ * the queue will actually use — hence one function, not a second computation
+ * that agrees today. A desk that promised free and a queue that then billed a
+ * session is the fault D-097 was written about.
+ */
+app.get('/api/levels/:lid/jobs/:id/continue/quote', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const previous = rt.queue.get(c.req.param('id'));
+  if (!previous) return c.json({ error: 'unknown job' }, 404);
+  if (!previous.meter?.outOfTurns) {
+    return c.json({ error: 'that run did not stop for want of turns' }, 400);
+  }
+  return c.json({ quote: continuationSpec(rt, previous).quote });
+});
+
+/** Everything a carry-on is built from, shared by the quote and the queueing. */
+function continuationSpec(
+  rt: LevelRuntime,
+  previous: Job,
+): { prompt: string; tools: string[]; plan: WorkPlan; ranAs?: string; quote: Quote } {
   // The original sentence verbatim: the carry-on brief rides on `brief`, never
   // in the prompt, so a continuation is keyed, matched, quoted and credited as
   // the job it continues rather than banking recipes under a compound key
@@ -1502,30 +1545,23 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
     rt.sim.agentlings.find((a) => a.id === previous.assignedTo)?.role ??
     rt.roster.find((a) => a.id === previous.assignedTo)?.role ??
     previous.preferredRole;
-  const job = rt.queue.add(
-    queuedJobSpec({
-      title: previous.title,
+  return {
+    prompt,
+    tools,
+    plan,
+    ranAs,
+    quote: quoteFor_(
+      QUOTE_CTX,
+      rt.dir,
       prompt,
-      repoPath: previous.repoPath,
       tools,
-      plan: { ...plan, role: ranAs ?? plan.role },
-      quote: quoteFor_(
-        QUOTE_CTX,
-        rt.dir,
-        prompt,
-        tools,
-        ranAs ?? runnerRole(plan),
-        previous.repoPath,
-        false,
-        previous.id,
-      ),
-      continues: previous.id,
-      brief: continuationBrief(previous),
-    }),
-  );
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
-  return c.json(job, 201);
-});
+      ranAs ?? runnerRole(plan),
+      previous.repoPath,
+      false,
+      previous.id,
+    ),
+  };
+}
 
 app.post('/api/levels/:lid/jobs/:id/cancel', (c) => {
   const rt = getLevel(c.req.param('lid'));
@@ -1755,14 +1791,17 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       type: 'resolved',
       jobId: job.id,
       title: job.title,
+      // Your verb, not the ledger's. "promoted" is what the record calls it;
+      // "approved" is what you did, and the feed is a list of your decisions.
       detail:
         body.action === 'promote'
           ? sentNow > 0
-            ? `promoted — sent ${sentNow} via ${pending.outbox?.channel}`
+            ? `approved — sent ${sentNow} via ${pending.outbox?.channel}`
             : installedPack
-              ? `promoted — installed the ${installedPack} world`
-              : 'promoted'
-          : 'discarded',
+              ? `approved — installed the ${installedPack} world`
+              : 'approved'
+          : 'discarded — nothing applied, the work stays in the sandbox',
+      by: 'you',
     });
     return c.json({ ...job, ...(approval ? { sendApproval: approval } : {}) });
   } catch (err) {

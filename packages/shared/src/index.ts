@@ -452,6 +452,22 @@ export interface ChannelAsk {
   options: ChannelOption[];
 }
 
+/**
+ * What a run got to, and what it left — the close-out's third output beside
+ * the lesson and the approach (D-114).
+ *
+ * `items` empty means the run believed itself finished, which is a different
+ * statement from "nobody asked": a job with no `pending` at all is one whose
+ * close-out never ran, and the review says so rather than implying nothing is
+ * left.
+ */
+export interface Pending {
+  /** Where it got to, in one line. */
+  state: string;
+  /** What remains, in the run's own words. Empty when it thinks it is done. */
+  items: string[];
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -551,6 +567,15 @@ export interface Job {
   outboxError?: string;
   /** Send results so far, merged across retries. */
   outboxSent?: OutboxSent;
+  /**
+   * Where the run got to and what it did not get to (D-114).
+   *
+   * Written by the close-out, which is the only thing that runs *after* a
+   * session dies — and the runs that need this most are exactly the ones cut
+   * before they could write anything of their own: three of the first six
+   * were. Without it, granting more turns is a coin flip.
+   */
+  pending?: Pending;
   /** What the session cost — recorded whether it succeeded or failed. */
   meter?: JobMeter;
   status: JobStatus;
@@ -1031,6 +1056,13 @@ export interface JobEvent {
   agentling?: string;
   /** Progress text, result summary, failure reason, or resolve action. */
   detail?: string;
+  /**
+   * Who resolved it (D-114). `you` at the desk, `app` under a standing
+   * approval — and the feed must keep them apart, because an auto-send is
+   * precisely the case nobody looked at. A resolved line wearing your verb
+   * when you never saw it is the one thing an audit trail must not do.
+   */
+  by?: 'you' | 'app';
 }
 
 /**

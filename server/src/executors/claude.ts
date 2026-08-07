@@ -11,7 +11,14 @@ import {
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import type { Agentling, AudiencePerson, Job, JobAttachment, JobMeter } from '@agentlings/shared';
+import type {
+  Agentling,
+  AudiencePerson,
+  Job,
+  JobAttachment,
+  JobMeter,
+  Pending,
+} from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
@@ -597,6 +604,36 @@ export function closeOutEvidence(sandboxDir: string): string | null {
  * honest result is then no new lesson — not the same fact in new words, which
  * is how one publication-lag lesson came to fill every note slot (D-073).
  */
+/**
+ * PENDING.md into the shape the review shows.
+ *
+ * `done` alone is the close-out saying nothing is left — the same sentinel
+ * idiom as `known` in `parseLesson`, and for the same reason: a model asked
+ * for a list will write one, so the way to get "nothing" is to name the word
+ * that means it. That is a different answer from a job carrying no `pending`
+ * at all, which means the close-out never ran.
+ */
+export function parsePending(text: string): Pending | undefined {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return undefined;
+  if (lines.length === 1 && /^done\.?$/i.test(lines[0])) return { state: 'Finished.', items: [] };
+
+  const items: string[] = [];
+  const prose: string[] = [];
+  for (const line of lines) {
+    if (/^[-*]\s+/.test(line)) items.push(line.replace(/^[-*]\s+/, '').slice(0, 300));
+    else if (!/^#/.test(line)) prose.push(line);
+  }
+  const state = prose[0]?.slice(0, 300);
+  if (!state && items.length === 0) return undefined;
+  // Five is what the brief asks for; trimming here means a close-out that
+  // ignores the cap cannot flood the panel.
+  return { state: state ?? 'Stopped before it could say where it got to.', items: items.slice(0, 5) };
+}
+
 export function parseLesson(text: string): string | undefined {
   const notARepeat = (lesson: string): string | undefined =>
     /^known\.?$/i.test(lesson) ? undefined : lesson;
@@ -638,7 +675,7 @@ export function closeOutBrief(
       // Measured: without this it opened the file it had just been told
       // about and ran out of turns having written nothing.
       'Do not read, open or search any files. Everything you need is in this message.',
-      'Write exactly two files in the working directory, then stop:',
+      'Write exactly three files in the working directory, then stop:',
       '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
       ...(known.length > 0
         ? [
@@ -646,6 +683,14 @@ export function closeOutBrief(
           ]
         : []),
       '- APPROACH.md: a few lines telling whoever does this KIND of job next how to do it directly, without exploring. Describe the method, never the answer.',
+      // The user is deciding whether to buy this run more turns, and the only
+      // thing that answers it is what the run itself did not get to. Written
+      // here because the close-out is the one errand that runs *after* the
+      // session dies, which is precisely when nobody wrote a report (D-114).
+      '- PENDING.md: what is left. First line: where the run actually got to, one sentence, in the past tense.',
+      '  Then one "- " line per thing still to do, most important first, at most five.',
+      '  Say only what the evidence above supports. If it got nowhere, say that plainly — "it had barely started" is a useful answer and a made-up plan is not.',
+      '  If nothing is left and the work looks complete, write PENDING.md holding exactly the word "done".',
       'If the run failed, say what to do differently — a run that died still teaches something.',
     ].join('\n'),
   };
@@ -928,9 +973,12 @@ export class ClaudeAgentExecutor implements Executor {
     job: Job,
     known: string[],
     onProgress?: (detail: string) => void,
-  ): Promise<{ lesson?: string; approach?: string; closeOutUsd?: number }> {
+  ): Promise<{ lesson?: string; approach?: string; pending?: Pending; closeOutUsd?: number }> {
     const first = await this.harvest(sandboxDir, hasRepo, onProgress);
-    if (first.lesson && first.approach) return first;
+    // `pending` joins the short-circuit: a run that wrote its own lesson and
+    // approach used to skip the close-out entirely, and would now skip the one
+    // thing only the close-out writes.
+    if (first.lesson && first.approach && first.pending) return first;
 
     const meter = await this.closeOut(sandboxDir, job, job.id, known, onProgress);
     if (!meter) return first;
@@ -939,6 +987,7 @@ export class ClaudeAgentExecutor implements Executor {
     return {
       lesson: after.lesson ?? first.lesson,
       approach: after.approach ?? first.approach,
+      pending: after.pending ?? first.pending,
       ...(meter.costUsd ? { closeOutUsd: meter.costUsd } : {}),
     };
   }
@@ -952,7 +1001,7 @@ export class ClaudeAgentExecutor implements Executor {
     sandboxDir: string,
     hasRepo: boolean,
     onProgress?: (detail: string) => void,
-  ): Promise<{ lesson?: string; approach?: string }> {
+  ): Promise<{ lesson?: string; approach?: string; pending?: Pending }> {
     if (hasRepo) {
       const changed = await writeDiff(sandboxDir);
       onProgress?.(changed ? 'DIFF.patch written for review' : 'no repository changes');
@@ -968,7 +1017,12 @@ export class ClaudeAgentExecutor implements Executor {
       ? readFileSync(approachPath, 'utf8').trim().slice(0, 1200) || undefined
       : undefined;
 
-    return { lesson, approach };
+    const pendingPath = path.join(sandboxDir, 'PENDING.md');
+    const pending = existsSync(pendingPath)
+      ? parsePending(readFileSync(pendingPath, 'utf8'))
+      : undefined;
+
+    return { lesson, approach, pending };
   }
 
   /**

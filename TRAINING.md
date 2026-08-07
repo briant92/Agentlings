@@ -381,6 +381,59 @@ each one rests on already is.
    useful next input is a second authoring run at a different size, not a
    tuning pass on one data point — the same discipline item 5 is waiting on.
 
+   **Run 2 is pre-registered below, unrun** (written 2026-08-07, before the
+   button was pressed — a prediction recorded afterwards is not one).
+
+   *The sentence, verbatim, in `hq` so the level and the agentling match run
+   1:* **`an empty swimming pool, drained, at noon`**. Six words against run
+   1's fifteen, and one clause deliberately: run 1's *night* bought a scrim,
+   *lamplit* bought light cones, and *the sea through the gunports* bought
+   the whole 10-op backdrop layer. This buys none of them. It is **not**
+   told to keep the pack small — that is the experiment. If a small subject
+   comes back as another 450-tall world, the class has a flat price, and
+   that is the finding.
+
+   *Measured before writing it, with the real `findRecipe`:* a new world
+   does not match run 1's recipe at all — 0.114–0.159 against a 0.30 hint
+   threshold, because the key is dominated by the *scene* words rather than
+   the task words. Two consequences. Run 2 starts **cold**, exactly like run
+   1, so the two are comparable. And no leash can fire: a *strong* match
+   would route `oneshot`, and that recipe carries no `completedInTurns`, so
+   `canShortenLeash` would have defaulted true and armed a 5-turn leash on a
+   17-turn job. Not close to the 0.65 bar, so it cannot happen — but it also
+   means **D-069's ~43% second-run saving will never reach this class.**
+   Every authoring run is a first run.
+
+   *Run 1's numbers, to compare against:* $1.8134 · 17 turns · 429s · 31,262
+   output tokens · 881,656 cache-read · 16 tool calls · close-out 6.6c ·
+   quoted 50c expected against the $2 ceiling · `jobClass: "worker"` · pack
+   shape 33 foreground ops / 10 backdrop / 3 ambient / viewH 450.
+
+   *Prediction (mine, pre-run).* The app will quote **~50c again** — same
+   pooled class, one more sample. Actual: **~$1.00, range $0.85–1.20, 9–12
+   turns.** Format-learning, the `pack:check` loop, RESULT.md and close-out
+   are fixed at roughly 6–8 of run 1's turns; composition scales with op
+   count, and cache-read cost grows faster than linearly in turns, so a
+   scene cut to about a third should cost less than half — and nowhere near
+   nothing.
+
+   *Decision rule, fixed before the run.* **≥$1.50** → the price is flat per
+   pack; quote the class at ~$1.80 whatever the description, and two points
+   are enough. **≤$1.00** → cost tracks scene size, and the pair gives a
+   slope worth a third run at the top end. **$1.00–1.50** → inconclusive on
+   shape, but the class is still confirmed at 3–4x its pooled rate.
+
+   *Record:* job id, quoted expected vs `costUsd`, `turns`, output tokens,
+   and the pack's own shape — that last is what makes the cost comparable
+   rather than merely smaller.
+
+   *What two runs still will not fix.* The ledger files this as `jobClass:
+   "worker"`, because the class is the role that ran the work — so however
+   many authoring runs land, the quote keeps averaging them against every
+   short worker session in the level. Two points give the right number;
+   **something has to tag the class before the quote can use it.** Cheap
+   once the number exists, and not before.
+
 Deliberately **not** here, so nobody reopens them: the quote ceiling pinned at
 the $2.00 clamp (D-072), the compile turn cap (D-025), the compile rate split
 (D-029), Google Custom Search (D-054), browser acting tools (D-034/D-035), and

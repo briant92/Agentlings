@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { DeliveryFile, Job, SendApprovalInfo } from '@agentlings/shared';
+import type { DeliveryFile, Job, PackDraft, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
+import { renderScenePreview } from '../world/looks';
 
 /**
  * A calendar event's when, as the card shows it (D-104). A zoneless string
@@ -117,6 +118,8 @@ export function ReviewModal({
           {job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}
+          {job.packDraftError && <p className="error">{job.packDraftError}</p>}
+          {job.packDraft && <PackCard draft={job.packDraft} />}
           {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
               was approved in good faith and sent nothing — this says so
               before the button does it again. */}
@@ -263,6 +266,55 @@ export function ReviewModal({
           <button onClick={onClose}>Close</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The world a run authored, shown before it is installed (M4).
+ *
+ * The picture is drawn from the pack's own data through the interpreter that
+ * will draw it for real — so it cannot flatter the pack, and a scene that
+ * would render badly renders badly here. Approving a world you cannot see is
+ * exactly what this exists to prevent, so a preview that were merely
+ * decorative would be worse than none at all.
+ *
+ * At true proportions rather than card-shaped: how tall a world is, is one of
+ * the few things a pack decides that you cannot change afterwards.
+ */
+function PackCard({ draft }: { draft: PackDraft }) {
+  const { pack, slug } = draft;
+  const preview = renderScenePreview(pack, pack.theme, 520);
+  const backdropOps = pack.backdrop?.ops?.length ?? 0;
+
+  return (
+    <div className="rv-pack">
+      <div className="rv-pack-head">
+        <span className="rv-pack-t">{pack.name}</span>
+        <span className="dim">
+          installs as {slug} · {pack.viewH} tall, ground at {pack.groundY}
+        </span>
+      </div>
+      <img
+        className="rv-pack-shot"
+        src={preview.url}
+        height={preview.height}
+        alt={`The ${pack.name} world, drawn from the pack`}
+      />
+      <div className="rv-pack-facts">
+        <span>{pack.ops.length} foreground ops</span>
+        {backdropOps > 0 && <span>{backdropOps} backdrop</span>}
+        {pack.backdrop?.scrim && <span>scrim {pack.backdrop.scrim.alpha}</span>}
+        <span className={pack.rim ? '' : 'rv-pack-warn'}>
+          {pack.rim ? `rim ${pack.rim}` : 'no rim — the crew may vanish into it'}
+        </span>
+        {pack.ambient?.length ? <span>{pack.ambient.length} ambient</span> : null}
+      </div>
+      <p className="rv-pack-prov">{pack.provenance}</p>
+      <p className="dim">
+        Approving installs this world. It joins the palette for new levels; no existing level
+        changes.
+      </p>
     </div>
   );
 }

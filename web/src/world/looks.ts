@@ -1,4 +1,5 @@
 import type { LevelPack, PackProblem, Scene, Theme, ThemeId, ThemeKey } from '@agentlings/shared';
+import { WORLD_WIDTH } from '@agentlings/shared';
 import { api } from '../api';
 import { css } from './palette';
 import { anchorsOf, canvasSurface, drawScene } from './scene';
@@ -95,35 +96,62 @@ export function rejectedPacks(): { slug: string; problems: PackProblem[] }[] {
 const thumbCache = new Map<ThemeId, string>();
 
 /**
- * Tiny deterministic scene in the look's own palette — the level card image.
- *
- * The card is the level shrunk, not a sketch of it: the same scene data
- * through the same interpreter, scaled by the level's own height so a taller
- * pack shrinks further rather than being cropped.
+ * Paints a scene onto a canvas of a given size. The one place a scene becomes
+ * an image, so the level card and the review preview cannot draw the same
+ * world differently — only at different sizes.
  */
-export function renderThumbnail(id: ThemeId): string {
-  const cached = thumbCache.get(id);
-  if (cached) return cached;
-  const look = lookFor(id);
-  const anchors = anchorsOf(look.scene);
-  const w = 240;
-  const h = 72;
+function paintTo(scene: Scene, theme: Theme, w: number, h: number): string {
+  const anchors = anchorsOf(scene);
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = css(look.theme.void);
+  ctx.fillStyle = css(theme.void);
   ctx.fillRect(0, 0, w, h);
-  drawScene(
-    canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css),
-    look.scene,
-    look.theme,
-    anchors,
-  );
+  drawScene(canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css), scene, theme, anchors);
   ctx.globalAlpha = 1;
+  return canvas.toDataURL();
+}
 
-  const url = canvas.toDataURL();
-  thumbCache.set(id, url);
+/**
+ * The level card image: the level shrunk, not a sketch of it — the same scene
+ * data through the same interpreter.
+ *
+ * A fixed 240×72 whatever the world's own shape, so a tall pack is squashed
+ * into the card rather than cropped out of it. The review preview is the one
+ * that keeps true proportions.
+ */
+export function renderThumbnail(id: ThemeId): string {
+  const cached = thumbCache.get(id);
+  if (cached) return cached;
+  const look = lookFor(id);
+  const url = paintTo(look.scene, look.theme, 240, 72);
+  // Only cache a real answer. Asking for a pack's card before its pack has
+  // loaded returns the fallback, and caching that would pin the cave onto
+  // that level for the life of the page — the picture would stay wrong long
+  // after the pack arrived. Boot loads packs before the first render so this
+  // should not arise; it is one line to make sure it cannot.
+  if (!lookIsMissing(id)) thumbCache.set(id, url);
   return url;
+}
+
+/**
+ * A world at its true proportions — for reviewing one that is not installed.
+ *
+ * Unlike the card, this scales x and y together, so a 450-tall pack looks
+ * 450 tall. That is the point of it: approving a world you cannot see is the
+ * thing this exists to prevent, and a preview that lied about the shape would
+ * be worse than none.
+ *
+ * Takes the scene rather than a look id, because a draft has no id yet — it
+ * is not installed, and whether it ever will be is what is being decided.
+ */
+export function renderScenePreview(
+  scene: Scene,
+  theme: Theme,
+  width: number,
+): { url: string; height: number } {
+  const height = Math.round((width * scene.viewH) / WORLD_WIDTH);
+  return { url: paintTo(scene, theme, width, height), height };
 }

@@ -3616,3 +3616,47 @@ button.danger:hover {
   color: #8a91a3;
   border-color: #3a4152;
 }
+
+/* The world a run authored, shown before Approve installs it (M4). */
+.rv-pack {
+  border: 1px solid var(--line, #2f2c44);
+  background: #16151f;
+  padding: 10px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rv-pack-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rv-pack-t {
+  font-weight: 600;
+  color: #fff;
+}
+.rv-pack-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border: 1px solid #2f2c44;
+}
+.rv-pack-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 11px;
+  color: #9badb7;
+}
+.rv-pack-warn {
+  color: #df7126;
+}
+.rv-pack-prov {
+  font-size: 11px;
+  color: #8d88a6;
+  margin: 0;
+  line-height: 1.5;
+}

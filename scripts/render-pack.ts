@@ -24,7 +24,13 @@ import {
   type LevelPack,
 } from '@agentlings/shared';
 import { COLOR_POOL } from '../server/src/levels';
-import { bufferSurface, drawStandIn, encodePng, separationAt } from '../server/src/raster';
+import {
+  bufferSurface,
+  drawStandIn,
+  encodePng,
+  relLuminance,
+  separationAt,
+} from '../server/src/raster';
 
 const args = process.argv.slice(2);
 const scaleFlag = args.indexOf('--scale');
@@ -83,29 +89,60 @@ for (const [i, at] of positions.entries()) {
 writeFileSync(out, encodePng(raster));
 
 const worst = separations.reduce((a, b) => (b.separation < a.separation ? b : a));
+// How the rim fares against the same background. A gown that vanishes is only
+// a fault when nothing else separates it — the rim is the device that is
+// supposed to survive exactly this, so a verdict that ignores it tells a pack
+// with a good rim to go and set one.
+const rimLuminance = rim === undefined ? undefined : relLuminance(rim);
+const rimSeparation =
+  rimLuminance === undefined ? 0 : Math.abs(rimLuminance - worst.behind);
+const vanishing = COLOR_POOL.filter(
+  (g) => Math.abs(relLuminance(g) - worst.behind) < 5,
+);
+
 console.log(`Rendered ${path.basename(target)} → ${out}  (${raster.w}×${raster.h})`);
-console.log(`  ${pack.name} · viewH ${pack.viewH} · groundY ${pack.groundY} · rim ${pack.rim ?? '(none)'}`);
+console.log(
+  `  ${pack.name} · viewH ${pack.viewH} · groundY ${pack.groundY} · rim ${pack.rim ?? '(none)'}`,
+);
 console.log('');
 console.log('  Crew legibility — luminance of the scene behind each standing place (0–100):');
 for (const s of separations) {
-  const flag = s.separation < 5 ? '  <- too close' : s.separation < 10 ? '  <- thin' : '';
+  const flag = s.separation < 5 ? '  <- a gown vanishes' : s.separation < 10 ? '  <- thin' : '';
   console.log(
     `    x ${String(s.at).padStart(4)}   behind ${s.behind.toFixed(1).padStart(5)}` +
       `   nearest gown ${s.separation.toFixed(1).padStart(5)}${flag}`,
   );
 }
 console.log('');
-if (worst.separation < 5) {
-  console.log(
-    `  Worst separation ${worst.separation.toFixed(1)} at x ${worst.at}. A gown that close to its` +
-      ' background disappears into it — the rim is what keeps it visible, so set `rim` to a slot' +
-      ' that contrasts here, or change what the pack draws behind that spot.',
-  );
+if (vanishing.length === 0) {
+  console.log(`  Worst separation ${worst.separation.toFixed(1)} — every gown reads on its own.`);
 } else {
-  console.log(`  Worst separation ${worst.separation.toFixed(1)} — every standing place reads.`);
+  const names = vanishing.map((g) => `#${g.toString(16).padStart(6, '0')}`).join(', ');
+  console.log(
+    `  ${vanishing.length} of ${COLOR_POOL.length} crew colours vanish into this` +
+      ` background at x ${worst.at} (${names}).`,
+  );
+  if (rimSeparation >= 10) {
+    console.log(
+      `  The rim carries them: \`${pack.rim}\` separates ${rimSeparation.toFixed(1)} from the same` +
+        ' spot, which is exactly the job it exists for. Worth knowing, not worth fixing.',
+    );
+  } else if (pack.rim) {
+    console.log(
+      `  And the rim cannot carry them: \`${pack.rim}\` separates only` +
+        ` ${rimSeparation.toFixed(1)} here. Pick a rim slot that contrasts with this background,` +
+        ' or change what the pack draws behind that spot.',
+    );
+  }
 }
 if (!pack.rim) {
   console.log('  No `rim` set. Set one: it is the only thing that survives a busy backdrop.');
+} else if (rimSeparation < 10 && vanishing.length === 0) {
+  console.log(
+    `  The rim is nearly invisible here (\`${pack.rim}\` separates ${rimSeparation.toFixed(1)}),` +
+      ' which costs nothing while the gowns themselves separate — but it is the only guard left' +
+      ' if the background ever changes.',
+  );
 }
 if (pack.ambient?.length) {
   console.log(

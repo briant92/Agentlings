@@ -122,6 +122,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-110 — 2026-08-07 — M4: a run authors a world, and the first one found three faults in the brief](#d-110--2026-08-07--m4-a-run-authors-a-world-and-the-first-one-found-three-faults-in-the-brief)
 - [D-111 — 2026-08-07 — A name clash was a dead end, and the crew's world replaced the hand-written one](#d-111--2026-08-07--a-name-clash-was-a-dead-end-and-the-crews-world-replaced-the-hand-written-one)
 - [D-112 — 2026-08-07 — The crew got eyes: a headless renderer, a designer, and the trap the class tag set](#d-112--2026-08-07--the-crew-got-eyes-a-headless-renderer-a-designer-and-the-trap-the-class-tag-set)
+- [D-113 — 2026-08-07 — The DKC look, measured: 128 colours holds, and the crew works from a picture rather than copying one](#d-113--2026-08-07--the-dkc-look-measured-128-colours-holds-and-the-crew-works-from-a-picture-rather-than-copying-one)
 
 ## By theme
 
@@ -145,7 +146,10 @@ entry updates one file rather than two.
   the crew drew replacing the hand-written one; D-112 — the crew given eyes,
   a headless renderer walking the app's own interpreter, D-107's separation
   measure finally existing as code, and a `designer` whose class tag fixed the
-  quote while starving the turn budget
+  quote while starving the turn budget; D-113 — the DKC look measured at last
+  (128 holds, 32 destroys, flat sprites on it really do read as pasted on),
+  and the reference path taken over the raster one because a session can
+  genuinely see a picture
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -6655,3 +6659,109 @@ deliveries are drawn over a pack rather than in it.
 
 1430 tests green, typecheck clean. The Long Glasshouse ships as the third
 installed world, and the first drawn by an agentling that could see it.
+
+## D-113 — 2026-08-07 — The DKC look, measured: 128 colours holds, and the crew works from a picture rather than copying one
+
+D-108 chose a raster backdrop with its own 128-colour palette and left three
+things unmeasured: whether quantizing to that budget preserves the look,
+whether 32 really destroys it, and whether flat DB32 sprites on a soft-shaded
+ground read as pasted on. All three are now measured, on the actual Kongo
+Jungle screenshot Brian pointed at when he opened the subject.
+
+**`npm run pack:quantize`** makes the budget a fact rather than a hope, as
+D-108 said it would. Median cut — deterministic, so the number is assertable —
+plus Floyd–Steinberg, plus a PNG decoder written beside the encoder from
+D-112. Still no dependency: node's `zlib` both ways.
+
+| source | budget | mean error /255 |
+|---|---|---|
+| Kongo Jungle, 83,910 colours | 128 | **4.37** |
+| the same | 32 | **15.30** |
+| a clean glasshouse render, 1,002 colours | 128 | **1.10** |
+| the same | 32 | **6.23** |
+
+**D-108's claim holds and is now numeric: 32 costs 3.5x the error of 128 on a
+real render, and the difference is obvious by eye** — at 32 the sky
+crosshatches, the rear palm crowns collapse from dark green to purple-black,
+and DK himself goes muddy maroon. At 128 it survives essentially intact.
+
+A prediction of mine was wrong on the way, and the reason matters: I expected
+a SNES screenshot to arrive already console-quantized near 128 colours. It
+arrived at **83,910**, because 1440×900 is not a SNES resolution — the file is
+an upscaled, resampled, lossily recompressed copy, and the interpolation
+invented tens of thousands of colours long before it reached us. A screenshot
+is not the console's output.
+
+**And D-108's predicted cost is real.** Standing crew-coloured blocks with the
+mandatory rim on that jungle, they read exactly as pasted on — while DK and
+the Kremling, in the same frame, look at home, because they came from the same
+pipeline as the background. Two honest qualifications: our stand-ins are flat
+rectangles, which is the worst case against a real shaded 18×20 sprite; and
+this is **not** a legibility failure — separation is fine, the crew are
+perfectly visible. The rim machinery answers "can I be seen" and has nothing
+to say about "do I belong". D-107 and D-108 solved the first. The second is
+the re-skin D-108 parked, and it is still parked.
+
+### Two ways to use a picture, and which we took
+
+- **(a) the upload becomes the backdrop** — the only route to the look, since
+  the ops vocabulary provably cannot reach it. Costs a second file through
+  both the sandbox handover and the install (`installPack` writes exactly one
+  `pack.json`), a checker budget, both renderers, and it takes authoring out
+  of the crew's hands, because nothing in this app can generate such an image:
+  the connections are web, github, search, browser, telegram, google,
+  whatsapp-business, slack.
+- **(b) the upload is a reference the crew works from** — no format change at
+  all, and worlds stay crew-authored.
+
+**Taken: (b)**, on evidence rather than preference. A session was given the
+screenshot as `reference.png`, with the filename deliberately neutral so it
+could not be recognised from the name, and asked to describe what it saw.
+
+It saw it. The sandy path dipping left and cresting middle-right, three
+horizontal zones, near-black leaf undergrowth in the bottom quarter, a brown
+ape on all fours with cream muzzle and pale pink hands, the magenta fan-leaf
+behind it, three bananas on the sand, a helmeted green reptile with a purple
+tail, the DK barrel, a second grey barrel in the undergrowth, the graded hole
+between them, an arc of nine bananas. It **described rather than recognised**
+— *"I have not named the game or the characters, since the picture itself
+carries no title, only the letters `DK`"* — which is exactly what working from
+a reference requires. It cropped six regions, re-encoded them at 2–3× and
+looked again, and separated seen from unseen: dusk or dawn undeterminable from
+the gradient, "roughly eleven" palm crowns with the overlap stated, and a
+patch on the reptile it declined to name at 6×.
+
+So the reference path is not a compromise: the crew can see, zoom, and reason
+about what it sees. What it cannot do is reproduce a rendered painting, and
+the brief now says so in as many words, because a run that tries to trace one
+will come out worse than a run that reads it.
+
+**Cost: $0.99 and 17 turns for a description — and a third of that was waste.**
+It wrote its own PNG decoder, chunk walk and Paeth unfiltering and all, inside
+a sandbox whose `repo/server/src/raster.ts` had held `decodePng` since that
+morning. Nothing told it. The brief now points at it by name, which is the
+cheapest possible version of the capability surface doing its job.
+
+### What shipped, and what did not
+
+`Artwork/` is a drop folder for source images, with **its contents gitignored
+and its README tracked**. Not a judgement per file: `LEVELPACK.md` already
+says a file in this repository makes its licence this project's problem, and a
+folder people drop pictures into fills up with things nobody re-read the terms
+of. Inputs untracked, `web/public/packs/<slug>/` outputs tracked and carrying
+provenance the checker refuses to let you omit. A pack drawn from a reference
+must name it there, which is why the upload is kept rather than consumed.
+
+New Level offers **Pixel** or **Pre-rendered** — the two ways this kind of
+world was ever made — and pre-rendered asks for the picture. It rides as an
+ordinary attachment into `input/`, measured long ago at 88s against 616s for
+making a session go and find things.
+
+Deliberately not built: the raster backdrop of (a). It is still the only route
+to the real thing, and the measurements above are what a decision to build it
+should rest on. Also caught before it shipped, and worth recording because the
+file that prompted the feature is exactly the size that breaks it:
+`String.fromCharCode(...bytes)` spreads one argument per byte, so a 1.5 MB
+reference is 1.5 million arguments and a stack overflow. Chunked at 32KB.
+
+1448 tests green, typecheck clean.

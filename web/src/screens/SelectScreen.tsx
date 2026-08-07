@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { LevelInfo, ThemeId } from '@agentlings/shared';
-import { api, postJson } from '../api';
+import { api, lvl, postJson } from '../api';
 import { allLooks, renderThumbnail } from '../world/looks';
 
 export interface LevelEntry {
@@ -74,6 +74,7 @@ export function SelectScreen({
       </div>
       {creating && (
         <NewLevelModal
+          levels={levels ?? []}
           onClose={() => setCreating(false)}
           onCreated={(level) => {
             setCreating(false);
@@ -86,9 +87,11 @@ export function SelectScreen({
 }
 
 function NewLevelModal({
+  levels,
   onClose,
   onCreated,
 }: {
+  levels: LevelInfo[];
   onClose: () => void;
   onCreated: (level: LevelEntry) => void;
 }) {
@@ -96,6 +99,14 @@ function NewLevelModal({
   const [project, setProject] = useState('');
   const [theme, setTheme] = useState<ThemeId>('cave');
   const [error, setError] = useState<string | null>(null);
+  /** A world the crew author rather than one already on the palette (M4). */
+  const [world, setWorld] = useState('');
+  const [authoring, setAuthoring] = useState(false);
+  const [authored, setAuthored] = useState<string | null>(null);
+  // The crew doing the work. A pack is not owned by a level — it installs for
+  // the whole app — but the job that writes it has to run somewhere, so it
+  // runs in the first level and the copy says so rather than being coy.
+  const host = levels[0];
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -104,6 +115,20 @@ function NewLevelModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const authorWorld = async () => {
+    if (!host) return;
+    setError(null);
+    setAuthoring(true);
+    try {
+      await api(lvl(host.id, '/author-pack'), postJson({ description: world }));
+      setAuthored(world);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAuthoring(false);
+    }
+  };
 
   const create = async () => {
     setError(null);
@@ -146,6 +171,31 @@ function NewLevelModal({
               </button>
             ))}
           </div>
+          {host && (
+            <>
+              <div className="sect">or have the crew author one</div>
+              {authored ? (
+                <p className="dim">
+                  {host.name} is authoring it. It will appear on this palette once you approve
+                  the delivery — nothing is installed until you do.
+                </p>
+              ) : (
+                <div className="nl-author">
+                  <input
+                    placeholder="Describe a world (e.g. the between-decks of a whaling ship at night)"
+                    value={world}
+                    onChange={(e) => setWorld(e.target.value)}
+                  />
+                  <button
+                    disabled={!world.trim() || authoring}
+                    onClick={() => void authorWorld()}
+                  >
+                    {authoring ? 'queueing…' : 'Author it'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           {error && <p className="error">{error}</p>}
         </div>
         <div className="m-foot">

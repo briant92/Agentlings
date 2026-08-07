@@ -1410,6 +1410,15 @@ select {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+/* Describe a world and the crew author it — the palette's other half (M4). */
+.nl-author {
+  display: flex;
+  gap: 8px;
+}
+.nl-author input {
+  flex: 1;
+  min-width: 0;
+}
 .nl-theme {
   display: flex;
   flex-direction: column;

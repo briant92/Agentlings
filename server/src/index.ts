@@ -89,6 +89,7 @@ import {
   type LevelMeta,
 } from './levels';
 import { installPack, scanPacks, themeExists } from './packs';
+import { packBrief } from './packbrief';
 import { ocrAvailable } from './ocr';
 import { isStale, readIndex, storeLines, sync, writeIndex } from './store';
 import {
@@ -1151,6 +1152,36 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
     });
   }
 }
+
+/**
+ * Author a world: a description in, a job out (M4).
+ *
+ * Its own route rather than a sentence pattern at the desk, for now. The
+ * phrasings people actually use for this do not exist yet, and both walls the
+ * send surface hit — D-090's inflections, D-093's typo'd verb — were found by
+ * real sentences rather than predicted. A button cannot misfire, and the
+ * matcher can be designed later against sentences that have actually been
+ * typed.
+ *
+ * Everything past the brief is the ordinary glue: quoted, sandboxed, reviewed,
+ * and installed only at Approve.
+ */
+app.post('/api/levels/:lid/author-pack', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = await c.req.json<{ description?: string }>();
+  const description = body.description?.trim();
+  if (!description) return c.json({ error: 'say what the world should be' }, 400);
+
+  const job = queueSentence(rt, `Author a level pack: ${description}`, {
+    brief: packBrief(),
+    // A description is prose about a place. Splitting it on the word "then"
+    // would turn "a deck, then the sea beyond it" into two jobs (D-105).
+    noSplit: true,
+    note: 'authoring a world',
+  });
+  return c.json(job, 201);
+});
 
 app.post('/api/levels/:lid/work', async (c) => {
   const rt = getLevel(c.req.param('lid'));

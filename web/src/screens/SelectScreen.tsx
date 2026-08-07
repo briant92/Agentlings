@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { LevelInfo, ThemeId } from '@agentlings/shared';
+import type { LevelInfo, Quote, ThemeId, WorkPlan } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { allLooks, renderThumbnail } from '../world/looks';
 
@@ -103,6 +103,7 @@ function NewLevelModal({
   const [world, setWorld] = useState('');
   const [authoring, setAuthoring] = useState(false);
   const [authored, setAuthored] = useState<string | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
   // The crew doing the work. A pack is not owned by a level — it installs for
   // the whole app — but the job that writes it has to run somewhere, so it
   // runs in the first level and the copy says so rather than being coy.
@@ -115,6 +116,37 @@ function NewLevelModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  /**
+   * The quote, before anything is queued.
+   *
+   * The desk plans a sentence and shows what it will cost before Start exists;
+   * this button skipped straight to queueing, which is a worse promise than
+   * every other way into the engine makes. Planned unsplit, because that is
+   * how the route queues it.
+   */
+  useEffect(() => {
+    const text = world.trim();
+    if (!host || !text) {
+      setQuote(null);
+      return;
+    }
+    let alive = true;
+    const timer = window.setTimeout(() => {
+      void api<WorkPlan>(
+        lvl(host.id, '/work/plan'),
+        postJson({ text: `Author a level pack: ${text}`, single: true }),
+      )
+        .then((plan) => alive && setQuote(plan.quote ?? null))
+        // A quote that will not load must not block authoring; the button
+        // simply stops claiming a price it does not have.
+        .catch(() => alive && setQuote(null));
+    }, 350);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [host, world]);
 
   const authorWorld = async () => {
     if (!host) return;
@@ -190,9 +222,19 @@ function NewLevelModal({
                     disabled={!world.trim() || authoring}
                     onClick={() => void authorWorld()}
                   >
-                    {authoring ? 'queueing…' : 'Author it'}
+                    {authoring
+                      ? 'queueing…'
+                      : quote
+                        ? `Author it — up to $${quote.ceilingUsd.toFixed(2)}`
+                        : 'Author it'}
                   </button>
                 </div>
+              )}
+              {!authored && quote && (
+                <p className="dim">
+                  {host.name} will run one session, capped at ${quote.ceilingUsd.toFixed(2)}.
+                  Nothing installs until you approve the delivery.
+                </p>
               )}
             </>
           )}

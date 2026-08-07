@@ -1,11 +1,20 @@
 /**
- * The scene format: the shape of a level, as data.
+ * The scene format: the shape of a level, as data, and the geometry it hangs
+ * on.
  *
- * Types only — no drawing. It lives in shared rather than in the renderer
- * because a level pack is a thing the server stores and a checker validates
- * before anyone installs it, and neither can import a browser bundle. The
- * interpreter that turns these into pixels stays in web/src/world/scene.ts.
+ * No drawing — that is `./draw`, which moved here from the renderer when the
+ * browser stopped being the only thing that draws. Both live in shared rather
+ * than in web because a level pack is a thing the server stores, a checker
+ * validates, and a CLI renders, and none of those can import a browser bundle.
  */
+
+// World geometry, in logical units the client scales to its canvas.
+export const WORLD_WIDTH = 1000;
+export const SPAWN_X = 80;
+export const EXIT_X = 940;
+export const STATION_BASE_X = 240;
+export const STATION_SPACING = 130;
+export const MAX_STATIONS = 5;
 
 /**
  * Per-theme palette, every slot drawn from the DB32 master ramp; geometry

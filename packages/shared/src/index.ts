@@ -3,6 +3,7 @@
 export * from './pack';
 import type { PackDraft } from './pack';
 export * from './scene';
+export * from './draw';
 export * from './palette';
 
 /** The four looks built into the app; the client owns the actual colors. */
@@ -1052,13 +1053,9 @@ export type ServerMessage =
   | { type: 'world'; state: WorldFrame }
   | { type: 'events'; events: JobEvent[] };
 
-// World geometry, in logical units the client scales to its canvas.
-export const WORLD_WIDTH = 1000;
-export const SPAWN_X = 80;
-export const EXIT_X = 940;
-export const STATION_BASE_X = 240;
-export const STATION_SPACING = 130;
-export const MAX_STATIONS = 5;
+// World geometry moved to ./scene, beside the interpreter that anchors a
+// scene on it; re-exported by the `export *` above, so nothing importing it
+// from this package had to change.
 export const TICK_MS = 100;
 /**
  * Close code for "that level does not exist". A socket closed with it must not

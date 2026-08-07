@@ -116,6 +116,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-104 — 2026-08-06 — The acting surface finished: Slack, calendar events and GitHub comments, one outbox](#d-104--2026-08-06--the-acting-surface-finished-slack-calendar-events-and-github-comments-one-outbox)
 - [D-105 — 2026-08-06 — Composite work: split where the user said "then", each step its own job](#d-105--2026-08-06--composite-work-split-where-the-user-said-then-each-step-its-own-job)
 - [D-106 — 2026-08-06 — Schedule only: the repeat row can decline today's run, and says the first date](#d-106--2026-08-06--schedule-only-the-repeat-row-can-decline-todays-run-and-says-the-first-date)
+- [D-107 — 2026-08-07 — Backdrops: the strip grows, and the viewport becomes data](#d-107--2026-08-07--backdrops-the-strip-grows-and-the-viewport-becomes-data)
+- [D-108 — 2026-08-07 — The backdrop leaves DB32: one palette for the crew, another for the painting](#d-108--2026-08-07--the-backdrop-leaves-db32-one-palette-for-the-crew-another-for-the-painting)
 
 ## By theme
 
@@ -128,7 +130,10 @@ entry updates one file rather than two.
 - **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
   D-008–D-010, D-014; and D-083 — idle life joining the format as ambient
   idioms, the draw reporting its own stalactite tips, and the cave comment
-  the dice had quietly falsified
+  the dice had quietly falsified; D-107 — backdrops behind the
+  strip, the viewport becoming data a scene owns, and the scrim measured
+  into a sprite rim; D-108 — the backdrop leaving DB32 for its own
+  128-colour palette
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6151,3 +6156,136 @@ math, both already pinned; the desk gained one caller of each. 115 web
 tests green, typecheck clean. T5 can now be scheduled tonight and run
 first on September 1st, which closes the training programme's last open
 task without anyone having to remember it.
+
+## D-107 — 2026-08-07 — Backdrops: the strip grows, and the viewport becomes data
+
+Brian asked for pre-rendered backgrounds behind the levels, with the
+interface overlaid, and for levels drawn from literature and pop culture.
+Three forks were settled before any code, and one of them was settled by
+measurement against what I had argued for.
+
+**Where the backdrop sits: behind the world strip, not behind the whole
+app.** The alternative was a full-bleed illustration with the header, rail
+and terminal floating over it as translucent surfaces. Rejected on blast
+radius: every panel's legibility would have to be re-solved against
+arbitrary art, where the strip confines the risk to one canvas and leaves
+every existing coordinate alive. The full-bleed frame stays available as a
+later phase off the same pack format.
+
+**The viewport becomes data, and that is M1, built here.** `VIEW_H` and
+`GROUND_Y` were constants in `WorldCanvas`, with a second copy in
+`themes.ts`, so every level was 320 pixels tall whatever it was a picture
+of — a backdrop had nowhere to exist. They move into the `Scene`, and
+`anchorsOf` is the single place they become `Anchors`, so the world, the
+thumbnail and any future pack cannot disagree about where the ground is.
+The four built-ins declare 320 / 258; the Pequod mock-up runs 450 / 388,
+which keeps the 62 pixels below the ground line untouched and spends all
+130 new ones on air above.
+
+Only y moved, and that is what kept it local: the server sim carries `x`
+and nothing else, `hover.ts` already took `groundY` as a parameter, and
+only the three particle emitters had to follow.
+
+Proved by recording all four scenes through the `Surface` before and after
+— 1198 / 225 / 300 / 307 draw calls, byte-identical at 70,373 bytes. That
+capture fed anchors in by hand, so a test pins the other half: `anchorsOf`
+on each built-in must still yield 1000 / 320 / 258 / 80 / 940, written as
+literals because the point is that history did not move. Three mutations,
+three kills — a scene claiming 259, `anchorsOf` reading `viewH` where
+`groundY` belongs, and `anchorsOf` hard-coding 320 instead of asking.
+`tsc` caught what vitest could not, the test file's ad-hoc scene literals;
+the fix is a helper, because an optional `viewH` would re-hide the exact
+constant this removes. 1343 tests green, typecheck clean.
+
+**The scrim, and the premise I had to abandon.** A scrim — a ramp of the
+theme's own `void` from mid-height down to the ground line — was proposed
+as the answer to a busy backdrop eating the crew. Measured by rendering
+each scene twice, scrim on and off, and comparing only the pixels that
+differ, which are backdrop by construction since the sprites draw
+identically in both passes. On the Pequod's dark wall it helps every crew
+member, mean separation 108.5 → 114.7. On Arrakis's bright sand it is a
+**wash** — 31.0 → 31.1 — and actively harms two of four: rose 52.4 → 31.3,
+and pink **20.9 → 0.3**, which is the same luminance as the sand it is
+standing on. Darkening a bright ground drags it *through* the mid-tones
+where the gowns live instead of away from them, and no single direction
+works for gowns spanning the whole ramp.
+
+So the scrim stays, per-pack and tunable, but it is not the legibility
+device. That is a **constant one-pixel dark rim on the sprites** —
+separation by contour rather than by value, which is indifferent to what
+is behind it. This is not new machinery: `flatten()` in `tint.ts` and
+`OUTLINE_OFFSETS` in `hover.ts` already build exactly this ring for the
+hover outline. The change is running it always for packs that ask.
+
+**Levels from a sentence.** "A level inspired by Moby-Dick" becomes an
+ordinary quoted, sandboxed job whose deliverable is the pack: theme slots,
+scene ops, ambient, validated by a checker and previewed before install —
+the tool compiler's own rule, that generated instruction proves its own
+output. A supplied `backdrop.png` in the pack folder wins over authored
+ops. An image-generation connection was refused for now: it needs a
+connection shape the registry cannot express (G6's `builtin | stdio`), a
+new key and a new cost line, and authored scenes have not yet been shown
+to be insufficient.
+
+Deliberately out of scope and named rather than smuggled in:
+**parallax**, on the ground that the world does not scroll so there is
+nothing to parallax against; and **prop sprite overrides**. Signposts,
+crates and torches stay code-drawn from theme slots, which the Arrakis
+mock-up exposes better than any argument — its doorway glows pink, because
+the renderer fills a doorway with the theme's `void` and Arrakis spends
+`void` on its sky. Nothing is broken; a prop and a pack disagreed about
+what a slot means. Either props gain sprite overrides, or slots gain
+contracts — a `void` that promises to be dark. Left open on purpose, to be
+decided against a real picture rather than in the abstract.
+
+Remaining: M2 the backdrop layer and scrim, M3 level packs with `themeId`
+opening up and `provenance` required by the checker, M4 the authoring job.
+Mock-up: https://claude.ai/code/artifact/8dd970c4-ea80-4cf4-8726-4d1a93752422
+
+## D-108 — 2026-08-07 — The backdrop leaves DB32: one palette for the crew, another for the painting
+
+Brian pointed at Donkey Kong Country's Kongo Jungle map screen and asked
+whether that look was reachable. It is, and it costs a rule.
+
+Two things had to be said plainly. First, the scene format cannot produce
+it and never will: DKC's art was modelled and rendered in 3D on SGI
+workstations, then quantized down to the console's palette, and soft
+ambient shading, depth haze and foliage clusters are not expressible as
+`rect` / `poly` / `speckle`. The format is parameterised idioms,
+deliberately not a drawing language (D-014), so this look means a genuine
+raster file in the pack folder — which is the branch already chosen in
+D-107.
+
+Second, **DB32 is what stands in the way.** Everything loaded is currently
+snapped to 32 colours, and for sprites that is exactly what stops an
+outside pack looking grafted on (D-008, D-009). Snap a rendered backdrop
+to 32 colours and it is destroyed — that look lives in a hundred-odd
+shades with dithering between them. DKC itself is on the order of 128
+colours for a background layer, not 32.
+
+Decided: **DB32 governs everything drawn from theme slots** — crew, props,
+scene ops — which is where "one crew" comes from, and **the backdrop layer
+carries its own quantized palette**, budgeted at 128 and dithered. A split
+with a stated boundary, not a hole. `pack:quantize` will make the budget a
+checkable fact rather than a hope, and the same tool takes a Blender
+render or an image model's output, since the authentic route here is also
+the practical one for a single person.
+
+The cost is bought knowingly: flat 32-colour sprites on a soft-shaded
+render will read as pasted on, because DKC's own coherence came from
+characters and backgrounds sharing one pipeline. This is what promotes
+D-107's sprite rim from a bright-ground fix to **mandatory**. Re-skinning
+the crew to match is expressible today — the pack format already accepts
+any frame resolution and scales to frame height — but it is an
+art-sourcing problem, a re-skin of the whole product, and a separate
+decision to be taken after one backdrop is actually in place.
+
+Composition constraints that fall out of the strip: author at 1000×450 (or
+2000×900 and downsample), and keep the bottom 62 pixels and the ground
+line quiet, because the crew walk there and the signposts, doorway and
+parcel pile sit at fixed x. A centred composition like that map screen
+does not transfer; it has to become a horizontal band.
+
+`PACK.md` still states the old unconditional rule and is left alone
+deliberately — it describes what exists, and backdrops do not exist yet.
+It changes with M2.

@@ -123,6 +123,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-111 — 2026-08-07 — A name clash was a dead end, and the crew's world replaced the hand-written one](#d-111--2026-08-07--a-name-clash-was-a-dead-end-and-the-crews-world-replaced-the-hand-written-one)
 - [D-112 — 2026-08-07 — The crew got eyes: a headless renderer, a designer, and the trap the class tag set](#d-112--2026-08-07--the-crew-got-eyes-a-headless-renderer-a-designer-and-the-trap-the-class-tag-set)
 - [D-113 — 2026-08-07 — The DKC look, measured: 128 colours holds, and the crew works from a picture rather than copying one](#d-113--2026-08-07--the-dkc-look-measured-128-colours-holds-and-the-crew-works-from-a-picture-rather-than-copying-one)
+- [D-114 — 2026-08-07 — One button in the terminal, the decision in the panel, and an account of what is left](#d-114--2026-08-07--one-button-in-the-terminal-the-decision-in-the-panel-and-an-account-of-what-is-left)
 
 ## By theme
 
@@ -174,7 +175,10 @@ entry updates one file rather than two.
   lands between the first two and turns the halving back into a single step
   followed by noise, exactly as §8 says a recipe behaves
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
-  D-033
+  D-033; and D-114, where the feed stopped being where decisions are made —
+  one REVIEW on the row, the whole choice in the panel, the close-out writing
+  an account of what is left so "more turns" is a judgement, and a resolved
+  line that says who decided
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
@@ -6765,3 +6769,84 @@ file that prompted the feature is exactly the size that breaks it:
 reference is 1.5 million arguments and a stack overflow. Chunked at 32KB.
 
 1448 tests green, typecheck clean.
+
+## D-114 — 2026-08-07 — One button in the terminal, the decision in the panel, and an account of what is left
+
+Brian's own reading of the feed, from a screenshot: a finished run puts four
+controls and a text box into a scrolling log and **leaves them live after they
+have been used**, so rows already dealt with stay clickable, and the decision
+itself happens in a strip a few characters tall while the panel with room for
+the actual work sits unopened.
+
+Decided: the row gets **one green REVIEW**, the panel gets the whole decision —
+Approve, Discard, More turns, and a box to tell the agentling something — and
+the row collapses to a plain line once you have chosen.
+
+**A click-through mockup came first** and earned its keep: built in the app's
+own palette straight out of `styles.css`, with a real rendered world embedded,
+so the flow could be clicked rather than imagined. Four questions came out of
+it that the description had not raised, and each answer changed the code. The
+prototype is at
+`https://claude.ai/code/artifact/1986a959-40fe-4c0f-9d08-bb4ad5a35420`.
+
+### The four, and why each went the way it did
+
+**Where "what is left" comes from.** More turns without it is a coin flip, and
+the runs that most need it are the ones cut before they could write anything —
+**three of the first six wrote no report at all**. The answer was already in
+the system: the close-out is a separate two-turn errand that fires *after* the
+session dies, proven on every cut run at 5–9c. It now writes `PENDING.md`
+beside `LESSON.md` and `APPROACH.md`. Two details are load-bearing. It joins
+the short-circuit — a run that wrote its own lesson and approach used to skip
+the close-out entirely, and would have skipped the one thing only the close-out
+writes. And `done` is its sentinel, the same idiom as `known`, because a model
+asked for a list will write one: the way to get "nothing" is to name the word
+that means it.
+
+**What More turns says before you press it.** `up to $X`, matching how the desk
+phrases every other spend, with *charged only if it finishes* beside it. That
+second half is a rule and not reassurance: `priceFor` returns 0 for any run
+filed `failed`, and every cut run has been — six for six, including ones whose
+output was kept. The figure comes from the route that will charge it, through
+one shared `continuationSpec`, because a desk that quotes one price and a queue
+that bills another is exactly D-097.
+
+**Approve leaves the log.** The panel opens with it focused, so a trusted run
+is REVIEW then Enter. The speed lost is the speed that let the drained pool's
+vanishing crew colour through unlooked-at; the speed kept is standing approval,
+which is the mechanism built for "stop asking me" (D-101).
+
+**The resolved line names the decider.** `approved — installed the
+glasshouse-dawn world` in lime when it was you; `sent automatically` in sky
+when a standing approval did it. Your verb, not the ledger's — "promoted" is
+what the record calls it, and the feed is a list of your decisions. An
+auto-send must never wear your verb, because those are precisely the runs
+nobody looked at.
+
+`pending` is stamped in `queue.finish()` beside the outbox and the pack draft:
+the same seam, firing on every ending including a cancel, and needing no thread
+back through the executor because the close-out writes the file before either
+completion path returns.
+
+### What is not proved, and should not be read as proved
+
+1459 tests green and the quote route verified live against a real cut run
+(200 with a quote; 400 for a run that did not stop for want of turns). Neither
+of those is the thing that matters:
+
+- **Nobody has looked at the new UI.** The Browser pane freezes in this
+  environment, so it is unobserved in a browser. In a session whose whole
+  lesson was that looking is what catches faults — the renderer of D-112 exists
+  for that reason — shipping an interface nobody has seen is the same mistake
+  one layer up, and is recorded here rather than discovered later.
+- **No real close-out has ever produced a `PENDING.md`.** The parser, the brief
+  and the panel are tested; the model asked to write it has not been asked
+  once. Its first outputs need checking against what the run actually did,
+  because a two-turn errand reading a dead sandbox is precisely where an
+  invented plan would come from. The brief tells it that *"it had barely
+  started"* is a valid answer for that reason.
+- **A pre-existing oddity is now visible where users read.** The live quote for
+  a cut run came back `expected $2.36, ceiling $2.00` — the expectation above
+  the clamp. That is D-072 behaving as designed, not something introduced here,
+  but the button now says "up to $2.00" for a continuation whose own history
+  says otherwise.

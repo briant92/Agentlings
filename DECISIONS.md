@@ -124,6 +124,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-112 — 2026-08-07 — The crew got eyes: a headless renderer, a designer, and the trap the class tag set](#d-112--2026-08-07--the-crew-got-eyes-a-headless-renderer-a-designer-and-the-trap-the-class-tag-set)
 - [D-113 — 2026-08-07 — The DKC look, measured: 128 colours holds, and the crew works from a picture rather than copying one](#d-113--2026-08-07--the-dkc-look-measured-128-colours-holds-and-the-crew-works-from-a-picture-rather-than-copying-one)
 - [D-114 — 2026-08-07 — One button in the terminal, the decision in the panel, and an account of what is left](#d-114--2026-08-07--one-button-in-the-terminal-the-decision-in-the-panel-and-an-account-of-what-is-left)
+- [D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back](#d-115--2026-08-07--the-careers-were-zeroed-at-boot-and-the-ledger-gave-them-back)
 
 ## By theme
 
@@ -216,7 +217,10 @@ entry updates one file rather than two.
   and the free tier that answers a bare search without a session: D-055
 - **Reading the crew record** — the productivity block and the inbox, the author
   the ledger never recorded, and the three tests that passed without testing:
-  D-056
+  D-056; and D-115, where the sim zeroed the careers the roster persisted and
+  `syncRoster` wrote the zeros back over the record — caught because D-056's
+  ledger held the second derivation to disagree with, and repaired from it by
+  identification
 - **Documents, continued** — produced in D-031, and shown rather than merely
   offered in D-058, which also collapses the second listing and the second
   ordering (D-030's shape again); read *into* the knowledge store by D-059,
@@ -6850,3 +6854,59 @@ of those is the thing that matters:
   the clamp. That is D-072 behaving as designed, not something introduced here,
   but the button now says "up to $2.00" for a continuation whose own history
   says otherwise.
+
+## D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back
+
+Found by the evening's full review, by looking rather than by any test: the
+ledger gives Pip 50 runs in hq, his roster career said 1, and every level card
+said "0 done". Three counters, one fact, three answers.
+
+The mechanism was two correct pieces composed into an eraser. `Sim`'s
+constructor materialised the roster with `jobsDone: 0, jobsFailed: 0`
+hardcoded — while `addAgentling`, six lines below, seeded `seed.jobsDone ?? 0`
+the way M4.0 intended. And `syncRoster` then wrote the sim's live counters
+back over `roster.json`, which is correct exactly when the sim was seeded
+correctly and an eraser when it was not: every restart re-zeroed the record on
+disk. The stray values that survived anywhere (`Pip: 1`) were whatever landed
+since the latest boot. D-030's shape yet again — one notion, two derivations,
+the visible one wrong — and D-097's test gap beside it: 1,459 tests were green
+because none of them ever handed the constructor a veteran.
+
+Decided: the constructor takes `addAgentling`'s two lines, and one test pins
+both layers — the seeding, and the restart round-trip through `syncRoster`
+handing back what came in. Mutation-proved by putting the zeroes back: exactly
+the new test fails (1 of 10), everything else green (`64bd28c`).
+
+The history came back from the ledger, by identification and not by guess
+(D-056's precedent). The mapping is exact rather than approximate, which is
+what made the backfill safe: a ledger row's `outcome` is written from the same
+`landed` boolean that increments the career (`landed = status !== 'failed'`,
+then `jobsDone++`/`jobsFailed++` and `onOutcome` files the row), so per
+`(levelId, agentlingId)` the done rows are `jobsDone` and the failed rows are
+`jobsFailed`, one to one. A cancel that never ran a session touches neither
+side. Dry-run first, cross-checked against the productivity panel's
+per-member run counts, then applied:
+
+| Level | Member | Was (done/failed) | Recomputed |
+|---|---|---|---|
+| hq | Pip | 1 / 0 | 20 / 30 |
+| hq | Ivy | 0 / 0 | 12 / 13 |
+| hq | Sol | 0 / 0 | 10 / 2 |
+| hq | Dot | 0 / 0 | 1 / 0 |
+| hq | Moss | 0 / 0 | 1 / 5 |
+| home-chores | Pip | 1 / 0 | 4 / 0 |
+| training-ground | Pip | 3 / 0 | 47 / 10 |
+| training-ground | Dot | 0 / 0 | 2 / 0 |
+
+Every total matches the ledger's per-member row counts (Pip hq 50, Ivy 25,
+Sol 12, Moss 6; training-ground's 57 + 2 are its 59). Deliberately untouched:
+the 17 rows with no `agentlingId` (blank by D-056's own rule), rows for
+`pdf-test-drive` (the level is gone), and — had any existed — rows attributed
+to ids no longer on a roster; none were, because no merge has ever executed.
+Verified live after a reload: `/api/levels` reports hq 44 done,
+training-ground 49, home-chores 4 from the server's own memory.
+
+Worth keeping from this one: the counter was only caught because D-056 gave
+the ledger an author to disagree *with*. A figure that cannot be
+cross-checked is not wrong, it is unfalsifiable — the level cards had been
+reading "0 done" with nobody in a position to say so.

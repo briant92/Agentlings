@@ -125,6 +125,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-113 — 2026-08-07 — The DKC look, measured: 128 colours holds, and the crew works from a picture rather than copying one](#d-113--2026-08-07--the-dkc-look-measured-128-colours-holds-and-the-crew-works-from-a-picture-rather-than-copying-one)
 - [D-114 — 2026-08-07 — One button in the terminal, the decision in the panel, and an account of what is left](#d-114--2026-08-07--one-button-in-the-terminal-the-decision-in-the-panel-and-an-account-of-what-is-left)
 - [D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back](#d-115--2026-08-07--the-careers-were-zeroed-at-boot-and-the-ledger-gave-them-back)
+- [D-116 — 2026-08-07 — "Do it properly" comes back, in the panel](#d-116--2026-08-07--do-it-properly-comes-back-in-the-panel)
 
 ## By theme
 
@@ -179,7 +180,8 @@ entry updates one file rather than two.
   D-033; and D-114, where the feed stopped being where decisions are made —
   one REVIEW on the row, the whole choice in the panel, the close-out writing
   an account of what is left so "more turns" is a judgement, and a resolved
-  line that says who decided
+  line that says who decided; and D-116, where that move turned out to have
+  orphaned "Do it properly" and the button was restored in the panel
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
@@ -6910,3 +6912,30 @@ Worth keeping from this one: the counter was only caught because D-056 gave
 the ledger an author to disagree *with*. A figure that cannot be
 cross-checked is not wrong, it is unfalsifiable — the level cards had been
 reading "0 done" with nobody in a position to say so.
+
+## D-116 — 2026-08-07 — "Do it properly" comes back, in the panel
+
+The same review that found D-115 found that D-114's rewrite had orphaned the
+redo path: the terminal's four controls were replaced by one REVIEW, and "Do
+it properly" — D-015's escape hatch, the one-click way to pay for a full
+session when a routed free answer is wrong — was in none of the surfaces that
+replaced them. The server route survived, quoted and tested (`D-027` closed
+its unquoted hole), with no caller left in `web/src`.
+
+The near-miss mattered less than it first looked, which is why this was a
+question rather than a straight fix: the clarify box already escalates — a
+reply carries `continues:`, and the router refuses a continuation every
+shortcut — so a wrong free answer was recoverable by typing a sentence. But
+that is a different offer: a reply *continues* the sandbox with new words,
+while redo re-runs the same request properly, and the user should not have to
+compose instructions to say "that answer is not good enough".
+
+Decided (Brian, of the three options): restore the button. It sits in the
+review panel's footer beside Discard — the place D-114 moved every decision —
+shown only when `job.meter?.routed` is true, so it can never appear on work
+that already paid for a session. One click POSTs the existing route, the new
+run is queued and quoted as a session, and the routed job stays reviewable
+exactly as before. Render-verified live on a routed $0 fetch in the `ui-check`
+scratch level: the button appears for the routed job, Approve keeps focus, and
+More turns stays absent. Deliberately not clicked there — the route queues a
+real paid session, and proving the wiring is the route's own tests' job.

@@ -112,6 +112,20 @@ export function ReviewModal({
     }
   };
 
+  /** The router answered without a session and the user disagrees: full run, router off. */
+  const redo = async () => {
+    setRefusal(null);
+    setBusy(true);
+    try {
+      await api(lvl(levelId, `/jobs/${job.id}/redo`), { method: 'POST' });
+      onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** Buy the run more turns: same sandbox, its own quote, charged only if it lands. */
   const carryOn = async () => {
     setRefusal(null);
@@ -349,6 +363,14 @@ export function ReviewModal({
               <button className="btn-quiet" onClick={() => void resolve('discard')}>
                 Discard
               </button>
+              {/* A routed answer cost nothing and can be wrong (D-015); this
+                  pays for the full session with the router off. Lost its door
+                  when D-114 moved the decision in here — restored (D-116). */}
+              {job.meter?.routed && (
+                <button className="btn-quiet" disabled={busy} onClick={() => void redo()}>
+                  Do it properly
+                </button>
+              )}
             </>
           )}
           {/* Only for a run the server will actually let continue — a button

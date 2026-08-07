@@ -3,11 +3,19 @@
 Everything the crew is drawn with is data. This is what a pack has to
 contain, whoever made it — you, a free pack from itch, or a commission.
 
-Check anything before installing it:
+There are two kinds now. An **art pack** is the crew: a spritesheet and an
+atlas, the rest of this file. A **level pack** is a whole world for a level to
+be set in — palette, terrain, backdrop — and is described in
+[LEVELPACK.md](LEVELPACK.md).
+
+Check either before installing it; the checker works out which it is:
 
 ```
-npm run art:check -- path/to/atlas.json
+npm run pack:check -- path/to/pack.json
 ```
+
+`npm run art:check` is the same checker, defaulting to the atlas currently
+installed.
 
 Install it by putting the two files in `web/public/art/`. There is no build
 step and no rebuild; reload the page. If a pack is missing or broken the app

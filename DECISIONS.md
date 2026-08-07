@@ -118,6 +118,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-106 — 2026-08-06 — Schedule only: the repeat row can decline today's run, and says the first date](#d-106--2026-08-06--schedule-only-the-repeat-row-can-decline-todays-run-and-says-the-first-date)
 - [D-107 — 2026-08-07 — Backdrops: the strip grows, and the viewport becomes data](#d-107--2026-08-07--backdrops-the-strip-grows-and-the-viewport-becomes-data)
 - [D-108 — 2026-08-07 — The backdrop leaves DB32: one palette for the crew, another for the painting](#d-108--2026-08-07--the-backdrop-leaves-db32-one-palette-for-the-crew-another-for-the-painting)
+- [D-109 — 2026-08-07 — M2 and M3 built: the backdrop layer, and a level pack that is a whole world](#d-109--2026-08-07--m2-and-m3-built-the-backdrop-layer-and-a-level-pack-that-is-a-whole-world)
 
 ## By theme
 
@@ -133,7 +134,9 @@ entry updates one file rather than two.
   the dice had quietly falsified; D-107 — backdrops behind the
   strip, the viewport becoming data a scene owns, and the scrim measured
   into a sprite rim; D-108 — the backdrop leaving DB32 for its own
-  128-colour palette
+  128-colour palette; D-109 — M2 and M3 built: the
+  scrim as alpha bands, the format moving to shared so a checker can see it,
+  and ThemeKey opening into an installed pack
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6289,3 +6292,94 @@ does not transfer; it has to become a horizontal band.
 `PACK.md` still states the old unconditional rule and is left alone
 deliberately — it describes what exists, and backdrops do not exist yet.
 It changes with M2.
+
+## D-109 — 2026-08-07 — M2 and M3 built: the backdrop layer, and a level pack that is a whole world
+
+D-107 planned four milestones. M1 landed with that entry; this is M2 and M3,
+and the parts where building them changed the plan.
+
+**M2 — the backdrop, and the scrim as bands.** A scene gains an optional
+`backdrop`: ops of its own, plus a scrim, drawn beneath the foreground.
+Because `drawScene` is what both the world and the level card already call, a
+backdrop reaches both with no renderer change — which is what the `Surface`
+abstraction was always for.
+
+The scrim is **stacked alpha bands, not a gradient**. `Surface` has three
+primitives and a gradient would be a fourth that Pixi, the thumbnail canvas
+and the test recorder would all have to grow; banding is also what pixel art
+does anyway. Bands tile on whole pixels so the alphas never compound and a
+fractional band height cannot leave a bright seam. The backdrop is seeded off
+its own base, for the same reason each op already has one: adding a rock to
+the foreground must not reshuffle the grain of the sky.
+
+`rim` puts D-107's measured outline on the crew — its own silhouette set,
+because the hover colour is deliberately chosen to *stand out* where a rim
+wants to read as an edge, and a pool, because eight ghosts suffice for hover
+but a rim needs eight per agentling. Opt-in; none of the built-ins set it.
+
+On the way, the slot lookup was collapsed into `paintOf`. Worth recording
+because the duplication was mine and one commit old: `drawOp` had it inline,
+the scrim duplicated it, and the rim would have been a third.
+
+**M3 — the format moves, so a checker can see it.** A pack has to be
+validated before installation, by a CLI and by the server that serves it, and
+neither can import a browser bundle. So the scene format moved to
+`packages/shared/src/scene.ts` — types only; the interpreter, the surfaces and
+`anchorsOf` stay in web, the last deliberately, so the new module needs no
+imports and cannot go cyclic with `index.ts`. `web/src/world/scene.ts`
+re-exports the lot, so all ten importers were untouched. The first attempt
+*copied* `Theme` rather than moving it, leaving two structurally identical
+interfaces that typecheck was perfectly happy with — which is exactly how that
+kind of duplicate survives.
+
+`LevelPack extends Scene` rather than restating it, so a pack cannot describe
+something the renderer would refuse to draw. It adds the palette and
+`provenance`, required, because the licence becomes this repository's problem.
+
+The half worth having is the **walk**. An unknown slot name reaches the
+renderer as a throw at draw time — a level that will not open, with a stack
+trace behind it. Now it is a line naming the op and the slot before anything
+is installed. The walk is driven by which *keys* hold colours and coordinates
+rather than by the op union, so a colour nested inside a `repeat` inside a
+`band` is checked by the same three lines as a top-level one, and an op added
+later is covered without touching the checker. Coordinates go through
+`resolveCoord` itself, so the checker and the draw cannot disagree about what
+parses. `THEME_SLOTS` carries a type-level assertion against drifting from
+`Theme`; dropping a slot fails compilation naming the slot, mutation-proved.
+
+**M3 also opened `ThemeKey`.** What a level stores is a `ThemeId` — a built-in
+key or an installed pack's folder name — because the set is no longer closed
+at compile time. The rule that follows: nothing downstream may assume it
+resolves. `lookFor` never throws and never returns nothing, so a level whose
+pack was deleted, renamed or refused still opens in the cave, the way a broken
+art pack leaves the crew in built-in art. A pack named after a built-in is
+refused rather than merged, because which one won would depend on directory
+order.
+
+The server reads `web/public/packs/*/pack.json` per request and serves them
+whole — whole rather than as names, because it has already read and validated
+every one and returning names would have the client fetch the same files and
+decide validity a second time. Rejected packs come back with their reasons, so
+a pack absent from the world can say why. Per request, so dropping a folder in
+and reloading is the entire install.
+
+**Evidence.** The four built-in scenes, run through the checker as packs —
+between them every op in the format, including cave's ceiling with stalactites
+and vines, and the beam, glints and clock ambients — pass with zero errors,
+and fail the moment a slot they use is removed, which is what proves the walk
+reached them. The CLI against a real pack: clean, exit 0; with four planted
+faults, four exact messages, exit 1. Live: the server lists The Pequod at
+450/388 with rim `rockEdge`; it appears in the new-level palette with its own
+thumbnail; `lookFor('atlantis')` falls back to cave; a deliberately broken
+pack planted beside it left the good one installed and came back rejected with
+both reasons. Cave's thumbnail is still 17,154 bytes — the same figure it
+measured before M1, through all three milestones. 1375 tests green.
+
+Ships `web/public/packs/moby-dick`, the first real pack, and `LEVELPACK.md`.
+
+**Deliberately not built.** The raster backdrop and its own 128-colour palette
+(D-108) — `backdrop` takes ops today, not an image, so DB32 has not in fact
+been relaxed anywhere yet. M4, the job that authors a pack from a sentence.
+And the props question D-107 left open: signposts, crates and torches are
+still code-drawn from theme slots, so a pack that repurposes `void` for sky
+still gets a doorway painted with its sky.

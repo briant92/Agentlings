@@ -38,6 +38,37 @@ export interface Theme {
 }
 
 /**
+ * Every slot, as data — what a checker walks to see that a pack supplies the
+ * whole palette rather than the half it happened to use.
+ *
+ * The assertion below is what stops this drifting from the interface above:
+ * add a slot to `Theme` and forget it here, and the project stops compiling
+ * rather than shipping a checker that quietly waves the omission through.
+ */
+export const THEME_SLOTS = [
+  'void',
+  'rock',
+  'rockLight',
+  'rockDark',
+  'rockEdge',
+  'accent',
+  'accentLight',
+  'accentDark',
+  'grass',
+  'grassDark',
+  'wood',
+  'woodDark',
+  'stoneDark',
+  'flame',
+  'flameCore',
+  'hover',
+] as const satisfies readonly (keyof Theme)[];
+
+type MissingSlot = Exclude<keyof Theme, (typeof THEME_SLOTS)[number]>;
+const _everySlotListed: MissingSlot extends never ? true : MissingSlot = true;
+void _everySlotListed;
+
+/**
  * Terrain as data.
  *
  * The world's shape used to be a hundred lines of Pixi calls that drew a cave

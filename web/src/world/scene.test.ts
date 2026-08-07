@@ -1,4 +1,5 @@
 import type { ThemeKey } from '@agentlings/shared';
+import { validateLevelPack } from '@agentlings/shared';
 import { EXIT_X, SPAWN_X, WORLD_WIDTH } from '@agentlings/shared';
 import { describe, expect, it } from 'vitest';
 import { CAVE } from './scenes/cave';
@@ -414,5 +415,38 @@ describe('paintOf', () => {
         ops: [],
       }),
     ).toThrow(/unknown colour/);
+  });
+});
+
+describe('the built-in scenes, dressed as packs', () => {
+  // The strongest data the checker can be pointed at. Between them these four
+  // use every op in the format — cave alone has a ceiling with stalactites and
+  // vines, repeats, bands, polys, speckle, veins and tufts — plus the beam,
+  // glints and clock ambients. A walker that passes these is walking real
+  // scenes, not a fixture written to suit it.
+  it('pass the checker a real pack will face', () => {
+    for (const key of Object.keys(SCENES) as ThemeKey[]) {
+      const problems = validateLevelPack({
+        ...SCENES[key],
+        provenance: 'built in',
+        theme: THEMES[key],
+      });
+      expect(problems.filter((p) => p.level === 'error').map((p) => p.message), key).toEqual([]);
+    }
+  });
+
+  // ...and the same scenes fail it the moment a slot they use is taken away,
+  // which is what proves the walk above actually reached them.
+  it('fail it as soon as the palette stops covering them', () => {
+    for (const key of Object.keys(SCENES) as ThemeKey[]) {
+      const { rock: _gone, ...gapped } = THEMES[key];
+      const problems = validateLevelPack({
+        ...SCENES[key],
+        provenance: 'built in',
+        theme: gapped,
+      });
+      expect(problems.some((p) => p.message.includes('theme.rock is missing')), key).toBe(true);
+      expect(problems.some((p) => p.message.includes('paints with "rock"')), key).toBe(true);
+    }
   });
 });

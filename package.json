@@ -18,6 +18,7 @@
     "build": "npm run build -w web",
     "art": "node scripts/bake-sprites.mjs",
     "art:check": "tsx scripts/check-pack.ts",
+    "pack:check": "tsx scripts/check-pack.ts",
     "ledger:report": "tsx scripts/ledger-report.ts"
   },
   "devDependencies": {

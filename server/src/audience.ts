@@ -1,16 +1,20 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { AudiencePerson } from '@agentlings/shared';
+import type { GoogleContact } from './google';
 import type { SendRecord } from './sends';
 
 /**
  * The audience roster (D-092): the people a sending channel can actually
- * reach, persisted by name so nobody types a chat id twice. Two honest
- * sources and no other: the bot's own getUpdates (whoever tapped Start —
- * Telegram only shows 24 hours of hellos, so once seen means remembered),
- * and sends.jsonl (whoever a reviewed send already went to, under the name
- * the review showed). No contact book is imported anywhere; a person absent
- * from this file is unreachable, which is the channel's rule, not ours.
+ * reach, persisted by name so nobody types an address twice. What counts as
+ * an honest source is the channel's rule, not ours, and the channels differ
+ * (D-122): on Telegram the roster IS reachability — getUpdates (whoever
+ * tapped Start; 24 hours of hellos, so once seen means remembered) plus
+ * sends.jsonl (whoever a reviewed send already went to), and no one else —
+ * while on Gmail any address is reachable and the roster is autofill, so the
+ * user's own saved contacts join on the consent they already gave. What a
+ * paid session is told stays narrower than this file either way: the brief's
+ * legend carries relevant people only, never the book (channel.ts, D-122).
  *
  * One file per channel, global like the bot itself — a level does not have
  * its own Telegram audience any more than it has its own bot.
@@ -109,6 +113,37 @@ export function mergeSends(
         name: record.name ?? record.to,
         viaStart: false,
         sends: 1,
+      });
+    }
+  }
+  return [...next.values()];
+}
+
+/**
+ * Fold the user's saved contacts in (D-122). The contact-book name wins when
+ * it is a real name — it is the name the user chose for them — but an
+ * address-as-name never overwrites a name a reviewed send taught; aliases
+ * and send counts survive untouched, and re-merging the whole book is
+ * idempotent. A contact deleted at Google stays here until forgotten in
+ * Settings: the roster is a record of who is known, not a mirror.
+ */
+export function mergeContacts(
+  people: AudiencePerson[],
+  contacts: GoogleContact[],
+): AudiencePerson[] {
+  const next = new Map(people.map((p) => [p.id, { ...p }]));
+  for (const contact of contacts) {
+    const known = next.get(contact.id);
+    if (known) {
+      known.viaContacts = true;
+      if (contact.name !== contact.id) known.name = contact.name;
+    } else {
+      next.set(contact.id, {
+        id: contact.id,
+        name: contact.name,
+        viaContacts: true,
+        viaStart: false,
+        sends: 0,
       });
     }
   }

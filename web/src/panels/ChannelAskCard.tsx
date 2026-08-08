@@ -29,6 +29,7 @@ export function ChannelAskCard({
   answers = {},
   onAnswer,
   audience = [],
+  audienceProblem,
 }: {
   ask: ChannelAsk;
   /** The alternative the user chose on the fork, when they chose one. */
@@ -46,6 +47,8 @@ export function ChannelAskCard({
   onAnswer?: (id: string, value: string) => void;
   /** The channel's opted-in people, behind the To field (D-092). */
   audience?: AudiencePerson[];
+  /** Why the live audience source refused, shown in the picker (D-122). */
+  audienceProblem?: string;
 }) {
   const factInput = (q: ClarifyQuestion, className: string) =>
     q.id === 'send-to' ? (
@@ -56,6 +59,7 @@ export function ChannelAskCard({
         value={answers[q.id] ?? ''}
         onChange={(value) => onAnswer?.(q.id, value)}
         people={audience}
+        problem={audienceProblem}
       />
     ) : (
       <input

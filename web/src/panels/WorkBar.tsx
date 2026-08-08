@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   AudiencePerson,
+  AudienceReply,
   Cadence,
   ConnectionInfo,
   ScheduleInfo,
@@ -155,15 +156,24 @@ export function WorkBar({
    * the send audit before answering.
    */
   const [audience, setAudience] = useState<AudiencePerson[]>([]);
+  /** Why the live source refused (D-122) — shown in the picker, not swallowed. */
+  const [audienceProblem, setAudienceProblem] = useState<string | undefined>(undefined);
   const effectiveChannel = channel ?? plan?.channelAsk?.channel ?? null;
   useEffect(() => {
     if (!effectiveChannel) {
       setAudience([]);
+      setAudienceProblem(undefined);
       return;
     }
-    void api<{ people: AudiencePerson[] }>(`/api/channels/${effectiveChannel}/audience`)
-      .then((reply) => setAudience(reply.people))
-      .catch(() => setAudience([]));
+    void api<AudienceReply>(`/api/channels/${effectiveChannel}/audience`)
+      .then((reply) => {
+        setAudience(reply.people);
+        setAudienceProblem(reply.problem);
+      })
+      .catch(() => {
+        setAudience([]);
+        setAudienceProblem(undefined);
+      });
   }, [effectiveChannel]);
 
   // An address already in the sentence answers "who" — and so does a name
@@ -638,6 +648,7 @@ export function WorkBar({
                   answers={answers}
                   onAnswer={answerFact}
                   audience={audience}
+                  audienceProblem={audienceProblem}
                 />
               </div>
             </AskBubble>
@@ -654,6 +665,7 @@ export function WorkBar({
                 answers={answers}
                 onAnswer={answerFact}
                 audience={audience}
+                audienceProblem={audienceProblem}
               />
             </div>
           )}
@@ -695,6 +707,7 @@ export function WorkBar({
                     value={answers[q.id] ?? ''}
                     onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
                     people={audience}
+                    problem={audienceProblem}
                   />
                 ) : q.freeText ? (
                   <input

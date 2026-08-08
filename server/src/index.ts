@@ -73,7 +73,13 @@ import {
 } from './close';
 import { sweepWorkingCopies, workingCopies } from './sweep';
 import { secretValueProblem, storeSecret } from './env';
-import { exchangeCode, FlowStore, GOOGLE_SECRETS } from './google';
+import {
+  accessTokenFromRefresh,
+  exchangeCode,
+  FlowStore,
+  GOOGLE_SECRETS,
+  googleContacts,
+} from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
 import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
@@ -153,6 +159,7 @@ import {
 } from './roles';
 import {
   mergeChats,
+  mergeContacts,
   mergeSends,
   readAudience,
   removePerson,
@@ -588,16 +595,21 @@ function rosterNames(channel: string | undefined): string[] {
 }
 
 /**
- * The channel's opted-in audience (D-092), refreshed on every read — this
- * GET is both the garage's "check for new people" and the picker's quiet
- * refresh, one call doing both by decision. Telegram's getUpdates retains
- * ~24 hours, so whatever it shows is merged and persisted; the send audit
- * is re-merged whole (idempotent) so names reviewed at send time ride in.
- * A missing token degrades to the stored roster rather than failing.
+ * The channel's audience (D-092), refreshed on every read — this GET is both
+ * the garage's "check for new people" and the picker's quiet refresh, one
+ * call doing both by decision. Telegram's getUpdates retains ~24 hours, so
+ * whatever it shows is merged and persisted; Gmail merges the user's saved
+ * contacts on the consent they already gave (D-122); the send audit is
+ * re-merged whole (idempotent) so names reviewed at send time ride in. A
+ * missing token degrades to the stored roster; a live source that *refused*
+ * — the People API console toggle, a revoked consent — comes back as
+ * `problem` beside the stored people, because a wall the user must act on
+ * once should never look like an empty address book.
  */
 app.get('/api/channels/:channel/audience', async (c) => {
   const channel = c.req.param('channel');
   let people = readAudience(SANDBOX_ROOT, channel);
+  let problem: string | undefined;
   if (channel === 'telegram' && process.env.TELEGRAM_BOT_TOKEN) {
     try {
       people = mergeChats(people, await telegramChats(process.env.TELEGRAM_BOT_TOKEN));
@@ -605,9 +617,28 @@ app.get('/api/channels/:channel/audience', async (c) => {
       // The stored roster is the answer when Telegram is unreachable.
     }
   }
+  const googleAuth = {
+    clientId: process.env[GOOGLE_SECRETS.clientId],
+    clientSecret: process.env[GOOGLE_SECRETS.clientSecret],
+    refreshToken: process.env[GOOGLE_SECRETS.refreshToken],
+  };
+  if (channel === 'gmail' && googleAuth.clientId && googleAuth.clientSecret && googleAuth.refreshToken) {
+    const minted = await accessTokenFromRefresh({
+      clientId: googleAuth.clientId,
+      clientSecret: googleAuth.clientSecret,
+      refreshToken: googleAuth.refreshToken,
+    });
+    if ('error' in minted) {
+      problem = minted.error;
+    } else {
+      const got = await googleContacts({ accessToken: minted.token });
+      if ('error' in got) problem = got.error;
+      else people = mergeContacts(people, got);
+    }
+  }
   people = mergeSends(people, readSends(SANDBOX_ROOT), channel);
   writeAudience(SANDBOX_ROOT, channel, people);
-  return c.json({ people });
+  return c.json({ people, ...(problem ? { problem } : {}) });
 });
 
 /** Un-know someone: the roster forgets them until they say hello again. */

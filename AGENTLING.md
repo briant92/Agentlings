@@ -1372,12 +1372,17 @@ list per channel (D-077; SPEC M5.11 has the slices):
       send whose Words were left empty, the 26.8¢ lesson of a session
       that could only block on "what to say" (D-101) — and a failed
       run's question carries a reply box that continues the same job,
-      channel and all (D-087). The channel's opted-in audience is
-      persisted by name (Live, D-092): merged from the bot's own
-      getUpdates and the send audit, offered as a picker behind the To
-      field, listed in Settings with a forget button, and handed to the
-      session as a legend so "send it to Pepo" resolves — the never-invent
-      rule intact, no contact book imported anywhere. A channel word with
+      channel and all (D-087). The channel's audience is persisted by
+      name (Live, D-092, D-122): Telegram's is opt-in only — the bot's
+      own getUpdates plus the send audit — while Gmail's adds the user's
+      saved Google Contacts on the consent already given (official API,
+      never a userbot scrape; the People API console toggle refusing
+      comes back as a sentence in the picker, not an empty book). The
+      roster sits behind the To field as a ranked, filtering picker, and
+      what a session hears is narrower than the roster: the legend
+      carries only people the sentence names or the user has sent to,
+      capped at 20 — the never-invent rule intact, the whole address
+      book never riding a prompt. A channel word with
       no send verb beside it — a typo'd "Sen", a bare mention — raises a
       near-miss question at the desk instead of silence, one click turns
       it into the full send surface, and a job that mentioned a channel it

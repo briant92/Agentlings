@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   mergeChats,
+  mergeContacts,
   mergeSends,
   readAudience,
   removePerson,
@@ -35,6 +36,48 @@ describe('mergeChats (D-092)', () => {
     const known = [{ id: '86', name: '86', viaStart: false, sends: 3 }];
     const got = mergeChats(known, [{ id: '86', name: 'Brian Thornton' }]);
     expect(got).toEqual([{ id: '86', name: 'Brian Thornton', viaStart: true, sends: 3 }]);
+  });
+});
+
+describe('mergeContacts (D-122)', () => {
+  it('a saved contact joins as autofill, never as an opt-in', () => {
+    const got = mergeContacts([], [{ id: 'ana@x.com', name: 'Ana García' }]);
+    expect(got).toEqual([
+      { id: 'ana@x.com', name: 'Ana García', viaContacts: true, viaStart: false, sends: 0 },
+    ]);
+  });
+
+  it('the contact-book name wins, but an address-as-name never overwrites', () => {
+    const known = [
+      { id: 'ana@x.com', name: 'ana@x.com', viaStart: false, sends: 2 },
+      { id: 'luis@x.com', name: 'Luisito', viaStart: false, sends: 1, aliases: ['Lucho'] },
+    ];
+    const got = mergeContacts(known, [
+      { id: 'ana@x.com', name: 'Ana García' },
+      // No display name at Google — the fetch falls back to the address.
+      { id: 'luis@x.com', name: 'luis@x.com' },
+    ]);
+    expect(got.find((p) => p.id === 'ana@x.com')).toEqual({
+      id: 'ana@x.com',
+      name: 'Ana García',
+      viaStart: false,
+      viaContacts: true,
+      sends: 2,
+    });
+    // The reviewed name and its aliases survive the book saying nothing better.
+    expect(got.find((p) => p.id === 'luis@x.com')).toEqual({
+      id: 'luis@x.com',
+      name: 'Luisito',
+      viaStart: false,
+      viaContacts: true,
+      sends: 1,
+      aliases: ['Lucho'],
+    });
+  });
+
+  it('re-merging the whole book is idempotent', () => {
+    const once = mergeContacts([], [{ id: 'ana@x.com', name: 'Ana García' }]);
+    expect(mergeContacts(once, [{ id: 'ana@x.com', name: 'Ana García' }])).toEqual(once);
   });
 });
 

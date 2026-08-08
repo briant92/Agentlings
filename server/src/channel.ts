@@ -319,6 +319,39 @@ export const RESEND_WORDS = /\b(same|again|resend|re-send|like (?:the )?last|pre
  * shape as the two job builders that dropped a field in silence (D-097) — a
  * correct function reached by nobody.
  */
+/** Legend rows past this bound wait to be named or used; the book never rides whole. */
+export const LEGEND_CAP = 20;
+
+/**
+ * Who the brief's legend may name (D-122): people the sentence mentions,
+ * then people already sent to, and never the whole roster. A contact book
+ * runs to hundreds, and handing every row to every send session prices the
+ * user's whole address book into each prompt — context costs on every turn
+ * (D-053) — for recipients the job will never touch. Mention matching
+ * mirrors the To prefill's rule (askFacts.matchRecipient: whole words,
+ * tokens of three letters or more, aliases and usernames included) minus
+ * the uniqueness demand — a legend may hold both Anas and let the session
+ * say which is missing.
+ */
+export function legendAudience(prompt: string, people: AudiencePerson[]): AudiencePerson[] {
+  const text = prompt.toLowerCase();
+  const mentioned = (person: AudiencePerson) =>
+    [person.name, person.username ?? '', ...(person.aliases ?? [])]
+      .flatMap((source) => source.toLowerCase().split(/[^\p{L}\p{N}]+/u))
+      .some(
+        (token) =>
+          token.length >= 3 &&
+          new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'u').test(text),
+      );
+  const named = people.filter(mentioned);
+  const used = people
+    .filter((person) => person.sends > 0 && !named.includes(person))
+    .sort((a, b) => b.sends - a.sends);
+  // Everyone the prompt names stays, past the cap included — the sentence
+  // asked for them; the cap only bounds the people added on history alone.
+  return [...named, ...used].slice(0, Math.max(named.length, LEGEND_CAP));
+}
+
 export function briefForJob(
   job: { channel?: string; prompt: string; send?: { words: string } },
   audience: (channel: string) => AudiencePerson[],
@@ -328,7 +361,7 @@ export function briefForJob(
   return (
     channelBrief(
       job.channel,
-      audience(job.channel),
+      legendAudience(job.prompt, audience(job.channel)),
       // "The same again" reuses the audited body instead of rebuilding and
       // drifting (D-094).
       RESEND_WORDS.test(job.prompt) ? lastSend(job.channel) : undefined,

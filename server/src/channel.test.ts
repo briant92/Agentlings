@@ -4,6 +4,8 @@ import {
   channelBrief,
   channelShelf,
   detectChannelAsk,
+  LEGEND_CAP,
+  legendAudience,
   mentionsChannel,
   RESEND_WORDS,
 } from './channel';
@@ -396,6 +398,82 @@ describe('briefForJob', () => {
     )!;
     expect(brief).toContain('A DARLE');
     expect(brief).toContain('the last thing sent on this channel');
+  });
+});
+
+describe('legendAudience (D-122)', () => {
+  const person = (
+    id: string,
+    name: string,
+    sends: number,
+    extra: Partial<{ aliases: string[]; username: string; viaContacts: boolean }> = {},
+  ) => ({ id, name, viaStart: false, sends, ...extra });
+
+  it('keeps who the sentence names, sent to or not', () => {
+    const got = legendAudience('email Ana the summary', [
+      person('ana@x.com', 'Ana García', 0, { viaContacts: true }),
+      person('bo@x.com', 'Roberto Díaz', 0, { viaContacts: true }),
+    ]);
+    expect(got.map((p) => p.id)).toEqual(['ana@x.com']);
+  });
+
+  it('matches through aliases, the way the To prefill does (D-094)', () => {
+    const got = legendAudience('send it to Pepo', [
+      person('6783316106', 'Jose Dussaillant', 2, { aliases: ['Pepo'] }),
+    ]);
+    expect(got).toHaveLength(1);
+  });
+
+  it('drops an unmentioned, never-used contact — the book never rides whole', () => {
+    const got = legendAudience('email the weekly report', [
+      person('ana@x.com', 'Ana García', 0, { viaContacts: true }),
+      person('used@x.com', 'Carmen Soto', 3),
+    ]);
+    expect(got.map((p) => p.id)).toEqual(['used@x.com']);
+  });
+
+  it('caps the added-on-history tail but never the named', () => {
+    const many = Array.from({ length: LEGEND_CAP + 10 }, (_, i) =>
+      person(`p${i}@x.com`, `Persona${i} Apellido`, i + 1),
+    );
+    const unnamed = legendAudience('email the report', many);
+    expect(unnamed).toHaveLength(LEGEND_CAP);
+    // Ranked by use: the biggest sender leads.
+    expect(unnamed[0]?.sends).toBe(LEGEND_CAP + 10);
+
+    const prompt = `email ${many.map((p) => p.name.split(' ')[0]).join(' and ')}`;
+    expect(legendAudience(prompt, many)).toHaveLength(LEGEND_CAP + 10);
+  });
+
+  it('a two-letter name cannot claim a mention — the prefill rule, mirrored', () => {
+    expect(legendAudience('email bo now', [person('bo@x.com', 'Bo', 0)])).toHaveLength(0);
+  });
+});
+
+describe('briefForJob filters the legend (D-122)', () => {
+  const roster = [
+    { id: 'ana@x.com', name: 'Ana García', viaStart: false, viaContacts: true, sends: 0 },
+    { id: 'luis@x.com', name: 'Luis Vera', viaStart: false, viaContacts: true, sends: 0 },
+  ];
+
+  it('a job naming nobody gets no legend from a book of unused contacts', () => {
+    const brief = briefForJob(
+      { channel: 'gmail', prompt: 'email the weekly summary' },
+      () => roster,
+      () => undefined,
+    )!;
+    expect(brief).not.toContain('Known recipients');
+    expect(brief).not.toContain('ana@x.com');
+  });
+
+  it('a job naming a contact carries exactly them', () => {
+    const brief = briefForJob(
+      { channel: 'gmail', prompt: 'email Ana the weekly summary' },
+      () => roster,
+      () => undefined,
+    )!;
+    expect(brief).toContain('Ana García — ana@x.com');
+    expect(brief).not.toContain('luis@x.com');
   });
 });
 

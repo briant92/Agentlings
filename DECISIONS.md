@@ -131,6 +131,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-119 — 2026-08-07 — Paperwork does not inherit: PENDING.md joins the forward exclusion](#d-119--2026-08-07--paperwork-does-not-inherit-pendingmd-joins-the-forward-exclusion)
 - [D-120 — 2026-08-07 — An approval is keyed by the sentence the chain began with](#d-120--2026-08-07--an-approval-is-keyed-by-the-sentence-the-chain-began-with)
 - [D-121 — 2026-08-08 — Closing a level archives it in place, and the sweep takes the clones](#d-121--2026-08-08--closing-a-level-archives-it-in-place-and-the-sweep-takes-the-clones)
+- [D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole](#d-122--2026-08-08--gmails-roster-reads-the-contact-book-the-legend-stops-riding-whole)
 
 ## By theme
 
@@ -339,7 +340,10 @@ entry updates one file rather than two.
   merged with the send audit, nothing imported), the To field becomes a
   picker, Settings lists who the bot knows with a forget button, and the
   session brief carries the legend so "send it to Pepo" resolves with the
-  never-invent rule intact; and D-093, wall 4 (a typo'd "Sen") answered at
+  never-invent rule intact; and D-122, where Gmail's roster reads the saved
+  contact book on the consent already given — reachability vs autofill is
+  the channel's own rule — and the legend narrows to named-or-used, capped,
+  for every channel; and D-093, wall 4 (a typo'd "Sen") answered at
   both gates — a channel word with no send verb raises a near-miss
   *question* the user can confirm into the full send surface, and a job
   that mentioned a channel it never carried says at review that approving
@@ -7253,3 +7257,65 @@ tests that walk six-file temp dirs; obvious on the first real call. The walk
 now rides fs/promises, and measured again the API answers 6–14 ms *during*
 the scan. The Settings card says "Measuring…" for those seconds — the honest
 cost of a real number; a cached figure would answer its own question stale.
+
+## D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole
+
+Brian asked whether the Gmail connection can review his contact list so the
+To field offers a dropdown with name matching. Almost all of it already
+existed: `contacts.readonly` has been in the consent since D-080 ("one
+consent, three capabilities… so nobody re-consents per feature"), the
+audience route is channel-generic and the WorkBar already calls it for
+whatever channel the plan carries, `RecipientPicker` and the D-094 name
+prefill are channel-agnostic, and `AudiencePerson.id` was documented as "a
+chat id, **later an email**". The one missing piece was a source: nothing
+filled `audience/gmail.json` from Google Contacts.
+
+D-092 said "never a contact-book import", and that line was written about
+the **userbot shelf** — scraping a phone's book through an unofficial
+client, refused with reasons (D-077). This is the other thing: the official
+People API, on the user's own OAuth client and a consent they already gave.
+The distinction that makes both rules true at once is that **what counts as
+an honest source is the channel's own rule**: on Telegram the roster IS
+reachability, so opt-in is the boundary; on Gmail any address is reachable
+and the roster is autofill, so the user's saved contacts belong in it.
+Decided with Brian: **saved contacts only** ("My Contacts") — the
+`otherContacts` everyone-ever-emailed list needs a scope the consent does
+not carry, and the send audit grows that population honestly anyway.
+
+The build: `googleContacts` (People API, names + addresses only, paged at
+1,000, one row per email, a two-address person is two reachable rows, no
+display name falls back to the address) rides `accessTokenFromRefresh`;
+`mergeContacts` folds the book in — contact-book name wins, but an
+address-as-name never overwrites a name a reviewed send taught; aliases and
+send counts survive; idempotent — and the audience GET grows a gmail branch
+beside telegram's, gated on the three `GOOGLE_OAUTH_*` env names. A refusal
+becomes `problem` beside the stored people rather than a silently thinner
+dropdown, because the People API sits behind the **same console toggle that
+walled the calendar** (D-104): live-verified the hour it was built, the
+real store answered 2 send-audit people plus exactly that sentence —
+"Google says the People API is off for your project — enable it in the
+Google console (APIs & Services → Library → People API), then look again."
+The picker shows it amber where the expectation forms; the 7-day-trap and
+revocation wordings ride the same field for free.
+
+**The legend stopped riding whole, for every channel — decided with Brian
+against the whole-roster and picker-only alternatives.** channelBrief used
+to map every roster row into every send session's prompt; two Telegram
+people made that invisible, a contact book prices the user's whole address
+book into each paid prompt for recipients the job will never touch (context
+costs on every turn, D-053). `legendAudience` now filters at briefForJob —
+the single production call site — to people the sentence names (mirroring
+`matchRecipient`'s whole-word ≥3-letter token rule, aliases included, minus
+the uniqueness demand: a legend may hold both Anas) plus people already
+sent to, ranked by use, capped at 20 — with everyone the prompt names kept
+past the cap, because the sentence asked for them. The picker itself ranks
+by use, bounds its DOM at 80 rows with an honest "N more — keep typing",
+and scrolls inside its own list.
+
+14 new tests (paging and flattening, the console sentence, refusal
+wordings, merge semantics including the address-as-name guard, the legend's
+keep/drop/cap rules, and the briefForJob wiring both ways); 1,362 + 130
+green, typecheck clean. Telegram's audience answered unchanged beside the
+gmail check. What remains is Brian's console toggle — the same one the
+calendar waits on — and the first real dropdown over the real book after
+it.

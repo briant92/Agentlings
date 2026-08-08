@@ -7,6 +7,7 @@ import {
   FLOW_TTL_MS,
   FlowStore,
   GOOGLE_SCOPES,
+  googleContacts,
   idTokenEmail,
 } from './google';
 
@@ -141,5 +142,88 @@ describe('accessTokenFromRefresh', () => {
     const got = await accessTokenFromRefresh({ ...args, fetchFn: fn });
     expect('error' in got && got.error).toContain('Connect Google again');
     expect('error' in got && got.error).toContain('7 days');
+  });
+});
+
+describe('googleContacts (D-122)', () => {
+  /** One canned answer per call, in order — pagination needs a sequence. */
+  function pagedFetch(pages: { ok: boolean; status?: number; body?: unknown }[]) {
+    const calls: string[] = [];
+    const fn = (async (url: string) => {
+      calls.push(url);
+      const res = pages[Math.min(calls.length - 1, pages.length - 1)];
+      return {
+        ok: res.ok,
+        status: res.status ?? (res.ok ? 200 : 500),
+        json: async () => res.body ?? {},
+      };
+    }) as unknown as typeof fetch;
+    return { fn, calls };
+  }
+
+  it('flattens people to one row per address and follows pages', async () => {
+    const { fn, calls } = pagedFetch([
+      {
+        ok: true,
+        body: {
+          connections: [
+            {
+              names: [{ displayName: 'Ana García' }],
+              emailAddresses: [{ value: 'ana@x.com' }, { value: 'ana@work.com' }],
+            },
+            { emailAddresses: [{ value: 'no-name@x.com' }] },
+            { names: [{ displayName: 'Sin Correo' }] },
+          ],
+          nextPageToken: 't2',
+        },
+      },
+      { ok: true, body: { connections: [{ names: [{ displayName: 'Roberto' }], emailAddresses: [{ value: 'bo@x.com' }] }] } },
+    ]);
+    const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
+    expect(got).toEqual([
+      { id: 'ana@x.com', name: 'Ana García' },
+      { id: 'ana@work.com', name: 'Ana García' },
+      // A contact with no display name is reachable under their address.
+      { id: 'no-name@x.com', name: 'no-name@x.com' },
+      { id: 'bo@x.com', name: 'Roberto' },
+    ]);
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toContain('personFields=names%2CemailAddresses');
+    expect(calls[0]).toContain('pageSize=1000');
+    expect(calls[1]).toContain('pageToken=t2');
+  });
+
+  it('the disabled People API comes back as the console sentence, not an empty book', async () => {
+    const { fn } = pagedFetch([
+      {
+        ok: false,
+        status: 403,
+        body: {
+          error: {
+            message:
+              'People API has not been used in project 42 before or it is disabled. Enable it by visiting…',
+          },
+        },
+      },
+    ]);
+    const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
+    expect('error' in got && got.error).toContain('People API is off');
+    expect('error' in got && got.error).toContain('console');
+  });
+
+  it("any other refusal carries Google's own words", async () => {
+    const { fn } = pagedFetch([
+      { ok: false, status: 401, body: { error: { message: 'Invalid Credentials' } } },
+    ]);
+    const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
+    expect('error' in got && got.error).toBe('Google refused the contacts — Invalid Credentials');
+  });
+
+  it('an unreachable Google degrades with a sentence', async () => {
+    const fn = (async () => {
+      throw new Error('offline');
+    }) as unknown as typeof fetch;
+    const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
+    expect('error' in got && got.error).toContain('could not be reached');
   });
 });

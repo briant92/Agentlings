@@ -207,3 +207,71 @@ export async function accessTokenFromRefresh(args: {
   }
   return { token };
 }
+
+/** A saved contact flattened to one reachable address — one row per email. */
+export interface GoogleContact {
+  id: string;
+  name: string;
+}
+
+/** What one page of people/me/connections looks like, fields we read only. */
+interface ConnectionsPage {
+  connections?: {
+    names?: { displayName?: string }[];
+    emailAddresses?: { value?: string }[];
+  }[];
+  nextPageToken?: string;
+  error?: { message?: string };
+}
+
+/**
+ * The user's saved contacts ("My Contacts"), names and addresses only — the
+ * fields the roster holds and nothing more (D-122). Paged at Google's
+ * maximum; a person with two addresses is two reachable rows; a contact
+ * with no email is not reachable on this channel and is skipped. The People
+ * API answers 403 until it is enabled in the user's own console — the same
+ * wall the Calendar API put up (D-104) — so that refusal comes back as the
+ * sentence to act on, never as a silently empty book.
+ */
+export async function googleContacts(args: {
+  accessToken: string;
+  fetchFn?: typeof fetch;
+}): Promise<GoogleContact[] | { error: string }> {
+  const doFetch = args.fetchFn ?? fetch;
+  const byEmail = new Map<string, GoogleContact>();
+  let pageToken: string | undefined;
+  // 10 pages of 1,000 is a bound nobody's address book meets, not a cap.
+  for (let page = 0; page < 10; page++) {
+    const url = new URL('https://people.googleapis.com/v1/people/me/connections');
+    url.searchParams.set('personFields', 'names,emailAddresses');
+    url.searchParams.set('pageSize', '1000');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+    let res: { ok: boolean; status: number; json: () => Promise<unknown> };
+    try {
+      res = await doFetch(url.toString(), {
+        headers: { authorization: `Bearer ${args.accessToken}` },
+      });
+    } catch {
+      return { error: 'Google could not be reached — showing who is already known.' };
+    }
+    const body = (await res.json().catch(() => null)) as ConnectionsPage | null;
+    if (!res.ok) {
+      const message = body?.error?.message ?? `HTTP ${res.status}`;
+      return {
+        error: /disabled|has not been used/i.test(message)
+          ? 'Google says the People API is off for your project — enable it in the Google console (APIs & Services → Library → People API), then look again.'
+          : `Google refused the contacts — ${message}`,
+      };
+    }
+    for (const person of body?.connections ?? []) {
+      const name = person.names?.[0]?.displayName?.trim();
+      for (const address of person.emailAddresses ?? []) {
+        const email = address.value?.trim();
+        if (email && !byEmail.has(email)) byEmail.set(email, { id: email, name: name || email });
+      }
+    }
+    pageToken = body?.nextPageToken;
+    if (!pageToken) break;
+  }
+  return [...byEmail.values()];
+}

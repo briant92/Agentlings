@@ -270,8 +270,21 @@ export interface AudiencePerson {
   aliases?: string[];
   /** They messaged the bot themselves — the strongest opt-in. */
   viaStart: boolean;
+  /** From the user's own saved Google Contacts (D-122) — autofill, not opt-in. */
+  viaContacts?: boolean;
   /** Reviewed sends already delivered to them. */
   sends: number;
+}
+
+/**
+ * The audience GET's answer. `problem` names why the live source could not
+ * be read — the People API console toggle, a revoked consent — while the
+ * stored roster still answers; a wall shown where the expectation forms
+ * instead of a silently thinner dropdown.
+ */
+export interface AudienceReply {
+  people: AudiencePerson[];
+  problem?: string;
 }
 
 /** One row of the channels Settings lists beyond the wired ones (D-088). */

@@ -882,9 +882,9 @@ app.post('/api/levels/:lid/reopen', (c) => {
 });
 
 /** The measured disk answer: repo/ clones under resolved jobs, nothing else. */
-app.get('/api/working-copies', (c) => c.json(workingCopies(SANDBOX_ROOT)));
+app.get('/api/working-copies', async (c) => c.json(await workingCopies(SANDBOX_ROOT)));
 
-app.post('/api/working-copies/sweep', (c) => c.json(sweepWorkingCopies(SANDBOX_ROOT)));
+app.post('/api/working-copies/sweep', async (c) => c.json(await sweepWorkingCopies(SANDBOX_ROOT)));
 
 app.get('/api/levels/:lid/state', (c) => {
   const rt = getLevel(c.req.param('lid'));

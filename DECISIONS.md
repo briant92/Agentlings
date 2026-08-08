@@ -7239,3 +7239,17 @@ file still says running.
 16 new tests (blocker wording, granted-only approvals, pause through the
 tested path, reopen leaves paused, the per-job sweep rule, torn-file
 tolerance, the no-rewrite pin); 1,348 + 130 green, typecheck clean.
+
+**Evidence amendment, the same hour — the first real call did its usual
+work.** Mutation-proved post-commit (`59070e2`): the mid-job guard removed
+kills exactly the two blocker tests, `done` added to the sweepable set kills
+exactly the two classification tests, the pause condition inverted kills
+exactly the two schedule tests — no survivors, no over-kills. Then the live
+`GET /api/working-copies` against the real store agreed with the independent
+PowerShell measurement to the byte (40 clones / 403.3 MB sweepable,
+50 / 599.6 MB kept) — and took **19 seconds on a synchronous walk**, holding
+the event loop for all of it: sim, sockets, every request. Invisible to
+tests that walk six-file temp dirs; obvious on the first real call. The walk
+now rides fs/promises, and measured again the API answers 6–14 ms *during*
+the scan. The Settings card says "Measuring…" for those seconds — the honest
+cost of a real number; a cached figure would answer its own question stale.

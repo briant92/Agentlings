@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
+import { readdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { Job, SweepResult, WorkingCopiesInfo } from '@agentlings/shared';
 import { repoDir } from './gitwork';
@@ -15,23 +16,28 @@ import { readStoredJobs } from './queue';
  * about itself, so it is kept rather than guessed at. Transcripts,
  * close-outs, outputs and everything else in the sandbox stay — a redo
  * clones fresh anyway.
+ *
+ * The walk is async because the store is not small: the first live call
+ * measured 19 seconds over ~150k files, and a synchronous walk holds the
+ * event loop — the sim, the sockets and every other request — for all of
+ * it. Sizes ride the thread pool instead; the world keeps ticking.
  */
 
 const SWEEPABLE = new Set<Job['status']>(['promoted', 'discarded']);
 
-function dirBytes(dir: string): number {
-  let total = 0;
+async function dirBytes(dir: string): Promise<number> {
   let entries;
   try {
-    entries = readdirSync(dir, { withFileTypes: true });
+    entries = await readdir(dir, { withFileTypes: true });
   } catch {
     return 0; // unreadable counts as nothing rather than failing the scan
   }
+  let total = 0;
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     try {
-      if (entry.isDirectory()) total += dirBytes(full);
-      else if (entry.isFile()) total += statSync(full).size;
+      if (entry.isDirectory()) total += await dirBytes(full);
+      else if (entry.isFile()) total += (await stat(full)).size;
     } catch {
       // A file the sync client is holding: skip it, keep counting.
     }
@@ -59,12 +65,13 @@ function scanClones(sandboxRoot: string): { sweepable: string[]; kept: string[] 
   return { sweepable, kept };
 }
 
-export function workingCopies(sandboxRoot: string): WorkingCopiesInfo {
+export async function workingCopies(sandboxRoot: string): Promise<WorkingCopiesInfo> {
   const { sweepable, kept } = scanClones(sandboxRoot);
-  const sum = (dirs: string[]) => dirs.reduce((total, dir) => total + dirBytes(dir), 0);
+  const sum = async (dirs: string[]) =>
+    (await Promise.all(dirs.map(dirBytes))).reduce((total, bytes) => total + bytes, 0);
   return {
-    sweepable: { clones: sweepable.length, bytes: sum(sweepable) },
-    kept: { clones: kept.length, bytes: sum(kept) },
+    sweepable: { clones: sweepable.length, bytes: await sum(sweepable) },
+    kept: { clones: kept.length, bytes: await sum(kept) },
   };
 }
 
@@ -73,13 +80,13 @@ export function workingCopies(sandboxRoot: string): WorkingCopiesInfo {
  * counted only when the removal went through whole, so the report never
  * claims space a locked file kept.
  */
-export function sweepWorkingCopies(sandboxRoot: string): SweepResult {
+export async function sweepWorkingCopies(sandboxRoot: string): Promise<SweepResult> {
   const { sweepable } = scanClones(sandboxRoot);
   const result: SweepResult = { clones: 0, bytes: 0, skipped: 0 };
   for (const repo of sweepable) {
-    const bytes = dirBytes(repo);
+    const bytes = await dirBytes(repo);
     try {
-      rmSync(repo, { recursive: true, force: true });
+      await rm(repo, { recursive: true, force: true });
       result.clones++;
       result.bytes += bytes;
     } catch {

@@ -51,52 +51,52 @@ describe('working copies', () => {
 
   afterEach(() => rm(root, { recursive: true, force: true }));
 
-  it('splits clones by whether their job is settled', () => {
+  it('splits clones by whether their job is settled', async () => {
     const dir = level(root, 'l1', [job('a', 'promoted'), job('b', 'done'), job('d', 'discarded')]);
     clone(dir, 'a');
     clone(dir, 'b');
     clone(dir, 'c'); // no job row: proves nothing about itself, so kept
     clone(dir, 'd');
-    const info = workingCopies(root);
+    const info = await workingCopies(root);
     expect(info.sweepable).toEqual({ clones: 2, bytes: 128 });
     expect(info.kept).toEqual({ clones: 2, bytes: 128 });
   });
 
-  it('sweeps only the settled clones and only the clone itself', () => {
+  it('sweeps only the settled clones and only the clone itself', async () => {
     const dir = level(root, 'l1', [job('a', 'promoted'), job('b', 'done')]);
     const swept = clone(dir, 'a');
     writeFileSync(path.join(dir, 'jobs', 'a', '.session.json'), '{}');
     const kept = clone(dir, 'b');
 
-    expect(sweepWorkingCopies(root)).toEqual({ clones: 1, bytes: 64, skipped: 0 });
+    expect(await sweepWorkingCopies(root)).toEqual({ clones: 1, bytes: 64, skipped: 0 });
     expect(existsSync(swept)).toBe(false);
     // The sandbox around the clone is the training data — untouched.
     expect(existsSync(path.join(dir, 'jobs', 'a', '.session.json'))).toBe(true);
     expect(existsSync(kept)).toBe(true);
     // A second sweep finds nothing: the report never re-claims freed space.
-    expect(sweepWorkingCopies(root)).toEqual({ clones: 0, bytes: 0, skipped: 0 });
+    expect(await sweepWorkingCopies(root)).toEqual({ clones: 0, bytes: 0, skipped: 0 });
   });
 
-  it('includes closed levels — the rule is per job, not per level', () => {
+  it('includes closed levels — the rule is per job, not per level', async () => {
     const dir = level(root, 'shut', [job('a', 'promoted')], true);
     const repo = clone(dir, 'a');
-    expect(sweepWorkingCopies(root).clones).toBe(1);
+    expect((await sweepWorkingCopies(root)).clones).toBe(1);
     expect(existsSync(repo)).toBe(false);
   });
 
-  it('keeps every clone when the jobs file cannot be read', () => {
+  it('keeps every clone when the jobs file cannot be read', async () => {
     const dir = level(root, 'l1', []);
     writeFileSync(path.join(dir, 'jobs.json'), 'not json');
     const repo = clone(dir, 'a');
-    const info = workingCopies(root);
+    const info = await workingCopies(root);
     expect(info.sweepable.clones).toBe(0);
     expect(info.kept.clones).toBe(1);
-    expect(sweepWorkingCopies(root).clones).toBe(0);
+    expect((await sweepWorkingCopies(root)).clones).toBe(0);
     expect(existsSync(repo)).toBe(true);
   });
 
-  it('reads an empty store as zeros', () => {
-    expect(workingCopies(root)).toEqual({
+  it('reads an empty store as zeros', async () => {
+    expect(await workingCopies(root)).toEqual({
       sweepable: { clones: 0, bytes: 0 },
       kept: { clones: 0, bytes: 0 },
     });

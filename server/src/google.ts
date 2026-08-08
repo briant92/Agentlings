@@ -35,6 +35,23 @@ export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/contacts.other.readonly',
 ];
 
+/**
+ * Who the consent walk runs as: the body's client when one was typed, the
+ * stored client otherwise (D-123). Scopes never grow on an existing token,
+ * so widening them means walking consent again — and a connected card must
+ * be able to do that without anyone re-pasting secrets the .env already
+ * holds. An empty ask is a reconnect, not a mistake.
+ */
+export function startCredentials(
+  body: { clientId?: string; clientSecret?: string },
+  env: Record<string, string | undefined>,
+): { clientId: string; clientSecret: string } {
+  return {
+    clientId: body.clientId?.trim() || env[GOOGLE_SECRETS.clientId] || '',
+    clientSecret: body.clientSecret?.trim() || env[GOOGLE_SECRETS.clientSecret] || '',
+  };
+}
+
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const CALL_TIMEOUT_MS = 15_000;

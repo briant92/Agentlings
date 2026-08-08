@@ -7359,3 +7359,20 @@ insufficient-scope match kills exactly the reconnect test. What remains is
 Brian's one consent click, after which the compose-field population fills
 the picker on its next focus — no restart, and the legend rule keeps every
 prompt as narrow as before regardless of how big the list turns out to be.
+
+**Amendment, minutes later — Brian could not take the click, and the fault
+was D-111's shape exactly.** "Press Connect Google again" pointed at a
+control that does not exist: the drawer and its Connect button render only
+while a connection is *not ready*, so a connected Google card offered
+identity, a pill and a switch — no way to re-walk consent. An instruction
+the user cannot act on is a trap, and this one was written the same hour
+the entry above praised the reconnect sentence. Fixed at both ends: the
+start route takes typed secrets or falls back to the client the .env
+already stores (`startCredentials`, its own tests — an empty ask is a
+reconnect, not a mistake; a truly absent client still gets the old
+validation sentences), and the ready Google card grows a quiet
+**re-approve access** link that opens the fresh consent in a tab with
+nothing to re-paste and nothing to poll — the callback storing the new
+refresh token is the whole grant. Live-verified: an empty-body start
+answered 200 with the accounts.google.com URL carrying **both** contacts
+scopes, minted from the stored client. 1,368 + 130 green.

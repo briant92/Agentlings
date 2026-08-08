@@ -31,6 +31,9 @@ export function SettingsModal({
   const [drawerError, setDrawerError] = useState<string | null>(null);
   /** A Google sign-in tab is open; the server flips ready when it comes back. */
   const [googlePending, setGooglePending] = useState(false);
+  /** The connected card's re-approve (D-123): sent, or why it could not be. */
+  const [reconnectSent, setReconnectSent] = useState(false);
+  const [reconnectError, setReconnectError] = useState<string | null>(null);
 
   /** The tiers beyond the wired connections — planned, and never-with-why. */
   const [shelf, setShelf] = useState<ChannelShelf | null>(null);
@@ -151,6 +154,30 @@ export function SettingsModal({
       setDrawerError(err instanceof Error ? err.message : String(err));
     } finally {
       setChecking(false);
+    }
+  };
+
+  /**
+   * Re-walk the consent with the client already stored (D-123). Scopes never
+   * grow on an existing token, so when a new ability lands — reading the
+   * people you have emailed — the connected card must offer the fresh
+   * approval itself; a connected state with no way to re-consent was a dead
+   * end of exactly D-111's kind. The empty body tells the server "same
+   * client"; the approval happens on Google's page, and the callback storing
+   * a new refresh token is the whole grant — nothing here to poll.
+   */
+  const reconnectGoogle = async () => {
+    setReconnectError(null);
+    try {
+      const { url } = await api<{ url: string }>('/api/settings/connections/google/oauth/start', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      window.open(url, '_blank', 'noopener');
+      setReconnectSent(true);
+    } catch (err) {
+      setReconnectError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -285,6 +312,22 @@ export function SettingsModal({
                     {drawer === connection.name ? 'close' : 'add it here'}
                   </button>{' '}
                   or set it in .env.
+                </p>
+              )}
+              {connection.name === 'google' && connection.ready && (
+                <p className="dim conn-note">
+                  {reconnectSent ? (
+                    <>approve in the Google tab that opened — it says Connected when the new permission lands.</>
+                  ) : (
+                    <>
+                      <button className="work-link" onClick={() => void reconnectGoogle()}>
+                        re-approve access
+                      </button>{' '}
+                      — Google asks again in a new tab. Needed once when a new ability arrives,
+                      like reading the people you have emailed.
+                    </>
+                  )}
+                  {reconnectError && <span className="error"> {reconnectError}</span>}
                 </p>
               )}
               {!connection.ready && drawer === connection.name && (

@@ -80,6 +80,7 @@ import {
   GOOGLE_SECRETS,
   googleContacts,
   googleOtherContacts,
+  startCredentials,
 } from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
@@ -735,8 +736,11 @@ const GOOGLE_REDIRECT = `http://127.0.0.1:${PORT}/api/oauth/google/callback`;
 
 app.post('/api/settings/connections/google/oauth/start', async (c) => {
   const body = await c.req.json<{ clientId?: string; clientSecret?: string }>();
-  const clientId = body.clientId?.trim() ?? '';
-  const clientSecret = body.clientSecret?.trim() ?? '';
+  // Typed secrets win; the stored client answers an empty ask — that is the
+  // connected card's re-approve, which re-walks consent so a widened scope
+  // list can actually be granted (D-123). Validation still guards both
+  // sources: a truly absent client gets the same sentences as before.
+  const { clientId, clientSecret } = startCredentials(body, process.env);
   for (const [label, value] of [
     ['client id', clientId],
     ['client secret', clientSecret],

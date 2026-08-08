@@ -10,6 +10,7 @@ import {
   googleContacts,
   googleOtherContacts,
   idTokenEmail,
+  startCredentials,
 } from './google';
 
 function fakeFetch(respond: () => { ok: boolean; status?: number; body?: unknown }) {
@@ -226,6 +227,28 @@ describe('googleContacts (D-122)', () => {
     }) as unknown as typeof fetch;
     const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
     expect('error' in got && got.error).toContain('could not be reached');
+  });
+});
+
+describe('startCredentials (D-123)', () => {
+  const env = { GOOGLE_OAUTH_CLIENT_ID: 'stored-id', GOOGLE_OAUTH_CLIENT_SECRET: 'stored-sec' };
+
+  it('typed secrets win over the stored client', () => {
+    expect(startCredentials({ clientId: ' typed-id ', clientSecret: 'typed-sec' }, env)).toEqual({
+      clientId: 'typed-id',
+      clientSecret: 'typed-sec',
+    });
+  });
+
+  it('an empty ask is a reconnect — the stored client answers', () => {
+    expect(startCredentials({}, env)).toEqual({
+      clientId: 'stored-id',
+      clientSecret: 'stored-sec',
+    });
+  });
+
+  it('nothing anywhere stays empty, for the validator to refuse in words', () => {
+    expect(startCredentials({}, {})).toEqual({ clientId: '', clientSecret: '' });
   });
 });
 

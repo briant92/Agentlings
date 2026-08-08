@@ -237,6 +237,10 @@ export function CrewPanel({
               <div className="sect">standing approvals — jobs allowed to send without review</div>
               {approvals.map((a) => (
                 <div key={a.key} className="bo-standing-row">
+                  {/* The key IS the job — its own sentence (D-082). Without it
+                      two grants to the same person render as identical rows,
+                      and a list of duplicates reads as a bug. */}
+                  <span className="bo-standing-key">“{a.key}”</span>
                   <span className="bo-standing-what">
                     {a.channel} → {a.recipients.join(', ')}
                     {a.template ? ` · template ${a.template}` : ''}

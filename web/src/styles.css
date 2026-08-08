@@ -2135,6 +2135,12 @@ button.danger:hover {
   flex-wrap: wrap;
   font-size: 12px;
 }
+/* The sentence the grant belongs to — what tells two rows apart. */
+.bo-standing-key {
+  flex-basis: 100%;
+  color: #b9bfce;
+  overflow-wrap: anywhere;
+}
 .bo-standing-what {
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -3503,10 +3509,21 @@ button.danger:hover {
   min-width: 0;
   font-size: 12px;
 }
+/* A button so it opens the review, dressed as the text it always was. */
 .in-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.in-name:hover {
+  text-decoration: underline;
 }
 .in-dot {
   width: 5px;

@@ -108,7 +108,12 @@ export function Inbox({
               <span className="in-main">
                 <span className="in-title">
                   {unread && <span className="in-dot" />}
-                  <span className="in-name">{d.title}</span>
+                  {/* The title is the natural thing to click; it opens the
+                      review the way the chips do, at the report rather than
+                      at one file. */}
+                  <button className="in-name" onClick={() => open(d.jobId)} title="Open the review">
+                    {d.title}
+                  </button>
                   <span className={`badge ${d.status}`}>
                     {d.outcome === 'to review' ? d.status : d.outcome}
                   </span>

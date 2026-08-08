@@ -6860,6 +6860,16 @@ of those is the thing that matters:
   but the button now says "up to $2.00" for a continuation whose own history
   says otherwise.
 
+**First contact, added the same evening.** Brian pressed the restored "Do it
+properly" (D-116) on the `ui-check` routed fetch; the redo ran as a session
+with the router off — 3 turns, 22.0c against the $2 clamp, `outcome: done`,
+approved — and its close-out wrote the first real `PENDING.md`: the word
+`done`, verbatim. The sentinel idiom held on its first outing — a model asked
+for a list named the word that means nothing is left instead of writing one —
+and the claim is true against the run, whose RESULT.md is a complete account
+of the page. Only the clean path is proven by this: a cut run's account, the
+case More turns actually depends on, is still unobserved.
+
 ## D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back
 
 Found by the evening's full review, by looking rather than by any test: the

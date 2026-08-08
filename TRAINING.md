@@ -340,12 +340,83 @@ the real figures with `npm run ledger:report` after each wave.
   of each fact however many runs land, and the close-out's `known` decline
   gets its first live outings.
 
+## The overnight campaign — 2026-08-07 (D-118)
+
+Brian asked for one night that exercised everything: every tier, every
+connection, every learning level, the whole review flow, results by 09:00.
+Pre-registered first, then 27 ledger rows — **$7.87 charged, $8.14 spent**
+(predicted $5–9). The full account is D-118; what belongs to this file's
+running themes:
+
+| Probe | Predicted | Measured |
+|---|---|---|
+| answer / search / fetch+extract route free | $0 x3 | **all three ran sessions** (29.7c, 40.1c, 21.9c); verbatim repeat still a session (17.4c, the D-069 step); no `answer` banked |
+| recalls, tool on an 8th CSV, verbatim compose | $0 | $0, $0, $0 — citations, exact figures, auto-send 1.4s under D-101's grant |
+| same sentence, three crews (veteran / never-used / fresh hire) | learning shows in cost | **cost is variance** (59.6c/47.0c/62.7c, cold pair 2x apart); **learning is the standard** — the veteran's five-source authority chain vs the fresh hire's honest one-hop flag |
+| first analyst anywhere (fresh class) | a cut, welcome | **cut-but-complete** at a 6-turn grant, workbook exact, 5.1c absorbed; run 2: 40 turns, done, 17.2c — the cheapest class-tag tax yet (n=3 with D-112) |
+| skill authored → installed → measured | fewer turns on pack #4 | **quality, not turns**: `lamp-room-daybreak` separation **19.8, best ever**, ramp rule applied at design time; still cut at 23. Fifth world installed |
+| composite "then" x compiled tool | unknown | **step 1 quoted and served `tool`, $0, inside the chain**; halted chains have no resume affordance (step 2 hand-requeued after the crash) |
+| More turns on a real cut run | full loop | quote proven live ("About 59c — done this 3 times before", ceiling $1.33); the POST left one atom short — every cut tonight was cut-but-complete, and continuing finished work buys nothing |
+
+Two latent bugs found and fixed the same night with reproductions as test
+cases: a continuation inheriting its parent's `PENDING.md` (D-119) and
+approvals keyed on reply transcripts (D-120). 1,462 tests green after both.
+
 ## What's open
 
 Inherited from `FINDINGS.md` when it was retired (2026-08-06). Its findings
 are all settled and live in `DECISIONS.md`; these are the open *jobs* that had
 collected on its board, and they sit here because this is where the evidence
 each one rests on already is.
+
+0. **The server died twice with sessions live (2026-08-07, D-118), cause
+   unobserved.** 21:38 and 21:46:08: composite step 2 and the first analyst
+   probe filed `INTERRUPTED`, the pack run's meter was eaten (`costUnknown`,
+   the ninth unmeasured row). No watched file changed at either moment, and
+   the plausible process at 21:38 turned out to be Adobe's own node.exe — the
+   pattern-matched-signal rule, live. **Next input: capture the dev server's
+   stderr across an evening of real sessions** — an unwatched console is why
+   this is still a mystery, and a server that dies on completion seams is the
+   likeliest author of the older unmeasured rows too.
+1. **The free answer tier never fires — decide whether that is a policy or a
+   bug, by measurement.** Tonight's population (D-118): general questions
+   always pay, even verbatim repeats of timeless ones; what routes free is
+   bare reads, recalls, tools and verbatim composes. Before loosening
+   anything, read what `answer`-banking requires and count how many real
+   prompts would have qualified — the gate may be guarding against exactly
+   the staleness D-045 named.
+2. **More turns' POST is one atom short of proven** — a genuinely-unfinished
+   cut run has not been continued live (the quote half is proven on a real
+   cut run). Do not manufacture one: the next designer run that cuts mid-work
+   is the honest specimen, and **cut-but-complete beside `Finished.` is the
+   signal for declining the button**, twice observed.
+3. **A second standing approval sits granted-but-untaken**: "send a telegram
+   to brian with the current uf value and the observed dollar rate" reached
+   `eligible: true` on three unchanged approvals; taking it is one click in
+   the panel and D-101 already proved the auto-fire. A daily 09:00 schedule
+   on that sentence would make it the timer's first *useful* standing
+   automation once granted.
+4. **Calendar is wired and walled**: its first firing failed only on the
+   Google console toggle (`calendar-json.googleapis.com`, project
+   40965402983 — the same wall gmail cleared the same evening). Enable, then
+   re-Approve job `3e5ef9f2` in ui-check: "nobody is messaged twice" held.
+5. **T5 fires itself Wed 12 Aug 2026 at 09:00**, on its real monthly cadence
+   (schedule `c639d84a`, untouched tonight). Still not to be hand-queued.
+   The timer's *mechanism* was live-fired 2026-08-07 on a disposable $0
+   daily, knowingly front-running D-103's "deliberately left" line —
+   August's T5 firing remains the first real scheduled work.
+6. **Three measured gaps, deliberately unbuilt** (unchanged): the quote is
+   blind to attachments (re-measured tonight: 48KB of sources pushed the
+   skill job to 79c) and to per-level context weight; and the store trusts a
+   junk embedded text layer — now attested by the crew itself: the redo of
+   the thin recall called it *"a defect, not a gap in the archive"* (D-118).
+7. **Two ledger blind spots, recorded rather than fixed** (both in D-096):
+   the candidate list lands a run late, and a compile that builds a working
+   tool files `outcome: failed`. Joined tonight by their cousin: a crash
+   files a working run `costUnknown`, so "unmeasured" now has three authors —
+   caps, compiles and deaths.
+
+Settled while the list was live, kept for the record:
 
 1. ~~**The Warzone recipe is mis-credited.**~~ **Done 2026-08-06 — D-099.**
    The question underneath it turned out to have one answer: a run that only
@@ -379,32 +450,15 @@ each one rests on already is.
    say" — so Start now arrests "no message", mutation-proved, beside
    D-091's shape check. Left to unit tests deliberately: revocation,
    the stranger-blocks-it rule, and the send-time refusal fallback.
-4. **T5 fires itself on Wed 12 Aug 2026 at 09:00**, on its real monthly
-   cadence — moved from the 1st on 2026-08-07 so *this month's* indicators
-   have been published by the time it asks (Wave 3's row has the reasoning
-   and the schedule id). Still not to be hand-queued before then. ~~Wave 5
-   needs Brian to pick a real documents folder.~~ **Wave 5 ran 2026-08-06**
-   — picked through D-102's dialog, measured above; only T5 remains. The
-   recurrence timer (D-103) now holds the cadence, so **August's firing is
-   the run** — the timer's first live outing, on the job the programme was
-   already waiting on, and nobody has to remember it.
-5. **Three measured gaps, deliberately unbuilt.** The quote is blind to
-   attachments (74KB ≈ +$0.83, T2·1) and to per-level context weight (~5–8c
-   per-call floor here against the pooled class rate). And the store trusts
-   an embedded text layer even when it is junk — a scan that arrived with
-   bad OCR baked in reads "zo22" and our better engine never fires, because
-   D-059's rule assumes any text layer beats OCR (Wave 5's balance PDF, the
-   one passage it yielded). All three have ledger rows behind them; none is
-   worth code before more traffic.
-6. **Two ledger blind spots, recorded rather than fixed** (both in D-096).
-   `tool-candidates.jsonl` lands a run late, because the candidate check reads
-   the recipe as loaded at run *start* — the UI's list is one run behind the
-   promote route's own bar. And **a compile that produces a working tool is
-   filed `outcome: failed` and charged $0**, because it hit the turn cap
-   holding two finished scripts: right by D-012, and it means any "compile
-   success rate" read off the ledger says 0% while the tool it built is live.
+*(Old items 4–6 — T5's cadence, the three measured gaps, the two ledger
+blind spots — are restated with tonight's evidence as items 5–7 of the live
+list above.)*
 
-7. **The quote is wrong for a whole job class, not just low.** The first
+7. ~~**The quote is wrong for a whole job class, not just low.**~~ **Done
+   2026-08-07 — D-112 gave the class its tag** (the `designer` role), and the
+   quote flipped from a pooled 54c to "first time doing this"; GAPS G5
+   records the close and the tag's own cost. The account below stands as
+   written, run 2's measurement included. The first
    real pack-authoring run (2026-08-07, D-110) quoted **50c** at *high*
    certainty from 51 samples and cost **$1.81** — 3.6x over, and 91% of the
    $2 ceiling. This is not the per-call floor of item 5: that is a residual

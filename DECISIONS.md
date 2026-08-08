@@ -127,6 +127,9 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back](#d-115--2026-08-07--the-careers-were-zeroed-at-boot-and-the-ledger-gave-them-back)
 - [D-116 — 2026-08-07 — "Do it properly" comes back, in the panel](#d-116--2026-08-07--do-it-properly-comes-back-in-the-panel)
 - [D-117 — 2026-08-07 — The designer drift measured, and both cheap fixes measured out](#d-117--2026-08-07--the-designer-drift-measured-and-both-cheap-fixes-measured-out)
+- [D-118 — 2026-08-07 — The overnight campaign: 27 runs, priced first, across every flow the app has](#d-118--2026-08-07--the-overnight-campaign-27-runs-priced-first-across-every-flow-the-app-has)
+- [D-119 — 2026-08-07 — Paperwork does not inherit: PENDING.md joins the forward exclusion](#d-119--2026-08-07--paperwork-does-not-inherit-pendingmd-joins-the-forward-exclusion)
+- [D-120 — 2026-08-07 — An approval is keyed by the sentence the chain began with](#d-120--2026-08-07--an-approval-is-keyed-by-the-sentence-the-chain-began-with)
 
 ## By theme
 
@@ -271,7 +274,17 @@ entry updates one file rather than two.
   seams, and the close-out shown what is already on file: D-073
 - **Mid-flight runs** — the carry-on brief out of the prompt, the router's
   shortcut guard, and what a continuation may credit — closing for
-  continuations the recipe-key gap D-072 closed for hinted sessions: D-074
+  continuations the recipe-key gap D-072 closed for hinted sessions: D-074;
+  D-119, where a continuation inherited its parent's PENDING.md and wore a
+  stale account, so the file joined the paperwork that never forwards; and
+  D-120, the same identification arriving at standing approvals — keyed by
+  the root sentence, never the reply transcript
+- **The overnight campaign** — 27 runs pre-priced and driven end to end
+  through the API in one night: the free tiers' real population measured,
+  learning showing in the standard rather than the price, the class-tag tax
+  at n=3, the first crew-authored skill installed and measured on the next
+  world, the review flow's unobserved paths exercised, and two latent bugs
+  found, reproduced and fixed before morning: D-118 (with D-119, D-120)
 - **Acting, and the apps worth acting on** — the outbox replayed at approval,
   which closes §15's "one decision, not seven tasks": D-075; the two
   credential shapes and the never-a-password rule: D-076; the researched
@@ -6998,3 +7011,169 @@ that is not design work reopens this. The real fix, if it fires, is not a
 weight — it is query-term informativeness, D-051's lesson again: whether one
 shared word is signal depends on how rare the word is *in language*, not in
 a six-document corpus where "know" is unique by accident.
+
+## D-118 — 2026-08-07 — The overnight campaign: 27 runs, priced first, across every flow the app has
+
+Brian's brief, verbatim in spirit: broad tasks that trigger every tool, hire
+across the roles and explore new ones, install skills, control the entire flow,
+send only to him, try every learning level, results by 09:00, ceiling $200.
+The campaign was **pre-registered before any quote was taken** (predictions in
+the scratchpad plan, the house method applied to the curriculum itself) and
+driven end to end through the server's own API — `/work/plan`, `/work`,
+`resolve`, `redo`, `reply`, `continue/quote`, the approvals route, hire, role,
+rest/wake, schedules. 27 ledger rows: **$7.87 charged, $8.14 spent** against a
+predicted $5–9, ~$200 never close.
+
+**The free tiers' real population.** The plan predicted routed $0 for an
+answer-shaped question, a fetch-with-extraction and a search question; all
+three ran paid sessions (29.7c, 21.9c, 40.1c), and a **verbatim repeat** of the
+timeless question five minutes later still ran a session (17.4c — D-069's one
+step, visible). The recipe banked a method and no `answer`. What routes free
+tonight, measured: bare URL reads, knowledge recalls (both $0 with citations),
+compiled tools, and verbatim-words composes. Filed as an open question rather
+than a bug: whether answer-banking's criteria should widen is a measurement to
+take deliberately, not a gate to loosen because a prediction embarrassed
+itself.
+
+**Learning shows in the standard, not the price.** The same sentence, verbatim,
+in three populations: training-ground veteran 59.6c/13 turns, never-used
+`random` crew 47.0c/9, fresh hire in a new `bootcamp` level 62.7c/16. The two
+cold runs differ nearly 2x from each other, so at n=1 the variance drowns any
+cost signal — but the *quality* gradient is real and directional: the veteran's
+note carries the banked five-source standard (authority hierarchy, the
+forward-published UF path, Monday's already-known rate) where the fresh hire
+fought an Incapsula block for seven turns and honestly flagged its figure as
+one hop from the issuer.
+
+**The class-tag tax, at n=3.** The first analyst anywhere (Bea, bootcamp,
+hired and role'd tonight) was cut at a 6-turn grant on her first job —
+`outOfTurns: true` beside `pending: Finished.`, the workbook complete and
+exact — 5.1c absorbed; her second job got 40 turns and delivered a three-sheet
+workbook at 17.2c. One cut-but-complete run is the cheapest tag ever paid
+(designer's was $4, D-112). The matcher sweep over all 20 recurring recipe
+keys: 11 no-match, 3 scout-held in hq, and **5 whose matched specialist is
+unhired exactly where the work recurs** (scout x2, scribe x2, analyst x1 in
+training-ground; analyst x1 in hq). The recommendation that follows: no new
+role earns invention tonight — sends already compose at $0 without a courier —
+the shortage is hiring existing specialists where their matched work already
+recurs, priced against the now-thrice-measured tag tax.
+
+**The skill loop, closed.** A training-ground run authored
+`authoring-a-level-pack` from five attached sources (79.0c/10 turns — the
+attachment tax again), three of its claims were verified against source before
+anything installed (HEADROOM 58, the checker's key sets, the four built-in
+theme names), and the picker attached it to the designer role. Pack #4,
+`lamp-room-daybreak`, was then authored **under** it: worst separation **19.8,
+the best any pack has measured** (glasshouse 17.6), with the luminance-ramp
+rule applied at design time — a plinth wall placed *because* "the crew's ramp
+runs 22.5–84.3" — instead of discovered after a render. The skill moved the
+method and the quality, not the turn count (cut at 23, like its ancestors).
+Fifth world installed. The 532-entry library, meanwhile, has still never had
+an install (`installed.json: {}`) — the app's own skills all arrived as
+folder drops.
+
+**The review flow's unobserved paths.** Second live "Do it properly", first
+via the API — the redo of the thin balance-sheet recall diagnosed the store's
+junk text layer in its own words ("a defect, not a gap in the archive"),
+which is G6's boundary attested by the crew. A discard on the stale greenhouse
+partial whose draft slug was already taken (it could never have installed —
+D-111's rule made the discard objective). A reply-continuation ran, keyed and
+credited as its job (recipes clean, D-074 holding) — and exposed both bugs
+below. More turns' quote came back live on a real cut run ("About 59c — done
+this 3 times before", ceiling $1.33): the figure the button shows, computed by
+the route that would charge it. The POST itself stays one atom short of
+proven, deliberately: every cut tonight was **cut-but-complete** (`outOfTurns`
+beside `Finished.`), and continuing finished work buys nothing — that pattern,
+twice in one night, is the panel's real signal for *declining* the button, and
+genuine mid-work cuts have become rare since D-095/D-112.
+
+**Sends, arrests, automation.** The bare-send arrest and the standing approval
+composed for the first time: Words demanded at the desk, composed in code at
+$0, then auto-sent 1.4s after finishing under D-101's grant (approvals 4→5,
+audit row stamped). The "Sen" near-miss raised `channelMention` exactly as
+D-093 built. Slack answered `connectable` with an honest note rather than an
+arrest. The heartbeat sentence met D-087's shape — the crew **refused to
+invent** "tonight's training heartbeat" and asked for the data instead of
+fabricating it. The UF-ping arc earned a second grant's eligibility (three
+unchanged approvals → offer), and the grant was left on the table: the
+permission layer treats taking a standing auto-send rule as the user's own
+click, which is the right reading — it is one click in the panel now.
+Calendar's first firing is wired-correct and walled by the Google console
+(`calendar-json.googleapis.com` disabled on project 40965402983 — the same
+wall gmail cleared earlier the same evening); the 400 leaves the job
+reviewable and "nobody is messaged twice" held. The recurrence timer's
+mechanism live-fired on a disposable $0 daily (created, fired +7s, deleted;
+`c639d84a` untouched) — knowingly front-running D-103's "deliberately left"
+line; T5's Aug-12 firing remains the first real scheduled work.
+
+**Composite x tool.** The split preview priced step 1 "Free — the crew wrote
+a tool for this" and the run served it `tooled: true` at $0 inside a
+then-chain. Step 2 died to the crash below and was recovered by hand-requeue:
+a halted chain has no resume affordance, noted as a UX gap.
+
+**The crash, unresolved and named.** The tsx child died twice with executor
+sessions live (21:38, 21:46:08), killing composite step 2 and the first
+analyst probe (`INTERRUPTED`) and eating the pack run's meter (`costUnknown`,
+the ledger's ninth unmeasured row). No watched file changed at either moment,
+and the 21:38 "restart" process turned out to be Adobe's own node.exe born on
+a coincidental second — the hard-won rule about pattern-matched signals,
+earning its keep mid-diagnosis. Cause unobserved (the dev server's stderr was
+not captured); left open at the top of TRAINING.md's list with the evidence
+table. Worth saying plainly: a server that can die on completion seams is the
+likeliest author of the ledger's older unmeasured rows too.
+
+Two latent bugs were found, reproduced on demand, and fixed the same night:
+D-119 and D-120. 1,462 tests green and typecheck clean after both.
+
+## D-119 — 2026-08-07 — Paperwork does not inherit: PENDING.md joins the forward exclusion
+
+Found on `fb19d020`, the heartbeat continuation: it composed its outbox
+correctly, and its job record told its **parent's** story — "halted after
+validating the recipient", items about supplying data it had already been
+given. The two sandboxes held byte-identical `PENDING.md`s.
+
+The mechanism is three correct pieces composing into a lie. `carryForward`
+excludes `PAPERWORK_FORWARD = {RESULT, DIFF, LESSON, APPROACH}` — written
+before D-114 existed, so the third paperwork file forwards like any
+deliverable. The continuation's run wrote its own lesson and approach, and
+`harvestAndCloseOut`'s short-circuit (`first.lesson && first.approach &&
+first.pending`) found all three present — the third one **inherited** — and
+skipped the close-out, the only thing that would have written a fresh account.
+D-114 worried about an invented account from a close-out reading a dead
+sandbox; the live failure was the opposite — a *real* account from the wrong
+run, stamped onto a job whose work it never described.
+
+Decided: `PENDING.md` joins the exclusion set — `carryForward`'s own docstring
+("its own paperwork is deliberately left behind") already stated the rule the
+set now matches. A continuation starts with no account; if its run writes
+none, the short-circuit fails on `first.pending` and the close-out writes one
+that is actually its own. The extended paperwork test pins all four files;
+mutation-proved by removing the entry — exactly one test fails (1 of 1,332).
+
+## D-120 — 2026-08-07 — An approval is keyed by the sentence the chain began with
+
+Found twice: a dead grant already on disk whose key is a 360-character
+transcript ("…you have already worked on this — anything you produced is
+already here… the user replied: can you add an excel table…"), and then
+reproduced on demand — approving `fb19d020`'s send minted a second
+(`send a telegram to brian with tonight's training heartbeat you have already
+worked on this…`, approvals 1). A key like that can never match a future
+sentence: the grant is dead weight and the approvals ladder silently restarts
+for every continuation of a send.
+
+The cause is D-074's gap, one seam over. `/reply` builds a transcript prompt
+(deliberately — the run needs the conversation), recipes credit a continuation
+as the job it continues, `/continue` keys by the verbatim original — and all
+three approval call-sites still keyed `approvalKey(job.prompt)`.
+
+Decided: `JobQueue.rootPrompt(id)` walks the `continues` chain (cycle-safe,
+stopping at a missing parent, answering the job's own prompt when there is
+nothing further), and the three call-sites — auto-send's lookup, auto-send's
+record, and the resolve route's record — key by the root. The security
+boundary does not move: `autoSendable` still gates on the recipient allowlist,
+so a continuation auto-sends only under the root grant's locked recipients —
+which is what a continuation *is* under D-074's identification. The dead keys
+stay on disk as inert rows, deliberately unmigrated: a grant is cheap to
+re-earn, and a migration that guessed wrong would write an auto-send rule
+nobody granted. Tests pin the chain walk, the orphan stop and the unknown id;
+mutation-proved by killing the walk — exactly one test fails.

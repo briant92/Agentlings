@@ -427,7 +427,15 @@ export async function carryForward(
   }
 }
 
-const PAPERWORK_FORWARD = new Set(['RESULT.md', 'DIFF.patch', 'LESSON.md', 'APPROACH.md']);
+// PENDING.md is paperwork too: forwarded, a parent's account satisfies the
+// close-out's short-circuit and gets stamped onto a run it never described.
+const PAPERWORK_FORWARD = new Set([
+  'RESULT.md',
+  'DIFF.patch',
+  'LESSON.md',
+  'APPROACH.md',
+  'PENDING.md',
+]);
 
 export function titleAddsSomething(job: Job): boolean {
   const title = job.title.replace(/…+$/, '').trim();

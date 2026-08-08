@@ -377,7 +377,9 @@ async function autoSendIfApproved(
   try {
     if (autoBlocker(job, outputNames(queue.sandboxDir(job.id))) !== null) return;
     const outbox = job.outbox!;
-    const approval = readApprovals(dir).find((a) => a.key === approvalKey(job.prompt));
+    const approval = readApprovals(dir).find(
+      (a) => a.key === approvalKey(queue.rootPrompt(job.id) ?? job.prompt),
+    );
     if (!autoSendable(approval, outbox)) return;
     const refusal = outboxRefusal(
       outbox,
@@ -431,7 +433,7 @@ async function autoSendIfApproved(
       return;
     }
     queue.resolve(job.id, 'promote');
-    recordApproval(dir, job.prompt, outbox, at);
+    recordApproval(dir, queue.rootPrompt(job.id) ?? job.prompt, outbox, at);
     eventLog.emit({
       type: 'resolved',
       jobId: job.id,
@@ -1785,7 +1787,17 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // promote that got this far: every message either sent now or before.
     const approval =
       body.action === 'promote' && pending.outbox
-        ? describeApproval(recordApproval(rt.dir, pending.prompt, pending.outbox, Date.now()))
+        ? describeApproval(
+            recordApproval(
+              rt.dir,
+              // The root sentence, not the reply transcript: a continuation's
+              // approval must climb the same signature's ladder, not mint a
+              // key nobody can ever say again (the D-074 rule, for approvals).
+              rt.queue.rootPrompt(pending.id) ?? pending.prompt,
+              pending.outbox,
+              Date.now(),
+            ),
+          )
         : null;
     rt.eventLog.emit({
       type: 'resolved',

@@ -103,11 +103,19 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Six ship, hand-written against this app's contract — sandbox only,
+session. Eight ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
-`check-your-work` · `cite-sources` · `concise-reports` · `plain-language` ·
-`small-diffs` · `tables-and-numbers`
+`authoring-a-level-pack` · `check-your-work` · `cite-sources` ·
+`concise-reports` · `plain-language` · `see-your-work` · `small-diffs` ·
+`tables-and-numbers`
+
+The two newest mark a line the others do not cross: `see-your-work` was
+hand-written for the designer (D-112), and `authoring-a-level-pack` was
+**written by a run** — a training-ground session distilled it from the pack
+sources as attachments (job `9524e59b`), it was previewed and spot-verified
+against source, installed through the role picker, and the next pack authored
+under it measured the best crew separation yet (19.8, D-118).
 
 Skills install from the same library as roles, whole-folder: up to 200
 companion files and 2 MB, with every remote path refused rather than sanitised
@@ -1389,7 +1397,10 @@ list per channel (D-077; SPEC M5.11 has the slices):
       event per outbox, validated at the seam, invitations by Google's own
       mail, reviewed and replayed like every send. The desk asks no
       To/Words for it — a calendar job's facts are a title and a time, and
-      the brief carries the event contract instead (D-104)
+      the brief carries the event contract instead (D-104). First live
+      firing attempted 2026-08-07 (D-118): the wiring held to the last hop
+      and the Google console's Calendar API toggle refused it — the 400
+      names the enable link, the job stays reviewable, re-Approve retries
 - [x] **WhatsApp Business** — template sends through Meta's Cloud API, the
       free-test-number on-ramp in the guide, and the audit taking the user's
       declared per-message rate or none (D-081)

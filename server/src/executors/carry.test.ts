@@ -82,15 +82,19 @@ describe('carryForward', () => {
   });
 
   // The new run writes its own. Inheriting RESULT.md would make "did this
-  // deliver" true before the session had done anything at all.
+  // deliver" true before the session had done anything at all — and an
+  // inherited PENDING.md satisfies the close-out's short-circuit, stamping a
+  // parent's account onto a run it never described (found live on fb19d020,
+  // 2026-08-07: the continuation composed its outbox, and the review showed
+  // the parent's "halted" story).
   it('leaves the earlier run’s paperwork behind', async () => {
     const first = sandbox('a');
-    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md']) {
+    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md', 'PENDING.md']) {
       writeFileSync(path.join(first, name), 'old');
     }
     const second = sandbox('b');
     await carryForward('a', second, false);
-    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md']) {
+    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md', 'PENDING.md']) {
       expect(existsSync(path.join(second, name))).toBe(false);
     }
   });

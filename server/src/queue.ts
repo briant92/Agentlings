@@ -144,6 +144,28 @@ export class JobQueue {
     return this.jobs.get(id);
   }
 
+  /**
+   * The sentence a chain of continuations began with. A reply's prompt embeds
+   * the whole transcript ("You have already worked on this…"), so anything
+   * keyed on it — a standing approval's signature — mints a key no future
+   * sentence can match. Recipes already credit a continuation as the job it
+   * continues (D-074); this is the same identification for everyone else.
+   * Stops at a missing parent or a cycle, and answers with the job's own
+   * prompt when there is nothing further to walk to.
+   */
+  rootPrompt(id: string): string | undefined {
+    let job = this.jobs.get(id);
+    if (!job) return undefined;
+    const seen = new Set<string>([job.id]);
+    while (job.continues) {
+      const parent = this.jobs.get(job.continues);
+      if (!parent || seen.has(parent.id)) break;
+      seen.add(parent.id);
+      job = parent;
+    }
+    return job.prompt;
+  }
+
   add(spec: NewJobSpec): Job {
     const job: Job = {
       id: randomUUID().slice(0, 8),

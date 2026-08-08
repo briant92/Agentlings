@@ -30,6 +30,34 @@ describe('JobQueue', () => {
    * everywhere else reaches nothing — and the router cannot compose what the
    * queue never stored.
    */
+  /**
+   * A reply's prompt embeds the transcript, and an approval keyed on it can
+   * never match a future sentence — found live twice: one dead grant on disk,
+   * then reproduced on demand (fb19d020, 2026-08-07). The root walk is what
+   * the three approval call-sites key by instead.
+   */
+  it('answers a continuation chain with the sentence it began with', () => {
+    const root = queue.add({ title: 'Send', prompt: 'send a telegram to brian' });
+    const reply = queue.add({
+      title: 'Send',
+      prompt: 'send a telegram to brian\n\nYou have already worked on this…\n\nThe user replied: use 42',
+      continues: root.id,
+    });
+    const again = queue.add({
+      title: 'Send',
+      prompt: 'send a telegram to brian\n\nYou have already worked on this…\n\nThe user replied: and bold',
+      continues: reply.id,
+    });
+    expect(queue.rootPrompt(again.id)).toBe('send a telegram to brian');
+    expect(queue.rootPrompt(root.id)).toBe('send a telegram to brian');
+    expect(queue.rootPrompt('nope')).toBeUndefined();
+  });
+
+  it('rootPrompt stops at a missing parent instead of walking off the queue', () => {
+    const orphan = queue.add({ title: 'T', prompt: 'the words', continues: 'gone-forever' });
+    expect(queue.rootPrompt(orphan.id)).toBe('the words');
+  });
+
   it('keeps the send the desk handed it', () => {
     const job = queue.add({
       title: 'Telegram to Brian',

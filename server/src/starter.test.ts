@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships six generalist jobs and seven generalist abilities', () => {
+  it('ships six generalist jobs and eight abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'designer',
@@ -52,6 +52,10 @@ describe('shipped starter set', () => {
       'worker',
     ]);
     expect(skills.map((s) => s.name).sort()).toEqual([
+      // authoring-a-level-pack is the first crew-authored skill: written by a
+      // training-ground run from the pack sources (job 9524e59b, 2026-08-07),
+      // previewed, then installed to the designer role.
+      'authoring-a-level-pack',
       'check-your-work',
       'cite-sources',
       'concise-reports',

@@ -68,8 +68,14 @@ capability roadmap; this is the short list of what matters most, in order.
       paid for in the first few runs under the new tag.**
 - [ ] **G6 — Robustness odds and ends.** The store trusts a junk embedded
       text layer over its own better OCR (Wave 5's "zo22" balance sheet —
-      D-059's rule assumes any text layer beats OCR); the connection
+      D-059's rule assumes any text layer beats OCR) — now attested by the
+      crew itself: the 2026-08-07 redo of the thin recall called it *"a
+      defect, not a gap in the archive"* (D-118); the connection
       registry cannot express a hosted HTTP MCP server (`builtin | stdio`
       only), which binds the day a connection is somebody else's server; a
       job waits for its matched specialist while others idle (the §15 row
-      that is a choice, not wiring).
+      that is a choice, not wiring). Joined 2026-08-07 by the sharpest row:
+      **the server died twice with executor sessions live** (D-118), killing
+      two runs and eating a third's meter — cause unobserved because nothing
+      captures the dev server's stderr; TRAINING.md's "What's open" item 0
+      names the next input.

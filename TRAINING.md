@@ -390,11 +390,17 @@ each one rests on already is.
    cut run). Do not manufacture one: the next designer run that cuts mid-work
    is the honest specimen, and **cut-but-complete beside `Finished.` is the
    signal for declining the button**, twice observed.
-3. **A second standing approval sits granted-but-untaken**: "send a telegram
+3. **A second standing approval sits earned-but-untaken**: "send a telegram
    to brian with the current uf value and the observed dollar rate" reached
-   `eligible: true` on three unchanged approvals; taking it is one click in
-   the panel and D-101 already proved the auto-fire. A daily 09:00 schedule
-   on that sentence would make it the timer's first *useful* standing
+   `eligible: true` on three unchanged approvals. **Taking it needs one more
+   reviewed run**: the grant control exists only in the review panel's offer
+   modal, which fires on Approve of that signature — the backoffice row shows
+   the state ("the offer waits at the next review") but carries no button.
+   The API-driven third approval consumed the modal moment invisibly, which
+   is how the offer ended up owned by nobody — D-111's shape, softened by
+   the row naming its own exit. Candidate UX fix: the grant control on the
+   backoffice row itself. D-101 already proved the auto-fire; a daily 09:00
+   schedule on the sentence becomes the timer's first useful standing
    automation once granted.
 4. **Calendar is wired and walled**: its first firing failed only on the
    Google console toggle (`calendar-json.googleapis.com`, project

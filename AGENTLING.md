@@ -1373,11 +1373,13 @@ list per channel (D-077; SPEC M5.11 has the slices):
       that could only block on "what to say" (D-101) — and a failed
       run's question carries a reply box that continues the same job,
       channel and all (D-087). The channel's audience is persisted by
-      name (Live, D-092, D-122): Telegram's is opt-in only — the bot's
-      own getUpdates plus the send audit — while Gmail's adds the user's
-      saved Google Contacts on the consent already given (official API,
-      never a userbot scrape; the People API console toggle refusing
-      comes back as a sentence in the picker, not an empty book). The
+      name (Live, D-092, D-122, D-123): Telegram's is opt-in only — the
+      bot's own getUpdates plus the send audit — while Gmail's adds the
+      user's saved Google Contacts and, once the widened consent is
+      re-granted, the people Gmail's own compose field knows — everyone
+      the user has emailed (official API, never a userbot scrape; a
+      refusal — the console toggle, a missing scope — comes back as a
+      sentence in the picker, not an empty book). The
       roster sits behind the To field as a ranked, filtering picker, and
       what a session hears is narrower than the roster: the legend
       carries only people the sentence names or the user has sent to,

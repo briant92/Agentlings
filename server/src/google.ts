@@ -18,9 +18,13 @@ export const GOOGLE_SECRETS = {
 } as const;
 
 /**
- * One consent, three capabilities (D-076) — sends now, calendar and
- * contacts when their slices land, so nobody re-consents per feature.
+ * One consent, four capabilities (D-076) — sends, calendar, saved contacts,
+ * and the people Gmail's own compose field knows (D-123: "other contacts",
+ * everyone the user has emailed), so nobody re-consents per feature.
  * `openid email` is what lets the exchange say who connected, for free.
+ * A token minted before a scope joined this list does not grow it —
+ * reconnecting once is what grants the new slice, and the audience GET says
+ * so in a sentence until then.
  */
 export const GOOGLE_SCOPES = [
   'openid',
@@ -28,6 +32,7 @@ export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/contacts.readonly',
+  'https://www.googleapis.com/auth/contacts.other.readonly',
 ];
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -208,42 +213,49 @@ export async function accessTokenFromRefresh(args: {
   return { token };
 }
 
-/** A saved contact flattened to one reachable address — one row per email. */
+/** A contact flattened to one reachable address — one row per email. */
 export interface GoogleContact {
   id: string;
   name: string;
 }
 
-/** What one page of people/me/connections looks like, fields we read only. */
-interface ConnectionsPage {
-  connections?: {
-    names?: { displayName?: string }[];
-    emailAddresses?: { value?: string }[];
-  }[];
+/** What one page of either People API list looks like, fields we read only. */
+interface PeoplePage {
+  connections?: PersonRow[];
+  otherContacts?: PersonRow[];
   nextPageToken?: string;
   error?: { message?: string };
 }
+interface PersonRow {
+  names?: { displayName?: string }[];
+  emailAddresses?: { value?: string }[];
+}
 
 /**
- * The user's saved contacts ("My Contacts"), names and addresses only — the
- * fields the roster holds and nothing more (D-122). Paged at Google's
- * maximum; a person with two addresses is two reachable rows; a contact
- * with no email is not reachable on this channel and is skipped. The People
- * API answers 403 until it is enabled in the user's own console — the same
- * wall the Calendar API put up (D-104) — so that refusal comes back as the
- * sentence to act on, never as a silently empty book.
+ * Shared walker for the People API's two lists — same paging, same
+ * flattening, same refusals-as-sentences. Names and addresses only, the
+ * fields the roster holds and nothing more (D-122); a person with two
+ * addresses is two reachable rows; no email means not reachable on this
+ * channel, skipped. The API answers 403 until it is enabled in the user's
+ * own console — the Calendar API's wall (D-104) — and a token minted before
+ * a scope joined the consent answers "insufficient scopes" until the user
+ * reconnects (D-123); both come back as the sentence to act on, never as a
+ * silently empty book.
  */
-export async function googleContacts(args: {
+async function listPeople(args: {
   accessToken: string;
   fetchFn?: typeof fetch;
+  path: string;
+  fieldsParam: 'personFields' | 'readMask';
+  listField: 'connections' | 'otherContacts';
 }): Promise<GoogleContact[] | { error: string }> {
   const doFetch = args.fetchFn ?? fetch;
   const byEmail = new Map<string, GoogleContact>();
   let pageToken: string | undefined;
   // 10 pages of 1,000 is a bound nobody's address book meets, not a cap.
   for (let page = 0; page < 10; page++) {
-    const url = new URL('https://people.googleapis.com/v1/people/me/connections');
-    url.searchParams.set('personFields', 'names,emailAddresses');
+    const url = new URL(`https://people.googleapis.com/v1/${args.path}`);
+    url.searchParams.set(args.fieldsParam, 'names,emailAddresses');
     url.searchParams.set('pageSize', '1000');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
     let res: { ok: boolean; status: number; json: () => Promise<unknown> };
@@ -254,16 +266,18 @@ export async function googleContacts(args: {
     } catch {
       return { error: 'Google could not be reached — showing who is already known.' };
     }
-    const body = (await res.json().catch(() => null)) as ConnectionsPage | null;
+    const body = (await res.json().catch(() => null)) as PeoplePage | null;
     if (!res.ok) {
       const message = body?.error?.message ?? `HTTP ${res.status}`;
       return {
-        error: /disabled|has not been used/i.test(message)
-          ? 'Google says the People API is off for your project — enable it in the Google console (APIs & Services → Library → People API), then look again.'
-          : `Google refused the contacts — ${message}`,
+        error: /insufficient/i.test(message)
+          ? 'Google needs a fresh sign-in for this — open Settings, press Connect Google again, and approve reading the people you have emailed.'
+          : /disabled|has not been used/i.test(message)
+            ? 'Google says the People API is off for your project — enable it in the Google console (APIs & Services → Library → People API), then look again.'
+            : `Google refused the contacts — ${message}`,
       };
     }
-    for (const person of body?.connections ?? []) {
+    for (const person of body?.[args.listField] ?? []) {
       const name = person.names?.[0]?.displayName?.trim();
       for (const address of person.emailAddresses ?? []) {
         const email = address.value?.trim();
@@ -274,4 +288,35 @@ export async function googleContacts(args: {
     if (!pageToken) break;
   }
   return [...byEmail.values()];
+}
+
+/** The user's saved contacts — "My Contacts", curated by hand (D-122). */
+export async function googleContacts(args: {
+  accessToken: string;
+  fetchFn?: typeof fetch;
+}): Promise<GoogleContact[] | { error: string }> {
+  return listPeople({
+    ...args,
+    path: 'people/me/connections',
+    fieldsParam: 'personFields',
+    listField: 'connections',
+  });
+}
+
+/**
+ * The list Gmail's own compose field draws on (D-123): "other contacts",
+ * auto-collected from everyone the user has emailed. Its own scope
+ * (contacts.other.readonly) and its own readMask parameter — otherwise the
+ * same walk as the saved book.
+ */
+export async function googleOtherContacts(args: {
+  accessToken: string;
+  fetchFn?: typeof fetch;
+}): Promise<GoogleContact[] | { error: string }> {
+  return listPeople({
+    ...args,
+    path: 'otherContacts',
+    fieldsParam: 'readMask',
+    listField: 'otherContacts',
+  });
 }

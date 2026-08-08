@@ -8,6 +8,7 @@ import {
   FlowStore,
   GOOGLE_SCOPES,
   googleContacts,
+  googleOtherContacts,
   idTokenEmail,
 } from './google';
 
@@ -145,22 +146,22 @@ describe('accessTokenFromRefresh', () => {
   });
 });
 
-describe('googleContacts (D-122)', () => {
-  /** One canned answer per call, in order — pagination needs a sequence. */
-  function pagedFetch(pages: { ok: boolean; status?: number; body?: unknown }[]) {
-    const calls: string[] = [];
-    const fn = (async (url: string) => {
-      calls.push(url);
-      const res = pages[Math.min(calls.length - 1, pages.length - 1)];
-      return {
-        ok: res.ok,
-        status: res.status ?? (res.ok ? 200 : 500),
-        json: async () => res.body ?? {},
-      };
-    }) as unknown as typeof fetch;
-    return { fn, calls };
-  }
+/** One canned answer per call, in order — pagination needs a sequence. */
+function pagedFetch(pages: { ok: boolean; status?: number; body?: unknown }[]) {
+  const calls: string[] = [];
+  const fn = (async (url: string) => {
+    calls.push(url);
+    const res = pages[Math.min(calls.length - 1, pages.length - 1)];
+    return {
+      ok: res.ok,
+      status: res.status ?? (res.ok ? 200 : 500),
+      json: async () => res.body ?? {},
+    };
+  }) as unknown as typeof fetch;
+  return { fn, calls };
+}
 
+describe('googleContacts (D-122)', () => {
   it('flattens people to one row per address and follows pages', async () => {
     const { fn, calls } = pagedFetch([
       {
@@ -225,5 +226,41 @@ describe('googleContacts (D-122)', () => {
     }) as unknown as typeof fetch;
     const got = await googleContacts({ accessToken: 'tok', fetchFn: fn });
     expect('error' in got && got.error).toContain('could not be reached');
+  });
+});
+
+describe('googleOtherContacts (D-123)', () => {
+  it("walks Gmail's own autocomplete list, with its own readMask", async () => {
+    const { fn, calls } = pagedFetch([
+      {
+        ok: true,
+        body: {
+          otherContacts: [
+            { names: [{ displayName: 'Ana García' }], emailAddresses: [{ value: 'ana@x.com' }] },
+            { emailAddresses: [{ value: 'colega@deloitte.com' }] },
+          ],
+        },
+      },
+    ]);
+    const got = await googleOtherContacts({ accessToken: 'tok', fetchFn: fn });
+    expect(got).toEqual([
+      { id: 'ana@x.com', name: 'Ana García' },
+      { id: 'colega@deloitte.com', name: 'colega@deloitte.com' },
+    ]);
+    expect(calls[0]).toContain('/v1/otherContacts');
+    expect(calls[0]).toContain('readMask=names%2CemailAddresses');
+  });
+
+  it('a token minted before the scope answers with the reconnect sentence', async () => {
+    const { fn } = pagedFetch([
+      {
+        ok: false,
+        status: 403,
+        body: { error: { message: 'Request had insufficient authentication scopes.' } },
+      },
+    ]);
+    const got = await googleOtherContacts({ accessToken: 'tok', fetchFn: fn });
+    expect('error' in got && got.error).toContain('Connect Google again');
+    expect('error' in got && got.error).toContain('people you have emailed');
   });
 });

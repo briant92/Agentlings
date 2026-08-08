@@ -185,11 +185,13 @@ the loop runs end to end without one.
   app honestly offer (D-079)? A send verb plus a channel word claims; a bare
   mention does not. Under-firing is the safe direction.
 - `audience.ts` — the people a channel can reach, persisted by name (D-092,
-  D-122). Sources are the channel's rule: Telegram is opt-in only (whoever
-  tapped Start, whoever a reviewed send went to); Gmail adds the user's saved
-  Google Contacts on the consent already given. What a session is told stays
-  narrower either way — `legendAudience` filters the brief's legend to people
-  named in the sentence or already sent to, never the whole book.
+  D-122, D-123). Sources are the channel's rule: Telegram is opt-in only
+  (whoever tapped Start, whoever a reviewed send went to); Gmail adds the
+  user's saved Google Contacts and, once the widened consent is re-granted,
+  the people Gmail's own compose field knows ("other contacts" — everyone
+  the user has emailed). What a session is told stays narrower either way —
+  `legendAudience` filters the brief's legend to people named in the
+  sentence or already sent to, never the whole book.
 - `approvals.ts` — standing approval for a recurring send (D-082): unchanged
   reviews counted, the grant refused until earned, the recipient set as the
   security boundary, and any signature change starting the count over.
@@ -863,7 +865,8 @@ tried, measured and rejected is in `DECISIONS.md`:
     - [x] **The Google Connect flow.** Loopback OAuth against the user's own
           client (never a shared one, D-076): the drawer takes client id +
           secret, Google's consent page opens in a fresh tab — one consent
-          across gmail.send, calendar.events, contacts.readonly plus
+          across gmail.send, calendar.events, contacts.readonly,
+          contacts.other.readonly (D-123) plus
           identity — and the 127.0.0.1 callback exchanges the code with
           PKCE. The exchange succeeding is the validation; a flow that
           never returns stores nothing. The gmail channel sends approved

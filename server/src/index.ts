@@ -79,6 +79,7 @@ import {
   FlowStore,
   GOOGLE_SECRETS,
   googleContacts,
+  googleOtherContacts,
 } from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
@@ -631,9 +632,17 @@ app.get('/api/channels/:channel/audience', async (c) => {
     if ('error' in minted) {
       problem = minted.error;
     } else {
-      const got = await googleContacts({ accessToken: minted.token });
-      if ('error' in got) problem = got.error;
-      else people = mergeContacts(people, got);
+      // Emailed-people first, the curated book second, so a saved contact's
+      // chosen name outranks an auto-collected one in the merge — and if
+      // both lists refuse, the saved book's broader sentence keeps the line
+      // (D-123); an insufficient-scope refusal on this list alone leaves
+      // the reconnect sentence standing beside whatever the book gave.
+      const emailed = await googleOtherContacts({ accessToken: minted.token });
+      if ('error' in emailed) problem = emailed.error;
+      else people = mergeContacts(people, emailed);
+      const saved = await googleContacts({ accessToken: minted.token });
+      if ('error' in saved) problem = saved.error;
+      else people = mergeContacts(people, saved);
     }
   }
   people = mergeSends(people, readSends(SANDBOX_ROOT), channel);

@@ -79,6 +79,12 @@ describe('mergeContacts (D-122)', () => {
     const once = mergeContacts([], [{ id: 'ana@x.com', name: 'Ana García' }]);
     expect(mergeContacts(once, [{ id: 'ana@x.com', name: 'Ana García' }])).toEqual(once);
   });
+
+  it('the saved book, merged second, outranks an auto-collected name (D-123)', () => {
+    const emailedFirst = mergeContacts([], [{ id: 'ana@x.com', name: 'Ana' }]);
+    const got = mergeContacts(emailedFirst, [{ id: 'ana@x.com', name: 'Ana García' }]);
+    expect(got[0]?.name).toBe('Ana García');
+  });
 });
 
 describe('mergeSends (D-092)', () => {

@@ -132,6 +132,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-120 — 2026-08-07 — An approval is keyed by the sentence the chain began with](#d-120--2026-08-07--an-approval-is-keyed-by-the-sentence-the-chain-began-with)
 - [D-121 — 2026-08-08 — Closing a level archives it in place, and the sweep takes the clones](#d-121--2026-08-08--closing-a-level-archives-it-in-place-and-the-sweep-takes-the-clones)
 - [D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole](#d-122--2026-08-08--gmails-roster-reads-the-contact-book-the-legend-stops-riding-whole)
+- [D-123 — 2026-08-08 — The picker learns what Gmail's compose field knows](#d-123--2026-08-08--the-picker-learns-what-gmails-compose-field-knows)
 
 ## By theme
 
@@ -343,7 +344,9 @@ entry updates one file rather than two.
   never-invent rule intact; and D-122, where Gmail's roster reads the saved
   contact book on the consent already given — reachability vs autofill is
   the channel's own rule — and the legend narrows to named-or-used, capped,
-  for every channel; and D-093, wall 4 (a typo'd "Sen") answered at
+  for every channel; and D-123, where the compose-field list ("other
+  contacts", everyone ever emailed) joins on a widened consent whose
+  granting act is the user's own reconnect; and D-093, wall 4 (a typo'd "Sen") answered at
   both gates — a channel word with no send verb raises a near-miss
   *question* the user can confirm into the full send surface, and a job
   that mentioned a channel it never carried says at review that approving
@@ -7319,3 +7322,40 @@ green, typecheck clean. Telegram's audience answered unchanged beside the
 gmail check. What remains is Brian's console toggle — the same one the
 calendar waits on — and the first real dropdown over the real book after
 it.
+
+## D-123 — 2026-08-08 — The picker learns what Gmail's compose field knows
+
+Brian flipped the People API toggle the same hour, and the D-122 fetch
+answered honestly: **one** saved contact with an email. His book at
+contacts.google.com is phone numbers. What he wanted — "like when I'm
+composing an email in Gmail" — is a different list: **"other contacts"**,
+auto-collected from everyone he has ever emailed, which is what Gmail's own
+compose field autocompletes from. It sits behind its own People API
+endpoint and its own scope (`contacts.other.readonly`) — exactly the list
+D-122 skipped while the consent lacked the scope. Asked for by name, the
+skip is revised; the boundary that stays is D-092's real one, the
+shelf-refused userbot scrape.
+
+The build widens one seam rather than adding one. `GOOGLE_SCOPES` gains the
+scope, with the note that matters operationally: **a token minted before a
+scope joined the list does not grow it** — reconnecting is what grants the
+slice, and the reconnect on Google's own page is the user's consent act, so
+the code ships inert until Brian himself approves. The connections walker
+generalizes to `listPeople` serving both lists — `otherContacts` speaks
+`readMask` where `connections` speaks `personFields`, otherwise the same
+walk, the same paging, the same refusals-as-sentences — and a 403
+"insufficient authentication scopes" maps to the sentence naming the fix:
+open Settings, Connect Google again, approve. The audience route merges
+emailed-people first and the saved book second, so a curated name outranks
+an auto-collected one; if both lists refuse, the saved book's broader
+sentence keeps the problem line.
+
+Live the hour it shipped: the route answered the 3 known people plus
+exactly the reconnect sentence — the token predates the scope, as it must
+until the Connect button is pressed. 3 new tests (the readMask walk against
+its own endpoint, the reconnect mapping, saved-over-auto name precedence);
+1,365 + 130 green, typecheck clean; mutation: breaking the
+insufficient-scope match kills exactly the reconnect test. What remains is
+Brian's one consent click, after which the compose-field population fills
+the picker on its next focus — no restart, and the legend rule keeps every
+prompt as narrow as before regardless of how big the list turns out to be.

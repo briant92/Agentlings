@@ -16,3 +16,8 @@ browser-state*.json
 # under web/public/packs/ is the tracked output, and carries its provenance.
 Artwork/*
 !Artwork/README.md
+
+# pack:render output — the crew's eyes (D-112), drawn beside the pack it
+# reads. A render is a measurement, not part of the installed world.
+web/public/packs/*/pack.png
+web/public/packs/*/PACK.png

@@ -126,6 +126,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-114 — 2026-08-07 — One button in the terminal, the decision in the panel, and an account of what is left](#d-114--2026-08-07--one-button-in-the-terminal-the-decision-in-the-panel-and-an-account-of-what-is-left)
 - [D-115 — 2026-08-07 — The careers were zeroed at boot, and the ledger gave them back](#d-115--2026-08-07--the-careers-were-zeroed-at-boot-and-the-ledger-gave-them-back)
 - [D-116 — 2026-08-07 — "Do it properly" comes back, in the panel](#d-116--2026-08-07--do-it-properly-comes-back-in-the-panel)
+- [D-117 — 2026-08-07 — The designer drift measured, and both cheap fixes measured out](#d-117--2026-08-07--the-designer-drift-measured-and-both-cheap-fixes-measured-out)
 
 ## By theme
 
@@ -156,7 +157,9 @@ entry updates one file rather than two.
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
-  already there, and a class with no rate falls back to a standing cap
+  already there, and a class with no rate falls back to a standing cap; and
+  D-117, that drift measured on every real prompt — ~5%, carried by generic
+  body words — with both cheap fixes measured out and the index left alone
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
@@ -6939,3 +6942,49 @@ exactly as before. Render-verified live on a routed $0 fetch in the `ui-check`
 scratch level: the button appears for the routed job, Approve keeps focus, and
 More turns stays absent. Deliberately not clicked there — the route queues a
 real paid session, and proving the wiring is the route's own tests' job.
+
+## D-117 — 2026-08-07 — The designer drift measured, and both cheap fixes measured out
+
+The review caught it live: "Read https://example.com" matched **designer** at
+0.49 on `[read, com]`, and the desk said "nobody here is a designer, so it
+goes to your worker" about fetching a page. The memory note from the hire
+already warned that adding Moss's two documents moved the matcher underneath
+the existing roles; this entry is that warning sized, and the tuning question
+settled by measurement rather than by the first idea.
+
+**The drift, on the whole population.** Every distinct real prompt the app
+has ever queued (83, plus the live probe) replayed through the production
+matcher offline (`MatchIndex` + `suggestSetup` against the real catalog):
+42 no-match, scout 17, scribe 14, **designer 5**, mason 3, analyst 3. The
+five: a knowledge question ("what do we know about the close-out pass",
+**0.66, on the single word `know`**), two coding prompts, a fetch, and one
+defensible capture ("describe the attached image", on `see, picture`). The
+mechanism is the designer's long prose body — `toDoc` indexes role bodies at
+weight 1 against descriptions at 2, and a ~30-line body full of *read, see,
+look, know, first, pass* out-words every terse built-in.
+
+**Fix one, descriptions-only: refused by its own numbers.** Rebuilding the
+index with bodies dropped kills all five designer captures — and orphans
+**14 correct matches** with them ("turn the attached CSV into an .xlsx
+workbook" loses analyst, "move `quoteFor_` out of index.ts" loses mason,
+"write a short sourced note" loses scout…). 42 → 56 no-matches. Bodies carry
+real signal for every role whose body is terse; the cure costs three times
+the disease.
+
+**Fix two, down-weighting: a dead knob.** The same sweep at body weight 0.5
+and 0.25: designer keeps 4 of its 5 captures at both settings, "know" still
+winning at 0.65 (was 0.66). Confidence leans on **coverage**, not raw score
+(D-011's design), so scaling body terms cannot dislodge a match carried by a
+body-only word. The knob does not reach the fault.
+
+Decided: **weight 1 stays; nothing changes in the matcher.** The measured
+cost is ~5% of real prompts drifting to a role that mostly is not hired
+(the assignment then falls back — "goes to your worker" — and the tier is
+the router's decision, not the matcher's). The one real exposure is in hq,
+where Moss exists: a drifted sentence that reaches a session runs as
+`jobClass: designer` and pollutes the class rate D-112 paid $4 to
+establish. **Tripwire:** an hq ledger row filed `designer` on a sentence
+that is not design work reopens this. The real fix, if it fires, is not a
+weight — it is query-term informativeness, D-051's lesson again: whether one
+shared word is signal depends on how rare the word is *in language*, not in
+a six-document corpus where "know" is unique by accident.

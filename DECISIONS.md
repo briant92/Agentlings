@@ -7435,3 +7435,17 @@ ordinary firing); 1,371 + 134 green, typecheck clean. Found in passing:
 Brian had quietly given the close feature its first three real uses —
 bootcamp, random and ui-check all sit on the closed shelf, ui-check with
 its kept calendar re-Approve named on the row.
+
+**Mutation evidence, with a catch worth its own lines.** The Invitees
+exemption removed kills exactly its test. But the sendFacts guard removed
+**survived** — twice. The first compose-refusal test used a sentence that
+was never bare ("invite" reads as content), so it returned null with or
+without the guard: a test passing for the wrong reason, the harness-first
+lesson again. The second attempt exposed the deeper fact: `calendar` is
+not a CHANNEL_WORD, so any sentence *containing* the word cannot read
+bare — the guard's one reachable path is a **settled** channel with no
+channel word in the text (an ask-card pick, a schedule replay). The test
+now uses exactly that shape, with a telegram twin on the same sentence
+proving it composes there — so the calendar null is the guard refusing,
+not the sentence never qualifying — and the mutation now kills exactly
+one test. Three exact kills total across the change.

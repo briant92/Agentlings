@@ -434,12 +434,17 @@ describe('questionsFor: the calendar channel', () => {
   });
 
   it('never takes the compose shortcut — an event needs times only a session parses', () => {
+    // The settled-channel case: a pick or a schedule replay carries
+    // channel without the word in the sentence, which is the one way a
+    // calendar job's text can read bare. The telegram twin keeps the test
+    // honest — the same sentence composes there, so the null below is the
+    // guard refusing and not the sentence never being bare at all.
+    const answers = { 'send-to': 'Andy — andy@x.com', 'send-say': 'Budget review' };
     expect(
-      sendFacts(
-        'send a calendar invite to Andy',
-        { channel: 'calendar', names: ['Andy'] },
-        { 'send-to': 'Andy — andy@x.com', 'send-say': 'Budget review' },
-      ),
+      sendFacts('Send a message to Andy', { channel: 'telegram', names: ['Andy'] }, answers),
+    ).toEqual({ to: 'Andy — andy@x.com', words: 'Budget review' });
+    expect(
+      sendFacts('Send a message to Andy', { channel: 'calendar', names: ['Andy'] }, answers),
     ).toBeNull();
   });
 

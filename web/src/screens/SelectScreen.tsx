@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { LevelInfo, Quote, ThemeId, WorkPlan } from '@agentlings/shared';
+import type {
+  CloseLevelPreview,
+  ClosedLevelInfo,
+  LevelInfo,
+  Quote,
+  ThemeId,
+  WorkPlan,
+} from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { allLooks, renderThumbnail } from '../world/looks';
 
@@ -8,6 +15,24 @@ export interface LevelEntry {
   name: string;
   theme: ThemeId;
 }
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** "Pip & Dot", "Pip, Dot & Moss" — names the way the copy speaks them. */
+const names = (list: string[]) =>
+  list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} & ${list[list.length - 1]}`;
+
+const onDate = (at: number) =>
+  new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
+const firing = (at: number) =>
+  new Date(at).toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 
 
@@ -21,18 +46,27 @@ export function SelectScreen({
 }) {
   const [levels, setLevels] = useState<LevelInfo[] | null>(null);
   const [creating, setCreating] = useState(false);
+  /** The closed shelf, and whichever level a dialog is holding right now. */
+  const [closed, setClosed] = useState<ClosedLevelInfo[]>([]);
+  const [closing, setClosing] = useState<LevelInfo | null>(null);
+  const [reopening, setReopening] = useState<ClosedLevelInfo | null>(null);
 
-  useEffect(() => {
+  const load = () => {
     void api<LevelInfo[]>('/api/levels').then(setLevels);
-  }, []);
+    void api<ClosedLevelInfo[]>('/api/levels/closed')
+      .then(setClosed)
+      .catch(() => setClosed([]));
+  };
+
+  useEffect(load, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !creating) onBack();
+      if (e.key === 'Escape' && !creating && !closing && !reopening) onBack();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onBack, creating]);
+  }, [onBack, creating, closing, reopening]);
 
   return (
     <div className="select-screen">
@@ -42,36 +76,76 @@ export function SelectScreen({
       </div>
       <div className="ss-grid">
         {(levels ?? []).map((l) => (
-          <button
-            key={l.id}
-            className="lvl-card"
-            onClick={() => onEnter({ id: l.id, name: l.name, theme: l.theme })}
-          >
-            <img className="lvl-thumb" src={renderThumbnail(l.theme)} alt="" />
-            <span className="lvl-meta">
-              <span className="lvl-name">{l.name}</span>
-              <span className="lvl-proj">{l.project}</span>
-            </span>
-            <span className="lvl-crew">
-              {l.colors.map((c, i) => (
-                <span
-                  key={i}
-                  className="crew-dot"
-                  style={{ background: `#${c.toString(16).padStart(6, '0')}` }}
-                />
-              ))}
-              <span className="dim">
-                {l.crew} crew · {l.jobsDone} done
-                {l.jobsRunning > 0 ? ` · ${l.jobsRunning} running` : ''}
+          <div key={l.id} className="lvl-slot">
+            <button
+              className="lvl-card"
+              onClick={() => onEnter({ id: l.id, name: l.name, theme: l.theme })}
+            >
+              <img className="lvl-thumb" src={renderThumbnail(l.theme)} alt="" />
+              <span className="lvl-meta">
+                <span className="lvl-name">{l.name}</span>
+                <span className="lvl-proj">{l.project}</span>
               </span>
-            </span>
-          </button>
+              <span className="lvl-crew">
+                {l.colors.map((c, i) => (
+                  <span
+                    key={i}
+                    className="crew-dot"
+                    style={{ background: `#${c.toString(16).padStart(6, '0')}` }}
+                  />
+                ))}
+                <span className="dim">
+                  {l.crew} crew · {l.jobsDone} done
+                  {l.jobsRunning > 0 ? ` · ${l.jobsRunning} running` : ''}
+                </span>
+              </span>
+            </button>
+            <button className="lvl-close" onClick={() => setClosing(l)}>
+              close
+            </button>
+          </div>
         ))}
         <button className="lvl-card new" onClick={() => setCreating(true)}>
           <span className="lvl-new-plus">+ NEW LEVEL</span>
           <span className="dim">name it · pick a palette · fresh crew spawns</span>
         </button>
       </div>
+      {closed.length > 0 && (
+        <>
+          <div className="sect">closed</div>
+          <div className="closed-rows">
+            {closed.map((row) => (
+              <div key={row.id} className="closed-row">
+                <span className="closed-name">{row.name}</span>
+                <span className="dim">closed {onDate(row.closedAt)}</span>
+                <span className="dim">{plural(row.jobs, 'job')} kept · ledger kept</span>
+                <span className="closed-spacer" />
+                <button onClick={() => setReopening(row)}>Reopen</button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {closing && (
+        <CloseLevelModal
+          level={closing}
+          onClose={() => setClosing(null)}
+          onClosed={() => {
+            setClosing(null);
+            load();
+          }}
+        />
+      )}
+      {reopening && (
+        <ReopenModal
+          row={reopening}
+          onClose={() => setReopening(null)}
+          onReopened={() => {
+            setReopening(null);
+            load();
+          }}
+        />
+      )}
       {creating && (
         <NewLevelModal
           levels={levels ?? []}
@@ -307,6 +381,215 @@ function NewLevelModal({
         <div className="m-foot">
           <button disabled={!name.trim()} onClick={() => void create()}>
             Create level
+          </button>
+          <button onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Closing archives in place — the folder stays whole, the runtime stops. The
+ * preview is fetched before the button so the dialog names consequences
+ * (schedules stop, granted approvals lapse, waiting reviews are kept) instead
+ * of asserting safety; a mid-job crew member arrives as `blocker` and arrests
+ * the button the way a doomed Start is arrested (D-087's manner).
+ */
+function CloseLevelModal({
+  level,
+  onClose,
+  onClosed,
+}: {
+  level: LevelInfo;
+  onClose: () => void;
+  onClosed: () => void;
+}) {
+  const [preview, setPreview] = useState<CloseLevelPreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void api<CloseLevelPreview>(lvl(level.id, '/close/preview'))
+      .then(setPreview)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+  }, [level.id]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const close = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(lvl(level.id, ''), { method: 'DELETE' });
+      onClosed();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="m-head">
+          <span className="m-title">Close level — {level.name}</span>
+          <button onClick={onClose}>✕</button>
+        </div>
+        <div className="m-body">
+          {preview === null && !error && <p className="dim">Looking at what this would stop…</p>}
+          {preview && (
+            <>
+              <p>
+                The level leaves the map and its clock stops. The folder stays whole —{' '}
+                {plural(preview.jobs, 'job')}, {plural(preview.recipes, 'recipe')},{' '}
+                {plural(preview.notes, 'note')}
+                {preview.crew.length > 0 ? `, and the lessons ${names(preview.crew)} keep` : ''} —
+                and the ledger keeps every row.
+              </p>
+              {preview.blocker && <p className="error">{preview.blocker}</p>}
+              {(preview.reviews > 0 ||
+                preview.schedules.length > 0 ||
+                preview.approvals.length > 0) && (
+                <>
+                  <div className="sect">what stops</div>
+                  <ul className="close-stops">
+                    {preview.reviews > 0 && (
+                      <li>
+                        <span className="mark">reviews</span>
+                        <span>{plural(preview.reviews, 'delivery', 'deliveries')} still in review</span>
+                        <span className="then">kept as they are — back if you reopen</span>
+                      </li>
+                    )}
+                    {preview.schedules.map((s) => (
+                      <li key={s.id}>
+                        <span className="mark">schedule</span>
+                        <span>
+                          “{s.prompt}” — {s.cadenceLabel}
+                        </span>
+                        <span className="then">
+                          {s.paused ? 'already paused' : `next ${firing(s.nextDueAt)}`} — stops;
+                          stays paused if you reopen
+                        </span>
+                      </li>
+                    ))}
+                    {preview.approvals.map((a) => (
+                      <li key={a.key}>
+                        <span className="mark">approval</span>
+                        <span>standing approval “{a.key}”</span>
+                        <span className="then">lapses — nothing auto-sends from a closed level</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
+          )}
+          {error && <p className="error">{error}</p>}
+        </div>
+        <div className="m-foot">
+          <span className="dim foot-note">
+            Nothing is deleted — the folder stays at .agentlings/levels/{level.id}.
+          </span>
+          <button
+            className="warn"
+            disabled={busy || !preview || preview.blocker !== null}
+            onClick={() => void close()}
+          >
+            {busy ? 'closing…' : 'Close level'}
+          </button>
+          <button onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Reopening names the two powers that could otherwise return unnoticed:
+ * schedules stay paused (a level asleep for months must not fire a catch-up
+ * on waking), and a standing approval never stopped being granted.
+ */
+function ReopenModal({
+  row,
+  onClose,
+  onReopened,
+}: {
+  row: ClosedLevelInfo;
+  onClose: () => void;
+  onReopened: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const reopen = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(lvl(row.id, '/reopen'), { method: 'POST' });
+      onReopened();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="m-head">
+          <span className="m-title">Reopen {row.name}?</span>
+          <button onClick={onClose}>✕</button>
+        </div>
+        <div className="m-body">
+          <p>
+            Back on the map with crew, recipes and{' '}
+            {row.reviews > 0 ? `the ${plural(row.reviews, 'waiting review')}` : 'its work record'}{' '}
+            exactly as they were.
+          </p>
+          {(row.schedules.length > 0 || row.approvals.length > 0) && (
+            <ul className="close-stops">
+              {row.schedules.map((s) => (
+                <li key={s.id}>
+                  <span className="mark">schedule</span>
+                  <span>
+                    “{s.prompt}” — {s.cadenceLabel}
+                  </span>
+                  <span className="then">
+                    stays paused — resume it from the backoffice when you want it firing again
+                  </span>
+                </li>
+              ))}
+              {row.approvals.map((a) => (
+                <li key={a.key}>
+                  <span className="mark">approval</span>
+                  <span>standing approval “{a.key}”</span>
+                  <span className="then">
+                    still granted — revoke in Settings if you no longer want auto-sends
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {error && <p className="error">{error}</p>}
+        </div>
+        <div className="m-foot">
+          <button disabled={busy} onClick={() => void reopen()}>
+            {busy ? 'reopening…' : 'Reopen'}
           </button>
           <button onClick={onClose}>Cancel</button>
         </div>

@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
-import type { AudiencePerson, ChannelShelf, SettingsInfo } from '@agentlings/shared';
+import type {
+  AudiencePerson,
+  ChannelShelf,
+  SettingsInfo,
+  SweepResult,
+  WorkingCopiesInfo,
+} from '@agentlings/shared';
 import { api } from '../api';
 import { ChannelLogo } from '../panels/ChannelLogo';
 import { resetTour, tourSeen } from '../panels/Tour';
 import { crtEnabled, setCrt } from '../ui/crt';
+
+/** Disk sizes in the unit the numbers were measured in. */
+const mb = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`;
 
 export function SettingsModal({
   onClose,
@@ -28,6 +37,29 @@ export function SettingsModal({
   /** Who the bot knows (D-092) — reading is also the quiet refresh. */
   const [audience, setAudience] = useState<AudiencePerson[] | null>(null);
   const [audienceOpen, setAudienceOpen] = useState(false);
+  /** The repo clones under finished jobs — the measured disk weight. */
+  const [copies, setCopies] = useState<WorkingCopiesInfo | null>(null);
+  const [sweeping, setSweeping] = useState(false);
+  const [swept, setSwept] = useState<SweepResult | null>(null);
+  const [sweepError, setSweepError] = useState<string | null>(null);
+
+  const loadCopies = () =>
+    void api<WorkingCopiesInfo>('/api/working-copies')
+      .then(setCopies)
+      .catch(() => setCopies(null));
+
+  const sweep = async () => {
+    setSweeping(true);
+    setSweepError(null);
+    try {
+      setSwept(await api<SweepResult>('/api/working-copies/sweep', { method: 'POST' }));
+      loadCopies();
+    } catch (err) {
+      setSweepError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSweeping(false);
+    }
+  };
 
   const loadAudience = () =>
     void api<{ people: AudiencePerson[] }>('/api/channels/telegram/audience')
@@ -50,6 +82,7 @@ export function SettingsModal({
     void api<ChannelShelf>('/api/channels')
       .then(setShelf)
       .catch(() => setShelf(null));
+    loadCopies();
   }, []);
 
   /** The server is what makes it true, so the reply is what we render. */
@@ -429,6 +462,49 @@ export function SettingsModal({
           <div className="sect">catalog</div>
           <p className="dim">Roles and skills are a global library shared by every level.</p>
           <button onClick={onOpenRoles}>Open roles &amp; skills</button>
+          <div className="sect">maintenance</div>
+          <div className="maint-card">
+            <div className="maint-title">Working copies</div>
+            {copies === null && <p className="dim">Measuring…</p>}
+            {copies && copies.sweepable.clones > 0 && (
+              <p className="dim">
+                Finished jobs keep the repo they cloned to work in. Right now{' '}
+                <b>
+                  {mb(copies.sweepable.bytes)} across {copies.sweepable.clones} finished jobs
+                </b>{' '}
+                can go — transcripts, outputs and lessons stay, and a redo clones fresh anyway.
+              </p>
+            )}
+            {copies && copies.sweepable.clones === 0 && (
+              <p className="dim">
+                Finished jobs keep the repo they cloned to work in. Nothing is sweepable right now —
+                clones under work still in review are kept.
+              </p>
+            )}
+            <div className="maint-foot">
+              <button
+                disabled={sweeping || !copies || copies.sweepable.clones === 0}
+                onClick={() => void sweep()}
+              >
+                {sweeping ? 'sweeping…' : 'Sweep working copies'}
+              </button>
+              {copies && (
+                <span className="dim">
+                  only promoted or discarded jobs · {mb(copies.kept.bytes)} in{' '}
+                  {copies.kept.clones} kept clones
+                </span>
+              )}
+            </div>
+            {swept && (
+              <p className="stat-done">
+                Freed {mb(swept.bytes)} across {swept.clones} clone{swept.clones === 1 ? '' : 's'}.
+                {swept.skipped > 0
+                  ? ` ${swept.skipped} skipped — something is holding them; try again later.`
+                  : ''}
+              </p>
+            )}
+            {sweepError && <p className="error">{sweepError}</p>}
+          </div>
         </div>
         <div className="m-foot">
           <button onClick={onClose}>Close</button>

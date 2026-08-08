@@ -26,6 +26,13 @@ export interface LevelMeta {
    * project is not a note about another, the same reason a recipe is.
    */
   knowledgeSources?: string[];
+  /**
+   * Closed levels stay on disk, whole, and only stop being loaded — the app
+   * archives and never destroys (the agentling let-go precedent). Keeping the
+   * directory under levels/ is also what keeps `createLevelFiles` from ever
+   * reissuing the id, so ledger rows keep pointing at real history.
+   */
+  closedAt?: number;
 }
 
 export interface CrewSeed {

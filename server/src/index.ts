@@ -63,6 +63,15 @@ import {
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { channelShelf, detectChannelAsk, mentionsChannel } from './channel';
+import {
+  closeBlocker,
+  closeLevelFiles,
+  closePreview,
+  describeClosedLevel,
+  listClosedLevels,
+  reopenLevelFiles,
+} from './close';
+import { sweepWorkingCopies, workingCopies } from './sweep';
 import { secretValueProblem, storeSecret } from './env';
 import { exchangeCode, FlowStore, GOOGLE_SECRETS } from './google';
 import { quoteFor } from './estimate';
@@ -452,8 +461,13 @@ async function autoSendIfApproved(
 }
 
 migrateLegacy(SANDBOX_ROOT);
-for (const dir of listLevelDirs(SANDBOX_ROOT)) makeLevel(dir);
-if (levels.size === 0) {
+// Closed levels stay on disk and stay unloaded — reopening is what loads one.
+for (const dir of listLevelDirs(SANDBOX_ROOT)) {
+  if (!readMeta(dir).closedAt) makeLevel(dir);
+}
+// Seed only a genuinely empty install: an all-closed map is a decision the
+// user made, not an absence to paper over with a fresh HQ.
+if (levels.size === 0 && listLevelDirs(SANDBOX_ROOT).length === 0) {
   const meta = createLevelFiles(SANDBOX_ROOT, {
     name: 'HQ',
     project: 'Agentlings dev',
@@ -795,6 +809,82 @@ app.post('/api/levels', async (c) => {
 function getLevel(id: string): LevelRuntime | undefined {
   return levels.get(id);
 }
+
+/** Who is mid-job right now, for the close guard's named refusal. */
+function workingName(rt: LevelRuntime): string | undefined {
+  return rt.sim.agentlings.find((a) => a.state === 'working')?.name;
+}
+
+/** The closed shelf: still on disk, whole, and one button from coming back. */
+app.get('/api/levels/closed', (c) =>
+  c.json(listClosedLevels(SANDBOX_ROOT).map(({ dir, meta }) => describeClosedLevel(dir, meta))),
+);
+
+/**
+ * What closing would keep and stop, before the button — the merge preview's
+ * grammar. The confirmation names consequences (schedules stop, granted
+ * approvals lapse, reviews wait) instead of asserting safety.
+ */
+app.get('/api/levels/:lid/close/preview', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  return c.json(
+    closePreview({
+      jobs: rt.queue.list(),
+      workingName: workingName(rt),
+      recipes: readRecipes(rt.dir).length,
+      notes: readKnowledge(rt.dir).length,
+      crew: rt.roster.map((seed) => seed.name),
+      schedules: readSchedules(rt.dir),
+      approvals: readApprovals(rt.dir),
+    }),
+  );
+});
+
+/**
+ * Closing a level. An archive, not a delete: the folder stays whole under
+ * levels/ (the id is never reissued, the ledger's rows keep their referent),
+ * schedules pause, and the runtime stops — the tick and schedule sweeps both
+ * walk the levels map, so removal from it is the whole stop. The app has no
+ * route that destroys a level's data, deliberately (D-111's counterpart: the
+ * app offers the reversible act; the irreversible one stays out of reach).
+ */
+app.delete('/api/levels/:lid', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const blocker = closeBlocker(rt.queue.list(), workingName(rt));
+  if (blocker) return c.json({ error: blocker }, 409);
+  const closedAt = closeLevelFiles(rt.dir, Date.now());
+  levels.delete(rt.meta.id);
+  sentJobsRev.delete(rt.meta.id);
+  // The same signal a vanished level already sends (SOCKET_LEVEL_GONE), so a
+  // watcher leaves for the select screen instead of retrying forever.
+  for (const [socket, subscribed] of subscriptions) {
+    if (subscribed === rt.meta.id) socket.close(SOCKET_LEVEL_GONE, 'level closed');
+  }
+  return c.json({ id: rt.meta.id, closedAt });
+});
+
+/**
+ * Back on the map exactly as left. Schedules stay paused — a level asleep
+ * for months must not fire a catch-up on waking — and the client names any
+ * standing approvals, which never stopped being granted, before this is
+ * pressed.
+ */
+app.post('/api/levels/:lid/reopen', (c) => {
+  const lid = c.req.param('lid');
+  if (levels.has(lid)) return c.json({ error: 'already open' }, 400);
+  const dir = levelDir(SANDBOX_ROOT, lid);
+  if (!existsSync(path.join(dir, 'level.json'))) return c.json({ error: 'unknown level' }, 404);
+  if (!readMeta(dir).closedAt) return c.json({ error: 'already open' }, 400);
+  reopenLevelFiles(dir);
+  return c.json(levelInfo(makeLevel(dir)));
+});
+
+/** The measured disk answer: repo/ clones under resolved jobs, nothing else. */
+app.get('/api/working-copies', (c) => c.json(workingCopies(SANDBOX_ROOT)));
+
+app.post('/api/working-copies/sweep', (c) => c.json(sweepWorkingCopies(SANDBOX_ROOT)));
 
 app.get('/api/levels/:lid/state', (c) => {
   const rt = getLevel(c.req.param('lid'));

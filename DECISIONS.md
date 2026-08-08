@@ -130,6 +130,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-118 — 2026-08-07 — The overnight campaign: 27 runs, priced first, across every flow the app has](#d-118--2026-08-07--the-overnight-campaign-27-runs-priced-first-across-every-flow-the-app-has)
 - [D-119 — 2026-08-07 — Paperwork does not inherit: PENDING.md joins the forward exclusion](#d-119--2026-08-07--paperwork-does-not-inherit-pendingmd-joins-the-forward-exclusion)
 - [D-120 — 2026-08-07 — An approval is keyed by the sentence the chain began with](#d-120--2026-08-07--an-approval-is-keyed-by-the-sentence-the-chain-began-with)
+- [D-121 — 2026-08-08 — Closing a level archives it in place, and the sweep takes the clones](#d-121--2026-08-08--closing-a-level-archives-it-in-place-and-the-sweep-takes-the-clones)
 
 ## By theme
 
@@ -163,7 +164,10 @@ entry updates one file rather than two.
   already there, and a class with no rate falls back to a standing cap; and
   D-117, that drift measured on every real prompt — ~5%, carried by generic
   body words — with both cheap fixes measured out and the index left alone
-- **Levels as workspaces, and the non-expert setup path** — D-011, D-013
+- **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
+  D-121, where deletion becomes closing — an archive in place that keeps the
+  id off the market — and the measured disk weight turns out to be repo
+  clones, answered by a per-job sweep rather than by deleting anything
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
   guess about a trade; and D-070, the third form of one fault — a quote that
@@ -7177,3 +7181,61 @@ stay on disk as inert rows, deliberately unmigrated: a grant is cheap to
 re-earn, and a migration that guessed wrong would write an auto-send rule
 nobody granted. Tests pin the chain walk, the orphan stop and the unknown id;
 mutation-proved by killing the walk — exactly one test fails.
+
+## D-121 — 2026-08-08 — Closing a level archives it in place, and the sweep takes the clones
+
+Brian asked for level deletion with a happy medium between unbounded growth
+and losing training data. Measured first, the two halves came apart: six
+levels held 1,019 MB, of which hq alone was 1,016 — and 1,002.9 MB of that is
+`repo/` working copies under job sandboxes. Every level's actual learning —
+recipes, knowledge, lessons, transcripts, close-outs — fits in ~16 MB. So
+"delete a level" was never the disk question, and the disk question was never
+about levels. The design also mostly existed already, three times over:
+letting an agentling go archives the lessons and forgets the roster (the file
+is still there), D-029 left ledger rows from dead levels alone, and D-111
+ruled that the app offers the action rather than a filesystem instruction.
+
+Decided: **the app closes levels and never destroys them.**
+`DELETE /api/levels/:lid` stamps `closedAt` into level.json and pauses every
+schedule through `setPaused` — the pause route's own function — with the
+stamp written last so a failure part-way leaves the close retryable. The
+runtime stops by removal from the levels map: the tick loop and the schedule
+sweep both walk it, so one delete is the whole stop; watchers get
+`SOCKET_LEVEL_GONE`, which the client already treats as "leave, don't retry".
+The folder staying whole under `levels/` is also the id defence:
+`createLevelFiles` guards on the *directory* existing, so a closed id is
+never reissued and the ledger's rows keep their referent. A preview route in
+merge's preview→act grammar feeds the confirm, which names consequences
+instead of asserting safety: deliveries still in review are kept; each
+schedule is quoted with its next firing (closing training-ground would have
+to say T5 stops); granted standing approvals lapse — an approvals file in a
+closed dir is inert by construction, because nothing reads the dir. Close
+refuses 409 while anyone is mid-job, in the crew routes' own wording. Reopen
+clears the stamp and rebuilds the runtime; schedules stay paused
+deliberately — a level asleep for months must not fire a catch-up on
+waking — and the reopen dialog names the paused schedules and still-granted
+approvals, so no power returns silently. Boot skips closed dirs, and the
+fresh-HQ seed now requires a genuinely empty install: an all-closed map is a
+decision, not an absence to paper over. A hard delete is deliberately not a
+route — D-111's counterpart: the app offers the reversible act; the
+irreversible one stays a by-hand act outside it.
+
+The disk answer is a separate sweep (`POST /api/working-copies/sweep`),
+offered as a maintenance card in Settings. It removes `repo/` only, and only
+under `promoted` or `discarded` jobs — a done, partial or failed job's clone
+is where a reply's continuation still works, and a sandbox dir with no job
+row proves nothing about itself, so both are kept rather than guessed at
+(backfill by identification). Everything else in a sandbox stays; a redo
+clones fresh. Measured at build time: 403.3 MB across 40 clones sweepable
+immediately, 599.6 MB more under hq's 60 unresolved reviews, freeing as they
+resolve. Closed levels are swept too: the rule is per job, not per level.
+
+One trap dodged and pinned: counting a closed level's jobs by constructing a
+`JobQueue` would have *rewritten* it — `restore()` fails running jobs over to
+`failed — interrupted` and persists. `readStoredJobs` reads without touching,
+and a test closes a level with a `running` job on disk and asserts the stored
+file still says running.
+
+16 new tests (blocker wording, granted-only approvals, pause through the
+tested path, reopen leaves paused, the per-job sweep rule, torn-file
+tolerance, the no-rewrite pin); 1,348 + 130 green, typecheck clean.

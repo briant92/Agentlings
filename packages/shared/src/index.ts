@@ -37,6 +37,61 @@ export interface LevelInfo {
   jobsRunning: number;
 }
 
+/**
+ * What closing a level would keep and stop, shown before the button. Closing
+ * archives in place — the folder stays whole so the id is never reissued and
+ * the ledger's rows keep pointing at real history; only the runtime stops.
+ */
+export interface CloseLevelPreview {
+  /** Why the close is refused right now — someone mid-job — or null. */
+  blocker: string | null;
+  jobs: number;
+  /** Deliveries waiting on a decision (done, partial or failed). Kept as they are. */
+  reviews: number;
+  recipes: number;
+  notes: number;
+  /** Names on the roster; their lessons stay with the level. */
+  crew: string[];
+  /** Every schedule stops firing; paused at close so reopening cannot surprise. */
+  schedules: ScheduleInfo[];
+  /** Granted standing approvals — they lapse; nothing auto-sends from a closed level. */
+  approvals: SendApprovalInfo[];
+}
+
+/** One row on the closed shelf, carrying what a reopen would bring back. */
+export interface ClosedLevelInfo {
+  id: string;
+  name: string;
+  project: string;
+  theme: ThemeId;
+  closedAt: number;
+  jobs: number;
+  /** Deliveries that were waiting on a decision when the level closed. */
+  reviews: number;
+  /** All paused at close; reopening leaves them paused. */
+  schedules: ScheduleInfo[];
+  /** Still granted on disk — named at reopen so no power returns silently. */
+  approvals: SendApprovalInfo[];
+}
+
+/**
+ * repo/ working copies under job sandboxes — the disk weight, measured. Only
+ * clones under promoted or discarded jobs are sweepable: a failed, partial or
+ * done job's clone is where a reply's continuation still works.
+ */
+export interface WorkingCopiesInfo {
+  sweepable: { clones: number; bytes: number };
+  kept: { clones: number; bytes: number };
+}
+
+/** What a sweep actually removed, plus what it could not. */
+export interface SweepResult {
+  clones: number;
+  bytes: number;
+  /** Clones the filesystem refused to release (a lock, a sync in flight). */
+  skipped: number;
+}
+
 /** Where a session's credentials come from, and whether they still work. */
 export interface AuthStatus {
   ok: boolean;

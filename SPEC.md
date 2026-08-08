@@ -160,6 +160,14 @@ the loop runs end to end without one.
   what a delivered step forwards into the next step's input/, and the step
   brief. Each step is an ordinary job — its own recipe key, tier and quote —
   and a failed step halts the chain.
+- `close.ts` — closing a level as an archive in place (D-121): the mid-job
+  blocker, the named-consequences preview, the closedAt stamp that pauses
+  schedules through the pause route's own function, and the closed shelf.
+  Nothing here deletes; the folder staying under levels/ is what keeps the id
+  off the market.
+- `sweep.ts` — the disk answer (D-121): repo/ working copies under promoted
+  or discarded jobs, measured and removed. Every other byte of a sandbox —
+  transcript, close-out, outputs — stays; a redo clones fresh.
 - `clarify.ts` — the questions worth asking before any money moves. Local and
   deterministic like the matcher, never on free work, never more than three,
   and never required: Start must always work.
@@ -259,6 +267,7 @@ catalog, settings and spend are global because they are.
 | `GET /api/levels/:lid/jobs/:id/output/:name/preview` | The same file converted for reading — a grid, words, slide text, or the note that the browser draws it |
 | `GET /api/levels/:lid/productivity` | What the crew produced and what it cost, per member and per level |
 | `GET /api/spend` | Cost, chargeable price and what was absorbed, by level and tier |
+| `GET /api/working-copies` · `POST .../sweep` | The repo clones under finished jobs, measured, and the sweep that removes exactly those (D-121) |
 
 **The crew and the level.**
 
@@ -271,6 +280,9 @@ catalog, settings and spend are global because they are.
 | `POST /api/levels/:lid/agentlings/:aid/rest` · `/wake` | Out through the door, and back through the hatch |
 | `GET /api/levels/:lid/merge/proposals` | Redundant hires worth folding together, with the reasons |
 | `POST /api/levels/:lid/merge/preview` · `POST /api/levels/:lid/merge` | What a fold would do, then doing it |
+| `GET /api/levels/:lid/close/preview` · `DELETE /api/levels/:lid` | What closing would keep and stop, then closing — an archive in place, never a delete (D-121) |
+| `GET /api/levels/closed` | The closed shelf, each row carrying what a reopen would bring back |
+| `POST /api/levels/:lid/reopen` | Back on the map exactly as left; schedules stay paused |
 
 **What the crew knows, and what it has compiled.**
 

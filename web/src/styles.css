@@ -1412,6 +1412,115 @@ select {
   font-size: 11px;
   color: var(--db-lime-light);
 }
+/* The close control rides a wrapper, not the card: a button cannot nest a
+   button, and entering the level must stay the whole card's click. */
+.lvl-slot {
+  position: relative;
+  display: flex;
+}
+.lvl-slot .lvl-card {
+  flex: 1;
+}
+.lvl-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  font-size: 10px;
+  padding: 2px 7px;
+  background: rgba(16, 19, 26, 0.85);
+  border-color: #262b36;
+  color: #8a91a3;
+  opacity: 0;
+  pointer-events: none;
+}
+.lvl-slot:hover .lvl-close,
+.lvl-close:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lvl-close:hover {
+  color: #d8dce6;
+  border-color: #33415c;
+}
+.closed-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.closed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px dashed #262b36;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.closed-row .closed-name {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--db-steel);
+}
+.closed-spacer {
+  flex: 1;
+}
+/* What a close stops, one named consequence per row. */
+.close-stops {
+  margin: 4px 0 2px;
+  padding: 0;
+  list-style: none;
+}
+.close-stops li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  border: 1px solid #262b36;
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+.close-stops .mark {
+  color: #d27d2c;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.close-stops .then {
+  color: #626a7d;
+}
+button.warn {
+  background: #d27d2c;
+  border-color: #a05a1c;
+  color: #fff;
+}
+button.warn:hover:not(:disabled) {
+  background: #de8b3f;
+}
+.m-foot .foot-note {
+  margin-right: auto;
+  font-size: 11px;
+  max-width: 36ch;
+}
+.maint-card {
+  border: 1px solid #262b36;
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.maint-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.maint-foot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
 .nl-body {
   display: flex;

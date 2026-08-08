@@ -47,6 +47,22 @@ export function jobsFile(sandboxRoot: string): string {
   return path.join(sandboxRoot, 'jobs.json');
 }
 
+/**
+ * The stored jobs, read without opening the level. Constructing a JobQueue is
+ * not a read — restore() fails running jobs over and rewrites the file — so
+ * anything that only wants to look at a closed level's jobs comes here.
+ */
+export function readStoredJobs(sandboxRoot: string): Job[] {
+  const file = jobsFile(sandboxRoot);
+  if (!existsSync(file)) return [];
+  try {
+    const stored = JSON.parse(readFileSync(file, 'utf8')) as Job[];
+    return Array.isArray(stored) ? stored.filter((job) => job?.id) : [];
+  } catch {
+    return []; // a torn file reads as empty, the same tolerance restore() has
+  }
+}
+
 export const INTERRUPTED = 'interrupted — the app restarted while this was running';
 
 /**

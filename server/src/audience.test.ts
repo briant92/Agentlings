@@ -9,6 +9,7 @@ import {
   mergeSends,
   readAudience,
   removePerson,
+  rosterChannel,
   telegramChats,
   writeAudience,
 } from './audience';
@@ -84,6 +85,18 @@ describe('mergeContacts (D-122)', () => {
     const emailedFirst = mergeContacts([], [{ id: 'ana@x.com', name: 'Ana' }]);
     const got = mergeContacts(emailedFirst, [{ id: 'ana@x.com', name: 'Ana García' }]);
     expect(got[0]?.name).toBe('Ana García');
+  });
+});
+
+describe('rosterChannel (D-124)', () => {
+  it('calendar reads the gmail book — attendees are email addresses', () => {
+    expect(rosterChannel('calendar')).toBe('gmail');
+  });
+
+  it('every other channel reads its own', () => {
+    for (const channel of ['telegram', 'gmail', 'slack', 'whatsapp-business']) {
+      expect(rosterChannel(channel)).toBe(channel);
+    }
   });
 });
 

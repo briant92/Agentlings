@@ -133,6 +133,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-121 — 2026-08-08 — Closing a level archives it in place, and the sweep takes the clones](#d-121--2026-08-08--closing-a-level-archives-it-in-place-and-the-sweep-takes-the-clones)
 - [D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole](#d-122--2026-08-08--gmails-roster-reads-the-contact-book-the-legend-stops-riding-whole)
 - [D-123 — 2026-08-08 — The picker learns what Gmail's compose field knows](#d-123--2026-08-08--the-picker-learns-what-gmails-compose-field-knows)
+- [D-124 — 2026-08-08 — Calendar asks its own two facts, and reads the gmail book](#d-124--2026-08-08--calendar-asks-its-own-two-facts-and-reads-the-gmail-book)
 
 ## By theme
 
@@ -346,7 +347,10 @@ entry updates one file rather than two.
   the channel's own rule — and the legend narrows to named-or-used, capped,
   for every channel; and D-123, where the compose-field list ("other
   contacts", everyone ever emailed) joins on a widened consent whose
-  granting act is the user's own reconnect; and D-093, wall 4 (a typo'd "Sen") answered at
+  granting act is the user's own reconnect; and D-124, where calendar stops
+  being silent at the desk — "Who's invited?" (optional, the gmail book
+  behind it) and the title verbatim — and every audience seam maps
+  calendar to gmail through one function; and D-093, wall 4 (a typo'd "Sen") answered at
   both gates — a channel word with no send verb raises a near-miss
   *question* the user can confirm into the full send surface, and a job
   that mentioned a channel it never carried says at review that approving
@@ -7376,3 +7380,58 @@ nothing to re-paste and nothing to poll — the callback storing the new
 refresh token is the whole grant. Live-verified: an empty-body start
 answered 200 with the accounts.google.com URL carrying **both** contacts
 scopes, minted from the stored client. 1,368 + 130 green.
+
+## D-124 — 2026-08-08 — Calendar asks its own two facts, and reads the gmail book
+
+Brian asked for the calendar invite to work like a telegram or a mail at
+the desk: To filling with matching contacts (who is invited), Say helping
+with the title. Probed live before touching anything: "Send a calendar
+invite to Andy for tomorrow at 6pm" detects `calendar` correctly (even
+with "on Gmail" in the sentence — the D-104 scoped claims hold), and the
+desk asks **nothing** — D-104's deliberate exception. The deeper fault was
+new, though: a calendar job's brief legend reads the *calendar* roster,
+which does not exist — the 116-person book of D-122/D-123 is keyed under
+gmail — so a paid run could never have resolved "Andy" and would have
+refused the attendee honestly after the money was spent, the 71¢-wall
+class again.
+
+Decided with Brian, revising D-104's silence rather than its reasoning:
+
+- **Calendar asks its own two.** "Who's invited?" — id `send-to`, label
+  **Invitees**, and the label is load-bearing: it is how the client's
+  arrest knows this To is *optional*, because a dentist appointment has no
+  invitees and must queue without a fight (D-104's argument, kept). A
+  *filled* field is checked like any other channel's (D-091): the calendar
+  shape wants an address in every comma-separated part, so "Ana García"
+  alone is arrested before money and "Ana — ana@x.com" passes the way
+  every picker pick does. "What's the event called?" — label **Title**,
+  used verbatim; never 'Words', so the bare-send arrest cannot fire. Times
+  stay the sentence's job; the session parses them under the brief's
+  contract, and the brief now says outright that an Invitees answer is
+  exactly the attendee list and a Title answer is the subject verbatim.
+- **Every audience seam maps calendar → gmail through one function**
+  (`rosterChannel`, the D-119/D-120 sweep done up front): the audience GET
+  (so the picker and its problem line just work, client unchanged), the
+  plan-time roster names, the executor's injected legend reader, and the
+  forget route. Attendees are gmail-reachable people; a calendar.json
+  would only ever have held "primary".
+- **Calendar never takes the D-097 compose shortcut**: `sendFacts` refuses
+  it by name, because a `{to, words}` compose cannot carry the start and
+  end an event needs — without the guard, adding the questions would have
+  quietly extended the free-tier promise to a channel it cannot keep it
+  for.
+- The answers reach the run through `clarificationLines`' existing
+  recompute — zero new plumbing — and execution needed nothing: the outbox
+  contract already validates attendees as emails and Approve already sends
+  invitations via sendUpdates=all.
+
+Live after building: the same sentence now answers
+`send-to [Invitees] "Who's invited?" · send-say [Title] "What's the event
+called?"`, and `GET /api/channels/calendar/audience` serves the 116-person
+gmail book — the picker and the D-094 prefill have both inputs. 9 new
+tests (calendar's questions and labels, the compose refusal, rosterChannel
+both ways, the calendar shape, missingRecipient's exemption and its
+ordinary firing); 1,371 + 134 green, typecheck clean. Found in passing:
+Brian had quietly given the close feature its first three real uses —
+bootcamp, random and ui-check all sit on the closed shelf, ui-check with
+its kept calendar re-Approve named on the row.

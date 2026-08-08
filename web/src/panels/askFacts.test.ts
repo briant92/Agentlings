@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchRecipient, missingWords, recipientProblem } from './askFacts';
+import { matchRecipient, missingRecipient, missingWords, recipientProblem } from './askFacts';
 
 const BRIAN = { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 };
 const JOSE = {
@@ -110,5 +110,32 @@ describe('recipientProblem — slack and github (D-104)', () => {
     expect(recipientProblem('github', 'briant92/Agentlings#12')).toBeNull();
     expect(recipientProblem('github', 'issue 12')).toContain('owner/repo#123');
     expect(recipientProblem('github', 'Agentlings#12')).toContain('owner/repo#123');
+  });
+
+  it('calendar wants an address in every comma part (D-124)', () => {
+    expect(recipientProblem('calendar', 'Andy — andytg1111@gmail.com')).toBeNull();
+    expect(
+      recipientProblem('calendar', 'Andy — andy@x.com, Ana García — ana@y.com'),
+    ).toBeNull();
+    expect(recipientProblem('calendar', 'Ana García')).toContain('comma-separated');
+    expect(recipientProblem('calendar', 'andy@x.com, Ana García')).toContain('comma-separated');
+  });
+});
+
+describe('missingRecipient (D-124)', () => {
+  const TO = (label?: string) => [{ id: 'send-to', ...(label ? { label } : {}) }];
+
+  it('an empty To dooms every messaging channel, as before', () => {
+    expect(missingRecipient(TO(), '')).toBe(true);
+    expect(missingRecipient(TO(), '  ')).toBe(true);
+    expect(missingRecipient(TO(), 'Brian — 8633678680')).toBe(false);
+  });
+
+  it('empty Invitees queue — an event for just you is the ordinary case', () => {
+    expect(missingRecipient(TO('Invitees'), '')).toBe(false);
+  });
+
+  it('no To question, nothing missing', () => {
+    expect(missingRecipient([], '')).toBe(false);
   });
 });

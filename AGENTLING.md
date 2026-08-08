@@ -1402,12 +1402,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
 - [x] **Create an event** — the calendar channel on the consent already
       given (D-080 covered `calendar.events` from the first Connect): one
       event per outbox, validated at the seam, invitations by Google's own
-      mail, reviewed and replayed like every send. The desk asks no
-      To/Words for it — a calendar job's facts are a title and a time, and
-      the brief carries the event contract instead (D-104). First live
-      firing attempted 2026-08-07 (D-118): the wiring held to the last hop
-      and the Google console's Calendar API toggle refused it — the 400
-      names the enable link, the job stays reviewable, re-Approve retries
+      mail, reviewed and replayed like every send. The desk asks calendar's
+      own two facts (D-124, revising D-104's silence): "Who's invited?" —
+      optional, the picker over the gmail book behind it, empty never
+      arresting, a filled non-address arrested before money — and the
+      title, used verbatim; times stay the sentence's job and the brief
+      carries the event contract. First live firing attempted 2026-08-07
+      (D-118): the wiring held to the last hop and the Google console's
+      Calendar API toggle refused it — the 400 names the enable link, the
+      job stays reviewable, re-Approve retries
 - [x] **WhatsApp Business** — template sends through Meta's Cloud API, the
       free-test-number on-ramp in the guide, and the audit taking the user's
       declared per-message rate or none (D-081)

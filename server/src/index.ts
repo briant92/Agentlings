@@ -165,6 +165,7 @@ import {
   mergeSends,
   readAudience,
   removePerson,
+  rosterChannel,
   telegramChats,
   writeAudience,
 } from './audience';
@@ -311,7 +312,7 @@ function makeLevel(dir: string): LevelRuntime {
           () => [...readKnowledge(dir), ...storeLines(dir, Date.now())],
           () => readConnections(CONNECTIONS_FILE),
           () => readLedger(SANDBOX_ROOT),
-          (channel) => readAudience(SANDBOX_ROOT, channel),
+          (channel) => readAudience(SANDBOX_ROOT, rosterChannel(channel)),
           // The newest audited body on the channel — what "the same" means.
           (channel) =>
             readSends(SANDBOX_ROOT)
@@ -589,7 +590,7 @@ app.get('/api/channels', (c) => c.json(channelShelf()));
  */
 function rosterNames(channel: string | undefined): string[] {
   if (!channel) return [];
-  return readAudience(SANDBOX_ROOT, channel).flatMap((person) => [
+  return readAudience(SANDBOX_ROOT, rosterChannel(channel)).flatMap((person) => [
     person.name,
     ...(person.username ? [person.username] : []),
     ...(person.aliases ?? []),
@@ -609,7 +610,10 @@ function rosterNames(channel: string | undefined): string[] {
  * once should never look like an empty address book.
  */
 app.get('/api/channels/:channel/audience', async (c) => {
-  const channel = c.req.param('channel');
+  // Calendar asks for gmail's book (D-124): attendees are email addresses,
+  // and the mapping happening here is what lets the client stay ignorant of
+  // it — the picker just fetches the channel it is on.
+  const channel = rosterChannel(c.req.param('channel'));
   let people = readAudience(SANDBOX_ROOT, channel);
   let problem: string | undefined;
   if (channel === 'telegram' && process.env.TELEGRAM_BOT_TOKEN) {
@@ -653,7 +657,9 @@ app.get('/api/channels/:channel/audience', async (c) => {
 
 /** Un-know someone: the roster forgets them until they say hello again. */
 app.delete('/api/channels/:channel/audience/:id', (c) =>
-  c.json({ people: removePerson(SANDBOX_ROOT, c.req.param('channel'), c.req.param('id')) }),
+  c.json({
+    people: removePerson(SANDBOX_ROOT, rosterChannel(c.req.param('channel')), c.req.param('id')),
+  }),
 );
 
 /**

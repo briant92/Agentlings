@@ -10,7 +10,7 @@ import type {
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
-import { matchRecipient, missingWords, recipientProblem } from './askFacts';
+import { matchRecipient, missingRecipient, missingWords, recipientProblem } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { RecipientPicker } from './RecipientPicker';
@@ -204,7 +204,9 @@ export function WorkBar({
     if (!ask && !mentionPicked) return null;
     const parts: string[] = [];
     const to = answers['send-to']?.trim();
-    if (sendQuestions.some((q) => q.id === 'send-to') && !to) parts.push('no recipient');
+    // 'Invitees' never counts as missing (D-124) — an event for just you
+    // queues; only a filled field can be wrong, caught just below.
+    if (missingRecipient(sendQuestions, to)) parts.push('no recipient');
     const effective = channel ?? ask?.channel;
     // A filled recipient the channel's contract cannot reach — a name where
     // a chat id belongs — is the 71¢ wall, caught before money moves (D-091).

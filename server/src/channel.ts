@@ -451,6 +451,7 @@ export function channelBrief(
           '- One event per outbox, exactly. "to" is the calendar — write "primary" unless the user named another. "subject" is the event title; "body" is a short description the review shows.',
           '- "event.start" and "event.end" are date-times like 2026-08-13T18:00:00, written in the user\'s own local time exactly as they said it — never converted, and the end after the start.',
           '- "attendees" are email addresses and invitations go out to them at approval. Only addresses the user gave or the known-recipients list carries — never invent one; leave attendees out and say so in RESULT.md instead.',
+          '- If the clarifications answer "Who’s invited?", the attendees are exactly those addresses — nobody added, nobody dropped. If they answer the title, "subject" is that text verbatim, not a rewrite of it.',
         ]
       : []),
     ...(channel === 'github'

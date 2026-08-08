@@ -20,6 +20,18 @@ import type { SendRecord } from './sends';
  * its own Telegram audience any more than it has its own bot.
  */
 
+/**
+ * Whose roster a channel reads (D-124). Calendar invites gmail-reachable
+ * people — its attendees are email addresses — so its picker, its prefill
+ * and its session legend all draw the gmail book; a calendar.json would
+ * only ever have held "primary". Every seam that reads an audience goes
+ * through this, so the mapping cannot be honoured in one place and missed
+ * in another (the D-119/D-120 lesson).
+ */
+export function rosterChannel(channel: string): string {
+  return channel === 'calendar' ? 'gmail' : channel;
+}
+
 export function audienceFile(sandboxRoot: string, channel: string): string {
   return path.join(sandboxRoot, 'audience', `${channel}.json`);
 }

@@ -17,6 +17,14 @@ const SHAPES: Record<string, { test: RegExp; wants: string }> = {
   // which is exactly what Slack's own API would refuse less legibly (D-104).
   slack: { test: /^[#@]?[\w-]+$/, wants: 'a channel like #general or a member id' },
   github: { test: /^[\w.-]+\/[\w.-]+#\d+$/, wants: 'an issue as owner/repo#123' },
+  // Invitees, comma-separated (D-124): every part must carry an address —
+  // "Ana García" alone is the 71¢ wall again; "Ana — ana@x.com" passes the
+  // way every picker pick does. Empty never reaches this: an event with no
+  // invitees is ordinary, and the arrest only inspects a filled field.
+  calendar: {
+    test: /^[^,]*@[^,]*(,[^,]*@[^,]*)*$/,
+    wants: 'email addresses, comma-separated',
+  },
 };
 
 export function recipientProblem(channel: string, to: string): string | null {
@@ -42,6 +50,21 @@ export function missingWords(
   say: string | undefined,
 ): boolean {
   return questions.some((q) => q.id === 'send-say' && q.label === 'Words') && !say?.trim();
+}
+
+/**
+ * An empty To that dooms the queue — every channel's contract but one
+ * refuses to invent a recipient. The exception is the 'Invitees' label
+ * (D-124): an event for just you is the ordinary case, so an empty
+ * invitees field queues exactly as a dentist appointment should.
+ */
+export function missingRecipient(
+  questions: { id: string; label?: string }[],
+  to: string | undefined,
+): boolean {
+  return (
+    questions.some((q) => q.id === 'send-to' && q.label !== 'Invitees') && !to?.trim()
+  );
 }
 
 /** A person as the matcher needs them — the roster row's naming half. */

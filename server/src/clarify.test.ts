@@ -416,19 +416,31 @@ describe('clarificationLines: the drafting request is spent at the desk', () => 
 });
 
 /**
- * The calendar exception (D-104): its facts are a title and a time, not a
- * recipient and a message — the send questions would be the desk talking
- * past the user.
+ * Calendar asks its own two facts (D-124, revising D-104's silence): who is
+ * invited — optional, the 'Invitees' label the arrest reads — and the
+ * title, verbatim. Times stay the sentence's job.
  */
 describe('questionsFor: the calendar channel', () => {
-  it('asks no send facts for a calendar job', () => {
-    const got = ids('add the dentist to my calendar thursday 4pm', {
-      hasRepo: false,
-      tier: 'session',
-      channel: 'calendar',
-    });
-    expect(got).not.toContain('send-to');
-    expect(got).not.toContain('send-say');
+  const CAL = { hasRepo: false, tier: 'session' as const, channel: 'calendar' };
+
+  it('asks who is invited and what it is called, in calendar words', () => {
+    const got = questionsFor('add the dentist to my calendar thursday 4pm', CAL);
+    const to = got.find((q) => q.id === 'send-to');
+    const say = got.find((q) => q.id === 'send-say');
+    expect(to?.label).toBe('Invitees');
+    expect(to?.hint).toContain('empty');
+    expect(say?.label).toBe('Title');
+    expect(say?.hint).toContain('exactly as written');
+  });
+
+  it('never takes the compose shortcut — an event needs times only a session parses', () => {
+    expect(
+      sendFacts(
+        'send a calendar invite to Andy',
+        { channel: 'calendar', names: ['Andy'] },
+        { 'send-to': 'Andy — andy@x.com', 'send-say': 'Budget review' },
+      ),
+    ).toBeNull();
   });
 
   it('slack and github asks carry their own To hints', () => {

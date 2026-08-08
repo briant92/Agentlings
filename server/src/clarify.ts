@@ -158,6 +158,10 @@ export function sendFacts(
   answers: Record<string, string> | undefined,
 ): { to: string; words: string } | null {
   if (!channel || !answers) return null;
+  // An event cannot be composed from To and Say alone — it needs a start
+  // and an end that only a session parses from the sentence — so calendar
+  // never takes the D-097 shortcut, even with both answers in hand (D-124).
+  if (channel === 'calendar') return null;
   if (!bareSend(text, names)) return null;
   const to = answers['send-to']?.trim();
   const said = answers['send-say']?.trim();
@@ -191,11 +195,29 @@ export function questionsFor(
   // delivery was the question (D-087). Still never required: the arrest at
   // Start is the client's honesty, not a server gate.
   //
-  // The calendar channel is the exception (D-104): its facts are a title and
-  // a time, not a recipient and a message, and asking "who should this go
-  // to?" about a dentist appointment is the desk talking past the user. The
-  // sentence usually carries the when and what; the session's brief holds
-  // the event contract, and review is where the event is checked.
+  // Calendar asks its own two (D-124, revising D-104's silence now that the
+  // roster can resolve a name): who is invited — optional, because a
+  // dentist appointment has no invitees, which is the 'Invitees' label the
+  // arrest reads — and the title, used verbatim. Times stay the sentence's
+  // job; the session parses them under the brief's contract.
+  if (channel === 'calendar') {
+    asked.push({
+      id: 'send-to',
+      ask: 'Who’s invited?',
+      hint: 'Names or emails, comma-separated. Leave it empty for an event that’s just for you.',
+      label: 'Invitees',
+      options: [],
+      freeText: true,
+    });
+    asked.push({
+      id: 'send-say',
+      ask: 'What’s the event called?',
+      hint: 'Used as the title, exactly as written. Your sentence carries the rest.',
+      label: 'Title',
+      options: [],
+      freeText: true,
+    });
+  }
   if (channel && channel !== 'calendar') {
     asked.push({
       id: 'send-to',

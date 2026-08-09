@@ -92,10 +92,13 @@ describe('every credentialed connection carries its setup steps', () => {
 });
 
 describe('what a job is actually allowed to call', () => {
-  it('reaches the web tool through the catalog rather than a special case', () => {
+  it('reaches the web and render tools through the catalog rather than a special case', () => {
     const names = grantedTools(undefined, all, {}, {});
     const { granted } = resolveForJob(names, all, {});
-    expect(mcpToolNames(granted)).toEqual(['mcp__web__fetch_page']);
+    expect(mcpToolNames(granted).sort()).toEqual([
+      'mcp__render__render_pdf',
+      'mcp__web__fetch_page',
+    ]);
   });
 
   it('adds only the reading half of the browser when it is switched on', () => {
@@ -109,6 +112,30 @@ describe('what a job is actually allowed to call', () => {
   it('is not reachable at all while it is off, however a job asks', () => {
     const names = grantedTools(['browser'], all, {}, {});
     expect(names).not.toContain('browser');
+  });
+});
+
+/**
+ * The renderer prints a run's own HTML and reaches nothing — no secret, no
+ * network (every request the page makes is aborted, render.test.ts proves it
+ * against a live listener). What is asserted here is the grant shape: one
+ * tool, builtin, on by default like `web`, and the settings switch still
+ * authoritative over it.
+ */
+describe('the render connection', () => {
+  const render = all.find((c) => c.name === 'render');
+
+  it('grants exactly the one print tool, with nothing to configure', () => {
+    expect(render?.transport).toBe('builtin');
+    expect(render?.defaultOn).toBe(true);
+    expect(render?.tools).toEqual(['render_pdf']);
+    expect(render?.secrets).toBeUndefined();
+  });
+
+  it('obeys the switch: off in settings means unreachable, defaultOn or not', () => {
+    const names = grantedTools(undefined, all, { connections: { render: false } }, {});
+    const { granted } = resolveForJob(names, all, {});
+    expect(mcpToolNames(granted)).not.toContain('mcp__render__render_pdf');
   });
 });
 

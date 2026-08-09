@@ -3,7 +3,7 @@
 // Plain JS on purpose: spawned with plain `node`, never through tsx.
 // Usage: node agent-runner.mjs <config.json>
 // Emits JSONL on stdout: {type: 'progress'|'result'|'error', ...}
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 function emit(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
@@ -43,6 +43,53 @@ try {
               text = page.error ? `Could not read ${url}: ${page.error}` : page.text;
             } catch (err) {
               text = `Could not read ${url}: ${err instanceof Error ? err.message : String(err)}`;
+            }
+            return { content: [{ type: 'text', text }] };
+          },
+        ),
+      ],
+    });
+  }
+
+  // The 'render' connection is web-shaped rather than a loop entry below: its
+  // reply is bytes to write, not text to read, so the handler lands the PDF at
+  // the sandbox root itself and hands the model the receipt — base64 never
+  // rides a prompt.
+  if (config.render) {
+    const { z } = await import('zod');
+    mcpServers.render = createSdkMcpServer({
+      name: 'render',
+      version: '1.0.0',
+      tools: [
+        tool(
+          'render_pdf',
+          'Render a complete, self-contained HTML document (inline CSS, data: images, @page rules for size and margins) to a styled PDF at the sandbox root. External URLs are blocked during the render.',
+          {
+            html: z.string().describe('the whole HTML document'),
+            file: z.string().optional().describe('output filename (default report.pdf)'),
+          },
+          async ({ html, file }) => {
+            let text;
+            try {
+              const res = await fetch(config.render.endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ tool: 'render_pdf', args: { html } }),
+              });
+              const reply = await res.json();
+              if (reply.error) {
+                text = `Could not render: ${reply.error}`;
+              } else {
+                let name =
+                  typeof file === 'string' && file.trim()
+                    ? file.trim().replace(/^.*[\\/]/, '')
+                    : 'report.pdf';
+                if (!/\.pdf$/i.test(name)) name += '.pdf';
+                writeFileSync(`${config.cwd}/${name}`, Buffer.from(reply.pdf, 'base64'));
+                text = `Wrote ${name} — ${reply.pages ?? '?'} page(s), ${reply.bytes} bytes. Read it back with pdf-parse before calling it done.`;
+              }
+            } catch (err) {
+              text = `Could not render: ${err instanceof Error ? err.message : String(err)}`;
             }
             return { content: [{ type: 'text', text }] };
           },

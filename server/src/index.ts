@@ -187,6 +187,7 @@ import {
 import { type QuoteContext, quoteFor_ } from './quote';
 import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
+import { callRender } from './render';
 import { callSearch } from './search';
 import { fetchPage } from './web';
 import { AUTHOR_ROLE } from './packcontract';
@@ -2650,6 +2651,17 @@ app.post('/internal/search', async (c) => {
   return c.json(
     await callSearch(body.tool, body.args ?? {}, { http, token: process.env.BRAVE_API_KEY }),
   );
+});
+
+app.post('/internal/render', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'render');
+  if (!connection) return c.json({ error: 'the render connection is not configured' }, 404);
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(await callRender(body.tool, body.args ?? {}));
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));

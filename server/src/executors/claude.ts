@@ -199,6 +199,7 @@ const DOCUMENT_LIBRARIES = [
   '- .xlsx read/write/edit: `new (await import("exceljs")).default.Workbook()`, `await wb.xlsx.writeFile(f)` / `readFile(f)`',
   '- .pptx write: `new (await import("pptxgenjs")).default()`, `await pres.writeFile({fileName})`',
   '- .pdf write/edit: `const {PDFDocument,StandardFonts}=await import("pdf-lib")`; `PDFDocument.load(bytes)` opens an existing one',
+  '- styled .pdf report (when a `render_pdf` tool is present): write ONE self-contained .html — inline CSS, images as data: URIs, `@page` rules for size and margins — then call `render_pdf` with the whole html; it writes the PDF at the sandbox root and reports pages and bytes. External URLs are blocked during the render, so nothing the page needs may live outside it',
   '- .pdf text: `const {PDFParse}=await import("pdf-parse")`; `await new PDFParse({data}).getText()` → `.text`',
   // A scan returns nothing from `getText`, and an agent that does not know
   // there is an answer to that will conclude the file is empty and say so.
@@ -778,6 +779,7 @@ export class ClaudeAgentExecutor implements Executor {
     const web = granted.find((c) => c.name === 'web');
     const codeHost = granted.find((c) => c.name === 'github');
     const searchConn = granted.find((c) => c.name === 'search');
+    const render = granted.find((c) => c.name === 'render');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -880,6 +882,11 @@ export class ClaudeAgentExecutor implements Executor {
         mcpServers: toMcpServers(granted, process.env),
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
+          : {}),
+        // Web-shaped, not loop-shaped: the reply is bytes the runner writes,
+        // so the runner holds a dedicated block and this carries only the door.
+        ...(render
+          ? { render: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/render` } }
           : {}),
         // Builtin like `web`, and for the same reason: the server owns the
         // call so it owns the size of the reply. Only the tools the catalog

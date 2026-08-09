@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships seven generalist jobs and nine abilities', () => {
+  it('ships seven generalist jobs and twelve abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -63,6 +63,13 @@ describe('shipped starter set', () => {
       'check-your-work',
       'cite-sources',
       'concise-reports',
+      // The studio three (EXPANSION P2): deck-design and pdf-report ride
+      // designer; document-design and pdf-report ride scribe, which gained
+      // bash the same day — a role without a shell cannot run the docx
+      // call shapes the brief hands it.
+      'deck-design',
+      'document-design',
+      'pdf-report',
       'plain-language',
       'see-your-work',
       'small-diffs',

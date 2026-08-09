@@ -106,7 +106,15 @@
     "category and country; the optional WHATSAPP_USD_PER_MESSAGE in .env is",
     "the user's own declared rate and is stamped on sends.jsonl as such —",
     "never a guess. Start with the free test number Meta gives every app: it",
-    "messages up to 5 numbers you verify, which is the whole demo loop."
+    "messages up to 5 numbers you verify, which is the whole demo loop.",
+    "",
+    "'render' is builtin and defaultOn like 'web', and reaches nothing: it",
+    "prints a run's own HTML into a styled PDF through the Edge this machine",
+    "already has (playwright-core by channel — no browser download, D-128).",
+    "The render is offline — every request the page makes is aborted — so the",
+    "document must be self-contained: inline CSS, data: images, @page rules",
+    "for size and margins. The reply is bytes the runner writes at the",
+    "sandbox root; base64 never rides a prompt."
   ],
   "connections": [
     {
@@ -118,6 +126,14 @@
       "tools": ["fetch_page"],
       "allow": [],
       "maxChars": 12000
+    },
+    {
+      "name": "render",
+      "label": "Print HTML to PDF",
+      "description": "Renders a run's own self-contained HTML into a styled PDF through the system Edge, offline — external URLs are blocked during the render.",
+      "transport": "builtin",
+      "defaultOn": true,
+      "tools": ["render_pdf"]
     },
     {
       "name": "github",

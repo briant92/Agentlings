@@ -7655,6 +7655,42 @@ the evidence gate, after Brian's server restart picks up the catalog and
 runner changes. Expected quotes come from scribe's and designer's
 existing classes, not a first-time ceiling.
 
+**Amendment, 2026-08-09 afternoon — the gate is closed, and the deck run
+taught more than the clean one.** Brian restarted (the capture logged the
+SIGINT and the fresh start — it also logged tsx restarting under this
+morning's live edits, working exactly as built) and ran both jobs.
+
+*The report* (`650fadbf`, scribe, promoted): **63.5¢ against the $1.58
+quote, 6 of 22 turns** — an existing class quoting from its own rate, as
+intended. One A4 page, the brand colour and three derived tints, and the
+skill's discipline held whole: pdf-parse read-back quoted in the result,
+a first render that came out 2 pages **tightened and re-rendered to 1**
+(the door served repeatedly), and the model-knowledge caveat printed on
+the page itself. One mechanical mismatch found: the skill says keep the
+.html beside the .pdf, but the html rides the tool *argument* and need
+never touch disk — the run composed in memory and no .html exists. The
+skill line, not the run, is what should move (one line, next touch).
+
+*The deck* (`bd129804`, designer, promoted): the ledger row reads
+`failed · costUnknown · $0 charged` — the run was **cut by the 10-minute
+session wall mid-iteration** (its RESULT is titled "in progress") — and
+the sandbox it left was good enough that Brian promoted it. What it held
+is the finding: the run routed around pptxgenjs entirely — a 16:9 PDF
+deck through the render door, then **`mutool` (present on this machine;
+it noted pdftoppm absent, probed, found it) rasterised every page**, it
+*looked* at them, wrote seven named visual faults ("the plume ran through
+the word SpaceX", "the rocket read as clip-art"), fixed all seven in v2,
+and computed WCAG contrast ratios in its own `contrast.mjs`, quoting
+eight pairs. The see-your-work loop ran END TO END on a deck — the thing
+the parked `render_office` row assumed needed LibreOffice.
+
+Recorded, not yet acted on (n=1 each): a deck job's look-loop wants
+headroom the 10-minute wall does not give; deck-design's .pptx mandate
+versus the render-door path is a real fork (editable artifact vs
+presentable one) the skill should name instead of silently losing;
+and **mutool's presence means deck visual QA is possible today** — the
+render_office row's premise has an alternative on this machine.
+
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 
 **The event.** Minutes after P1 pushed, Brian hired an architect and "the

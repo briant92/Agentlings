@@ -7749,6 +7749,36 @@ actually wants answered, spot-checked against their citations (the D-118
 verify-the-crew's-claims pattern). The class pays G5's tax knowingly; the
 $2 ceiling stays deliberately unraised until a real run argues otherwise.
 
+**Amendment, 2026-08-09 — the first real run (1 of 3), and its citations
+audited from outside.** Brian hired a researcher (Bea, into home-chores)
+and asked what Starlink's V3 satellites are made of and can do (job
+`75d1503a`, promoted). The brief is the skill running whole: verdict
+first, a "V3 ≠ FCC Gen3" section untangling exactly the conflation the
+skill hoped it would catch, four conflicting mass figures reported and
+**not averaged** ("I'm not averaging these — use the best-provenance one,
+dated"), and a Gaps section naming eight things it could not establish.
+
+Audited the citations through the app's own `/internal/fetch`, not
+trusted: the flight claims (TechCrunch) verified; the corroborator the
+brief cites (Converge Digest) confirmed every headline number — 1 Tbps,
+160 Gbps, 2,048 beams, 400 Gbps lasers, Ka/E/V/W, Redmond. **The finding
+worth keeping: the brief's most load-bearing source — SpaceX's own spec
+page — returns 0 chars through the app's door (JS-rendered, the D-035
+class), yet the brief quotes it verbatim.** The researcher read it through
+the SDK's `WebFetch` (held via the role's `web_fetch`), a richer fetch
+path than the app's own `fetch_page` door — so a researcher carries two
+fetches of different reach, and the app cannot itself re-audit what the
+richer one read. What rescued auditability was the skill's own
+**two-independent-sources rule**: the corroborator *is* app-readable, so
+the numbers stand on a source the app can check even when the primary
+cannot. The rule earned its place on the first run.
+
+Cost is the second signal: **$2.41 spent, $2.00 charged, $0.41 absorbed**
+— the run hit the $2 ceiling (36 turns of 30, D-022's reported-over-
+granted). "Never billed above quote" fired. One real argument that the
+researcher class may want a higher ceiling than a design or scribe job —
+but n=1, and two more gate questions come first. The ceiling stays.
+
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 
 **The event.** Minutes after P1 pushed, Brian hired an architect and "the

@@ -120,6 +120,7 @@ function roleFromText(text: string): LoadedRole {
   if (!NAME_RE.test(name)) throw new Error('frontmatter needs a kebab-case "name"');
   if (!description) throw new Error('frontmatter needs a "description"');
   const turns = Number(toText(parsed.meta.maxTurns));
+  const timeout = Number(toText(parsed.meta.timeoutMinutes));
   return {
     name,
     description,
@@ -127,6 +128,7 @@ function roleFromText(text: string): LoadedRole {
     skills: toList(parsed.meta.skills),
     model: toText(parsed.meta.model) || undefined,
     ...(Number.isFinite(turns) && turns > 0 ? { maxTurns: turns } : {}),
+    ...(Number.isFinite(timeout) && timeout > 0 ? { timeoutMinutes: timeout } : {}),
     prompt: parsed.body,
   };
 }

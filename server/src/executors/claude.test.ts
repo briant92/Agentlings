@@ -183,6 +183,32 @@ describe('turnsFor', () => {
     expect(turnsFor({ maxTurns: Number.NaN })).toBe(10);
   });
 });
+
+import { timeoutMsFor } from './claude';
+
+describe('timeoutMsFor', () => {
+  // The wall's shape mirrors the turn cap's on purpose: same frontmatter
+  // idiom, same clamp-don't-trust. Built when the wall, not the turns, cut
+  // the first live deck run mid-iteration (D-128, D-129).
+  it('keeps the ten-minute default when a role says nothing', () => {
+    expect(timeoutMsFor(undefined)).toBe(10 * 60_000);
+    expect(timeoutMsFor({})).toBe(10 * 60_000);
+  });
+
+  it('lets a role that runs long ask for more', () => {
+    expect(timeoutMsFor({ timeoutMinutes: 25 })).toBe(25 * 60_000);
+  });
+
+  it('clamps a runaway value rather than trusting it', () => {
+    expect(timeoutMsFor({ timeoutMinutes: 999 })).toBe(30 * 60_000);
+  });
+
+  it('ignores nonsense instead of uncapping the clock', () => {
+    expect(timeoutMsFor({ timeoutMinutes: 0 })).toBe(10 * 60_000);
+    expect(timeoutMsFor({ timeoutMinutes: -5 })).toBe(10 * 60_000);
+    expect(timeoutMsFor({ timeoutMinutes: Number.NaN })).toBe(10 * 60_000);
+  });
+});
 import {
   buildAppend,
   gateOutside,

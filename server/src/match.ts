@@ -42,7 +42,10 @@ const INTENT: Record<string, string[]> = {
   recap: ['summaries', 'changelogs', 'report', 'writing'],
   explain: ['documentation', 'writing', 'guide'],
 
-  research: ['research', 'reconnaissance', 'survey', 'findings'],
+  // 'research' stopped bridging to scout's words (reconnaissance, survey)
+  // when the researcher trade arrived and took the term as its own (D-129);
+  // look/explore/survey/investigate still carry the scout phrasings.
+  research: ['research', 'sources', 'brief', 'findings'],
   find: ['research', 'survey', 'findings', 'grep'],
   search: ['research', 'survey', 'grep', 'findings'],
   look: ['research', 'survey', 'read'],

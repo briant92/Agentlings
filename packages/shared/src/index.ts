@@ -715,6 +715,13 @@ export interface RoleInfo {
   model?: string;
   /** Turn budget for this role's sessions; clamped by the executor. */
   maxTurns?: number;
+  /**
+   * Wall clock for this role's sessions, in minutes; clamped by the executor
+   * like the turn cap. Exists because the 10-minute default binds long-form
+   * work first — a research synthesis and a deck's look-loop were both cut by
+   * the wall before their turns ran out (D-128, D-129).
+   */
+  timeoutMinutes?: number;
 }
 
 export interface SkillInfo {

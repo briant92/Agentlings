@@ -235,6 +235,22 @@ export class SessionFailure extends Error {
   }
 }
 
+/**
+ * A role's own wall clock, clamped like the turn cap so a typo cannot uncap
+ * it. The 10-minute default binds long-form work before turns do — the first
+ * live deck run was cut mid-iteration by the wall with turns to spare
+ * (D-128) — so a role that genuinely runs long raises this in its
+ * frontmatter, the exact shape `maxTurns:` already has.
+ */
+const TIMEOUT_CEILING_MINUTES = 30;
+export function timeoutMsFor(role: { timeoutMinutes?: number } | undefined): number {
+  const wanted = role?.timeoutMinutes;
+  if (typeof wanted !== 'number' || !Number.isFinite(wanted) || wanted < 1) {
+    return SESSION_TIMEOUT_MS;
+  }
+  return Math.min(Math.trunc(wanted), TIMEOUT_CEILING_MINUTES) * 60_000;
+}
+
 /** A role's own turn budget, clamped so a typo can't uncap the loop. */
 export function turnsFor(role: { maxTurns?: number } | undefined): number {
   const wanted = role?.maxTurns;
@@ -920,7 +936,7 @@ export class ClaudeAgentExecutor implements Executor {
     let summary: string;
     let meter: JobMeter;
     try {
-      ({ summary, meter } = await this.runSession(configPath, job.id, onProgress));
+      ({ summary, meter } = await this.runSession(configPath, job.id, onProgress, timeoutMsFor(role)));
     } catch (err) {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
@@ -1104,6 +1120,7 @@ export class ClaudeAgentExecutor implements Executor {
     configPath: string,
     jobId: string,
     onProgress?: (detail: string) => void,
+    timeoutMs = SESSION_TIMEOUT_MS,
   ): Promise<{ summary: string; meter: JobMeter }> {
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [RUNNER, configPath], {
@@ -1113,8 +1130,8 @@ export class ClaudeAgentExecutor implements Executor {
       this.running.set(jobId, child);
       const timer = setTimeout(() => {
         child.kill();
-        reject(new Error(`session timed out after ${SESSION_TIMEOUT_MS / 60_000} minutes`));
-      }, SESSION_TIMEOUT_MS);
+        reject(new Error(`session timed out after ${timeoutMs / 60_000} minutes`));
+      }, timeoutMs);
 
       let summary = '';
       let meter: JobMeter = {};

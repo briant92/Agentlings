@@ -42,12 +42,16 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships seven generalist jobs and twelve abilities', () => {
+  it('ships eight generalist jobs and thirteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
       'designer',
       'mason',
+      // researcher is P3: deep multi-source research on the default model
+      // with a longer wall (timeoutMinutes 25) — scout stays the cheap
+      // errand-reader on Haiku; the reach rows below keep them apart.
+      'researcher',
       'scout',
       'scribe',
       'worker',
@@ -68,6 +72,7 @@ describe('shipped starter set', () => {
       // bash the same day — a role without a shell cannot run the docx
       // call shapes the brief hands it.
       'deck-design',
+      'deep-research',
       'document-design',
       'pdf-report',
       'plain-language',
@@ -135,6 +140,7 @@ describe('shipped starter set', () => {
       ['design a world for this level', 'designer'],
       ['make the layout look better', 'designer'],
       ['draw an architecture blueprint of this system', 'architect'],
+      ['do deep research on the european drone delivery market', 'researcher'],
     ];
     for (const [text, expected] of reach) {
       const result = suggest(text);

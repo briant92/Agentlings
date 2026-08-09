@@ -90,8 +90,13 @@ describe('concept matcher', () => {
   });
 
   it('explains itself with the user’s own words', () => {
-    const result = suggest('research how the payment code works');
-    expect(result.matchedTerms).toContain('research');
+    // 'investigate' reaches scout only through the concept bridge
+    // (reconnaissance, findings), so the echoed term proves the bridge
+    // credits the user's word, not the catalog's. It was 'research' until
+    // D-129, when that word stopped bridging to scout and became the
+    // researcher trade's own.
+    const result = suggest('investigate the options and report back');
+    expect(result.matchedTerms).toContain('investigate');
     expect(result.matchedTerms.length).toBeGreaterThan(0);
   });
 

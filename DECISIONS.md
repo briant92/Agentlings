@@ -7779,6 +7779,31 @@ granted). "Never billed above quote" fired. One real argument that the
 researcher class may want a higher ceiling than a design or scribe job —
 but n=1, and two more gate questions come first. The ceiling stays.
 
+**Second amendment — the gate is complete, 3 of 3, and the ceiling
+argument is now measured.** Brian ran the other two on Bea: SpaceX's
+business (`1732eece`) and how to train Agentlings (`2c0955f2`), both
+promoted. Both are the skill at its best — the business brief runs its
+own arithmetic consistency checks (segment results reconciling to the
+stated total to the rounding), self-corrects a draft error on the record,
+discloses two paywalls, and catches that a quoted "Aug 09" share price
+cannot be real because the date is a Sunday; the training brief engages
+this project's own "learns only from clean successes" memory and grounds
+concrete M6 fixes in 2026 literature (ACE, ExpeL, the STALE benchmark),
+labelling its one synthesis as inference rather than a sourced claim.
+Citations audited from outside through `/internal/fetch`, and this time
+the primaries were app-readable and verified: Fortune's +92%/$7.8B, ACE's
++10.6% and "brevity bias", STALE's 55.2%. The trade works.
+
+**The ceiling is now a measured case, not a hunch — all three runs bound
+on the $2 clamp:** cost $2.41 / $3.23 / $2.02, charged $2.00 each,
+**$1.66 absorbed across the three**, and the clamp pulled two runs' turn
+budgets *below the role's own 25* (25 and 19 granted against maxTurns 30)
+— the researcher's cost history wants to quote ~$5 and `MAX_CEILING_USD`
+holds it at $2. That clamp is D-016's runaway guard, deliberately global,
+so raising it is a real tradeoff and Brian's call — surfaced, not taken.
+The three quality passes are the gate; the ceiling is a separate decision
+the runs have now earned.
+
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 
 **The event.** Minutes after P1 pushed, Brian hired an architect and "the

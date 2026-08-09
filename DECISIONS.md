@@ -140,6 +140,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-128 — 2026-08-09 — The studio pack: a render door that reaches nothing, and scribe grows a shell](#d-128--2026-08-09--the-studio-pack-a-render-door-that-reaches-nothing-and-scribe-grows-a-shell)
 - [D-129 — 2026-08-09 — The researcher trade: a longer clock, and the word "research" changes hands](#d-129--2026-08-09--the-researcher-trade-a-longer-clock-and-the-word-research-changes-hands)
 - [D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned](#d-130--2026-08-09--a-role-may-raise-its-own-ceiling-the-per-class-knob-the-researcher-earned)
+- [D-131 — 2026-08-09 — The analyst upgrade: a kept script, an SVG chart, and an inert display already built](#d-131--2026-08-09--the-analyst-upgrade-a-kept-script-an-svg-chart-and-an-inert-display-already-built)
 
 ## By theme
 
@@ -7855,6 +7856,50 @@ exactly that test. Two env seams (`AGENTLINGS_DEV_ENTRY`,
 - **A third-party role's `model:` reaches the executor unsanitized** —
   `inherit` is not a model id; harmless until such a role runs a session,
   and a candidate for the install preview's warning list.
+
+## D-131 — 2026-08-09 — The analyst upgrade: a kept script, an SVG chart, and an inert display already built
+
+EXPANSION P4, the smallest pack, and smaller still than planned: the engine
+seam it named — "SVG preview in the outputs panel, served inert" — turned
+out to **already exist**. `.svg` was mapped to `image/svg+xml` in
+`CONTENT_TYPES`, and `previewFile` routes any `image/*` type to a `native`
+preview the panel renders through an `<img>`. An SVG loaded via `<img>` runs
+no script and fetches no external resource — the standard safe-display
+technique — and `opensInBrowser` stays PDF-only, so the bytes route serves a
+`.svg` attachment-disposition and a direct navigation downloads it rather
+than executing it (a top-level SVG navigation *does* run scripts; an `<img>`
+does not). Both halves of the security property were latent and untested.
+
+So the pack was mostly the skill, and two tests that make the implicit
+property **explicit and load-bearing** (`d31398d`):
+
+- **`data-analysis`**, the fourteenth ability: compute in a script the
+  sandbox keeps (`analysis.mjs`), never in the head; cite every figure to
+  its column, row range and file; draw the result as hand-authored SVG —
+  `<rect>` bars, `<line>` axes — with no chart library (`exceljs` cannot
+  draw one), no `<script>`, no external URLs, at the sandbox root; read the
+  numbers back and confirm the parts sum.
+- **The analyst gained `write`**, the scribe precedent exactly (D-128): a
+  role authoring a Node script and an SVG needs a real file, not a `cat >`
+  heredoc on six Haiku turns. Its `write`-or-`bash` starter check was
+  already green either way, so the tool is the enabling fix, not a
+  correctness one. Model and turn cap unchanged — Haiku, 6 turns — on the
+  measure-first rule: "ran out of turns" has not meant "needed more turns"
+  here, so the first real analysis job is what argues, not a guess (D-015,
+  D-025). A chart glyph so an `.svg` is findable in the file rail.
+
+Evidence: 1,392 + 140 green on the first run, the reach canary held with a
+new skill doc in the corpus (data-analysis's words did not tip the
+spreadsheet sentence off the analyst), typecheck clean. Two post-commit
+mutations, both killed: letting a `.svg` open inline in the browser killed
+the never-open-itself test; giving `.svg` a non-image content-type killed
+both the shown-as-image preview test and the content-type assertion.
+
+Not yet run live: the first real analysis job — a CSV or workbook with a
+chart worth drawing — is the evidence gate, and the one number to watch is
+whether six Haiku turns reach a script, a chart and a cited report or get
+cut. The database row stays §15-blocked on a read-only credential existing;
+this pack sharpens the file-and-record path the analyst already has.
 
 ## D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned
 

@@ -201,7 +201,7 @@ and its Gaps section is honest. That is achievable at this budget shape.
 through the trade; spot-check citations against sources (the D-118 pattern —
 the crew's claims verified against ground truth, not trusted).
 
-### P4 — Analyst upgrade *(small; keeps expectations honest)*
+### P4 — Analyst upgrade *(small; keeps expectations honest)* — **built, D-131**
 
 **Unlocks:** analysis jobs that compute rather than recall — scripts over
 CSVs/workbooks, numbers cited to cells, a chart the review can show.

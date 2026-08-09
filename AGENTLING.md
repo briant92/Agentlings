@@ -87,7 +87,7 @@ the SDK session, not advised in a prompt.
 | `scout` | Reconnaissance — looks into how existing code and sources work, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
 | `researcher` | Deep research — cited, triangulated briefs from many sources | read, write, grep, web_fetch | deep-research, cite-sources, concise-reports | default | 30 · 25-min wall · $4 ceiling |
 | `scribe` | Documentation — turns work into words, and into .docx and report PDFs | read, write, grep, bash | concise-reports, plain-language, document-design, pdf-report | default | 10 |
-| `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
+| `analyst` | Numbers — computes over records in a kept script, draws the result as an SVG chart | read, write, grep, bash | concise-reports, tables-and-numbers, cite-sources, data-analysis | Haiku 4.5 | 6 |
 | `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
 | `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
 
@@ -106,13 +106,13 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Thirteen ship, written against this app's contract — sandbox only,
+session. Fourteen ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
-`cite-sources` · `concise-reports` · `deck-design` · `deep-research` ·
-`document-design` · `pdf-report` · `plain-language` · `see-your-work` ·
-`small-diffs` · `tables-and-numbers`
+`cite-sources` · `concise-reports` · `data-analysis` · `deck-design` ·
+`deep-research` · `document-design` · `pdf-report` · `plain-language` ·
+`see-your-work` · `small-diffs` · `tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was

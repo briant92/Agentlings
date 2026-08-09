@@ -207,7 +207,10 @@ the loop runs end to end without one.
   back as replacement characters.
 - `preview.ts` — that file converted for reading, in the server because the
   libraries are already here. Every conversion loses something and says what:
-  a `.docx` keeps its words and not its layout.
+  a `.docx` keeps its words and not its layout. An analyst's SVG chart (D-131)
+  is shown as a `native` image through an `<img>`, where scripts and external
+  refs do not run, and it is served attachment-disposition so a direct
+  navigation downloads rather than executing it.
 - `deliveries.ts` — finished work, newest first: the inbox. Everything that
   reached an outcome, failures included, because the terminal feed is numbered
   per server run and gone after a restart.
@@ -416,6 +419,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.16 the blueprint pack (EXPANSION P1) → D-125
 - M5.17 the studio pack (EXPANSION P2) → D-128
 - M5.18 the researcher trade (EXPANSION P3) → D-129
+- M5.19 the analyst upgrade (EXPANSION P4) → D-131
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

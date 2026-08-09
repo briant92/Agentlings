@@ -1161,6 +1161,12 @@ export interface WorkPlan {
   /** Present when the sentence wants to send on a channel (D-079). */
   channelAsk?: ChannelAsk;
   /**
+   * The sentence wants a folder reorganized (D-132). The desk shows a "choose
+   * the folder" step — only the native picker yields an absolute path — and
+   * the picked path rides back into `/work` as `organizeRoot`.
+   */
+  organize?: boolean;
+  /**
    * A channel word with no send verb beside it (D-093) — the near-miss the
    * ask stays quiet on, surfaced as a question the user can confirm. Absent
    * whenever a real ask fired.

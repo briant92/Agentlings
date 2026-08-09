@@ -189,6 +189,8 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
 import { callSearch } from './search';
+import { appendMovesJournal, executeMoves, opKey, reverseMoves } from './moves';
+import { folderInventory, wantsOrganize } from './organize';
 import { fetchPage } from './web';
 import { AUTHOR_ROLE } from './packcontract';
 import {
@@ -1082,6 +1084,11 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
       names,
     }),
     ...(channelAsk ? { channelAsk } : {}),
+    // A folder reorganization is asked for by picking the folder, the way a
+    // send asks for its recipient (D-132): the sentence wants organizing, but
+    // only the native picker yields the absolute path, so the desk shows a
+    // "choose the folder" step rather than claiming one from the words.
+    ...(wantsOrganize(text) ? { organize: true } : {}),
     // The near-miss itself, when no ask fired: a channel word with no send
     // verb beside it (D-093), for the desk to question rather than claim.
     ...(() => {
@@ -1146,6 +1153,8 @@ function queueSentence(
   opts: {
     tools?: string[];
     channel?: string;
+    /** The real folder to reorganize, picked at intake (D-132). */
+    organizeRoot?: string;
     answers?: Record<string, string>;
     attachments?: { name: string; data: Buffer }[];
     /** How this job came to exist, said on the queued event's line. */
@@ -1181,9 +1190,13 @@ function queueSentence(
     }
   }
   const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  // An organize job routes to the generalist worker, which carries the
+  // organizing skill (D-132) — the folder, not the sentence's verb, is what
+  // makes it one, so the role is forced rather than matched.
+  const forcedRole = opts.organizeRoot ? 'worker' : opts.role;
   const plan =
-    opts.role && registry.get(opts.role)
-      ? forceRole(matched, opts.role, rt.sim.agentlings)
+    forcedRole && registry.get(forcedRole)
+      ? forceRole(matched, forcedRole, rt.sim.agentlings)
       : matched;
   const tools = granted(opts.tools);
   const requestedChannel = opts.channel;
@@ -1244,6 +1257,7 @@ function queueSentence(
       ),
       attachments: opts.attachments ?? [],
       channel,
+      ...(opts.organizeRoot ? { organizeRoot: opts.organizeRoot } : {}),
       ...(send ? { send } : {}),
       ...(opts.brief ? { brief: opts.brief } : {}),
       ...(steps?.length ? { steps } : {}),
@@ -1406,11 +1420,18 @@ app.post('/api/levels/:lid/work', async (c) => {
     files?: { name?: string; data?: string }[];
     /** The channel picked on the ask-card, when there was one (D-079). */
     channel?: string;
+    /** The folder picked for an organize job (D-132) — an absolute path. */
+    organizeRoot?: string;
     /** The user chose "run as one job" on the steps row (D-105). */
     single?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
+
+  const organizeRoot = body.organizeRoot?.trim();
+  if (organizeRoot && !existsSync(organizeRoot)) {
+    return c.json({ error: `no folder at "${organizeRoot}"` }, 400);
+  }
 
   let attachments: { name: string; data: Buffer }[];
   try {
@@ -1434,6 +1455,7 @@ app.post('/api/levels/:lid/work', async (c) => {
   const job = queueSentence(rt, text, {
     tools: body.tools,
     channel: typeof body.channel === 'string' ? body.channel : undefined,
+    ...(organizeRoot ? { organizeRoot } : {}),
     answers: body.answers,
     attachments,
     ...(body.single === true ? { noSplit: true } : {}),
@@ -1904,6 +1926,47 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // world that now exists rather than the one it asked to be.
     if (renamed) pending.packDraft = draft;
   }
+  /**
+   * A reviewed folder reorganization is replayed exactly as a reviewed outbox
+   * is sent and a reviewed pack installed: at Approve, by us, never by the
+   * session (D-132). The manifest is applied under the folder the job was
+   * pointed at — never a root the model could name — and each op is stamped so
+   * a retry skips what already moved. A partial failure returns 400 with the
+   * job reviewable, so "Approve again" finishes the rest and moves nothing
+   * twice. This is the one branch that touches a real folder outside the app.
+   */
+  let movedNow = 0;
+  if (
+    body.action === 'promote' &&
+    promotable &&
+    pending.moves &&
+    pending.organizeRoot &&
+    !waitingTool
+  ) {
+    const root = pending.organizeRoot;
+    if (!existsSync(root)) {
+      return c.json({ error: `the folder is not there any more: ${root}` }, 400);
+    }
+    const alreadyDone = (pending.movesRun?.done ?? []).map(opKey);
+    const run = executeMoves(pending.moves, root, alreadyDone);
+    appendMovesJournal(rt.queue.sandboxDir(pending.id), {
+      at: Date.now(),
+      root,
+      done: run.done,
+      failed: run.failed,
+    });
+    rt.queue.recordMoves(pending.id, run);
+    movedNow = run.done.length;
+    if (run.failed.length > 0) {
+      const detail = run.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
+      return c.json(
+        {
+          error: `moved ${run.done.length}, but some failed — ${detail}. Approve again to retry; nothing moves twice.`,
+        },
+        400,
+      );
+    }
+  }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script
   // to check it worked, which left the output file in its clone, and promoting
@@ -1960,6 +2023,43 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 400);
   }
+});
+
+/**
+ * Undo a reorganization (D-132): replay the job's journal backwards. Files
+ * go back where they were and the empty folders the moves made are removed —
+ * a folder that has since gained a file is left whole, because reversing must
+ * never delete. Idempotent by the same accumulator: what has been moved back
+ * is dropped from `movesRun.done`, so undoing twice is safe.
+ */
+app.post('/api/levels/:lid/jobs/:id/reverse-moves', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const job = rt.queue.list().find((j) => j.id === c.req.param('id'));
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  if (!job.organizeRoot || !job.movesRun?.done.length) {
+    return c.json({ error: 'nothing was moved to undo' }, 400);
+  }
+  if (!existsSync(job.organizeRoot)) {
+    return c.json({ error: `the folder is not there any more: ${job.organizeRoot}` }, 400);
+  }
+  const undo = reverseMoves(job.movesRun.done, job.organizeRoot);
+  appendMovesJournal(rt.queue.sandboxDir(job.id), {
+    at: Date.now(),
+    root: job.organizeRoot,
+    done: undo.done.map((op) => (op.op === 'move' ? { op: 'move', from: op.to, to: op.from } : op)),
+    failed: undo.failed,
+  });
+  // Drop what went back from the accumulator; anything that could not reverse
+  // stays recorded, so the picture matches the folder.
+  const reversed = new Set(undo.done.map(opKey));
+  const remaining = job.movesRun.done.filter((op) => !reversed.has(opKey(op)));
+  const updated = rt.queue.setMovesDone(job.id, remaining);
+  if (undo.failed.length > 0) {
+    const detail = undo.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
+    return c.json({ error: `undid ${undo.done.length}, some could not be reversed — ${detail}` }, 400);
+  }
+  return c.json(updated);
 });
 
 /** Standing approvals for this level — the list, and the switch (D-082). */

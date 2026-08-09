@@ -21,6 +21,7 @@ import type {
 } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
+import { folderInventory, organizeBrief } from '../organize';
 import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
@@ -495,6 +496,8 @@ export function buildAppend(
    * this section a send job has no way to know OUTBOX.json exists.
    */
   outboxBrief?: string,
+  /** The organizing contract + folder inventory, when this job organizes (D-132). */
+  organizeText?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -527,6 +530,7 @@ export function buildAppend(
     ].join('\n'),
   );
   if (outboxBrief) parts.push(outboxBrief);
+  if (organizeText) parts.push(organizeText);
   if (attachments.length > 0) {
     parts.push(
       [
@@ -887,6 +891,7 @@ export class ClaudeAgentExecutor implements Executor {
             (channel) => this.audience(channel),
             (channel) => this.lastSend(channel),
           ),
+          job.organizeRoot ? organizeBrief(folderInventory(job.organizeRoot)) : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

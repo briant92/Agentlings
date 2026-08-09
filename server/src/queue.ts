@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Job, JobAttachment, JobMeter } from '@agentlings/shared';
+import type { Job, JobAttachment, JobMeter, MoveOp } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
+import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
 import { PACK_FILE, readPackDraft } from './packcontract';
 import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
@@ -33,6 +34,8 @@ export interface NewJobSpec {
   brief?: string;
   /** The channel this job sends on, when intake detected one (D-079). */
   channel?: string;
+  /** The real folder this job reorganizes, picked at intake (D-132). */
+  organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
   send?: { to: string; words: string };
   /** Ceiling quoted before the work. */
@@ -197,6 +200,7 @@ export class JobQueue {
       ...(spec.continues ? { continues: spec.continues } : {}),
       ...(spec.brief ? { brief: spec.brief } : {}),
       ...(spec.channel ? { channel: spec.channel } : {}),
+      ...(spec.organizeRoot ? { organizeRoot: spec.organizeRoot } : {}),
       ...(spec.send ? { send: spec.send } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
@@ -391,6 +395,7 @@ export class JobQueue {
   private finish(job: Job): void {
     this.stampOutbox(job);
     this.stampPackDraft(job);
+    this.stampMoves(job);
     this.stampPending(job);
     job.finishedAt = Date.now();
     job.slot = -1;
@@ -446,6 +451,20 @@ export class JobQueue {
     else job.packDraft = read.draft;
   }
 
+  /**
+   * The folder reorganization a run proposed, read off the sandbox at the same
+   * seam as the outbox and the pack (D-132). Only a job that was pointed at a
+   * folder can carry one — without a root there is nothing to move against, so
+   * a stray MOVES.json from an ordinary job is ignored rather than acted on.
+   */
+  private stampMoves(job: Job): void {
+    if (job.compile || !job.organizeRoot) return;
+    const read = readMoves(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.error) job.movesError = `${MOVES_FILE}: ${read.error}`;
+    else job.moves = read.moves;
+  }
+
   /** Merges one Approve's send results; `sentTo` accumulates so retries skip them. */
   recordOutboxSends(
     jobId: string,
@@ -454,6 +473,23 @@ export class JobQueue {
     const job = this.mustGet(jobId);
     const prior = job.outboxSent?.sentTo ?? [];
     job.outboxSent = { at: Date.now(), sentTo: [...prior, ...run.sentTo], failed: run.failed };
+    this.persist();
+    return job;
+  }
+
+  /** Merges one Approve's move results; `done` accumulates so retries skip them (D-132). */
+  recordMoves(jobId: string, run: MovesRunResult): Job {
+    const job = this.mustGet(jobId);
+    const prior = job.movesRun?.done ?? [];
+    job.movesRun = { at: Date.now(), done: [...prior, ...run.done], failed: run.failed };
+    this.persist();
+    return job;
+  }
+
+  /** After an undo, the ops still in force — what has not been reversed (D-132). */
+  setMovesDone(jobId: string, done: MoveOp[]): Job {
+    const job = this.mustGet(jobId);
+    job.movesRun = { at: Date.now(), done, failed: [] };
     this.persist();
     return job;
   }

@@ -163,6 +163,8 @@ export function queuedJobSpec(args: {
   brief?: string;
   /** The channel this job sends on, when intake detected one (D-079). */
   channel?: string;
+  /** The folder this job reorganizes, picked at intake (D-132). */
+  organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
   send?: { to: string; words: string };
   /** A mentioned channel the job never carried (D-093), for the review. */
@@ -183,6 +185,7 @@ export function queuedJobSpec(args: {
   continues?: string;
   brief?: string;
   channel?: string;
+  organizeRoot?: string;
   send?: { to: string; words: string };
   channelMention?: { channel: string; label: string };
   steps?: string[];
@@ -199,6 +202,7 @@ export function queuedJobSpec(args: {
     ...(args.continues ? { continues: args.continues } : {}),
     ...(args.brief ? { brief: args.brief } : {}),
     ...(args.channel ? { channel: args.channel } : {}),
+    ...(args.organizeRoot ? { organizeRoot: args.organizeRoot } : {}),
     // Dropped here once, and the route, the type and the router were all
     // correct while the job reached the queue without it — the field this
     // function does not name does not exist, and spreading it into the call

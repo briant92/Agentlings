@@ -2878,7 +2878,10 @@ app.post('/api/templates/install', async (c) => {
   }
 });
 
-const server = serve({ fetch: app.fetch, port: PORT }, (info) => {
+// The bind is the whole boundary: the /internal doors carry no auth, and
+// with no hostname this listened on 0.0.0.0 — every route reachable from
+// the LAN (found by the first architect run, measured by netstat; D-127).
+const server = serve({ fetch: app.fetch, port: PORT, hostname: '127.0.0.1' }, (info) => {
   console.log(`[agentlings] server on http://localhost:${info.port}`);
 });
 

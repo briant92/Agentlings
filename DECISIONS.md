@@ -135,6 +135,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-123 — 2026-08-08 — The picker learns what Gmail's compose field knows](#d-123--2026-08-08--the-picker-learns-what-gmails-compose-field-knows)
 - [D-124 — 2026-08-08 — Calendar asks its own two facts, and reads the gmail book](#d-124--2026-08-08--calendar-asks-its-own-two-facts-and-reads-the-gmail-book)
 - [D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams](#d-125--2026-08-08--the-architect-trade-and-a-review-that-draws-its-diagrams)
+- [D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role](#d-126--2026-08-08--the-third-death-gets-a-capture-and-an-install-overwrites-a-shipped-role)
 
 ## By theme
 
@@ -171,7 +172,14 @@ entry updates one file rather than two.
   and D-125, the architect trade (EXPANSION P1) — where a survived mutation
   proved the routing surface is the whole role file, name ×3 description ×2
   body ×1, so D-112's reword-to-fix-tipping advice applies to bodies too,
-  and the review panel learned to draw a markdown file's mermaid fences
+  and the review panel learned to draw a markdown file's mermaid fences;
+  and D-126's collision half — a library install onto an existing role name
+  silently overwrites the shipped file, D-111's clash taking the other branch
+- **The dev server's own deaths** — D-118 (two, unobserved, the Adobe-node
+  red herring) and D-126: the third death, diagnosed from outside by the
+  port split (:4600 refused under a living :5173), and the capture D-118
+  named — `npm run dev` tees the server's stdout/stderr into
+  `.agentlings/server.log` with stamped exits, proved by a spawn test
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
@@ -7511,3 +7519,51 @@ G5's tax knowingly — with no rate, architect's standing 15-turn cap is its
 whole budget until rows exist. The natural first errand: hire an architect
 into hq and queue the reach sentence itself — hq is the level whose
 blueprint can be checked against SPEC's own architecture section.
+
+## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
+
+**The event.** Minutes after P1 pushed, Brian hired an architect and "the
+app froze". Diagnosed from outside the tree before touching anything:
+`:4600` refused the connection while `:5173` served 200 in 3 ms — the API
+process was dead and vite alive, so the "freeze" was a living page talking
+to a dead world. The third unobserved server death (D-118 holds the first
+two). No traceback exists for any of them, because nothing kept the
+terminal's contents — the exact gap D-118 named as the next input.
+
+**What the disk then said.** `roles/architect.md` was not P1's file. At
+20:56:02 the library had installed `role:architect` from wshobson/agents
+(`plugins/ship-mate/agents/architect.md`; provenance in `installed.json`):
+Brian's running server booted before P1 existed, so its hire list carried
+no architect — he found one on the shelf, and the install landed on the
+same filename and **silently overwrote the shipped role**. The community
+file is written for another framework entirely (it reads
+`orchestrator-output.md`; `model: inherit`; no `tools:`), and the starter
+suite named the breach exactly — "architect has no way to write RESULT.md:
+(none)" — D-041's write-capability guard doing its job against a file it
+was never written about. Restored by checkout; the community version stays
+reinstallable from the catalog, nothing lost.
+
+**What was built** (`9d95110`). The dev script now runs the same
+`tsx watch` through `dev-logged.mjs`: identical console, plus
+`.agentlings/server.log` holding stdout, stderr, starts, forwarded
+signals, and a stamped exit line with the code. Rotation at 5 MB, one
+generation. Proved end to end rather than by unit-testing the plumbing
+apart: a spawn test runs the wrapper over a synthetic entry that prints
+to stderr and exits 7, and asserts the log holds both and the wrapper
+repeats the code. Post-commit mutation — the exit line removed — killed
+exactly that test. Two env seams (`AGENTLINGS_DEV_ENTRY`,
+`AGENTLINGS_LOG_DIR`) exist only for the test.
+
+**Open, recorded rather than fixed tonight, each on the surgical rule:**
+
+- **The deaths' cause.** Unobservable retroactively; the capture turns the
+  next one into a traceback. Until one is caught armed, the Adobe-node
+  lesson stands — no pattern-matched suspects, and the coincidence of this
+  death with an `npm install` under the running server stays a suspicion,
+  not a finding.
+- **Install-by-name overwrites a shipped role.** D-111 met this shape for
+  packs and refused the arrival; roles took the other branch and replaced
+  the resident. Refuse-or-rename at the collision is the candidate fix.
+- **A third-party role's `model:` reaches the executor unsanitized** —
+  `inherit` is not a model id; harmless until such a role runs a session,
+  and a candidate for the install preview's warning list.

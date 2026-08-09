@@ -374,10 +374,13 @@ each one rests on already is.
    probe filed `INTERRUPTED`, the pack run's meter was eaten (`costUnknown`,
    the ninth unmeasured row). No watched file changed at either moment, and
    the plausible process at 21:38 turned out to be Adobe's own node.exe — the
-   pattern-matched-signal rule, live. **Next input: capture the dev server's
-   stderr across an evening of real sessions** — an unwatched console is why
-   this is still a mystery, and a server that dies on completion seams is the
-   likeliest author of the older unmeasured rows too.
+   pattern-matched-signal rule, live. ~~Next input: capture the dev server's
+   stderr.~~ **The capture is built (2026-08-08, D-126)** — after a *third*
+   unobserved death the same evening (:4600 refused under a living :5173),
+   `npm run dev` now tees the server's stdout/stderr into
+   `.agentlings/server.log` with stamped starts and exits. The mystery itself
+   stays open until a death is caught with the capture armed; until then the
+   Adobe lesson stands — no pattern-matched suspects.
 1. **The free answer tier never fires — decide whether that is a policy or a
    bug, by measurement.** Tonight's population (D-118): general questions
    always pay, even verbatim repeats of timeless ones; what routes free is

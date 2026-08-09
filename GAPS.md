@@ -76,6 +76,12 @@ capability roadmap; this is the short list of what matters most, in order.
       job waits for its matched specialist while others idle (the §15 row
       that is a choice, not wiring). Joined 2026-08-07 by the sharpest row:
       **the server died twice with executor sessions live** (D-118), killing
-      two runs and eating a third's meter — cause unobserved because nothing
-      captures the dev server's stderr; TRAINING.md's "What's open" item 0
-      names the next input.
+      two runs and eating a third's meter — a third death followed on
+      2026-08-08, and ~~nothing captures the dev server's stderr~~ **the
+      capture now exists (D-126)**: `.agentlings/server.log` keeps stdout,
+      stderr and stamped exits; the cause question stays open until a death
+      is caught with it armed. Joined the same evening by a new row:
+      **a library install onto an existing role name silently overwrites the
+      shipped file** (D-126 — wshobson's architect landed on P1's; D-111 was
+      this shape for packs and refused the arrival, roles took the other
+      branch). Refuse-or-rename at the collision is the candidate fix.

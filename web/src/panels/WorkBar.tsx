@@ -84,6 +84,8 @@ export function WorkBar({
   const [files, setFiles] = useState<Attached[]>([]);
   /** "Run as one job" — the escape from a split the user didn't mean (D-105). */
   const [single, setSingle] = useState(false);
+  /** The folder picked to reorganize, when the sentence wants one (D-132). */
+  const [organizeRoot, setOrganizeRoot] = useState<string | null>(null);
   /** The schedule just made without a run, so its first firing is visible (D-106). */
   const [scheduled, setScheduled] = useState<ScheduleInfo | null>(null);
   /** Repeat this sentence on a cadence (D-103). 'off' queues once, as ever. */
@@ -271,10 +273,27 @@ export function WorkBar({
       setAnswers({});
       setRepeatKind('off');
       setSingle(false);
+      setOrganizeRoot(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Pick the folder to reorganize — the native dialog is the only source of
+   *  an absolute path (D-102/D-132). */
+  const pickOrganizeFolder = async () => {
+    setError(null);
+    try {
+      const picked = await api<{ path?: string; cancelled?: boolean; error?: string }>(
+        '/api/pick-folder',
+        { method: 'POST' },
+      );
+      if (picked.path) setOrganizeRoot(picked.path);
+      else if (picked.error) setError(picked.error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -294,6 +313,7 @@ export function WorkBar({
           // Only an explicit pick rides; with none the server settles the
           // channel itself from the same detection the card came from.
           ...(channel ? { channel } : {}),
+          ...(organizeRoot ? { organizeRoot } : {}),
           ...(single ? { single: true } : {}),
         }),
       );
@@ -316,6 +336,7 @@ export function WorkBar({
       setPlan(null);
       setChannel(null);
       setAnswers({});
+      setOrganizeRoot(null);
       setFiles([]);
       setRepeatKind('off');
       setSingle(false);
@@ -596,6 +617,30 @@ export function WorkBar({
       {plan?.channelAsk && !askingRepo && plan.channelAsk.state === 'ready' && (
         <p className="work-gaps work-channel-ready">
           sends via {plan.channelAsk.askedLabel} · every message waits for your review
+        </p>
+      )}
+
+      {/* Organizing wants a folder, and only the native picker yields an
+          absolute path (D-132). Until one is picked, Start would have nothing
+          to organize, so the pick is the gate. */}
+      {plan?.organize && !askingRepo && (
+        <p className="work-gaps work-organize">
+          {organizeRoot ? (
+            <>
+              organizing <span className="work-organize-path">{organizeRoot}</span> · the crew
+              proposes moves, nothing changes until you approve —{' '}
+              <button type="button" className="work-link" onClick={() => void pickOrganizeFolder()}>
+                change folder
+              </button>
+            </>
+          ) : (
+            <>
+              which folder?{' '}
+              <button type="button" className="work-link" onClick={() => void pickOrganizeFolder()}>
+                choose a folder to organize…
+              </button>
+            </>
+          )}
         </p>
       )}
 

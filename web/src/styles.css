@@ -2149,6 +2149,60 @@ button.danger:hover {
   border-radius: 8px;
   overflow: hidden;
 }
+/* The folder-reorganization card (D-132), the outbox card's plainer sibling. */
+.rv-moves-card {
+  border: 1px solid #33415c;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rv-moves-head {
+  padding: 9px 12px;
+  border-bottom: 1px solid #33415c;
+  background: #151a24;
+}
+.rv-moves-t {
+  font-weight: 600;
+}
+.rv-moves-done {
+  color: var(--db-sky, #7fb0ff);
+  font-weight: 400;
+}
+.rv-moves-s {
+  font-size: 11px;
+  opacity: 0.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-moves-card .rv-moves {
+  list-style: none;
+  margin: 0;
+  padding: 6px 12px;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.rv-move-from {
+  opacity: 0.75;
+}
+.rv-move-arrow {
+  color: var(--db-sky, #7fb0ff);
+}
+.rv-move-to {
+  font-weight: 600;
+}
+.rv-moves-note {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  opacity: 0.65;
+  border-top: 1px solid #33415c;
+}
+.work-organize-path {
+  font-family: var(--mono, monospace);
+  opacity: 0.85;
+}
 .rv-outbox-head {
   display: flex;
   align-items: center;

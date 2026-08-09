@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships eight generalist jobs and fourteen abilities', () => {
+  it('ships eight generalist jobs and fifteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -79,6 +79,9 @@ describe('shipped starter set', () => {
       'deck-design',
       'deep-research',
       'document-design',
+      // organizing-folders is EXPANSION P5 (D-132): worker proposes a
+      // MOVES.json reorganization of a real folder, replayed at Approve.
+      'organizing-folders',
       'pdf-report',
       'plain-language',
       'see-your-work',

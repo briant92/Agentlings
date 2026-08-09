@@ -3,6 +3,7 @@ import type { DeliveryFile, Job, PackDraft, Quote, SendApprovalInfo } from '@age
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { FileViewer } from './FileViewer';
+import { moveRows, movesLeft, movesSummary } from './moves';
 import { allLooks, renderScenePreview } from '../world/looks';
 
 /**
@@ -175,6 +176,22 @@ export function ReviewModal({
 
   const sentTo = job.outboxSent?.sentTo ?? [];
   const unsent = job.outbox ? job.outbox.messages.filter((m) => !sentTo.includes(m.to)) : [];
+  const moveLeft = job.moves ? movesLeft(job.moves.moves, job.movesRun?.done ?? []) : [];
+  const movedCount = job.movesRun?.done.length ?? 0;
+
+  /** Undo a reorganization: the server replays the journal backwards (D-132). */
+  const undoMoves = async () => {
+    setRefusal(null);
+    setBusy(true);
+    try {
+      await api(lvl(levelId, `/jobs/${job.id}/reverse-moves`), { method: 'POST' });
+      onClose();
+    } catch (err) {
+      setRefusal(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -269,6 +286,41 @@ export function ReviewModal({
               </ul>
             </div>
           )}
+          {job.movesError && <p className="rv-error">{job.movesError}</p>}
+          {job.moves && job.organizeRoot && (
+            // A folder reorganization (D-132): from→to rows, the plain-words
+            // count, and the caution that a move inside a synced folder syncs.
+            // Approve replays it under the picked root; undo replays it back.
+            <div className="rv-moves-card">
+              <div className="rv-moves-head">
+                <div className="rv-moves-t">
+                  Reorganize — {movesSummary(job.moves.moves)}
+                  {movedCount > 0 && <span className="rv-moves-done"> · {movedCount} done</span>}
+                </div>
+                <div className="rv-moves-s" title={job.organizeRoot}>
+                  in {job.organizeRoot}
+                </div>
+              </div>
+              <ul className="rv-moves">
+                {moveRows(job.moves.moves).map((r) => (
+                  <li key={`${r.from}→${r.to}`}>
+                    <span className="rv-move-from">{r.from}</span>
+                    <span className="rv-move-arrow" aria-hidden="true"> → </span>
+                    <span className="rv-move-to">{r.to}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="rv-moves-note">
+                Files are moved, never deleted, and only after you approve. A move inside a synced
+                folder (OneDrive, Dropbox) will sync.
+              </p>
+              {movedCount > 0 && (
+                <button className="btn-quiet" disabled={busy} onClick={() => void undoMoves()}>
+                  Undo the moves
+                </button>
+              )}
+            </div>
+          )}
           {job.changes && job.changes.files > 0 && (
             <>
               <div className="sect">
@@ -355,10 +407,14 @@ export function ReviewModal({
             <>
               <button
                 ref={approveRef}
-                className={unsent.length > 0 ? 'btn-send' : undefined}
+                className={unsent.length > 0 || moveLeft.length > 0 ? 'btn-send' : undefined}
                 onClick={() => void resolve('promote')}
               >
-                {unsent.length > 0 ? `Approve & send ${unsent.length}` : 'Approve'}
+                {unsent.length > 0
+                  ? `Approve & send ${unsent.length}`
+                  : moveLeft.length > 0
+                    ? `Approve & move ${moveLeft.filter((m) => m.op === 'move').length}`
+                    : 'Approve'}
               </button>
               <button className="btn-quiet" onClick={() => void resolve('discard')}>
                 Discard

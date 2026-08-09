@@ -260,7 +260,13 @@ live agent moves. This pack would be genuinely differentiated.
 measure the proposal against Brian's own judgement; prove the journal
 reverses cleanly before the real folder is ever named.
 
-### P6 — Web-operator pack: flows behind the scenes *(the D-034-sized decision; last)*
+### P6 — Web-operator pack: flows behind the scenes *(the D-034-sized decision; last)* — **decided: not built, D-133**
+
+> Brian chose option 1 (keep refusing) on 2026-08-09: no real recurring web
+> errand demanded it, and a reviewed web-actuation engine built speculatively
+> is the wrong default. Reopen the moment a concrete errand exists — option 2
+> below is then the shape, and the errand is its evidence gate. Reasoning in
+> D-133.
 
 **Unlocks:** "renew X on that portal", "fill this month's form" — multi-step
 flows on named sites, drafted by a run, executed only at Approve.

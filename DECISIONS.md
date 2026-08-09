@@ -142,6 +142,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned](#d-130--2026-08-09--a-role-may-raise-its-own-ceiling-the-per-class-knob-the-researcher-earned)
 - [D-131 — 2026-08-09 — The analyst upgrade: a kept script, an SVG chart, and an inert display already built](#d-131--2026-08-09--the-analyst-upgrade-a-kept-script-an-svg-chart-and-an-inert-display-already-built)
 - [D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest](#d-132--2026-08-09--the-organizer-pack-the-sandbox-boundary-crossed-by-a-reviewed-reversible-manifest)
+- [D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface](#d-133--2026-08-09--the-web-operator-pack-stays-refused-no-errand-no-acting-surface)
 
 ## By theme
 
@@ -8011,3 +8012,46 @@ roots in one job, and a standing/scheduled reorganization (the recurring
 shape can come later, as sends did). This partially answers §15's
 "filesystem beyond the sandbox" row — but as a reviewed-and-replayed
 manifest, not a live tool, which is the row's own condition.
+
+## D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface
+
+EXPANSION P6 — the last pack, and the only one whose own plan built it "only
+if Brian has a real recurring web errand." Asked directly, Brian chose to
+**keep refusing** (the plan's recommended default), so P6 is not built, by
+decision rather than by omission.
+
+The reasoning, which is worth keeping because it is the whole project's
+posture in one place:
+
+- **No errand demanded it.** P6 opens a path to *acting* on real websites —
+  filling forms, clicking submit/confirm on the user's own logged-in
+  sessions. A capability like that is earned by a concrete use, not built
+  speculatively; without a real recurring errand there is nothing to shape
+  the `WEBPLAN` contract or the allowlist, and nothing to prove it against
+  but a synthetic page.
+- **The read case already measured weak** (D-035, D-053): the crew routes
+  around the browser unaided, and forced onto it, it is cheap but fragile.
+  An acting surface on top of that inherits the fragility (selector drift,
+  auth walls, hour-scale flows collapsing to ~20% at the 2026 frontier).
+- **The safety argument is D-034's, unchanged and quantified.** In-session
+  acting stays refused outright (option 3). Even the reviewed
+  replay-at-Approve shape (option 2) is a dual-use web-actuation engine, and
+  the 2026 indirect-injection numbers (17.8% single-attempt success against
+  unguarded GUI agents) are exactly why the model that read a page must never
+  be the thing that acts on it. Building that engine with no legitimate,
+  bounded errand behind it is the wrong default.
+
+**The condition to reopen is explicit:** a concrete web errand Brian actually
+repeats — "log into portal X and pull this month's statement", "fill the same
+weekly form on site Y". The moment one exists, P6's option 2 is the shape to
+build (WEBPLAN drafted by a read-only run, replayed at Approve, per-step
+`expect`-halts, allowlisted to that one site, screenshots as the audit),
+and the errand is its evidence gate. Until then, refusing is the answer, and
+`AGENTLING.md` §15's "Click, type, fill a form" row stays open with this
+entry as its reason.
+
+**This closes the expansion (EXPANSION.md).** P1–P5 are built and, for P1–P3,
+proven live; P6 is decided-not-built. The file's remaining rows are the two
+content-toggle follow-ups (a bounded content peek for the organizer, an
+outbox attachment field) and the live evidence gates that wait on Brian's own
+runs — none of them a new pack.

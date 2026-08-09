@@ -1468,7 +1468,11 @@ list per channel (D-077; SPEC M5.11 has the slices):
       same gates as a manual approve, and is revocable in one click
       (D-082; fired live 2026-08-06, 906 ms after the run's finish — D-101)
 - [ ] **Click, type, fill a form** — still refused in-session; no channel
-      needs it, and reopening it is a D-034-sized decision, not a wiring task
+      needs it, and reopening it is a D-034-sized decision, not a wiring task.
+      The reviewed replay-at-Approve version (EXPANSION P6) was weighed and
+      **deliberately not built** (D-133): no real recurring web errand
+      demanded it, and a speculative web-actuation engine is the wrong
+      default. Reopens the moment a concrete errand exists
 
 ### Runtime and executor
 

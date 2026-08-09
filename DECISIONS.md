@@ -141,6 +141,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-129 — 2026-08-09 — The researcher trade: a longer clock, and the word "research" changes hands](#d-129--2026-08-09--the-researcher-trade-a-longer-clock-and-the-word-research-changes-hands)
 - [D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned](#d-130--2026-08-09--a-role-may-raise-its-own-ceiling-the-per-class-knob-the-researcher-earned)
 - [D-131 — 2026-08-09 — The analyst upgrade: a kept script, an SVG chart, and an inert display already built](#d-131--2026-08-09--the-analyst-upgrade-a-kept-script-an-svg-chart-and-an-inert-display-already-built)
+- [D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest](#d-132--2026-08-09--the-organizer-pack-the-sandbox-boundary-crossed-by-a-reviewed-reversible-manifest)
 
 ## By theme
 
@@ -201,6 +202,11 @@ entry updates one file rather than two.
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
   clones, answered by a per-job sweep rather than by deleting anything
+- **Acting on the real world through review** — the promote grammar applied to
+  side effects: D-075 (send), D-104 (the acting surface), D-110/D-111 (a run
+  authors a world), and D-132, where it first crosses the sandbox boundary —
+  a run proposes a folder reorganization as MOVES.json and the server replays
+  it, model-never-touches, never a delete, journaled so it reverses
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on
@@ -7936,3 +7942,72 @@ ceiling yet; the next real question is the proof, and the expected shape
 is a quote near $4 with a turn budget no longer clamped below 30. The
 global `MAX_CEILING_USD` is untouched, so every other class is exactly as
 it was.
+
+## D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest
+
+EXPANSION P5, planned in plan mode and the first pack that touches a real
+folder outside the sandbox. Brian's two decisions: the inventory a run sees
+is **names, types, sizes and dates only** — no file contents ever leave the
+disk, so §11's no-redaction gap never bites — and the organizing skill goes
+on **`worker`**, no new price class.
+
+**The boundary decision, which is the whole point.** Option 2 of three: the
+model never touches the folder. The server walks it into a read-only
+inventory (handed to the run in its brief, the way the repo listing is), the
+run writes `MOVES.json` — `mkdir` and `move` ops, **never a delete or a
+copy** — and **Approve replays it**, the server the only thing that moves a
+file, only under the folder Brian picked, journaled so it reverses. Option 1
+(stay manual) and option 3 (give the session a filesystem tool — refused; it
+would formalize leaving the sandbox, §10) were not taken. SOTA is the
+argument: agent reliability on real filesystem servers is ~45–58% (MCPMark),
+and the best consumer organizer sorts on filenames only — a deterministic
+replay of a reviewed manifest is safer *and* more capable than a live loop.
+
+Built by replicating the outbox/pack convention (there is no shared
+deliverable interface — a contract module, a stamp in `finish()`, a `Job`
+field, a resolve branch, a review branch), across three commits:
+
+- **`moves.ts` — the contract and the executor**, the one piece with no
+  precedent to copy. `checkMoves` is the whole gate: every path relative and
+  lexically incapable of escape (no `..`, no absolute, no drive letter), no
+  two moves onto one destination, a cap, a reason for every refusal.
+  `executeMoves` mirrors `executeOutbox` — skip already-done ops, per-op
+  try/catch that never aborts the batch, **`move` refuses to overwrite**,
+  never `unlink` — and **re-resolves each path under the root at execution
+  time**, so the manifest is never trusted on its own word. `reverseMoves` is
+  the undo: the journal walked back, files to→from, and the empty folders
+  `mkdir` made removed only if still empty — a folder that gained a file is
+  left whole, because reversing must never delete.
+- **The reach and the wiring.** `organize.ts` walks a picked folder into the
+  metadata inventory and tells the session the contract in its brief (D-031).
+  The queue carries `organizeRoot`, `stampMoves` reads the manifest at the
+  same seam as the outbox, and the resolve route gains the replay branch —
+  re-checks the folder is there, `executeMoves` under the picked root (never a
+  root the model could name), journals to `moves.jsonl`, records `movesRun`,
+  and returns 400-and-reviewable on a partial so "Approve again" finishes the
+  rest and moves nothing twice. A `reverse-moves` route is the undo. Intake
+  detection under-fires like a channel (`wantsOrganize`), routes to `worker`,
+  and the desk asks *which folder* through the native picker — the only source
+  of an absolute path.
+- **The skill and the review.** `organizing-folders` on worker; a `MovesCard`
+  showing from→to rows, the plain-words count, the OneDrive-syncs caution, and
+  an Undo button; Approve flips to "Approve & move N".
+
+Evidence: the security core is 12 tests against a real temp dir — escape
+refused both ways, no-overwrite, idempotent replay, exec-time re-check, and
+the reverse round-tripping to the exact original layout — plus 6 reach tests
+(the inventory proven to carry **no file contents**) and the web summary
+helper. 1,410 + 142 green, the reach canary held with a new skill doc,
+typecheck clean. Three post-commit mutations on the executor guards each
+killed exactly their test: the exec-time escape guard removed (a `..`
+manifest would execute), the no-overwrite check removed, the skip-done
+idempotency removed.
+
+Not yet run live, and the gate is deliberately cautious: **first against a
+copy of a real messy folder**, the proposal measured against Brian's own
+judgement, and the journal proven to reverse cleanly before any real folder
+is ever named. Deliberately out of scope: delete (never), copy, multiple
+roots in one job, and a standing/scheduled reorganization (the recurring
+shape can come later, as sends did). This partially answers §15's
+"filesystem beyond the sandbox" row — but as a reviewed-and-replayed
+manifest, not a live tool, which is the row's own condition.

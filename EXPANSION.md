@@ -223,7 +223,7 @@ right — recurring analysis converges to compiled tools with `verify.mjs`,
 deterministic and free — so this pack sharpens inputs and outputs rather
 than pretending a skill closes a frontier gap.
 
-### P5 — Organizer pack: real folders *(first boundary decision)*
+### P5 — Organizer pack: real folders *(first boundary decision)* — **built, D-132**
 
 **Unlocks:** "organize this folder" — a reviewed reorganization of a real
 directory Brian names: content-aware sorting into a proposed structure,

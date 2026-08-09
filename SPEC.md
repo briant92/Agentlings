@@ -118,6 +118,14 @@ the loop runs end to end without one.
   system Edge (playwright-core by channel, D-128). Offline by construction:
   every request the page makes is aborted, proved against a live listener.
   No secret; on by default; the runner writes the bytes at the sandbox root.
+- `moves.ts` — the organizer contract (D-132): `checkMoves` validates a
+  MOVES.json of mkdir/move ops (every path under the root, never a delete),
+  `executeMoves` replays it at Approve refusing to overwrite and re-checking
+  each path, `reverseMoves` is the undo. The one place the server moves a
+  file in a real folder outside the app.
+- `organize.ts` — reaching that folder: a metadata-only inventory (names,
+  types, sizes, dates — no contents) handed to the run in its brief, and the
+  under-firing detector that routes an "organize" sentence to worker.
 - `github.ts` — reading a code host, builtin for the same reason: one issue
   list is unbounded JSON unless the caller owns the size. Compact lines,
   capped lists, truncated bodies, never a patch. Reads and cannot act; needs
@@ -420,6 +428,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.17 the studio pack (EXPANSION P2) → D-128
 - M5.18 the researcher trade (EXPANSION P3) → D-129
 - M5.19 the analyst upgrade (EXPANSION P4) → D-131
+- M5.20 the organizer pack (EXPANSION P5) → D-132
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

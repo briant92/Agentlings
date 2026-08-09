@@ -1022,9 +1022,21 @@ dialog rather than by a sentence, deliberately — the phrasings for this do not
 exist yet, and a button cannot misfire. Measured once: $1.81 for a 17-turn run
 that produced 33 foreground ops.
 
+**A run can also reorganize a real folder** (D-132). Given a folder Brian
+picks, it writes `MOVES.json` at the sandbox root — `mkdir` and `move` ops,
+never a delete — from a metadata-only inventory the server walked (names,
+types, sizes, dates; no contents, so nothing but a filename ever enters the
+session). Review shows the moves, and **Approve is the reorganization**: the
+server replays the manifest under the picked folder, journals it, and can
+reverse it. The session installs nothing, touches nothing outside its
+sandbox, and has no tool that could — this is the first time the promote
+shape crosses into a real folder outside the app, and it crosses only as a
+reviewed manifest the server carries out.
+
 The structural argument survives intact. Every guarantee rests on one shape —
-**work in a sandbox, review, promote** — and a send now goes *through*
-promote, as does an install. What remains refused is acting mid-session, where there is no promote
+**work in a sandbox, review, promote** — and a send goes *through* promote, as
+do an install and now a folder reorganization. What remains refused is acting
+mid-session, where there is no promote
 step: `browser_click` on "Confirm order" happens the instant the model decides
 to, which is D-034's argument, untouched. Pausing a run to ask was the obvious
 mitigation and stays refused (D-030).
@@ -1234,6 +1246,8 @@ untouched until you press Approve.
 | `RENDER_TIMEOUT_MS` | 30 s | `render.ts` | A render that hangs is killed, like a compiled tool |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
+| `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |
+| `INVENTORY_CAP` | 400 | `organize.ts` | Files shown to a run before "and N more"; metadata only, no contents |
 | `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |
 | `SEND_TIMEOUT_MS` | 15 s | `channels.ts` | One send call at approval |
 | `APPROVALS_FOR_AUTO` | 3 | `approvals.ts` | Unchanged reviews before auto-send may be offered (D-082) |
@@ -1357,9 +1371,14 @@ judgement — *which of its tools are reading, and which are acting*.
 - [ ] **A task tracker** — unlocks "what am I meant to be doing".
       *Blocked on: reading is easy, and the useful half is writing — which is
       §11's question, not this one.*
-- [ ] **Filesystem beyond the sandbox** — unlocks working across repositories.
-      *Blocked on: §10. The sandbox is already only an instruction; granting a
-      tool that formalises leaving it deserves the boundary decision first.*
+- [~] **Filesystem beyond the sandbox** — the boundary decision was taken for
+      one shape (D-132, EXPANSION P5): a run **proposes** a folder
+      reorganization as MOVES.json and the *server* replays it at Approve —
+      the model never gets a filesystem tool, never touches the real folder,
+      and nothing is deleted. That answers "reorganize a folder Brian names".
+      What stays open is a *session* reading or writing across repositories
+      live, which is still §10's refusal — a reviewed-and-replayed manifest is
+      not a live tool, which is exactly why this one was buildable.
 - [ ] **Email / calendar / chat, reading** — unlocks context the crew cannot
       otherwise see. *Blocked on: nothing technical. Note that reading a mailbox
       moves personal data into a session, which §11 says there is no control

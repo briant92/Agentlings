@@ -137,6 +137,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams](#d-125--2026-08-08--the-architect-trade-and-a-review-that-draws-its-diagrams)
 - [D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role](#d-126--2026-08-08--the-third-death-gets-a-capture-and-an-install-overwrites-a-shipped-role)
 - [D-127 — 2026-08-09 — The bind pinned to loopback: G7 closed the day it opened](#d-127--2026-08-09--the-bind-pinned-to-loopback-g7-closed-the-day-it-opened)
+- [D-128 — 2026-08-09 — The studio pack: a render door that reaches nothing, and scribe grows a shell](#d-128--2026-08-09--the-studio-pack-a-render-door-that-reaches-nothing-and-scribe-grows-a-shell)
 
 ## By theme
 
@@ -175,7 +176,11 @@ entry updates one file rather than two.
   body ×1, so D-112's reword-to-fix-tipping advice applies to bodies too,
   and the review panel learned to draw a markdown file's mermaid fences;
   and D-126's collision half — a library install onto an existing role name
-  silently overwrites the shipped file, D-111's clash taking the other branch
+  silently overwrites the shipped file, D-111's clash taking the other branch;
+  and D-128, the studio pack — three design skills, scribe gaining bash
+  because a role without a shell cannot run the call shapes the brief hands
+  it, and the render door whose offline rule is proved against a live
+  listener rather than described
 - **The dev server's own deaths** — D-118 (two, unobserved, the Adobe-node
   red herring) and D-126: the third death, diagnosed from outside by the
   port split (:4600 refused under a living :5173), and the capture D-118
@@ -7588,6 +7593,67 @@ Left alone on purpose: the boot log still prints `http://localhost:4600`
 (a browser resolves it fine either family), and the doors still carry no
 auth — the bind is again the boundary, but now it is a *chosen* one,
 measured, rather than a default nobody had read.
+
+## D-128 — 2026-08-09 — The studio pack: a render door that reaches nothing, and scribe grows a shell
+
+EXPANSION P2, planned in plan mode and decided by Brian in three answers:
+`playwright-core` driving the **system Edge** by channel (no browser
+download; the dependency in the *server* workspace on purpose — root
+dependencies are read as `lib:` capability tokens, so a root dep would
+demote every recipe on the machine, D-036 via `LIBRARIES`); the `render`
+connection **defaultOn** like `web`; and **scribe gains `bash`** — the
+planning exploration found its `[read, write, grep]` could never execute
+the docx call shapes the brief has been handing every session since D-031.
+
+What shipped (`aa6cbac`):
+
+- **`render.ts` + the `/internal/render` door.** A run authors ONE
+  self-contained HTML document and the tool prints it: `setContent` (the
+  page never navigates) plus a route that **aborts every request**, so an
+  image, font or stylesheet URL in a run's HTML reaches nothing — proved
+  in `render.test.ts` against a live localhost listener that counted
+  **zero hits** while the document asked for an image, alongside a real
+  Edge-printed one-page PDF. Caps owned by the module: 2 MB of HTML, 30 s
+  killed. The door copies `/internal/github`'s 400/404/403 shape with the
+  grant re-checked — never `/internal/fetch`'s, the sibling that skips it
+  (D-125's finding).
+- **Web-shaped on the session side, and that is a correction to the plan's
+  first draft**: the runner's generic github/search loop hands
+  `reply.text` to the model, and a PDF is bytes to *write* — so `render`
+  gets a dedicated runner block (the `web` precedent) that writes the
+  file at the sandbox root and hands the model the receipt
+  (`Wrote report.pdf — 2 page(s), N bytes`). Base64 never rides a prompt.
+- **Three skills in the house style**, all mandating sandbox-root output
+  (subdirectory files are invisible to review — the planning sweep's
+  finding): `deck-design` (palette-first pptxgenjs, the no-`#` hex trap,
+  layout variety, the ban list, native `addChart`, read-back quoting
+  slide count and titles, the honest "layout unverified by eye" line),
+  `document-design` (styles never decorated runs, hierarchy, page
+  furniture, mammoth read-back), `pdf-report` (`@page` owns the paper,
+  data: URIs, pdf-parse read-back, the .html kept beside the .pdf as its
+  source, and the no-renderer fallback: deliver the HTML and say so).
+  deck-design + pdf-report ride designer; document-design + pdf-report
+  ride scribe. No new role — designer and scribe keep their earned rates,
+  which was the point (G5's class tax paid only where a class is new).
+- `DOCUMENT_LIBRARIES` gains the styled-PDF line, self-qualified ("when a
+  render_pdf tool is present") so the brief stays honest when the
+  connection is off.
+
+Evidence: 1,380 + 139 green on the first full run — the reach canary held
+with three new skill docs in the corpus — typecheck clean. Mutations,
+post-commit: the route-abort removed was killed exactly by the
+zero-requests test; `defaultOn` flipped and the grant emptied were each
+killed by exactly the two catalog assertions. Known and accepted, stated
+rather than hidden: the `/internal/render` route's 403 is untested like
+both of its siblings, the runner block is untested like the whole runner
+(both conventions, not oversights), and turning the connection on demotes
+existing strong recipes for one outing while their surface heals —
+D-036's designed behaviour, not a regression.
+
+Not yet run live: the first styled-PDF job and the first branded deck are
+the evidence gate, after Brian's server restart picks up the catalog and
+runner changes. Expected quotes come from scribe's and designer's
+existing classes, not a first-time ceiling.
 
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 

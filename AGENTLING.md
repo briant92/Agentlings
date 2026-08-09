@@ -85,9 +85,9 @@ the SDK session, not advised in a prompt.
 | `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work | default | 10 |
 | `mason` | Builds — implements, refactors, fixes | read, write, edit, bash, grep | small-diffs, check-your-work | default | 15 |
 | `scout` | Research — reads much, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
-| `scribe` | Documentation — turns work into words | read, write, grep | concise-reports, plain-language | default | 10 |
+| `scribe` | Documentation — turns work into words, and into .docx and report PDFs | read, write, grep, bash | concise-reports, plain-language, document-design, pdf-report | default | 10 |
 | `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
-| `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack | default | 20 |
+| `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
 | `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
 
 Role tool names map onto SDK tools (`grep` → `Grep` + `Glob`, `web_fetch` →
@@ -105,12 +105,13 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Nine ship, written against this app's contract — sandbox only,
+session. Twelve ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
-`cite-sources` · `concise-reports` · `plain-language` · `see-your-work` ·
-`small-diffs` · `tables-and-numbers`
+`cite-sources` · `concise-reports` · `deck-design` · `document-design` ·
+`pdf-report` · `plain-language` · `see-your-work` · `small-diffs` ·
+`tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was
@@ -144,7 +145,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Search | `Grep` / `Glob` |
 | Work on your code | `git clone --local --no-hardlinks` into `sandbox/repo`; every change captured as `DIFF.patch` after the session |
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
-| Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job |
+| Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through the system Edge, offline — every external URL aborted (D-128) |
 | Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§9) |
 | Report | `RESULT.md`: outcome first, evidence second |
 
@@ -274,6 +275,7 @@ off, so the app's fetch was gated and this second door was not.
 | Connection | Transport | Default | Status |
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
+| `render` — print a run's own HTML to a styled PDF | builtin | **on** | Live; offline by construction — every request the page makes is aborted (D-128) |
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only in a session; its one write is a reviewed comment, replayed at approval (D-104) |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
@@ -1221,6 +1223,8 @@ untouched until you press Approve.
 | `FETCH_TIMEOUT_MS` | 15 s | `web.ts` | One page |
 | `MAX_BYTES` | 5 MB | `web.ts` | Refuses to download a page it will trim anyway |
 | pre-fetched URLs | 5 | `router.ts` | URLs pulled out of your sentence |
+| `MAX_HTML_BYTES` | 2 MB | `render.ts` | One document handed to `render_pdf`; past it, inline less or split |
+| `RENDER_TIMEOUT_MS` | 30 s | `render.ts` | A render that hangs is killed, like a compiled tool |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
 | `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |

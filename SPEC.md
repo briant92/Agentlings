@@ -114,6 +114,10 @@ the loop runs end to end without one.
 - `search.ts` — finding a page, as against reading one. Builtin so the reply
   size is ours: titles, snippets and links, then `fetch_page` reads the chosen
   one. Brave Search; needs `BRAVE_API_KEY`; ships off.
+- `render.ts` — printing a run's own HTML into a styled PDF through the
+  system Edge (playwright-core by channel, D-128). Offline by construction:
+  every request the page makes is aborted, proved against a live listener.
+  No secret; on by default; the runner writes the bytes at the sandbox root.
 - `github.ts` — reading a code host, builtin for the same reason: one issue
   list is unbounded JSON unless the caller owns the size. Compact lines,
   capped lists, truncated bodies, never a patch. Reads and cannot act; needs
@@ -409,6 +413,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.14 composite work → D-105
 - M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
 - M5.16 the blueprint pack (EXPANSION P1) → D-125
+- M5.17 the studio pack (EXPANSION P2) → D-128
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

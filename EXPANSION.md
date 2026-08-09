@@ -124,7 +124,7 @@ decision.
 review; every named module exists (the T8·1 sweep style — checked by
 enumeration, not by reading).
 
-### P2 — Studio pack: decks, reports, styled PDFs *(the discovery pack)*
+### P2 — Studio pack: decks, reports, styled PDFs *(the discovery pack)* — **built, D-128**
 
 **Unlocks:** a branded one-shot deck or report — palette, layout variety,
 real charts — produced in the sandbox, previewed in review, downloaded from

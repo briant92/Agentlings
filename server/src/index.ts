@@ -1038,10 +1038,17 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     rt.meta.repoPath,
     text,
   );
+  // An organize sentence runs as worker (it carries the organizing skill,
+  // D-132), forced at queue time by `organizeRoot`. The preview has to say so
+  // too, or the card shows the matcher's guess (scribe for "sort … into
+  // subfolders") while Start quietly runs a worker — the same shape as the
+  // authoring force right beside it.
   const draft =
     body.authoring === true && registry.get(AUTHOR_ROLE)
       ? forceRole(matchedDraft, AUTHOR_ROLE, rt.sim.agentlings)
-      : matchedDraft;
+      : wantsOrganize(text) && registry.get('worker')
+        ? forceRole(matchedDraft, 'worker', rt.sim.agentlings)
+        : matchedDraft;
   // Derived at ask time from the catalog and Settings, so the same sentence
   // gets a different card once a channel is connected (D-079).
   const channelAsk = detectChannelAsk(

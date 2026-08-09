@@ -7520,6 +7520,38 @@ whole budget until rows exist. The natural first errand: hire an architect
 into hq and queue the reach sentence itself — hq is the level whose
 blueprint can be checked against SPEC's own architecture section.
 
+**Amendment, 2026-08-09 — every unproven line above is now proved, and the
+first run out-earned its pack.** Job `3296ea7a` ("Draw an architecture
+blueprint of this system", hq, Bea as architect): **promoted**, $1.66
+against the $2.00 first-time quote (charged = cost, under the ceiling;
+close-out 5.7¢; ledger reports 21 turns against 15 allowed — D-022's
+reported-is-not-granted, on a run that delivered whole). Brian confirmed
+the review **drew the diagrams** — the pixels check. The mechanical gate
+passed: all 26 file paths the blueprint names exist, `index.ts` is exactly
+the 2,981 lines it claims, the route count within one of its 73. The run
+also corrected its own brief on the record: the handed listing says 40
+files where `git ls-files` finds 260 — the cap is deliberate (D-063's
+orientation turn), but the brief's wording let it read as the whole.
+
+What the first blueprint found, verified where checkable the same hour:
+
+- **The server binds every interface.** `serve({fetch, port})` at
+  `index.ts:2881` passes no hostname; the blueprint flagged it as its one
+  unresolved security consequence, and netstat against the live server
+  confirmed: `0.0.0.0:4600` and `[::]:4600` LISTENING. §11's "localhost
+  only" was an assumption, not a bind — G7 now holds the open decision
+  (pin `127.0.0.1`, or keep LAN reach on purpose).
+- `/internal/fetch` does not re-assert the catalog grant its two sibling
+  doors re-assert (the D-119 sibling-seam shape, found by a paid run).
+- The tier concept lives as **three vocabularies in three files** (router
+  kinds, quote tiers, AGENTLING's seven) — anything adding a tier lands in
+  all three.
+- Four modules import `executors/claude.ts` for constants and sentinels
+  only — pricing a quote drags the SDK-spawning module in.
+
+A $1.66 run produced one confirmed security finding, one sibling-seam
+gap and two coupling facts. The pack's evidence gate is closed.
+
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 
 **The event.** Minutes after P1 pushed, Brian hired an architect and "the

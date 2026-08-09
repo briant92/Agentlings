@@ -1038,8 +1038,11 @@ job sent itself 906 ms after finishing, no reviewer in the loop (D-101).
 
 What is true today:
 
-- **Localhost only.** No multi-user, no auth, no hosting, no telemetry. The
-  server binds a local port and the browser talks to it.
+- **Single-user, no auth, no hosting, no telemetry** — but "localhost only"
+  overstated the bind: measured 2026-08-09 (netstat, live server), port 4600
+  is LISTENING on `0.0.0.0` and `[::]` because `serve()` is passed no
+  hostname. Any device on the same network can reach every route and the
+  unauthenticated `/internal/*` doors. Pinning it is G7's open decision.
 - **`.agentlings/` is gitignored.** The app's memory is not the repository's:
   the ledger, the sandboxes, the rosters, the lessons and everything fetched
   stay out of version control.

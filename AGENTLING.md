@@ -85,7 +85,7 @@ the SDK session, not advised in a prompt.
 | `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work | default | 10 |
 | `mason` | Builds — implements, refactors, fixes | read, write, edit, bash, grep | small-diffs, check-your-work | default | 15 |
 | `scout` | Reconnaissance — looks into how existing code and sources work, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
-| `researcher` | Deep research — cited, triangulated briefs from many sources | read, write, grep, web_fetch | deep-research, cite-sources, concise-reports | default | 30 · 25-min wall |
+| `researcher` | Deep research — cited, triangulated briefs from many sources | read, write, grep, web_fetch | deep-research, cite-sources, concise-reports | default | 30 · 25-min wall · $4 ceiling |
 | `scribe` | Documentation — turns work into words, and into .docx and report PDFs | read, write, grep, bash | concise-reports, plain-language, document-design, pdf-report | default | 10 |
 | `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
 | `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
@@ -1189,6 +1189,7 @@ untouched until you press Approve.
 | `CLOSEOUT_TURNS` | 2 | `executors/claude.ts` | The write-up pass |
 | `SESSION_TIMEOUT_MS` | 10 min | `executors/claude.ts` | Wall clock on one session — the default; a role raises it with `timeoutMinutes:` frontmatter (D-129) |
 | `TIMEOUT_CEILING_MINUTES` | 30 | `executors/claude.ts` | Clamp on `timeoutMinutes`; a typo cannot uncap the clock |
+| `ROLE_CEILING_HARD_MAX_USD` | $10 | `estimate.ts` | Clamp on a role's `maxCostUsd:`, which lifts the $2 runaway cap for its class alone (D-130); `AGENTLINGS_MAX_COST_USD` still wins |
 
 ### Money
 

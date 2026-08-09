@@ -139,6 +139,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-127 — 2026-08-09 — The bind pinned to loopback: G7 closed the day it opened](#d-127--2026-08-09--the-bind-pinned-to-loopback-g7-closed-the-day-it-opened)
 - [D-128 — 2026-08-09 — The studio pack: a render door that reaches nothing, and scribe grows a shell](#d-128--2026-08-09--the-studio-pack-a-render-door-that-reaches-nothing-and-scribe-grows-a-shell)
 - [D-129 — 2026-08-09 — The researcher trade: a longer clock, and the word "research" changes hands](#d-129--2026-08-09--the-researcher-trade-a-longer-clock-and-the-word-research-changes-hands)
+- [D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned](#d-130--2026-08-09--a-role-may-raise-its-own-ceiling-the-per-class-knob-the-researcher-earned)
 
 ## By theme
 
@@ -200,7 +201,10 @@ entry updates one file rather than two.
   id off the market — and the measured disk weight turns out to be repo
   clones, answered by a per-job sweep rather than by deleting anything
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
-  D-026–D-027, D-029; D-067, where the quote stops losing to a role's standing
+  D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
+  global runaway clamp for its class alone (the researcher, measured bound on
+  the $2 cap three times) — the env hard limit still wins, and a typo is
+  clamped; D-067, where the quote stops losing to a role's standing
   guess about a trade; and D-070, the third form of one fault — a quote that
   cannot find its history cannot tighten, whether the class it looks up is
   wrong (D-026, D-029), in the wrong field (`quoteClass`), or absent because
@@ -7851,3 +7855,39 @@ exactly that test. Two env seams (`AGENTLINGS_DEV_ENTRY`,
 - **A third-party role's `model:` reaches the executor unsanitized** —
   `inherit` is not a model id; harmless until such a role runs a session,
   and a candidate for the install preview's warning list.
+
+## D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned
+
+Brian's decision after P3's gate, from three options (leave it, raise the
+global clamp, or a per-role knob): **the knob** — the surgical fix that
+matches the trio P3 was already building.
+
+The measured case D-129's second amendment laid out: all three researcher
+gate runs bound on `MAX_CEILING_USD` ($2), the class's own cost history
+wanting ~$5, and the clamp pulling two runs' turn budgets below the role's
+own 30. That clamp is D-016's runaway guard and is deliberately global, so
+raising it for everyone would loosen the guard for mason and scribe too —
+a freak run of theirs could then quote $4 before anything caught it.
+
+What shipped (`78a26d8`): an optional `maxCostUsd:` in role frontmatter,
+the third of P3's per-role trio after `maxTurns` and `timeoutMinutes` and
+the same trusted-but-bounded shape. `roleCeilingUsd(roleMax, envMax)`
+resolves it: a role's value applies only when set, clamped to
+`ROLE_CEILING_HARD_MAX_USD` ($10) so a typo of `maxCostUsd: 400` cannot
+uncap spending, and an explicit `AGENTLINGS_MAX_COST_USD` **still wins
+outright** — an env spending limit is how a user gets a hard cap back, and
+a role's wish for more can never cross it. `quoteFor` already took
+`maxCeilingUsd`; the seam only had to feed it. `researcher.md` carries
+`maxCostUsd: 4`, so its own evidence (mean × 2 ≈ $5, clamped to its $4
+ceiling) now sets the quote instead of the $2 global floor.
+
+Two mutations, two exact kills: the env-limit precedence removed (role
+value returned even when a lower env limit is set) killed the
+env-wins test; the hard clamp dropped (raw role value trusted) killed the
+runaway-typo test. 1,390 + 139 green, typecheck clean.
+
+**Not yet fired live** — no researcher run has been quoted under the new
+ceiling yet; the next real question is the proof, and the expected shape
+is a quote near $4 with a turn budget no longer clamped below 30. The
+global `MAX_CEILING_USD` is untouched, so every other class is exactly as
+it was.

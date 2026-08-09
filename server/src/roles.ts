@@ -121,6 +121,7 @@ function roleFromText(text: string): LoadedRole {
   if (!description) throw new Error('frontmatter needs a "description"');
   const turns = Number(toText(parsed.meta.maxTurns));
   const timeout = Number(toText(parsed.meta.timeoutMinutes));
+  const maxCost = Number(toText(parsed.meta.maxCostUsd));
   return {
     name,
     description,
@@ -129,6 +130,7 @@ function roleFromText(text: string): LoadedRole {
     model: toText(parsed.meta.model) || undefined,
     ...(Number.isFinite(turns) && turns > 0 ? { maxTurns: turns } : {}),
     ...(Number.isFinite(timeout) && timeout > 0 ? { timeoutMinutes: timeout } : {}),
+    ...(Number.isFinite(maxCost) && maxCost > 0 ? { maxCostUsd: maxCost } : {}),
     prompt: parsed.body,
   };
 }

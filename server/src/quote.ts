@@ -1,5 +1,5 @@
 import type { Job, Quote } from '@agentlings/shared';
-import { quoteFor } from './estimate';
+import { quoteFor, roleCeilingUsd } from './estimate';
 import { RECIPE_TURNS, turnsFor } from './executors/claude';
 import { readKnowledge } from './levels';
 import { rateFor, readLedger, type Tier } from './ledger';
@@ -157,7 +157,12 @@ export function quoteFor_(
     // answer than the tier average.
     fallbackClass: wider,
     ...(freeBecause ? { freeBecause } : {}),
-    maxCeilingUsd: Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    // A role may raise its own ceiling above the global runaway clamp; an
+    // explicit env spending limit still wins over it (D-130).
+    maxCeilingUsd: roleCeilingUsd(
+      role ? ctx.registry.get(role)?.maxCostUsd : undefined,
+      Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    ),
     ...(rate.samples > 0 ? { floorUsd: leash * rate.usd } : {}),
   });
 }

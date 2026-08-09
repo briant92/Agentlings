@@ -4,8 +4,10 @@ import {
   DEFAULT_CEILING_USD,
   MAX_CEILING_USD,
   ONESHOT_CEILING_USD,
+  ROLE_CEILING_HARD_MAX_USD,
   formatUsd,
   quoteFor,
+  roleCeilingUsd,
 } from './estimate';
 import type { LedgerEntry, Tier } from './ledger';
 
@@ -25,6 +27,35 @@ function entry(over: Partial<LedgerEntry> = {}): LedgerEntry {
 }
 
 const costing = (...costs: number[]): LedgerEntry[] => costs.map((costUsd) => entry({ costUsd }));
+
+describe('roleCeilingUsd', () => {
+  // The seam D-130 added: a role may raise its own ceiling, an env limit is a
+  // hard cap that wins, and a typo cannot uncap spending.
+  it('leaves the env value untouched for a role that names nothing', () => {
+    expect(roleCeilingUsd(undefined, 2)).toBe(2);
+    expect(roleCeilingUsd(undefined, undefined)).toBeUndefined();
+  });
+
+  it('applies a role ceiling when no env limit is set', () => {
+    expect(roleCeilingUsd(4, undefined)).toBe(4);
+  });
+
+  it('lets an explicit env spending limit win over the role', () => {
+    // AGENTLINGS_MAX_COST_USD is how a user gets a hard cap back; a role's
+    // wish for more cannot cross it.
+    expect(roleCeilingUsd(4, 1.5)).toBe(1.5);
+  });
+
+  it('clamps a runaway role value so a typo cannot uncap spending', () => {
+    expect(roleCeilingUsd(400, undefined)).toBe(ROLE_CEILING_HARD_MAX_USD);
+  });
+
+  it('ignores a nonsense role value and falls back to the env answer', () => {
+    expect(roleCeilingUsd(0, 2)).toBe(2);
+    expect(roleCeilingUsd(-3, undefined)).toBeUndefined();
+    expect(roleCeilingUsd(Number.NaN, 2)).toBe(2);
+  });
+});
 
 describe('formatUsd', () => {
   it('says free rather than $0.00', () => {
@@ -90,6 +121,15 @@ describe('quoteFor, with history for this job', () => {
     const quote = quoteFor('session', 'tidy', costing(5));
     expect(quote.ceilingUsd).toBe(MAX_CEILING_USD);
     expect(quote.expectedUsd).toBe(5); // honest about the average it will not promise
+  });
+
+  it('lets a role raise its own ceiling above the global cap', () => {
+    // The researcher's exact case (D-130): mean 2.53 doubled is 5.07, which
+    // the $2 global clamp would hold to $2 — the $4 role ceiling lets the
+    // class's own evidence through, and is itself the bound.
+    const quote = quoteFor('session', 'researcher', costing(2.4, 3.2, 2.0), { maxCeilingUsd: 4 });
+    expect(quote.ceilingUsd).toBe(4);
+    expect(quote.ceilingUsd).toBeGreaterThan(MAX_CEILING_USD);
   });
 
   it('never quotes zero, even asked for a ceiling of zero', () => {

@@ -722,6 +722,15 @@ export interface RoleInfo {
    * the wall before their turns ran out (D-128, D-129).
    */
   timeoutMinutes?: number;
+  /**
+   * The most a job of this role may be quoted, in dollars, raising the global
+   * `MAX_CEILING_USD` runaway clamp for this class alone (D-130). A genuinely
+   * expensive trade — the researcher's three gate runs all bound on the $2
+   * global cap and its cost history wanted ~$5 — needs the headroom without
+   * loosening the clamp for mason or scribe. Clamped to a hard maximum, and
+   * an explicit `AGENTLINGS_MAX_COST_USD` still wins over it.
+   */
+  maxCostUsd?: number;
 }
 
 export interface SkillInfo {

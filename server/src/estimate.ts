@@ -32,6 +32,35 @@ export const ONESHOT_CEILING_USD = 0.1;
  * it, and lowering it is how you get a hard spending limit back.
  */
 export const MAX_CEILING_USD = 2;
+/**
+ * The most a role may raise its own ceiling to (D-130). A role that runs
+ * genuinely expensive — the researcher, whose gate runs all bound on the $2
+ * global cap — sets `maxCostUsd:` in its frontmatter to lift the clamp for
+ * its class alone; this is the clamp on that clamp, so a typo of `maxCostUsd:
+ * 400` cannot uncap spending. Its shape is the turn cap's `TURN_CEILING` and
+ * the wall's `TIMEOUT_CEILING_MINUTES`: a role knob is trusted, but bounded.
+ */
+export const ROLE_CEILING_HARD_MAX_USD = 10;
+
+/**
+ * The ceiling a job may be quoted at, resolving a role's own `maxCostUsd`
+ * against an explicit `AGENTLINGS_MAX_COST_USD` hard limit.
+ *
+ * Precedence, and the reasoning: an env limit is how a user gets a hard
+ * spending cap back (see `MAX_CEILING_USD`), so it wins outright — a role's
+ * wish for more can never exceed it. Absent an env limit, the role's value
+ * applies, clamped to `ROLE_CEILING_HARD_MAX_USD`. A role naming nothing
+ * leaves the caller's env value (or the default) untouched, so this is inert
+ * for every role but the ones that opt in.
+ */
+export function roleCeilingUsd(
+  roleMaxUsd: number | undefined,
+  envMaxUsd: number | undefined,
+): number | undefined {
+  if (roleMaxUsd === undefined || !(roleMaxUsd > 0)) return envMaxUsd;
+  const clamped = Math.min(roleMaxUsd, ROLE_CEILING_HARD_MAX_USD);
+  return envMaxUsd === undefined ? clamped : Math.min(clamped, envMaxUsd);
+}
 
 export function formatUsd(amount: number): string {
   if (amount === 0) return 'free';

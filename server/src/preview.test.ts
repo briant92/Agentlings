@@ -108,6 +108,17 @@ describe('previewFile', () => {
     expect(await previewFile(file)).toEqual({ kind: 'native', contentType: 'application/pdf' });
   });
 
+  it('shows an SVG chart as an image, never as its markup', async () => {
+    // The analyst draws charts as SVG (D-131). It is served as a `native`
+    // image so the panel renders it through an <img>, where scripts and
+    // external refs do not run — an SVG that reached `text` or `html` would
+    // put author-controlled markup into the panel. This is the security
+    // property, pinned so it cannot be "improved" into an inline render.
+    const file = path.join(dir, 'totals.svg');
+    writeFileSync(file, '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect/></svg>');
+    expect(await previewFile(file)).toEqual({ kind: 'native', contentType: 'image/svg+xml' });
+  });
+
   it('parses a .csv into the same grid a spreadsheet gets', async () => {
     const file = path.join(dir, 'prices.csv');
     writeFileSync(file, 'sku,supplier\nAX-1,"Meridian, Ltd"\n');

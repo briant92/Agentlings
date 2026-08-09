@@ -210,6 +210,15 @@ describe('opensInBrowser', () => {
       expect(opensInBrowser(name)).toBe(false);
     }
   });
+
+  // An SVG chart (D-131) is shown inline in the panel through an <img>, which
+  // runs no script — but it must NOT open in the browser on its own, because a
+  // top-level SVG navigation executes its scripts. Attachment disposition is
+  // what forces a download there instead. So `image/svg+xml`, and not inline.
+  it('serves an SVG as an image but never lets it open itself in the browser', () => {
+    expect(contentTypeFor('totals.svg')).toBe('image/svg+xml');
+    expect(opensInBrowser('totals.svg')).toBe(false);
+  });
 });
 
 /**

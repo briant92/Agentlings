@@ -42,6 +42,8 @@ export function glyph(name: string): string {
       return '▤';
     case '.pptx':
       return '▭';
+    case '.svg':
+      return '▨';
     case '.patch':
     case '.diff':
       return '±';

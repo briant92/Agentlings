@@ -48,6 +48,11 @@ describe('glyph', () => {
     expect(glyph('summary.docx')).not.toBe(glyph('lines.xlsx'));
     expect(glyph('LESSON.md')).toBe('·');
   });
+
+  it('marks a chart so it is findable in the rail', () => {
+    expect(glyph('totals.svg')).not.toBe('·');
+    expect(glyph('totals.svg')).not.toBe(glyph('lines.xlsx'));
+  });
 });
 
 describe('size', () => {

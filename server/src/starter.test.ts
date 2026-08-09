@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships eight generalist jobs and thirteen abilities', () => {
+  it('ships eight generalist jobs and fourteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -67,6 +67,11 @@ describe('shipped starter set', () => {
       'check-your-work',
       'cite-sources',
       'concise-reports',
+      // data-analysis is EXPANSION P4: the analyst computes in a kept script
+      // and draws the result as a plain SVG the review shows inline. The
+      // analyst gained `write` the same day — the docx/script call shapes
+      // need a real file, not a bash heredoc (the scribe precedent, D-128).
+      'data-analysis',
       // The studio three (EXPANSION P2): deck-design and pdf-report ride
       // designer; document-design and pdf-report ride scribe, which gained
       // bash the same day — a role without a shell cannot run the docx

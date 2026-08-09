@@ -5,14 +5,26 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { folderInventory, organizeBrief, wantsOrganize } from './organize';
 
 describe('wantsOrganize — detection, under-firing', () => {
-  it('fires on the organize verbs', () => {
-    for (const s of ['organize my downloads', 'tidy this folder', 'sort out the mess', 'clean up my desktop']) {
+  it('fires on a tidying verb beside a folder reference', () => {
+    for (const s of [
+      'organize this folder',
+      'tidy my downloads',
+      'sort out my desktop',
+      'clean up my documents folder',
+      'declutter my screenshots',
+    ]) {
       expect(wantsOrganize(s)).toBe(true);
     }
   });
 
-  it('does not fire on unrelated sentences, including code "organising"', () => {
-    for (const s of ['summarise the invoices', 'send Brian a telegram', 'refactor the module layout']) {
+  it('does not fire on code cleanup or a verb with no folder — the noun, not the verb', () => {
+    for (const s of [
+      'clean up the whole project', // code, not a folder — must stay a coding job
+      'sort out the bug in the parser',
+      'tidy up the error handling',
+      'summarise the invoices',
+      'send Brian a telegram',
+    ]) {
       expect(wantsOrganize(s)).toBe(false);
     }
   });

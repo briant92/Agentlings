@@ -1,4 +1,5 @@
 import type { ClarifyQuestion, Quote } from '@agentlings/shared';
+import { wantsOrganize } from './organize';
 import { terms } from './recipes';
 
 /**
@@ -187,6 +188,13 @@ export function questionsFor(
   }: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
 ): ClarifyQuestion[] {
   if (!text.trim()) return [];
+  // An organize job has exactly one input — the folder — and it comes from
+  // the native Select Folder dialog, never a text box, because a browser
+  // cannot reveal an absolute path (D-102/D-132). So it asks none of these
+  // questions: the repo-target question ("which file or folder…") in
+  // particular is a text box for the one thing that must be picked, which is
+  // the worst possible ask. The desk shows the folder picker instead.
+  if (wantsOrganize(text)) return [];
   const asked: ClarifyQuestion[] = [];
 
   // A send job asks its two facts first: the outbox contract refuses to

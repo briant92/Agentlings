@@ -15,19 +15,22 @@ import path from 'node:path';
 /** Files the inventory will show before it says "and N more". */
 export const INVENTORY_CAP = 400;
 
-/** The verbs that mean "reorganize a folder", detected like a send (D-079). */
-const ORGANIZE_VERBS =
-  /\b(organi[sz]e|reorgani[sz]e|tidy|declutter|sort\s+out|clean\s+up|clear\s+out)\b/i;
+/** A tidying verb, and a folder reference — both are needed to claim (D-132). */
+const ORGANIZE_VERB = /\b(organi[sz]e|reorgani[sz]e|tidy|declutter|rearrange|sort|clean|clear)\b/i;
+const FOLDER_NOUN =
+  /\b(folders?|sub-?folders?|director(y|ies)|downloads|desktop|documents|photos|pictures|screenshots)\b/i;
 
 /**
- * Whether a sentence wants a folder reorganized. Under-fires like the channel
- * detector: "sort out my downloads" claims, but the folder itself is asked for
- * separately (only the native picker yields an absolute path), so a bare
- * "organize the code into modules" with no folder picked stays an ordinary
- * coding job.
+ * Whether a sentence wants a folder reorganized. Under-fires on purpose: a
+ * tidying verb alone is not enough, because "clean up the whole project" and
+ * "sort out the bug" are code work, not folder work. It claims only when a
+ * folder is actually referenced — "tidy my downloads", "organize this
+ * folder" — and even then the folder itself is picked from the native dialog,
+ * never typed. So "clean up my desktop" claims and "clean up the code" does
+ * not, on the noun, not the verb.
  */
 export function wantsOrganize(prompt: string): boolean {
-  return ORGANIZE_VERBS.test(prompt);
+  return ORGANIZE_VERB.test(prompt) && FOLDER_NOUN.test(prompt);
 }
 
 interface Entry {

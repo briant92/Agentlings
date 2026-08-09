@@ -358,6 +358,14 @@ export function WorkBar({
       setAskingRepo(true);
       return;
     }
+    // An organize job needs its folder, and a folder can only be picked, never
+    // typed (D-132). Pressing Start with none opens the native Select Folder
+    // dialog rather than queuing something with nothing to organize — the
+    // repo ask's twin, one line above.
+    if (plan?.organize && !organizeRoot) {
+      void pickOrganizeFolder();
+      return;
+    }
     // A doomed queue costs one extra press, with the reason on the button —
     // never a modal, and Start stays one press whenever the run can land
     // (D-087, the repo ask's twin).
@@ -621,27 +629,38 @@ export function WorkBar({
       )}
 
       {/* Organizing wants a folder, and only the native picker yields an
-          absolute path (D-132). Until one is picked, Start would have nothing
-          to organize, so the pick is the gate. */}
+          absolute path (D-132) — never a text box for a path nobody can type.
+          Until one is picked, Start has nothing to organize, so the pick is
+          the gate. */}
       {plan?.organize && !askingRepo && (
-        <p className="work-gaps work-organize">
+        <div className="work-organize">
           {organizeRoot ? (
-            <>
-              organizing <span className="work-organize-path">{organizeRoot}</span> · the crew
-              proposes moves, nothing changes until you approve —{' '}
-              <button type="button" className="work-link" onClick={() => void pickOrganizeFolder()}>
-                change folder
+            <div className="work-organize-picked">
+              <button
+                type="button"
+                className="work-folder-btn is-picked"
+                onClick={() => void pickOrganizeFolder()}
+                title="Choose a different folder"
+              >
+                <span className="work-folder-ic" aria-hidden="true">📁</span>
+                <span className="work-organize-path">{organizeRoot}</span>
+                <span className="work-folder-change">change</span>
               </button>
-            </>
+              <span className="work-organize-note">
+                the crew proposes the moves — nothing changes until you approve
+              </span>
+            </div>
           ) : (
-            <>
-              which folder?{' '}
-              <button type="button" className="work-link" onClick={() => void pickOrganizeFolder()}>
-                choose a folder to organize…
-              </button>
-            </>
+            <button
+              type="button"
+              className="work-folder-btn"
+              onClick={() => void pickOrganizeFolder()}
+            >
+              <span className="work-folder-ic" aria-hidden="true">📁</span>
+              Choose the folder to organize…
+            </button>
           )}
-        </p>
+        </div>
       )}
 
       {/* The near-miss (D-093): a channel word with no send verb — asked as

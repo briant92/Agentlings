@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fidelity, glyph, orderFiles, size } from './files';
+import { fidelity, glyph, orderFiles, size, splitMermaid } from './files';
 
 describe('orderFiles', () => {
   it('puts what was asked for above what the crew wrote about it', () => {
@@ -55,5 +55,37 @@ describe('size', () => {
     expect(size(840)).toBe('840 B');
     expect(size(7183)).toBe('7 KB');
     expect(size(2 * 1024 * 1024)).toBe('2.0 MB');
+  });
+});
+
+describe('splitMermaid', () => {
+  it('leaves a file with no fences as one run of text', () => {
+    expect(splitMermaid('# Title\n\nplain words')).toEqual([
+      { kind: 'text', text: '# Title\n\nplain words' },
+    ]);
+  });
+
+  it('cuts a closed fence out as a diagram and keeps the words around it', () => {
+    const md = '# Map\n```mermaid\nflowchart LR\n  a --> b\n```\nafter';
+    expect(splitMermaid(md)).toEqual([
+      { kind: 'text', text: '# Map' },
+      { kind: 'mermaid', code: 'flowchart LR\n  a --> b' },
+      { kind: 'text', text: 'after' },
+    ]);
+  });
+
+  it('keeps an unclosed fence as text — half a diagram is not the file', () => {
+    const md = 'before\n```mermaid\nflowchart LR\n  a --> b';
+    expect(splitMermaid(md)).toEqual([{ kind: 'text', text: md }]);
+  });
+
+  it('draws every fence, not only the first', () => {
+    const md = '```mermaid\na\n```\nmiddle\n```mermaid\nb\n```';
+    expect(splitMermaid(md).filter((s) => s.kind === 'mermaid')).toHaveLength(2);
+  });
+
+  it('does not mistake other fences, or mermaid-prefixed words, for diagrams', () => {
+    const md = '```js\nconst x = 1;\n```\n```mermaidish\nnope\n```';
+    expect(splitMermaid(md)).toEqual([{ kind: 'text', text: md }]);
   });
 });

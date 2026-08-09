@@ -42,9 +42,10 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships six generalist jobs and eight abilities', () => {
+  it('ships seven generalist jobs and nine abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
+      'architect',
       'designer',
       'mason',
       'scout',
@@ -52,6 +53,9 @@ describe('shipped starter set', () => {
       'worker',
     ]);
     expect(skills.map((s) => s.name).sort()).toEqual([
+      // architecture-blueprints is P1 of the expansion plan: C4 views as
+      // mermaid fences whose every box traces to a real file.
+      'architecture-blueprints',
       // authoring-a-level-pack is the first crew-authored skill: written by a
       // training-ground run from the pack sources (job 9524e59b, 2026-08-07),
       // previewed, then installed to the designer role.
@@ -123,6 +127,7 @@ describe('shipped starter set', () => {
       ['someone who can do a bit of anything', 'worker'],
       ['design a world for this level', 'designer'],
       ['make the layout look better', 'designer'],
+      ['draw an architecture blueprint of this system', 'architect'],
     ];
     for (const [text, expected] of reach) {
       const result = suggest(text);

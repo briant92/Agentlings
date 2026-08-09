@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { DeliveryFile, FilePreview } from '@agentlings/shared';
 import { api, lvl } from '../api';
-import { fidelity, fileUrl, glyph, orderFiles, PAPERWORK, size } from './files';
+import { fidelity, fileUrl, glyph, orderFiles, PAPERWORK, size, splitMermaid } from './files';
+import { Mermaid } from './Mermaid';
 
 /**
  * A job's files, one rail and one pane.
@@ -102,9 +103,21 @@ function Pane({ preview, name }: { preview: FilePreview; name: string }) {
         </>
       );
     case 'text':
+      // A markdown file's ```mermaid fences are drawn (blueprints carry
+      // them); everything else stays the bytes themselves.
       return (
         <>
-          <pre className="fv-text">{preview.content}</pre>
+          {name.toLowerCase().endsWith('.md') && preview.content.includes('```mermaid')
+            ? splitMermaid(preview.content).map((seg, i) =>
+                seg.kind === 'mermaid' ? (
+                  <Mermaid key={i} code={seg.code} />
+                ) : (
+                  <pre key={i} className="fv-text">
+                    {seg.text}
+                  </pre>
+                ),
+              )
+            : <pre className="fv-text">{preview.content}</pre>}
           {preview.truncated && <p className="dim fv-note">Cut short — save the file for all of it.</p>}
         </>
       );

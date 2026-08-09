@@ -3146,6 +3146,21 @@ button.danger:hover {
   overflow: auto;
   white-space: pre-wrap;
 }
+.fv-mm-draw {
+  background: #151a24;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  padding: 10px;
+  overflow: auto;
+}
+.fv-mm-draw svg {
+  max-width: 100%;
+}
+.fv-mm-src summary {
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.6;
+}
 /* Rendered by the browser itself — no viewer library, no bundle weight. */
 .fv-pdf {
   width: 100%;

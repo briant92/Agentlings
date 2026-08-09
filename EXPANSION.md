@@ -169,7 +169,7 @@ the outputs panel. Generation only; editing user files stays parked with the
 the panel; the PDF door proves itself by rendering a report the reviewer can
 open inline (the existing PDF preview already does that part).
 
-### P3 — Deep-research pack
+### P3 — Deep-research pack — **built, D-129**
 
 **Unlocks:** multi-source, cited, triangulated briefs as a trade rather than
 a lucky scout run — the Wave 5 briefing shape (verdict first, per-claim

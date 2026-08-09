@@ -332,8 +332,9 @@ sprite to open its profile; assignments persist in
 
 - **Roles** are Claude Code subagent files in `roles/*.md` — frontmatter
   (`name`, `description`, `tools`, `skills`, optional `model`, optional
-  `maxTurns`) plus the system prompt as body. Built-ins: worker, scout,
-  mason, scribe, analyst. The catalog is global; the crews are per level.
+  `maxTurns`, optional `timeoutMinutes` — D-129) plus the system prompt as
+  body. Built-ins: worker, mason, scout, scribe, analyst, designer,
+  architect, researcher. The catalog is global; the crews are per level.
 - **Skills** are `SKILL.md` folders in `skills/` — built-in:
   check-your-work, cite-sources, concise-reports, plain-language,
   small-diffs, tables-and-numbers. Both roles and skills install from
@@ -414,6 +415,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
 - M5.16 the blueprint pack (EXPANSION P1) → D-125
 - M5.17 the studio pack (EXPANSION P2) → D-128
+- M5.18 the researcher trade (EXPANSION P3) → D-129
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

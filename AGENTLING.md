@@ -84,7 +84,8 @@ the SDK session, not advised in a prompt.
 |---|---|---|---|---|---|
 | `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work | default | 10 |
 | `mason` | Builds — implements, refactors, fixes | read, write, edit, bash, grep | small-diffs, check-your-work | default | 15 |
-| `scout` | Research — reads much, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
+| `scout` | Reconnaissance — looks into how existing code and sources work, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
+| `researcher` | Deep research — cited, triangulated briefs from many sources | read, write, grep, web_fetch | deep-research, cite-sources, concise-reports | default | 30 · 25-min wall |
 | `scribe` | Documentation — turns work into words, and into .docx and report PDFs | read, write, grep, bash | concise-reports, plain-language, document-design, pdf-report | default | 10 |
 | `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
 | `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
@@ -105,13 +106,13 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Twelve ship, written against this app's contract — sandbox only,
+session. Thirteen ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
-`cite-sources` · `concise-reports` · `deck-design` · `document-design` ·
-`pdf-report` · `plain-language` · `see-your-work` · `small-diffs` ·
-`tables-and-numbers`
+`cite-sources` · `concise-reports` · `deck-design` · `deep-research` ·
+`document-design` · `pdf-report` · `plain-language` · `see-your-work` ·
+`small-diffs` · `tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was
@@ -1155,11 +1156,15 @@ nothing.
 
 ### Researching, specifically
 
-`scout` on Haiku, twelve turns, read + grep + web_fetch and no write. URLs you
-named are already on disk. `fetch_page` trims each page to 12,000 characters of
-readable text. With the browser switched on it can also open a JavaScript site
-and read what renders — and cannot touch it. `cite-sources` and
-`concise-reports` are mounted, so the report names where every claim came from.
+Two trades since D-129, split by depth. `scout` on Haiku, twelve turns —
+reconnaissance: reads much, writes little, cites paths; the cheap
+errand-reader. `researcher` on the default model, thirty turns and the
+25-minute wall (the first user of the per-role clock): search finds,
+fetch reads, **two independent sources per load-bearing claim**, per-claim
+`[url, fetched date]` citations, and a Gaps section — the Wave 5 briefing
+shape as a standard rather than a lucky run. Either way, URLs you named
+are already on disk, and `fetch_page` trims each page to 12,000 characters
+of readable text.
 
 ### Editing code, specifically
 
@@ -1182,7 +1187,8 @@ untouched until you press Approve.
 | `RECIPE_TURNS` | 5 | `executors/claude.ts` | The leash on a strong recipe match |
 | `COMPILE_TURNS` | 10 | `executors/claude.ts` | A compile gets its own cap, not the role's |
 | `CLOSEOUT_TURNS` | 2 | `executors/claude.ts` | The write-up pass |
-| `SESSION_TIMEOUT_MS` | 10 min | `executors/claude.ts` | Wall clock on one session |
+| `SESSION_TIMEOUT_MS` | 10 min | `executors/claude.ts` | Wall clock on one session — the default; a role raises it with `timeoutMinutes:` frontmatter (D-129) |
+| `TIMEOUT_CEILING_MINUTES` | 30 | `executors/claude.ts` | Clamp on `timeoutMinutes`; a typo cannot uncap the clock |
 
 ### Money
 

@@ -138,6 +138,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role](#d-126--2026-08-08--the-third-death-gets-a-capture-and-an-install-overwrites-a-shipped-role)
 - [D-127 — 2026-08-09 — The bind pinned to loopback: G7 closed the day it opened](#d-127--2026-08-09--the-bind-pinned-to-loopback-g7-closed-the-day-it-opened)
 - [D-128 — 2026-08-09 — The studio pack: a render door that reaches nothing, and scribe grows a shell](#d-128--2026-08-09--the-studio-pack-a-render-door-that-reaches-nothing-and-scribe-grows-a-shell)
+- [D-129 — 2026-08-09 — The researcher trade: a longer clock, and the word "research" changes hands](#d-129--2026-08-09--the-researcher-trade-a-longer-clock-and-the-word-research-changes-hands)
 
 ## By theme
 
@@ -180,7 +181,11 @@ entry updates one file rather than two.
   and D-128, the studio pack — three design skills, scribe gaining bash
   because a role without a shell cannot run the call shapes the brief hands
   it, and the render door whose offline rule is proved against a live
-  listener rather than described
+  listener rather than described; and D-129, where adding a researcher
+  fired the D-112 canary twice and both fixes were a vocabulary handover —
+  scout keeps "looks into", the concept map's 'research' stops bridging to
+  scout's words — and the per-role `timeoutMinutes` wall arrived in
+  maxTurns's exact idiom
 - **The dev server's own deaths** — D-118 (two, unobserved, the Adobe-node
   red herring) and D-126: the third death, diagnosed from outside by the
   port split (:4600 refused under a living :5173), and the capture D-118
@@ -7690,6 +7695,59 @@ versus the render-door path is a real fork (editable artifact vs
 presentable one) the skill should name instead of silently losing;
 and **mutool's presence means deck visual QA is possible today** — the
 render_office row's premise has an alternative on this machine.
+
+## D-129 — 2026-08-09 — The researcher trade: a longer clock, and the word "research" changes hands
+
+EXPANSION P3. The build is small — a role, a skill, one engine seam — and
+the seam had just earned its evidence: the deck run (D-128's amendment)
+was cut by the 10-minute wall with turns to spare, exactly the bind the
+plan predicted research would hit first.
+
+What shipped (`39211ff`):
+
+- **`timeoutMinutes`** on `RoleInfo`, parsed in `maxTurns`'s exact
+  frontmatter idiom, applied by `timeoutMsFor` — default 10, clamped at
+  30 so a typo cannot uncap the clock — and passed per call into
+  `runSession`; the close-out keeps the 10-minute default. The turn cap's
+  whole shape, deliberately: same parse, same clamp-don't-trust, same
+  tests.
+- **`researcher`**, the eighth trade: default model (scout stays the cheap
+  Haiku errand-reader), 30 turns, the first `timeoutMinutes: 25`;
+  verdict-first briefs, two independent sources per load-bearing claim,
+  RESULT.md kept current so a cut run has still delivered.
+- **`deep-research`**, the thirteenth ability: decompose before fetching;
+  search finds, fetch reads; independent means separately produced;
+  per-claim `[url, fetched YYYY-MM-DD]` citations (the store's provenance
+  shape extended to the web); disagreement reported, never averaged; a
+  Gaps section; never pad.
+
+**The D-112 canary fired twice, and both fixes were a vocabulary
+handover.** First 'look into how the payment code works' tipped scout →
+mason the moment the corpus grew — fixed by scout's own words (its
+description trades the word "Research" for the literal "looks into").
+Then the new reach row landed on scout anyway, through the **concept
+map**: `research:` had bridged to `reconnaissance`/`survey` since the
+days scout *was* the research role. The map entry now reads
+`['research', 'sources', 'brief', 'findings']` — the researcher owns the
+word — while look/explore/survey/investigate keep carrying scout's
+phrasings. match.test's echoed-term probe moved to 'investigate', a
+bridge that still exists, keeping its point (the user's word is credited,
+not the catalog's).
+
+Mutation evidence, including one that taught about the instrument:
+clamp-removed killed exactly its test; the map handover reverted killed
+exactly the reach row. The researcher-gutted mutant **survived on the
+first attempt — because the mutant was broken, not the test**: the
+node-script surgery left the role's body intact, and the stemmer has no
+`-er` rule so the name alone (`researcher` ≠ `research`) could not have
+carried the routing. Redone with a real gutting, the reach row killed it
+exactly. A surviving mutant is a claim about the mutant first — the
+measure-before-tuning rule in mutation form.
+
+Not yet run live: the trade's evidence gate is three real questions Brian
+actually wants answered, spot-checked against their citations (the D-118
+verify-the-crew's-claims pattern). The class pays G5's tax knowingly; the
+$2 ceiling stays deliberately unraised until a real run argues otherwise.
 
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 

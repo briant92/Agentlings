@@ -134,6 +134,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole](#d-122--2026-08-08--gmails-roster-reads-the-contact-book-the-legend-stops-riding-whole)
 - [D-123 — 2026-08-08 — The picker learns what Gmail's compose field knows](#d-123--2026-08-08--the-picker-learns-what-gmails-compose-field-knows)
 - [D-124 — 2026-08-08 — Calendar asks its own two facts, and reads the gmail book](#d-124--2026-08-08--calendar-asks-its-own-two-facts-and-reads-the-gmail-book)
+- [D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams](#d-125--2026-08-08--the-architect-trade-and-a-review-that-draws-its-diagrams)
 
 ## By theme
 
@@ -166,7 +167,11 @@ entry updates one file rather than two.
   means it does nothing, adding one moves the matcher underneath the roles
   already there, and a class with no rate falls back to a standing cap; and
   D-117, that drift measured on every real prompt — ~5%, carried by generic
-  body words — with both cheap fixes measured out and the index left alone
+  body words — with both cheap fixes measured out and the index left alone;
+  and D-125, the architect trade (EXPANSION P1) — where a survived mutation
+  proved the routing surface is the whole role file, name ×3 description ×2
+  body ×1, so D-112's reword-to-fix-tipping advice applies to bodies too,
+  and the review panel learned to draw a markdown file's mermaid fences
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
@@ -7449,3 +7454,60 @@ now uses exactly that shape, with a telegram twin on the same sentence
 proving it composes there — so the calendar null is the guard refusing,
 not the sentence never qualifying — and the mutation now kills exactly
 one test. Three exact kills total across the change.
+
+## D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams
+
+Brian picked P1 off `EXPANSION.md` (the broaden-the-spectrum proposal,
+`cfbf654`; the research that shaped it is cited there). The decisive local
+fact: the review panel could not show a diagram at all — no mermaid
+anywhere in `web/src` — so a blueprint would have arrived as fence source
+in a `<pre>`, and the pack's whole point is a drawing someone can read.
+
+What shipped (`c5995e3`):
+
+- **`architect`**, the seventh trade — read, grep, bash, write; 15 turns;
+  evidence-first prompt: enumerate before describing (the T8·1 lesson as a
+  standing instruction — memory invents files, a listing cannot), views
+  rather than one mural, ADRs when the job is a decision, and every
+  blueprint closes by naming what it did not read.
+- **`architecture-blueprints`**, the ninth ability — C4 discipline top
+  down, one diagram per level; mermaid mechanics (`flowchart` /
+  `architecture-beta`, never the still-experimental C4 syntax; a view
+  splits past ~15 nodes); boxes carry their real paths; arrows say what
+  actually flows.
+- **The review draws fences.** `splitMermaid` cuts a markdown preview into
+  text and *closed* ```mermaid fences; a `Mermaid` component lazy-loads
+  the library (heavy, and most files carry no diagram), renders under
+  `securityLevel: 'strict'` so a label is text and a crew-written file
+  cannot script the panel, and keeps the fence's own source one click
+  below the drawing — D-030's rule that a conversion must never read as
+  the file, applied to diagrams. An **unclosed fence stays text**,
+  deliberately: the preview's own truncation can cut a fence mid-diagram,
+  and half a diagram is something the file does not say.
+
+Evidence: 1,371 + 139 green (five splitter tests; the starter pins move to
+seven jobs / nine abilities; a reach sentence — "draw an architecture
+blueprint of this system" — routes to architect), typecheck clean, and the
+D-112 canary held on first run: no earlier reach sentence tipped when the
+corpus grew.
+
+**Mutation evidence, and the one that survived.** Unclosed-fences-render
+killed exactly its test; opener-loosened-to-a-prefix (```mermaidish reads
+as a fence) killed exactly its test. Then the architect's *description*
+gutted to "A helpful generalist" **survived** — the reach still routed to
+architect. Not a hole in the reach test: `toDoc` weights name ×3,
+description ×2, body ×1, and the role's body is dense with its own
+vocabulary, so the route was riding the whole document. Description and
+body gutted together killed exactly the reach test. Worth keeping: **the
+matcher's routing surface is the whole role file**, so D-112's advice —
+fix a tipped sentence by rewording the role that should own it — applies
+to bodies as much as descriptions.
+
+Not proved yet, said plainly: no browser has drawn one of these diagrams
+(jsdom cannot render mermaid, so the tests pin the splitter and the
+fallback, never the pixels — the first F5 on Brian's own server is that
+check); the first real blueprint job has not run; and the new class pays
+G5's tax knowingly — with no rate, architect's standing 15-turn cap is its
+whole budget until rows exist. The natural first errand: hire an architect
+into hq and queue the reach sentence itself — hq is the level whose
+blueprint can be checked against SPEC's own architecture section.

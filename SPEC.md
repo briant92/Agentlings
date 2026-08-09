@@ -408,6 +408,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.13 the acting surface finished → D-104
 - M5.14 composite work → D-105
 - M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
+- M5.16 the blueprint pack (EXPANSION P1) → D-125
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

@@ -87,6 +87,8 @@ the SDK session, not advised in a prompt.
 | `scout` | Research — reads much, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
 | `scribe` | Documentation — turns work into words | read, write, grep | concise-reports, plain-language | default | 10 |
 | `analyst` | Numbers — reads records, reports what they say | read, grep, bash | concise-reports, tables-and-numbers, cite-sources | Haiku 4.5 | 6 |
+| `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack | default | 20 |
+| `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
 
 Role tool names map onto SDK tools (`grep` → `Grep` + `Glob`, `web_fetch` →
 `WebFetch`). A role naming no tools gets the default set: Read, Write, Edit,
@@ -103,14 +105,14 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Eight ship, written against this app's contract — sandbox only,
+session. Nine ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
-`authoring-a-level-pack` · `check-your-work` · `cite-sources` ·
-`concise-reports` · `plain-language` · `see-your-work` · `small-diffs` ·
-`tables-and-numbers`
+`architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
+`cite-sources` · `concise-reports` · `plain-language` · `see-your-work` ·
+`small-diffs` · `tables-and-numbers`
 
-The two newest mark a line the others do not cross: `see-your-work` was
+Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was
 **written by a run** — a training-ground session distilled it from the pack
 sources as attachments (job `9524e59b`), it was previewed and spot-verified

@@ -99,7 +99,7 @@ Each names what it unlocks, the build shape (role + skills + engine seams),
 the decisions it waits on, and the evidence that would prove it landed —
 because the definition of done here is showing the evidence, not asserting.
 
-### P1 — Blueprint pack *(smallest; no decisions; recommended first)*
+### P1 — Blueprint pack *(smallest; no decisions; recommended first)* — **built, D-125**
 
 **Unlocks:** "draw me the architecture of this repo" as a reviewable
 deliverable: a C4-shaped document — context → containers → components — where

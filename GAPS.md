@@ -85,13 +85,14 @@ capability roadmap; this is the short list of what matters most, in order.
       shipped file** (D-126 — wshobson's architect landed on P1's; D-111 was
       this shape for packs and refused the arrival, roles took the other
       branch). Refuse-or-rename at the collision is the candidate fix.
-- [ ] **G7 — The server listens on every interface.** Found by the first
+- [x] **G7 — The server listens on every interface.** Found by the first
       architect run (D-125's amendment) and confirmed by netstat 2026-08-09:
       `serve({fetch, port})` at `index.ts:2881` passes no hostname, so
-      `0.0.0.0:4600` and `[::]:4600` are LISTENING — all ~73 routes
-      (resolve/Approve and Settings included) plus the three unauthenticated
-      `/internal/*` doors are reachable from any device on any network this
-      machine joins. §11's "localhost only" was an assumption, not a bind.
-      *Blocked on: one decision — pin `hostname: '127.0.0.1'` (one line,
-      restarts the dev server) unless LAN access from other devices is a
-      workflow worth keeping; if it is, the doors need auth instead.*
+      `0.0.0.0:4600` and `[::]:4600` were LISTENING — every route plus the
+      three unauthenticated `/internal/*` doors reachable from any device on
+      any network this machine joins. §11's "localhost only" was an
+      assumption, not a bind.
+      **Done 2026-08-09 — D-127.** Brian chose pin over auth (no cross-device
+      workflow exists): `hostname: '127.0.0.1'` on serve, vite's proxy dialing
+      the address so ::1 resolution cannot miss it. Verified live: netstat
+      shows loopback only, direct API and the proxied browser chain both 200.

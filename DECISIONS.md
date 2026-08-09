@@ -136,6 +136,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-124 — 2026-08-08 — Calendar asks its own two facts, and reads the gmail book](#d-124--2026-08-08--calendar-asks-its-own-two-facts-and-reads-the-gmail-book)
 - [D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams](#d-125--2026-08-08--the-architect-trade-and-a-review-that-draws-its-diagrams)
 - [D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role](#d-126--2026-08-08--the-third-death-gets-a-capture-and-an-install-overwrites-a-shipped-role)
+- [D-127 — 2026-08-09 — The bind pinned to loopback: G7 closed the day it opened](#d-127--2026-08-09--the-bind-pinned-to-loopback-g7-closed-the-day-it-opened)
 
 ## By theme
 
@@ -180,6 +181,10 @@ entry updates one file rather than two.
   port split (:4600 refused under a living :5173), and the capture D-118
   named — `npm run dev` tees the server's stdout/stderr into
   `.agentlings/server.log` with stamped exits, proved by a spawn test
+- **The listening surface** — D-127: the first architect run found `serve()`
+  passed no hostname (0.0.0.0, netstat-confirmed, G7), and Brian's decision
+  pinned it to 127.0.0.1 with vite's proxy dialing the address so a ::1
+  resolution cannot miss it — the pin verified live the same hour
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
@@ -7551,6 +7556,38 @@ What the first blueprint found, verified where checkable the same hour:
 
 A $1.66 run produced one confirmed security finding, one sibling-seam
 gap and two coupling facts. The pack's evidence gate is closed.
+
+## D-127 — 2026-08-09 — The bind pinned to loopback: G7 closed the day it opened
+
+Brian's decision on G7, taken the morning the first architect run opened
+it: **pin, don't authenticate** — no workflow reaches the app from another
+device, so the LAN reach was all exposure and no use.
+
+What changed (`05864c7`), both ends of the dial:
+
+- `serve({ fetch, port })` at the foot of `index.ts` gains
+  `hostname: '127.0.0.1'`, with the constraint stated where the code is:
+  the `/internal/*` doors carry no auth, so **the bind is the whole
+  boundary**. The WebSocket upgrades ride the same server and inherit it.
+- `web/vite.config.ts` dials `127.0.0.1` **by address** for `/api` and
+  `/ws`: Node may resolve `localhost` to `::1` first, and a proxy dialing
+  IPv6 at an IPv4-only bind would have turned the pin into an outage. The
+  executor's door endpoints and the OAuth redirect already used the
+  address (`claude.ts:882-904`, `GOOGLE_REDIRECT`) — untouched.
+
+Verified against the live server, not asserted: tsx watch restarted on the
+edit (the D-126 capture logged the restart — its first config-triggered
+serving); netstat moved from `0.0.0.0:4600` + `[::]:4600` to
+**`127.0.0.1:4600` alone**; the direct API answered 200; and the browser's
+whole chain through vite's proxy answered 200. 1,372 + 139 green,
+typecheck clean. `AGENTLING.md` §11's line re-corrected to the new
+measured truth, per its code-wins rule — the same line that had claimed
+"localhost only" while the bind said otherwise.
+
+Left alone on purpose: the boot log still prints `http://localhost:4600`
+(a browser resolves it fine either family), and the doors still carry no
+auth — the bind is again the boundary, but now it is a *chosen* one,
+measured, rather than a default nobody had read.
 
 ## D-126 — 2026-08-08 — The third death gets a capture, and an install overwrites a shipped role
 

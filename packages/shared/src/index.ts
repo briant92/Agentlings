@@ -446,6 +446,40 @@ export interface OutboxEvent {
 }
 
 /**
+ * A reorganization a run proposes for a real folder (D-132, EXPANSION P5),
+ * written as MOVES.json at the sandbox root — one manifest, up to MAX_MOVES
+ * ops, never executed by the session. Review shows the moves and Approve
+ * replays them, exactly as a reviewed patch is replayed by `git apply`.
+ *
+ * Ops are `mkdir` and `move` only — **no delete, no copy** (D-121's grammar on
+ * files). Every path is relative to the picked root and must stay under it:
+ * the model proposes, the server moves, and the server is the only thing that
+ * touches the real folder.
+ */
+export type MoveOp =
+  | { op: 'mkdir'; path: string }
+  | { op: 'move'; from: string; to: string };
+
+export interface MovesManifest {
+  moves: MoveOp[];
+}
+
+/**
+ * What approval actually moved, stamped per op so a retry can never move
+ * anything twice: `done` accumulates across Approves, `failed` is the last
+ * attempt's remainder with the reason per op. The journal `moves.jsonl` is
+ * `done` written out, and reversing it is the undo.
+ */
+export interface MovesRun {
+  at: number;
+  done: MoveOp[];
+  failed: { op: MoveOp; reason: string }[];
+}
+
+export const MAX_MOVES = 200;
+export const MAX_MOVE_PATH_CHARS = 400;
+
+/**
  * When a schedule fires: a calendar cadence in the machine's own local time
  * (D-103). Not cron syntax — the person this app is for says "every
  * Thursday at 9", not "0 9 * * 4".
@@ -635,6 +669,20 @@ export interface Job {
   outboxError?: string;
   /** Send results so far, merged across retries. */
   outboxSent?: OutboxSent;
+  /**
+   * A folder reorganization this run proposed, offered for review (D-132).
+   * The same promise as `outbox` and `packDraft`: written by the session,
+   * performed by the server at Approve, never the other way round. `moves`
+   * is the manifest; `organizeRoot` is the folder it applies to, set from
+   * the picker at queue time and never from the model's file.
+   */
+  moves?: MovesManifest;
+  /** The real folder the moves apply to; the model never sees or sets it. */
+  organizeRoot?: string;
+  /** MOVES.json existed and was not a valid manifest — the reason, never a silent drop. */
+  movesError?: string;
+  /** Move results so far, merged across retries — the accumulator behind the journal. */
+  movesRun?: MovesRun;
   /**
    * Where the run got to and what it did not get to (D-114).
    *

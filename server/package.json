@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-logged.mjs",
+    "serve": "node scripts/dev-logged.mjs --no-watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

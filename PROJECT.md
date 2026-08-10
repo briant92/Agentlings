@@ -31,6 +31,9 @@ behavioral base lives there alone; this is the project half, split out on
 - Setup: `npm install`; for the real executor copy `.env.example` → `.env`
   and set one auth option (see SPEC.md M1)
 - Run dev: `npm run dev` (web on http://localhost:5173, API/WS on :4600)
+- Run stable: `npm run serve` — same server and log, **no file watching**, so
+  a source edit or a OneDrive echo cannot restart it mid-session (D-140).
+  Drive the app with this; use `dev` only while changing server code.
 - Test: `npm test`
 - Lint / typecheck: `npm run typecheck`
 

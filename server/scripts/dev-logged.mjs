@@ -15,9 +15,16 @@ import { spawn } from 'node:child_process';
  * `.agentlings/server.log` and stamps starts and exits, so the next death
  * leaves a body to examine.
  *
- * Test seam: AGENTLINGS_DEV_ENTRY replaces `watch src/index.ts` with a
- * plain entry (no watch, so exits propagate), and AGENTLINGS_LOG_DIR moves
- * the log out of the real store. Neither is set in ordinary use.
+ * The log's first catch closed the case (D-140): the "deaths" were tsx
+ * watch RESTARTS on source-file events — live edits, and OneDrive echoing
+ * an edit minutes later — each one killing whatever paid session was
+ * running. `--no-watch` is the answer for driving the app rather than
+ * developing it: same server, same log, no file watching, so a session
+ * outlives everything except Ctrl+C. `npm run serve` uses it.
+ *
+ * Test seam: AGENTLINGS_DEV_ENTRY replaces the entry with a plain script
+ * (no watch, so exits propagate), and AGENTLINGS_LOG_DIR moves the log out
+ * of the real store. Neither is set in ordinary use.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const serverDir = path.resolve(here, '..');
@@ -45,7 +52,9 @@ const require = createRequire(import.meta.url);
 const tsx = require.resolve('tsx/cli');
 const entry = process.env.AGENTLINGS_DEV_ENTRY
   ? [process.env.AGENTLINGS_DEV_ENTRY]
-  : ['watch', 'src/index.ts'];
+  : process.argv.includes('--no-watch')
+    ? ['src/index.ts']
+    : ['watch', 'src/index.ts'];
 
 log(`\n[dev-logged] start ${new Date().toISOString()} entry=${entry.join(' ')}\n`);
 const child = spawn(process.execPath, [tsx, ...entry], {

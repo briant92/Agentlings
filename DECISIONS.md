@@ -149,6 +149,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-137 — 2026-08-10 — The select screen wears switch-palace blocks](#d-137--2026-08-10--the-select-screen-wears-switch-palace-blocks)
 - [D-138 — 2026-08-10 — A cut is a boundary, not an annulment: More time, the clock said out loud, and walls that can learn](#d-138--2026-08-10--a-cut-is-a-boundary-not-an-annulment-more-time-the-clock-said-out-loud-and-walls-that-can-learn)
 - [D-139 — 2026-08-10 — An answered run stops asking: continuations stamp their parent](#d-139--2026-08-10--an-answered-run-stops-asking-continuations-stamp-their-parent)
+- [D-140 — 2026-08-10 — The capture's first catch: the "unexplained deaths" were the watcher, and serving stops watching](#d-140--2026-08-10--the-captures-first-catch-the-unexplained-deaths-were-the-watcher-and-serving-stops-watching)
 
 ## By theme
 
@@ -200,7 +201,11 @@ entry updates one file rather than two.
   red herring) and D-126: the third death, diagnosed from outside by the
   port split (:4600 refused under a living :5173), and the capture D-118
   named — `npm run dev` tees the server's stdout/stderr into
-  `.agentlings/server.log` with stamped exits, proved by a spawn test
+  `.agentlings/server.log` with stamped exits, proved by a spawn test; and
+  D-140, the capture's first catch closing the case — the deaths were tsx
+  watch restarts on source events (live edits, OneDrive echoes minutes
+  late) killing whatever session was running, answered by `npm run serve`:
+  same server and log, no watching
 - **The listening surface** — D-127: the first architect run found `serve()`
   passed no hostname (0.0.0.0, netstat-confirmed, G7), and Brian's decision
   pinned it to 127.0.0.1 with vite's proxy dialing the address so a ::1
@@ -8472,3 +8477,39 @@ removed the backfill loop and killed exactly the backfill test. The
 browser pane refused to boot past the title for the pixels check (the
 recorded flake) — the answered-modal wording rides the proven field and
 Brian's next open of an answered failure is its ten-second look.
+
+## D-140 — 2026-08-10 — The capture's first catch: the "unexplained deaths" were the watcher, and serving stops watching
+
+The authoring re-run (`97a25071`, the Iliad pack) died 190 seconds in as
+"interrupted — the app restarted while this was running", and the capture
+D-126 built finally had a body to examine. Its last line names the killer
+to the millisecond: `9:12:26 [tsx] change in ./src/queue.ts —
+Restarting...` — exactly the job's `finishedAt`. Nobody edited queue.ts
+at 09:12; its last touch was a git checkout at 09:05:42. The repo lives
+inside OneDrive, which echoes file operations minutes after the fact;
+tsx watch heard the echo, restarted the server, and the restart killed
+the paid session.
+
+The same log laid the whole morning out: a dozen restarts between 08:50
+and 09:05, one per source edit of this session's builds — any run live
+during any of them would have died identically. D-118's two
+deaths-with-sessions-live and D-126's third now have a shape that fits
+every fact: not crashes at all, but **watch-mode doing its job at the
+worst moment**, with OneDrive adding delayed echoes that strike even
+when nobody is editing. Stated as shape, not proof, for the old deaths —
+no log existed then; the 09:12 catch is proven.
+
+The fix separates two modes that had been living in one command:
+`dev-logged.mjs` takes `--no-watch` (same logger, same server, plain tsx
+entry), `npm run serve` exists at both roots, and PROJECT.md's commands
+now say it plainly — **drive the app with `serve`, develop with `dev`**.
+Under serve, a session outlives everything except Ctrl+C. The capture
+stays armed in both modes; the spawn test still guards the logging, and
+the log's own `entry=` start stamp shows which mode is running.
+
+Also settled by the dead run on its way down: D-138's brief was verified
+live mid-flight — "You have 23 turns and about 25 minutes of clock",
+23 funded turns over the role's standing 20 (the soft cap again), and
+the write-as-you-go section riding the prompt. The wall was not the
+killer and staged writes never got their test; the third attempt, under
+`serve`, is the gate for both.

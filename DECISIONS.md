@@ -151,6 +151,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-139 — 2026-08-10 — An answered run stops asking: continuations stamp their parent](#d-139--2026-08-10--an-answered-run-stops-asking-continuations-stamp-their-parent)
 - [D-140 — 2026-08-10 — The capture's first catch: the "unexplained deaths" were the watcher, and serving stops watching](#d-140--2026-08-10--the-captures-first-catch-the-unexplained-deaths-were-the-watcher-and-serving-stops-watching)
 - [D-141 — 2026-08-10 — One Approve, one door: the install that refused itself](#d-141--2026-08-10--one-approve-one-door-the-install-that-refused-itself)
+- [D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it](#d-142--2026-08-10--the-plate-lands-a-raster-behind-the-world-and-the-basin-that-proved-it)
 
 ## By theme
 
@@ -177,7 +178,11 @@ entry updates one file rather than two.
   quote while starving the turn budget; D-113 — the DKC look measured at last
   (128 holds, 32 destroys, flat sprites on it really do read as pasted on),
   and the reference path taken over the raster one because a session can
-  genuinely see a picture
+  genuinely see a picture; and D-142 — the plate landing at last:
+  `backdrop.plates` as a checked raster beneath everything, one per pack
+  because the tooling is opaque RGB, rim made a checked requirement, drafts
+  refusing plates with the same message on both sides, and The Amber Basin
+  proving format, checker, renderer, cards and CLI live in one evening
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -8596,3 +8601,72 @@ D-141 server reload before a pixel check was possible — the conditional
 is its own proof, and the next resolved failure is its live gate. The
 rule, complete at last: **a card solicits while a decision is open, and
 not one moment after — whatever door closed it.**
+
+## D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it
+
+Brian read `PRERENDER.md`'s deep dive — D-108's deferred raster seam mapped
+against what DKC, the fixed-camera games and HD-2D actually did — and
+greenlit v1 as recommended: one raster plate per pack, in-Pixi, on D-108's
+quantized-128 finish, production Route 0 first (any provenance-recorded
+image through `pack:quantize`), the render door's screenshot mode next.
+Built the same session.
+
+**The format grew one field and the interpreter grew none.**
+`backdrop.plates` names files beside `pack.json`, drawn beneath everything —
+plate, then backdrop ops, then scrim, then foreground. Not an op,
+deliberately: `Surface` has three primitives, and D-109's gradient argument
+applies to a raster twice over — every implementation would have to grow an
+image method. Instead each consumer composites the plate *before* walking
+`drawScene`: the world as a linear-sampled sprite under the scenery, the
+level card via `drawImage`, the CLI renderer via a pixel blit whose 2×
+branch averages each 2×2 block — the downsample D-108 blessed — with a test
+whose 0/100/100/200 block would catch a decimation pretending.
+
+**One plate, and why the field is still an array.** Depth-layered plates
+need no migration later, but v1 refuses more than one: `decodePng`
+composites alpha onto a background because `Raster` is opaque RGB, so a
+stacked translucent plate cannot even be validated honestly, let alone
+blitted. Stacking waits for tooling that keeps alpha, and the refusal says
+so.
+
+**The checker splits along what each half can see.** Shape rules in
+`validateLevelPack`, because a draft can be judged by them: a plain `.png`
+name — joined to the pack folder, so a path boundary exactly like the slug —
+one plate, and `rim` required the moment plates appear, D-108's "mandatory"
+finally a checked fact. Raster rules in `server/plates`, run by `scanPacks`
+and `pack:check`, because they need the folder: file present, decodes,
+sized to the pack's *own* geometry (1000×viewH or 2000×2·viewH — D-108's
+450 generalised, since a stretched plate moves the ground line out from
+under the crew), at most 128 colours, and separation measured at the seven
+standing places on the plate itself — warnings, not errors, because they
+describe the floor the rim starts from, not the finished picture. And
+drafts refuse plates with one message on both sides, contract and CLI: a
+`PACK.json` is one JSON file, a plate is an image beside it, and an Approve
+that copies only the JSON would install a pack the loader then rejects —
+after the money was spent. D-110's no-invisible-walls rule, applied before
+this wall existed.
+
+**The Amber Basin proved the path end to end.** A dusk-basin plate painted
+in canvas 2D and rendered by the same headless Edge the render door drives —
+with one lesson worth keeping: *paint arch openings, never punch them*;
+`destination-out` on a single canvas reaches the page, which the first
+render showed as white blobs and a 14.7 separation at x 80 that the repaint
+lifted to 20.2. 45,696 colours quantized to 128 at mean error 2.78/255;
+`pack:check` clean; `pack:render` composited plate under scrim under ops
+with worst separation 20.8, every gown reading. Live, against the running
+dev server: the pack installed by folder drop, `POST /api/levels` accepted
+`amber-basin` through `themeExists` walking the new checks, the select
+screen drew Basin Proof's card with the plate composited into the
+thumbnail, and the level opened with Pip and Dot patrolling crisp in front
+of the picture — the D-108 split visible on screen, DB32 crew over a
+128-colour render. 1437 + 147 green, typecheck clean. Three mutations,
+post-commit, each killed by exactly its test: the colour budget disabled
+(the budget test), `scanPacks` skipping `checkPlates` (the missing-plate
+rejection), the rim requirement dropped (the rim test).
+
+**Deliberately not built**, with `PRERENDER.md` §5 as the record: the
+smooth finish (would amend D-108), parallax and the occlusion strip (v2 —
+the array field means neither needs a migration), and the render door's
+screenshot mode — the next step, and the one that turns plate authoring
+into a designer job inside the existing PACK.json → review → Approve
+contract.

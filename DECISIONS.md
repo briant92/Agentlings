@@ -145,6 +145,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface](#d-133--2026-08-09--the-web-operator-pack-stays-refused-no-errand-no-acting-surface)
 - [D-134 — 2026-08-09 — Start arrests a sentence leaning on an attachment nothing carries](#d-134--2026-08-09--start-arrests-a-sentence-leaning-on-an-attachment-nothing-carries)
 - [D-135 — 2026-08-09 — The failed modal's reply reads as the action it is](#d-135--2026-08-09--the-failed-modals-reply-reads-as-the-action-it-is)
+- [D-136 — 2026-08-10 — The failed card says what its door opens on, and every review carries its ask](#d-136--2026-08-10--the-failed-card-says-what-its-door-opens-on-and-every-review-carries-its-ask)
 
 ## By theme
 
@@ -421,7 +422,10 @@ entry updates one file rather than two.
   non-send sentence — "the attached X" with nothing attached, built the
   evening its 5.3c evidence arrived; and D-135, the failed modal's reply
   given standalone wording and btn-more's amber, because "Or …" trailing
-  buttons a failure never renders read as close-only
+  buttons a failure never renders read as close-only; and D-136, the
+  failed card's button saying SEE WHAT HAPPENED instead of promising a
+  verdict, and every review opening with `the ask` — the verbatim prompt
+  and its desk clarifications, the trace from result back to question
 - **Recurrence** — the timer that queues a sentence again on its own cadence,
   fired by a server sweep through the same glue `/work` uses so the new way
   in is quoted like every other, with downtime collapsing to a single
@@ -8293,3 +8297,34 @@ modal read back badge `failed`, class `rv-clarify answer`, placeholder
 `f3124c4f`'s modal kept `rv-clarify`, the "Or …" wording and the grey
 placeholder. 147 web tests green (none cover this panel — the live
 read-back is the proof, D-134's precedent), typecheck clean.
+
+## D-136 — 2026-08-10 — The failed card says what its door opens on, and every review carries its ask
+
+Two review-surface honesty fixes, ordered together just past midnight —
+the last crumb of the failed-modal diagnosis plus a traceability ask of
+Brian's own.
+
+**The button stops overselling.** The terminal card's one control read
+`REVIEW` for every finished status, and a failed job's door opens on an
+error and an answer box — no verdict to give (D-135's ground). The label
+is now status-aware: `failed` → **SEE WHAT HAPPENED**; done and partial
+keep REVIEW, their branch the old literal unchanged.
+
+**Every review opens with `the ask`.** A collapsed `<details>` at the
+body's top holds the job's prompt **verbatim**, plus the desk
+clarifications that rode the queue when there are any (the calendar
+shape: "Who's invited? …", "What's the event called? …") — the trace
+from result back to what was actually asked. Continuation prompts arrive
+stitched ("You said… The user replied…") and display whole with their
+line breaks (`pre-wrap`), which is the point, and why it collapses: the
+`<details>` idiom is D-125's, from the mermaid drawings. Deliberately
+verbatim and unabridged — an ask paraphrased is D-027's shortcut grown
+back at the display layer.
+
+Verified live on both shapes, read back off the DOM: the failed
+`a9d504f1`'s modal (badge failed, summary "the ask", the full sentence,
+empty clarifications, its terminal card reading SEE WHAT HAPPENED) and
+the promoted `f3124c4f`'s (the invite sentence plus both clarification
+rows exactly as the desk collected them). 147 web tests green, typecheck
+clean; neither panel has component tests, so the DOM read-back is the
+proof — D-134/D-135's precedent, third use.

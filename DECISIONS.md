@@ -143,6 +143,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-131 — 2026-08-09 — The analyst upgrade: a kept script, an SVG chart, and an inert display already built](#d-131--2026-08-09--the-analyst-upgrade-a-kept-script-an-svg-chart-and-an-inert-display-already-built)
 - [D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest](#d-132--2026-08-09--the-organizer-pack-the-sandbox-boundary-crossed-by-a-reviewed-reversible-manifest)
 - [D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface](#d-133--2026-08-09--the-web-operator-pack-stays-refused-no-errand-no-acting-surface)
+- [D-134 — 2026-08-09 — Start arrests a sentence leaning on an attachment nothing carries](#d-134--2026-08-09--start-arrests-a-sentence-leaning-on-an-attachment-nothing-carries)
 
 ## By theme
 
@@ -415,7 +416,9 @@ entry updates one file rather than two.
   the body), calendar events on D-080's already-given consent through the
   contract's one event block, GitHub comments as the first write on the
   reading connection, and scoped claim verbs that widen detection without
-  loosening it
+  loosening it; and D-134, the fourth arrest and the first that guards a
+  non-send sentence — "the attached X" with nothing attached, built the
+  evening its 5.3c evidence arrived
 - **Recurrence** — the timer that queues a sentence again on its own cadence,
   fired by a server sweep through the same glue `/work` uses so the new way
   in is quoted like every other, with downtime collapsing to a single
@@ -8219,3 +8222,40 @@ proven live; P6 is decided-not-built. The file's remaining rows are the two
 content-toggle follow-ups (a bounded content peek for the organizer, an
 outbox attachment field) and the live evidence gates that wait on Brian's own
 runs — none of them a new pack.
+
+## D-134 — 2026-08-09 — Start arrests a sentence leaning on an attachment nothing carries
+
+The fourth arrest, built the evening its evidence arrived. The analyst
+gate's first attempt (D-131's amendment) queued "Total the attached
+expenses…" with nothing attached — Brian pasted the sentence and pressed
+Start, nothing else — and the run's only possible delivery was the
+question back: 4 turns, 5.3c, absorbed. The desk had held every fact the
+refusal needed the whole time: the sentence claims an attachment, the
+queue carries none, and a run has no other way to receive a file. Brian
+ordered the arrest built after seeing the failed job's review offered
+nothing to act on (that review-side texture stays recorded in D-131's
+amendment, deliberately unbuilt).
+
+`missingAttachment(text, attachedCount)` joins `askFacts.ts` beside the
+D-087/D-091/D-101/D-124 walls: a word-boundary match on the **claiming
+forms only** — "attached", "attachment(s)" — never the bare verb, because
+"attach a summary to it" instructs the run about its own output rather
+than claiming a file rides along ("detached"/"unattached" cannot reach
+the `\b` either). The arrest seam itself widened one notch: it used to
+exist only for send-shaped plans (a channelAsk or a confirmed mention);
+the attachment reason now computes for **any** sentence, with the
+send-only walls still gated exactly as before. The two-press contract is
+unchanged — first press relabels the button "Queue anyway — nothing
+attached", the second queues regardless, because the sentence itself may
+carry the content ("summarise the attached: <pasted text>").
+
+Evidence: five new unit tests, suites green (server 1,410 + web 147),
+typecheck clean. **The call site was proven live** rather than by a
+component test (WorkBar has no test file — the wiring's only automated
+gap, stated): the exact doomed sentence typed into the running app, one
+Start press, and the armed label read back off the DOM — "Queue anyway —
+nothing attached", nothing queued, and the armed state retired by the
+next keystroke's re-plan as D-087 built it. Post-commit mutations, two
+for two: the detector gutted (return false) killed exactly the 5.3c-wall
+test; the regex loosened to admit the bare verb killed exactly the
+never-claims test.

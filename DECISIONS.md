@@ -144,6 +144,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest](#d-132--2026-08-09--the-organizer-pack-the-sandbox-boundary-crossed-by-a-reviewed-reversible-manifest)
 - [D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface](#d-133--2026-08-09--the-web-operator-pack-stays-refused-no-errand-no-acting-surface)
 - [D-134 — 2026-08-09 — Start arrests a sentence leaning on an attachment nothing carries](#d-134--2026-08-09--start-arrests-a-sentence-leaning-on-an-attachment-nothing-carries)
+- [D-135 — 2026-08-09 — The failed modal's reply reads as the action it is](#d-135--2026-08-09--the-failed-modals-reply-reads-as-the-action-it-is)
 
 ## By theme
 
@@ -418,7 +419,9 @@ entry updates one file rather than two.
   reading connection, and scoped claim verbs that widen detection without
   loosening it; and D-134, the fourth arrest and the first that guards a
   non-send sentence — "the attached X" with nothing attached, built the
-  evening its 5.3c evidence arrived
+  evening its 5.3c evidence arrived; and D-135, the failed modal's reply
+  given standalone wording and btn-more's amber, because "Or …" trailing
+  buttons a failure never renders read as close-only
 - **Recurrence** — the timer that queues a sentence again on its own cadence,
   fired by a server sweep through the same glue `/work` uses so the new way
   in is quoted like every other, with downtime collapsing to a single
@@ -8259,3 +8262,34 @@ next keystroke's re-plan as D-087 built it. Post-commit mutations, two
 for two: the detector gutted (return false) killed exactly the 5.3c-wall
 test; the regex loosened to admit the bare verb killed exactly the
 never-claims test.
+
+## D-135 — 2026-08-09 — The failed modal's reply reads as the action it is
+
+The texture D-131's amendment recorded and D-134 left deliberately
+unbuilt, built the same evening once Brian asked. On a failed job the
+review's only verdict-free affordances are the reply and Close — but the
+reply's placeholder, "Or tell them what to do differently…", was written
+to trail the Approve/Discard pair, which a failed job deliberately does
+not render (nothing was delivered; there is no verdict to give). The
+"Or …" clause dangling after nothing read as decoration, and the modal's
+first real reviewer took the whole thing for close-only — the
+observation that opened the evening's desk work.
+
+One conditional and three CSS rules: `status === 'failed'` swaps the
+placeholder to the standalone **"Answer them…"** (aria "Answer the
+agentling") and the clarify span gains `answer`, lifting the input in
+btn-more's exact amber — #56412a border, #ffb86c placeholder — so it
+invites without alarming and adds no new palette entries. Every other
+status keeps the trailing wording untouched. Deliberately NOT added: a
+"They asked:" quote beside the input (the failure's question already
+renders at the body top — for the proof job twice, since `error` and
+`summary` held the same text — and a third copy clarifies nothing) and a
+reply cost line (the continuation is quoted where it is charged; a
+number shown here would be a guess, D-097's mismatch invited back).
+
+Verified live on the real jobs, both directions: the failed `a9d504f1`'s
+modal read back badge `failed`, class `rv-clarify answer`, placeholder
+"Answer them…", computed colours the amber pair exactly; the promoted
+`f3124c4f`'s modal kept `rv-clarify`, the "Or …" wording and the grey
+placeholder. 147 web tests green (none cover this panel — the live
+read-back is the proof, D-134's precedent), typecheck clean.

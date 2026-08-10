@@ -7501,6 +7501,32 @@ proving it composes there — so the calendar null is the guard refusing,
 not the sentence never qualifying — and the mutation now kills exactly
 one test. Three exact kills total across the change.
 
+**Amendment (2026-08-09 late — the desk's first sent invite, and the
+timeline the audit straightened out).** The send journal showed the
+history had run ahead of the notes: `3e5ef9f2` (ui-check) failed its
+Approve **twice** on 2026-08-07 night with the designed error — the 400
+naming the console enable link — and succeeded 2026-08-08 08:04 after
+Brian enabled the Calendar API, *before* ui-check was closed; the
+"re-Approve waits with the closed level" note was stale. The **first real
+attendee-carrying invite** then sent the same morning (`be099816`, the
+Pollo reminder, ok:true 10:21, andytg1111@gmail.com attached) — but it
+had needed the old detour: a first job asking for Andy's email, Brian's
+reply, a second job. What remained unproven was exactly what this entry
+built that evening.
+
+Tonight closed it: `f3124c4f`, "Send a calendar invite to Andy for
+tomorrow at 6pm about joining the Agentlings revolution", queued through
+the D-124 desk. The clarifications carried both answers in the desk's own
+words — "Who's invited? Andy — andytg1111@gmail.com" (the picker's
+format, straight off the 116-person book) and "What's the event called?
+AGENTLINGS" (verbatim, capitals kept) — and the run shows what that
+bought: **3 turns, one Write, 15.8 s, `asked: false`**, the event exact
+(2026-08-10T18:00–19:00 from "tomorrow at 6pm", attendee attached, title
+verbatim), `sends.jsonl` ok:true matching the job's `outboxSent` to the
+millisecond, ~35c all-in against the $2 ceiling. Two jobs and a reply
+became one job and no questions — the detour D-124 was built to kill,
+measured dead on its first live outing.
+
 ## D-125 — 2026-08-08 — The architect trade, and a review that draws its diagrams
 
 Brian picked P1 off `EXPANSION.md` (the broaden-the-spectrum proposal,

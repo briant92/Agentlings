@@ -7908,6 +7908,57 @@ whether six Haiku turns reach a script, a chart and a cited report or get
 cut. The database row stays §15-blocked on a read-only credential existing;
 this pack sharpens the file-and-record path the analyst already has.
 
+**Amendment (2026-08-09 late — the gate closed on a seeded CSV; every
+promise audited from outside).** Job `64dbcd1b` (home-chores, the level's
+first analyst hire `a6-1dhs`; promoted). The fixture was deliberate: a
+30-row July expenses CSV seeded with four traps — an exact duplicate, a
+decimal-slip outlier, a missing amount, a blank line, plus mixed category
+casing — with the correct sums computed independently before the run.
+
+**All four traps handled, cited to exact file lines** (13/19/23, each
+verified): the outlier flagged and quantified ("100× too high, distorts
+groceries to 77.8%" — 5682.15/7305.89 is 77.77%), the duplicate caught,
+the missing amount excluded *and said so*, the casing folded. Every
+category total and the $7,305.89 grand total matched the audit's reference
+to the cent — and **the kept script, re-run outside the sandbox,
+reproduced every figure**, the pack's whole thesis proven in the strongest
+form. Nuance kept honest: the script's own anomaly heuristic (`> $500`)
+false-positives rent and has no duplicate check — the *report* corrected
+both, so totals are script-backed and the flags were judgment, and the
+judgment was right. The SVG (a pie — a fair answer to "where did the money
+go", though the skill suggests bars) is inert as demanded — no `<script>`,
+no external refs — its geometry trig-verified (the 77.8% slice spans
+280.0° exactly), and **Brian confirmed the review drew it**: the
+already-built `<img>` seam's first live outing. File-name nit: the script
+landed as `analyze.js`, not the skill's `analysis.mjs` — it ran as ESM
+only because the repo root's `"type": "module"` is inherited through
+`.agentlings/`, which is precisely the fragility the `.mjs` spelling
+exists to avoid.
+
+**The six-turn question dissolved rather than answered**: with two
+class rows the money leash funds the run (D-067's soft cap — the same
+mechanism D-130's amendment verified), so this run was allowed 33 and
+needed **7 — one more than the role's standing guess**, meaning a firm 6
+would have cut it and the funded leash made the guess safe. Quote 10.4c,
+cost 13.5c, charged 10.4c — the class's first D-012 bound, 3.1c absorbed.
+The audit's own 26c prediction was wrong the instructive way: it pooled
+the two bootcamp rows that ran under the xlsx *recipe*, and `quoteClass`
+splits recipe-keyed rows out of the role's history by design — the quote
+answers "have we done *this* before", per its own comment.
+
+**The run before it earned its nickel**: first attempt `a9d504f1` went
+out with no attachment (Brian pasted the sentence, nothing else) and the
+analyst failed honestly in 4 turns — "I don't see an expenses file in the
+working directory" — 5.3c absorbed, nothing invented. Two desk gaps
+observed, recorded not built: a sentence naming "the attached X" queues
+with zero attachments (D-087's doomed-queue shape; an arrest candidate),
+and the gate again began with a hire because the analyst existed only on
+closed bootcamp — the researcher gate's noOneHasRole lesson, caught by
+probe this time before it cost anything. Close-out control case for
+D-130's recorded seam: RESULT.md at 1,216 chars sits under the 1,500-char
+slice and this PENDING.md is *accurate* — data-quality follow-ups, no
+phantom truncation.
+
 ## D-130 — 2026-08-09 — A role may raise its own ceiling: the per-class knob the researcher earned
 
 Brian's decision after P3's gate, from three options (leave it, raise the

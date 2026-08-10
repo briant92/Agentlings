@@ -147,6 +147,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-135 — 2026-08-09 — The failed modal's reply reads as the action it is](#d-135--2026-08-09--the-failed-modals-reply-reads-as-the-action-it-is)
 - [D-136 — 2026-08-10 — The failed card says what its door opens on, and every review carries its ask](#d-136--2026-08-10--the-failed-card-says-what-its-door-opens-on-and-every-review-carries-its-ask)
 - [D-137 — 2026-08-10 — The select screen wears switch-palace blocks](#d-137--2026-08-10--the-select-screen-wears-switch-palace-blocks)
+- [D-138 — 2026-08-10 — A cut is a boundary, not an annulment: More time, the clock said out loud, and walls that can learn](#d-138--2026-08-10--a-cut-is-a-boundary-not-an-annulment-more-time-the-clock-said-out-loud-and-walls-that-can-learn)
 
 ## By theme
 
@@ -228,7 +229,11 @@ entry updates one file rather than two.
   them; that entry also records why the pinned ceiling was measured and then
   left alone rather than fixed — and is amended with what settled and what did
   not, since the freak-run diagnosis it rests on has since been resolved by the
-  fix while the ceiling stayed at the clamp for a different reason entirely
+  fix while the ceiling stayed at the clamp for a different reason entirely;
+  and D-138, where the clock joins the budget grammar — `timedOut` as
+  `outOfTurns`'s twin with More time behind it, the wall named in the brief
+  so a run can ration, and walls-that-learn deferred until ledger rows
+  carry duration
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
@@ -8366,3 +8371,61 @@ leaves-out-unfinished and the new one-population-no-drift — exactly the
 shared seam doing its job. 1,412 + 147 green, typecheck clean. One
 grammar catch from reading the live title: "1 schedule firing on their
 own" became singular-aware wording.
+
+## D-138 — 2026-08-10 — A cut is a boundary, not an annulment: More time, the clock said out loud, and walls that can learn
+
+Brian's review after the first authoring casualty: "Author a level pack"
+(designer, hq) died at the flat 10-minute wall with an **empty sandbox**
+and an **unknown cost** — the request annulled, ten minutes lost, and
+nothing learned by anyone. The review named the asymmetry between the
+three cut axes: turns are budgeted from the class's own ledger and a
+turn-cut ends in a button ("More turns · charged only if it finishes");
+money never kills mid-run — it shortens the leash up front; **time was a
+flat constant whose cut was terminal**, filed `costUnknown` (the
+least-learning failure mode — the killed process reports no meter), with
+a recovery route that answered "that run did not stop for want of
+turns". And beneath it the self-sealing prior: a class walled below what
+its work needs never completes, so it never produces the evidence that
+would re-wall it — G5's class tax, paid forever. This was the
+designer's **second** wall casualty; D-128's amendment had already
+recorded the deck run wanting headroom.
+
+Built — options A+B+C of four, Brian's pick:
+
+- **The stamp, and a meter no longer lost.** The timeout kill now rejects
+  a `SessionFailure` carrying the streamed partials plus `timedOut` —
+  it used to throw a bare `Error`, discarding the turns and tool calls
+  the stream had already counted.
+- **More time (B).** The continue and continue-quote routes accept
+  `timedOut` beside `outOfTurns` — the refusal now reads "that run was
+  not cut short by turns or the clock" — and the review modal's carry-on
+  reads both, labelling itself **More time** for a pure clock-cut. Same
+  sandbox, its own quote, charged only if it finishes. The D-016 posture
+  is kept deliberately: budgets stay trusted-but-bounded and the human
+  grants more; no auto-raise, no silent retry.
+- **The clock said out loud (C).** The session brief names the minutes
+  beside the turns — "You have N turns and about M minutes of clock.
+  When either runs out…" — because a run never told about a wall cannot
+  ration against it. The authoring brief gains **Write it as you go**: a
+  small valid pack on disk early, grown region by region, so a cut
+  delivers what is written instead of nothing.
+- **The designer's own wall (A).** `timeoutMinutes: 25`, the
+  researcher's D-129 precedent, justified by two recorded casualties.
+
+**Deferred by decision — D, time funded like turns.** Ledger rows carry
+no `durationMs` today, so no amount of history can tune a wall; the
+follow-up adds the field and sets each class's wall from its own
+observed durations (clamped 10–30), flat 10 only for history-less
+classes. B is D's bootstrap: first run cut → More time → a completion
+row finally exists → the wall has something to learn from.
+
+Evidence: 1,414 + 147 green (two new brief tests), typecheck clean;
+post-commit mutation on the brief line (minutes clause dropped) killed
+exactly the names-the-clock test; the live server reloaded and answered.
+Honestly unproven: the stamp, the widened gate and the More-time button
+have no automated coverage (a child-process closure, untested routes, no
+component tests) and no live time-cut exists yet to read them back — the
+first real one is their gate, and A+C exist precisely to make it rare.
+Old time-cut rows, today's casualty included, predate the stamp and stay
+terminal: backfilling by parsing our own error string was considered and
+skipped — one dead job is cheaper re-run than a string-match seam.

@@ -7305,6 +7305,17 @@ now rides fs/promises, and measured again the API answers 6–14 ms *during*
 the scan. The Settings card says "Measuring…" for those seconds — the honest
 cost of a real number; a cached figure would answer its own question stale.
 
+**Amendment (2026-08-09 late — the sweep's first live run, its last
+unexercised item).** Brian ran it from Settings against the real store,
+audited from outside before and after. Before: 45 clones / 588,685,262
+bytes sweepable (grown from the 40/403.3 MB above as reviews resolved),
+52 / 693,327,406 kept. After: **sweepable 0/0, kept byte-identical** —
+the sweep took exactly what it named, ~561 MB freed. Disk agreed with the
+instrument: exactly 52 `repo/` dirs remain. Spot check on promoted
+`42d39856` (the P5 organize job): clone gone, RESULT.md, MOVES.json and
+`moves.jsonl` — the journal Undo and audit read — all intact. Deliverables
+never lived in the clones, and now the store shows it.
+
 ## D-122 — 2026-08-08 — Gmail's roster reads the contact book; the legend stops riding whole
 
 Brian asked whether the Gmail connection can review his contact list so the

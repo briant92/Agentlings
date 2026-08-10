@@ -486,6 +486,34 @@ describe('buildAppend', () => {
       expect(budgeted()).toContain('You have 10 turns');
     });
 
+    // The clock joins the turns (D-138): the first authoring run was never
+    // told there was a wall, spent its whole ten minutes composing, and died
+    // with an empty sandbox. A run that cannot see a limit cannot ration
+    // against it.
+    it('names the clock beside the turns when the wall is known', () => {
+      const text = buildAppend(
+        undefined,
+        [],
+        [],
+        false,
+        [],
+        undefined,
+        [],
+        [],
+        10,
+        undefined,
+        undefined,
+        25,
+      );
+      expect(text).toContain('You have 10 turns and about 25 minutes of clock');
+      expect(text).toContain('When either runs out');
+    });
+
+    it('says nothing about a clock it was not given', () => {
+      expect(budgeted()).not.toContain('minutes of clock');
+      expect(budgeted()).toContain('When they run out');
+    });
+
     it('asks for RESULT.md early rather than at the end', () => {
       const text = budgeted();
       expect(text).toContain('as soon as you have anything worth reporting');

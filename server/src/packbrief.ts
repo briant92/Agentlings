@@ -89,6 +89,15 @@ example installs, is the one outcome this brief is not asking for.${inUse}${from
 Write nothing else at the top level except a short RESULT.md saying what you
 made and why it looks the way it does.
 
+## Write it as you go
+
+Put a small **valid** pack on disk early — slug, name, provenance, the theme
+slots, the ground, one region of ops — and grow it in place from there. The
+clock is real, and a cut run delivers only what is already written: a pack
+with three regions on disk is three regions delivered, while a whole world
+composed in your head and written at the end is nothing. That exact run has
+already happened once.
+
 ## The pack
 
     {

@@ -1659,8 +1659,10 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const previous = rt.queue.get(c.req.param('id'));
   if (!previous) return c.json({ error: 'unknown job' }, 404);
-  if (!previous.meter?.outOfTurns) {
-    return c.json({ error: 'that run did not stop for want of turns' }, 400);
+  // A run stopped by either limit — turns or the clock (D-138) — may be
+  // funded past it; one that finished or died some other way may not.
+  if (!previous.meter?.outOfTurns && !previous.meter?.timedOut) {
+    return c.json({ error: 'that run was not cut short by turns or the clock' }, 400);
   }
 
   const { prompt, tools, plan, ranAs, quote } = continuationSpec(rt, previous);
@@ -1693,8 +1695,8 @@ app.get('/api/levels/:lid/jobs/:id/continue/quote', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const previous = rt.queue.get(c.req.param('id'));
   if (!previous) return c.json({ error: 'unknown job' }, 404);
-  if (!previous.meter?.outOfTurns) {
-    return c.json({ error: 'that run did not stop for want of turns' }, 400);
+  if (!previous.meter?.outOfTurns && !previous.meter?.timedOut) {
+    return c.json({ error: 'that run was not cut short by turns or the clock' }, 400);
   }
   return c.json({ quote: continuationSpec(rt, previous).quote });
 });

@@ -498,6 +498,13 @@ export function buildAppend(
   outboxBrief?: string,
   /** The organizing contract + folder inventory, when this job organizes (D-132). */
   organizeText?: string,
+  /**
+   * The wall clock in minutes, said beside the turns for the same reason the
+   * turns are said at all (D-138): a run that was never told there was a
+   * clock could not ration against it — the first authoring run spent its
+   * whole ten minutes composing and died with an empty sandbox.
+   */
+  minutes?: number,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -523,7 +530,7 @@ export function buildAppend(
       // only *when* it is written, not whether.
       ...(turns
         ? [
-            `- You have ${turns} turns. When they run out the session stops wherever you are, so write RESULT.md as soon as you have anything worth reporting and keep updating it. Do not save it for the end.`,
+            `- You have ${turns} turns${minutes ? ` and about ${minutes} minutes of clock` : ''}. When ${minutes ? 'either runs' : 'they run'} out the session stops wherever you are, so write RESULT.md as soon as you have anything worth reporting and keep updating it. Do not save it for the end.`,
             '- If you run out before finishing, RESULT.md should say what you established, what is still missing, and what you would do next.',
           ]
         : []),
@@ -892,6 +899,9 @@ export class ClaudeAgentExecutor implements Executor {
             (channel) => this.lastSend(channel),
           ),
           job.organizeRoot ? organizeBrief(folderInventory(job.organizeRoot)) : undefined,
+          // The same number the timer kills at, so the brief and the wall
+          // cannot disagree about how long the run has.
+          timeoutMsFor(role) / 60_000,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection
@@ -1135,7 +1145,17 @@ export class ClaudeAgentExecutor implements Executor {
       this.running.set(jobId, child);
       const timer = setTimeout(() => {
         child.kill();
-        reject(new Error(`session timed out after ${timeoutMs / 60_000} minutes`));
+        // A SessionFailure carrying the streamed partials, not a bare Error:
+        // a time-cut used to lose everything the stream had counted, filing a
+        // meter with no turns and no tools — the least-learning failure mode.
+        // `timedOut` is `outOfTurns`'s twin, and carry-on reads it (D-138).
+        reject(
+          new SessionFailure(`session timed out after ${timeoutMs / 60_000} minutes`, {
+            ...meter,
+            timedOut: true,
+            ...(meter.costUsd === undefined ? { costUnknown: true } : {}),
+          }),
+        );
       }, timeoutMs);
 
       let summary = '';

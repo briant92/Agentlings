@@ -52,7 +52,9 @@ export function ReviewModal({
   const [clarify, setClarify] = useState('');
   const [busy, setBusy] = useState(false);
   const approveRef = useRef<HTMLButtonElement>(null);
-  const canCarryOn = Boolean(job.meter?.outOfTurns);
+  // Either limit reads as cut (D-138): a run stopped by the clock is as
+  // continuable as one stopped by turns — same sandbox, its own quote.
+  const canCarryOn = Boolean(job.meter?.outOfTurns || job.meter?.timedOut);
 
   useEffect(() => {
     let alive = true;
@@ -449,7 +451,7 @@ export function ReviewModal({
           {!offer && canCarryOn && (
             <>
               <button className="btn-more" disabled={busy} onClick={() => void carryOn()}>
-                More turns
+                {job.meter?.timedOut && !job.meter?.outOfTurns ? 'More time' : 'More turns'}
                 {carryQuote ? ` · up to $${carryQuote.ceilingUsd.toFixed(2)}` : ''}
               </button>
               {/* The asymmetry that makes this an easy call: a cut run is

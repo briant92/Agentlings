@@ -177,6 +177,12 @@ export interface JobMeter {
    */
   outOfTurns?: boolean;
   /**
+   * The wall clock cut this run, not the turn budget — `outOfTurns`'s twin
+   * (D-138). Carry-on reads it the same way: a run stopped by a limit is a
+   * run the user may fund past the limit, whichever limit it was.
+   */
+  timedOut?: boolean;
+  /**
    * Part of `costUsd`, spent by the close-out pass rather than by the session.
    * Kept separate so the per-turn rate prices the session alone: the write-up
    * is a fixed errand, not something the turn budget can buy more or less of.

@@ -148,6 +148,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-136 — 2026-08-10 — The failed card says what its door opens on, and every review carries its ask](#d-136--2026-08-10--the-failed-card-says-what-its-door-opens-on-and-every-review-carries-its-ask)
 - [D-137 — 2026-08-10 — The select screen wears switch-palace blocks](#d-137--2026-08-10--the-select-screen-wears-switch-palace-blocks)
 - [D-138 — 2026-08-10 — A cut is a boundary, not an annulment: More time, the clock said out loud, and walls that can learn](#d-138--2026-08-10--a-cut-is-a-boundary-not-an-annulment-more-time-the-clock-said-out-loud-and-walls-that-can-learn)
+- [D-139 — 2026-08-10 — An answered run stops asking: continuations stamp their parent](#d-139--2026-08-10--an-answered-run-stops-asking-continuations-stamp-their-parent)
 
 ## By theme
 
@@ -246,7 +247,11 @@ entry updates one file rather than two.
   one REVIEW on the row, the whole choice in the panel, the close-out writing
   an account of what is left so "more turns" is a judgement, and a resolved
   line that says who decided; and D-116, where that move turned out to have
-  orphaned "Do it properly" and the button was restored in the panel
+  orphaned "Do it properly" and the button was restored in the panel; and
+  D-139, where an answered run stops asking — both continuation doors stamp
+  the parent (`continuedBy`), the failed card retires, carry-on refuses a
+  second charge, and restore() backfills history from each child's own
+  `continues`
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
@@ -8429,3 +8434,41 @@ first real one is their gate, and A+C exist precisely to make it rare.
 Old time-cut rows, today's casualty included, predate the stamp and stay
 terminal: backfilling by parsing our own error string was considered and
 skipped — one dead job is cheaper re-run than a string-match seam.
+
+## D-139 — 2026-08-10 — An answered run stops asking: continuations stamp their parent
+
+Brian answered the timed-out authoring job through the reply box — "Keep
+going" — and the failed card kept sitting in the feed with its button, as
+if nothing had happened. His words named the family: "same issue as
+before when interrupted tasks get interacted with." He was right that it
+is a family: both continuation doors — the reply route and More
+turns/More time — stamped the **child** (`continues: previous.id`) and
+never the parent, so the parent's surfaces kept offering what had
+already been done: the feed card its button, the modal its reply box,
+and carry-on a **second continuation for a second charge** against work
+someone was already doing.
+
+The fix is one field and its discipline. `Job.continuedBy` is set by
+`markContinued` in both routes; the failed card retires from the feed
+once answered (the continuation's own events follow right there);
+`canCarryOn` refuses a job already continued; and the failed modal
+replaces the reply box with "answered — a follow-up run is carrying it
+on". Done and partial jobs deliberately keep their verdict buttons — a
+continuation does not judge the files the original still holds.
+
+**The backfill is the load-bearing half.** Stamping at reply time would
+have shipped inert against the exact card complained about (the
+hard-won rule: a fix must reach the data written before it). The child's
+`continues` identifies the parent **exactly**, so `restore()` heals
+history on boot — identification, never guessing — and the first tsx
+reload proved it on the real store: three answered authoring parents
+stamped in hq's jobs.json, Brian's "Keep going" case (`7f95be04` →
+`690dbc0b`) among them. Where one parent has several children the first
+wins; any child proves answered.
+
+Evidence: 1,416 + 147 green (two new queue tests: the stamp's round
+trip, and restore backfilling a pre-field parent); post-commit mutation
+removed the backfill loop and killed exactly the backfill test. The
+browser pane refused to boot past the title for the pixels check (the
+recorded flake) — the answered-modal wording rides the proven field and
+Brian's next open of an answered failure is its ten-second look.

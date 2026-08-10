@@ -21,11 +21,18 @@ import { PACK_FILE } from './packcontract';
  * whaling deck should look like is the session's job; what will fail the
  * checker is ours, and every rule below is one the checker actually enforces.
  */
-export function packBrief(taken: readonly string[] = [], reference?: string): string {
+export function packBrief(
+  taken: readonly string[] = [],
+  reference?: string,
+  /** The user asked for a pre-rendered 3D backdrop: the plate is the point. */
+  wantsPlate = false,
+): string {
   // A picture to work from changes the job enough to be said up front, and
-  // says what the format cannot do with it. D-113 measured both halves: a
-  // session reads an image accurately and reasons about it, and the ops
-  // vocabulary cannot reproduce a rendered painting at any budget.
+  // says what the format can and cannot do with it. D-113 measured the ops
+  // half: a session reads an image accurately and reasons about it, and the
+  // ops vocabulary cannot reproduce a rendered painting at any budget. D-143
+  // added the other half: a *plate* can carry a rendered picture — one the
+  // session renders itself, never the reference laundered through a page.
   const fromReference = reference
     ? `
 
@@ -42,6 +49,10 @@ trace the picture will come out worse than one that reads it. Take from it
 the things the format *can* carry — the staging and where the ground sits,
 the palette and how light and dark are distributed, the depth layers, the
 shapes that repeat and at what rhythm — and compose your own scene from those.
+If the world wants a rendered picture *as its backdrop*, that is what a plate
+is for (below) — and the plate must be your own scene: **never embed the
+reference image itself in a plate page**; a screenshot of someone else's
+picture is their picture with extra steps.
 
 Say in \`RESULT.md\` what you took from the reference and what you knowingly
 left, and **name the reference in \`provenance\`**: a pack drawn from someone
@@ -52,6 +63,22 @@ There is a PNG decoder in the repository already — \`decodePng\` and
 \`countColours\` in \`server/src/raster.ts\`, run with \`npx tsx\`. Use it to
 crop or measure the reference rather than writing your own; the last run that
 needed one spent a third of its turns rebuilding it beside the copy it had.`
+    : '';
+
+  // The plate-first lead, when the button said so: the run must not deliver
+  // a lovely ops world with the one thing the user asked for missing.
+  const plateLead = wantsPlate
+    ? `
+
+## This world's backdrop is a rendered plate — that is the ask
+
+The user chose a pre-rendered 3D backdrop. **Render the plate first** with
+the \`render_plate\` tool and *look at the PNG*, then compose the theme and
+the foreground ops around what you rendered. A pack without
+\`backdrop.plates\` does not deliver this job, however good its ops are.
+The full discipline — the import URL, the ready title, the composition
+rules, the crew band — is in your \`plate-design\` skill; the format rules
+are below.`
     : '';
 
   const slots = THEME_SLOTS.join(', ');
@@ -84,7 +111,7 @@ what installs it.
 this brief.** Every placeholder below written as \`<like this>\` is yours to
 fill in; the concrete values are illustrations of the *format*, not defaults
 to adopt. A world called what the example is called, installing where the
-example installs, is the one outcome this brief is not asking for.${inUse}${fromReference}
+example installs, is the one outcome this brief is not asking for.${inUse}${plateLead}${fromReference}
 
 Write nothing else at the top level except a short RESULT.md saying what you
 made and why it looks the way it does.
@@ -106,7 +133,10 @@ already happened once.
       "viewH": 450, "groundY": 388,  // world height, and the ground line
       "rim": "<a dark slot>",        // set this — see Legibility
       "theme": { …16 slots… },
-      "backdrop": { "scrim": {…}, "ops": [ … ] },   // optional
+      "backdrop": {                  // optional
+        "plates": ["plate.png"],     //   a rendered picture behind everything — see below
+        "scrim": {…}, "ops": [ … ]
+      },
       "ops": [ … ],                  // the foreground; required, non-empty
       "ambient": [ … ]               // optional
     }
@@ -132,6 +162,29 @@ language, and anything not listed here does not exist:
 - \`ceiling\` {step,minY,maxY,fill,edge,flatNear?,hang?} — the lid of the world
 
 **ambient** effects: \`drips\`, \`flyer\`, \`motes\`, \`beam\`, \`glints\`, \`clock\`.
+
+## The backdrop can be a rendered picture (plates)
+
+What the ops cannot paint, a **plate** can carry: one raster file drawn
+behind everything — plate, then backdrop ops, then scrim, then foreground
+(D-142, D-143).
+
+- Render it yourself with the \`render_plate\` tool: one self-contained HTML
+  page, three.js importable from \`http://three.local/three.module.js\` (the
+  only URL that resolves during the render), \`document.title = "ready"\`
+  once the scene has drawn. It writes the PNG at your sandbox root already
+  quantized to the 128-colour backdrop budget, and its receipt reports the
+  colour count and the worst crew separation. **Read the PNG and look at
+  it** — then iterate; the render is cheap. The full discipline is in your
+  \`plate-design\` skill.
+- Name the file in \`backdrop.plates: ["plate.png"]\` and leave it at the
+  sandbox root beside ${PACK_FILE}. It rides your delivery: the review
+  shows it composited, and Approve installs it with the pack.
+- One plate, exactly. \`rim\` becomes **required** the moment plates are
+  present — the checker refuses a plate without one.
+- \`pack:check\` validates the file beside ${PACK_FILE} (2000×900 for a
+  450-tall world, at most 128 colours); \`pack:render\` composites it under
+  your ops so the picture you judge is the picture the app will draw.
 
 ## Coordinates
 

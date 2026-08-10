@@ -1390,11 +1390,14 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const body = await c.req.json<{
     description?: string;
-    /** A picture to work from, when the user picked "pre-rendered" (D-113). */
+    /** A picture to work from — optional for either kind (D-113, D-144). */
     reference?: { name?: string; data?: string };
+    /** 'plate' when the user asked for a rendered 3D backdrop (D-144). */
+    kind?: string;
   }>();
   const description = body.description?.trim();
   if (!description) return c.json({ error: 'say what the world should be' }, 400);
+  const wantsPlate = body.kind === 'plate';
 
   // The reference rides as an ordinary attachment, so it lands in the
   // sandbox's `input/` like any other supplied material — measured at 88s
@@ -1418,7 +1421,7 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
   const job = queueSentence(rt, `Author a level pack: ${description}`, {
     // What is already installed, so the session is told what is taken
     // rather than finding out at Approve (M4, first real run).
-    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug), reference),
+    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug), reference, wantsPlate),
     attachments,
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).

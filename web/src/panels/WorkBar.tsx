@@ -11,6 +11,7 @@ import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
 import {
+  authoringSentence,
   matchRecipient,
   missingAttachment,
   missingRecipient,
@@ -214,6 +215,10 @@ export function WorkBar({
     // not — the run has no other way to receive a file (D-134; the proof
     // run's whole delivery was the question back).
     if (missingAttachment(text, files.length)) parts.push('nothing attached');
+    // "Build me a level" is authoring, and authoring lives behind the New
+    // Level door where it prices as design work (D-110, D-144) — typed here
+    // it would run as an ordinary worker job.
+    if (authoringSentence(text)) parts.push('worlds are authored from + New Level');
     const ask = plan?.channelAsk;
     if (!ask && !mentionPicked) return parts.length ? parts.join(' · ') : null;
     const to = answers['send-to']?.trim();

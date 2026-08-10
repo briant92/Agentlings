@@ -253,8 +253,9 @@ function NewLevelModal({
   /** A world the crew author rather than one already on the palette (M4). */
   const [world, setWorld] = useState('');
   const [authoring, setAuthoring] = useState(false);
-  /** How the world is meant to look, and the picture behind it (D-113). */
-  const [kind, setKind] = useState<'pixel' | 'pre-rendered'>('pixel');
+  /** How the backdrop is made: drawn from ops, or a rendered plate (D-144). */
+  const [kind, setKind] = useState<'pixel' | '3d'>('pixel');
+  /** A picture to work from — optional for either kind (D-113, D-144). */
   const [reference, setReference] = useState<File | null>(null);
   const [authored, setAuthored] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -311,13 +312,18 @@ function NewLevelModal({
     try {
       // Read here rather than in the route: the server takes base64 like every
       // other attachment, and the browser is where a File becomes bytes.
-      const picture =
-        kind === 'pre-rendered' && reference
-          ? { name: reference.name, data: await base64Of(reference) }
-          : undefined;
+      const picture = reference
+        ? { name: reference.name, data: await base64Of(reference) }
+        : undefined;
       await api(
         lvl(host.id, '/author-pack'),
-        postJson({ description: world, ...(picture ? { reference: picture } : {}) }),
+        postJson({
+          description: world,
+          // 'plate' asks the designer to render a real 3D backdrop with
+          // render_plate; the brief leads with it (D-144).
+          kind: kind === '3d' ? 'plate' : 'pixel',
+          ...(picture ? { reference: picture } : {}),
+        }),
       );
       setAuthored(world);
     } catch (err) {
@@ -384,39 +390,44 @@ function NewLevelModal({
                     onChange={(e) => setWorld(e.target.value)}
                   />
                   {/*
-                    The two ways a world of this kind has ever been made: drawn
-                    by hand, or rendered and then reduced. Pre-rendered asks for
-                    the picture, because the crew works from it — it does not
-                    become the backdrop, which the ops format cannot carry
-                    (D-108, D-113).
+                    The two ways a backdrop is made now (D-144): drawn from
+                    the ops idioms, or a real 3D plate the designer renders
+                    with render_plate and ships behind the pixel frame
+                    (D-142, D-143). A reference picture is its own, optional
+                    thing for either kind — worked from, never copied
+                    (D-113), and never the backdrop itself.
                   */}
                   <div className="nl-kind">
-                    {(['pixel', 'pre-rendered'] as const).map((k) => (
+                    {(['pixel', '3d'] as const).map((k) => (
                       <button
                         key={k}
                         className={`nl-kind-pick${kind === k ? ' on' : ''}`}
                         onClick={() => setKind(k)}
                       >
-                        {k === 'pixel' ? 'Pixel' : 'Pre-rendered'}
+                        {k === 'pixel' ? 'Pixel' : '3D backdrop'}
                       </button>
                     ))}
                   </div>
-                  {kind === 'pre-rendered' && (
-                    <label className="nl-ref">
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) => setReference(e.target.files?.[0] ?? null)}
-                      />
-                      <span className="dim">
-                        {reference
-                          ? `${reference.name} — ${host.name} will look at it and compose a world from it, not copy it.`
-                          : 'Pick a picture to work from. It is a reference, not the backdrop.'}
-                      </span>
-                    </label>
+                  {kind === '3d' && (
+                    <p className="dim">
+                      {host.name} renders a real 3D scene as the backdrop plate; the crew and
+                      props stay pixel, in front of it.
+                    </p>
                   )}
+                  <label className="nl-ref">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(e) => setReference(e.target.files?.[0] ?? null)}
+                    />
+                    <span className="dim">
+                      {reference
+                        ? `${reference.name} — ${host.name} will look at it and compose a world from it, not copy it.`
+                        : 'Optional: a picture to work from. It is a reference, never the backdrop itself.'}
+                    </span>
+                  </label>
                   <button
-                    disabled={!world.trim() || authoring || (kind === 'pre-rendered' && !reference)}
+                    disabled={!world.trim() || authoring}
                     onClick={() => void authorWorld()}
                   >
                     {authoring

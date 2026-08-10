@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  authoringSentence,
   matchRecipient,
   missingAttachment,
   missingRecipient,
@@ -170,5 +171,32 @@ describe('missingAttachment (D-134)', () => {
 
   it('an ordinary sentence says nothing about attachments', () => {
     expect(missingAttachment('tidy the notes', 0)).toBe(false);
+  });
+});
+
+describe('authoringSentence (D-144)', () => {
+  it('the proof sentence arrests — typed at the desk, it went to a worker', () => {
+    expect(
+      authoringSentence('Build me a level inspired in The Odyssey, with a 3D backdrop of the sea monster'),
+    ).toBe(true);
+  });
+
+  it('the creating forms fire, whatever the article or a stray adjective', () => {
+    expect(authoringSentence('make a new level about the deep sea')).toBe(true);
+    expect(authoringSentence('author a world set in a lighthouse')).toBe(true);
+    expect(authoringSentence('create an underwater world')).toBe(true);
+    expect(authoringSentence('design us a quiet level for finance work')).toBe(true);
+  });
+
+  it('the level as this codebase’s noun queues untouched', () => {
+    expect(authoringSentence('make the level select screen faster')).toBe(false);
+    expect(authoringSentence('fix the level card thumbnails')).toBe(false);
+    expect(authoringSentence('build the level list from the API')).toBe(false);
+  });
+
+  it('building other things is not authoring', () => {
+    expect(authoringSentence('build me a dashboard for the ledger')).toBe(false);
+    expect(authoringSentence('create a summary of this repo')).toBe(false);
+    expect(authoringSentence('tidy the notes')).toBe(false);
   });
 });

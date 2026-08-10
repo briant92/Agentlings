@@ -160,6 +160,44 @@ describe('packBrief', () => {
       expect(plain).not.toMatch(/reference/i);
       expect(plain).not.toContain('decodePng');
     });
+
+    /**
+     * The laundering wall (D-144): render_plate would happily screenshot a
+     * page with the reference embedded as a data: URI, which is someone
+     * else's picture with extra steps. The brief has to close that door in
+     * the same breath it opens the plate one.
+     */
+    it('forbids embedding the reference in a plate page', () => {
+      expect(withRef).toMatch(/never embed the\s+reference image itself in a plate page/i);
+    });
+  });
+
+  describe('the plate half (D-142, D-143, D-144)', () => {
+    it('teaches plates in the skeleton and the vocabulary, every time', () => {
+      expect(brief).toContain('"plates": ["plate.png"]');
+      expect(brief).toMatch(/rendered picture \(plates\)/i);
+      expect(brief).toContain('render_plate');
+      expect(brief).toContain('http://three.local/three.module.js');
+      expect(brief).toMatch(/rim\` becomes \*\*required\*\*/i);
+    });
+
+    /**
+     * D-113's "cannot carry a rendered painting" was true of the ops and is
+     * now false of the format; the brief must not still say the old thing.
+     */
+    it('no longer claims the format cannot carry a rendered picture', () => {
+      expect(brief).not.toMatch(/format has no field for/i);
+      expect(brief).toMatch(/What the ops cannot paint, a \*\*plate\*\* can carry/i);
+    });
+
+    it('leads with the plate when the button asked for one', () => {
+      const plated = packBrief([], undefined, true);
+      expect(plated).toMatch(/backdrop is a rendered plate — that is the ask/i);
+      expect(plated).toMatch(/Render the plate first/i);
+      expect(plated).toMatch(/without\s+`backdrop\.plates`\s+does not deliver/i);
+      // ...and says none of that lead when nobody asked.
+      expect(brief).not.toMatch(/that is the ask/i);
+    });
   });
 
   it('requires provenance in the same words the checker does', () => {

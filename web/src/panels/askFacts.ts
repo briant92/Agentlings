@@ -81,6 +81,27 @@ export function missingAttachment(text: string, attachedCount: number): boolean 
   return attachedCount === 0 && /\battach(?:ed|ments?)\b/i.test(text);
 }
 
+/**
+ * A sentence asking for a new world, typed where worlds are not made (D-144).
+ *
+ * Authoring arrives by the New Level door, deliberately (D-110): the door
+ * prices it as design work and installs only at Approve, while the desk's
+ * matcher reads "build me a level" as ordinary building and hands it to a
+ * worker. The proof sentence was real — "Build me a level inspired in The
+ * Odyssey, with a 3D backdrop of the sea monster" — assigned to a worker at
+ * the desk, the first of the phrasings D-110 said it was waiting for.
+ *
+ * Only the creating forms fire: a making verb, an article, then level/world
+ * within a couple of words. "Make the level select screen faster" — the
+ * level as this codebase's noun — queues untouched, and one extra press
+ * still queues anything: the desk warns, the user decides (D-134's contract).
+ */
+export function authoringSentence(text: string): boolean {
+  return /\b(?:build|make|create|author|design)\s+(?:me\s+|us\s+)?(?:a|an|another|new)\s+(?:\w+\s+){0,2}(?:level|world)\b/i.test(
+    text,
+  );
+}
+
 /** A person as the matcher needs them — the roster row's naming half. */
 interface Nameable {
   id: string;

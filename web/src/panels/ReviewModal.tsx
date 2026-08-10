@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { DeliveryFile, Job, PackDraft, Quote, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
+import { cutNotice } from './cut';
 import { fileUrl } from './files';
 import { FileViewer } from './FileViewer';
 import { moveRows, movesLeft, movesSummary } from './moves';
@@ -60,6 +61,19 @@ export function ReviewModal({
   const canCarryOn = Boolean(
     (job.meter?.outOfTurns || job.meter?.timedOut) && !job.continuedBy,
   );
+  // A cut said as a boundary, not an annulment (D-138; D-015/D-025: often
+  // the ordinary ending): the raw error in red above a reviewable delivery
+  // read as "definitively unfinished" even when the checker was clean, so a
+  // cut run names which limit ended it — and what landed — in one neutral
+  // sentence. Real failures keep the red.
+  const cutLine = cutNotice({
+    outOfTurns: job.meter?.outOfTurns,
+    timedOut: job.meter?.timedOut,
+    turns: job.meter?.turns,
+    hasWorldDraft: Boolean(job.packDraft),
+    patchedFiles: job.changes?.files ?? 0,
+    files,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -230,7 +244,8 @@ export function ReviewModal({
               </ul>
             )}
           </details>
-          {job.error && <p className="error">{job.error}</p>}
+          {cutLine && <p className="rv-cut">{cutLine}</p>}
+          {!cutLine && job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}
           {job.packDraftError && <p className="error">{job.packDraftError}</p>}

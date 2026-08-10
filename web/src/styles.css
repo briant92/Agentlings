@@ -2087,6 +2087,19 @@ button.danger:hover {
   border-radius: 3px;
   padding: 6px 9px;
 }
+/* A cut said as a boundary, not an annulment (D-138): calm ink and a neutral
+   bar, never .error's red — the delivery below is often perfectly reviewable,
+   and More turns/time an offer rather than a repair. */
+.rv-cut {
+  font-size: 13px;
+  color: #aab0bf;
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-left: 3px solid #4a5268;
+  border-radius: 3px;
+  padding: 6px 9px;
+  margin: 10px 0 4px;
+}
 /* The asymmetry that decides it: a cut run is filed failed and priced at
    zero, so only a landing costs anything. */
 .rv-free {

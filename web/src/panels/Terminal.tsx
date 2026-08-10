@@ -255,15 +255,21 @@ function EventEntry({
                 <span className="t-meter t-meter-right">{meterLine(job)}</span>
               )}
             </div>
-            <ReviewCard
-              job={job}
-              onOpenReview={onOpenReview}
-              say={
-                job.meter?.outOfTurns
-                  ? 'Ran out of turns, but what it got done is ready to review.'
-                  : 'Stopped early, but what it got done is ready to review.'
-              }
-            />
+            {/* A continued partial retires its card too (D-139 amendment): the
+                user decided — More turns — and a decided task must not keep
+                soliciting from the feed. Its files stay reviewable from the
+                inbox and the panel. */}
+            {!job.continuedBy && (
+              <ReviewCard
+                job={job}
+                onOpenReview={onOpenReview}
+                say={
+                  job.meter?.outOfTurns
+                    ? 'Ran out of turns, but what it got done is ready to review.'
+                    : 'Stopped early, but what it got done is ready to review.'
+                }
+              />
+            )}
           </>
         );
       }

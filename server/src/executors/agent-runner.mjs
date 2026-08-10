@@ -94,6 +94,43 @@ try {
             return { content: [{ type: 'text', text }] };
           },
         ),
+        tool(
+          'render_plate',
+          'Render a complete, self-contained HTML page into a 2000×900 level-backdrop plate (PNG, quantized to the 128-colour budget) at the sandbox root. Import three.js from http://three.local/three.module.js — the only URL that resolves during the render; everything else is blocked. Set document.title = "ready" once your scene has drawn.',
+          {
+            html: z.string().describe('the whole HTML page'),
+            file: z.string().optional().describe('output filename (default plate.png)'),
+          },
+          async ({ html, file }) => {
+            let text;
+            try {
+              const res = await fetch(config.render.endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ tool: 'render_plate', args: { html } }),
+              });
+              const reply = await res.json();
+              if (reply.error) {
+                text = `Could not render: ${reply.error}`;
+              } else {
+                let name =
+                  typeof file === 'string' && file.trim()
+                    ? file.trim().replace(/^.*[\\/]/, '')
+                    : 'plate.png';
+                if (!/\.png$/i.test(name)) name += '.png';
+                writeFileSync(`${config.cwd}/${name}`, Buffer.from(reply.png, 'base64'));
+                text =
+                  `Wrote ${name} — ${reply.width}×${reply.height}, ${reply.colours} colours, ` +
+                  `worst crew separation ${reply.worstSeparation} at x ${reply.worstAt} ` +
+                  `(assuming groundY 388 of viewH 450). ` +
+                  `Read the PNG to look at it before calling it done.`;
+              }
+            } catch (err) {
+              text = `Could not render: ${err instanceof Error ? err.message : String(err)}`;
+            }
+            return { content: [{ type: 'text', text }] };
+          },
+        ),
       ],
     });
   }

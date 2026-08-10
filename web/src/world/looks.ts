@@ -192,7 +192,9 @@ export function renderScenePreview(
   scene: Scene,
   theme: Theme,
   width: number,
+  /** A draft's plates, fetched from its sandbox by the caller (D-143). */
+  plates: HTMLImageElement[] = [],
 ): { url: string; height: number } {
   const height = Math.round((width * scene.viewH) / WORLD_WIDTH);
-  return { url: paintTo(scene, theme, width, height), height };
+  return { url: paintTo(scene, theme, width, height, plates), height };
 }

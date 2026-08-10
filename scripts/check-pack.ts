@@ -9,7 +9,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   AGENTLING_PACK,
-  platesInDraftProblem,
   slugProblem,
   validateLevelPack,
   validatePack,
@@ -68,14 +67,12 @@ if (wrapped) {
     : [];
   const says = slugProblem((json as { slug?: unknown }).slug, taken);
   if (says) problems.unshift({ level: 'error', message: says });
-  // The same refusal Approve would make, visible before any money is spent.
-  const plateSays = platesInDraftProblem(level);
-  if (plateSays) problems.push({ level: 'error', message: plateSays });
 }
 
-// An installed-shape level pack sits in its folder, so the raster half of the
-// plate rules — file present, size, colour budget — can run right here.
-if (kind === 'level' && !wrapped && problems.every((p) => p.level !== 'error')) {
+// A level pack sits beside its plates — in its installed folder, or at the
+// sandbox root beside PACK.json (D-143) — so the raster half of the plate
+// rules runs right here, exactly as the server runs it at scan and harvest.
+if (kind === 'level' && problems.every((p) => p.level !== 'error')) {
   problems.push(...checkPlates(level as LevelPack, path.dirname(path.resolve(target))));
 }
 

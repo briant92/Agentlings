@@ -1,11 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import {
-  platesInDraftProblem,
-  slugProblem,
-  validateLevelPack,
-  type LevelPack,
-} from '@agentlings/shared';
+import { slugProblem, validateLevelPack, type LevelPack } from '@agentlings/shared';
+import { checkPlates } from './plates';
 
 /**
  * The pack contract: how a run hands over a world it has authored (M4).
@@ -69,14 +65,18 @@ export function checkPackDraft(parsed: unknown): PackDraftRead {
   if (problems.length > 0) {
     return { error: problems.map((p) => p.message).join('; ') };
   }
-  // A draft is one JSON file and a plate is an image beside it (D-142); the
-  // CLI checker refuses the same way, so a session sees this wall from inside.
-  const plateSays = platesInDraftProblem(pack);
-  if (plateSays) return { error: plateSays };
   return { draft: { slug: slug as string, pack: pack as LevelPack } };
 }
 
-/** Parses PACK.json from a sandbox: null when absent, the reason when invalid. */
+/**
+ * Parses PACK.json from a sandbox: null when absent, the reason when invalid.
+ *
+ * Plates ride the draft as files beside it (D-143), so the raster half of the
+ * plate rules runs here against the sandbox — a missing or over-budget plate
+ * fails the draft at harvest, in review, rather than at Approve after the
+ * money is spent. The CLI checker runs the same rules against the same
+ * folder, so the wall is visible from inside a sandbox (D-110's rule).
+ */
 export function readPackDraft(dir: string): PackDraftRead | null {
   const file = path.join(dir, PACK_FILE);
   if (!existsSync(file)) return null;
@@ -86,5 +86,12 @@ export function readPackDraft(dir: string): PackDraftRead | null {
   } catch {
     return { error: 'not valid JSON' };
   }
-  return checkPackDraft(parsed);
+  const read = checkPackDraft(parsed);
+  if (read.draft) {
+    const plateProblems = checkPlates(read.draft.pack, dir).filter((p) => p.level === 'error');
+    if (plateProblems.length > 0) {
+      return { error: plateProblems.map((p) => p.message).join('; ') };
+    }
+  }
+  return read;
 }

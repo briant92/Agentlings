@@ -94,27 +94,6 @@ const MAX_SLUG = 40;
 const PLATE_FILE_RE = /^[a-z0-9][a-z0-9._-]{0,62}\.png$/i;
 
 /**
- * Why a PACK.json draft may not carry plates, stated once.
- *
- * A draft is one JSON file; a plate is an image beside it, and Approve copies
- * only the JSON — so a plate-bearing draft would install a pack whose plate
- * the loader then rejects, after the money was spent. The server's contract
- * and the CLI checker both refuse with this, so the wall is visible from
- * inside a sandbox (D-110's rule: no refusal a session cannot see coming).
- */
-export function platesInDraftProblem(pack: unknown): string | null {
-  const plates = ((pack as Partial<LevelPack> | null)?.backdrop as Backdrop | undefined)?.plates;
-  if (Array.isArray(plates) && plates.length > 0) {
-    return (
-      'backdrop.plates cannot ride a PACK.json draft yet — a draft is one JSON file and ' +
-      'a plate is an image beside it. Install plate-bearing packs by dropping the folder ' +
-      'into web/public/packs (D-142)'
-    );
-  }
-  return null;
-}
-
-/**
  * Only the names matter here — the checker asks whether a coordinate *parses*
  * and names a real anchor, not where it lands.
  */

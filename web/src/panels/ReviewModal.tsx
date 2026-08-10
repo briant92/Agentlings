@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { DeliveryFile, Job, PackDraft, Quote, SendApprovalInfo } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
+import { fileUrl } from './files';
 import { FileViewer } from './FileViewer';
 import { moveRows, movesLeft, movesSummary } from './moves';
 import { allLooks, renderScenePreview } from '../world/looks';
@@ -234,7 +235,13 @@ export function ReviewModal({
           {job.outboxError && <p className="error">{job.outboxError}</p>}
           {job.packDraftError && <p className="error">{job.packDraftError}</p>}
           {job.packDraft && (
-            <PackCard draft={job.packDraft} slug={packSlug} onSlug={setPackSlug} />
+            <PackCard
+              draft={job.packDraft}
+              slug={packSlug}
+              onSlug={setPackSlug}
+              levelId={levelId}
+              jobId={job.id}
+            />
           )}
           {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
               was approved in good faith and sent nothing — this says so
@@ -518,13 +525,46 @@ function PackCard({
   draft,
   slug,
   onSlug,
+  levelId,
+  jobId,
 }: {
   draft: PackDraft;
   slug: string;
   onSlug: (next: string) => void;
+  levelId: string;
+  jobId: string;
 }) {
   const { pack } = draft;
-  const preview = renderScenePreview(pack, pack.theme, 520);
+  // A draft's plates live in its sandbox (D-143); fetch them so the preview
+  // shows the world Approve would install, not the world minus its picture.
+  // A plate that fails to load costs only itself — the preview still draws.
+  const plateFiles = pack.backdrop?.plates ?? [];
+  const [plateImages, setPlateImages] = useState<HTMLImageElement[]>([]);
+  useEffect(() => {
+    if (plateFiles.length === 0) return;
+    let gone = false;
+    void Promise.all(
+      plateFiles.map(async (name) => {
+        try {
+          const img = new Image();
+          img.src = fileUrl(levelId, jobId, name);
+          await img.decode();
+          return img;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((images) => {
+      if (!gone) setPlateImages(images.filter((img): img is HTMLImageElement => img !== null));
+    });
+    return () => {
+      gone = true;
+    };
+    // The file list is identity enough: a draft's plates never change names
+    // without the whole draft changing, which remounts the review.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levelId, jobId, plateFiles.join('|')]);
+  const preview = renderScenePreview(pack, pack.theme, 520, plateImages);
   const backdropOps = pack.backdrop?.ops?.length ?? 0;
   // Whether this name is free, checked here rather than at Approve. The first
   // collision surfaced only after the button, naming a folder the reviewer had
@@ -548,6 +588,13 @@ function PackCard({
       />
       <div className="rv-pack-facts">
         <span>{pack.ops.length} foreground ops</span>
+        {plateFiles.length > 0 && (
+          <span className={plateImages.length > 0 ? '' : 'rv-pack-warn'}>
+            {plateImages.length > 0
+              ? `plate ${plateFiles.join(', ')}`
+              : `plate ${plateFiles.join(', ')} — not shown; it did not load`}
+          </span>
+        )}
         {backdropOps > 0 && <span>{backdropOps} backdrop</span>}
         {pack.backdrop?.scrim && <span>scrim {pack.backdrop.scrim.alpha}</span>}
         <span className={pack.rim ? '' : 'rv-pack-warn'}>

@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships eight generalist jobs and fifteen abilities', () => {
+  it('ships eight generalist jobs and sixteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -84,6 +84,10 @@ describe('shipped starter set', () => {
       'organizing-folders',
       'pdf-report',
       'plain-language',
+      // plate-design is D-143: the designer authors a pre-rendered 3D
+      // backdrop with three.js through render_plate, reads the PNG back,
+      // and delivers it in a PACK.json world whose plates Approve copies.
+      'plate-design',
       'see-your-work',
       'small-diffs',
       'tables-and-numbers',

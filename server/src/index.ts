@@ -1962,7 +1962,9 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       const says = slugProblem(renamed, scanPacks(ROOT).installed.map((p) => p.slug));
       if (says) return c.json({ error: `pack not installed — ${says}` }, 400);
     }
-    const result = installPack(ROOT, draft);
+    // The sandbox is where a draft's plates live (D-143); the install copies
+    // them from there, re-checking at the moment of writing.
+    const result = installPack(ROOT, draft, rt.queue.sandboxDir(pending.id));
     if ('error' in result) return c.json({ error: `pack not installed — ${result.error}` }, 400);
     if (!result.already) installedPack = draft.slug;
     // Remember the name it went in under, so the job's record matches the

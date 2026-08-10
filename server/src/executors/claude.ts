@@ -201,6 +201,7 @@ const DOCUMENT_LIBRARIES = [
   '- .pptx write: `new (await import("pptxgenjs")).default()`, `await pres.writeFile({fileName})`',
   '- .pdf write/edit: `const {PDFDocument,StandardFonts}=await import("pdf-lib")`; `PDFDocument.load(bytes)` opens an existing one',
   '- styled .pdf report (when a `render_pdf` tool is present): write ONE self-contained .html — inline CSS, images as data: URIs, `@page` rules for size and margins — then call `render_pdf` with the whole html; it writes the PDF at the sandbox root and reports pages and bytes. External URLs are blocked during the render, so nothing the page needs may live outside it',
+  '- level-backdrop plate (when a `render_plate` tool is present): write ONE self-contained .html page — three.js importable from `http://three.local/three.module.js`, the only URL that resolves — set `document.title = "ready"` after your scene has drawn, then call `render_plate`; it writes a 2000×900 PNG at the sandbox root, quantized to the 128-colour backdrop budget, and reports colours and worst crew separation',
   '- .pdf text: `const {PDFParse}=await import("pdf-parse")`; `await new PDFParse({data}).getText()` → `.text`',
   // A scan returns nothing from `getText`, and an agent that does not know
   // there is an answer to that will conclude the file is empty and say so.

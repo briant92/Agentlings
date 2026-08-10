@@ -1,6 +1,13 @@
 import { createServer, type Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { callRender, RENDER_TOOL_NAMES, RENDER_TOOLS, renderAvailable } from './render';
+import {
+  callRender,
+  RENDER_TOOL_NAMES,
+  RENDER_TOOLS,
+  renderAvailable,
+  type PlateResult,
+  type RenderResult,
+} from './render';
 
 /**
  * The refusals run everywhere. The two that render run only where Edge
@@ -12,8 +19,8 @@ import { callRender, RENDER_TOOL_NAMES, RENDER_TOOLS, renderAvailable } from './
 const available = await renderAvailable();
 
 describe('the render tool list', () => {
-  it('offers exactly one tool, and its params fit the runner schema builder', () => {
-    expect(RENDER_TOOL_NAMES).toEqual(['render_pdf']);
+  it('offers the print and plate tools, and their params fit the runner schema builder', () => {
+    expect(RENDER_TOOL_NAMES).toEqual(['render_pdf', 'render_plate']);
     for (const tool of RENDER_TOOLS) {
       for (const param of tool.params) {
         expect(['string', 'number']).toContain(param.type);
@@ -31,6 +38,7 @@ describe('callRender refusals', () => {
   it('asks for the document when html is missing or blank', async () => {
     expect((await callRender('render_pdf', {})).error).toContain('html is required');
     expect((await callRender('render_pdf', { html: '   ' })).error).toContain('html is required');
+    expect((await callRender('render_plate', {})).error).toContain('html is required');
   });
 
   it('refuses an oversized document with the remedy, before any browser starts', async () => {
@@ -44,9 +52,9 @@ describe('rendering, on a machine that can', () => {
   it.runIf(available)(
     'prints real HTML to a real one-page PDF and counts it',
     async () => {
-      const result = await callRender('render_pdf', {
+      const result = (await callRender('render_pdf', {
         html: '<html><body><h1>Studio</h1><p>one page</p></body></html>',
-      });
+      })) as RenderResult;
       expect(result.error).toBeUndefined();
       const bytes = Buffer.from(result.pdf ?? '', 'base64');
       expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
@@ -77,9 +85,9 @@ describe('rendering, on a machine that can', () => {
     it.runIf(available)(
       'a document that asks for the network gets a PDF and the network gets nothing',
       async () => {
-        const result = await callRender('render_pdf', {
+        const result = (await callRender('render_pdf', {
           html: `<html><body><img src="${origin}/leak.png"><p>text</p></body></html>`,
-        });
+        })) as RenderResult;
         // The render succeeds — a blocked image is a broken picture, not a
         // failed document — and the request never left the page.
         expect(result.error).toBeUndefined();
@@ -87,6 +95,76 @@ describe('rendering, on a machine that can', () => {
           '%PDF-',
         );
         expect(hits).toBe(0);
+      },
+      45_000,
+    );
+
+    /**
+     * The plate's whole contract in one page: three.js arrives through the
+     * vendored exception, a real WebGL scene draws, the network still gets
+     * nothing, and the reply carries the plate already inside the backdrop
+     * budget with its separation measured. A flat or black screenshot would
+     * fail the colour floor — WebGL that silently did not run cannot pass.
+     */
+    it.runIf(available)(
+      'a three.js scene renders offline into a quantized, measured plate',
+      async () => {
+        const html = `<html><head><meta charset="utf-8"></head><body style="margin:0">
+<script type="module">
+  fetch('${origin}/leak.json').catch(() => {});
+  import * as THREE from 'http://three.local/three.module.js';
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(2000, 900);
+  document.body.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1433);
+  scene.fog = new THREE.Fog(0x1a1433, 10, 60);
+  const camera = new THREE.PerspectiveCamera(18, 2000 / 900, 0.1, 100);
+  camera.position.set(0, 3, 30);
+  const sun = new THREE.DirectionalLight(0xffc080, 2);
+  sun.position.set(-10, 5, -10);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x404070, 1));
+  for (let i = 0; i < 8; i++) {
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(3, 4 + i, 3),
+      new THREE.MeshStandardMaterial({ color: 0x5a3c60 }),
+    );
+    box.position.set(-14 + i * 4, (4 + i) / 2 - 2, -i * 4);
+    scene.add(box);
+  }
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({ color: 0x241a38 }),
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -2;
+  scene.add(ground);
+  renderer.render(scene, camera);
+  document.title = 'ready';
+</${'script'}></body></html>`;
+        const result = (await callRender('render_plate', { html })) as PlateResult;
+        expect(result.error).toBeUndefined();
+        expect(result.width).toBe(2000);
+        expect(result.height).toBe(900);
+        expect(result.colours).toBeGreaterThanOrEqual(2);
+        expect(result.colours).toBeLessThanOrEqual(128);
+        expect(typeof result.worstSeparation).toBe('number');
+        expect(typeof result.worstAt).toBe('number');
+        const bytes = Buffer.from(result.png ?? '', 'base64');
+        expect(bytes.subarray(1, 4).toString('latin1')).toBe('PNG');
+        expect(hits).toBe(0);
+      },
+      60_000,
+    );
+
+    it.runIf(available)(
+      'a page that never says ready is refused by name, not screenshotted early',
+      async () => {
+        const result = await callRender('render_plate', {
+          html: '<html><head><title>plate</title></head><body><p>still drawing</p></body></html>',
+        });
+        expect(result.error).toContain('"ready"');
       },
       45_000,
     );

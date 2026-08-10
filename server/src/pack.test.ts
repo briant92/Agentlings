@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   AGENTLING_PACK,
-  platesInDraftProblem,
   THEME_SLOTS,
   validateLevelPack,
   validatePack,
@@ -243,14 +242,4 @@ describe('validateLevelPack', () => {
     });
   });
 
-  describe('platesInDraftProblem', () => {
-    it('is silent for a pack with no plates', () => {
-      expect(platesInDraftProblem(pack())).toBeNull();
-    });
-    it('names the wall for a pack that carries them', () => {
-      expect(platesInDraftProblem(pack({ backdrop: { plates: ['far.png'] } }))).toMatch(
-        /cannot ride a PACK\.json draft/,
-      );
-    });
-  });
 });

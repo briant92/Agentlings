@@ -97,6 +97,7 @@ describe('what a job is actually allowed to call', () => {
     const { granted } = resolveForJob(names, all, {});
     expect(mcpToolNames(granted).sort()).toEqual([
       'mcp__render__render_pdf',
+      'mcp__render__render_plate',
       'mcp__web__fetch_page',
     ]);
   });
@@ -118,17 +119,18 @@ describe('what a job is actually allowed to call', () => {
 /**
  * The renderer prints a run's own HTML and reaches nothing — no secret, no
  * network (every request the page makes is aborted, render.test.ts proves it
- * against a live listener). What is asserted here is the grant shape: one
- * tool, builtin, on by default like `web`, and the settings switch still
- * authoritative over it.
+ * against a live listener; the plate tool's one vendored exception is served
+ * from disk and proved the same way). What is asserted here is the grant
+ * shape: the two tools, builtin, on by default like `web`, and the settings
+ * switch still authoritative over both.
  */
 describe('the render connection', () => {
   const render = all.find((c) => c.name === 'render');
 
-  it('grants exactly the one print tool, with nothing to configure', () => {
+  it('grants exactly the print and plate tools, with nothing to configure', () => {
     expect(render?.transport).toBe('builtin');
     expect(render?.defaultOn).toBe(true);
-    expect(render?.tools).toEqual(['render_pdf']);
+    expect(render?.tools).toEqual(['render_pdf', 'render_plate']);
     expect(render?.secrets).toBeUndefined();
   });
 

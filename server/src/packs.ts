@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
 import { BUILTIN_THEMES } from '@agentlings/shared';
@@ -110,14 +117,46 @@ export type InstallResult = { installed: true; already: boolean } | { error: str
  * Anything else already at that slug is refused and left alone. Overwriting
  * someone's installed world because a session picked the same name is not a
  * thing an approval should be able to do silently.
+ *
+ * `from` is where the pack's plates are copied from — the job sandbox, for a
+ * draft (D-143). Validated again at this moment rather than trusted from
+ * harvest, because the sandbox can change between review and Approve; the
+ * plates land before pack.json does, so the json is the commit point and a
+ * half-failed install is completed, not blocked, by approving again.
  */
-export function installPack(root: string, draft: { slug: string; pack: LevelPack }): InstallResult {
+export function installPack(
+  root: string,
+  draft: { slug: string; pack: LevelPack },
+  from?: string,
+): InstallResult {
   const dir = path.join(packsDir(root), draft.slug);
   const file = path.join(dir, 'pack.json');
   const contents = `${JSON.stringify(draft.pack, null, 2)}\n`;
+  const plates = draft.pack.backdrop?.plates ?? [];
+
+  if (plates.length > 0) {
+    if (from === undefined) {
+      return { error: 'this pack carries plates and the install was given nowhere to copy them from' };
+    }
+    const plateProblems = checkPlates(draft.pack, from).filter((p) => p.level === 'error');
+    if (plateProblems.length > 0) {
+      return { error: plateProblems.map((p) => p.message).join('; ') };
+    }
+  }
 
   if (existsSync(file)) {
-    if (readFileSync(file, 'utf8') === contents) return { installed: true, already: true };
+    if (readFileSync(file, 'utf8') === contents) {
+      // The retry path: the json landed but a plate may not have. Copy what
+      // is missing and touch nothing that is already there.
+      if (from !== undefined) {
+        for (const plate of plates) {
+          if (!existsSync(path.join(dir, plate))) {
+            copyFileSync(path.join(from, plate), path.join(dir, plate));
+          }
+        }
+      }
+      return { installed: true, already: true };
+    }
     // Name the world the way the palette names it, not by its folder. The
     // first time this fired, the message said only "moby-dick" — a string the
     // user had never seen, for a world the app calls "The Pequod" — and told
@@ -139,6 +178,12 @@ export function installPack(root: string, draft: { slug: string; pack: LevelPack
   }
 
   mkdirSync(dir, { recursive: true });
+  // Plates land first: pack.json is the commit point, so a copy that dies
+  // midway leaves a folder the scan rejects loudly rather than a world whose
+  // picture is missing.
+  if (from !== undefined) {
+    for (const plate of plates) copyFileSync(path.join(from, plate), path.join(dir, plate));
+  }
   writeFileSync(file, contents);
   return { installed: true, already: false };
 }

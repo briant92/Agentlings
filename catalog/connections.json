@@ -114,7 +114,16 @@
     "The render is offline — every request the page makes is aborted — so the",
     "document must be self-contained: inline CSS, data: images, @page rules",
     "for size and margins. The reply is bytes the runner writes at the",
-    "sandbox root; base64 never rides a prompt."
+    "sandbox root; base64 never rides a prompt.",
+    "",
+    "render_plate (D-143) is the same door pointed at level backdrops: the",
+    "page renders at 2000×900, is screenshotted once it sets document.title",
+    "to 'ready', and comes back quantized to the 128-colour backdrop budget",
+    "with crew separation measured — the receipt carries the same numbers the",
+    "pack checker holds a plate to. One stated exception to the offline rule:",
+    "http://three.local/three.module.js (and the core file it imports) is",
+    "fulfilled from the server's own pinned copy of three.js and never leaves",
+    "the machine; every other URL still aborts."
   ],
   "connections": [
     {
@@ -129,11 +138,11 @@
     },
     {
       "name": "render",
-      "label": "Print HTML to PDF",
-      "description": "Renders a run's own self-contained HTML into a styled PDF through the system Edge, offline — external URLs are blocked during the render.",
+      "label": "Print HTML to PDF, render backdrop plates",
+      "description": "Renders a run's own self-contained HTML through the system Edge, offline — into a styled PDF, or a 2000×900 level-backdrop plate quantized to the backdrop budget. External URLs are blocked during the render; three.js is served from the server's own pinned copy.",
       "transport": "builtin",
       "defaultOn": true,
-      "tools": ["render_pdf"]
+      "tools": ["render_pdf", "render_plate"]
     },
     {
       "name": "github",

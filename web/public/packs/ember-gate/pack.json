@@ -1,0 +1,86 @@
+{
+  "name": "The Ember Gate",
+  "provenance": "Original three.js scene rendered through the render_plate door (D-143), fourth take of the see-your-work loop; quantized in-door to the 128-colour budget. three.js (MIT) as renderer; no other third-party assets.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "rockEdge",
+  "theme": {
+    "void": 1313316,
+    "rock": 4861762,
+    "rockLight": 8016712,
+    "rockDark": 3153980,
+    "rockEdge": 16767392,
+    "accent": 13201234,
+    "accentLight": 16769712,
+    "accentDark": 8142684,
+    "grass": 7227964,
+    "grassDark": 4862249,
+    "wood": 9067068,
+    "woodDark": 6240810,
+    "stoneDark": 2365489,
+    "flame": 15902298,
+    "flameCore": 16771488,
+    "hover": 6278628
+  },
+  "backdrop": {
+    "plates": [
+      "plate.png"
+    ],
+    "scrim": {
+      "color": "void",
+      "alpha": 0.3,
+      "from": "groundY-110",
+      "steps": 8
+    }
+  },
+  "ops": [
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 62,
+      "color": "stoneDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": "worldWidth",
+      "h": 2,
+      "color": "accent"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+36",
+      "w": "worldWidth",
+      "h": 3,
+      "color": "rockDark",
+      "alpha": 0.6
+    },
+    {
+      "op": "speckle",
+      "count": 140,
+      "x": 0,
+      "y": "groundY+5",
+      "w": "worldWidth",
+      "h": 55,
+      "light": "rock",
+      "dark": "void"
+    }
+  ],
+  "ambient": [
+    {
+      "fx": "motes",
+      "count": 10,
+      "x": 480,
+      "y": 110,
+      "w": 420,
+      "h": 240
+    },
+    {
+      "fx": "flyer"
+    }
+  ]
+}

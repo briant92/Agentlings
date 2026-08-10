@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { slugProblem, THEME_SLOTS, type LevelPack } from '@agentlings/shared';
 import { checkPackDraft, PACK_FILE, readPackDraft } from './packcontract';
 import { installPack, packsDir, scanPacks } from './packs';
+import { encodePng } from './raster';
 
 const theme = Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233]));
 
@@ -176,15 +177,73 @@ describe('renaming a pack out of a collision', () => {
   });
 });
 
-describe('plates in a draft (D-142)', () => {
-  // A draft is one JSON file and a plate is an image beside it: Approve copies
-  // only the JSON, so accepting this would install a pack the loader then
-  // rejects — after the money was spent.
-  it('refuses a draft whose pack carries plates, naming the way through', () => {
-    const carrying = draft({
-      pack: pack({ rim: 'rockEdge', backdrop: { plates: ['far.png'] } }) as unknown as LevelPack,
-    });
-    expect(checkPackDraft(carrying).error).toMatch(/cannot ride a PACK\.json draft/);
-    expect(checkPackDraft(carrying).error).toMatch(/web\/public\/packs/);
+describe('plates ride the draft (D-143)', () => {
+  /**
+   * A draft's plate is a file beside PACK.json at the sandbox root; harvest
+   * judges the pair, review shows them, and Approve copies plates before the
+   * json so the json stays the commit point. What D-142 refused for want of
+   * a copier, this carries.
+   */
+  const plated = () =>
+    pack({ rim: 'rockEdge', backdrop: { plates: ['far.png'] } }) as unknown as LevelPack;
+  const PNG = (() => {
+    const w = 1000;
+    const h = 450;
+    const pixels = new Uint8ClampedArray(w * h * 3);
+    for (let i = 0; i < w * h; i++) {
+      pixels[i * 3] = 0x0a;
+      pixels[i * 3 + 1] = 0x0a;
+      pixels[i * 3 + 2] = 0x12;
+    }
+    return encodePng({ pixels, w, h });
+  })();
+
+  let sandbox: string;
+  beforeEach(() => {
+    sandbox = path.join(root, 'sandbox');
+    mkdirSync(sandbox, { recursive: true });
+  });
+
+  it('reads a draft whose plate sits beside it', () => {
+    writeFileSync(path.join(sandbox, PACK_FILE), JSON.stringify({ slug: 'amber', pack: plated() }));
+    writeFileSync(path.join(sandbox, 'far.png'), PNG);
+    const read = readPackDraft(sandbox);
+    expect(read?.error).toBeUndefined();
+    expect(read?.draft?.pack.backdrop?.plates).toEqual(['far.png']);
+  });
+
+  it('fails the draft at harvest, by name, when the plate is not there', () => {
+    writeFileSync(path.join(sandbox, PACK_FILE), JSON.stringify({ slug: 'amber', pack: plated() }));
+    expect(readPackDraft(sandbox)?.error).toMatch(/"far\.png" is not in the pack folder/);
+  });
+
+  it('Approve copies the plate with the json, and the scan accepts the result', () => {
+    writeFileSync(path.join(sandbox, 'far.png'), PNG);
+    const result = installPack(root, { slug: 'amber', pack: plated() }, sandbox);
+    expect(result).toEqual({ installed: true, already: false });
+    expect(existsSync(path.join(packsDir(root), 'amber', 'far.png'))).toBe(true);
+    const scan = scanPacks(root);
+    expect(scan.rejected).toEqual([]);
+    expect(scan.installed.map((p) => p.slug)).toEqual(['amber']);
+  });
+
+  it('a second Approve completes a half-landed install rather than refusing', () => {
+    writeFileSync(path.join(sandbox, 'far.png'), PNG);
+    installPack(root, { slug: 'amber', pack: plated() }, sandbox);
+    rmSync(path.join(packsDir(root), 'amber', 'far.png'));
+    const again = installPack(root, { slug: 'amber', pack: plated() }, sandbox);
+    expect(again).toEqual({ installed: true, already: true });
+    expect(existsSync(path.join(packsDir(root), 'amber', 'far.png'))).toBe(true);
+  });
+
+  it('refuses at Approve when the sandbox no longer holds a good plate', () => {
+    writeFileSync(path.join(sandbox, 'far.png'), 'gone wrong');
+    const result = installPack(root, { slug: 'amber', pack: plated() }, sandbox);
+    expect('error' in result && result.error).toMatch(/did not decode/);
+  });
+
+  it('refuses a plated pack given nowhere to copy from', () => {
+    const result = installPack(root, { slug: 'amber', pack: plated() });
+    expect('error' in result && result.error).toMatch(/nowhere to copy/);
   });
 });

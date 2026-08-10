@@ -2,7 +2,7 @@
 name: designer
 description: Visual design — worlds, layouts, colours and palettes; draws a thing, renders it, and judges how it looks
 tools: [read, write, edit, bash]
-skills: [see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report]
+skills: [see-your-work, concise-reports, authoring-a-level-pack, plate-design, deck-design, pdf-report]
 maxTurns: 20
 timeoutMinutes: 25
 ---

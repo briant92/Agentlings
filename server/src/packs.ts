@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import path from 'node:path';
 import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
 import { BUILTIN_THEMES } from '@agentlings/shared';
+import { checkPlates } from './plates';
 
 /**
  * Installed level packs: whole worlds a level can be set in, alongside the
@@ -75,6 +76,12 @@ export function scanPacks(root: string): PackScan {
     }
 
     const problems = validateLevelPack(parsed);
+    if (problems.some((p) => p.level === 'error')) {
+      rejected.push({ slug, problems });
+      continue;
+    }
+    // The raster half: the shape checker cannot see the folder, this can.
+    problems.push(...checkPlates(parsed as LevelPack, path.join(dir, slug)));
     if (problems.some((p) => p.level === 'error')) {
       rejected.push({ slug, problems });
       continue;

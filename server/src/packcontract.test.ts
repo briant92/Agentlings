@@ -175,3 +175,16 @@ describe('renaming a pack out of a collision', () => {
     expect(slugProblem('cave', [])).toMatch(/built-in theme/);
   });
 });
+
+describe('plates in a draft (D-142)', () => {
+  // A draft is one JSON file and a plate is an image beside it: Approve copies
+  // only the JSON, so accepting this would install a pack the loader then
+  // rejects — after the money was spent.
+  it('refuses a draft whose pack carries plates, naming the way through', () => {
+    const carrying = draft({
+      pack: pack({ rim: 'rockEdge', backdrop: { plates: ['far.png'] } }) as unknown as LevelPack,
+    });
+    expect(checkPackDraft(carrying).error).toMatch(/cannot ride a PACK\.json draft/);
+    expect(checkPackDraft(carrying).error).toMatch(/web\/public\/packs/);
+  });
+});

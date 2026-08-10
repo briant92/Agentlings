@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { slugProblem, validateLevelPack, type LevelPack } from '@agentlings/shared';
+import {
+  platesInDraftProblem,
+  slugProblem,
+  validateLevelPack,
+  type LevelPack,
+} from '@agentlings/shared';
 
 /**
  * The pack contract: how a run hands over a world it has authored (M4).
@@ -64,6 +69,10 @@ export function checkPackDraft(parsed: unknown): PackDraftRead {
   if (problems.length > 0) {
     return { error: problems.map((p) => p.message).join('; ') };
   }
+  // A draft is one JSON file and a plate is an image beside it (D-142); the
+  // CLI checker refuses the same way, so a session sees this wall from inside.
+  const plateSays = platesInDraftProblem(pack);
+  if (plateSays) return { error: plateSays };
   return { draft: { slug: slug as string, pack: pack as LevelPack } };
 }
 

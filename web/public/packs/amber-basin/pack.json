@@ -1,0 +1,39 @@
+{
+  "name": "The Amber Basin",
+  "provenance": "Original in-repo work (D-142): dusk-basin plate painted in canvas 2D, rendered by headless Edge, quantized to 128 colours by pack:quantize. No third-party assets; palette hand-picked. CC0.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "rockEdge",
+  "theme": {
+    "void": 1577523,
+    "rock": 4861762,
+    "rockLight": 8016712,
+    "rockDark": 3022131,
+    "rockEdge": 15250538,
+    "accent": 13201234,
+    "accentLight": 16766614,
+    "accentDark": 8142684,
+    "grass": 9071164,
+    "grassDark": 6243881,
+    "wood": 9067068,
+    "woodDark": 6240810,
+    "stoneDark": 2825528,
+    "flame": 15902298,
+    "flameCore": 16771488,
+    "hover": 6278628
+  },
+  "backdrop": {
+    "plates": ["far.png"],
+    "scrim": { "color": "void", "alpha": 0.32, "from": "groundY-120", "steps": 8 }
+  },
+  "ops": [
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 62, "color": "rock" },
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 2, "color": "accent" },
+    { "op": "rect", "x": 0, "y": "groundY+34", "w": "worldWidth", "h": 3, "color": "rockDark", "alpha": 0.6 },
+    { "op": "speckle", "count": 150, "x": 0, "y": "groundY+5", "w": "worldWidth", "h": 55, "light": "rockLight", "dark": "rockDark" }
+  ],
+  "ambient": [
+    { "fx": "motes", "count": 12, "x": 250, "y": 90, "w": 580, "h": 220 },
+    { "fx": "flyer" }
+  ]
+}

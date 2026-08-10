@@ -7,7 +7,15 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AGENTLING_PACK, slugProblem, validateLevelPack, validatePack } from '@agentlings/shared';
+import {
+  AGENTLING_PACK,
+  platesInDraftProblem,
+  slugProblem,
+  validateLevelPack,
+  validatePack,
+  type LevelPack,
+} from '@agentlings/shared';
+import { checkPlates } from '../server/src/plates';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const target = process.argv[2] ?? path.join(ROOT, 'web', 'public', 'art', 'agentling.json');
@@ -60,6 +68,15 @@ if (wrapped) {
     : [];
   const says = slugProblem((json as { slug?: unknown }).slug, taken);
   if (says) problems.unshift({ level: 'error', message: says });
+  // The same refusal Approve would make, visible before any money is spent.
+  const plateSays = platesInDraftProblem(level);
+  if (plateSays) problems.push({ level: 'error', message: plateSays });
+}
+
+// An installed-shape level pack sits in its folder, so the raster half of the
+// plate rules — file present, size, colour budget — can run right here.
+if (kind === 'level' && !wrapped && problems.every((p) => p.level !== 'error')) {
+  problems.push(...checkPlates(level as LevelPack, path.dirname(path.resolve(target))));
 }
 
 // The atlas can be perfect and still point at a PNG nobody shipped.

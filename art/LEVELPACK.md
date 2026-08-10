@@ -29,6 +29,7 @@ directory order.
   "rim": "rockEdge",             // optional; see Legibility
   "theme": { "void": 2236468, … },  // all 16 slots, as numbers
   "backdrop": {                  // optional
+    "plates": ["far.png"],       // optional raster behind everything — see The plate
     "scrim": { "color": "void", "alpha": 0.38, "from": 300 },
     "ops": [ … ]
   },
@@ -82,9 +83,38 @@ own palette and the checker only asks that the numbers are colours. Staying on
 the DB32 ramp is still what makes a pack look like it belongs beside the crew,
 who are snapped.
 
-A raster backdrop with a palette of its own is decided (D-108) and **not yet
-built**: `backdrop` currently takes ops, not an image. When it lands it gets
-its own quantized budget rather than DB32's 32 colours.
+The plate is the deliberate exception (D-108): it carries its own quantized
+palette, budgeted at 128 colours and dithered, because snapping a soft-shaded
+render to 32 colours destroys it. The split has a stated boundary: everything
+drawn from theme slots stays DB32-adjacent; the picture behind it does not.
+
+## The plate
+
+`backdrop.plates` names a pre-rendered raster drawn beneath everything —
+plate, then backdrop ops, then the scrim, then the foreground (D-142). The
+rules, all checked before a pack installs:
+
+- **One plate, v1.** The field is an array so depth-layered plates need no
+  migration later, but today it carries exactly one file.
+- **A plain `.png` name beside `pack.json`** — no paths; the name is joined
+  to the pack folder, so like the slug it is a security boundary.
+- **Sized to the pack's own geometry**: `1000×viewH`, or `2000×(2·viewH)`
+  for a 2× author-and-downsample. The Amber Basin ships 2000×900 for its
+  450-tall world.
+- **At most 128 colours.** `npm run pack:quantize -- source.png far.png`
+  gets a render there, dithered, and previews the crew standing on it.
+- **`rim` is required** the moment a plate is present — the outline is the
+  one legibility device that survives standing in front of a picture.
+- **Drafts cannot carry plates**: a run's `PACK.json` is one JSON file and a
+  plate is an image beside it, so the contract refuses the combination with
+  the same message the CLI gives. Plate-bearing packs install by folder drop.
+
+`npm run pack:check` on the folder's `pack.json` runs every rule above;
+`npm run pack:render` composites the plate under the drawn scene and reports
+per-position crew separation. `web/public/packs/amber-basin` is the worked
+example. Provenance matters doubly here — a plate is exactly the kind of file
+that arrives from a renderer, a model or a marketplace, and its licence lands
+in this repository with it.
 
 ## Licensing
 

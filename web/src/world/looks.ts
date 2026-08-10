@@ -31,6 +31,19 @@ const looks = new Map<ThemeId, Look>(
   ]),
 );
 
+/**
+ * Decoded backdrop plates by pack, loaded at boot alongside the packs
+ * themselves so the level cards — drawn synchronously during render — can
+ * composite them. The world does not use these: Pixi loads its own texture.
+ */
+const plateImages = new Map<ThemeId, HTMLImageElement[]>();
+
+/** The plate files of a pack, as fetchable paths under the web root. */
+export function plateUrls(look: Look): string[] {
+  if (!look.installed) return [];
+  return (look.scene.backdrop?.plates ?? []).map((file) => `/packs/${look.id}/${file}`);
+}
+
 /** What the app falls back to when a level names a look nothing can supply. */
 const FALLBACK: ThemeKey = 'cave';
 
@@ -60,6 +73,27 @@ export async function loadLooks(): Promise<void> {
         installed: true,
       });
     }
+    // Plates, decoded before the first render so a card never draws half a
+    // world. A plate that fails to load costs only itself: the card and the
+    // world draw from ops alone, the way a missing pack falls back to cave.
+    await Promise.all(
+      [...looks.values()].filter((look) => look.installed).map(async (look) => {
+        const images = await Promise.all(
+          plateUrls(look).map(async (url) => {
+            try {
+              const img = new Image();
+              img.src = url;
+              await img.decode();
+              return img;
+            } catch {
+              return null;
+            }
+          }),
+        );
+        const loaded = images.filter((img): img is HTMLImageElement => img !== null);
+        if (loaded.length > 0) plateImages.set(look.id, loaded);
+      }),
+    );
   } catch {
     // Offline, or an older server with no /api/packs. Built-ins still work.
   }
@@ -98,7 +132,13 @@ const thumbCache = new Map<ThemeId, string>();
  * an image, so the level card and the review preview cannot draw the same
  * world differently — only at different sizes.
  */
-function paintTo(scene: Scene, theme: Theme, w: number, h: number): string {
+function paintTo(
+  scene: Scene,
+  theme: Theme,
+  w: number,
+  h: number,
+  plates: HTMLImageElement[] = [],
+): string {
   const anchors = anchorsOf(scene);
   const canvas = document.createElement('canvas');
   canvas.width = w;
@@ -107,6 +147,9 @@ function paintTo(scene: Scene, theme: Theme, w: number, h: number): string {
 
   ctx.fillStyle = css(theme.void);
   ctx.fillRect(0, 0, w, h);
+  // The plate sits under everything drawScene draws — the same order the
+  // world composites in (D-142).
+  for (const plate of plates) ctx.drawImage(plate, 0, 0, w, h);
   drawScene(canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css), scene, theme, anchors);
   ctx.globalAlpha = 1;
   return canvas.toDataURL();
@@ -124,7 +167,7 @@ export function renderThumbnail(id: ThemeId): string {
   const cached = thumbCache.get(id);
   if (cached) return cached;
   const look = lookFor(id);
-  const url = paintTo(look.scene, look.theme, 240, 72);
+  const url = paintTo(look.scene, look.theme, 240, 72, plateImages.get(look.id));
   // Only cache a real answer. Asking for a pack's card before its pack has
   // loaded returns the fallback, and caching that would pin the cave onto
   // that level for the life of the page — the picture would stay wrong long

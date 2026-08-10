@@ -24,10 +24,12 @@ import {
   type LevelPack,
 } from '@agentlings/shared';
 import { COLOR_POOL } from '../server/src/levels';
+import { blitPlate } from '../server/src/plates';
 import {
   bufferSurface,
   drawStandIn,
   encodePng,
+  decodePng,
   relLuminance,
   separationAt,
 } from '../server/src/raster';
@@ -67,6 +69,17 @@ const { surface, raster } = bufferSurface(
   scale,
   paintOf(pack.theme, 'void'),
 );
+
+// The plate first, exactly as the app composites (D-142). A plate that will
+// not load is reported and skipped, so this still renders what it can.
+for (const file of pack.backdrop?.plates ?? []) {
+  const at = path.join(path.dirname(path.resolve(target)), file);
+  try {
+    blitPlate(raster, decodePng(readFileSync(at)));
+  } catch (error) {
+    console.error(`  (plate "${file}" not composited: ${(error as Error).message})`);
+  }
+}
 
 drawScene(surface, pack, pack.theme, anchors);
 

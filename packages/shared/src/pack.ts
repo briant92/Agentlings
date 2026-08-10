@@ -87,6 +87,34 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_SLUG = 40;
 
 /**
+ * A plate filename is joined to the pack directory, so like the slug this is
+ * a security boundary, not tidiness: no separators, no leading dot, nothing
+ * that could name a path. PNG only — that is what the raster tooling decodes.
+ */
+const PLATE_FILE_RE = /^[a-z0-9][a-z0-9._-]{0,62}\.png$/i;
+
+/**
+ * Why a PACK.json draft may not carry plates, stated once.
+ *
+ * A draft is one JSON file; a plate is an image beside it, and Approve copies
+ * only the JSON — so a plate-bearing draft would install a pack whose plate
+ * the loader then rejects, after the money was spent. The server's contract
+ * and the CLI checker both refuse with this, so the wall is visible from
+ * inside a sandbox (D-110's rule: no refusal a session cannot see coming).
+ */
+export function platesInDraftProblem(pack: unknown): string | null {
+  const plates = ((pack as Partial<LevelPack> | null)?.backdrop as Backdrop | undefined)?.plates;
+  if (Array.isArray(plates) && plates.length > 0) {
+    return (
+      'backdrop.plates cannot ride a PACK.json draft yet — a draft is one JSON file and ' +
+      'a plate is an image beside it. Install plate-bearing packs by dropping the folder ' +
+      'into web/public/packs (D-142)'
+    );
+  }
+  return null;
+}
+
+/**
  * Only the names matter here — the checker asks whether a coordinate *parses*
  * and names a real anchor, not where it lands.
  */
@@ -235,6 +263,37 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
 
   if (!Array.isArray(data.ops) || data.ops.length === 0) {
     fail('ops is missing or empty — a pack with no foreground draws nothing');
+  }
+
+  // The raster plate (D-108, D-142). Shape only — whether the file exists,
+  // its size and its colour budget need the pack folder, which the server and
+  // the CLI have and a draft does not; those checks live in server/plates.
+  const plates = (data.backdrop as Backdrop | undefined)?.plates;
+  if (plates !== undefined) {
+    if (!Array.isArray(plates) || plates.length === 0) {
+      fail('backdrop.plates must be a non-empty array of filenames');
+    } else {
+      if (plates.length > 1) {
+        fail(
+          `backdrop.plates carries ${plates.length} files; v1 draws exactly one — ` +
+            'layered plates are not built yet (D-142)',
+        );
+      }
+      plates.forEach((file, i) => {
+        if (typeof file !== 'string' || !PLATE_FILE_RE.test(file)) {
+          fail(
+            `backdrop.plates[${i}] must be a plain .png filename beside pack.json, ` +
+              `like "plate.png" — got ${JSON.stringify(file)}`,
+          );
+        }
+      });
+      if (data.rim === undefined) {
+        fail(
+          'a raster backdrop needs the rim (D-108): set `rim` to a slot that ' +
+            'contrasts with the plate, or the crew can vanish into the picture',
+        );
+      }
+    }
   }
 
   // Colours and coordinates, everywhere they appear. Skips `theme` itself,

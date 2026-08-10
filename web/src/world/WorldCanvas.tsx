@@ -1,4 +1,13 @@
-import { Application, Container, Graphics, Rectangle, Sprite, Text, type Texture } from 'pixi.js';
+import {
+  Application,
+  Assets,
+  Container,
+  Graphics,
+  Rectangle,
+  Sprite,
+  Text,
+  type Texture,
+} from 'pixi.js';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Job, JobEvent, ThemeId, WorldState } from '@agentlings/shared';
 import {
@@ -25,7 +34,7 @@ import {
 import { DB } from './palette';
 import { departedIds } from './roster';
 import { anchorsOf, drawScene, paintOf, pixiSurface } from './scene';
-import { lookFor } from './looks';
+import { lookFor, plateUrls } from './looks';
 import {
   buildAgentTextures,
   buildSilhouetteTextures,
@@ -367,6 +376,31 @@ export function WorldCanvas({
             silhouette: (color) => sheet.silhouette(color),
           });
         });
+
+        // The pre-rendered plate (D-142): beneath everything drawScene draws,
+        // the same order every other consumer composites in. Loaded async;
+        // until it arrives — or if it never does — the void and the ops stand
+        // alone, the way a missing pack leaves a level in the cave.
+        const plateLayer = new Container();
+        app.stage.addChild(plateLayer);
+        for (const url of plateUrls(look)) {
+          Assets.load<Texture>(url)
+            .then((texture) => {
+              if (destroyed) return;
+              // Smooth minification: a 2x plate downsamples into the buffer
+              // (D-108's "author at 2000×900 and downsample"); the pixel look
+              // of everything else comes from its own art, not from sampling.
+              texture.source.scaleMode = 'linear';
+              const plate = new Sprite(texture);
+              plate.width = WORLD_WIDTH;
+              plate.height = VIEW_H;
+              plate.eventMode = 'none';
+              plateLayer.addChild(plate);
+            })
+            .catch(() => {
+              // A plate the browser cannot fetch costs only itself.
+            });
+        }
 
         const scenery = new Graphics();
         const marks = drawScene(pixiSurface(scenery), scene, T, ANCHORS);

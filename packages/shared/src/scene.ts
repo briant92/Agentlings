@@ -248,11 +248,26 @@ export interface Scrim {
  * What sits behind the level: the painting the foreground stands in front of.
  *
  * Separate from `ops` rather than merged with them because the scrim has to
- * land *between* the two, and because a backdrop is the layer that may later
- * be a raster file with a palette of its own (D-108) while the foreground
- * stays on DB32.
+ * land *between* the two, and because a backdrop is the layer that carries
+ * its own palette (D-108) while the foreground stays on DB32.
  */
 export interface Backdrop {
+  /**
+   * The pre-rendered picture, as a raster file beside pack.json (D-108,
+   * D-142). Drawn beneath everything — plate, then `ops`, then the scrim,
+   * then the foreground.
+   *
+   * Not an op, deliberately: `Surface` has three primitives and a raster is
+   * not one, so each consumer composites the plate *before* walking
+   * `drawScene` rather than every surface growing an image method. An array
+   * so depth-layered plates need no migration later, but v1 carries exactly
+   * one — stacking needs alpha, and the raster tooling is opaque RGB.
+   *
+   * The file rules are D-108's, made checkable: a plain .png name, sized
+   * 1000×viewH or 2000×(2·viewH), at most 128 colours, and `rim` set on the
+   * scene — the one device that survives standing in front of a picture.
+   */
+  plates?: string[];
   ops?: SceneOp[];
   scrim?: Scrim;
 }

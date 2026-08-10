@@ -2,10 +2,12 @@
 
 Researched 2026-08-10 at Brian's request: how to put proper pre-rendered 3D
 graphics behind the world, with the 2D pixel frame — crew, props, ground —
-sitting on top, closer to the viewer. This is a proposal, not a decision:
-nothing here is built, and the open choices are listed at the end. When they
-are settled they become a `DECISIONS.md` entry and this file shrinks to what
-the entry does not carry.
+sitting on top, closer to the viewer. **Status: v1 was greenlit as
+recommended the same day and is built — D-142.** Section 5 records what was
+chosen; the file stays as the research record, the v2 menu (parallax,
+occlusion strip, animated regions), and the production-route map (the render
+door's screenshot mode and the Blender template are the next steps, in that
+order). The plate rules as shipped live in `art/LEVELPACK.md`.
 
 An interactive mockup accompanies this document (Claude artifact
 "Pre-rendered backdrop — Agentlings mockup"): the same diorama in three
@@ -237,17 +239,17 @@ viewpoint and lighting a fixed diorama doesn't use, at the price of a second
 engine; pre-rendered plates put unlimited render quality on screen for the
 cost of three textured quads.
 
-## 5. The decisions Brian owns
+## 5. The decisions — taken 2026-08-10, as recommended (D-142)
 
-1. **Adopt raster plates v1** (single plate, in-Pixi, quantized-128,
-   checker rules as §3)? — recommended yes.
-2. **Finish**: stay quantized-only (recommended; honors D-108) or also
-   build the smooth finish now (Option B; amends D-108)? Judge by the
-   mockup's SMOOTH vs QUANT toggle before answering.
-3. **Production order**: Route 0 → 1 → 2 as recommended? Route 1's sub-choice:
-   vendor three.js into the door (recommended) vs inline per session.
-4. **v2 scope**: parallax + occlusion strip deferred (recommended), format
-   carries `plates[]` from day one either way.
+1. **Adopt raster plates v1** — yes. Single plate, in-Pixi, quantized-128,
+   checker rules as §3. Built.
+2. **Finish** — quantized-only; D-108 stands. The smooth finish remains a
+   possible v2, priced in §3 Option B.
+3. **Production order** — Route 0 → 1 → 2 confirmed. The first plate shipped
+   by Route 0 (painted in-repo, quantized). Route 1's screenshot mode, with
+   three.js vendored into the door, is the next build.
+4. **v2 scope** — parallax and the occlusion strip deferred; the format
+   carries `plates[]` from day one, so neither needs a migration.
 
 ## Sources
 

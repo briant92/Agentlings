@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AGENTLING_PACK,
+  platesInDraftProblem,
   THEME_SLOTS,
   validateLevelPack,
   validatePack,
@@ -209,5 +210,47 @@ describe('validateLevelPack', () => {
     expect(bad(pack({ ops: [] }))).toEqual([
       'ops is missing or empty — a pack with no foreground draws nothing',
     ]);
+  });
+
+  // The raster plate, shape half (D-142). The folder half — existence, size,
+  // colour budget — lives in server/plates and is tested there.
+  describe('backdrop plates', () => {
+    const withPlates = (plates: unknown, over: Record<string, unknown> = {}) =>
+      pack({ rim: 'rockEdge', backdrop: { plates }, ...over });
+
+    it('accepts one plainly-named plate on a pack that sets its rim', () => {
+      expect(bad(withPlates(['far.png']))).toEqual([]);
+    });
+
+    it('refuses more than one plate — v1 draws exactly one', () => {
+      expect(bad(withPlates(['a.png', 'b.png']))[0]).toMatch(/v1 draws exactly one/);
+    });
+
+    it('refuses an empty plates array rather than treating it as none', () => {
+      expect(bad(withPlates([]))[0]).toMatch(/non-empty array/);
+    });
+
+    // The filename is joined to the pack directory, so it is a boundary the
+    // same way the slug is: nothing that could name a path may pass.
+    it('refuses names that reach for a path or another format', () => {
+      for (const evil of ['../escape.png', 'a/b.png', 'a\\b.png', '.hidden.png', 'plate.jpg']) {
+        expect(bad(withPlates([evil]))[0]).toMatch(/plain \.png filename/);
+      }
+    });
+
+    it('insists on the rim: the one device that survives a picture', () => {
+      expect(bad(pack({ backdrop: { plates: ['far.png'] } }))[0]).toMatch(/needs the rim/);
+    });
+  });
+
+  describe('platesInDraftProblem', () => {
+    it('is silent for a pack with no plates', () => {
+      expect(platesInDraftProblem(pack())).toBeNull();
+    });
+    it('names the wall for a pack that carries them', () => {
+      expect(platesInDraftProblem(pack({ backdrop: { plates: ['far.png'] } }))).toMatch(
+        /cannot ride a PACK\.json draft/,
+      );
+    });
   });
 });

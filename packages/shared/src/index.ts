@@ -35,6 +35,16 @@ export interface LevelInfo {
   colors: number[];
   jobsDone: number;
   jobsRunning: number;
+  /** Deliveries waiting on a decision — the select screen's red block (D-137). */
+  toReview: number;
+  /** Unpaused schedules living here — the green block. */
+  schedules: number;
+  /**
+   * The finished-job ids the inbox lists, newest first. The browser subtracts
+   * its own seen set for the blue block — "have I read this" never reaches
+   * the server.
+   */
+  finished: string[];
 }
 
 /**

@@ -8,6 +8,7 @@ import type {
   WorkPlan,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { readSeen } from '../panels/Inbox';
 import { allLooks, renderThumbnail } from '../world/looks';
 
 export interface LevelEntry {
@@ -33,6 +34,63 @@ const firing = (at: number) =>
     hour: '2-digit',
     minute: '2-digit',
   });
+
+/**
+ * The card's notification row (D-137), Super Mario World's switch-palace
+ * grammar: four fixed positions, a dashed outline when quiet, a filled !
+ * when live — position alone says which signal fired. Only the red block
+ * carries a count (60 waiting reviews and 1 are different errands); the
+ * others answer on hover. Unread is judged here, not by the server: the
+ * inbox's own seen set against the same capped population it lists.
+ */
+function LevelBlocks({ level }: { level: LevelInfo }) {
+  const unread = level.finished.filter((id) => !readSeen(level.id).includes(id)).length;
+  const blocks = [
+    {
+      k: 'y',
+      on: level.jobsRunning > 0,
+      title:
+        level.jobsRunning > 0
+          ? `${plural(level.jobsRunning, 'job')} running right now`
+          : 'nobody working right now',
+    },
+    {
+      k: 'r',
+      on: level.toReview > 0,
+      count: level.toReview,
+      title:
+        level.toReview > 0
+          ? `${plural(level.toReview, 'delivery', 'deliveries')} waiting on your review`
+          : 'nothing to review',
+    },
+    {
+      k: 'g',
+      on: level.schedules > 0,
+      title:
+        level.schedules === 1
+          ? 'a schedule fires on its own here'
+          : level.schedules > 1
+            ? `${level.schedules} schedules fire on their own here`
+            : 'no schedules',
+    },
+    {
+      k: 'b',
+      on: unread > 0,
+      title:
+        unread > 0 ? `${plural(unread, 'new result')} you haven't opened` : 'nothing new in the inbox',
+    },
+  ];
+  return (
+    <span className="lvl-blocks">
+      {blocks.map((b) => (
+        <span key={b.k} className={b.on ? `nblk on nb-${b.k}` : 'nblk off'} title={b.title}>
+          {b.on ? '!' : ''}
+          {b.k === 'r' && b.on && (b.count ?? 0) > 1 && <span className="nb-cnt">{b.count}</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 
 
@@ -99,6 +157,7 @@ export function SelectScreen({
                   {l.jobsRunning > 0 ? ` · ${l.jobsRunning} running` : ''}
                 </span>
               </span>
+              <LevelBlocks level={l} />
             </button>
             <button className="lvl-close" onClick={() => setClosing(l)}>
               close

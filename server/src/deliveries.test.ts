@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Job } from '@agentlings/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { deliveriesFor } from './deliveries';
+import { deliveredIds, deliveriesFor } from './deliveries';
 
 let root: string;
 
@@ -145,5 +145,27 @@ describe('deliveriesFor', () => {
     // The reported date needs the same fallback the sort uses, or the row
     // sorts to the top of the list showing 1970 beside it.
     expect(rows.map((d) => d.at)).toEqual([5, 3]);
+  });
+});
+
+describe('deliveredIds (D-137)', () => {
+  it('is the inbox rows exactly, as ids — one population, no drift', () => {
+    const jobs = [
+      job({ id: 'old', finishedAt: 10 }),
+      job({ id: 'q', status: 'queued' }),
+      job({ id: 'new', finishedAt: 90, status: 'failed' }),
+      job({ id: 'r', status: 'running' }),
+      job({ id: 'mid', finishedAt: 50, status: 'promoted' }),
+    ];
+    expect(deliveredIds(jobs, 2)).toEqual(
+      deliveriesFor(jobs, names, dirFor, 2).map((d) => d.jobId),
+    );
+    expect(deliveredIds(jobs, 2)).toEqual(['new', 'mid']);
+  });
+
+  it('reads no sandbox — ids come from the queue alone', () => {
+    // deliveriesFor pays a readdir per surviving row; the select screen asks
+    // for every level at once and must not.
+    expect(deliveredIds([job({ id: 'a' })], 10)).toEqual(['a']);
   });
 });

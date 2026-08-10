@@ -34,7 +34,9 @@ function when(at: number): string {
 function seenKey(levelId: string): string {
   return `agentlings:inbox-seen:${levelId}`;
 }
-function readSeen(levelId: string): string[] {
+/** Exported for the select screen's blue block (D-137), which subtracts this
+ *  same set from the same capped population — the dot and the block agree. */
+export function readSeen(levelId: string): string[] {
   try {
     return JSON.parse(localStorage.getItem(seenKey(levelId)) ?? '[]') as string[];
   } catch {

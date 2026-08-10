@@ -1409,6 +1409,59 @@ select {
   height: 7px;
   flex-shrink: 0;
 }
+/* The notification row (D-137): SMW switch-palace grammar — four fixed
+   positions, dashed when quiet, a bevelled ! block when live. */
+.lvl-blocks {
+  display: flex;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+.nblk {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #fff;
+}
+.nblk.on {
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.35),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+}
+.nblk.off {
+  border: 2px dashed #3a4150;
+}
+.nb-y {
+  background: #e0a400;
+}
+.nb-r {
+  background: #c8362e;
+}
+.nb-g {
+  background: #2f9e44;
+}
+.nb-b {
+  background: #2f6fd6;
+}
+.nb-cnt {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  background: #0b0d14;
+  border: 1px solid #c8362e;
+  color: #ff8d85;
+  font-size: 8px;
+  line-height: 11px;
+  padding: 0 3px;
+  border-radius: 6px;
+  font-family: var(--font-mono, monospace);
+}
 .lvl-card.new {
   align-items: center;
   justify-content: center;

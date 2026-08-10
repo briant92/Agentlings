@@ -22,6 +22,7 @@ import type {
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS,
+  outcomeOf,
   slugProblem,
   SOCKET_LEVEL_GONE,
   TICK_MS,
@@ -89,7 +90,7 @@ import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
 import { categorise, entriesIn, indexedBySource } from './browse';
-import { deliveriesFor } from './deliveries';
+import { deliveredIds, DELIVERIES_SHOWN, deliveriesFor } from './deliveries';
 import { applyPatch, patchFile } from './gitwork';
 import {
   appendKnowledge,
@@ -506,6 +507,12 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
     colors: rt.sim.agentlings.map((a) => a.color),
     jobsDone: rt.sim.agentlings.reduce((sum, a) => sum + a.jobsDone, 0),
     jobsRunning: jobs.filter((j) => j.status === 'queued' || j.status === 'running').length,
+    // The select screen's notification blocks (D-137): what waits on a
+    // decision, what fires on its own, and the ids whose unread-ness only the
+    // browser can judge — its seen set never reaches the server.
+    toReview: jobs.filter((j) => outcomeOf(j.status) === 'to review').length,
+    schedules: readSchedules(rt.dir).filter((s) => !s.paused).length,
+    finished: deliveredIds(jobs, DELIVERIES_SHOWN),
   };
 }
 
@@ -2203,7 +2210,7 @@ app.get('/api/levels/:lid/deliveries', (c) => {
   const asked = Number(c.req.query('limit'));
   // Capped whatever is asked for: each row costs a directory read, and this is
   // polled on every change to the queue.
-  const limit = Number.isFinite(asked) ? Math.min(Math.max(asked, 1), 50) : 12;
+  const limit = Number.isFinite(asked) ? Math.min(Math.max(asked, 1), 50) : DELIVERIES_SHOWN;
   const names = new Map(rt.roster.map((seed) => [seed.id, seed.name]));
   return c.json(deliveriesFor(rt.queue.list(), names, (id) => rt.queue.sandboxDir(id), limit));
 });

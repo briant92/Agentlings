@@ -7944,6 +7944,54 @@ is a quote near $4 with a turn budget no longer clamped below 30. The
 global `MAX_CEILING_USD` is untouched, so every other class is exactly as
 it was.
 
+**Amendment (2026-08-09 late — the knob fired live; gate closed).** Job
+`1f91f4a3` (home-chores, Bea, the AI data-centre electricity question;
+promoted). The desk quote was verified from outside before Start — the plan
+route answered "About $2.55 — from 3 jobs like it" with `ceilingUsd` 4, the
+class's own evidence (mean ×2 ≈ $5.10) clamped to the role's $4 exactly as
+shipped. (Same probe, same sentence, on hq and training-ground: role matched
+`researcher` but `noOneHasRole` — the desk fell back to Pip-the-worker at a
+$2/50c quote, G5's a-role-nobody-holds rule doing its job; Brian hit this
+first by queueing on the wrong level, and the card could say it louder.)
+The ledger row is the proof: `quotedUsd` 4 against the prior rows' 2/2/2,
+and `priceUsd` = `costUsd` = **$3.09** — the first researcher run charged
+what it really cost, $0 absorbed, where the three gate runs had absorbed
+$1.66 between them.
+
+The turn budget came back **39, not 30 — and that is the design, not a
+fault**: `turnsForBudget` funds `floor(ceiling / rate)` at the class's own
+rate — `costPerTurn` = Σ(cost − close-out) / Σ(turnsAllowed) = $7.4596/74
+= 10.08c/turn, so floor(4/0.1008) = 39 — and a role's `maxTurns` is the
+soft cap by D-067 (a standing guess about a trade, outranked by a budget
+computed for the work in front of it), `TURN_CEILING` 40 the hard one.
+D-129's starvation (25, then 19) is gone; the run used the whole leash (53
+tool calls, `lastTool: Edit`) and delivered whole, banking 8 recallable
+passages (0/1/4 on the prior runs).
+
+The brief ran the skill whole: verdict first; source+date on every figure;
+disagreements tabled and left standing — the 2× China spread promoted to
+the headline reason the consensus 950 TWh is "more likely low than high",
+the IEA-vs-EPRI US tension declared irreconcilable from published material
+rather than averaged; its own arithmetic labelled as such. Citations
+re-audited from outside through `/internal/fetch`: IEA Key Questions 6/6
+claimed figures present in the page, Goldman 5/5, Carbon Brief 4/4, WRI
+4/4 — and EPRI's site answered **0 chars through the door, which the
+brief's own weaknesses section had already declared** ("returned no
+readable text… I have not read the primary document"). The Gaps section is
+verified honest, and D-129's banked finding — JS-rendered primaries
+unreadable app-side, the two-source rule the rescue — recurs as the norm.
+
+One new seam, recorded not acted: `closeOutEvidence` hands the close-out
+the first **1,500 chars** of RESULT.md (`claude.ts:600`). This 28K brief
+was cut mid-word at exactly that boundary, and the Haiku close-out —
+rightly obeying "say only what the evidence above supports" — wrote a
+PENDING.md describing a run "truncated mid-analysis" whose every listed
+item the RESULT.md on disk already satisfies. Harmless on a promoted job,
+but PENDING.md is what a redo forwards (D-114), so a continuation would be
+told to redo finished work. When touched: the excerpt should say it is an
+excerpt, or carry head+tail. LESSON.md came back the sentinel `known` —
+the dedup declining a repeat lesson, correct.
+
 ## D-132 — 2026-08-09 — The organizer pack: the sandbox boundary crossed by a reviewed, reversible manifest
 
 EXPANSION P5, planned in plan mode and the first pack that touches a real

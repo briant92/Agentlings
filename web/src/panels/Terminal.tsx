@@ -54,8 +54,10 @@ function ReviewCard({
     <div className="t-card">
       {say && <div className="summary">{say}</div>}
       <div className="actions">
+        {/* A failure has no verdict to give — "REVIEW" promised one, and the
+            modal behind it opens on an error and an answer box (D-135/D-136). */}
         <button className="t-review" onClick={() => onOpenReview(job.id)}>
-          REVIEW
+          {job.status === 'failed' ? 'SEE WHAT HAPPENED' : 'REVIEW'}
         </button>
       </div>
     </div>

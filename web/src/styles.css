@@ -2074,6 +2074,25 @@ button.danger:hover {
 .rv-clarify.answer input::placeholder {
   color: #ffb86c;
 }
+/* The ask that produced the review, collapsed until wanted (D-136). */
+.rv-prompt {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+.rv-prompt summary {
+  color: #8a91a3;
+  cursor: pointer;
+}
+.rv-prompt p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  color: #aab0bf;
+}
+.rv-prompt ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: #8a91a3;
+}
 
 .rv-summary {
   font-size: 13px;

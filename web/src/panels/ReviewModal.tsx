@@ -208,6 +208,21 @@ export function ReviewModal({
           <button onClick={onClose}>✕</button>
         </div>
         <div className="m-body">
+          {/* The sentence that produced all of this, verbatim, with the desk
+              answers that rode along — the trace from result back to ask
+              (D-136). Collapsed because a continuation's stitched prompt runs
+              long; the mermaid drawing's <details> precedent (D-125). */}
+          <details className="rv-prompt">
+            <summary>the ask</summary>
+            <p>{job.prompt}</p>
+            {job.clarifications && job.clarifications.length > 0 && (
+              <ul>
+                {job.clarifications.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            )}
+          </details>
           {job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
           {job.outboxError && <p className="error">{job.outboxError}</p>}

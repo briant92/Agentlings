@@ -146,6 +146,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-134 — 2026-08-09 — Start arrests a sentence leaning on an attachment nothing carries](#d-134--2026-08-09--start-arrests-a-sentence-leaning-on-an-attachment-nothing-carries)
 - [D-135 — 2026-08-09 — The failed modal's reply reads as the action it is](#d-135--2026-08-09--the-failed-modals-reply-reads-as-the-action-it-is)
 - [D-136 — 2026-08-10 — The failed card says what its door opens on, and every review carries its ask](#d-136--2026-08-10--the-failed-card-says-what-its-door-opens-on-and-every-review-carries-its-ask)
+- [D-137 — 2026-08-10 — The select screen wears switch-palace blocks](#d-137--2026-08-10--the-select-screen-wears-switch-palace-blocks)
 
 ## By theme
 
@@ -205,7 +206,10 @@ entry updates one file rather than two.
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
-  clones, answered by a per-job sweep rather than by deleting anything
+  clones, answered by a per-job sweep rather than by deleting anything; and
+  D-137, the select screen wearing SMW switch-palace blocks — dashed when
+  quiet, a filled ! per signal (working, to review, scheduled, unread),
+  the unread population shared with the inbox so the two cannot drift
 - **Acting on the real world through review** — the promote grammar applied to
   side effects: D-075 (send), D-104 (the acting surface), D-110/D-111 (a run
   authors a world), and D-132, where it first crosses the sandbox boundary —
@@ -8328,3 +8332,37 @@ the promoted `f3124c4f`'s (the invite sentence plus both clarification
 rows exactly as the desk collected them). 147 web tests green, typecheck
 clean; neither panel has component tests, so the DOM read-back is the
 proof — D-134/D-135's precedent, third use.
+
+## D-137 — 2026-08-10 — The select screen wears switch-palace blocks
+
+Brian's ask, mockup-first per his standing preference: Super Mario
+World's notification grammar on the level cards — a row of blocks,
+dashed outline when quiet, bevelled `!` when live. The mockup went up
+first and all three recommendations were taken: **four blocks** (working
+yellow, to-review red, scheduled green, new-results blue — SMW's own
+four switch-palace colors), a **count badge on red alone** and only past
+one (29 waiting and 1 are different errands; the rest answer on hover),
+and the **dashed empties kept**, so every card shows the same four
+positions and position alone says which signal fired.
+
+The server half: `levelInfo` gains `toReview` (jobs whose outcome is
+'to review'), `schedules` (unpaused, off `readSchedules`) and `finished`
+— the inbox-capped newest finished ids. `deliveredIds` shares
+`finishedNewest` with `deliveriesFor`, and the inbox's default cap
+became the named `DELIVERIES_SHOWN` both read, so the two populations
+cannot drift. Unread deliberately stays the browser's business: the
+select screen subtracts the inbox's own seen set (`readSeen`, now
+exported) from that same population — the inbox dot and the blue block
+agree by construction, and no directory is read for ids.
+
+Verified live on all three real cards, DOM read against the API: hq
+`!29` red + green + blue; home-chores `!2` red + blue; training-ground
+`!17` red + green (T5's schedule) + blue. **The seen-subtraction proved
+itself unprompted**: the pane profile had opened exactly one review
+earlier in the session, and its blue block read 11 new where the cap
+holds 12. Post-commit mutation: the finished filter dropped from
+`finishedNewest` killed both consumers' tests at once — the inbox's
+leaves-out-unfinished and the new one-population-no-drift — exactly the
+shared seam doing its job. 1,412 + 147 green, typecheck clean. One
+grammar catch from reading the live title: "1 schedule firing on their
+own" became singular-aware wording.

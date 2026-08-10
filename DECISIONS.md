@@ -8755,6 +8755,27 @@ class tax is paid only where a class is new). The first *paid* designer run
 through this door is the evidence gate left open, after the server restart
 picks up the catalog and runner changes.
 
+**Amendment, 2026-08-10 night — the gate is closed.** The first paid
+designer run went through the whole road the same evening D-144 repaired
+it: Brian pressed the 3D-backdrop button with his Odyssey description, and
+job `cfa2a7a3` came back in ~17 minutes holding **The Wine-Dark Strait** —
+a galley heeled under a backlit square sail, a sea-beast rearing in
+near-silhouette to its right, one storm-break light source obeyed by every
+form in the picture. Plate 2000×900 at exactly 128 colours; separation
+iterated *by looking*, 10.5 → 15.9 → 13.6, quoted in RESULT.md exactly as
+the role demands; `rim: stoneDark`; provenance naming the three.js render,
+the primitives it was built from, and the public-domain theme. It kept
+`plate.html` beside the PNG unprompted — the plate carries its own source.
+The clock cut it with the ground strip still two placeholder rects, no
+scrim and no ambient, and its RESULT says so under an "in progress" title:
+write-as-you-go delivering exactly what was on disk, D-138's boundary
+honestly worn. `pack:check` against the sandbox draft: clean, plate rules
+included. What the run proved beyond the door itself: the plate-first
+brief really does lead a paid session to render before composing, and the
+see-your-work loop — render, read the PNG, fix what the eye finds — ran
+whole with nobody watching. The review, and whether More Time finishes the
+foreground, are Brian's.
+
 ## D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate
 
 Brian restarted the server and typed the first real authoring sentence —

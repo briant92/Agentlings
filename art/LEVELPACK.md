@@ -105,16 +105,22 @@ rules, all checked before a pack installs:
   gets a render there, dithered, and previews the crew standing on it.
 - **`rim` is required** the moment a plate is present — the outline is the
   one legibility device that survives standing in front of a picture.
-- **Drafts cannot carry plates**: a run's `PACK.json` is one JSON file and a
-  plate is an image beside it, so the contract refuses the combination with
-  the same message the CLI gives. Plate-bearing packs install by folder drop.
+- **Drafts carry plates as files beside `PACK.json`** (D-143): a run renders
+  the plate with the `render_plate` tool (which quantizes it into budget and
+  reports crew separation in its receipt), names it in `backdrop.plates`,
+  and leaves both at the sandbox root. Harvest runs the raster rules against
+  the sandbox, the review composites the plate into the preview, and
+  **Approve copies plates before `pack.json`** — so the json is the commit
+  point, and approving again completes a half-landed install.
 
-`npm run pack:check` on the folder's `pack.json` runs every rule above;
-`npm run pack:render` composites the plate under the drawn scene and reports
-per-position crew separation. `web/public/packs/amber-basin` is the worked
-example. Provenance matters doubly here — a plate is exactly the kind of file
-that arrives from a renderer, a model or a marketplace, and its licence lands
-in this repository with it.
+`npm run pack:check` on a `pack.json` — installed folder or sandbox draft —
+runs every rule above; `npm run pack:render` composites the plate under the
+drawn scene and reports per-position crew separation.
+`web/public/packs/amber-basin` (painted, folder-dropped) and
+`web/public/packs/ember-gate` (three.js through the door, carried by a
+draft) are the worked examples. Provenance matters doubly here — a plate is
+exactly the kind of file that arrives from a renderer, a model or a
+marketplace, and its licence lands in this repository with it.
 
 ## Licensing
 

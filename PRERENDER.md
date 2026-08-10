@@ -246,8 +246,10 @@ cost of three textured quads.
 2. **Finish** — quantized-only; D-108 stands. The smooth finish remains a
    possible v2, priced in §3 Option B.
 3. **Production order** — Route 0 → 1 → 2 confirmed. The first plate shipped
-   by Route 0 (painted in-repo, quantized). Route 1's screenshot mode, with
-   three.js vendored into the door, is the next build.
+   by Route 0 (painted in-repo, quantized). **Route 1 is built — D-143**:
+   `render_plate` on the render door, three.js vendored, drafts carrying
+   plates through review and Approve; The Ember Gate is its proof. Route 2,
+   the Blender template, remains the quality ceiling when wanted.
 4. **v2 scope** — parallax and the occlusion strip deferred; the format
    carries `plates[]` from day one, so neither needs a migration.
 

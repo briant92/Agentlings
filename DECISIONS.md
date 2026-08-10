@@ -152,6 +152,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-140 — 2026-08-10 — The capture's first catch: the "unexplained deaths" were the watcher, and serving stops watching](#d-140--2026-08-10--the-captures-first-catch-the-unexplained-deaths-were-the-watcher-and-serving-stops-watching)
 - [D-141 — 2026-08-10 — One Approve, one door: the install that refused itself](#d-141--2026-08-10--one-approve-one-door-the-install-that-refused-itself)
 - [D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it](#d-142--2026-08-10--the-plate-lands-a-raster-behind-the-world-and-the-basin-that-proved-it)
+- [D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built](#d-143--2026-08-10--the-door-learns-to-paint-render_plate-and-the-gate-the-loop-built)
 
 ## By theme
 
@@ -182,7 +183,12 @@ entry updates one file rather than two.
   `backdrop.plates` as a checked raster beneath everything, one per pack
   because the tooling is opaque RGB, rim made a checked requirement, drafts
   refusing plates with the same message on both sides, and The Amber Basin
-  proving format, checker, renderer, cards and CLI live in one evening
+  proving format, checker, renderer, cards and CLI live in one evening;
+  and D-143 — the render door growing render_plate (three.js vendored as
+  the offline rule's one stated exception, the receipt carrying the same
+  numbers the checker holds a plate to), drafts carrying plates through
+  review into an Approve that copies them, and The Ember Gate — a three.js
+  world built in four takes of the see-your-work loop — as its proof
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -8670,3 +8676,74 @@ the array field means neither needs a migration), and the render door's
 screenshot mode — the next step, and the one that turns plate authoring
 into a designer job inside the existing PACK.json → review → Approve
 contract.
+
+## D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built
+
+Brian said go on D-142's named next step, and the studio door from D-128
+grew the plate half of PRERENDER.md's Route 1: a session can now render a
+3D backdrop and deliver it as a world, end to end, without a single new
+install.
+
+**The tool proves its own output.** `render_plate` takes one self-contained
+HTML page, renders it at 2000×900 in the same headless Edge that prints
+PDFs, waits for `document.title === 'ready'` (a page that never says so is
+refused *by name*, not screenshotted early), then makes the screenshot a
+legal backdrop before anyone asks: quantized into D-108's 128-colour budget
+in the door itself, separation measured at the seven standing places, and
+both carried in the receipt — `2000×900, 127 colours, worst crew separation
+11.3 at x 240`. The numbers the pack checker will hold the plate to arrive
+with the plate, which is D-011/D-021's rule made mechanical. One bug worth
+the record: Playwright's `waitForFunction` takes options *third*; a timeout
+planted in the second slot is silently no timeout at all, and only the live
+test caught the wait running to the outer kill instead of its own.
+
+**Three.js is vendored, and the offline rule keeps its shape.** The library
+rides the server workspace (pinned, like playwright-core — never a root
+dep, D-036), and the route serves exactly two paths from disk —
+`/three.module.js` and the core file three's own module build imports as a
+sibling — while every other URL still aborts. The exception is stated in
+the catalog prose rather than discovered, and the live test proves both
+halves at once: a scene whose page also fires an external fetch renders a
+real WebGL picture while the listener counts zero hits. A flat screenshot
+cannot pass that test — the colour floor would catch WebGL silently not
+running.
+
+**Drafts carry plates now, and D-142's wall came down the way it was
+built.** `platesInDraftProblem` is deleted, not amended: harvest runs the
+same `checkPlates` against the sandbox that the scan runs against a folder
+(a missing or over-budget plate fails the draft at review, not at Approve),
+the review's PackCard fetches the plate through the existing files route
+and composites it into the preview — the world Approve would install, not
+the world minus its picture — and `installPack` gained a `from`: plates are
+re-checked at the moment of writing, copied *before* pack.json so the json
+stays the commit point, and an identical re-Approve completes a
+half-landed install instead of refusing (the outbox's own retry rule).
+`plate-design` rides designer and teaches the contract: the import URL,
+the ready title, the composition rules, and *read the PNG — the receipt
+proves legibility, only your eye proves it reads*.
+
+**The Ember Gate is the evidence, and the loop is the point.** Four takes
+through the live door, each fault found by looking: take 1's camera stood
+inside the scene with a sun forty percent of the frame tall; take 2 pulled
+the lens back and found the sky washed pink; take 3 exposed why — the sky
+gradient was 380 units tall and the visible window at that depth shows
+barely a quarter of it, so the frame only ever saw the ramp's warm foot —
+and take 4 sized the ramp to the window and separated the mesas into
+depth-staggered masses. Receipts 11.5 → 12.7 → 11.5 → 11.3 worst
+separation, 127-128 colours every time. The finished draft rode
+`readPackDraft` → `installPack` out of a real sandbox into
+`web/public/packs/ember-gate`, and level `gate-proof` opened on it live —
+with the brief bar underneath reading "render backdrop plates", the
+catalog line surfacing in the product's own copy. 1442 + 147 green,
+typecheck clean. Three mutations, post-commit, each killed by exactly its
+test: the vendored fulfill aborted (the three.js render test), harvest's
+`checkPlates` skipped (the missing-plate draft test), the install's plate
+copy dropped (both Approve tests).
+
+**Deliberately not built:** multi-plate drafts (the one-plate rule stands
+until the raster tooling keeps alpha), the Blender template (Route 2, the
+quality ceiling, priced in PRERENDER.md §4), and any change to pricing —
+designer keeps its earned class, exactly as the studio skills did (G5's
+class tax is paid only where a class is new). The first *paid* designer run
+through this door is the evidence gate left open, after the server restart
+picks up the catalog and runner changes.

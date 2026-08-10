@@ -37,8 +37,7 @@ const RENDER_TIMEOUT_MS = 30_000;
 /** The plate shape (D-108, D-142): 2x of the 1000-wide world at viewH 450. */
 export const PLATE_WIDTH = 2000;
 export const PLATE_HEIGHT = 900;
-/** The geometry the receipt assumes — the default pack shape the tool serves. */
-const PLATE_VIEW_H = 450;
+/** Where the receipt assumes the crew stand — the default pack's ground. */
 const PLATE_GROUND_Y = 388;
 
 /**

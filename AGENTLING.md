@@ -147,6 +147,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Work on your code | `git clone --local --no-hardlinks` into `sandbox/repo`; every change captured as `DIFF.patch` after the session |
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through the system Edge, offline — every external URL aborted (D-128) |
+| Author a backdrop plate | The run writes one self-contained HTML page — three.js served from the server's pinned copy at `http://three.local/three.module.js`, the offline rule's one stated exception — sets `document.title = "ready"`, and `render_plate` writes a 2000×900 PNG at the sandbox root, quantized to the 128-colour backdrop budget, its receipt reporting colours and worst crew separation. Named in `backdrop.plates`, the file rides the PACK.json draft through review, and Approve installs both (D-143) |
 | Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§9) |
 | Report | `RESULT.md`: outcome first, evidence second |
 
@@ -276,7 +277,7 @@ off, so the app's fetch was gated and this second door was not.
 | Connection | Transport | Default | Status |
 |---|---|---|---|
 | `web` — read web pages | builtin | **on** | Live |
-| `render` — print a run's own HTML to a styled PDF | builtin | **on** | Live; offline by construction — every request the page makes is aborted (D-128) |
+| `render` — print a run's own HTML to a styled PDF, or render a level-backdrop plate | builtin | **on** | Live; offline by construction — every request the page makes is aborted, except the vendored three.js pair served from the server's own disk (D-128, D-143) |
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only in a session; its one write is a reviewed comment, replayed at approval (D-104) |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
@@ -1242,8 +1243,9 @@ untouched until you press Approve.
 | `FETCH_TIMEOUT_MS` | 15 s | `web.ts` | One page |
 | `MAX_BYTES` | 5 MB | `web.ts` | Refuses to download a page it will trim anyway |
 | pre-fetched URLs | 5 | `router.ts` | URLs pulled out of your sentence |
-| `MAX_HTML_BYTES` | 2 MB | `render.ts` | One document handed to `render_pdf`; past it, inline less or split |
-| `RENDER_TIMEOUT_MS` | 30 s | `render.ts` | A render that hangs is killed, like a compiled tool |
+| `MAX_HTML_BYTES` | 2 MB | `render.ts` | One document handed to `render_pdf` or `render_plate`; past it, inline less or split |
+| `RENDER_TIMEOUT_MS` | 30 s | `render.ts` | A render that hangs is killed, like a compiled tool; a plate page gets half of it to say `ready` |
+| `PLATE_WIDTH` × `PLATE_HEIGHT` | 2000×900 | `render.ts` | The frame `render_plate` screenshots — D-108's 2× authoring shape (D-143) |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |

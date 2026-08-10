@@ -8582,3 +8582,17 @@ separations quoted, one Δ4.7 honestly flagged "fails by design");
 D-138 held throughout (staged writes from leg one, the wall never again
 the binder); and the funded leash, not the clock, is what bounds
 iterate-until-done work.
+
+**Second amendment (2026-08-10 — the last hole in the same rule).** Brian
+discarded the Iliad chain's final leg from its terminal card and the
+REVIEW button stayed. The path: the leg's feed event was failed-typed
+("agent session failed (error_max_turns)"), harvest upgraded the job to
+partial, the discard then made it `discarded` — and the plain-failed
+card render checked `continuedBy` but never re-checked the status, a
+gate the done-card has always had and this branch never needed while
+failed was terminal. The card now requires `status === 'failed'`: it
+renders only while the status still asks. The event log died with the
+D-141 server reload before a pixel check was possible — the conditional
+is its own proof, and the next resolved failure is its live gate. The
+rule, complete at last: **a card solicits while a decision is open, and
+not one moment after — whatever door closed it.**

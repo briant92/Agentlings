@@ -443,11 +443,22 @@ export function ReviewModal({
             </>
           )}
           {!offer && (
-            <span className="rv-clarify">
+            // On a failed job the Approve/Discard pair this wording trailed is
+            // not rendered, and "Or …" dangling after nothing read as
+            // decoration — a real reviewer took the whole modal for
+            // close-only (D-135). Standalone wording and the amber lift make
+            // the reply what it is there: the primary action.
+            <span className={job.status === 'failed' ? 'rv-clarify answer' : 'rv-clarify'}>
               <input
                 value={clarify}
-                placeholder="Or tell them what to do differently…"
-                aria-label="Tell the agentling what to do"
+                placeholder={
+                  job.status === 'failed'
+                    ? 'Answer them…'
+                    : 'Or tell them what to do differently…'
+                }
+                aria-label={
+                  job.status === 'failed' ? 'Answer the agentling' : 'Tell the agentling what to do'
+                }
                 onChange={(e) => setClarify(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void send();

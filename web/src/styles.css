@@ -2065,6 +2065,15 @@ button.danger:hover {
   font-size: 12px;
   padding: 5px 9px;
 }
+/* A failed job's reply is the primary action, not an afterthought —
+   btn-more's amber, so it invites without alarming (D-135). */
+.rv-clarify.answer input {
+  border-color: #56412a;
+  background: #14100b;
+}
+.rv-clarify.answer input::placeholder {
+  color: #ffb86c;
+}
 
 .rv-summary {
   font-size: 13px;

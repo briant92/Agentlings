@@ -281,7 +281,11 @@ function EventEntry({
               <span className="t-meter t-meter-right">{meterLine(job)}</span>
             )}
           </div>
-          {job && <ReviewCard job={job} onOpenReview={onOpenReview} say={event.detail} />}
+          {/* Answered failures retire their card (D-139): the reply took the
+              question, and the continuation's own events follow in the feed. */}
+          {job && !job.continuedBy && (
+            <ReviewCard job={job} onOpenReview={onOpenReview} say={event.detail} />
+          )}
         </>
       );
     case 'resolved':

@@ -1633,6 +1633,9 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
           ?.channel,
     }),
   );
+  // The parent is answered (D-139): its card stops offering the reply box
+  // it has already been given an answer through.
+  rt.queue.markContinued(previous.id, job.id);
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });
@@ -1678,6 +1681,9 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
       brief: continuationBrief(previous),
     }),
   );
+  // Same stamp as a reply (D-139): a run already being carried on must not
+  // offer to be carried on again — a second press would be a second charge.
+  rt.queue.markContinued(previous.id, job.id);
   rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
   return c.json(job, 201);
 });

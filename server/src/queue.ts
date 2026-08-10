@@ -110,6 +110,15 @@ export class JobQueue {
       if (job.status === 'queued') job.assignedTo = undefined;
       this.jobs.set(job.id, job);
     }
+    // A continuation names its parent, but until D-139 nothing stamped the
+    // parent back — so an answered failure kept offering its reply box. The
+    // child's `continues` identifies the parent exactly: backfill by
+    // identification (D-026's rule), healing rows written before the field.
+    for (const job of this.jobs.values()) {
+      if (!job.continues) continue;
+      const parent = this.jobs.get(job.continues);
+      if (parent && !parent.continuedBy) parent.continuedBy = job.id;
+    }
     this.persist();
   }
 
@@ -490,6 +499,15 @@ export class JobQueue {
   setMovesDone(jobId: string, done: MoveOp[]): Job {
     const job = this.mustGet(jobId);
     job.movesRun = { at: Date.now(), done, failed: [] };
+    this.persist();
+    return job;
+  }
+
+  /** A reply or carry-on took this job over (D-139) — the routes stamp the
+   *  parent so its card can stop offering what has already been done. */
+  markContinued(jobId: string, byJobId: string): Job {
+    const job = this.mustGet(jobId);
+    job.continuedBy = byJobId;
     this.persist();
     return job;
   }

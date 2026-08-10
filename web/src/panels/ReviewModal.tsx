@@ -53,8 +53,12 @@ export function ReviewModal({
   const [busy, setBusy] = useState(false);
   const approveRef = useRef<HTMLButtonElement>(null);
   // Either limit reads as cut (D-138): a run stopped by the clock is as
-  // continuable as one stopped by turns — same sandbox, its own quote.
-  const canCarryOn = Boolean(job.meter?.outOfTurns || job.meter?.timedOut);
+  // continuable as one stopped by turns — same sandbox, its own quote. But a
+  // run already continued must not offer it twice (D-139): a second press is
+  // a second charge against work someone is already doing.
+  const canCarryOn = Boolean(
+    (job.meter?.outOfTurns || job.meter?.timedOut) && !job.continuedBy,
+  );
 
   useEffect(() => {
     let alive = true;
@@ -459,7 +463,12 @@ export function ReviewModal({
               <span className="rv-free">charged only if it finishes</span>
             </>
           )}
-          {!offer && (
+          {/* An answered failure says so instead of asking again (D-139) —
+              the reply box already did its work once. */}
+          {!offer && job.status === 'failed' && job.continuedBy && (
+            <span className="dim">answered — a follow-up run is carrying it on</span>
+          )}
+          {!offer && !(job.status === 'failed' && job.continuedBy) && (
             // On a failed job the Approve/Discard pair this wording trailed is
             // not rendered, and "Or …" dangling after nothing read as
             // decoration — a real reviewer took the whole modal for

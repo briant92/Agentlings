@@ -636,6 +636,12 @@ export interface Job {
    */
   continues?: string;
   /**
+   * The reply or carry-on that took this job over (D-139). An answered
+   * failure is not still asking: the feed retires its card and the review
+   * stops offering the reply box and More turns/time once this is set.
+   */
+  continuedBy?: string;
+  /**
    * Standing instructions handed to the session on top of the prompt — the
    * carry-on brief of a continuation, today. Kept out of `prompt` for the same
    * reason `clarifications` is: a recipe is keyed on the prompt, so a brief

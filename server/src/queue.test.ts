@@ -58,6 +58,27 @@ describe('JobQueue', () => {
     expect(queue.rootPrompt(orphan.id)).toBe('the words');
   });
 
+  // The parent of a continuation used to stay unmarked, so an answered
+  // failure kept offering its reply box forever (D-139). The routes stamp
+  // going forward; restore() heals rows from before the field existed — the
+  // child's `continues` identifies the parent exactly, so this is backfill
+  // by identification, never by guess.
+  it('markContinued stamps the parent and survives the round trip', () => {
+    const parent = queue.add({ title: 'T', prompt: 'author a level pack' });
+    const child = queue.add({ title: 'T', prompt: 'p again', continues: parent.id });
+    queue.markContinued(parent.id, child.id);
+    expect(queue.get(parent.id)?.continuedBy).toBe(child.id);
+    expect(new JobQueue(root).get(parent.id)?.continuedBy).toBe(child.id);
+  });
+
+  it('restore backfills continuedBy from the children already on disk', () => {
+    const parent = queue.add({ title: 'T', prompt: 'p' });
+    const child = queue.add({ title: 'T', prompt: 'p again', continues: parent.id });
+    // Written before the stamp existed: nothing on the parent.
+    expect(queue.get(parent.id)?.continuedBy).toBeUndefined();
+    expect(new JobQueue(root).get(parent.id)?.continuedBy).toBe(child.id);
+  });
+
   it('keeps the send the desk handed it', () => {
     const job = queue.add({
       title: 'Telegram to Brian',

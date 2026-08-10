@@ -10,7 +10,13 @@ import type {
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
-import { matchRecipient, missingRecipient, missingWords, recipientProblem } from './askFacts';
+import {
+  matchRecipient,
+  missingAttachment,
+  missingRecipient,
+  missingWords,
+  recipientProblem,
+} from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { RecipientPicker } from './RecipientPicker';
@@ -196,15 +202,20 @@ export function WorkBar({
   /**
    * What turns the first Start press into a warning instead of a queue: a run
    * the desk already knows is doomed — no recipient, no message on a bare
-   * send, or nothing that can send. Recomputed each render, so fixing the
-   * reason turns Start back into Start, armed or not.
+   * send, a sentence leaning on an attachment nothing carries, or nothing
+   * that can send. Recomputed each render, so fixing the reason turns Start
+   * back into Start, armed or not.
    */
   /** A near-miss the user confirmed (D-093) — a send by their say-so. */
   const mentionPicked = !plan?.channelAsk && !!channel && !!plan?.channelMention;
   const arrest = (() => {
-    const ask = plan?.channelAsk;
-    if (!ask && !mentionPicked) return null;
     const parts: string[] = [];
+    // "The attached X" with an empty queue dooms any plan shape, send or
+    // not — the run has no other way to receive a file (D-134; the proof
+    // run's whole delivery was the question back).
+    if (missingAttachment(text, files.length)) parts.push('nothing attached');
+    const ask = plan?.channelAsk;
+    if (!ask && !mentionPicked) return parts.length ? parts.join(' · ') : null;
     const to = answers['send-to']?.trim();
     // 'Invitees' never counts as missing (D-124) — an event for just you
     // queues; only a filled field can be wrong, caught just below.

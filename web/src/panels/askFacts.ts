@@ -67,6 +67,20 @@ export function missingRecipient(
   );
 }
 
+/**
+ * A sentence that leans on an attachment the queue is not carrying (D-134).
+ * The proof run queued "Total the attached expenses…" with nothing attached,
+ * and the analyst's only possible delivery was the question back — 4 turns,
+ * 5.3c, absorbed (D-131's amendment). Only the claiming forms fire —
+ * "attached", "attachment(s)" — never the bare verb: "attach a summary to
+ * it" instructs the run about its own output, it does not claim a file
+ * rides along. The second press still queues, because the sentence itself
+ * may carry the content ("summarise the attached: <pasted text>").
+ */
+export function missingAttachment(text: string, attachedCount: number): boolean {
+  return attachedCount === 0 && /\battach(?:ed|ments?)\b/i.test(text);
+}
+
 /** A person as the matcher needs them — the roster row's naming half. */
 interface Nameable {
   id: string;

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { matchRecipient, missingRecipient, missingWords, recipientProblem } from './askFacts';
+import {
+  matchRecipient,
+  missingAttachment,
+  missingRecipient,
+  missingWords,
+  recipientProblem,
+} from './askFacts';
 
 const BRIAN = { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 };
 const JOSE = {
@@ -137,5 +143,32 @@ describe('missingRecipient (D-124)', () => {
 
   it('no To question, nothing missing', () => {
     expect(missingRecipient([], '')).toBe(false);
+  });
+});
+
+describe('missingAttachment (D-134)', () => {
+  it('a sentence leaning on an attachment arrests an empty queue — the 5.3c wall', () => {
+    expect(missingAttachment('Total the attached expenses by category and draw a chart', 0)).toBe(
+      true,
+    );
+    expect(missingAttachment('Summarise the attachment', 0)).toBe(true);
+    expect(missingAttachment('compare the two ATTACHMENTS', 0)).toBe(true);
+  });
+
+  it('a file on the queue clears it', () => {
+    expect(missingAttachment('Total the attached expenses by category', 1)).toBe(false);
+  });
+
+  it('the bare verb never claims — "attach a summary" is about the run’s own output', () => {
+    expect(missingAttachment('write the report and attach a summary to it', 0)).toBe(false);
+  });
+
+  it('detached and unattached are not attached', () => {
+    expect(missingAttachment('move the detached notes into the archive', 0)).toBe(false);
+    expect(missingAttachment('list the unattached fixtures', 0)).toBe(false);
+  });
+
+  it('an ordinary sentence says nothing about attachments', () => {
+    expect(missingAttachment('tidy the notes', 0)).toBe(false);
   });
 });

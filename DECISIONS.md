@@ -8527,3 +8527,54 @@ and the verdict remains reachable where it belongs — the inbox row and
 the panel, which keep Approve/Discard for the files the original still
 holds. Verified live on the exact reported state: the 09:34 partial's
 card gone from the feed, the continuation's events running below it.
+
+## D-141 — 2026-08-10 — One Approve, one door: the install that refused itself
+
+The Iliad chain ended with Brian's Approve refused — "a pack is already
+installed as gates-of-troy" — for a pack he had never approved. The
+audit found no unapproved install anywhere: **the installer was his own
+first Approve, tripping over itself.** The session had delivered the
+pack through two doors at once — `PACK.json` at the sandbox root (the
+draft door, as briefed) and a second copy written into its repo clone at
+`web/public/packs/gates-of-troy/` (plus three scratch measuring scripts),
+because hq's `repoPath` rode the authoring job and the clone showed it
+where packs live; its RESULT.md said so plainly ("installed at
+repo/web/public/packs/…"). Approve #1 (14:31:00) ran the promote's first
+door — `installPack` wrote the real folder — then its second door
+failed: `git apply` refused the diff whose pack.json now existed on
+disk, the route returned "patch did not apply", and the job stayed
+reviewable with the install silently done. Approve #2 hit the third
+seam: the modal prefills and always sends `packSlug`, the route treated
+any sent slug as a rename, and the pre-check found the slug taken — by
+approve #1. (The folder's 14:33 mtime matches OneDrive's echo, D-140's
+signature, not a second write.)
+
+Built, Brian's pick (A+B):
+- **Authoring drops the repo.** `queueSentence` gains `noRepo` and the
+  author-pack route uses it: the pack is a sandbox deliverable and the
+  clone was pure cost — the chain paid five clones of the project for
+  nothing but the collision. No repo, no diff, no second door.
+- **An unchanged slug is not a rename.** Only a slug that differs from
+  the draft's own takes the early collision check; a retry now flows
+  into `installPack`, whose already-identical tolerance was built for
+  exactly this ("a second Approve after a partly-failed one is safe").
+
+**The stuck job resolves by Discard** — the installed pack is
+byte-identical to the final draft ("The Horse at the Gates", 177 ops,
+its provenance clean), and the diff holds only the scratch scripts;
+nothing of value is lost and the world is already on the palette.
+
+**Recorded, not built — the pricing seam.** Every leg of the chain was
+cut, "charged only if it finishes" priced each at $0, and promote does
+not re-price: a finished pack cost the platform $9.29 and the user
+nothing. A D-012-compatible fix exists — price a cut leg up to its quote
+when its chain's end promotes — and it waits for a decision, not for
+evidence: the evidence is this chain.
+
+What the long run taught, for the record: the More-turns loop works as a
+pacing valve (five legs, ~22 turns each, every leg cut at allowed+1, the
+pack growing 3540→6071 diff-lines to 177 ops with measured luminance
+separations quoted, one Δ4.7 honestly flagged "fails by design");
+D-138 held throughout (staged writes from leg one, the wall never again
+the binder); and the funded leash, not the clock, is what bounds
+iterate-until-done work.

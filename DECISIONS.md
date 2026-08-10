@@ -154,6 +154,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it](#d-142--2026-08-10--the-plate-lands-a-raster-behind-the-world-and-the-basin-that-proved-it)
 - [D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built](#d-143--2026-08-10--the-door-learns-to-paint-render_plate-and-the-gate-the-loop-built)
 - [D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate](#d-144--2026-08-10--the-odyssey-sentence-the-desk-points-at-the-door-the-door-offers-the-plate)
+- [D-145 — 2026-08-10 — The review speaks D-138: the cut named as a boundary, the delivery in the same breath](#d-145--2026-08-10--the-review-speaks-d-138-the-cut-named-as-a-boundary-the-delivery-in-the-same-breath)
 
 ## By theme
 
@@ -276,7 +277,10 @@ entry updates one file rather than two.
   D-139, where an answered run stops asking — both continuation doors stamp
   the parent (`continuedBy`), the failed card retires, carry-on refuses a
   second charge, and restore() backfills history from each child's own
-  `continues`
+  `continues`; and D-145, where the review modal stops contradicting D-138 —
+  a cut run's red error becomes a neutral boundary sentence naming the limit
+  and the delivery's substance in the same breath, More turns/time untouched
+  beneath it
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
 - **Outside access, continued** — D-040
@@ -8829,3 +8833,53 @@ detector disabled (the proof-sentence case), the plate-first lead disabled
 plate-leading brief → designer with the skill → review showing the plate →
 Approve copying it — and the first paid run down it is still D-143's open
 gate, one button press away.
+
+## D-145 — 2026-08-10 — The review speaks D-138: the cut named as a boundary, the delivery in the same breath
+
+Brian, reviewing the first paid plate run (`cfa2a7a3`, The Wine-Dark
+Strait): the modal opened with `agent session failed (error_max_turns)`
+in error red above a delivery that was pack:check-clean, its RESULT.md
+honestly naming the small remainder — and with More turns waiting below,
+the whole surface read "definitively unfinished". The doctrine already
+disagreed: D-138 had ruled a cut a boundary, not an annulment, and
+D-015/D-025's hard-won form — "ran out of turns" does not mean "needed
+more turns" — sits in PROJECT.md itself. The feed's partial card even
+had the wording right ("Ran out of turns, but what it got done is ready
+to review"); the modal was the one surface still contradicting the rule
+it sat on.
+
+Built — presentation only, the mechanics untouched:
+
+- **The sentence.** `cutNotice` (`web/src/panels/cut.ts`, the moves.ts
+  shape: pure, tested) reads the meter and answers in one neutral line:
+  *"The turn budget ended this run at turn 21 — below is everything it
+  wrote, including a world draft and its RESULT.md account."* A pure
+  clock-cut says "The clock"; turns win when both limits are stamped —
+  the carry-on label's own precedence. Substance is three signals: a
+  `packDraft`, a repo patch (`changes.files`), RESULT.md among the
+  delivery files. Plain files get the plain clause; an empty sandbox
+  gets the headline alone, because promising "below is everything it
+  wrote" over nothing would be the opposite lie; and a still-loading
+  file list claims nothing until it lands.
+- **The styling.** `.rv-cut` is calm ink in the pending-item's own quiet
+  box with a neutral bar — never `.error`'s red. A cut run's modal now
+  contains no red unless something actually failed.
+- **What did not move.** A run with no `outOfTurns`/`timedOut` renders
+  exactly the red it always did — `cutNotice` returns null and the old
+  branch takes over. `canCarryOn`, the More turns/More time button, its
+  fetched quote and "charged only if it finishes" are untouched; the
+  offer is exactly as reachable as before, it just no longer stands
+  under an alarm. The terminal card is untouched too.
+
+Evidence: 1,446 + 156 green (five new on the sentence), typecheck clean;
+two post-commit mutations each killed by exactly its test (precedence
+flipped → the both-limits case; the substance clause silenced → the
+same-breath case). Proven live against the real store — the worktree's
+own vite proxied to the live API, read-only: the Wine-Dark Strait parent
+read back the turn-21 sentence above with zero `.error` nodes and no
+second carry-on offered (D-139's gate holding), and its still-undecided
+continuation leg was screenshotted at turn 13 — neutral notice, the
+drawn world draft, and **More turns · up to $2.00 · charged only if it
+finishes** in one frame. Honestly unproven: the modal render itself has
+no component test, like the rest of the modal — the two JSX conditionals
+ride the tested function, and the live read-back is their check.

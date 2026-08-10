@@ -8513,3 +8513,17 @@ live mid-flight — "You have 23 turns and about 25 minutes of clock",
 the write-as-you-go section riding the prompt. The wall was not the
 killer and staged writes never got their test; the third attempt, under
 `serve`, is the gate for both.
+
+**Amendment (2026-08-10 afternoon — the partial card joins the
+retirement).** The entry above deliberately kept partial cards visible
+("a continuation does not judge the files the original still holds") and
+the first live carry-on proved that scoping wrong for the feed: Brian
+pressed More turns on the authored pack's partial (`0ca2fb4d` →
+`3b67df24`, the stamp's first live firing) and the card kept soliciting
+REVIEW from the terminal. His rule is the better one: **a task decided
+on is not interacted with from the feed.** The partial card now retires
+on `continuedBy` exactly as the failed card does; the record line stays,
+and the verdict remains reachable where it belongs — the inbox row and
+the panel, which keep Approve/Discard for the files the original still
+holds. Verified live on the exact reported state: the 09:34 partial's
+card gone from the feed, the continuation's events running below it.

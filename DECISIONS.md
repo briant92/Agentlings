@@ -155,6 +155,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built](#d-143--2026-08-10--the-door-learns-to-paint-render_plate-and-the-gate-the-loop-built)
 - [D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate](#d-144--2026-08-10--the-odyssey-sentence-the-desk-points-at-the-door-the-door-offers-the-plate)
 - [D-145 — 2026-08-10 — The review speaks D-138: the cut named as a boundary, the delivery in the same breath](#d-145--2026-08-10--the-review-speaks-d-138-the-cut-named-as-a-boundary-the-delivery-in-the-same-breath)
+- [D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-146--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
 
 ## By theme
 
@@ -194,7 +195,9 @@ entry updates one file rather than two.
   D-144 — the road to that door repaired the evening a real sentence missed
   it: the authoring brief taught plates and its stale cannot-carry claim
   corrected, the form's 3D-backdrop kind with the reference gone optional,
-  and the desk arrest pointing at New Level
+  and the desk arrest pointing at New Level; and D-146's brief half — the
+  raster-decoder pointer made unconditional beside the plates section, after
+  the first paid More Time leg rebuilt the decoder to measure its own plate
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -371,7 +374,12 @@ entry updates one file rather than two.
   D-119, where a continuation inherited its parent's PENDING.md and wore a
   stale account, so the file joined the paperwork that never forwards; and
   D-120, the same identification arriving at standing approvals — keyed by
-  the root sentence, never the reply transcript
+  the root sentence, never the reply transcript; and D-146, where the
+  carry-on brief pointed at the exact file that rule leaves behind — the
+  first paid More Time leg re-derived its parent's thorough report as "the
+  last run never reported" — answered by the report riding renamed
+  (PREVIOUS-RESULT.md, newest in the chain, shared as one constant with the
+  brief) and invisible to every delivered/produced check
 - **The overnight campaign** — 27 runs pre-priced and driven end to end
   through the API in one night: the free tiers' real population measured,
   learning showing in the standard rather than the price, the class-tag tax
@@ -8883,3 +8891,54 @@ drawn world draft, and **More turns · up to $2.00 · charged only if it
 finishes** in one frame. Honestly unproven: the modal render itself has
 no component test, like the rest of the modal — the two JSX conditionals
 ride the tested function, and the live read-back is their check.
+
+## D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding
+
+The first paid More Time continuation (`cfa2a7a3` → `c19da3d1`, the
+Wine-Dark Strait chain) exposed two seams, both of the sibling-seam form.
+
+**The brief pointed at the exact file the carry deliberately leaves
+behind.** `carryForward` skips the parent's paperwork — RESULT.md among it,
+so "did this deliver" stays the new leg's own question (D-074's family,
+D-119's PENDING.md rule) — while `continuationBrief` opened with "Read
+RESULT.md first". Each right alone: the report is the best handover there
+is (D-063), and inheriting it under its own name would mark a leg delivered
+before it did anything. Together they sent the leg to a file that could not
+exist. It wrote "the last run never reported" — false, the parent's RESULT
+was thorough, separations quoted and all — and spent paid turns re-deriving
+state the parent had written down.
+
+The paperwork rule stands untouched; the report now rides **renamed**.
+`carryForward` hands the parent's RESULT.md over as `PREVIOUS-RESULT.md`,
+the newest report in the chain winning and a leg cut before reporting
+passing on the one it was handed, so a chain never loses its last account.
+The brief points at the inherited name and says why RESULT.md is the leg's
+own to write — and brief and carry share the name through one exported
+constant, so they cannot drift apart the way they did. What makes the
+rename load-bearing rather than cosmetic: every check that asks "what did
+this run do" was taught the inherited file is not an answer. It joined
+`PAPERWORK` (so `producedArtefacts` and the send-approval extras ignore
+it), `deliveredFiles` refuses to let it mark a do-nothing leg delivered
+(the queue's failed→partial upgrade reads that), and `closeOutEvidence`
+leaves it out of "files it produced".
+
+**And the leg rebuilt the PNG decoder beside the copy it had** — D-113's
+exact pattern, a `measure.cjs` written to measure its own plate — because
+the brief's pointer to `decodePng`/`countColours` in `raster.ts` lived only
+inside the reference-image section, and this leg had a plate to measure and
+no reference. The pointer is unconditional now, beside the plates section
+of every authoring brief, worded without the word "reference" so the
+no-reference brief still says nothing about one.
+
+Evidence: 1,452 + 151 green (six new tests: the hand-over, the newest-wins
+and pass-it-on chain cases, the two delivery refusals, the inherited report
+not counting as made), typecheck clean. Four mutations, post-commit, each
+killed by exactly its test and nothing else: the hand-over loop dropped
+(the three carry tests), the brief's pointer reverted to RESULT.md (the
+handed-over-name test), the decoder paragraph dropped (the
+reference-or-not test), `deliveredFiles` back to counting any file (the
+inherited-report refusal). Its live gate is the next More Time press.
+Observed on the way, not decided here: the reply route composes no brief,
+so its legs meet PREVIOUS-RESULT.md only by listing the sandbox; and
+`carryForward` copies top-level files only, so a continuation still starts
+without the parent's `input/` — the reference image among it.

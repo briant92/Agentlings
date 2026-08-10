@@ -1,6 +1,7 @@
 import type { Agentling, Job, Quote, RoleInfo, WorkPlan } from '@agentlings/shared';
 import { questionsFor } from './clarify';
 import { MatchIndex, suggestSetup } from './match';
+import { PREVIOUS_RESULT } from './outputs';
 import type { NewJobSpec } from './queue';
 
 /** Used by tests that are about routing rather than pricing. */
@@ -288,10 +289,15 @@ export function redoJobSpec(
  * answers out of the key, and the continuation's prompt is the original
  * sentence verbatim.
  *
- * It points at RESULT.md rather than repeating it. The previous run was asked
- * to say what it established, what is still missing and what it would do next
- * (D-063), so the handover it wrote is better than one composed out here — and
- * it is already on disk in the sandbox this job carries forward.
+ * It points at the handover rather than repeating it. The previous run was
+ * asked to say what it established, what is still missing and what it would do
+ * next (D-063), so the report it wrote is better than one composed out here —
+ * and `carryForward` hands it over as PREVIOUS-RESULT.md, since RESULT.md is
+ * each leg's own to write. The brief and the carry share that name through one
+ * constant because they drifted once: the brief said "read RESULT.md" while
+ * the carry deliberately left it behind, and the first paid More Time leg
+ * read the absence as "the last run never reported" and spent paid turns
+ * re-deriving what its parent had written down (D-146).
  */
 export function continuationBrief(previous: { repoPath?: string }): string {
   const carried = previous.repoPath
@@ -299,6 +305,6 @@ export function continuationBrief(previous: { repoPath?: string }): string {
     : 'anything you produced is already here';
   return [
     `You have already worked on this and ran out of turns — ${carried}.`,
-    'Read RESULT.md first: it says what the last run established, what is still missing, and what it would do next. Carry on from there rather than starting again, and keep RESULT.md updated as you go.',
+    `Read ${PREVIOUS_RESULT} first: the previous run's report, carried in under that name because RESULT.md is yours to write. It says what that run established, what is still missing, and what it would do next — carry on from there rather than starting again, and keep RESULT.md updated as you go.`,
   ].join('\n');
 }

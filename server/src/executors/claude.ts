@@ -26,7 +26,7 @@ import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../c
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
-import { outputNames } from '../outputs';
+import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { GITHUB_TOOLS } from '../github';
@@ -425,7 +425,11 @@ export function withCostKnown(meter: JobMeter): JobMeter {
  *
  * Its own paperwork is deliberately left behind. The new run writes its own
  * RESULT.md, and inheriting the old one would make "did this deliver" true
- * before the session had done anything.
+ * before the session had done anything. The report itself is too good to
+ * lose, though: the first paid More Time leg, finding no RESULT.md, decided
+ * the parent had never reported and spent paid turns re-deriving what was
+ * written down — so it rides as PREVIOUS-RESULT.md, a name no delivery
+ * check reads (D-146).
  */
 export async function carryForward(
   previousId: string,
@@ -444,16 +448,28 @@ export async function carryForward(
     if (PAPERWORK_FORWARD.has(name)) continue;
     cpSync(path.join(previous, name), path.join(sandboxDir, name));
   }
+  // The newest report in the chain rides under the inherited name: a leg
+  // that was cut before reporting passes on the one it was handed.
+  for (const name of ['RESULT.md', PREVIOUS_RESULT]) {
+    const report = path.join(previous, name);
+    if (existsSync(report)) {
+      cpSync(report, path.join(sandboxDir, PREVIOUS_RESULT));
+      break;
+    }
+  }
 }
 
 // PENDING.md is paperwork too: forwarded, a parent's account satisfies the
 // close-out's short-circuit and gets stamped onto a run it never described.
+// PREVIOUS-RESULT.md skips the generic copy so the explicit hand-over above
+// decides which report rides, not directory order.
 const PAPERWORK_FORWARD = new Set([
   'RESULT.md',
   'DIFF.patch',
   'LESSON.md',
   'APPROACH.md',
   'PENDING.md',
+  PREVIOUS_RESULT,
 ]);
 
 export function titleAddsSomething(job: Job): boolean {
@@ -624,7 +640,7 @@ export function closeOutEvidence(sandboxDir: string): string | null {
   // lesson, no recipe, nothing banked. Names only, never contents: the brief
   // is to describe the method, and a file's contents are the answer.
   const produced = outputNames(sandboxDir).filter(
-    (name) => name !== 'RESULT.md' && name !== 'DIFF.patch',
+    (name) => name !== 'RESULT.md' && name !== 'DIFF.patch' && name !== PREVIOUS_RESULT,
   );
   if (produced.length > 0) {
     parts.push(`Files it produced:\n${produced.map((f) => `- ${f}`).join('\n')}`);

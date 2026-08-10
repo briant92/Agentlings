@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   attachedFiles,
   contentTypeFor,
+  deliveredFiles,
   describeOutputs,
   isBinary,
   opensInBrowser,
@@ -125,6 +126,30 @@ describe('producedArtefacts', () => {
 
   it('is false for an empty sandbox', () => {
     expect(producedArtefacts(dir)).toBe(false);
+  });
+
+  // A continuation inherits its parent's report (D-146); inheriting is not
+  // making, or a repeat of the parent's job could be refused a replay it
+  // deserves.
+  it('does not count an inherited report as something made', () => {
+    writeFileSync(path.join(dir, 'PREVIOUS-RESULT.md'), '# the parent said\n');
+    expect(producedArtefacts(dir)).toBe(false);
+  });
+});
+
+// The one notion of "it delivered" for work that changes no repository —
+// which is exactly the check an inherited file must never satisfy: a leg
+// holding only its parent's report has not delivered anything (D-146).
+describe('deliveredFiles', () => {
+  it('does not count the inherited report as the run leaving something', () => {
+    writeFileSync(path.join(dir, 'PREVIOUS-RESULT.md'), 'the parent said');
+    expect(deliveredFiles(dir)).toBe(false);
+  });
+
+  it('counts the run’s own report, as it always has', () => {
+    writeFileSync(path.join(dir, 'PREVIOUS-RESULT.md'), 'the parent said');
+    writeFileSync(path.join(dir, 'RESULT.md'), 'the leg said');
+    expect(deliveredFiles(dir)).toBe(true);
   });
 });
 

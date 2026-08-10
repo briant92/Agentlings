@@ -150,6 +150,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-138 — 2026-08-10 — A cut is a boundary, not an annulment: More time, the clock said out loud, and walls that can learn](#d-138--2026-08-10--a-cut-is-a-boundary-not-an-annulment-more-time-the-clock-said-out-loud-and-walls-that-can-learn)
 - [D-139 — 2026-08-10 — An answered run stops asking: continuations stamp their parent](#d-139--2026-08-10--an-answered-run-stops-asking-continuations-stamp-their-parent)
 - [D-140 — 2026-08-10 — The capture's first catch: the "unexplained deaths" were the watcher, and serving stops watching](#d-140--2026-08-10--the-captures-first-catch-the-unexplained-deaths-were-the-watcher-and-serving-stops-watching)
+- [D-141 — 2026-08-10 — One Approve, one door: the install that refused itself](#d-141--2026-08-10--one-approve-one-door-the-install-that-refused-itself)
 
 ## By theme
 
@@ -221,7 +222,10 @@ entry updates one file rather than two.
   side effects: D-075 (send), D-104 (the acting surface), D-110/D-111 (a run
   authors a world), and D-132, where it first crosses the sandbox boundary —
   a run proposes a folder reorganization as MOVES.json and the server replays
-  it, model-never-touches, never a delete, journaled so it reverses
+  it, model-never-touches, never a delete, journaled so it reverses; and
+  D-141, one Approve one door — the gates-of-troy install refused by its own
+  first half, fixed by authoring dropping the repo and an unchanged slug not
+  counting as a rename, with the cut-legs-never-charge pricing seam recorded
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on

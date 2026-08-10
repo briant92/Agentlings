@@ -362,11 +362,14 @@ describe('continuationBrief', () => {
     expect(continuationBrief({ repoPath: undefined })).not.toContain('summarise');
   });
 
-  // The handover the previous run wrote is better than one composed here, and
-  // it is already on disk in the sandbox this job carries forward (D-063).
-  it('points at the handover rather than repeating it', () => {
+  // The handover the previous run wrote is better than one composed here
+  // (D-063) — and it rides as PREVIOUS-RESULT.md, since RESULT.md is each
+  // leg's own to write. Pointing at the per-leg name was the first paid More
+  // Time leg's whole confusion: carryForward had left RESULT.md behind, so
+  // the leg read the absence as "the last run never reported" (D-145).
+  it('points at the handed-over report, under the name the carry gives it', () => {
     const text = continuationBrief(noRepo);
-    expect(text).toContain('RESULT.md');
+    expect(text).toContain('PREVIOUS-RESULT.md');
     expect(text).toContain('what is still missing');
     expect(text).toContain('rather than starting again');
   });

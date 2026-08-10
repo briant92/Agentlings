@@ -99,6 +99,45 @@ describe('carryForward', () => {
     }
   });
 
+  /**
+   * The report is the one piece of paperwork handed over — renamed, so every
+   * "did this deliver" check still reads the leg's own RESULT.md. The first
+   * paid More Time leg (c19da3d1, 2026-08-10) found no report, wrote "the
+   * last run never reported", and spent paid turns re-deriving what its
+   * parent had already written down (D-145).
+   */
+  it('hands the earlier report over as PREVIOUS-RESULT.md', async () => {
+    const first = sandbox('a');
+    writeFileSync(path.join(first, 'RESULT.md'), 'the parent reported');
+    const second = sandbox('b');
+    await carryForward('a', second, false);
+    expect(readFileSync(path.join(second, 'PREVIOUS-RESULT.md'), 'utf8')).toBe(
+      'the parent reported',
+    );
+    expect(existsSync(path.join(second, 'RESULT.md'))).toBe(false);
+  });
+
+  // The newest report in the chain rides: a third leg reads what the second
+  // established, not what the first did.
+  it('prefers the earlier run’s own report over its hand-me-down', async () => {
+    const first = sandbox('a');
+    writeFileSync(path.join(first, 'PREVIOUS-RESULT.md'), 'from leg one');
+    writeFileSync(path.join(first, 'RESULT.md'), 'from leg two');
+    const second = sandbox('b');
+    await carryForward('a', second, false);
+    expect(readFileSync(path.join(second, 'PREVIOUS-RESULT.md'), 'utf8')).toBe('from leg two');
+  });
+
+  // ...and a leg cut before it could report passes on the one it was handed,
+  // rather than dropping the chain's memory on the floor.
+  it('passes the hand-me-down on when the earlier run never reported', async () => {
+    const first = sandbox('a');
+    writeFileSync(path.join(first, 'PREVIOUS-RESULT.md'), 'from leg one');
+    const second = sandbox('b');
+    await carryForward('a', second, false);
+    expect(readFileSync(path.join(second, 'PREVIOUS-RESULT.md'), 'utf8')).toBe('from leg one');
+  });
+
   it('does nothing when there is no such run to carry from', async () => {
     const second = sandbox('b');
     await expect(carryForward('missing', second, false)).resolves.toBeUndefined();

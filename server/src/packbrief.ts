@@ -57,12 +57,7 @@ picture is their picture with extra steps.
 Say in \`RESULT.md\` what you took from the reference and what you knowingly
 left, and **name the reference in \`provenance\`**: a pack drawn from someone
 else's picture inherits a question about that picture's licence, and the file
-is the only place that question can be answered later.
-
-There is a PNG decoder in the repository already — \`decodePng\` and
-\`countColours\` in \`server/src/raster.ts\`, run with \`npx tsx\`. Use it to
-crop or measure the reference rather than writing your own; the last run that
-needed one spent a third of its turns rebuilding it beside the copy it had.`
+is the only place that question can be answered later.`
     : '';
 
   // The plate-first lead, when the button said so: the run must not deliver
@@ -185,6 +180,12 @@ behind everything — plate, then backdrop ops, then scrim, then foreground
 - \`pack:check\` validates the file beside ${PACK_FILE} (2000×900 for a
   450-tall world, at most 128 colours); \`pack:render\` composites it under
   your ops so the picture you judge is the picture the app will draw.
+
+There is a PNG decoder in the repository already — \`decodePng\` and
+\`countColours\` in \`server/src/raster.ts\`, run with \`npx tsx\`. Use it to
+crop or measure any image in front of you rather than writing your own; the
+last run that needed one spent a third of its turns rebuilding it beside the
+copy it had.
 
 ## Coordinates
 

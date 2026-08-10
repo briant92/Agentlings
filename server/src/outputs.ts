@@ -109,11 +109,17 @@ export function outputNames(dir: string): string[] {
 }
 
 /**
- * The crew's own paperwork: the report it writes about the work, and the notes
- * the close-out writes about the run. Everything else in a sandbox is the
- * thing the user actually asked for.
+ * The previous leg's report, carried into a continuation's sandbox under its
+ * own name so RESULT.md stays the new run's to write (D-145).
  */
-export const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md']);
+export const PREVIOUS_RESULT = 'PREVIOUS-RESULT.md';
+
+/**
+ * The crew's own paperwork: the report it writes about the work, the notes
+ * the close-out writes about the run, and the report a continuation inherits.
+ * Everything else in a sandbox is the thing the user actually asked for.
+ */
+export const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md', PREVIOUS_RESULT]);
 
 /**
  * Whether the run made something, rather than merely reporting something.
@@ -134,7 +140,9 @@ export function producedArtefacts(dir: string): boolean {
  * every such run a failure — including one that wrote a working PDF.
  */
 export function deliveredFiles(dir: string): boolean {
-  return outputNames(dir).length > 0;
+  // The inherited report is the one file that is never this run's own doing —
+  // counting it would mark a leg delivered before it had done anything.
+  return outputNames(dir).some((name) => name !== PREVIOUS_RESULT);
 }
 
 /**

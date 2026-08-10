@@ -80,6 +80,19 @@ describe('packBrief', () => {
   });
 
   /**
+   * D-113's finding: a session handed an image wrote its own PNG decoder
+   * inside a sandbox that already contained ours, spending a third of its
+   * turns on it. The pointer was scoped to the reference section, and the
+   * pattern recurred exactly where that scope missed — the first paid More
+   * Time leg measured its own plate with a hand-rolled measure.cjs (D-145).
+   * Every authoring brief carries it now.
+   */
+  it('points at the decoder the repository already has, reference or not', () => {
+    expect(brief).toContain('decodePng');
+    expect(brief).toContain('server/src/raster.ts');
+  });
+
+  /**
    * The packs had doubled every run — 46, 78, 204, 413 ops — while every run
    * was cut at the cap, so I told the brief that past ~250 ops it was
    * elaborating rather than improving. **That was wrong and the re-run proved
@@ -145,20 +158,11 @@ describe('packBrief', () => {
       expect(withRef).toMatch(/name the reference in `provenance`/i);
     });
 
-    /**
-     * D-113's other finding: a session handed an image wrote its own PNG
-     * decoder inside a sandbox that already contained ours, spending a third
-     * of its turns on it. Nothing had told it the capability was there.
-     */
-    it('points at the decoder the repository already has', () => {
-      expect(withRef).toContain('decodePng');
-      expect(withRef).toContain('server/src/raster.ts');
-    });
-
+    // The decoder pointer deliberately stays (D-145) — only the reference
+    // prose must vanish with the reference.
     it('says none of it when there is no reference', () => {
       const plain = packBrief([]);
       expect(plain).not.toMatch(/reference/i);
-      expect(plain).not.toContain('decodePng');
     });
 
     /**

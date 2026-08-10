@@ -8013,6 +8013,34 @@ shape can come later, as sends did). This partially answers §15's
 "filesystem beyond the sandbox" row — but as a reviewed-and-replayed
 manifest, not a live tool, which is the row's own condition.
 
+**Amendment, 2026-08-09 night — the gate is closed, proven live end to end
+on real data.** Brian pointed it at a real folder (property and company
+documents — his own disposable test folder, but real files, inside OneDrive)
+and ran the whole round-trip. First job (17-op plan) discarded on the
+copy-first caution; second job `42d39856` (14-op plan) approved: the server
+replayed it, **12 files relocated into two new subfolders, 0 failures**,
+journaled to `moves.jsonl`. Verified against the actual disk, not the status:
+every move landed, every source gone. **The safety model held under the
+first real run** — the session's brief never contained the absolute path
+(one grep scare turned out to be the project's own `TRAINING.md` naming a
+same-named folder from a past session; the `.session.json` was clean), so
+the model wrote only `MOVES.json` and the *server* did every move. Then
+**Undo**: reverseMoves replayed the journal backwards — **12/12 files
+restored to their exact places, both created folders removed as empty**,
+`movesRun.done` 14 → 0, byte-for-byte the original layout. Two journal
+batches, both `failed=0`.
+
+Two things running it taught, each fixed before the success (found the way
+this project finds things — by use, not by tests): the intake preview showed
+the matcher's role (**scribe**) while the job would run as worker, so the
+preview now forces worker on an organize sentence (`91d27ff`); and the
+repo-target clarify question rendered as a **text box** for the one input
+that can only be picked, so an organize sentence now asks no clarify
+questions and pressing Start opens the native Select Folder dialog, with the
+detector narrowed to a tidying verb *beside a folder noun* so "clean up the
+whole project" stays a coding job (`780e854`). The plan-mode caution — prove
+the reversal before trusting it — is what made the first real run safe.
+
 ## D-133 — 2026-08-09 — The web-operator pack stays refused: no errand, no acting surface
 
 EXPANSION P6 — the last pack, and the only one whose own plan built it "only

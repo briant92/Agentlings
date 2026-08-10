@@ -1186,6 +1186,14 @@ function queueSentence(
      * class the ledger would then carry.
      */
     role?: string;
+    /**
+     * The job's deliverable lives in the sandbox, never the repository — so
+     * the level's repo must not ride (D-141). Authoring learned this at a
+     * price: five clones paid for nothing, and the session "installed" its
+     * pack into the clone too, so the one Approve fired two installs that
+     * collided with each other.
+     */
+    noRepo?: boolean;
   } = {},
 ): Job {
   // The split happens inside the glue (D-105), so every way in composes:
@@ -1203,7 +1211,8 @@ function queueSentence(
       step = { n: 1, of: split.length };
     }
   }
-  const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const jobRepoPath = opts.noRepo ? '' : rt.meta.repoPath;
+  const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, jobRepoPath, text);
   // An organize job routes to the generalist worker, which carries the
   // organizing skill (D-132) — the folder, not the sentence's verb, is what
   // makes it one, so the role is forced rather than matched.
@@ -1239,7 +1248,7 @@ function queueSentence(
     text,
     tools,
     runnerRole(plan),
-    rt.meta.repoPath || undefined,
+    jobRepoPath || undefined,
     false,
     undefined,
     send ?? undefined,
@@ -1249,7 +1258,7 @@ function queueSentence(
     queuedJobSpec({
       title: plan.title,
       prompt: text,
-      repoPath: rt.meta.repoPath || undefined,
+      repoPath: jobRepoPath || undefined,
       tools,
       plan,
       quote,
@@ -1418,6 +1427,10 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
     // by a button. Naming the role here is also what finally gives the class
     // a ledger of its own, after two runs priced 3x under as `worker`.
     role: AUTHOR_ROLE,
+    // The pack is a sandbox deliverable (PACK.json → Approve installs it);
+    // a repo clone is a cost per leg and a second door — the gates-of-troy
+    // chain paid five clones and double-installed through the diff (D-141).
+    noRepo: true,
     note: 'authoring a world',
   });
   return c.json(job, 201);
@@ -1935,7 +1948,15 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // thing about it that is not a matter of taste — it has to be unique — so
     // colliding must be something you can fix at the review rather than a dead
     // end that leaves discarding as the only move.
-    const renamed = body.packSlug?.trim();
+    //
+    // The modal prefills the slug and always sends it, so an UNCHANGED slug is
+    // not a rename and must not be pre-checked against the installed list —
+    // measured on gates-of-troy (D-141): Approve #1 installed the pack and
+    // then failed its repo patch; Approve #2 was refused by #1's own install.
+    // installPack's already-identical tolerance is the designed retry path,
+    // and only a real rename needs the early collision check.
+    const sent = body.packSlug?.trim();
+    const renamed = sent && sent !== pending.packDraft.slug ? sent : undefined;
     const draft = renamed ? { ...pending.packDraft, slug: renamed } : pending.packDraft;
     if (renamed) {
       const says = slugProblem(renamed, scanPacks(ROOT).installed.map((p) => p.slug));

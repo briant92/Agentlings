@@ -252,6 +252,13 @@ cost of three textured quads.
    the Blender template, remains the quality ceiling when wanted.
 4. **v2 scope** — parallax and the occlusion strip deferred; the format
    carries `plates[]` from day one, so neither needs a migration.
+   *Refined 2026-08-10 evening:* a single-plane shortcut (drifting the one
+   plate under the fixed frame, ~25 renderer lines) was offered and
+   **declined** — parallax arrives only as the full multi-plane version,
+   far and mid layers at their own rates, which is gated on multi-plate
+   packs and therefore on raster tooling that keeps alpha (the one-plate
+   rule's own blocker, D-142/D-143). Until then the worlds hold still and
+   the ambient idioms carry the motion.
 
 ## Sources
 

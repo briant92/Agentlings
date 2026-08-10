@@ -287,9 +287,12 @@ function EventEntry({
               <span className="t-meter t-meter-right">{meterLine(job)}</span>
             )}
           </div>
-          {/* Answered failures retire their card (D-139): the reply took the
-              question, and the continuation's own events follow in the feed. */}
-          {job && !job.continuedBy && (
+          {/* Answered failures retire their card (D-139), and so does any
+              resolution: a failed-typed event's job can become partial by
+              harvest and then promoted or discarded, and the card must ask
+              only while the status still does — the done-card's own rule,
+              which this branch never had because failed was once terminal. */}
+          {job && job.status === 'failed' && !job.continuedBy && (
             <ReviewCard job={job} onOpenReview={onOpenReview} say={event.detail} />
           )}
         </>

@@ -104,7 +104,7 @@ describe('carryForward', () => {
    * "did this deliver" check still reads the leg's own RESULT.md. The first
    * paid More Time leg (c19da3d1, 2026-08-10) found no report, wrote "the
    * last run never reported", and spent paid turns re-deriving what its
-   * parent had already written down (D-145).
+   * parent had already written down (D-146).
    */
   it('hands the earlier report over as PREVIOUS-RESULT.md', async () => {
     const first = sandbox('a');

@@ -154,7 +154,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it](#d-142--2026-08-10--the-plate-lands-a-raster-behind-the-world-and-the-basin-that-proved-it)
 - [D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built](#d-143--2026-08-10--the-door-learns-to-paint-render_plate-and-the-gate-the-loop-built)
 - [D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate](#d-144--2026-08-10--the-odyssey-sentence-the-desk-points-at-the-door-the-door-offers-the-plate)
-- [D-145 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-145--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
+- [D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-146--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
 
 ## By theme
 
@@ -194,7 +194,7 @@ entry updates one file rather than two.
   D-144 — the road to that door repaired the evening a real sentence missed
   it: the authoring brief taught plates and its stale cannot-carry claim
   corrected, the form's 3D-backdrop kind with the reference gone optional,
-  and the desk arrest pointing at New Level; and D-145's brief half — the
+  and the desk arrest pointing at New Level; and D-146's brief half — the
   raster-decoder pointer made unconditional beside the plates section, after
   the first paid More Time leg rebuilt the decoder to measure its own plate
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
@@ -370,7 +370,7 @@ entry updates one file rather than two.
   D-119, where a continuation inherited its parent's PENDING.md and wore a
   stale account, so the file joined the paperwork that never forwards; and
   D-120, the same identification arriving at standing approvals — keyed by
-  the root sentence, never the reply transcript; and D-145, where the
+  the root sentence, never the reply transcript; and D-146, where the
   carry-on brief pointed at the exact file that rule leaves behind — the
   first paid More Time leg re-derived its parent's thorough report as "the
   last run never reported" — answered by the report riding renamed
@@ -8838,7 +8838,7 @@ plate-leading brief → designer with the skill → review showing the plate →
 Approve copying it — and the first paid run down it is still D-143's open
 gate, one button press away.
 
-## D-145 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding
+## D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding
 
 The first paid More Time continuation (`cfa2a7a3` → `c19da3d1`, the
 Wine-Dark Strait chain) exposed two seams, both of the sibling-seam form.

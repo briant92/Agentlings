@@ -297,7 +297,7 @@ export function redoJobSpec(
  * constant because they drifted once: the brief said "read RESULT.md" while
  * the carry deliberately left it behind, and the first paid More Time leg
  * read the absence as "the last run never reported" and spent paid turns
- * re-deriving what its parent had written down (D-145).
+ * re-deriving what its parent had written down (D-146).
  */
 export function continuationBrief(previous: { repoPath?: string }): string {
   const carried = previous.repoPath

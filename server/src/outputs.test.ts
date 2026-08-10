@@ -128,7 +128,7 @@ describe('producedArtefacts', () => {
     expect(producedArtefacts(dir)).toBe(false);
   });
 
-  // A continuation inherits its parent's report (D-145); inheriting is not
+  // A continuation inherits its parent's report (D-146); inheriting is not
   // making, or a repeat of the parent's job could be refused a replay it
   // deserves.
   it('does not count an inherited report as something made', () => {
@@ -139,7 +139,7 @@ describe('producedArtefacts', () => {
 
 // The one notion of "it delivered" for work that changes no repository —
 // which is exactly the check an inherited file must never satisfy: a leg
-// holding only its parent's report has not delivered anything (D-145).
+// holding only its parent's report has not delivered anything (D-146).
 describe('deliveredFiles', () => {
   it('does not count the inherited report as the run leaving something', () => {
     writeFileSync(path.join(dir, 'PREVIOUS-RESULT.md'), 'the parent said');

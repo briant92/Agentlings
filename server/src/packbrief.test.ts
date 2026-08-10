@@ -84,7 +84,7 @@ describe('packBrief', () => {
    * inside a sandbox that already contained ours, spending a third of its
    * turns on it. The pointer was scoped to the reference section, and the
    * pattern recurred exactly where that scope missed — the first paid More
-   * Time leg measured its own plate with a hand-rolled measure.cjs (D-145).
+   * Time leg measured its own plate with a hand-rolled measure.cjs (D-146).
    * Every authoring brief carries it now.
    */
   it('points at the decoder the repository already has, reference or not', () => {
@@ -158,7 +158,7 @@ describe('packBrief', () => {
       expect(withRef).toMatch(/name the reference in `provenance`/i);
     });
 
-    // The decoder pointer deliberately stays (D-145) — only the reference
+    // The decoder pointer deliberately stays (D-146) — only the reference
     // prose must vanish with the reference.
     it('says none of it when there is no reference', () => {
       const plain = packBrief([]);

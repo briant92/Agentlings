@@ -110,7 +110,7 @@ export function outputNames(dir: string): string[] {
 
 /**
  * The previous leg's report, carried into a continuation's sandbox under its
- * own name so RESULT.md stays the new run's to write (D-145).
+ * own name so RESULT.md stays the new run's to write (D-146).
  */
 export const PREVIOUS_RESULT = 'PREVIOUS-RESULT.md';
 

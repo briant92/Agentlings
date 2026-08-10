@@ -429,7 +429,7 @@ export function withCostKnown(meter: JobMeter): JobMeter {
  * lose, though: the first paid More Time leg, finding no RESULT.md, decided
  * the parent had never reported and spent paid turns re-deriving what was
  * written down — so it rides as PREVIOUS-RESULT.md, a name no delivery
- * check reads (D-145).
+ * check reads (D-146).
  */
 export async function carryForward(
   previousId: string,

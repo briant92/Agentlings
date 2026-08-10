@@ -366,7 +366,7 @@ describe('continuationBrief', () => {
   // (D-063) — and it rides as PREVIOUS-RESULT.md, since RESULT.md is each
   // leg's own to write. Pointing at the per-leg name was the first paid More
   // Time leg's whole confusion: carryForward had left RESULT.md behind, so
-  // the leg read the absence as "the last run never reported" (D-145).
+  // the leg read the absence as "the last run never reported" (D-146).
   it('points at the handed-over report, under the name the carry gives it', () => {
     const text = continuationBrief(noRepo);
     expect(text).toContain('PREVIOUS-RESULT.md');

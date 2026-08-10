@@ -153,6 +153,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-141 — 2026-08-10 — One Approve, one door: the install that refused itself](#d-141--2026-08-10--one-approve-one-door-the-install-that-refused-itself)
 - [D-142 — 2026-08-10 — The plate lands: a raster behind the world, and the basin that proved it](#d-142--2026-08-10--the-plate-lands-a-raster-behind-the-world-and-the-basin-that-proved-it)
 - [D-143 — 2026-08-10 — The door learns to paint: render_plate, and the gate the loop built](#d-143--2026-08-10--the-door-learns-to-paint-render_plate-and-the-gate-the-loop-built)
+- [D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate](#d-144--2026-08-10--the-odyssey-sentence-the-desk-points-at-the-door-the-door-offers-the-plate)
 
 ## By theme
 
@@ -188,7 +189,11 @@ entry updates one file rather than two.
   the offline rule's one stated exception, the receipt carrying the same
   numbers the checker holds a plate to), drafts carrying plates through
   review into an Approve that copies them, and The Ember Gate — a three.js
-  world built in four takes of the see-your-work loop — as its proof
+  world built in four takes of the see-your-work loop — as its proof; and
+  D-144 — the road to that door repaired the evening a real sentence missed
+  it: the authoring brief taught plates and its stale cannot-carry claim
+  corrected, the form's 3D-backdrop kind with the reference gone optional,
+  and the desk arrest pointing at New Level
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -454,7 +459,9 @@ entry updates one file rather than two.
   reading connection, and scoped claim verbs that widen detection without
   loosening it; and D-134, the fourth arrest and the first that guards a
   non-send sentence — "the attached X" with nothing attached, built the
-  evening its 5.3c evidence arrived; and D-135, the failed modal's reply
+  evening its 5.3c evidence arrived; and D-144's fifth — "build me a
+  level" pointed at the New Level door, claiming forms only, built the
+  evening its proof sentence was typed; and D-135, the failed modal's reply
   given standalone wording and btn-more's amber, because "Or …" trailing
   buttons a failure never renders read as close-only; and D-136, the
   failed card's button saying SEE WHAT HAPPENED instead of promising a
@@ -8747,3 +8754,57 @@ designer keeps its earned class, exactly as the studio skills did (G5's
 class tax is paid only where a class is new). The first *paid* designer run
 through this door is the evidence gate left open, after the server restart
 picks up the catalog and runner changes.
+
+## D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate
+
+Brian restarted the server and typed the first real authoring sentence —
+*"Build me a level inspired in The Odyssey, with a 3D backdrop of the sea
+monster"* — at the HQ desk, and the desk planned it onto a worker at 53c.
+Working as built: D-110 made world-authoring a button so a matcher designed
+against no real phrasings could not misfire, and the phrasing it was
+waiting for had finally arrived. Nothing ran and nothing was spent; what
+the sentence exposed was that the road to the button had three stale
+stretches, all older than the plates that made the request possible.
+
+**The brief still described D-113's world.** `packBrief` taught the ops-only
+pack — no `plates` in its skeleton, no `render_plate`, and a reference
+section asserting the format "has no field for" a rendered painting, which
+was true when written and false since D-142. It now teaches the plate in
+the skeleton and in its own section (the tool, the vendored import URL, the
+ready title, one-plate-and-rim, check and render still the gates), defers
+technique to the `plate-design` skill riding the role, and — when the
+button asks for a 3D backdrop — leads with it: *a pack without
+`backdrop.plates` does not deliver this job, however good its ops are.*
+One wall added in the same breath the door opened: **never embed the
+reference image in a plate page** — `render_plate` would happily screenshot
+a `data:` URI of someone else's picture, and a screenshot of their picture
+is their picture with extra steps.
+
+**The form demanded what it no longer needed.** "Pre-rendered" was D-113's
+reference path — it *required* an upload because looking at a picture was
+the only pre-rendered thing a session could do. The kinds are now
+**Pixel / 3D backdrop**, the 3D pick saying plainly that the crew renders a
+real scene as the plate behind the pixel frame, and the reference is its
+own optional input for either kind, worked from and never copied. The
+route passes `kind: 'plate'` through to the brief's lead.
+
+**And the desk arrests the sentence it cannot serve.** `authoringSentence`
+is the fifth Start arrest and D-134's contract exactly: claiming forms only
+— a making verb, an article, then level/world within a couple of words —
+so *"make the level select screen faster"*, the level as this codebase's
+noun, queues untouched; and one extra press still queues anything, because
+the desk warns and the user decides. The button reads **"Queue anyway —
+worlds are authored from + New Level."** Routing the sentence to authoring
+directly was offered and declined: D-110's button stands, now visible from
+the desk instead of silent.
+
+**Evidence.** Proven live on the exact sentence: the arrest armed on the
+first press with the worker plan still honestly priced beneath it, and the
+New Level modal showed the 3D backdrop kind against a palette whose eight
+authored worlds all composite their thumbnails. 1446 + 151 green, typecheck
+clean. Two mutations, post-commit, each killed by exactly its test: the
+detector disabled (the proof-sentence case), the plate-first lead disabled
+(the leads-with-the-plate case). The road now runs desk → arrest → door →
+plate-leading brief → designer with the skill → review showing the plate →
+Approve copying it — and the first paid run down it is still D-143's open
+gate, one button press away.

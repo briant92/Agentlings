@@ -156,6 +156,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-144 — 2026-08-10 — The Odyssey sentence: the desk points at the door, the door offers the plate](#d-144--2026-08-10--the-odyssey-sentence-the-desk-points-at-the-door-the-door-offers-the-plate)
 - [D-145 — 2026-08-10 — The review speaks D-138: the cut named as a boundary, the delivery in the same breath](#d-145--2026-08-10--the-review-speaks-d-138-the-cut-named-as-a-boundary-the-delivery-in-the-same-breath)
 - [D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-146--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
+- [D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract](#d-147--2026-08-11--the-floor-that-drew-nothing-op-names-become-the-contract)
 
 ## By theme
 
@@ -195,7 +196,10 @@ entry updates one file rather than two.
   D-144 — the road to that door repaired the evening a real sentence missed
   it: the authoring brief taught plates and its stale cannot-carry claim
   corrected, the form's 3D-backdrop kind with the reference gone optional,
-  and the desk arrest pointing at New Level; and D-146's brief half — the
+  and the desk arrest pointing at New Level; and D-147 — the floor that
+  drew nothing: `"kind": "rect"` resolving every value past a checker that
+  never read the discriminant into a switch with no default, so op and fx
+  names became the checked contract and the interpreter went loud; and D-146's brief half — the
   raster-decoder pointer made unconditional beside the plates section, after
   the first paid More Time leg rebuilt the decoder to measure its own plate
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
@@ -8942,3 +8946,59 @@ Observed on the way, not decided here: the reply route composes no brief,
 so its legs meet PREVIOUS-RESULT.md only by listing the sandbox; and
 `carryForward` copies top-level files only, so a continuation still starts
 without the parent's `input/` — the reference image among it.
+
+## D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract
+
+Brian approved The Wine-Dark Strait — four designer legs, the first world
+authored end to end through the 3D door — and the floor polish he asked
+for next began by reading the installed pack. Its two ground ops said
+`"kind": "rect"`. The checker walks colours and coordinates *by key* and
+never reads the discriminant, so every value resolved and `pack:check`
+said "looks good" — four times, once per leg, and once more at install.
+The interpreter's switch on `op.op` then matched nothing, and its missing
+`default` skipped both ops without a word. **The approved floor drew
+nothing**, and nobody — not the legs looking at their own renders, not
+the CLI, not the review, not the approve — could see the difference,
+because the plate behind it already looked complete.
+
+The hole was the walk's own virtue inverted: driven by keys rather than
+the op union so a new op is covered without touching the checker (D-109),
+it had no opinion about the union at all. And the misspelling was
+invited: the brief lists the vocabulary as \`rect\` {x,y,w,h,…} and never
+names the field the idiom rides in, so a run guessed `kind` — a
+reasonable guess, wrong, and invisible.
+
+Decided and built, the same hour:
+
+- **`OP_NAMES` and `FX_NAMES` in the format**, each carrying THEME_SLOTS'
+  compile-time assertion, so the lists cannot drift from the unions.
+- **`validateLevelPack` refuses unknown discriminants** — top-level ops,
+  backdrop ops, `of` children, and ambient `fx` — and the one misspelling
+  that actually shipped gets its answer by name: *found `"kind": "rect"`;
+  the field is called `"op"`*.
+- **`drawOp` grew the `default` it never had**: an unknown op now throws
+  its name instead of silently drawing nothing. The checker is the wall
+  before money; the throw guards every path that never met the checker.
+- **The brief names the field** — `{"op": "rect", …}`, "there is no other
+  name for that field" — closing the guess at its source.
+- The fleet was swept before the rule landed: only the Strait carried the
+  disease, so no installed world flips to rejected.
+
+The Strait's floor itself was rewritten in the same pass, as the polish
+Brian asked for: wet shingle in the pack's own palette — dark strip,
+speckle and veins, a faint sheen line at the waterline, wrack tufts —
+plus glints riding the plate's sun-road, rain motes under the squall and
+a flyer. No scrim, deliberately: the fourth leg built the crew band's
+darkness into the plate itself, and the numbers respect it — worst
+separation 16.2, every gown reading, `pack:check` clean under the new
+rule. Committed in two acts: the pack exactly as approved first, because
+the crew's artifact is the record, then the fix.
+
+**Evidence.** 1458 + 156 green with the four built-ins and every
+installed pack passing the new rule; typecheck clean. Two mutations,
+post-commit, each killed by exactly its test: the checker call unwired
+(three name tests), the interpreter's throw muted (the loud-unknown
+test). The lesson joins D-030's family: the checker verified that values
+*resolve* and was read as verifying that ops *draw* — two claims that
+only sound alike, and the gap between them shipped an invisible floor
+through four paid reviews.

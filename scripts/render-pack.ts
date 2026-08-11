@@ -24,12 +24,13 @@ import {
   type LevelPack,
 } from '@agentlings/shared';
 import { COLOR_POOL } from '../server/src/levels';
-import { blitPlate } from '../server/src/plates';
+import { blitPlate, blitPlateA } from '../server/src/plates';
 import {
   bufferSurface,
   drawStandIn,
   encodePng,
   decodePng,
+  decodePngA,
   relLuminance,
   separationAt,
 } from '../server/src/raster';
@@ -70,16 +71,27 @@ const { surface, raster } = bufferSurface(
   paintOf(pack.theme, 'void'),
 );
 
-// The plate first, exactly as the app composites (D-142). A plate that will
-// not load is reported and skipped, so this still renders what it can.
-for (const file of pack.backdrop?.plates ?? []) {
-  const at = path.join(path.dirname(path.resolve(target)), file);
+// The plates first, back to front, exactly as the app composites (D-142,
+// v2) — the back one opaque, the rest as cut-outs, each at its rest offset
+// so an overscanned plate shows its centre window. A file that will not
+// load is reported and skipped, so this still renders what it can.
+const packDir = path.dirname(path.resolve(target));
+const restOffset = (w: number, h: number): number =>
+  Math.round((w - anchors.worldWidth * (h / anchors.viewH)) / 2);
+(pack.backdrop?.plates ?? []).forEach((file, i) => {
+  const at = path.join(packDir, file);
   try {
-    blitPlate(raster, decodePng(readFileSync(at)));
+    if (i === 0) {
+      const plate = decodePng(readFileSync(at));
+      blitPlate(raster, plate, restOffset(plate.w, plate.h));
+    } else {
+      const plate = decodePngA(readFileSync(at));
+      blitPlateA(raster, plate, restOffset(plate.w, plate.h));
+    }
   } catch (error) {
     console.error(`  (plate "${file}" not composited: ${(error as Error).message})`);
   }
-}
+});
 
 drawScene(surface, pack, pack.theme, anchors);
 
@@ -97,6 +109,18 @@ const separations = separationAt(raster, positions, anchors.groundY, COLOR_POOL,
 const rim = pack.rim ? paintOf(pack.theme, pack.rim) : undefined;
 for (const [i, at] of positions.entries()) {
   drawStandIn(surface, at, anchors.groundY, COLOR_POOL[i % COLOR_POOL.length], rim);
+}
+
+// The occlusion strip goes over everything, stand-ins included — that is
+// what it is: scenery the crew walk behind (v2).
+if (pack.backdrop?.occlusion) {
+  const file = pack.backdrop.occlusion;
+  try {
+    const strip = decodePngA(readFileSync(path.join(packDir, file)));
+    blitPlateA(raster, strip, restOffset(strip.w, strip.h));
+  } catch (error) {
+    console.error(`  (occlusion "${file}" not composited: ${(error as Error).message})`);
+  }
 }
 
 writeFileSync(out, encodePng(raster));

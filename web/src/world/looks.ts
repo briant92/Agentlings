@@ -32,16 +32,43 @@ const looks = new Map<ThemeId, Look>(
 );
 
 /**
- * Decoded backdrop plates by pack, loaded at boot alongside the packs
+ * Decoded backdrop rasters by pack, loaded at boot alongside the packs
  * themselves so the level cards — drawn synchronously during render — can
- * composite them. The world does not use these: Pixi loads its own texture.
+ * composite them. The world does not use these: Pixi loads its own textures.
  */
-const plateImages = new Map<ThemeId, HTMLImageElement[]>();
+const plateImages = new Map<
+  ThemeId,
+  { plates: HTMLImageElement[]; occlusion: HTMLImageElement | null }
+>();
 
 /** The plate files of a pack, as fetchable paths under the web root. */
 export function plateUrls(look: Look): string[] {
   if (!look.installed) return [];
   return (look.scene.backdrop?.plates ?? []).map((file) => `/packs/${look.id}/${file}`);
+}
+
+/** The occlusion strip's path, when the pack carries one (v2). */
+export function occlusionUrl(look: Look): string | null {
+  if (!look.installed || !look.scene.backdrop?.occlusion) return null;
+  return `/packs/${look.id}/${look.scene.backdrop.occlusion}`;
+}
+
+/** The plate-life loops of a pack, with their tiles as fetchable paths (v2). */
+export function plateLoopSpecs(look: Look): {
+  url: string;
+  x: number | string;
+  y: number | string;
+  w: number | string;
+  h: number | string;
+  dx: number;
+  dy: number;
+}[] {
+  if (!look.installed) return [];
+  return (look.scene.ambient ?? []).flatMap((op) =>
+    op.fx === 'plateloop'
+      ? [{ url: `/packs/${look.id}/${op.file}`, x: op.x, y: op.y, w: op.w, h: op.h, dx: op.dx, dy: op.dy }]
+      : [],
+  );
 }
 
 /** What the app falls back to when a level names a look nothing can supply. */
@@ -74,24 +101,31 @@ export async function loadLooks(): Promise<void> {
       });
     }
     // Plates, decoded before the first render so a card never draws half a
-    // world. A plate that fails to load costs only itself: the card and the
-    // world draw from ops alone, the way a missing pack falls back to cave.
+    // world. A file that fails to load costs only itself: the card and the
+    // world draw what did, the way a missing pack falls back to cave.
+    const fetchImage = async (url: string): Promise<HTMLImageElement | null> => {
+      try {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        return img;
+      } catch {
+        return null;
+      }
+    };
     await Promise.all(
       [...looks.values()].filter((look) => look.installed).map(async (look) => {
-        const images = await Promise.all(
-          plateUrls(look).map(async (url) => {
-            try {
-              const img = new Image();
-              img.src = url;
-              await img.decode();
-              return img;
-            } catch {
-              return null;
-            }
-          }),
-        );
+        const [images, occlusion] = await Promise.all([
+          Promise.all(plateUrls(look).map(fetchImage)),
+          (async () => {
+            const url = occlusionUrl(look);
+            return url ? fetchImage(url) : null;
+          })(),
+        ]);
         const loaded = images.filter((img): img is HTMLImageElement => img !== null);
-        if (loaded.length > 0) plateImages.set(look.id, loaded);
+        if (loaded.length > 0 || occlusion) {
+          plateImages.set(look.id, { plates: loaded, occlusion });
+        }
       }),
     );
   } catch {
@@ -138,6 +172,7 @@ function paintTo(
   w: number,
   h: number,
   plates: HTMLImageElement[] = [],
+  occlusion: HTMLImageElement | null = null,
 ): string {
   const anchors = anchorsOf(scene);
   const canvas = document.createElement('canvas');
@@ -145,12 +180,22 @@ function paintTo(
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
+  // A plate at the view width fills the frame; an overscanned one hangs half
+  // its margin off each side — the rest position the live drift moves around.
+  const drawPlate = (img: HTMLImageElement): void => {
+    const worldW = img.naturalWidth / (img.naturalHeight / anchors.viewH);
+    const sx = w / anchors.worldWidth;
+    ctx.drawImage(img, (-(worldW - anchors.worldWidth) / 2) * sx, 0, worldW * sx, h);
+  };
+
   ctx.fillStyle = css(theme.void);
   ctx.fillRect(0, 0, w, h);
-  // The plate sits under everything drawScene draws — the same order the
-  // world composites in (D-142).
-  for (const plate of plates) ctx.drawImage(plate, 0, 0, w, h);
+  // The plates sit under everything drawScene draws — the same order the
+  // world composites in (D-142), back to front.
+  for (const plate of plates) drawPlate(plate);
   drawScene(canvasSurface(ctx, w / anchors.worldWidth, h / anchors.viewH, css), scene, theme, anchors);
+  // The occlusion strip covers even the foreground — that is what it is.
+  if (occlusion) drawPlate(occlusion);
   ctx.globalAlpha = 1;
   return canvas.toDataURL();
 }
@@ -167,7 +212,8 @@ export function renderThumbnail(id: ThemeId): string {
   const cached = thumbCache.get(id);
   if (cached) return cached;
   const look = lookFor(id);
-  const url = paintTo(look.scene, look.theme, 240, 72, plateImages.get(look.id));
+  const rasters = plateImages.get(look.id);
+  const url = paintTo(look.scene, look.theme, 240, 72, rasters?.plates, rasters?.occlusion ?? null);
   // Only cache a real answer. Asking for a pack's card before its pack has
   // loaded returns the fallback, and caching that would pin the cave onto
   // that level for the life of the page — the picture would stay wrong long
@@ -194,7 +240,9 @@ export function renderScenePreview(
   width: number,
   /** A draft's plates, fetched from its sandbox by the caller (D-143). */
   plates: HTMLImageElement[] = [],
+  /** Its occlusion strip, drawn over everything (v2). */
+  occlusion: HTMLImageElement | null = null,
 ): { url: string; height: number } {
   const height = Math.round((width * scene.viewH) / WORLD_WIDTH);
-  return { url: paintTo(scene, theme, width, height, plates), height };
+  return { url: paintTo(scene, theme, width, height, plates, occlusion), height };
 }

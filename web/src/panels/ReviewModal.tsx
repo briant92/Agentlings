@@ -554,32 +554,38 @@ function PackCard({
   // shows the world Approve would install, not the world minus its picture.
   // A plate that fails to load costs only itself — the preview still draws.
   const plateFiles = pack.backdrop?.plates ?? [];
+  const occlusionFile = pack.backdrop?.occlusion;
   const [plateImages, setPlateImages] = useState<HTMLImageElement[]>([]);
+  const [occlusionImage, setOcclusionImage] = useState<HTMLImageElement | null>(null);
   useEffect(() => {
-    if (plateFiles.length === 0) return;
+    if (plateFiles.length === 0 && !occlusionFile) return;
     let gone = false;
-    void Promise.all(
-      plateFiles.map(async (name) => {
-        try {
-          const img = new Image();
-          img.src = fileUrl(levelId, jobId, name);
-          await img.decode();
-          return img;
-        } catch {
-          return null;
-        }
-      }),
-    ).then((images) => {
+    const fetchImage = async (name: string): Promise<HTMLImageElement | null> => {
+      try {
+        const img = new Image();
+        img.src = fileUrl(levelId, jobId, name);
+        await img.decode();
+        return img;
+      } catch {
+        return null;
+      }
+    };
+    void Promise.all(plateFiles.map(fetchImage)).then((images) => {
       if (!gone) setPlateImages(images.filter((img): img is HTMLImageElement => img !== null));
     });
+    if (occlusionFile) {
+      void fetchImage(occlusionFile).then((img) => {
+        if (!gone) setOcclusionImage(img);
+      });
+    }
     return () => {
       gone = true;
     };
     // The file list is identity enough: a draft's plates never change names
     // without the whole draft changing, which remounts the review.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [levelId, jobId, plateFiles.join('|')]);
-  const preview = renderScenePreview(pack, pack.theme, 520, plateImages);
+  }, [levelId, jobId, plateFiles.join('|'), occlusionFile]);
+  const preview = renderScenePreview(pack, pack.theme, 520, plateImages, occlusionImage);
   const backdropOps = pack.backdrop?.ops?.length ?? 0;
   // Whether this name is free, checked here rather than at Approve. The first
   // collision surfaced only after the button, naming a folder the reviewer had
@@ -608,6 +614,13 @@ function PackCard({
             {plateImages.length > 0
               ? `plate ${plateFiles.join(', ')}`
               : `plate ${plateFiles.join(', ')} — not shown; it did not load`}
+          </span>
+        )}
+        {occlusionFile && (
+          <span className={occlusionImage ? '' : 'rv-pack-warn'}>
+            {occlusionImage
+              ? `occlusion ${occlusionFile}`
+              : `occlusion ${occlusionFile} — not shown; it did not load`}
           </span>
         )}
         {backdropOps > 0 && <span>{backdropOps} backdrop</span>}

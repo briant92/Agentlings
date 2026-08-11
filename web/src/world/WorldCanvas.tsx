@@ -6,6 +6,7 @@ import {
   Rectangle,
   Sprite,
   Text,
+  TilingSprite,
   type Texture,
 } from 'pixi.js';
 import { useEffect, useRef, type MutableRefObject } from 'react';
@@ -33,8 +34,9 @@ import {
 } from './hover';
 import { DB } from './palette';
 import { departedIds } from './roster';
-import { anchorsOf, drawScene, paintOf, pixiSurface } from './scene';
-import { lookFor, plateUrls } from './looks';
+import { anchorsOf, drawScene, paintOf, pixiSurface, resolveCoord } from './scene';
+import { lookFor, occlusionUrl, plateLoopSpecs, plateUrls } from './looks';
+import { cameraTarget, layerOffset, occlusionRate, planeFor, plateRate } from './parallax';
 import {
   buildAgentTextures,
   buildSilhouetteTextures,
@@ -305,6 +307,19 @@ export function WorldCanvas({
         app.canvas.style.height = 'auto';
         host.appendChild(app.canvas);
 
+        // The pointer as a small camera pan (v2 parallax). Normalised across
+        // the canvas; null when away, which hands the camera to the idle
+        // sway. Listeners die with the canvas at teardown.
+        let pointerNx: number | null = null;
+        app.canvas.addEventListener('pointermove', (e) => {
+          const rect = app.canvas.getBoundingClientRect();
+          if (rect.width === 0) return;
+          pointerNx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+        });
+        app.canvas.addEventListener('pointerleave', () => {
+          pointerNx = null;
+        });
+
         // The bubble's window into the world (D-084): the smoothed position
         // the sprite actually stands at, through the canvas's own rect, so a
         // resize or layout change can never drift the mapping.
@@ -377,13 +392,22 @@ export function WorldCanvas({
           });
         });
 
-        // The pre-rendered plate (D-142): beneath everything drawScene draws,
-        // the same order every other consumer composites in. Loaded async;
-        // until it arrives — or if it never does — the void and the ops stand
-        // alone, the way a missing pack leaves a level in the cave.
+        // The pre-rendered plates (D-142, v2): beneath everything drawScene
+        // draws, back to front. Loaded async; until one arrives — or if it
+        // never does — the void and the ops stand alone, the way a missing
+        // pack leaves a level in the cave. Each plate gets its slot container
+        // up front, because Assets.load resolves in any order and z-order
+        // must be the pack's order, not the network's.
         const plateLayer = new Container();
         app.stage.addChild(plateLayer);
-        for (const url of plateUrls(look)) {
+        // Layers that drift, with the rate each one earned. Applied by the
+        // ticker below; rate 0 never registers, so a pinned world costs the
+        // frame loop nothing.
+        const drifting: { node: Container; baseX: number; rate: number }[] = [];
+        let backPlateRate = 0;
+        plateUrls(look).forEach((url, i) => {
+          const slot = new Container();
+          plateLayer.addChild(slot);
           Assets.load<Texture>(url)
             .then((texture) => {
               if (destroyed) return;
@@ -392,13 +416,47 @@ export function WorldCanvas({
               // of everything else comes from its own art, not from sampling.
               texture.source.scaleMode = 'linear';
               const plate = new Sprite(texture);
-              plate.width = WORLD_WIDTH;
+              const plane = planeFor(texture.width, texture.height, VIEW_H);
+              plate.width = plane.worldW;
               plate.height = VIEW_H;
+              // An overscanned plate hangs half its margin off each side, so
+              // its edges can never show inside the clamped drift.
+              plate.x = -(plane.worldW - WORLD_WIDTH) / 2;
               plate.eventMode = 'none';
-              plateLayer.addChild(plate);
+              slot.addChild(plate);
+              const rate = plateRate(i, plane.overscan);
+              if (i === 0) backPlateRate = rate;
+              if (rate !== 0) drifting.push({ node: slot, baseX: 0, rate });
             })
             .catch(() => {
               // A plate the browser cannot fetch costs only itself.
+            });
+        });
+
+        // Plate life (v2): raster tiles scroll-looping over the plates, under
+        // every op and the scrim. The layer rides the back plate's drift so
+        // a waterfall stays on the cliff it was painted against.
+        const plateLifeLayer = new Container();
+        app.stage.addChild(plateLifeLayer);
+        const loops: { sprite: TilingSprite; dx: number; dy: number }[] = [];
+        for (const spec of plateLoopSpecs(look)) {
+          Assets.load<Texture>(spec.url)
+            .then((texture) => {
+              if (destroyed) return;
+              texture.source.scaleMode = 'nearest';
+              const sprite = new TilingSprite({
+                texture,
+                width: resolveCoord(spec.w, ANCHORS),
+                height: resolveCoord(spec.h, ANCHORS),
+              });
+              sprite.x = resolveCoord(spec.x, ANCHORS);
+              sprite.y = resolveCoord(spec.y, ANCHORS);
+              sprite.eventMode = 'none';
+              plateLifeLayer.addChild(sprite);
+              loops.push({ sprite, dx: spec.dx, dy: spec.dy });
+            })
+            .catch(() => {
+              // A tile that cannot load costs only its own loop.
             });
         }
 
@@ -513,6 +571,34 @@ export function WorldCanvas({
         app.stage.addChild(spriteLayer);
         const fxLayer = new Graphics();
         app.stage.addChild(fxLayer);
+        // The occlusion strip (v2): scenery the crew walk BEHIND, above the
+        // sprites and their dust, below the emotes and labels — being talked
+        // over is fine, being unreadable is not. eventMode none, so nothing
+        // clickable ever hides behind a rock it can still be clicked through.
+        const occlusionLayer = new Container();
+        app.stage.addChild(occlusionLayer);
+        {
+          const url = occlusionUrl(look);
+          if (url) {
+            Assets.load<Texture>(url)
+              .then((texture) => {
+                if (destroyed) return;
+                texture.source.scaleMode = 'linear';
+                const strip = new Sprite(texture);
+                const plane = planeFor(texture.width, texture.height, VIEW_H);
+                strip.width = plane.worldW;
+                strip.height = VIEW_H;
+                strip.x = -(plane.worldW - WORLD_WIDTH) / 2;
+                strip.eventMode = 'none';
+                occlusionLayer.addChild(strip);
+                const rate = occlusionRate(plane.overscan);
+                if (rate !== 0) drifting.push({ node: occlusionLayer, baseX: 0, rate });
+              })
+              .catch(() => {
+                // A strip that cannot load costs only its own depth cue.
+              });
+          }
+        }
         // Above the crew so a bubble reads over the sprite, below the labels
         // so a hovered name still wins.
         const emoteLayer = new Graphics();
@@ -537,6 +623,10 @@ export function WorldCanvas({
         let lastEventId = -1;
         let eventsPrimed = false;
 
+        // The camera the drifting layers follow: lerped toward the pointer
+        // or the idle sway, never applied as anything but whole pixels.
+        let camera = 0;
+
         app.ticker.add((ticker) => {
           const w = worldRef.current;
           dynamic.clear();
@@ -550,6 +640,19 @@ export function WorldCanvas({
           const t = performance.now() / 1000;
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
           ambience.tick(ambientLayer, dt, t);
+
+          // The drift (v2): one camera, every layer at its own rate. A world
+          // with nothing overscanned registers nothing here and holds still.
+          if (drifting.length > 0 || loops.length > 0) {
+            camera += (cameraTarget(pointerNx, t) - camera) * (1 - Math.exp(-dt * 3));
+            for (const layer of drifting) {
+              layer.node.x = layer.baseX + layerOffset(layer.rate, camera);
+            }
+            plateLifeLayer.x = layerOffset(backPlateRate, camera);
+            for (const loop of loops) {
+              loop.sprite.tilePosition.set(Math.round(loop.dx * t), Math.round(loop.dy * t));
+            }
+          }
 
           // The rail and the world point at the same crew, so hovering either
           // one lights up both.

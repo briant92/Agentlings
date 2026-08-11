@@ -10,11 +10,17 @@
 // Plain node, no dependencies, reads one file. Safe to run any time.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { normalise } from '../server/src/recipes';
+import { normalise, readRecipes, TOOL_CANDIDATE_RUNS } from '../server/src/recipes';
 import { totals } from '../server/src/ledger';
+import { compileBlockers } from '../server/src/capability';
+import { readConnections } from '../server/src/connections';
+import { usableTools } from '../server/src/tools';
 
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
+// Recomputed like LEDGER and LEVELS above: the server's own constant lives in
+// index.ts, which boots a server on import — a report must not.
+const CONNECTIONS = path.join(process.cwd(), '.agentlings', 'catalog', 'connections.json');
 
 /**
  * Which recipe each job belongs to, including the runs that predate it.
@@ -272,6 +278,201 @@ if (sessionMean > 0) {
   console.log(`total avoided       ~${usd(saved)}   against ${usd(cost)} actually spent`);
   console.log('\nAssumes each would otherwise have run as an ordinary session, which is');
   console.log('what the router would have done with it. Treat as an order of magnitude.');
+}
+
+/**
+ * The absorbed headline, split by cause.
+ *
+ * "45% absorbed" cannot drive a decision until it says whether the money went
+ * on tuition (compiles and discovery, absorbed by design), on walls (runs cut
+ * at their own budget), or on honest failure. Buckets use ledger-only signals,
+ * first match wins. The wall marker is the runner's own record shape: a failed
+ * run cut at max-turns reports exactly `turnsAllowed + 1` (carried, never
+ * inferred — D-066), and only *failed* rows may use it, because on finished
+ * rows the same inference is known-wrong on 7 of 43 (D-052).
+ *
+ * The section proves itself before it prints: buckets that do not sum to
+ * `totals()`'s own absorbedUsd, plus clip slices reconciling to spent minus
+ * chargeable, exit non-zero — a report about money that disagrees with the
+ * shared arithmetic must fail loudly, not print two truths (D-021, D-030).
+ */
+console.log('\n## Absorbed, bucketed\n');
+const fullAbs = rows.filter((r) => r.priceUsd === 0 && r.costUsd > 0);
+const bucketOf = (r): string => {
+  if (r.compile) return 'compiles (tuition by design — D-096)';
+  if (r.toolFellBack) return 'tool fall-backs (promised free)';
+  if (r.outcome === 'failed' && (r.turnsAllowed ?? 0) > 0 && r.turns === r.turnsAllowed + 1)
+    return 'cut at the turn wall';
+  if (r.outcome === 'failed') return 'failed inside its budget';
+  return 'done at price zero (free-quoted or unpriced)';
+};
+const buckets = new Map<string, { n: number; usd: number }>();
+for (const r of fullAbs) {
+  const b = buckets.get(bucketOf(r)) ?? { n: 0, usd: 0 };
+  b.n += 1;
+  b.usd += r.costUsd;
+  buckets.set(bucketOf(r), b);
+}
+const fullSum = fullAbs.reduce((s, r) => s + r.costUsd, 0);
+for (const [name, b] of [...buckets.entries()].sort((a, b2) => b2[1].usd - a[1].usd)) {
+  console.log(
+    `${num(b.n, 4)} rows  ${num(usd(b.usd), 8)}  ${num(Math.round((100 * b.usd) / fullSum) + '%', 4)}  ${name}`,
+  );
+}
+const clip = rows.filter((r) => r.priceUsd > 0 && r.costUsd > r.priceUsd);
+const clipSum = clip.reduce((s, r) => s + r.costUsd - r.priceUsd, 0);
+const chainClipped = clip.filter((r) => r.chainPriced);
+console.log(
+  `${num(clip.length, 4)} rows  ${num(usd(clipSum), 8)}       over-quote overruns clipped to the quote` +
+    (chainClipped.length ? ` (${chainClipped.length} of them chain legs repriced at promote)` : ''),
+);
+if (Math.abs(fullSum - absorbed) > 0.005 || Math.abs(fullSum + clipSum - (cost - price)) > 0.005) {
+  console.error(
+    `\nRECONCILIATION FAILED: buckets ${usd(fullSum)} + clips ${usd(clipSum)} != spent − chargeable ${usd(cost - price)} (absorbed ${usd(absorbed)})`,
+  );
+  process.exit(1);
+}
+console.log(
+  `\nreconciles: ${usd(fullSum)} bucketed + ${usd(clipSum)} clipped = ${usd(cost - price)} spent-never-charged, matching totals()`,
+);
+
+/**
+ * Which recipes the compile gate would take today, by the gate's own criteria:
+ * `successes` at the bar promotion refuses under (D-021), no usable tool
+ * already answering the key, and `compileBlockers` — the same function the
+ * route calls (D-100), fed the same connections file — saying nothing the
+ * method used stops a plain-node script. A scheduled key recurs by standing
+ * instruction, so its payback never stops arriving; measured compiles cost
+ * $0.94–$1.32 (D-025, D-029), which is the payback arithmetic printed.
+ */
+console.log('\n## Compile candidates — by the gate\'s own criteria\n');
+const connections = readConnections(CONNECTIONS);
+type Candidate = {
+  level: string;
+  key: string;
+  successes: number;
+  blockers: string[];
+  paid: number;
+  mean: number;
+  scheduled: boolean;
+};
+const candidates: Candidate[] = [];
+for (const level of existsSync(LEVELS) ? readdirSync(LEVELS) : []) {
+  const dir = path.join(LEVELS, level);
+  const tooled = new Set(usableTools(dir).map((t) => t.recipeKey));
+  const schedFile = path.join(dir, 'schedules.json');
+  const scheduled = new Set<string>(
+    existsSync(schedFile)
+      ? JSON.parse(readFileSync(schedFile, 'utf8')).map((s: { prompt: string }) => normalise(s.prompt))
+      : [],
+  );
+  for (const recipe of readRecipes(dir)) {
+    if ((recipe.successes ?? 0) < TOOL_CANDIDATE_RUNS) continue;
+    if (tooled.has(recipe.key)) continue;
+    const runs = (byKey.get(recipe.key) ?? []).filter((r) => r.levelId === level && r.costUsd > 0);
+    candidates.push({
+      level,
+      key: recipe.key,
+      successes: recipe.successes ?? 0,
+      blockers: compileBlockers(recipe, connections),
+      paid: runs.length,
+      mean: runs.length ? runs.reduce((s, r) => s + r.costUsd, 0) / runs.length : 0,
+      scheduled: scheduled.has(recipe.key),
+    });
+  }
+}
+if (!candidates.length) {
+  console.log('none — no recipe both reaches the success bar and lacks a tool.');
+} else {
+  candidates.sort(
+    (a, b2) =>
+      Number(a.blockers.length > 0) - Number(b2.blockers.length > 0) ||
+      Number(b2.scheduled) - Number(a.scheduled) ||
+      b2.mean * b2.paid - a.mean * a.paid,
+  );
+  for (const c of candidates) {
+    const verdict = c.blockers.length
+      ? `blocked: used ${c.blockers.join(' and ')}`
+      : `compilable${c.mean > 0 ? ` — pays back in ~${Math.max(1, Math.ceil(1.1 / c.mean))} runs at ${usd(c.mean)}/run` : ''}`;
+    console.log(
+      `  ${pad(c.level, 16)} ${c.key.slice(0, 38).padEnd(38)} successes ${c.successes}${c.scheduled ? ' · SCHEDULED' : ''} · ${verdict}`,
+    );
+  }
+}
+
+/**
+ * D-050's own gate question, answered by counting rather than by principle.
+ *
+ * Tool graduation across levels was deferred on "one genuine repeat in 36
+ * jobs, two working tools, one active level". The design already exists; what
+ * it waits for is a job independently earned in two levels. Counted both ways
+ * it could be true: the same normalised sentence paid for in two levels on the
+ * ledger, and the same recipe key present in two levels' recipes.json.
+ */
+console.log("\n## Cross-level repeats — D-050's gate question\n");
+const ledgerSpan = [...byKey.entries()]
+  .map(([k, v]) => ({ k, levels: [...new Set(v.filter((r) => r.costUsd > 0).map((r) => r.levelId))] }))
+  .filter((g) => g.levels.length >= 2);
+const keyLevels = new Map<string, string[]>();
+for (const level of existsSync(LEVELS) ? readdirSync(LEVELS) : []) {
+  for (const recipe of readRecipes(path.join(LEVELS, level))) {
+    keyLevels.set(recipe.key, [...(keyLevels.get(recipe.key) ?? []), level]);
+  }
+}
+const recipeSpan = [...keyLevels.entries()].filter(([, v]) => v.length >= 2);
+console.log(`same sentence paid for in ≥2 levels (ledger):   ${ledgerSpan.length}`);
+for (const g of ledgerSpan) console.log(`    ${g.k.slice(0, 44).padEnd(44)} ${g.levels.join(', ')}`);
+console.log(`same recipe key stored in ≥2 levels (recipes):  ${recipeSpan.length}`);
+for (const [k, v] of recipeSpan) console.log(`    ${k.slice(0, 44).padEnd(44)} ${v.join(', ')}`);
+if (!ledgerSpan.length && !recipeSpan.length) {
+  console.log('\nzero — cross-level graduation (D-050 stages 1–3) waits until this number moves.');
+}
+
+/**
+ * Rows that paid the repo tax, split by whether the clone left an artifact.
+ *
+ * A clone multiplies the per-turn rate (the By-tier line above prints both
+ * rates). The artifact is DIFF.patch at the sandbox root, which survives the
+ * sweep (D-121 spot-checked the kept side byte-identical). No artifact does
+ * NOT prove waste — a survey reads the clone and writes elsewhere — so the
+ * figure is an upper bound and a reading list, not a verdict: identification
+ * before any router change, never a guess (D-053 is the case this asks about).
+ */
+console.log('\n## Clone use — rows that paid the repo tax\n');
+const repoRows = rows.filter(
+  (r) => r.hasRepo && r.costUsd > 0 && (r.tier === 'session' || r.tier === 'oneshot'),
+);
+let touched = 0;
+let gone = 0;
+const untouched: typeof rows = [];
+for (const r of repoRows) {
+  const sandbox = path.join(LEVELS, r.levelId, 'jobs', r.jobId);
+  if (!existsSync(sandbox)) {
+    gone++;
+  } else if (existsSync(path.join(sandbox, 'DIFF.patch'))) {
+    touched++;
+  } else {
+    untouched.push(r);
+  }
+}
+const untouchedCost = untouched.reduce((s, r) => s + r.costUsd, 0);
+const noRepoRate = perTurn(rows, 'session', false);
+console.log(
+  `${repoRows.length} paid rows carried a clone: ${touched} left a DIFF.patch, ${untouched.length} left none, ${gone} sandboxes gone (unknowable)`,
+);
+if (untouched.length) {
+  const counterfactual = noRepoRate
+    ? untouched.reduce((s, r) => s + (r.turnsAllowed ?? 0) * noRepoRate.usd, 0)
+    : null;
+  console.log(
+    `no-artifact rows cost ${usd(untouchedCost)}` +
+      (counterfactual !== null
+        ? `; at the no-repo session rate the same grants cost ~${usd(counterfactual)}`
+        : ''),
+  );
+  console.log(
+    'an upper bound on the clone tax, not a verdict — read those jobs before touching the router.',
+  );
 }
 
 console.log(

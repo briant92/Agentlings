@@ -176,13 +176,13 @@ describe('packBrief', () => {
     });
   });
 
-  describe('the plate half (D-142, D-143, D-144)', () => {
+  describe('the plate half (D-142, D-143, D-144, v2)', () => {
     it('teaches plates in the skeleton and the vocabulary, every time', () => {
       expect(brief).toContain('"plates": ["plate.png"]');
-      expect(brief).toMatch(/rendered picture \(plates\)/i);
+      expect(brief).toMatch(/rendered picture \(plates/i);
       expect(brief).toContain('render_plate');
       expect(brief).toContain('http://three.local/three.module.js');
-      expect(brief).toMatch(/rim\` becomes \*\*required\*\*/i);
+      expect(brief).toMatch(/rim\` stays \*\*required\*\*/i);
     });
 
     /**
@@ -191,7 +191,7 @@ describe('packBrief', () => {
      */
     it('no longer claims the format cannot carry a rendered picture', () => {
       expect(brief).not.toMatch(/format has no field for/i);
-      expect(brief).toMatch(/What the ops cannot paint, a \*\*plate\*\* can carry/i);
+      expect(brief).toMatch(/What the ops cannot paint, \*\*plates\*\* can carry/i);
     });
 
     it('names the op discriminant, because a run once guessed "kind" (D-147)', () => {
@@ -199,11 +199,30 @@ describe('packBrief', () => {
       expect(brief).toMatch(/there is no other name for that field/i);
     });
 
+    it('teaches the v2 stack: cut-outs, the strip, the layer-wide budget', () => {
+      // The back plate is opaque; everything above is a cut-out through the
+      // door's own modes.
+      expect(brief).toMatch(/back plate is the picture/i);
+      expect(brief).toContain('cutout-overscan');
+      expect(brief).toMatch(/transparent page background/i);
+      // The occlusion strip and both of its placement walls.
+      expect(brief).toContain('backdrop.occlusion');
+      expect(brief).toMatch(/in front of the crew/i);
+      expect(brief).toMatch(/signpost span/);
+      expect(brief).toMatch(/standing place/);
+      // One palette across every raster, and the mechanical fix by name.
+      expect(brief).toMatch(/budget is the layer's, not the file's/i);
+      expect(brief).toMatch(/pack:quantize --\s+far\.png mid\.png near\.png/);
+      // Plate life rides the ambient vocabulary.
+      expect(brief).toContain('plateloop');
+    });
+
     it('leads with the plate when the button asked for one', () => {
       const plated = packBrief([], undefined, true);
       expect(plated).toMatch(/backdrop is a rendered plate — that is the ask/i);
-      expect(plated).toMatch(/Render the plate first/i);
+      expect(plated).toMatch(/Render the back plate first/i);
       expect(plated).toMatch(/without\s+`backdrop\.plates`\s+does not deliver/i);
+      expect(plated).toMatch(/occlusion strip/i);
       // ...and says none of that lead when nobody asked.
       expect(brief).not.toMatch(/that is the ask/i);
     });

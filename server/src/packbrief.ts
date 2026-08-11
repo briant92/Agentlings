@@ -67,13 +67,16 @@ is the only place that question can be answered later.`
 
 ## This world's backdrop is a rendered plate — that is the ask
 
-The user chose a pre-rendered 3D backdrop. **Render the plate first** with
-the \`render_plate\` tool and *look at the PNG*, then compose the theme and
-the foreground ops around what you rendered. A pack without
+The user chose a pre-rendered 3D backdrop. **Render the back plate first**
+with the \`render_plate\` tool and *look at the PNG*, then compose the theme
+and the foreground ops around what you rendered. A pack without
 \`backdrop.plates\` does not deliver this job, however good its ops are.
-The full discipline — the import URL, the ready title, the composition
-rules, the crew band — is in your \`plate-design\` skill; the format rules
-are below.`
+The format carries up to three plates and an occlusion strip (below): a far
+plate plus one cut-out layer drifting apart under the pointer is the
+difference between a wallpaper and a place — add layers once the back
+plate is good. The full discipline — the import URL, the ready title, the
+composition rules, the crew band — is in your \`plate-design\` skill; the
+format rules are below.`
     : '';
 
   const slots = THEME_SLOTS.join(', ');
@@ -159,30 +162,54 @@ and there is no other name for that field; the checker refuses \`kind\`,
 - \`tufts\` {x,y,w,h,count,height,color,alt?} — upright tufts along a line
 - \`ceiling\` {step,minY,maxY,fill,edge,flatNear?,hang?} — the lid of the world
 
-**ambient** effects: \`drips\`, \`flyer\`, \`motes\`, \`beam\`, \`glints\`, \`clock\`.
+**ambient** effects: \`drips\`, \`flyer\`, \`motes\`, \`beam\`, \`glints\`, \`clock\`,
+and \`plateloop\` {file,x,y,w,h,dx,dy} — a small raster tile scroll-looping
+inside a region (a waterfall, drifting cloud); live-only, like the rest.
 
-## The backdrop can be a rendered picture (plates)
+## The backdrop can be a rendered picture (plates — up to three, plus a strip)
 
-What the ops cannot paint, a **plate** can carry: one raster file drawn
-behind everything — plate, then backdrop ops, then scrim, then foreground
-(D-142, D-143).
+What the ops cannot paint, **plates** can carry: raster files drawn behind
+everything, back to front — plates, then backdrop ops, then scrim, then
+foreground (D-142, D-143, v2).
 
-- Render it yourself with the \`render_plate\` tool: one self-contained HTML
-  page, three.js importable from \`http://three.local/three.module.js\` (the
-  only URL that resolves during the render), \`document.title = "ready"\`
-  once the scene has drawn. It writes the PNG at your sandbox root already
-  quantized to the 128-colour backdrop budget, and its receipt reports the
-  colour count and the worst crew separation. **Read the PNG and look at
-  it** — then iterate; the render is cheap. The full discipline is in your
-  \`plate-design\` skill.
-- Name the file in \`backdrop.plates: ["plate.png"]\` and leave it at the
-  sandbox root beside ${PACK_FILE}. It rides your delivery: the review
-  shows it composited, and Approve installs it with the pack.
-- One plate, exactly. \`rim\` becomes **required** the moment plates are
-  present — the checker refuses a plate without one.
-- \`pack:check\` validates the file beside ${PACK_FILE} (2000×900 for a
-  450-tall world, at most 128 colours); \`pack:render\` composites it under
-  your ops so the picture you judge is the picture the app will draw.
+- Render each yourself with the \`render_plate\` tool: one self-contained
+  HTML page, three.js importable from \`http://three.local/three.module.js\`
+  (the only URL that resolves during the render), \`document.title =
+  "ready"\` once the scene has drawn. It writes the PNG at your sandbox
+  root already quantized to the 128-colour backdrop budget, and its receipt
+  reports the numbers the checker will hold it to. **Read the PNG and look
+  at it** — then iterate; the render is cheap. The full discipline is in
+  your \`plate-design\` skill.
+- Name the files in \`backdrop.plates: ["far.png", "mid.png"]\`, back to
+  front, and leave them at the sandbox root beside ${PACK_FILE}. They ride
+  your delivery: the review shows the composite, and Approve installs them
+  with the pack.
+- **The back plate is the picture** — fully opaque, mode \`plate\` (2000×900)
+  or \`plate-overscan\` (2120×900, and the app drifts it gently with the
+  pointer). **Every plate above it is a cut-out** — mode \`cutout\` or
+  \`cutout-overscan\`, rendered on a transparent page background: its holes
+  are what the plates behind show through, and the door snaps its alpha
+  hard. An overscanned layer drifts at its own rate (nearer = less); an
+  exact-size layer holds still. Depth comes from the drift — a far
+  skyline, a mid ridge, and they move apart under the pointer.
+- \`backdrop.occlusion: "near.png"\` is the strongest depth cue: a cut-out
+  drawn **in front of the crew**, drifting against the pointer. It may be
+  opaque only near the screen edges — never over the signpost span
+  (x ~230–770), never over a standing place (spawn 80, the signposts, exit
+  940, widened by the drift margin when it drifts) — the checker refuses
+  both by name. Think an arch leg, a foreground rock, rigging at the frame's
+  edge.
+- **The 128-colour budget is the layer's, not the file's**: one palette
+  across every raster you ship (plates, strip, tiles). Render every layer
+  from the same scene with one lighting rig and the union stays small; if
+  the checker names an over-budget union, \`npm run pack:quantize --
+  far.png mid.png near.png\` cuts one palette across them.
+- \`rim\` stays **required** the moment any raster rides — the checker
+  refuses a plate without one.
+- \`pack:check\` validates every file beside ${PACK_FILE} (sizes, the
+  cut-out contract, occlusion placement, the union budget); \`pack:render\`
+  composites the whole stack under your ops so the picture you judge is the
+  picture the app will draw.
 
 There is a PNG decoder in the repository already — \`decodePng\` and
 \`countColours\` in \`server/src/raster.ts\`, run with \`npx tsx\`. Use it to

@@ -9124,3 +9124,36 @@ is that gate, deliberately, since a designer authoring through the new
 brief is the capability v2 exists for. Plate-life in a live browser rides
 the same run. Route 2's first render waits on Brian's one-time Blender
 install.
+
+**Amendment, 2026-08-11 — the live gate is closed: The Rearing Strait.**
+The Odyssey re-do ran the same night: authoring job `25e36d5f` on hq
+(designer, kind plate, the v1 strait plate attached as reference) plus
+five funded continuations — Brian's stated budget, four through the
+More-turns door and the fifth through the reply door, which can carry
+words. The chain converged BY THE CHECKER: leg 1 rendered all three
+layers and a valid draft (10 errors — strip over the crew, union 382);
+leg 2 fixed placement and union but left soft alpha on both cut-outs;
+legs 3–5 burned turns hand-rolling pixel scripts past the one-command
+fix; the reply leg was handed `npm run pack:quantize -- far.png mid.png
+near.png water.png` verbatim and came back **clean** at $0.54. Approve
+installed all four rasters (the packRasterFiles seam live); level
+`the-odyssey` created in the world. **Pixel proof, headless Edge**:
+pointer left→right shifted the sky band 10.47 mean-diff and the beast
+band 10.22; the same bands 1.2s later at the same pointer: **0.00** —
+drift is pointer-driven and settles dead still; the water sliver kept
+scrolling (plate-life live); an earlier run with the pointer never
+landing showed uniform ~2.4 diffs on every pair — the idle sine,
+accidentally proven. far/mid shipped 2120×900 (both drift, at their
+ranked rates); the designer pinned the strip at 2000×900 — legal, so the
+counter-drift path is still unexercised live. Both D-146 seams fired en
+route: the reference followed every carry in `input/`, and the reply leg
+got the brief because a hand-me-down report existed. **The pricing seam
+fired again, second occurrence**: six legs, all cut, $6.22 real,
+**$0.00 charged** — the exact D-141 shape (a chain of cut legs whose end
+promotes charges nothing); the recorded fix still awaits its decision.
+Recorded, not built: the partial-alpha refusal names only the door
+re-render as its fix — three legs hand-rolled scripts instead; the
+message could also name the joint quantize, which is what actually
+snapped them. And turnsAllowed 11–15 per leg says the $2-quoted class
+funds ~12 turns; a v2 stack wants most of them for renders, so the class
+rate will want rows (G5's tax, paying itself down as these six file).

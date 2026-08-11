@@ -21,3 +21,10 @@ Artwork/*
 # reads. A render is a measurement, not part of the installed world.
 web/public/packs/*/pack.png
 web/public/packs/*/PACK.png
+
+# The bare template is regenerable (build_template.py, one command), and a
+# DRESSED one may carry assets whose licence forbids redistributing the
+# .blend itself (BlenderKit — see art/blender/README.md). Whether a dressed
+# template gets tracked is decided at dressing time (D-148 amendment).
+art/blender/*.blend
+art/blender/*.blend1

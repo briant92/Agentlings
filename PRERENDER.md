@@ -216,9 +216,10 @@ depth encoding; compositor AO/colour-ramp post. Kit assets from CC0 sources
 items are fine *baked into plates* but the `.blend` itself must not be
 redistributed). Geometry-nodes scatter with a seed for set dressing. Driver
 script: `blender -b template.blend -P plates.py -- --level X --palette Y`,
-headless, agentling-runnable once Blender is installed on this machine (a
-one-time manual install; Claude's own tools sit in an MSIX sandbox and
-cannot confirm installs — known limitation). A global restyle becomes an
+headless, agentling-runnable — Blender 4.5.9 LTS installed 2026-08-11 as a
+portable zip at `C:\Users\MSI\Tools\blender-4.5.9-windows-x64\blender.exe`
+(full path, not PATH; the MSIX sandbox means Brian's own terminal gives the
+final install confirmation — known limitation). A global restyle becomes an
 overnight batch re-render, which is the property no hand-painted pipeline
 has. Existing prior art for agent-driven headless Blender: `blenderless`,
 `blender-auto-render`; Infinigen proves the ceiling.
@@ -263,7 +264,9 @@ cost of three textured quads.
    multi-plate stack (1..3) → pointer/idle multi-plane parallax at
    renderer-owned rates → the occlusion strip → `plateloop` animated
    regions → the door's cut-out/overscan/tile modes → joint quantize →
-   Route 2 shipped as untested-live Blender files (`art/blender/`). Two
+   Route 2 shipped as untested-live Blender files (`art/blender/`) —
+   then Blender landed and both scripts fired clean the same week
+   (2026-08-11, D-148 amendment); the dressed set is what remains. Two
    items stayed on the shelf on this file's own advice: the smooth finish
    (Option B — amends D-108) and depth-map displacement. The shipped rules
    live in `art/LEVELPACK.md`; the motion law in

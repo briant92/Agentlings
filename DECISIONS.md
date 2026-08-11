@@ -9165,6 +9165,31 @@ snapped them. And turnsAllowed 11–15 per leg says the $2-quoted class
 funds ~12 turns; a v2 stack wants most of them for renders, so the class
 rate will want rows (G5's tax, paying itself down as these six file).
 
+**Amendment, 2026-08-11 — point 8's gate is closed: both Blender scripts
+fired clean on their first real run.** Brian said "Do the Blender
+install." Blender 4.5.9 LTS went on as a portable zip (no installer, no
+registry, reversible by deleting the folder) at
+`C:\Users\MSI\Tools\blender-4.5.9-windows-x64\` — outside OneDrive so
+sync never grinds over ~900 MB of app tree, and outside the AppData
+trees the MSIX sandbox redirects (the same class of path as the two
+proven-real ones). The zip's sha256 matched blender.org's own manifest
+(`41da973b…77cf`); extraction needed `C:\Windows\System32\tar.exe` —
+Git Bash's GNU tar refuses zips. Then the entry's own gate, run with
+`--python-exit-code 1` so a script throw can't hide behind Blender's
+exit 0: `build_template.py` wrote the 432 KB template.blend first try,
+and `plates.py` rendered far/mid/near from it at 2120×900 RGBA, all
+three fully transparent (WIC-decoded: 0 nonzero-alpha pixels) — the
+correct product of an undressed template, proving the layer muting, the
+holdout wiring and the file writes with zero API corrections to either
+blind-written script. Still open, deliberately: the MSIX rule means
+"installed on Brian's real machine" is confirmed only by his own
+terminal running `--version` once; and the quality gate — a DRESSED set
+(CC0 assets appended per the README) rendering plates worth feeding
+quantize/check/render — remains Route 2's first real outing.
+template.blend is gitignored as regenerable; whether a dressed one gets
+tracked is decided at dressing time, since BlenderKit assets would make
+the `.blend` itself non-redistributable while CC0 keeps it clean.
+
 ## D-149 — 2026-08-11 — The parcel desk: a pile of forty shows forty
 
 Brian clicked the parcel pile reading ×40 and got one ancient job's review,

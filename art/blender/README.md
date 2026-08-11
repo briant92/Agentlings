@@ -5,16 +5,22 @@ layers render straight into the pack format's layer stack — far plate, mid
 cut-out, occlusion strip — from one locked camera, so a global restyle is an
 overnight batch re-render.
 
-**Status: files only, untested live.** Blender is not installed on this
-machine (checked 2026-08-11); installing it is a one-time manual step —
-Claude's own tools sit in an MSIX sandbox and cannot confirm installs
-(PRERENDER §4). The first `blender -b` run below is these scripts' live
-gate.
+**Status: both scripts fired clean on their first real run (2026-08-11).**
+Blender 4.5.9 LTS lives as a portable extraction at
+`C:\Users\MSI\Tools\blender-4.5.9-windows-x64\blender.exe` (not on PATH —
+use the full path; zip sha256-verified against blender.org's manifest).
+`build_template.py` wrote template.blend and `plates.py` rendered
+far/mid/near at 2120×900 RGBA — fully transparent, correct for the
+undressed template. One MSIX caveat stands: these tools cannot confirm an
+install as real-machine (PRERENDER §4), so run `--version` once from your
+own terminal; the remaining live gate is a dressed set rendering real
+plates through quantize/check/render.
 
 ## One-time setup
 
-1. Install Blender (blender.org, 4.x LTS). Add `blender` to PATH or use the
-   full exe path below.
+1. ~~Install Blender~~ Done 2026-08-11: portable 4.5.9 LTS at the path
+   above (delete `C:\Users\MSI\Tools\blender-4.5.9-windows-x64.zip` after
+   confirming from your own terminal).
 2. Build the template from a stock file:
 
    ```

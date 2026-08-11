@@ -8,6 +8,7 @@ import {
   type PlateResult,
   type RenderResult,
 } from './render';
+import { alphaStats, decodePngA } from './raster';
 
 /**
  * The refusals run everywhere. The two that render run only where Edge
@@ -45,6 +46,25 @@ describe('callRender refusals', () => {
     const result = await callRender('render_pdf', { html: 'x'.repeat(2_000_001) });
     expect(result.error).toContain('too large');
     expect(result.error).toContain('split');
+  });
+
+  it('refuses an unknown plate mode by name, never a silent default', async () => {
+    const result = await callRender('render_plate', { html: '<p>x</p>', mode: 'alpha' });
+    expect(result.error).toContain('no such mode: "alpha"');
+    expect(result.error).toContain('cutout-overscan');
+  });
+
+  it('holds tile mode to its dimensions, and keeps them off every other mode', async () => {
+    expect((await callRender('render_plate', { html: '<p>x</p>', mode: 'tile' })).error).toContain(
+      'tileWidth',
+    );
+    expect(
+      (await callRender('render_plate', { html: '<p>x</p>', mode: 'tile', tileWidth: 4000, tileHeight: 64 }))
+        .error,
+    ).toContain('8–512');
+    expect(
+      (await callRender('render_plate', { html: '<p>x</p>', tileWidth: 64 })).error,
+    ).toContain('belong to mode "tile"');
   });
 });
 
@@ -167,6 +187,64 @@ describe('rendering, on a machine that can', () => {
         expect(result.error).toContain('"ready"');
       },
       45_000,
+    );
+
+    /**
+     * The cut-out contract end to end (v2): a transparent page with one solid
+     * shape comes back at the overscan size with its holes kept, its alpha
+     * already binary, and coverage in the receipt instead of separation —
+     * what a cut-out does to legibility belongs to the composite.
+     */
+    it.runIf(available)(
+      'cutout-overscan keeps transparency, snaps it binary, and reports coverage',
+      async () => {
+        const html = `<html><head><meta charset="utf-8"><style>
+          html, body { margin: 0; background: transparent; }
+          .ridge { position: absolute; left: 0; top: 0; width: 300px; height: 500px;
+                   background: #0d1226; border-radius: 0 0 180px 0; }
+        </style></head><body><div class="ridge"></div>
+        <script>document.title = 'ready';</script></body></html>`;
+        const result = (await callRender('render_plate', {
+          html,
+          mode: 'cutout-overscan',
+        })) as PlateResult;
+        expect(result.error).toBeUndefined();
+        expect(result.width).toBe(2120);
+        expect(result.height).toBe(900);
+        expect(result.worstSeparation).toBeUndefined();
+        expect(result.opaquePct).toBeGreaterThan(0);
+        expect(result.opaquePct).toBeLessThan(50);
+        expect(typeof result.partialSnapped).toBe('number');
+        // The returned PNG really is binary: no partial alpha survives.
+        const raster = decodePngA(Buffer.from(result.png ?? '', 'base64'));
+        const stats = alphaStats(raster);
+        expect(stats.partial).toBe(0);
+        expect(stats.opaque).toBeGreaterThan(0);
+        expect(stats.transparent).toBeGreaterThan(0);
+        expect(hits).toBe(0);
+      },
+      60_000,
+    );
+
+    it.runIf(available)(
+      'a tile renders at its own small size with alpha kept',
+      async () => {
+        const html = `<html><head><style>html, body { margin: 0; background: transparent; }
+          div { width: 32px; height: 64px; background: #24406a; }
+        </style></head><body><div></div>
+        <script>document.title = 'ready';</script></body></html>`;
+        const result = (await callRender('render_plate', {
+          html,
+          mode: 'tile',
+          tileWidth: 64,
+          tileHeight: 64,
+        })) as PlateResult;
+        expect(result.error).toBeUndefined();
+        expect(result.width).toBe(64);
+        expect(result.height).toBe(64);
+        expect(result.opaquePct).toBeCloseTo(50, 0);
+      },
+      60_000,
     );
   });
 });

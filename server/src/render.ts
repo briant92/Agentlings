@@ -1,10 +1,28 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { PLATE_OVERSCAN } from '@agentlings/shared';
 import type { ToolSpec } from './github';
 import { COLOR_POOL } from './levels';
 import { STAND_POSITIONS } from './plates';
-import { applyPalette, BACKDROP_COLOURS, medianCut } from './quantize';
-import { countColours, decodePng, encodePng, separationAt } from './raster';
+import {
+  applyPalette,
+  applyPaletteA,
+  BACKDROP_COLOURS,
+  histogramOfA,
+  medianCut,
+  paletteFrom,
+} from './quantize';
+import {
+  alphaStats,
+  binariseAlpha,
+  countColours,
+  countColoursA,
+  decodePng,
+  decodePngA,
+  encodePng,
+  encodePngA,
+  separationAt,
+} from './raster';
 
 /**
  * A styled PDF, printed from HTML the run wrote.
@@ -82,7 +100,7 @@ export const RENDER_TOOLS: ToolSpec[] = [
   {
     name: 'render_plate',
     description:
-      'Render a self-contained HTML page into a 2000×900 level-backdrop plate (PNG) at the sandbox root, quantized to the 128-colour backdrop budget. three.js may be imported from http://three.local/three.module.js — the only URL that resolves; every other request is blocked. Set document.title = "ready" once your scene has drawn; the screenshot waits for it.',
+      'Render a self-contained HTML page into a level-backdrop plate (PNG) at the sandbox root, quantized to the 128-colour backdrop budget. three.js may be imported from http://three.local/three.module.js — the only URL that resolves; every other request is blocked. Set document.title = "ready" once your scene has drawn; the screenshot waits for it. Modes: "plate" (default, 2000×900 opaque back plate), "plate-overscan" (2120×900 opaque, for a back plate that drifts), "cutout" (2000×900, keep transparency — the page background must be transparent; alpha is snapped to on-or-off), "cutout-overscan" (2120×900 with transparency — upper plates and occlusion strips that drift), "tile" (a small loop tile; give tileWidth and tileHeight, each 8–512).',
     params: [
       { name: 'html', type: 'string', required: true, describe: 'the whole HTML page' },
       {
@@ -90,6 +108,14 @@ export const RENDER_TOOLS: ToolSpec[] = [
         type: 'string',
         describe: 'output filename at the sandbox root (default plate.png)',
       },
+      {
+        name: 'mode',
+        type: 'string',
+        describe:
+          'plate | plate-overscan | cutout | cutout-overscan | tile (default plate)',
+      },
+      { name: 'tileWidth', type: 'number', describe: 'tile mode only: 8–512' },
+      { name: 'tileHeight', type: 'number', describe: 'tile mode only: 8–512' },
     ],
   },
 ];
@@ -118,6 +144,10 @@ export interface PlateResult {
   colours?: number;
   worstSeparation?: number;
   worstAt?: number;
+  /** Cut-out modes: how much of the frame is actually there (0–100). */
+  opaquePct?: number;
+  /** Cut-out modes: soft-alpha pixels the door snapped to on-or-off. */
+  partialSnapped?: number;
   bytes?: number;
   error?: string;
 }
@@ -142,7 +172,7 @@ export async function callRender(
     return { error: 'no renderer on this machine — Microsoft Edge was not found' };
   }
 
-  if (tool === 'render_plate') return renderPlate(html);
+  if (tool === 'render_plate') return renderPlate(html, args);
 
   let pdf: Buffer;
   try {
@@ -163,18 +193,73 @@ export async function callRender(
   return { pdf: pdf.toString('base64'), pages, bytes: pdf.length };
 }
 
+const PLATE_MODES = ['plate', 'plate-overscan', 'cutout', 'cutout-overscan', 'tile'] as const;
+type PlateMode = (typeof PLATE_MODES)[number];
+
 /**
- * Screenshots the page at plate size, then makes the result a legal backdrop:
- * quantized into D-108's 128-colour budget and measured for crew separation
- * at the seven standing places, so the receipt carries the same numbers the
- * pack checker will hold it to.
+ * Screenshots the page at the mode's size, then makes the result a legal
+ * backdrop file: quantized into D-108's 128-colour budget — per render here;
+ * the layer-wide union is the checker's to hold — and, for opaque plates,
+ * measured for crew separation at the seven standing places, so the receipt
+ * carries the same numbers the pack checker will. Cut-out modes keep the
+ * page's transparency, snap it to on-or-off (the checker's contract), and
+ * report coverage instead of separation: what a cut-out does to legibility
+ * is a property of the composite, which pack:check measures.
  */
-async function renderPlate(html: string): Promise<PlateResult> {
+async function renderPlate(html: string, args: Record<string, unknown>): Promise<PlateResult> {
+  const rawMode = args.mode ?? 'plate';
+  if (typeof rawMode !== 'string' || !(PLATE_MODES as readonly string[]).includes(rawMode)) {
+    // Refused by name, never a silent default — the D-147 rule.
+    return { error: `no such mode: "${String(rawMode)}" — one of ${PLATE_MODES.join(', ')}` };
+  }
+  const mode = rawMode as PlateMode;
+  const tileW = args.tileWidth;
+  const tileH = args.tileHeight;
+  if (mode === 'tile') {
+    for (const [name, v] of [
+      ['tileWidth', tileW],
+      ['tileHeight', tileH],
+    ] as const) {
+      if (typeof v !== 'number' || !Number.isInteger(v) || v < 8 || v > 512) {
+        return { error: `tile mode needs ${name}: an integer 8–512` };
+      }
+    }
+  } else if (tileW !== undefined || tileH !== undefined) {
+    return { error: `tileWidth/tileHeight belong to mode "tile", not "${mode}"` };
+  }
+
+  const overscan = mode === 'plate-overscan' || mode === 'cutout-overscan';
+  const alpha = mode === 'cutout' || mode === 'cutout-overscan' || mode === 'tile';
+  // PLATE_OVERSCAN is world units; the plate frame is 2×.
+  const width = mode === 'tile' ? (tileW as number) : PLATE_WIDTH + (overscan ? PLATE_OVERSCAN * 2 : 0);
+  const height = mode === 'tile' ? (tileH as number) : PLATE_HEIGHT;
+
   let shot: Buffer;
   try {
-    shot = await screenshotPlate(html);
+    shot = await screenshotPlate(html, width, height, alpha);
   } catch (err) {
     return { error: `could not render: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  if (alpha) {
+    let raster = decodePngA(shot);
+    const partialSnapped = binariseAlpha(raster);
+    let colours = countColoursA(raster);
+    if (colours > BACKDROP_COLOURS) {
+      raster = applyPaletteA(raster, paletteFrom(histogramOfA(raster), BACKDROP_COLOURS), true);
+      colours = countColoursA(raster);
+    }
+    const stats = alphaStats(raster);
+    const png = encodePngA(raster);
+    return {
+      png: png.toString('base64'),
+      width: raster.w,
+      height: raster.h,
+      colours,
+      opaquePct: Number(((stats.opaque / (raster.w * raster.h)) * 100).toFixed(1)),
+      partialSnapped,
+      bytes: png.length,
+    };
   }
 
   let raster = decodePng(shot);
@@ -184,9 +269,22 @@ async function renderPlate(html: string): Promise<PlateResult> {
     colours = countColours(raster);
   }
   // Separation on the 2x plate: scale 2, ground at the default pack shape the
-  // description promises. A pack with another viewH re-measures at check time.
-  const separations = separationAt(raster, STAND_POSITIONS, PLATE_GROUND_Y, COLOR_POOL, 2);
-  const worst = separations.reduce((a, b) => (b.separation < a.separation ? b : a));
+  // description promises. A pack with another viewH re-measures at check
+  // time. On an overscanned plate the view starts half the margin in, so the
+  // standing places shift by it — and the receipt reports world x, as ever.
+  const shift = overscan ? PLATE_OVERSCAN / 2 : 0;
+  const separations = separationAt(
+    raster,
+    STAND_POSITIONS.map((p) => p + shift),
+    PLATE_GROUND_Y,
+    COLOR_POOL,
+    2,
+  );
+  let worstIndex = 0;
+  separations.forEach((s, i) => {
+    if (s.separation < separations[worstIndex].separation) worstIndex = i;
+  });
+  const worst = separations[worstIndex];
   const png = encodePng(raster);
   return {
     png: png.toString('base64'),
@@ -194,12 +292,17 @@ async function renderPlate(html: string): Promise<PlateResult> {
     height: raster.h,
     colours,
     worstSeparation: Number(worst.separation.toFixed(1)),
-    worstAt: worst.at,
+    worstAt: STAND_POSITIONS[worstIndex],
     bytes: png.length,
   };
 }
 
-async function screenshotPlate(html: string): Promise<Buffer> {
+async function screenshotPlate(
+  html: string,
+  width: number,
+  height: number,
+  omitBackground: boolean,
+): Promise<Buffer> {
   const vendorDir = vendoredThreeDir();
   const { chromium } = await import('playwright-core');
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
@@ -207,7 +310,7 @@ async function screenshotPlate(html: string): Promise<Buffer> {
     return await Promise.race([
       (async () => {
         const page = await browser.newPage({
-          viewport: { width: PLATE_WIDTH, height: PLATE_HEIGHT },
+          viewport: { width, height },
         });
         // The offline rule, with its one stated exception: the vendored
         // three.js pair is fulfilled from this machine's own disk, and every
@@ -235,7 +338,10 @@ async function screenshotPlate(html: string): Promise<Buffer> {
               'drawn, so the screenshot is not taken early',
           );
         }
-        return await page.screenshot({ type: 'png' });
+        // omitBackground keeps the page's transparency for the cut-out
+        // modes; an opaque page over a transparent background still comes
+        // out opaque, so it costs the plate modes nothing to leave false.
+        return await page.screenshot({ type: 'png', omitBackground });
       })(),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(`took over ${RENDER_TIMEOUT_MS / 1000}s`)), RENDER_TIMEOUT_MS),

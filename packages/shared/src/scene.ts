@@ -17,6 +17,19 @@ export const STATION_SPACING = 130;
 export const MAX_STATIONS = 5;
 
 /**
+ * How much wider than the view a *drifting* plate is, in world units (v2's
+ * parallax, PRERENDER §3: "2–3 plates with 6% overscan"). A plate at exactly
+ * the view width is pinned; one carrying this overscan drifts within it, so
+ * its edges can never show. The margin each side is half of this, which is
+ * also the hard bound on any drift the renderer may apply — and therefore the
+ * clearance the checker demands around the crew under an occlusion strip.
+ */
+export const PLATE_OVERSCAN = 60;
+
+/** How many plates a backdrop may stack — ~21 MB decoded at 2×, the checked budget. */
+export const MAX_PLATES = 3;
+
+/**
  * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
  * stays identical across all four.
  */
@@ -239,7 +252,21 @@ export type AmbientOp =
   /** Sparkles on gilding: named points, plus random spots along strips. */
   | { fx: 'glints'; points: [Coord, Coord][]; strips: { x: Coord; y: Coord; w: Coord }[] }
   /** Live clock hands over a painted face, telling the actual time. */
-  | { fx: 'clock'; x: Coord; y: Coord; r: number };
+  | { fx: 'clock'; x: Coord; y: Coord; r: number }
+  /**
+   * Plate life (v2): a small raster tile scroll-looping inside a region of
+   * the view — a waterfall, drifting cloud, running water. `file` is a PNG
+   * beside pack.json like a plate (cut-outs welcome, its colours count
+   * against the backdrop budget); `dx`/`dy` are pixels per second, whole-pixel
+   * stepped at draw time. Drawn directly over the plates, under every op and
+   * the scrim; live-only like the rest of the ambient vocabulary.
+   */
+  | ({ fx: 'plateloop'; file: string; dx: number; dy: number } & {
+      x: Coord;
+      y: Coord;
+      w: Coord;
+      h: Coord;
+    });
 
 /** Every ambient name, for the same checker and the same reason (D-147). */
 export const FX_NAMES = [
@@ -249,6 +276,7 @@ export const FX_NAMES = [
   'beam',
   'glints',
   'clock',
+  'plateloop',
 ] as const satisfies readonly AmbientOp['fx'][];
 
 type MissingFx = Exclude<AmbientOp['fx'], (typeof FX_NAMES)[number]>;
@@ -291,21 +319,33 @@ export interface Scrim {
  */
 export interface Backdrop {
   /**
-   * The pre-rendered picture, as a raster file beside pack.json (D-108,
-   * D-142). Drawn beneath everything — plate, then `ops`, then the scrim,
-   * then the foreground.
+   * The pre-rendered picture, as raster files beside pack.json (D-108,
+   * D-142), back to front — up to MAX_PLATES of them since v2. Drawn beneath
+   * everything: plates, then `ops`, then the scrim, then the foreground.
    *
    * Not an op, deliberately: `Surface` has three primitives and a raster is
-   * not one, so each consumer composites the plate *before* walking
-   * `drawScene` rather than every surface growing an image method. An array
-   * so depth-layered plates need no migration later, but v1 carries exactly
-   * one — stacking needs alpha, and the raster tooling is opaque RGB.
+   * not one, so each consumer composites the plates *before* walking
+   * `drawScene` rather than every surface growing an image method.
    *
-   * The file rules are D-108's, made checkable: a plain .png name, sized
-   * 1000×viewH or 2000×(2·viewH), at most 128 colours, and `rim` set on the
-   * scene — the one device that survives standing in front of a picture.
+   * The file rules are D-108's, made checkable: a plain .png name; width
+   * 1000 or, for a plate that drifts, 1000+PLATE_OVERSCAN (either at 2×);
+   * height exactly viewH at its scale. The first plate is the picture and
+   * must be fully opaque; every plate above it is a cut-out — binary alpha,
+   * with at least one hole. The 128-colour budget is the *layer's*: one
+   * palette across every raster file the pack carries. `rim` is required the
+   * moment any raster rides — the one device that survives standing in front
+   * of a picture.
    */
   plates?: string[];
+  /**
+   * The occlusion strip (v2): a cut-out drawn *above* the crew, near the
+   * screen edges — the strongest depth cue a fixed camera has (the RE mask
+   * trick). Same file rules as an upper plate, plus two of its own: opaque
+   * pixels may live only clear of the signpost span, and never over a place
+   * the crew stand still (their boxes, widened by the drift margin). It
+   * drifts opposite the backdrop when sized with overscan.
+   */
+  occlusion?: string;
   ops?: SceneOp[];
   scrim?: Scrim;
 }

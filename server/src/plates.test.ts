@@ -7,7 +7,7 @@ import { THEME_SLOTS, type LevelPack } from '@agentlings/shared';
 import { COLOR_POOL } from './levels';
 import { packsDir, scanPacks } from './packs';
 import { blitPlate, blitPlateA, checkPlates } from './plates';
-import { encodePng, type Raster, type RasterA } from './raster';
+import { encodePng, encodePngA, type Raster, type RasterA } from './raster';
 
 const theme = Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233]));
 
@@ -96,6 +96,171 @@ describe('checkPlates', () => {
     const said = warnings(pack());
     expect(said.length).toBeGreaterThan(0);
     expect(said[0]).toMatch(/a gown vanishes against the plate at x 80/);
+  });
+});
+
+/** An RGBA PNG: paint returns [rgb, alpha] per pixel. */
+function pngA(w: number, h: number, paint: (x: number, y: number) => [number, number]): Buffer {
+  const pixels = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const [c, a] = paint(x, y);
+      const i = (y * w + x) * 4;
+      pixels[i] = (c >> 16) & 0xff;
+      pixels[i + 1] = (c >> 8) & 0xff;
+      pixels[i + 2] = c & 0xff;
+      pixels[i + 3] = a;
+    }
+  }
+  return encodePngA({ pixels, w, h });
+}
+
+describe('checkPlates v2 — the stack', () => {
+  const dark = 0x0a0a12;
+  const backPng = () => png(1000, 450, () => dark);
+
+  it('accepts an opaque back plate with an overscanned cut-out above it', () => {
+    writeFileSync(path.join(dir, 'far.png'), backPng());
+    // A drifting mid: opaque ridge across the top, holes everywhere else.
+    writeFileSync(
+      path.join(dir, 'mid.png'),
+      pngA(1060, 450, (_x, y) => (y < 80 ? [0x101018, 255] : [0, 0])),
+    );
+    expect(errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }))).toEqual([]);
+  });
+
+  it('accepts the overscan widths and names them when the width is wrong', () => {
+    writeFileSync(path.join(dir, 'far.png'), png(1030, 450, () => dark));
+    expect(errors(pack())[0]).toMatch(/1060/);
+    expect(errors(pack())[0]).toMatch(/2120/);
+  });
+
+  it('refuses a back plate that is not fully opaque', () => {
+    writeFileSync(
+      path.join(dir, 'far.png'),
+      pngA(1000, 450, (x) => (x === 0 ? [0, 0] : [dark, 255])),
+    );
+    expect(errors(pack())[0]).toMatch(/back of the stack and must be fully opaque/);
+  });
+
+  it('refuses an upper plate with no holes', () => {
+    writeFileSync(path.join(dir, 'far.png'), backPng());
+    writeFileSync(path.join(dir, 'mid.png'), pngA(1000, 450, () => [0x101018, 255]));
+    expect(errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }))[0]).toMatch(
+      /fully opaque and would hide every plate behind it/,
+    );
+  });
+
+  it('refuses an upper plate with soft edges, naming the door fix', () => {
+    writeFileSync(path.join(dir, 'far.png'), backPng());
+    writeFileSync(
+      path.join(dir, 'mid.png'),
+      pngA(1000, 450, (x) => (x < 100 ? [0x101018, 140] : [0, 0])),
+    );
+    expect(errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }))[0]).toMatch(
+      /partial-alpha/,
+    );
+  });
+
+  it('budgets the layer, not the file: two plates within budget can be over together', () => {
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, (x) => (x % 100) * 0x010101));
+    writeFileSync(
+      path.join(dir, 'mid.png'),
+      pngA(1000, 450, (x, y) =>
+        y < 80 ? [((x % 100) + 100) * 0x010101, 255] : [0, 0],
+      ),
+    );
+    const said = errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }));
+    expect(said[0]).toMatch(/span 200 colours together/);
+    expect(said[0]).toMatch(/quantize them jointly/);
+    expect(said[0]).toMatch(/far\.png 100, mid\.png 100/);
+  });
+});
+
+describe('checkPlates v2 — the occlusion strip', () => {
+  const dark = 0x0a0a12;
+  const withStrip = (file = 'near.png') =>
+    pack({ backdrop: { plates: ['far.png'], occlusion: file } });
+  beforeEach(() => {
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, () => dark));
+  });
+
+  it('accepts a cut-out hugging the screen edge above the crew band', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x < 40 && y < 300 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())).toEqual([]);
+  });
+
+  it('refuses opacity over the signpost span', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 500 && y === 10 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())[0]).toMatch(/over the signpost span/);
+  });
+
+  it('refuses covering a standing place in the crew band', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 80 && y === 375 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())[0]).toMatch(/standing place at x 80/);
+  });
+
+  it('widens the forbidden span by the drift margin only when the strip drifts', () => {
+    // World x 210 sits between the spawn box and the signposts: legal for a
+    // pinned strip, inside the widened span for a drifting one.
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 210 && y === 10 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())).toEqual([]);
+
+    writeFileSync(
+      path.join(dir, 'drift.png'),
+      pngA(1060, 450, (x, y) => (x === 240 && y === 10 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip('drift.png'))[0]).toMatch(/widened by the drift margin/);
+  });
+
+  it('warns, not errors, on a strip that draws nothing', () => {
+    writeFileSync(path.join(dir, 'near.png'), pngA(1000, 450, () => [0, 0]));
+    expect(errors(withStrip())).toEqual([]);
+    expect(warnings(withStrip())[0]).toMatch(/fully transparent — it draws nothing/);
+  });
+});
+
+describe('checkPlates v2 — plate-life tiles', () => {
+  const loop = (file = 'falls.png') =>
+    pack({
+      backdrop: { plates: ['far.png'] },
+      ambient: [{ fx: 'plateloop', file, x: 100, y: 100, w: 32, h: 64, dx: 0, dy: 24 }],
+    });
+  beforeEach(() => {
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, () => 0x0a0a12));
+  });
+
+  it('accepts a small opaque tile', () => {
+    writeFileSync(path.join(dir, 'falls.png'), png(32, 64, () => 0x123845));
+    expect(errors(loop())).toEqual([]);
+  });
+
+  it('names a missing tile', () => {
+    expect(errors(loop())[0]).toMatch(/plate-life tile "falls\.png" is not in the pack folder/);
+  });
+
+  it('caps a tile at 512', () => {
+    writeFileSync(path.join(dir, 'falls.png'), png(600, 64, () => 0x123845));
+    expect(errors(loop())[0]).toMatch(/at most 512×512/);
+  });
+
+  it('counts tile colours against the layer budget', () => {
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, (x) => (x % 100) * 0x010101));
+    writeFileSync(path.join(dir, 'falls.png'), png(512, 1, (x) => (x % 40) * 0x010101 + 0xa00000));
+    const said = errors(loop());
+    expect(said[0]).toMatch(/span 140 colours together/);
   });
 });
 

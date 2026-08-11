@@ -316,6 +316,12 @@ export function createAmbience(ops: AmbientOp[], ctx: AmbienceContext): Ambience
         return glints(op, ctx.theme, ctx.anchors, rng);
       case 'clock':
         return clock(op, ctx.theme, ctx.anchors, now);
+      case 'plateloop':
+        // Plate life is a raster tile, and this surface draws primitives —
+        // the world canvas runs these as scrolling textures itself. A no-op
+        // here rather than an omission, so the switch stays exhaustive and a
+        // new fx cannot slip through silently (D-147's rule).
+        return () => {};
     }
   });
   return {

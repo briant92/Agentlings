@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
-import { validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
+import { packRasterFiles, validateLevelPack, type LevelPack, type PackProblem } from '@agentlings/shared';
 import { BUILTIN_THEMES } from '@agentlings/shared';
 import { checkPlates } from './plates';
 
@@ -132,7 +132,10 @@ export function installPack(
   const dir = path.join(packsDir(root), draft.slug);
   const file = path.join(dir, 'pack.json');
   const contents = `${JSON.stringify(draft.pack, null, 2)}\n`;
-  const plates = draft.pack.backdrop?.plates ?? [];
+  // Every raster the pack references — plates, the occlusion strip, the
+  // plate-life tiles — through the one shared list, so the install can never
+  // copy fewer files than the checker demanded (the sibling-seam lesson).
+  const plates = packRasterFiles(draft.pack);
 
   if (plates.length > 0) {
     if (from === undefined) {

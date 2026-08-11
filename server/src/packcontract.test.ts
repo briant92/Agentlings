@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { slugProblem, THEME_SLOTS, type LevelPack } from '@agentlings/shared';
 import { checkPackDraft, PACK_FILE, readPackDraft } from './packcontract';
 import { installPack, packsDir, scanPacks } from './packs';
-import { encodePng } from './raster';
+import { encodePng, encodePngA } from './raster';
 
 const theme = Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233]));
 
@@ -245,5 +245,98 @@ describe('plates ride the draft (D-143)', () => {
   it('refuses a plated pack given nowhere to copy from', () => {
     const result = installPack(root, { slug: 'amber', pack: plated() });
     expect('error' in result && result.error).toMatch(/nowhere to copy/);
+  });
+});
+
+describe('the v2 shape rules', () => {
+  const plated = (backdrop: Record<string, unknown>, over: Record<string, unknown> = {}) =>
+    checkPackDraft(draft({ pack: pack({ rim: 'rockEdge', backdrop, ...over }) as never }));
+
+  it('caps the stack at three plates', () => {
+    const bad = plated({ plates: ['a.png', 'b.png', 'c.png', 'd.png'] });
+    expect(bad.error).toMatch(/at most 3/);
+  });
+
+  it('refuses a duplicate plate entry', () => {
+    expect(plated({ plates: ['a.png', 'a.png'] }).error).toMatch(/same file twice/);
+  });
+
+  it('accepts an occlusion strip, but not one reusing a plate file', () => {
+    expect(plated({ plates: ['a.png'], occlusion: 'near.png' }).error).toBeUndefined();
+    expect(plated({ plates: ['a.png'], occlusion: 'a.png' }).error).toMatch(/its own cut-out/);
+  });
+
+  it('demands the rim for an occlusion strip even with no plates', () => {
+    const bad = checkPackDraft(
+      draft({ pack: pack({ backdrop: { occlusion: 'near.png' } }) as never }),
+    );
+    expect(bad.error).toMatch(/needs the rim/);
+  });
+
+  it('holds plateloop to its own fields', () => {
+    const loop = (fx: Record<string, unknown>) =>
+      plated({ plates: ['a.png'] }, { ambient: [{ fx: 'plateloop', ...fx }] });
+    expect(
+      loop({ file: 'falls.png', x: 0, y: 0, w: 10, h: 10, dx: 0, dy: 12 }).error,
+    ).toBeUndefined();
+    expect(loop({ file: '../x.png', x: 0, y: 0, w: 10, h: 10, dx: 0, dy: 12 }).error).toMatch(
+      /plain \.png filename/,
+    );
+    expect(loop({ file: 'falls.png', x: 0, y: 0, w: 10, h: 10, dy: 12 }).error).toMatch(
+      /finite number "dx"/,
+    );
+    expect(loop({ file: 'falls.png', x: 0, y: 0, w: 10, h: 10, dx: 0, dy: 0 }).error).toMatch(
+      /scrolls nowhere/,
+    );
+  });
+});
+
+describe('the install copies every raster the pack references (v2)', () => {
+  it('carries the occlusion strip and the plate-life tiles with the plates', () => {
+    const sandbox = path.join(root, 'sandbox-v2');
+    mkdirSync(sandbox, { recursive: true });
+    const dark = () => {
+      const pixels = new Uint8ClampedArray(1000 * 450 * 3);
+      for (let i = 0; i < 1000 * 450; i++) {
+        pixels[i * 3] = 0x0a;
+        pixels[i * 3 + 1] = 0x0a;
+        pixels[i * 3 + 2] = 0x12;
+      }
+      return encodePng({ pixels, w: 1000, h: 450 });
+    };
+    const strip = () => {
+      const pixels = new Uint8ClampedArray(1000 * 450 * 4);
+      // Opaque only in the top-left corner, clear of furniture and crew.
+      for (let y = 0; y < 60; y++) {
+        for (let x = 0; x < 40; x++) {
+          const i = (y * 1000 + x) * 4;
+          pixels[i + 2] = 0x0a;
+          pixels[i + 3] = 255;
+        }
+      }
+      return encodePngA({ pixels, w: 1000, h: 450 });
+    };
+    const tile = () => {
+      const pixels = new Uint8ClampedArray(16 * 16 * 3).fill(0x22);
+      return encodePng({ pixels, w: 16, h: 16 });
+    };
+    writeFileSync(path.join(sandbox, 'far.png'), dark());
+    writeFileSync(path.join(sandbox, 'near.png'), strip());
+    writeFileSync(path.join(sandbox, 'falls.png'), tile());
+
+    const full = pack({
+      rim: 'rockEdge',
+      backdrop: { plates: ['far.png'], occlusion: 'near.png' },
+      ambient: [{ fx: 'plateloop', file: 'falls.png', x: 100, y: 100, w: 16, h: 16, dx: 0, dy: 8 }],
+    }) as unknown as LevelPack;
+
+    const result = installPack(root, { slug: 'odyssey', pack: full }, sandbox);
+    expect(result).toEqual({ installed: true, already: false });
+    for (const name of ['far.png', 'near.png', 'falls.png']) {
+      expect(existsSync(path.join(packsDir(root), 'odyssey', name)), name).toBe(true);
+    }
+    const scan = scanPacks(root);
+    expect(scan.rejected).toEqual([]);
+    expect(scan.installed.map((p) => p.slug)).toEqual(['odyssey']);
   });
 });

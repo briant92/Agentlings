@@ -10,6 +10,7 @@
 import { BUILTIN_THEMES } from './themes';
 import {
   FX_NAMES,
+  MAX_PLATES,
   OP_NAMES,
   resolveCoord,
   THEME_SLOTS,
@@ -290,19 +291,24 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
     fail('ops is missing or empty — a pack with no foreground draws nothing');
   }
 
-  // The raster plate (D-108, D-142). Shape only — whether the file exists,
-  // its size and its colour budget need the pack folder, which the server and
-  // the CLI have and a draft does not; those checks live in server/plates.
-  const plates = (data.backdrop as Backdrop | undefined)?.plates;
+  // The raster plates (D-108, D-142, v2). Shape only — whether the files
+  // exist, their sizes, alpha and the layer's colour budget need the pack
+  // folder, which the server and the CLI have and a draft does not; those
+  // checks live in server/plates.
+  const backdrop = data.backdrop as Backdrop | undefined;
+  const plates = backdrop?.plates;
   if (plates !== undefined) {
     if (!Array.isArray(plates) || plates.length === 0) {
       fail('backdrop.plates must be a non-empty array of filenames');
     } else {
-      if (plates.length > 1) {
+      if (plates.length > MAX_PLATES) {
         fail(
-          `backdrop.plates carries ${plates.length} files; v1 draws exactly one — ` +
-            'layered plates are not built yet (D-142)',
+          `backdrop.plates carries ${plates.length} files; the stack is at most ` +
+            `${MAX_PLATES}, back to front — three 2× plates already cost ~21 MB decoded`,
         );
+      }
+      if (new Set(plates).size !== plates.length) {
+        fail('backdrop.plates lists the same file twice');
       }
       plates.forEach((file, i) => {
         if (typeof file !== 'string' || !PLATE_FILE_RE.test(file)) {
@@ -312,13 +318,55 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
           );
         }
       });
-      if (data.rim === undefined) {
+    }
+  }
+  const occlusion = backdrop?.occlusion;
+  if (occlusion !== undefined) {
+    if (typeof occlusion !== 'string' || !PLATE_FILE_RE.test(occlusion)) {
+      fail(
+        'backdrop.occlusion must be a plain .png filename beside pack.json — got ' +
+          JSON.stringify(occlusion),
+      );
+    } else if (Array.isArray(plates) && plates.includes(occlusion)) {
+      fail(
+        `backdrop.occlusion names "${occlusion}", which is already a backdrop plate — ` +
+          'the strip is its own cut-out, drawn above the crew',
+      );
+    }
+  }
+  if ((Array.isArray(plates) && plates.length > 0) || typeof occlusion === 'string') {
+    if (data.rim === undefined) {
+      fail(
+        'a raster backdrop needs the rim (D-108): set `rim` to a slot that ' +
+          'contrasts with the plate, or the crew can vanish into the picture',
+      );
+    }
+  }
+  // Plate life (v2): the fields the by-keys walk cannot judge. Its x/y/w/h
+  // ride the coordinate walk below like any op's; the file is a path-shaped
+  // security boundary and the velocities are what make it a loop at all.
+  if (Array.isArray(data.ambient)) {
+    (data.ambient as unknown[]).forEach((op, i) => {
+      const rec = op as Record<string, unknown> | null;
+      if (!rec || typeof rec !== 'object' || rec.fx !== 'plateloop') return;
+      if (typeof rec.file !== 'string' || !PLATE_FILE_RE.test(rec.file)) {
         fail(
-          'a raster backdrop needs the rim (D-108): set `rim` to a slot that ' +
-            'contrasts with the plate, or the crew can vanish into the picture',
+          `ambient[${i}] (plateloop) needs "file": a plain .png filename beside ` +
+            'pack.json — the tile that scrolls',
         );
       }
-    }
+      for (const key of ['dx', 'dy'] as const) {
+        if (typeof rec[key] !== 'number' || !Number.isFinite(rec[key] as number)) {
+          fail(`ambient[${i}] (plateloop) needs a finite number "${key}" — pixels per second`);
+        }
+      }
+      if (rec.dx === 0 && rec.dy === 0) {
+        fail(
+          `ambient[${i}] (plateloop) scrolls nowhere (dx 0, dy 0) — paint a still ` +
+            'detail into the plate instead',
+        );
+      }
+    });
   }
 
   // The op and fx names, before the value walk: a wrong discriminant means
@@ -347,6 +395,22 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
   }
 
   return problems;
+}
+
+/**
+ * Every raster file a pack references, deduped: the plates back to front,
+ * the occlusion strip, the plate-life tiles. The one list the install copies,
+ * the review fetches and the checker walks — three call sites that must never
+ * disagree about what "the pack's files" means (the sibling-seam lesson,
+ * D-119/D-120).
+ */
+export function packRasterFiles(scene: Pick<Scene, 'backdrop' | 'ambient'>): string[] {
+  const files = [...(scene.backdrop?.plates ?? [])];
+  if (scene.backdrop?.occlusion) files.push(scene.backdrop.occlusion);
+  for (const op of scene.ambient ?? []) {
+    if (op.fx === 'plateloop') files.push(op.file);
+  }
+  return [...new Set(files)];
 }
 
 export interface PackExpectations {

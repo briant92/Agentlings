@@ -278,8 +278,9 @@ describe('validateLevelPack', () => {
       expect(bad(withPlates(['far.png']))).toEqual([]);
     });
 
-    it('refuses more than one plate — v1 draws exactly one', () => {
-      expect(bad(withPlates(['a.png', 'b.png']))[0]).toMatch(/v1 draws exactly one/);
+    it('accepts a stack up to three, and refuses a fourth (v2)', () => {
+      expect(bad(withPlates(['a.png', 'b.png', 'c.png']))).toEqual([]);
+      expect(bad(withPlates(['a.png', 'b.png', 'c.png', 'd.png']))[0]).toMatch(/at most 3/);
     });
 
     it('refuses an empty plates array rather than treating it as none', () => {

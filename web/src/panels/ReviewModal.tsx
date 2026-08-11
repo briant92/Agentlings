@@ -29,13 +29,23 @@ export function ReviewModal({
   job,
   /** The file to open on, when the inbox already knows which one was clicked. */
   file,
+  queue,
+  onDecided,
   onClose,
 }: {
   levelId: string;
   job: Job;
   file?: string;
+  /** Set when this review is a stop in the parcel desk's flow. */
+  queue?: { position: number; total: number; onSkip: () => void };
+  /**
+   * A verdict landed (promote, discard, more turns, a reply, a redo) — the
+   * desk advances to the next parcel. Absent, deciding simply closes.
+   */
+  onDecided?: () => void;
   onClose: () => void;
 }) {
+  const decided = onDecided ?? onClose;
   const [files, setFiles] = useState<DeliveryFile[] | null>(null);
   // An Approve the server refused (a channel switched off, a recipient the
   // channel rejected) — shown here, with the job left reviewable (D-075).
@@ -128,7 +138,7 @@ export function ReviewModal({
         setOffer(reply.sendApproval);
         return;
       }
-      onClose();
+      decided();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     }
@@ -140,7 +150,7 @@ export function ReviewModal({
     setBusy(true);
     try {
       await api(lvl(levelId, `/jobs/${job.id}/redo`), { method: 'POST' });
-      onClose();
+      decided();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     } finally {
@@ -154,7 +164,7 @@ export function ReviewModal({
     setBusy(true);
     try {
       await api(lvl(levelId, `/jobs/${job.id}/continue`), { method: 'POST' });
-      onClose();
+      decided();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     } finally {
@@ -170,7 +180,7 @@ export function ReviewModal({
     setBusy(true);
     try {
       await api(lvl(levelId, `/jobs/${job.id}/reply`), postJson({ text }));
-      onClose();
+      decided();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     } finally {
@@ -187,7 +197,7 @@ export function ReviewModal({
         postJson({ key: offer.key, auto }),
       );
       if (auto) setOffer(updated);
-      else onClose();
+      else decided();
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     } finally {
@@ -226,6 +236,21 @@ export function ReviewModal({
             </span>
           )}
           <span className="m-title">{job.title}</span>
+          {/* The desk's flow strip: where this stop sits in the pile, the way
+              back, and past it without a verdict. */}
+          {queue && (
+            <span className="rv-queue">
+              <button className="ghost" onClick={onClose}>
+                ◂ pile
+              </button>
+              <span className="dim">
+                {queue.position} of {queue.total}
+              </span>
+              <button className="ghost" onClick={queue.onSkip}>
+                skip ▸
+              </button>
+            </span>
+          )}
           <button onClick={onClose}>✕</button>
         </div>
         <div className="m-body">

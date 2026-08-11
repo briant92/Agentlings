@@ -4,6 +4,8 @@ import { api, lvl } from '../api';
 import { CrewPanel } from '../panels/CrewPanel';
 import { CrewRail } from '../panels/CrewRail';
 import { HireModal } from '../panels/HireModal';
+import { ParcelDesk } from '../panels/ParcelDesk';
+import { parcelOrder } from '../panels/parcels';
 import { ProfileModal } from '../panels/ProfileModal';
 import { ReviewModal } from '../panels/ReviewModal';
 import { KnowledgeModal } from '../panels/KnowledgeModal';
@@ -33,7 +35,21 @@ export function LevelView({
   const { world, connected, events, gone } = useWorld(level.id);
   // The file is optional and only the inbox sets it: everywhere else opens a
   // job, not one of its files, and lands on whatever the viewer ranks first.
-  const [review, setReview] = useState<{ jobId: string; file?: string } | null>(null);
+  // `fromPile` marks a review opened from the parcel desk: it gets the queue
+  // strip, and a verdict advances to the next waiting delivery.
+  const [review, setReview] = useState<{
+    jobId: string;
+    file?: string;
+    fromPile?: boolean;
+  } | null>(null);
+  const [parcelsOpen, setParcelsOpen] = useState(false);
+  /**
+   * The flow order, snapshotted when a review opens from the desk: verdicts
+   * shrink the live queue, and advancing against a list that reshuffles
+   * under each verdict would skip parcels. Ids resolved elsewhere are
+   * filtered against the live queue at advance time instead.
+   */
+  const flowOrder = useRef<string[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
@@ -102,6 +118,33 @@ export function LevelView({
     arrival.current = window.setTimeout(() => setHired(agentling), 700);
   };
 
+  /** A review opened from the desk: snapshot the flow and join it. */
+  const openFromPile = (jobId: string) => {
+    flowOrder.current = parcelOrder(world?.jobs ?? []);
+    setReview({ jobId, fromPile: true });
+  };
+
+  /**
+   * The next parcel after a verdict or a skip: the id following this one in
+   * the snapshot that is STILL waiting; none left closes back to the desk.
+   */
+  const advancePile = (from: string) => {
+    const liveIds = new Set(parcelOrder(world?.jobs ?? []));
+    const order = flowOrder.current;
+    const at = order.indexOf(from);
+    const next = order.slice(at + 1).find((id) => id !== from && liveIds.has(id));
+    setReview(next ? { jobId: next, fromPile: true } : null);
+  };
+
+  const pileQueue =
+    review?.fromPile && flowOrder.current.length > 0
+      ? {
+          position: Math.max(1, flowOrder.current.indexOf(review.jobId) + 1),
+          total: flowOrder.current.length,
+          onSkip: () => advancePile(review.jobId),
+        }
+      : undefined;
+
   return (
     <div className="app">
       <header>
@@ -152,6 +195,7 @@ export function LevelView({
           onSelect={setProfileId}
           onOpenCrew={() => setCrewOpen(true)}
           onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
+          onOpenParcels={() => setParcelsOpen(true)}
           onHover={setHoveredId}
           hoveredId={hoveredId}
           anchorFor={anchorFor}
@@ -183,11 +227,21 @@ export function LevelView({
           onOpenReview={(jobId: string, file?: string) => setReview({ jobId, file })}
         />
       </aside>
+      {parcelsOpen && !reviewJob && (
+        <ParcelDesk
+          levelId={level.id}
+          jobs={world?.jobs ?? []}
+          onOpenReview={openFromPile}
+          onClose={() => setParcelsOpen(false)}
+        />
+      )}
       {reviewJob && (
         <ReviewModal
           levelId={level.id}
           job={reviewJob}
           file={review?.file}
+          queue={pileQueue}
+          onDecided={review?.fromPile ? () => advancePile(reviewJob.id) : undefined}
           onClose={() => setReview(null)}
         />
       )}
@@ -223,7 +277,7 @@ export function LevelView({
           }}
         />
       )}
-      {tour && !hired && !reviewJob && !profileId && !rolesOpen && !knowledgeOpen && (
+      {tour && !hired && !reviewJob && !profileId && !rolesOpen && !knowledgeOpen && !parcelsOpen && (
         <Tour onDone={() => setTour(false)} />
       )}
     </div>

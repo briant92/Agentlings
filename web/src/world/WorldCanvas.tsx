@@ -142,10 +142,15 @@ function jobAtSlot(world: WorldState | null, slot: number): Job | undefined {
   );
 }
 
-/** Deliveries waiting by the exit, oldest first — the parcel pile. */
+/**
+ * Deliveries waiting by the exit, oldest first — the parcel pile. A continued
+ * job is out (D-139: More turns was its decision), so the crates count the
+ * same queue the desk lists — a pile saying ×33 over a desk saying 27 would
+ * be the app disagreeing with itself.
+ */
 function waitingReview(world: WorldState | null): Job[] {
   return (world?.jobs ?? [])
-    .filter((j) => outcomeOf(j.status) === 'to review')
+    .filter((j) => outcomeOf(j.status) === 'to review' && !j.continuedBy)
     .sort((a, b) => (a.finishedAt ?? a.createdAt) - (b.finishedAt ?? b.createdAt));
 }
 
@@ -217,6 +222,7 @@ export function WorldCanvas({
   onSelect,
   onOpenCrew,
   onOpenReview,
+  onOpenParcels,
   onHover,
   hoveredId,
   anchorFor,
@@ -229,6 +235,8 @@ export function WorldCanvas({
   onOpenCrew: () => void;
   /** A signpost was clicked — show that job's work. */
   onOpenReview: (jobId: string) => void;
+  /** The parcel pile was clicked — open the desk with the whole queue. */
+  onOpenParcels: () => void;
   /** Who the pointer is over, so the crew rail can light up the same one. */
   onHover: (agentlingId: string | null) => void;
   /** Who the crew rail is pointing at, highlighted here in return. */
@@ -251,6 +259,8 @@ export function WorldCanvas({
   onOpenCrewRef.current = onOpenCrew;
   const onOpenReviewRef = useRef(onOpenReview);
   onOpenReviewRef.current = onOpenReview;
+  const onOpenParcelsRef = useRef(onOpenParcels);
+  onOpenParcelsRef.current = onOpenParcels;
   const onHoverRef = useRef(onHover);
   onHoverRef.current = onHover;
   const hoveredIdRef = useRef(hoveredId);
@@ -499,15 +509,15 @@ export function WorldCanvas({
         app.stage.addChild(portal);
 
         // The parcel pile beside the exit: clickable while deliveries wait,
-        // opening the oldest one's review.
+        // opening the desk with the whole queue — a pile of forty must show
+        // forty, not silently open the oldest one blind.
         const pBox = parcelsBox(GROUND_Y);
         const parcelZone = new Container();
         parcelZone.eventMode = 'none';
         parcelZone.cursor = 'pointer';
         parcelZone.hitArea = new Rectangle(pBox.x, pBox.y, pBox.w, pBox.h);
         parcelZone.on('pointerdown', () => {
-          const oldest = waitingReview(worldRef.current)[0];
-          if (oldest) onOpenReviewRef.current(oldest.id);
+          if (waitingReview(worldRef.current).length > 0) onOpenParcelsRef.current();
         });
         parcelZone.on('pointerover', () => setHover({ kind: 'parcels' }));
         parcelZone.on('pointerout', () => clearHover((target) => target.kind === 'parcels'));

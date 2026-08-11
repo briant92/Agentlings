@@ -4133,3 +4133,122 @@ button.danger:hover {
   color: #fff;
   font-weight: 600;
 }
+
+/* The parcel desk (review queue): the pile opened as a list, grouped by what
+   Approve would do. Same chrome as every modal; the section heads carry the
+   stakes colour — amber acts, sky patches, lime files-only. */
+.modal.parcels {
+  width: min(820px, 94vw);
+}
+.pd-body {
+  padding-bottom: 6px;
+}
+.pd-section {
+  margin-bottom: 6px;
+}
+.pd-section-head {
+  font-size: 11px;
+  padding: 8px 2px 4px;
+}
+.pd-section-head.pd-acts {
+  color: var(--db-orange);
+}
+.pd-section-head.pd-patch {
+  color: var(--db-sky);
+}
+.pd-section-head.pd-files {
+  color: var(--db-lime-light);
+}
+.pd-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px;
+  border-bottom: 1px solid #1a1f29;
+  cursor: pointer;
+}
+.pd-row:hover {
+  background: #161b26;
+}
+.pd-row input[type='checkbox'] {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.pd-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pd-dot.done {
+  background: var(--db-lime);
+}
+.pd-dot.partial {
+  background: var(--db-orange);
+}
+.pd-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dbe2ef;
+}
+.pd-chip {
+  font-size: 10px;
+  background: #1c2230;
+  color: #9badb7;
+  border-radius: 3px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.pd-meta {
+  font-size: 11px;
+  color: #8a91a3;
+  white-space: nowrap;
+}
+.pd-go {
+  font-size: 11px;
+  color: var(--db-sky);
+}
+.pd-refusal {
+  color: #f08080;
+  font-size: 12px;
+}
+.pd-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid #262b36;
+}
+.pd-note {
+  font-size: 11px;
+  flex: 1;
+}
+.pd-discard {
+  border-color: #7a3333;
+  color: #f08080;
+}
+.pd-discard.armed {
+  background: #3a1a1a;
+  border-color: #f08080;
+}
+.pd-work {
+  border-color: var(--db-green);
+  color: var(--db-lime-light);
+}
+
+/* The desk's flow strip inside a review: back to the pile, the position,
+   past this one without a verdict. Sits flush right, before the close. */
+.rv-queue {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.m-head .rv-queue button {
+  margin-left: 0;
+}

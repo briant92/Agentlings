@@ -1,0 +1,56 @@
+# Route 2 — the Blender template (PRERENDER §4)
+
+The quality ceiling for backdrop plates: one template `.blend` whose view
+layers render straight into the pack format's layer stack — far plate, mid
+cut-out, occlusion strip — from one locked camera, so a global restyle is an
+overnight batch re-render.
+
+**Status: files only, untested live.** Blender is not installed on this
+machine (checked 2026-08-11); installing it is a one-time manual step —
+Claude's own tools sit in an MSIX sandbox and cannot confirm installs
+(PRERENDER §4). The first `blender -b` run below is these scripts' live
+gate.
+
+## One-time setup
+
+1. Install Blender (blender.org, 4.x LTS). Add `blender` to PATH or use the
+   full exe path below.
+2. Build the template from a stock file:
+
+   ```
+   blender -b -P art/blender/build_template.py -- --out art/blender/template.blend
+   ```
+
+   This writes a `.blend` with: a locked long-lens camera framing 2120×900
+   (the overscan width — crop-compose for the centre 2000) at crew eye
+   height; `FAR` / `MID` / `NEAR` collections wired to three view layers,
+   each seeing its own collection with the nearer ones as holdouts; film
+   transparency on (RGBA out); mist with **fixed** start/depth — never the
+   per-frame Normalize node — so every level shares one depth encoding.
+
+3. Dress the set: append CC0 kit assets into the collections (all verified
+   CC0 — Kenney, Quaternius, Poly Haven; BlenderKit royalty-free items are
+   fine *baked into renders* but the `.blend` itself must not be
+   redistributed — keep provenance honest either way). Far skyline into
+   `FAR`, the middle band into `MID`, one near piece (arch leg, mast, rock)
+   into `NEAR`, hugging the frame's left or right quarter — the checker
+   refuses an occlusion strip over the signpost span or a standing place.
+
+## Rendering plates
+
+```
+blender -b art/blender/template.blend -P art/blender/plates.py -- --out <dir> [--layers far,mid,near] [--scale 2]
+```
+
+One PNG per layer: `far.png` (opaque), `mid.png` and `near.png` (RGBA
+cut-outs). Then the ordinary pipeline judges them exactly like door renders:
+
+```
+npm run pack:quantize -- <dir>/far.png <dir>/mid.png <dir>/near.png
+npm run pack:check   -- <sandbox>/PACK.json
+npm run pack:render  -- <sandbox>/PACK.json
+```
+
+The joint quantize cuts the one 128-colour palette the layer budget
+demands; the checker holds sizes, the cut-out contract and occlusion
+placement; the composite render is the look-at-it step.

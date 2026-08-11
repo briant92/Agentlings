@@ -429,6 +429,9 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.18 the researcher trade (EXPANSION P3) → D-129
 - M5.19 the analyst upgrade (EXPANSION P4) → D-131
 - M5.20 the organizer pack (EXPANSION P5) → D-132
+- M5.21 pre-rendered backdrops v1 (plates, the render door, the road) →
+  D-142–D-144 · v2 (the stack, parallax, the occlusion strip, plate life,
+  Route 2 as files) → D-148
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

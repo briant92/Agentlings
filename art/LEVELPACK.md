@@ -29,7 +29,8 @@ directory order.
   "rim": "rockEdge",             // optional; see Legibility
   "theme": { "void": 2236468, … },  // all 16 slots, as numbers
   "backdrop": {                  // optional
-    "plates": ["far.png"],       // optional raster behind everything — see The plate
+    "plates": ["far.png", "mid.png"],  // rasters behind everything, back to front — see The plates
+    "occlusion": "near.png",     // optional cut-out IN FRONT of the crew, edges only (v2)
     "scrim": { "color": "void", "alpha": 0.38, "from": 300 },
     "ops": [ … ]
   },
@@ -88,37 +89,54 @@ palette, budgeted at 128 colours and dithered, because snapping a soft-shaded
 render to 32 colours destroys it. The split has a stated boundary: everything
 drawn from theme slots stays DB32-adjacent; the picture behind it does not.
 
-## The plate
+## The plates
 
-`backdrop.plates` names a pre-rendered raster drawn beneath everything —
-plate, then backdrop ops, then the scrim, then the foreground (D-142). The
-rules, all checked before a pack installs:
+`backdrop.plates` names pre-rendered rasters drawn beneath everything —
+plates back to front, then backdrop ops, then the scrim, then the foreground
+(D-142, v2: D-148). The rules, all checked before a pack installs:
 
-- **One plate, v1.** The field is an array so depth-layered plates need no
-  migration later, but today it carries exactly one file.
+- **One to three plates, back to front.** The first is the picture and must
+  be **fully opaque**; every plate above it is a **cut-out** — binary alpha
+  (on-or-off, no soft edges) with at least one hole.
 - **A plain `.png` name beside `pack.json`** — no paths; the name is joined
   to the pack folder, so like the slug it is a security boundary.
 - **Sized to the pack's own geometry**: `1000×viewH`, or `2000×(2·viewH)`
-  for a 2× author-and-downsample. The Amber Basin ships 2000×900 for its
-  450-tall world.
-- **At most 128 colours.** `npm run pack:quantize -- source.png far.png`
-  gets a render there, dithered, and previews the crew standing on it.
-- **`rim` is required** the moment a plate is present — the outline is the
-  one legibility device that survives standing in front of a picture.
-- **Drafts carry plates as files beside `PACK.json`** (D-143): a run renders
-  the plate with the `render_plate` tool (which quantizes it into budget and
-  reports crew separation in its receipt), names it in `backdrop.plates`,
-  and leaves both at the sandbox root. Harvest runs the raster rules against
-  the sandbox, the review composites the plate into the preview, and
-  **Approve copies plates before `pack.json`** — so the json is the commit
-  point, and approving again completes a half-landed install.
+  for a 2× author-and-downsample — or, for a plate that **drifts** under
+  the pointer, `1060`/`2120` wide (the +60 overscan, D-148). Width is the
+  opt-in: exact-size plates hold still, overscanned ones move at
+  renderer-owned rates (far most, nearer less). Height never overscans.
+- **`backdrop.occlusion` is the strip in front** (v2): a cut-out drawn
+  above the crew, drifting against the pointer when overscanned. Opaque
+  only clear of the signpost span and of every standing place — each
+  widened by the drift margin exactly when the strip drifts; the checker
+  refuses both by name.
+- **`plateloop` ambient entries** scroll a small raster tile (≤512×512)
+  inside a region — a waterfall, drifting cloud. Live-only, like every
+  ambient idiom; the tile is a pack file under all the same rules.
+- **At most 128 colours — for the layer, not per file**: one union across
+  every raster the pack carries. `npm run pack:quantize -- far.png mid.png
+  near.png` cuts one palette across them; single-file mode still previews
+  the crew standing on it.
+- **`rim` is required** the moment any raster is present — the outline is
+  the one legibility device that survives standing in front of a picture.
+- **Drafts carry every raster as files beside `PACK.json`** (D-143): a run
+  renders each through the `render_plate` tool's modes (`plate`,
+  `plate-overscan`, `cutout`, `cutout-overscan`, `tile` — cut-outs are
+  snapped binary in the door and report coverage), names them in the pack,
+  and leaves everything at the sandbox root. Harvest runs the raster rules
+  against the sandbox, the review composites the whole stack into the
+  preview, and **Approve copies every referenced raster before
+  `pack.json`** — the json is the commit point, and approving again
+  completes a half-landed install.
 
 `npm run pack:check` on a `pack.json` — installed folder or sandbox draft —
-runs every rule above; `npm run pack:render` composites the plate under the
-drawn scene and reports per-position crew separation.
-`web/public/packs/amber-basin` (painted, folder-dropped) and
+runs every rule above; `npm run pack:render` composites the stack under the
+drawn scene (occlusion over the stand-ins, as the app draws it) and reports
+per-position crew separation.
+`web/public/packs/amber-basin` (painted, folder-dropped),
 `web/public/packs/ember-gate` (three.js through the door, carried by a
-draft) are the worked examples. Provenance matters doubly here — a plate is
+draft) and `web/public/packs/wine-dark-strait` (four designer legs) are the
+worked examples. Provenance matters doubly here — a plate is
 exactly the kind of file that arrives from a renderer, a model or a
 marketplace, and its licence lands in this repository with it.
 

@@ -259,6 +259,15 @@ cost of three textured quads.
    packs and therefore on raster tooling that keeps alpha (the one-plate
    rule's own blocker, D-142/D-143). Until then the worlds hold still and
    the ambient idioms carry the motion.
+   ***Taken 2026-08-11 — D-148, the whole menu:*** alpha tooling →
+   multi-plate stack (1..3) → pointer/idle multi-plane parallax at
+   renderer-owned rates → the occlusion strip → `plateloop` animated
+   regions → the door's cut-out/overscan/tile modes → joint quantize →
+   Route 2 shipped as untested-live Blender files (`art/blender/`). Two
+   items stayed on the shelf on this file's own advice: the smooth finish
+   (Option B — amends D-108) and depth-map displacement. The shipped rules
+   live in `art/LEVELPACK.md`; the motion law in
+   `web/src/world/parallax.ts`.
 
 ## Sources
 

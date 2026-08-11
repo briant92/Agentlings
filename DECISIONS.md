@@ -157,6 +157,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-145 — 2026-08-10 — The review speaks D-138: the cut named as a boundary, the delivery in the same breath](#d-145--2026-08-10--the-review-speaks-d-138-the-cut-named-as-a-boundary-the-delivery-in-the-same-breath)
 - [D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-146--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
 - [D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract](#d-147--2026-08-11--the-floor-that-drew-nothing-op-names-become-the-contract)
+- [D-148 — 2026-08-11 — Backdrop v2 whole: the stack, the drift, the strip, the life](#d-148--2026-08-11--backdrop-v2-whole-the-stack-the-drift-the-strip-the-life)
 
 ## By theme
 
@@ -201,7 +202,14 @@ entry updates one file rather than two.
   never read the discriminant into a switch with no default, so op and fx
   names became the checked contract and the interpreter went loud; and D-146's brief half — the
   raster-decoder pointer made unconditional beside the plates section, after
-  the first paid More Time leg rebuilt the decoder to measure its own plate
+  the first paid More Time leg rebuilt the decoder to measure its own plate;
+  and D-148 — backdrop v2 whole: alpha tooling beside the opaque paths, the
+  1..3 plate stack with the occlusion strip and plate-life loops, overscan
+  width as the drift opt-in, the renderer-owned motion law whose clamp *is*
+  the checker's clearance margin, the door's cut-out modes, the layer-wide
+  128 budget with joint quantize, and Route 2 shipped as untested-live
+  Blender files — the smooth finish and displacement parallax deliberately
+  left on the shelf
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -8958,6 +8966,21 @@ nothing to hand forward. Its predecessor had spent paid minutes concluding
 the leg after this change spent those minutes executing. The two seams
 observed above remain open as written.
 
+**Second amendment, 2026-08-11 — both observed seams closed** (with the
+v2 build, D-148, because the Odyssey re-do would run straight into them).
+`carryForward` now copies the parent's `input/` after the top-level files
+— `outputNames` lists files only, so a reference image or an attached CSV
+never followed a continuation; the leg's own attachments are on disk
+before the carry runs and win any name they share. And the reply route
+composes a brief at last: `replyBrief()` shares the exact
+PREVIOUS-RESULT.md pointer sentence with `continuationBrief` through one
+private helper, minus the ran-out framing — attached only when the parent
+actually left a report for the carry to hand over, because a brief naming
+a missing file would recreate the false premise this entry closed. Two
+new carry tests (reference rides; the leg's own input wins), one brief
+test (same pointer, no ran-out line); mutation: the `input/` block
+disabled → exactly the reference-rides test fails.
+
 ## D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract
 
 Brian approved The Wine-Dark Strait — four designer legs, the first world
@@ -9013,3 +9036,91 @@ test). The lesson joins D-030's family: the checker verified that values
 *resolve* and was read as verifying that ops *draw* — two claims that
 only sound alike, and the gap between them shipped an invisible floor
 through four paid reviews.
+
+## D-148 — 2026-08-11 — Backdrop v2 whole: the stack, the drift, the strip, the life
+
+Brian: "Let's do v2 completely, step by step, then re-do The Odyssey level
+with full v2 capabilities." The menu was PRERENDER §3/§5's; the unlock
+order was the one D-143 recorded — alpha-keeping raster tooling first,
+because the one-plate rule's blocker was that a stacked plate needs holes
+and the tooling was opaque RGB. Two menu items deliberately stayed out:
+the **smooth finish** (amends D-108, PRERENDER's own decision #2 says
+quantized-only stands, and it costs a second composited surface plus
+image-aware duplicates of every static drawing path — it remains a priced
+option, one decision away), and **depth-map displacement** (PRERENDER's
+own verdict: smears at silhouettes; multi-plane makes it redundant).
+
+Built, in eight committed steps, each green before the next:
+
+1. **Alpha primitives beside the opaque ones**, never a stride refactor:
+   `RasterA`, `decodePngA`/`encodePngA` (one shared chunk walk, so the
+   decoders cannot drift), `binariseAlpha` (cut-out = on-or-off, holes
+   zeroed, partials counted), `countColoursA`/`alphaStats`,
+   `histogramOfA`+`paletteFrom` (one palette across files),
+   `applyPaletteA` (error never diffuses across a hole), `blitPlateA`
+   (composite by coverage), `srcX` on both blits. Opaque paths
+   byte-untouched.
+2. **The format**: `plates` 1..3 back to front (`MAX_PLATES`),
+   `backdrop.occlusion`, ambient `plateloop`, `PLATE_OVERSCAN` 60 — width
+   at view size is pinned, width carrying overscan drifts, height never
+   overscans (vertical drift slides the ground line from under the crew's
+   feet). `packRasterFiles` is the ONE list install, review and checker
+   share (the D-119/D-120 sibling-seam lesson applied in advance).
+3. **The checker**: back plate fully opaque; upper plates binary alpha
+   with holes; the strip clear of the signpost span and every standing
+   box, both widened by the drift margin exactly when it drifts; tiles
+   ≤512; **the 128 budget is the layer's** — one union across every
+   raster file, per-file counts in the refusal and the joint quantize
+   named as the fix; separation measured on the composite at rest.
+4. **The motion law**, renderer-owned and pure (`web/src/world/parallax.ts`):
+   sprites locked, pointer as a small camera pan; plates behind shift
+   WITH it, far most — the moon out of a train window — the strip in
+   front against it hardest (−1.4×); whole-pixel steps; the clamp equals
+   the checker's clearance margin, which makes the clamp a contract;
+   idle breathes a 26-second sine. A pack authors ORDER and sizes; what
+   moves is app law, the way scrim semantics are. Slot containers fix a
+   latent z-order race v1's single plate had hidden (Assets.load resolves
+   in network order). The occlusion layer sits above sprites and dust,
+   below emotes and labels; plate-life TilingSprites ride the back
+   plate's drift.
+5. **The door**: `render_plate` modes — plate | plate-overscan | cutout |
+   cutout-overscan | tile — refused by name (D-147), booleans kept off
+   the runner's string/number schema builder. Cut-outs screenshot with
+   omitBackground, snap alpha hard, and report coverage instead of
+   separation (legibility under a cut-out belongs to the composite).
+6. **`pack:quantize` joint mode**: two-plus PNGs → one union, one median
+   cut, each file redrawn under the shared palette, holes kept.
+7. **The brief and the skill**: layers from ONE scene with one lighting
+   rig (what keeps the union small and the light agreeing — integration
+   rule #1), the five modes with the transparent-background trap, the
+   strip's two placement walls verbatim, the layer-wide budget with the
+   joint fix, plateloop in the vocabulary.
+8. **Route 2 as files** (`art/blender/`): a headless template builder
+   (2120×900 frame, long lens at crew eye height, FAR/MID/NEAR view
+   layers with nearer-as-holdout, film transparency, mist with FIXED
+   bounds — never per-frame Normalize) and a plates.py driver that ends
+   by pointing at the joint quantize. UNTESTED LIVE and labelled so:
+   Blender is not installed on this machine (checked); the first
+   `blender -b` run is the gate.
+
+**Evidence.** 1491 + 166 green (33 new server tests, 10 new web),
+typecheck clean throughout. A generated 2-plate + strip + tile pack
+passed `pack:check` clean and `pack:render` composited every layer
+correctly (holes showing sky through the ridge, the strip over the
+stand-ins, worst separation 21.9). Live Edge renders through the door:
+cutout-overscan at 2120×900 with binary alpha and 16.9%-class coverage
+receipts, a 64×64 tile at 50% opaque, the offline listener at zero hits.
+Joint quantize live: a 100+100-colour pair, union 200 → exactly 128. The
+running app after HMR: world draws, all six level cards composite through
+the new path, zero console errors. Four mutations post-commit, each
+killed by exactly its test: the strip's standing-box rule dropped, the
+drift clamp removed, the input/ carry disabled (filed under D-146's
+amendment), the door's binarise skipped — that last one killed by the
+live Edge test, which is the kind of kill worth having.
+
+**Honestly unproven, and whose gate is what:** live parallax in pixels —
+no installed pack carries an overscanned plate yet; the Odyssey re-do run
+is that gate, deliberately, since a designer authoring through the new
+brief is the capability v2 exists for. Plate-life in a live browser rides
+the same run. Route 2's first render waits on Brian's one-time Blender
+install.

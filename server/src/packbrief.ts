@@ -145,7 +145,10 @@ be. Spend them however the world needs — a sea level can put water in
 resolves, never what it is called.
 
 **ops** is the drawing vocabulary. It is a fixed set of idioms, not a
-language, and anything not listed here does not exist:
+language, and anything not listed here does not exist. Every op is an object
+whose **\`"op"\` field names the idiom** — \`{"op": "rect", "x": 0, …}\` —
+and there is no other name for that field; the checker refuses \`kind\`,
+\`type\` or anything else by name:
 
 - \`rect\` {x,y,w,h,color,alpha?} and \`circle\` {x,y,r,color,alpha?}
 - \`poly\` {points:[[x,y],…],color,alpha?}

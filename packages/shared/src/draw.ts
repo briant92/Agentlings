@@ -168,6 +168,13 @@ function drawOp(
     case 'ceiling':
       drawCeiling(s, op, theme, anchors, rng, c, marks);
       return;
+
+    default:
+      // Loud, never silent (D-147): the Strait's floor was two ops this
+      // switch matched nothing on and skipped without a word — through four
+      // paid legs and an Approve. The checker refuses unknown names before
+      // install; this guards every path that never went through it.
+      throw new Error(`unknown op "${String((op as { op?: unknown }).op)}"`);
   }
 }
 

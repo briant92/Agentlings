@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   AGENTLING_PACK,
+  anchorsOf,
+  drawScene,
   THEME_SLOTS,
   validateLevelPack,
   validatePack,
+  type Scene,
+  type Surface,
 } from '@agentlings/shared';
 
 function atlas(over: Record<string, unknown> = {}) {
@@ -209,6 +213,59 @@ describe('validateLevelPack', () => {
     expect(bad(pack({ ops: [] }))).toEqual([
       'ops is missing or empty — a pack with no foreground draws nothing',
     ]);
+  });
+
+  // The renderer's half of D-147: unknown never silently draws nothing again.
+  it('the interpreter is loud about an op the checker never saw', () => {
+    const mute: Surface = { rect() {}, circle() {}, poly() {}, polyline() {} };
+    const scene = {
+      name: 'x',
+      viewH: 320,
+      groundY: 258,
+      ops: [{ op: 'sparkle', x: 0, y: 0, w: 1, h: 1, color: 'rock' }],
+    } as unknown as Scene;
+    expect(() => drawScene(mute, scene, { ...theme } as never, anchorsOf(scene))).toThrow(
+      /unknown op "sparkle"/,
+    );
+  });
+
+  // The names themselves are the contract (D-147). The Strait's approved
+  // floor was two ops written `"kind": "rect"` — every colour resolved,
+  // every coordinate parsed, and the renderer's switch drew nothing, through
+  // four paid legs and an Approve.
+  describe('op and fx names', () => {
+    it('refuses the misspelling that shipped, by name', () => {
+      const said = bad(pack({ ops: [{ kind: 'rect', x: 0, y: 0, w: 10, h: 10, color: 'rock' }] }));
+      expect(said[0]).toMatch(/needs an "op" naming one of: rect, circle/);
+      expect(said[0]).toMatch(/found "kind": "rect"; the field is called "op"/);
+    });
+
+    it('refuses a name the renderer does not draw', () => {
+      expect(bad(pack({ ops: [{ op: 'sparkle', x: 0, y: 0, w: 1, h: 1, color: 'rock' }] }))[0]).toMatch(
+        /"sparkle" is not one of them/,
+      );
+    });
+
+    it('reaches a child nested inside a band', () => {
+      const nested = pack({
+        ops: [
+          {
+            op: 'band',
+            from: 0,
+            to: 40,
+            step: 10,
+            of: [{ kind: 'rect', x: 0, y: 0, w: 4, h: 4, color: 'rock' }],
+          },
+        ],
+      });
+      expect(bad(nested)[0]).toMatch(/^ops\[0\]\.of\[0\] needs an "op"/);
+    });
+
+    it('holds the ambient idioms to their own names', () => {
+      expect(bad(pack({ ambient: [{ fx: 'rain' }] }))[0]).toMatch(
+        /ambient\[0\] needs an "fx" naming one of: drips, flyer/,
+      );
+    });
   });
 
   // The raster plate, shape half (D-142). The folder half — existence, size,

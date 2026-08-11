@@ -194,6 +194,11 @@ describe('packBrief', () => {
       expect(brief).toMatch(/What the ops cannot paint, a \*\*plate\*\* can carry/i);
     });
 
+    it('names the op discriminant, because a run once guessed "kind" (D-147)', () => {
+      expect(brief).toContain('{"op": "rect"');
+      expect(brief).toMatch(/there is no other name for that field/i);
+    });
+
     it('leads with the plate when the button asked for one', () => {
       const plated = packBrief([], undefined, true);
       expect(plated).toMatch(/backdrop is a rendered plate — that is the ask/i);

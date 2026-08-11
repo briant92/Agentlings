@@ -189,6 +189,30 @@ export type SceneOp =
     };
 
 /**
+ * Every op name, as data — what the checker holds a pack's `op` fields to
+ * (D-147). The Strait shipped a floor written as `"kind": "rect"`: every
+ * colour resolved, every coordinate parsed, and the renderer's switch
+ * matched nothing and silently drew nothing, through four paid legs and an
+ * Approve. The assertion is THEME_SLOTS' trick: add an op to the union and
+ * forget it here, and the project stops compiling.
+ */
+export const OP_NAMES = [
+  'rect',
+  'circle',
+  'poly',
+  'repeat',
+  'band',
+  'speckle',
+  'veins',
+  'tufts',
+  'ceiling',
+] as const satisfies readonly SceneOp['op'][];
+
+type MissingOp = Exclude<SceneOp['op'], (typeof OP_NAMES)[number]>;
+const _everyOpListed: MissingOp extends never ? true : MissingOp = true;
+void _everyOpListed;
+
+/**
  * Idle life over the painting, in the same spirit as the ops: parameterised
  * idioms, not a language. Each one is a small looping effect the renderer
  * knows how to run; a scene says which it wants and where they hang. They are
@@ -216,6 +240,20 @@ export type AmbientOp =
   | { fx: 'glints'; points: [Coord, Coord][]; strips: { x: Coord; y: Coord; w: Coord }[] }
   /** Live clock hands over a painted face, telling the actual time. */
   | { fx: 'clock'; x: Coord; y: Coord; r: number };
+
+/** Every ambient name, for the same checker and the same reason (D-147). */
+export const FX_NAMES = [
+  'drips',
+  'flyer',
+  'motes',
+  'beam',
+  'glints',
+  'clock',
+] as const satisfies readonly AmbientOp['fx'][];
+
+type MissingFx = Exclude<AmbientOp['fx'], (typeof FX_NAMES)[number]>;
+const _everyFxListed: MissingFx extends never ? true : MissingFx = true;
+void _everyFxListed;
 
 /**
  * The band that holds a backdrop away from the crew.

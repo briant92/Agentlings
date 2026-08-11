@@ -9,6 +9,8 @@
 
 import { BUILTIN_THEMES } from './themes';
 import {
+  FX_NAMES,
+  OP_NAMES,
   resolveCoord,
   THEME_SLOTS,
   type Anchors,
@@ -116,6 +118,50 @@ const COORD_KEYS = new Set([
 ]);
 
 type Report = (message: string) => void;
+
+/**
+ * The discriminant check the by-keys walk cannot make (D-147).
+ *
+ * The walk asks whether colours and coordinates *resolve*, which is exactly
+ * why an op written as `"kind": "rect"` sailed through it: every value
+ * resolved, and the renderer's switch then matched nothing and drew nothing.
+ * The Strait's approved floor was two such ops — invisible through four paid
+ * legs, the CLI checker, and an Approve. So the names themselves are now the
+ * contract, nested `of` children included, and the one misspelling that
+ * actually happened gets its answer by name.
+ */
+function checkOpNames(node: unknown, path: string, fail: Report): void {
+  if (!Array.isArray(node)) return;
+  node.forEach((child, i) => {
+    const at = `${path}[${i}]`;
+    if (!child || typeof child !== 'object' || Array.isArray(child)) {
+      fail(`${at} is not an op object`);
+      return;
+    }
+    const rec = child as Record<string, unknown>;
+    if (typeof rec.op !== 'string' || !(OP_NAMES as readonly string[]).includes(rec.op)) {
+      const hint =
+        typeof rec.kind === 'string'
+          ? ` — found "kind": "${rec.kind}"; the field is called "op"`
+          : typeof rec.op === 'string'
+            ? ` — "${rec.op}" is not one of them`
+            : '';
+      fail(`${at} needs an "op" naming one of: ${OP_NAMES.join(', ')}${hint}`);
+    }
+    if (Array.isArray(rec.of)) checkOpNames(rec.of, `${at}.of`, fail);
+  });
+}
+
+/** The same contract for the ambient idioms, whose discriminant is `fx`. */
+function checkFxNames(node: unknown, fail: Report): void {
+  if (!Array.isArray(node)) return;
+  node.forEach((child, i) => {
+    const rec = child as Record<string, unknown> | null;
+    if (!rec || typeof rec !== 'object' || typeof rec.fx !== 'string' || !(FX_NAMES as readonly string[]).includes(rec.fx)) {
+      fail(`ambient[${i}] needs an "fx" naming one of: ${FX_NAMES.join(', ')}`);
+    }
+  });
+}
 
 function checkCoord(value: unknown, at: string, fail: Report): void {
   if (typeof value === 'number') {
@@ -274,6 +320,12 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
       }
     }
   }
+
+  // The op and fx names, before the value walk: a wrong discriminant means
+  // the values below it decorate an op the renderer will never draw (D-147).
+  checkOpNames(data.ops, 'ops', fail);
+  checkOpNames((data.backdrop as Backdrop | undefined)?.ops, 'backdrop.ops', fail);
+  checkFxNames(data.ambient, fail);
 
   // Colours and coordinates, everywhere they appear. Skips `theme` itself,
   // whose keys are slot names rather than references to them.

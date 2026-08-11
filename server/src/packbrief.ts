@@ -204,6 +204,20 @@ foreground (D-142, D-143, v2).
   from the same scene with one lighting rig and the union stays small; if
   the checker names an over-budget union, \`npm run pack:quantize --
   far.png mid.png near.png\` cuts one palette across them.
+- **The finish is a choice** (D-151). The default is the quantized finish
+  above — the pixel world's own. \`"finish": "smooth"\` in \`backdrop\`
+  switches this world to the photographic finish: plates render at native
+  resolution outside the pixel canvas, soft alpha is welcome, and there is
+  no colour budget — render every layer with \`finish: "smooth"\` on the
+  door and never quantize. Pick it only when the ask is painterly or
+  photographic; the crew stay crisp pixel art in front either way, and the
+  contrast is the point.
+- \`backdrop.depthMap\` (quantized finish only): a grayscale map, exactly
+  the back plate's size, and the app displaces the picture under the
+  pointer — continuous depth from one image. Render the map with
+  \`finish: "smooth"\` so its gradients stay smooth. Honest cost:
+  displacement smears at hard silhouettes; where an edge matters, a real
+  cut-out layer beats the map.
 - \`rim\` stays **required** the moment any raster rides — the checker
   refuses a plate without one.
 - \`pack:check\` validates every file beside ${PACK_FILE} (sizes, the

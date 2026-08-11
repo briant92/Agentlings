@@ -273,6 +273,20 @@ describe('the v2 shape rules', () => {
     expect(bad.error).toMatch(/needs the rim/);
   });
 
+  it('holds the finish to its one legal value — quantized is the absence', () => {
+    expect(plated({ plates: ['a.png'], finish: 'smooth' }).error).toBeUndefined();
+    expect(plated({ plates: ['a.png'], finish: 'hd' }).error).toMatch(/must be "smooth" or absent/);
+  });
+
+  it('holds the depth map to the quantized finish and a plate to displace', () => {
+    expect(plated({ plates: ['a.png'], depthMap: 'depth.png' }).error).toBeUndefined();
+    expect(plated({ depthMap: 'depth.png' }).error).toMatch(/no plate for it to displace/);
+    expect(plated({ plates: ['a.png'], depthMap: 'a.png' }).error).toMatch(/data, not picture/);
+    expect(
+      plated({ plates: ['a.png'], finish: 'smooth', depthMap: 'depth.png' }).error,
+    ).toMatch(/belongs to the quantized finish/);
+  });
+
   it('holds plateloop to its own fields', () => {
     const loop = (fx: Record<string, unknown>) =>
       plated({ plates: ['a.png'] }, { ambient: [{ fx: 'plateloop', ...fx }] });

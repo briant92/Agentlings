@@ -54,6 +54,11 @@ describe('callRender refusals', () => {
     expect(result.error).toContain('cutout-overscan');
   });
 
+  it('refuses an unknown finish by name — quantized is the absence', async () => {
+    const result = await callRender('render_plate', { html: '<p>x</p>', finish: 'hd' });
+    expect(result.error).toContain('no such finish: "hd"');
+  });
+
   it('holds tile mode to its dimensions, and keeps them off every other mode', async () => {
     expect((await callRender('render_plate', { html: '<p>x</p>', mode: 'tile' })).error).toContain(
       'tileWidth',
@@ -224,6 +229,45 @@ describe('rendering, on a machine that can', () => {
         expect(hits).toBe(0);
       },
       60_000,
+    );
+
+    /**
+     * The smooth finish (D-151): the render comes back exactly as the page
+     * drew it — a gradient keeps its hundreds of colours and a soft edge
+     * keeps its partial alpha, both of which the quantized path deliberately
+     * destroys. The pair of runs is the proof the flag does anything.
+     */
+    it.runIf(available)(
+      'finish smooth keeps the gradient and the soft edge as rendered',
+      async () => {
+        const html = `<html><head><style>
+          html, body { margin: 0; background: transparent; }
+          div { width: 900px; height: 500px; border-radius: 60px;
+                background: linear-gradient(90deg, #102040, #f0e0c0); }
+        </style></head><body><div></div>
+        <script>document.title = 'ready';</script></body></html>`;
+        const smoothRun = (await callRender('render_plate', {
+          html,
+          mode: 'cutout',
+          finish: 'smooth',
+        })) as PlateResult;
+        expect(smoothRun.error).toBeUndefined();
+        const smoothRaster = decodePngA(Buffer.from(smoothRun.png ?? '', 'base64'));
+        expect(alphaStats(smoothRaster).partial).toBeGreaterThan(0);
+        expect(smoothRun.colours).toBeGreaterThan(128);
+        expect(smoothRun.partialSnapped).toBeUndefined();
+
+        const quantizedRun = (await callRender('render_plate', {
+          html,
+          mode: 'cutout',
+        })) as PlateResult;
+        expect(quantizedRun.error).toBeUndefined();
+        expect(alphaStats(decodePngA(Buffer.from(quantizedRun.png ?? '', 'base64'))).partial).toBe(
+          0,
+        );
+        expect(quantizedRun.colours).toBeLessThanOrEqual(128);
+      },
+      90_000,
     );
 
     it.runIf(available)(

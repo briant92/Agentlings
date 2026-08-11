@@ -31,7 +31,14 @@ choose, one piece of near scenery they walk behind. PACK.json rules are
    layers drift at their own rates (far most, near least, strip against);
    exact-size layers hold still. Loop tiles (a waterfall strip, drifting
    cloud): `"tile"` with `tileWidth`/`tileHeight` ≤ 512, named by an
-   `ambient` `plateloop` entry.
+   `ambient` `plateloop` entry. Two orthogonal extras: `finish: "smooth"`
+   keeps a render exactly as drawn — for packs declaring
+   `backdrop.finish: "smooth"` (native-resolution DOM plates, soft alpha
+   welcome, no colour budget) and for depth maps; `backdrop.depthMap`
+   (quantized packs only) is a grayscale map at the back plate's exact
+   size that the app displaces under the pointer — render it smooth,
+   expect smearing at hard silhouettes, and prefer a real cut-out layer
+   wherever an edge matters.
 4. **The frame is 2000×900** (2× of a 1000-wide, 450-tall world; 2120 when
    overscanned — compose for the centre 2000, the margin is drift room).
    The crew stand at plate y **776**; the bottom **124px** belong to the

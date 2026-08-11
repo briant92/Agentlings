@@ -66,8 +66,13 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
 
   const plates = pack.backdrop?.plates ?? [];
   const occlusion = pack.backdrop?.occlusion;
+  const depthMap = pack.backdrop?.depthMap;
   const tiles = (pack.ambient ?? []).flatMap((op) => (op.fx === 'plateloop' ? [op.file] : []));
-  if (plates.length === 0 && !occlusion && tiles.length === 0) return problems;
+  // The smooth finish (D-151): another medium, so the quantized-look rules —
+  // binary alpha, the 128 union — do not apply. Geometry, opacity of the
+  // back, and the strip's placement are registration, not look, and hold.
+  const smooth = pack.backdrop?.finish === 'smooth';
+  if (plates.length === 0 && !occlusion && !depthMap && tiles.length === 0) return problems;
 
   const load = (file: string, label: string): RasterA | null => {
     const at = path.join(dir, file);
@@ -138,13 +143,13 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
         );
       }
     } else {
-      if (stats.partial > 0) {
+      if (!smooth && stats.partial > 0) {
         error(
           `backdrop plate "${file}" carries ${stats.partial} partial-alpha pixels — ` +
             'a cut-out is on-or-off (soft edges blend into colours no palette holds); ' +
             'render it through the door with alpha, which snaps them',
         );
-      } else if (stats.transparent === 0) {
+      } else if (stats.transparent === 0 && stats.partial === 0) {
         error(
           `backdrop plate "${file}" is fully opaque and would hide every plate ` +
             'behind it — a cut-out needs holes',
@@ -160,16 +165,34 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
       if (ok) {
         loaded.push(ok);
         const stats = alphaStats(r);
-        if (stats.partial > 0) {
+        if (!smooth && stats.partial > 0) {
           error(
             `occlusion strip "${occlusion}" carries ${stats.partial} partial-alpha ` +
               'pixels — a cut-out is on-or-off; render it through the door with alpha',
           );
-        } else if (stats.opaque === 0) {
+        } else if (stats.opaque === 0 && stats.partial === 0) {
           warn(`occlusion strip "${occlusion}" is fully transparent — it draws nothing`);
         } else {
           checkOcclusionPlacement(ok, pack.groundY, error);
         }
+      }
+    }
+  }
+
+  // The depth map (D-151): data, not picture. It must decode and sit exactly
+  // on the back plate it displaces — a mismatched map would slide the
+  // displacement off the forms it encodes — and it joins no colour union.
+  if (depthMap) {
+    const r = load(depthMap, 'depth map');
+    if (r) {
+      const back = backdropStack[0];
+      if (!back) {
+        error(`depth map "${depthMap}" has no loadable back plate to displace`);
+      } else if (r.w !== back.r.w || r.h !== back.r.h) {
+        error(
+          `depth map "${depthMap}" is ${r.w}×${r.h}; it must match the back plate ` +
+            `"${back.file}" exactly (${back.r.w}×${back.r.h})`,
+        );
       }
     }
   }
@@ -185,7 +208,7 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
       continue;
     }
     const stats = alphaStats(r);
-    if (stats.partial > 0) {
+    if (!smooth && stats.partial > 0) {
       error(
         `plate-life tile "${file}" carries ${stats.partial} partial-alpha pixels — ` +
           'a cut-out is on-or-off; snap them before shipping',
@@ -197,8 +220,9 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
 
   // The colour budget is the *layer's*: one palette across every raster file
   // the pack stacks, because they composite into one picture (D-108, v2).
+  // The smooth finish left the palette world entirely (D-151) — no budget.
   const union = new Map<number, number>();
-  for (const { r } of loaded) histogramOfA(r, union);
+  if (!smooth) for (const { r } of loaded) histogramOfA(r, union);
   if (union.size > BACKDROP_COLOURS) {
     if (loaded.length === 1) {
       error(

@@ -2,6 +2,7 @@ import {
   Application,
   Assets,
   Container,
+  DisplacementFilter,
   Graphics,
   Rectangle,
   Sprite,
@@ -36,7 +37,15 @@ import { DB } from './palette';
 import { departedIds } from './roster';
 import { anchorsOf, drawScene, paintOf, pixiSurface, resolveCoord } from './scene';
 import { lookFor, occlusionUrl, plateLoopSpecs, plateUrls } from './looks';
-import { cameraTarget, layerOffset, occlusionRate, planeFor, plateRate } from './parallax';
+import {
+  cameraTarget,
+  DEPTH_SCALE,
+  layerOffset,
+  layerOffsetRaw,
+  occlusionRate,
+  planeFor,
+  plateRate,
+} from './parallax';
 import {
   buildAgentTextures,
   buildSilhouetteTextures,
@@ -294,12 +303,19 @@ export function WorldCanvas({
     const seenStatus = new Map<string, string>();
     let dustClock = 0;
     let emberClock = 0;
+    // The smooth finish (D-151): plates leave the canvas for the DOM, so the
+    // canvas goes transparent and its pixelated upscale stops applying to the
+    // picture — which is the entire point of the finish.
+    const smooth = scene.backdrop?.finish === 'smooth';
+    // DOM the finish added; removed at teardown, or a theme switch would
+    // stack worlds behind worlds.
+    const domNodes: HTMLElement[] = [];
 
     app
       .init({
         width: WORLD_WIDTH,
         height: VIEW_H,
-        background: T.void,
+        ...(smooth ? { backgroundAlpha: 0 } : { background: T.void }),
         antialias: false,
         roundPixels: true,
       })
@@ -415,33 +431,91 @@ export function WorldCanvas({
         // frame loop nothing.
         const drifting: { node: Container; baseX: number; rate: number }[] = [];
         let backPlateRate = 0;
-        plateUrls(look).forEach((url, i) => {
-          const slot = new Container();
-          plateLayer.addChild(slot);
-          Assets.load<Texture>(url)
-            .then((texture) => {
-              if (destroyed) return;
-              // Smooth minification: a 2x plate downsamples into the buffer
-              // (D-108's "author at 2000×900 and downsample"); the pixel look
-              // of everything else comes from its own art, not from sampling.
-              texture.source.scaleMode = 'linear';
-              const plate = new Sprite(texture);
-              const plane = planeFor(texture.width, texture.height, VIEW_H);
-              plate.width = plane.worldW;
-              plate.height = VIEW_H;
-              // An overscanned plate hangs half its margin off each side, so
-              // its edges can never show inside the clamped drift.
-              plate.x = -(plane.worldW - WORLD_WIDTH) / 2;
-              plate.eventMode = 'none';
-              slot.addChild(plate);
+        // The smooth finish's plates live in the DOM instead (D-151): native
+        // resolution, browser-scaled, under the now-transparent canvas. One
+        // sizing rule for both media: an overscanned plate hangs half its
+        // margin off each side, so its edges can never show inside the drift.
+        const domPlates: { el: HTMLImageElement; worldW: number; rate: number }[] = [];
+        let domOcclusion: { el: HTMLImageElement; worldW: number; rate: number } | null = null;
+        const placeDom = (el: HTMLImageElement, worldW: number, offset: number): void => {
+          el.style.width = `${(worldW / WORLD_WIDTH) * 100}%`;
+          el.style.left = `${(((WORLD_WIDTH - worldW) / 2 + offset) / WORLD_WIDTH) * 100}%`;
+        };
+        const slots: Container[] = [];
+        if (smooth) {
+          const platesDiv = document.createElement('div');
+          platesDiv.className = 'world-plates';
+          host.insertBefore(platesDiv, app.canvas);
+          domNodes.push(platesDiv);
+          plateUrls(look).forEach((url, i) => {
+            // Appended in pack order, so DOM paint order IS z-order — the
+            // slot-container trick with no containers.
+            const img = document.createElement('img');
+            img.alt = '';
+            img.draggable = false;
+            img.onload = () => {
+              const plane = planeFor(img.naturalWidth, img.naturalHeight, VIEW_H);
               const rate = plateRate(i, plane.overscan);
               if (i === 0) backPlateRate = rate;
-              if (rate !== 0) drifting.push({ node: slot, baseX: 0, rate });
+              placeDom(img, plane.worldW, 0);
+              domPlates.push({ el: img, worldW: plane.worldW, rate });
+            };
+            img.src = url;
+            platesDiv.appendChild(img);
+          });
+        } else {
+          plateUrls(look).forEach((url, i) => {
+            const slot = new Container();
+            plateLayer.addChild(slot);
+            slots.push(slot);
+            Assets.load<Texture>(url)
+              .then((texture) => {
+                if (destroyed) return;
+                // Smooth minification: a 2x plate downsamples into the buffer
+                // (D-108's "author at 2000×900 and downsample"); the pixel
+                // look of everything else comes from its own art, not from
+                // sampling.
+                texture.source.scaleMode = 'linear';
+                const plate = new Sprite(texture);
+                const plane = planeFor(texture.width, texture.height, VIEW_H);
+                plate.width = plane.worldW;
+                plate.height = VIEW_H;
+                plate.x = -(plane.worldW - WORLD_WIDTH) / 2;
+                plate.eventMode = 'none';
+                slot.addChild(plate);
+                const rate = plateRate(i, plane.overscan);
+                if (i === 0) backPlateRate = rate;
+                if (rate !== 0) drifting.push({ node: slot, baseX: 0, rate });
+              })
+              .catch(() => {
+                // A plate the browser cannot fetch costs only itself.
+              });
+          });
+        }
+
+        // The depth map (D-151): continuous micro-depth inside the back
+        // plate, quantized finish only — the checker holds the pairing. The
+        // map sprite rides the same slot, so drift and displacement agree.
+        let depthFilter: DisplacementFilter | null = null;
+        const depthMap = scene.backdrop?.depthMap;
+        if (!smooth && depthMap && look.installed && slots.length > 0) {
+          Assets.load<Texture>(`/packs/${look.id}/${depthMap}`)
+            .then((texture) => {
+              if (destroyed) return;
+              const mapSprite = new Sprite(texture);
+              const plane = planeFor(texture.width, texture.height, VIEW_H);
+              mapSprite.width = plane.worldW;
+              mapSprite.height = VIEW_H;
+              mapSprite.x = -(plane.worldW - WORLD_WIDTH) / 2;
+              mapSprite.renderable = false;
+              slots[0].addChild(mapSprite);
+              depthFilter = new DisplacementFilter({ sprite: mapSprite, scale: 0 });
+              slots[0].filters = [depthFilter];
             })
             .catch(() => {
-              // A plate the browser cannot fetch costs only itself.
+              // A map that cannot load costs only its own depth cue.
             });
-        });
+        }
 
         // Plate life (v2): raster tiles scroll-looping over the plates, under
         // every op and the scrim. The layer rides the back plate's drift so
@@ -453,7 +527,9 @@ export function WorldCanvas({
           Assets.load<Texture>(spec.url)
             .then((texture) => {
               if (destroyed) return;
-              texture.source.scaleMode = 'nearest';
+              // A loop tile is part of the picture, so it takes the picture's
+              // finish: crisp beside quantized plates, filtered beside smooth.
+              texture.source.scaleMode = smooth ? 'linear' : 'nearest';
               const sprite = new TilingSprite({
                 texture,
                 width: resolveCoord(spec.w, ANCHORS),
@@ -589,7 +665,22 @@ export function WorldCanvas({
         app.stage.addChild(occlusionLayer);
         {
           const url = occlusionUrl(look);
-          if (url) {
+          if (url && smooth) {
+            // The smooth strip paints over the transparent canvas from the
+            // DOM: appended after it, so document order is the depth.
+            const img = document.createElement('img');
+            img.className = 'world-occlusion';
+            img.alt = '';
+            img.draggable = false;
+            img.onload = () => {
+              const plane = planeFor(img.naturalWidth, img.naturalHeight, VIEW_H);
+              placeDom(img, plane.worldW, 0);
+              domOcclusion = { el: img, worldW: plane.worldW, rate: occlusionRate(plane.overscan) };
+            };
+            img.src = url;
+            host.appendChild(img);
+            domNodes.push(img);
+          } else if (url) {
             Assets.load<Texture>(url)
               .then((texture) => {
                 if (destroyed) return;
@@ -651,14 +742,34 @@ export function WorldCanvas({
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
           ambience.tick(ambientLayer, dt, t);
 
-          // The drift (v2): one camera, every layer at its own rate. A world
-          // with nothing overscanned registers nothing here and holds still.
-          if (drifting.length > 0 || loops.length > 0) {
+          // The drift (v2, D-151): one camera, every layer at its own rate —
+          // whole pixels for the quantized medium, raw for the smooth one,
+          // the map's displacement scaled by the same camera. A world with
+          // nothing moving registers nothing here and holds still.
+          if (
+            drifting.length > 0 ||
+            loops.length > 0 ||
+            domPlates.length > 0 ||
+            domOcclusion !== null ||
+            depthFilter !== null
+          ) {
             camera += (cameraTarget(pointerNx, t) - camera) * (1 - Math.exp(-dt * 3));
             for (const layer of drifting) {
               layer.node.x = layer.baseX + layerOffset(layer.rate, camera);
             }
-            plateLifeLayer.x = layerOffset(backPlateRate, camera);
+            for (const plate of domPlates) {
+              placeDom(plate.el, plate.worldW, layerOffsetRaw(plate.rate, camera));
+            }
+            if (domOcclusion) {
+              placeDom(domOcclusion.el, domOcclusion.worldW, layerOffsetRaw(domOcclusion.rate, camera));
+            }
+            if (depthFilter) {
+              depthFilter.scale.x = camera * DEPTH_SCALE;
+              depthFilter.scale.y = 0;
+            }
+            plateLifeLayer.x = smooth
+              ? layerOffsetRaw(backPlateRate, camera)
+              : layerOffset(backPlateRate, camera);
             for (const loop of loops) {
               loop.sprite.tilePosition.set(Math.round(loop.dx * t), Math.round(loop.dy * t));
             }
@@ -900,6 +1011,7 @@ export function WorldCanvas({
     return () => {
       destroyed = true;
       if (anchorFor) anchorFor.current = null;
+      for (const node of domNodes) node.remove();
       if (app.renderer) app.destroy(true, { children: true });
     };
     // anchorFor is a ref box, stable by construction — the effect keys on the

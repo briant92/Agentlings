@@ -76,6 +76,25 @@ export function cameraTarget(pointer: number | null, t: number): number {
 
 /** A layer's pixel offset for the current camera: scaled, clamped, whole. */
 export function layerOffset(rate: number, camera: number): number {
-  const raw = rate * camera;
-  return Math.round(Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, raw)));
+  return Math.round(layerOffsetRaw(rate, camera));
 }
+
+/**
+ * The same offset unrounded — the smooth finish's motion (D-151). Whole
+ * pixels are what pixel art wants; the smooth plate is deliberately another
+ * medium, and sub-pixel drift is part of what makes it read as one. The
+ * clamp is identical: the overscan margin is a registration contract, not a
+ * look.
+ */
+export function layerOffsetRaw(rate: number, camera: number): number {
+  const raw = rate * camera;
+  return Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, raw));
+}
+
+/**
+ * Displacement strength per camera unit (D-151): the filter's x-scale is
+ * `camera * DEPTH_SCALE`, so a full pointer sweep displaces the back plate's
+ * far-vs-near extremes by roughly ±17px — felt, never violent, and still
+ * inside the drift bound at the map's extremes.
+ */
+export const DEPTH_SCALE = 0.6;

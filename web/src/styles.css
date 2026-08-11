@@ -142,6 +142,22 @@ main {
   border: 1px solid #262b36;
   border-radius: 6px;
   overflow: hidden;
+  /* The smooth finish's DOM plates anchor to this box (D-151); the canvas
+     alone keeps image-rendering: pixelated, which is the whole contrast. */
+  position: relative;
+}
+.world-plates {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.world-plates img,
+.world-occlusion {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
 }
 .world canvas {
   display: block;

@@ -116,6 +116,12 @@ export const RENDER_TOOLS: ToolSpec[] = [
       },
       { name: 'tileWidth', type: 'number', describe: 'tile mode only: 8–512' },
       { name: 'tileHeight', type: 'number', describe: 'tile mode only: 8–512' },
+      {
+        name: 'finish',
+        type: 'string',
+        describe:
+          'quantized (default: 128-colour budget, cut-out alpha snapped) | smooth (for packs declaring backdrop.finish "smooth", and for depth maps: colours and soft alpha kept as rendered)',
+      },
     ],
   },
 ];
@@ -213,6 +219,15 @@ async function renderPlate(html: string, args: Record<string, unknown>): Promise
     return { error: `no such mode: "${String(rawMode)}" — one of ${PLATE_MODES.join(', ')}` };
   }
   const mode = rawMode as PlateMode;
+  // The finish (D-151): quantized is the default and the absence; smooth
+  // keeps the render exactly as the page drew it — full colours, soft alpha
+  // — for packs on the smooth finish and for depth maps, whose gradients a
+  // 128 cut would band into steps the displacement would show.
+  const rawFinish = args.finish ?? 'quantized';
+  if (rawFinish !== 'quantized' && rawFinish !== 'smooth') {
+    return { error: `no such finish: "${String(rawFinish)}" — quantized or smooth` };
+  }
+  const keepAsRendered = rawFinish === 'smooth';
   const tileW = args.tileWidth;
   const tileH = args.tileHeight;
   if (mode === 'tile') {
@@ -243,9 +258,9 @@ async function renderPlate(html: string, args: Record<string, unknown>): Promise
 
   if (alpha) {
     let raster = decodePngA(shot);
-    const partialSnapped = binariseAlpha(raster);
+    const partialSnapped = keepAsRendered ? 0 : binariseAlpha(raster);
     let colours = countColoursA(raster);
-    if (colours > BACKDROP_COLOURS) {
+    if (!keepAsRendered && colours > BACKDROP_COLOURS) {
       raster = applyPaletteA(raster, paletteFrom(histogramOfA(raster), BACKDROP_COLOURS), true);
       colours = countColoursA(raster);
     }
@@ -256,15 +271,15 @@ async function renderPlate(html: string, args: Record<string, unknown>): Promise
       width: raster.w,
       height: raster.h,
       colours,
-      opaquePct: Number(((stats.opaque / (raster.w * raster.h)) * 100).toFixed(1)),
-      partialSnapped,
+      opaquePct: Number((((stats.opaque + stats.partial) / (raster.w * raster.h)) * 100).toFixed(1)),
+      ...(keepAsRendered ? {} : { partialSnapped }),
       bytes: png.length,
     };
   }
 
   let raster = decodePng(shot);
   let colours = countColours(raster);
-  if (colours > BACKDROP_COLOURS) {
+  if (!keepAsRendered && colours > BACKDROP_COLOURS) {
     raster = applyPalette(raster, medianCut(raster, BACKDROP_COLOURS), true);
     colours = countColours(raster);
   }

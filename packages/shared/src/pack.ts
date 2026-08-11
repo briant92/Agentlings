@@ -334,6 +334,33 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
       );
     }
   }
+  // The finish and the depth map (D-151). Quantized is the absence, so the
+  // only legal value is the opt-in — anything else refused by name (D-147).
+  const finish = backdrop?.finish;
+  if (finish !== undefined && finish !== 'smooth') {
+    fail(
+      `backdrop.finish must be "smooth" or absent (absent means quantized) — got ` +
+        JSON.stringify(finish),
+    );
+  }
+  const depthMap = backdrop?.depthMap;
+  if (depthMap !== undefined) {
+    if (typeof depthMap !== 'string' || !PLATE_FILE_RE.test(depthMap)) {
+      fail(
+        'backdrop.depthMap must be a plain .png filename beside pack.json — got ' +
+          JSON.stringify(depthMap),
+      );
+    } else if (!Array.isArray(plates) || plates.length === 0) {
+      fail('backdrop.depthMap displaces the back plate — there is no plate for it to displace');
+    } else if (plates.includes(depthMap) || depthMap === occlusion) {
+      fail(`backdrop.depthMap names "${depthMap}", which is already a plate — the map is data, not picture`);
+    } else if (finish === 'smooth') {
+      fail(
+        'backdrop.depthMap belongs to the quantized finish — the smooth finish carries ' +
+          'depth as real layers (overscanned plates and the strip)',
+      );
+    }
+  }
   if ((Array.isArray(plates) && plates.length > 0) || typeof occlusion === 'string') {
     if (data.rim === undefined) {
       fail(
@@ -407,6 +434,7 @@ export function validateLevelPack(pack: unknown): PackProblem[] {
 export function packRasterFiles(scene: Pick<Scene, 'backdrop' | 'ambient'>): string[] {
   const files = [...(scene.backdrop?.plates ?? [])];
   if (scene.backdrop?.occlusion) files.push(scene.backdrop.occlusion);
+  if (scene.backdrop?.depthMap) files.push(scene.backdrop.depthMap);
   for (const op of scene.ambient ?? []) {
     if (op.fx === 'plateloop') files.push(op.file);
   }

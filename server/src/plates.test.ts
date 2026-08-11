@@ -232,6 +232,51 @@ describe('checkPlates v2 — the occlusion strip', () => {
   });
 });
 
+describe('checkPlates — the smooth finish and the depth map (D-151)', () => {
+  const dark = 0x0a0a12;
+
+  it('waives the palette world for smooth: soft alpha and unbounded colours pass', () => {
+    // A back plate over budget and a soft-edged cut-out — both illegal
+    // quantized, both the point of smooth.
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, (x) => (x % 300) * 0x010101));
+    writeFileSync(
+      path.join(dir, 'mid.png'),
+      pngA(1000, 450, (x, y) => (y < 80 ? [0x101018, Math.min(255, x % 256)] : [0, 0])),
+    );
+    const smooth = pack({
+      backdrop: { plates: ['far.png', 'mid.png'], finish: 'smooth' },
+    });
+    expect(errors(smooth)).toEqual([]);
+    // The identical pack without the finish fails both walls.
+    const quantized = pack({ backdrop: { plates: ['far.png', 'mid.png'] } });
+    expect(errors(quantized).length).toBeGreaterThan(0);
+  });
+
+  it('still holds smooth to registration: sizes and the opaque back', () => {
+    writeFileSync(path.join(dir, 'far.png'), pngA(1000, 450, (x) => [dark, x === 0 ? 0 : 255]));
+    expect(
+      errors(pack({ backdrop: { plates: ['far.png'], finish: 'smooth' } }))[0],
+    ).toMatch(/must be fully opaque/);
+  });
+
+  it('demands the depth map match the back plate exactly', () => {
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, () => dark));
+    writeFileSync(path.join(dir, 'depth.png'), png(1000, 300, (x) => x * 0x010101));
+    const bad = pack({ backdrop: { plates: ['far.png'], depthMap: 'depth.png' } });
+    expect(errors(bad)[0]).toMatch(/must match the back plate/);
+    writeFileSync(path.join(dir, 'depth.png'), png(1000, 450, (x) => (x % 256) * 0x010101));
+    expect(errors(pack({ backdrop: { plates: ['far.png'], depthMap: 'depth.png' } }))).toEqual([]);
+  });
+
+  it('keeps the depth map out of the colour union — data, not picture', () => {
+    // Back plate at exactly the budget; a 256-grey map beside it must not
+    // push the layer over.
+    writeFileSync(path.join(dir, 'far.png'), png(1000, 450, (x) => (x % 128) * 0x010101));
+    writeFileSync(path.join(dir, 'depth.png'), png(1000, 450, (x) => (x % 256) * 0x010101));
+    expect(errors(pack({ backdrop: { plates: ['far.png'], depthMap: 'depth.png' } }))).toEqual([]);
+  });
+});
+
 describe('checkPlates v2 — plate-life tiles', () => {
   const loop = (file = 'falls.png') =>
     pack({

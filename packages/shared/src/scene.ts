@@ -346,6 +346,26 @@ export interface Backdrop {
    * drifts opposite the backdrop when sized with overscan.
    */
   occlusion?: string;
+  /**
+   * The finish (D-151, amending D-108's quantized-only): absent means
+   * quantized — the DKC lineage, 128 colours, drawn inside the pixel canvas.
+   * `'smooth'` is the HD-2D contrast: plates leave the canvas entirely and
+   * render as native-resolution DOM images under (and, for the strip, over)
+   * a transparent world canvas — soft alpha welcome, no colour budget, the
+   * drift unrounded. It reads as intentional exactly because the two media
+   * stay distinct: the crew keep their rigid pixel grid, the picture behind
+   * them is another medium.
+   */
+  finish?: 'smooth';
+  /**
+   * Continuous micro-depth from one image (D-151): a grayscale map beside
+   * pack.json, exactly the back plate's size, displacing it under the
+   * pointer. Data, not picture — never counted against the colour budget.
+   * Quantized finish only: the smooth finish carries depth as real layers,
+   * and honestly stated, displacement smears at hard silhouettes — prefer a
+   * cut-out plate wherever an edge matters.
+   */
+  depthMap?: string;
   ops?: SceneOp[];
   scrim?: Scrim;
 }

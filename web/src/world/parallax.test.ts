@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   cameraTarget,
+  DEPTH_SCALE,
   DRIFT_BUDGET,
   DRIFT_MAX,
   IDLE_AMPLITUDE,
   layerOffset,
+  layerOffsetRaw,
   occlusionRate,
   planeFor,
   plateRate,
@@ -76,5 +78,28 @@ describe('layerOffset', () => {
 
   it('is dead still at rate 0 whatever the camera does', () => {
     expect(layerOffset(0, 999)).toBe(0);
+  });
+});
+
+describe('the smooth medium (D-151)', () => {
+  it('layerOffsetRaw keeps the sub-pixel and the clamp', () => {
+    expect(layerOffsetRaw(0.55, 7.3)).toBeCloseTo(4.015, 3);
+    expect(layerOffsetRaw(3, 1000)).toBe(DRIFT_MAX);
+    expect(layerOffsetRaw(-1.4, DRIFT_BUDGET * 2)).toBe(-DRIFT_MAX);
+  });
+
+  it('the rounded offset is the raw one rounded — one law, two media', () => {
+    for (const [rate, camera] of [
+      [1, 13.7],
+      [0.55, -9.2],
+      [-1.4, 18],
+    ]) {
+      expect(layerOffset(rate, camera)).toBe(Math.round(layerOffsetRaw(rate, camera)));
+    }
+  });
+
+  it('displacement at full pointer stays well inside the drift bound', () => {
+    expect(DEPTH_SCALE * DRIFT_BUDGET).toBeLessThanOrEqual(DRIFT_MAX);
+    expect(DEPTH_SCALE * DRIFT_BUDGET).toBeGreaterThan(0);
   });
 });

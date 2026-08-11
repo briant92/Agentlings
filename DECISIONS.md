@@ -167,6 +167,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-155 — 2026-08-11 — The crew rail names the trade](#d-155--2026-08-11--the-crew-rail-names-the-trade)
 - [D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found](#d-156--2026-08-11--the-full-sweep-three-gates-closed-four-seams-found)
 - [D-157 — 2026-08-11 — Phase 0: the report answers the expansion plan's four questions](#d-157--2026-08-11--phase-0-the-report-answers-the-expansion-plans-four-questions)
+- [D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model](#d-158--2026-08-11--the-reading-desks-calendar-first-sibling-grants-a-clerk-on-the-cheap-model)
 
 ## By theme
 
@@ -323,7 +324,11 @@ entry updates one file rather than two.
   beneath it
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039
-- **Outside access, continued** — D-040
+- **Outside access, continued** — D-040; and D-158, the reading desks —
+  calendar-read first because it sits inside the consent already granted,
+  read tools as sendsOnly-preserving sibling connections, a clerk trade on
+  the cheap model, the morning brief as first standing desk; build gated
+  behind T5's first firing
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
@@ -9777,3 +9782,61 @@ names its precondition ("a tool manifest to record which connections it was
 compiled against") — a safety-model question (a $0 tier that reaches the
 network is a different animal from plain node), to be proposed with options
 and decided, not slipped in through a report.
+
+## D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model
+
+The expansion plan's A1 track, decided. Four options were put to Brian with
+recommendations and he took all four as recommended; each option's deciding
+fact was verified in source before it was offered, not remembered.
+
+**Calendar-read lands first; mail-read follows as its own step.** The
+deciding fact is `google.ts:32-35`: the stored consent already carries
+`calendar.events` — which grants reading as well as writing events — so the
+first reader needs no OAuth step at all. Mail needs `gmail.readonly`, a
+restricted scope and a fresh consent on Brian's own published client; it is
+a deliberate second bite, not a bundle.
+
+**Read tools live on new read-only sibling connections** (`calendar`, later
+`mail`) that reuse the google token but carry their own switch, tools
+allowlist and `maxChars` — the github/search house pattern (D-040, D-053:
+builtin transport, own the call, own the size of the answer). `google`
+stays `sendsOnly`. The senders-grant-nothing invariant is test-pinned
+(catalog.test.ts holds telegram's tools to `[]`) and stays untouched; one
+switch never gates both reading and sending.
+
+**A new `clerk` trade on the cheap model works the desks** — the ninth
+trade beside analyst, architect, designer, mason, researcher, scout, scribe
+and worker. A clean price class on Haiku from day one (the analyst is the
+precedent: a full four-trap run at 13.5c), rather than retrofitting the
+model onto an existing class — a model switch would silently invalidate the
+class's own c/turn history, which the quote engine prices from, so B3
+("cheap model by default") applies only to classes born on it. Class tax
+expected small (measured range 5.1c–$4). The matcher replay — D-117's
+83-prompt harness — runs before and after the role lands, because adding a
+role moves BM25 under the roles already there (D-112).
+
+**The first standing desk is a daily morning calendar brief** (today's
+events, conflicts, invites awaiting a response), created through the same
+quoted schedule door as everything else (D-103) and reviewed until standing
+approval earns itself (D-082's three unchanged approvals).
+
+What this deliberately does not change: sends stay outbox → review →
+approval; P6 stays refused (D-133); reading grants no acting.
+
+Two pieces of sequencing, both decisions: **the build starts only after
+T5's first real scheduled firing** (2026-08-12 09:00) — the recurrence
+timer's first live proof on real work is not to be raced by a server
+change. And **the desks are uncompilable by construction, on purpose**:
+every clerk run is live-data work whose `usedTools` will name the new read
+connections, so under the plain-node tool contract none of it can ever
+graduate — which makes the clerk's ledger the counted population that will
+reopen or re-settle D-100's "tools reaching a connection: decided no" with
+evidence instead of principle (reopen condition recorded in D-157's
+amendment).
+
+Build checklist, for the amendment that records what actually happened:
+connections.json entries; builtin callers owning payload size;
+`roles/clerk.md` (model, a small turn cap, the default clock);
+catalog.test.ts pinning the read-only tools lists; matcher replay
+before/after; hire, schedule through the UI, first reviewed runs; then
+SPEC.md's milestone section and AGENTLING.md re-read from source.

@@ -9614,7 +9614,11 @@ the folder into web/public/packs to install it") — and harvest, which
 reads only the root, saw no draft. The promote then took the worst
 path the code's own comments name: **stamped `promoted`, installed
 nothing, priced the chain, and locked D-143's retry door behind the
-`promoted` status**, returning the stale session error as its reason.
+`promoted` status**. (One clause first written here was wrong and is
+corrected: the route did NOT return a stale error as a refusal — it
+returned the promoted job row, whose honest historical `error` field my
+own audit parser misread as a refusal. The same-evening sweep of every
+resolve refusal branch found each one naming a real, current reason.)
 Fixes: `stampPackDraft` lifts a single child folder's PACK.json and
 files to the root before reading (same bytes; dir-exists guarded for
 never-started jobs; unit test + exact mutation kill), and an authoring
@@ -9628,8 +9632,10 @@ under the install-as-approved precedent, so the world charged for is
 the world on the palette.
 
 **Worlds shipped**: halls-of-knossos, aurora-anchorage, signal-quay —
-each with a level, beside troy-gate-proof. Recorded, not built: the
-checker hint's wording invites the folder shape (now harmless, but one
-line could say "leave PACK.json at the sandbox root when authoring");
-and the resolve route surfacing a job's stored error where a refusal
-reason belongs deserves a sweep of its other branches.
+each with a level, beside troy-gate-proof. Both closing crumbs were done
+the same evening: the checker's success line now says both installs in
+order ("From a run: leave PACK.json and its files at the sandbox root —
+Approve installs them. By hand: drop the folder into web/public/packs"),
+and the resolve-refusal sweep ran — every branch names a real, current
+reason, and the suspicion it chased is retracted above, where the
+misread that spawned it is named.

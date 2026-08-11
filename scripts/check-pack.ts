@@ -104,7 +104,12 @@ if (errors.length === 0 && warnings.length === 0) {
 const ok =
   kind === 'art'
     ? 'Usable. Drop the PNG and atlas into web/public/art to install it.'
-    : 'Usable. Drop the folder into web/public/packs to install it.';
+    : // Two installs, said in the order a reader is likely in: a run's draft
+      // stays AT THE SANDBOX ROOT for Approve; only a hand install drops a
+      // folder. The old wording coached a paid run into nesting its pack in
+      // an installable folder harvest could not see (D-156).
+      'Usable. From a run: leave PACK.json and its files at the sandbox root — ' +
+      'Approve installs them. By hand: drop the folder into web/public/packs.';
 console.log(
   errors.length > 0
     ? `\n${errors.length} error(s): the app would fall back to its built-in art.`

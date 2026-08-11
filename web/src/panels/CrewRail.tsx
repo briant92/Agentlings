@@ -53,6 +53,9 @@ function Row({
       <span className="rail-text">
         <span className="rail-name">
           {agentling.name}
+          {/* The trade, so a row answers "who IS Moss" without opening the
+              panel — recalling six roles by first name was the ask. */}
+          <span className="rail-role">{agentling.role}</span>
           <span className={`rail-state ${activity.state}`}>{activity.state}</span>
         </span>
         <span className="rail-doing">

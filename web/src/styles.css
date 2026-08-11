@@ -3477,6 +3477,11 @@ button.danger:hover {
   font-size: 12px;
   color: #d8dce6;
 }
+.rail-role {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #7d8598;
+}
 .rail-state {
   margin-left: 6px;
   font-size: 11px;

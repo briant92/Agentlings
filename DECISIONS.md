@@ -164,6 +164,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused](#d-152--2026-08-11--the-seam-sweep-excerpt-named-command-handed-over-arrival-refused)
 - [D-153 — 2026-08-11 — The Pine Reach: Route 2's dressed set, and the first smooth world](#d-153--2026-08-11--the-pine-reach-route-2s-dressed-set-and-the-first-smooth-world)
 - [D-154 — 2026-08-11 — Every world furnishes its own doorway and parcel stand](#d-154--2026-08-11--every-world-furnishes-its-own-doorway-and-parcel-stand)
+- [D-155 — 2026-08-11 — The crew rail names the trade](#d-155--2026-08-11--the-crew-rail-names-the-trade)
 
 ## By theme
 
@@ -9520,3 +9521,16 @@ own arch at the door spot and no level currently runs it — the default
 door would draw inside that arch in the pack's own palette, judged
 compatible by construction but unverified in pixels; the first troy
 level is that check.
+
+## D-155 — 2026-08-11 — The crew rail names the trade
+
+Brian's ask, verbatim shape: a crew row read "Pip idle — on patrol" and
+answering "which one is the designer?" meant opening the Agentling panel
+and recalling six roles by first name. `agentling.role` already rode the
+world state (roster-persisted since the roles landed), so this is one
+span and one style: the trade sits between the name and the state —
+name bright, role muted slate (#7d8598), state in its status colour —
+inside the existing nowrap/ellipsis line. Verified live on hq: all six
+rows read their real trades (worker, scribe ×2, scout, designer,
+architect), 181 web tests green, typecheck clean. No new data, no new
+format surface; the panel keeps being the place the whole story lives.

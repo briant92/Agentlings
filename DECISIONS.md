@@ -165,6 +165,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-153 — 2026-08-11 — The Pine Reach: Route 2's dressed set, and the first smooth world](#d-153--2026-08-11--the-pine-reach-route-2s-dressed-set-and-the-first-smooth-world)
 - [D-154 — 2026-08-11 — Every world furnishes its own doorway and parcel stand](#d-154--2026-08-11--every-world-furnishes-its-own-doorway-and-parcel-stand)
 - [D-155 — 2026-08-11 — The crew rail names the trade](#d-155--2026-08-11--the-crew-rail-names-the-trade)
+- [D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found](#d-156--2026-08-11--the-full-sweep-three-gates-closed-four-seams-found)
 
 ## By theme
 
@@ -9290,6 +9291,13 @@ quote cap dropped from `repriceChain` → exactly the min(cost, quote) test
 fails. The honest gate stated plainly: the first real promoted chain
 under this rule is the live proof; nothing has been charged by it yet.
 
+**Amendment, 2026-08-11 evening — the gate is closed, three chains
+deep.** The D-156 sweep promoted three chains the same day: six legs,
+every one cut at allowed+1, $10.54 charged against $11.85 real, the
+per-leg min(cost, its own quote) cap biting on three legs ($1.31
+absorbed), `chainPriced: true` on every row. The $0 world stopped
+shipping the day the rule met its first promote.
+
 **Amendment, 2026-08-11 — the recorded ask is decided: the shipped chains
 stay $0.** The entry left retroactive billing as "a different decision
 nobody asked for"; Brian asked the same day, reviewing the whole open
@@ -9346,6 +9354,16 @@ kills: the smooth waiver disabled, the map's size rule disabled, the
 reprice quote cap dropped (D-150's). Unexercised live, stated: a smooth
 pack authored by a designer through the brief — the first real smooth
 ask is that gate.
+
+**Amendment, 2026-08-11 evening — that gate is closed: The Aurora
+Anchorage.** A paid designer, asked for an arctic night harbour, shipped
+`finish: "smooth"` through the brief with 111,363 colours in its far
+plate — continuous aurora curtains no 128 cut could carry — soft alpha
+kept on both cut-outs, live on the palette beside the crisp crew (the
+contrast this finish exists for). It took the D-156 sweep's runner-schema
+fix to make `finish` reachable from a session at all, and its delivery
+found the folder-shape seam recorded there; the smooth path itself
+behaved exactly as this entry built it.
 
 ## D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused
 
@@ -9522,6 +9540,16 @@ door would draw inside that arch in the pack's own palette, judged
 compatible by construction but unverified in pixels; the first troy
 level is that check.
 
+**Amendment, 2026-08-11 evening — every boundary closed by the D-156
+sweep.** Troy Gate Proof exists and the default door draws inside their
+painted arch in their own palette, reading as designed together —
+pixel-verified. Knossos showed the furniture coexisting with a paid
+world the same hour. And the steering test passed at full difficulty:
+asked for a loading crane over the right side, a paid designer threaded
+a DRIFTING occlusion strip through doorway, parcel stand, signpost span
+and stands — all margin-widened — checker-clean on the first attempt.
+The bands teach; nobody burned a turn on a refusal.
+
 ## D-155 — 2026-08-11 — The crew rail names the trade
 
 Brian's ask, verbatim shape: a crew row read "Pip idle — on patrol" and
@@ -9534,3 +9562,74 @@ inside the existing nowrap/ellipsis line. Verified live on hq: all six
 rows read their real trades (worker, scribe ×2, scout, designer,
 architect), 181 web tests green, typecheck clean. No new data, no new
 format surface; the panel keeps being the place the whole story lives.
+
+## D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found
+
+Brian's ask, verbatim spine: queue real challenging work to test D-150,
+D-151 and D-154, grant up to ten More-Times per chain, review every
+partial thoroughly — "we need to build as much learning as possible."
+Three tasks proposed and approved: The Halls of Knossos (quantized v2
+stack + the first designer depth map, built to chain), The Aurora
+Anchorage (smooth through the brief — D-151's own gate wording), The
+Signal Quay (a drifting crane strip threaded through D-154's new bands
+on purpose). Six paid legs, every boundary reviewed from the sandbox
+before its grant.
+
+**The tally.** Knossos: three legs, all cut at allowed+1, promoted —
+$5.97 charged ($1.97 + $2.00 + $2.00), the per-leg cap biting once
+($2.79 → $2.00). Aurora: a failed leg ($0.57) plus a delivering one
+($2.13 → $2.00) — $2.57. Quay: one leg, whole stack first try, $2.39 →
+$2.00. **$10.54 charged against $11.85 real; `chainPriced: true` on all
+six rows; min(cost, its own quote) exact every time. D-150 closed.**
+Aurora shipped `finish: smooth` with **111,363 colours** in its far
+plate — the gate D-151 named (a smooth pack authored by a designer
+through the brief) **closed**. The Quay's crane cleared doorway, parcel
+stand, signposts and stands margin-widened, checker-clean on the first
+attempt — D-154's steering **closed**, alongside the Troy-arch pixel
+check (the default door draws inside their painted arch, same palette)
+and Knossos furniture coexistence.
+
+**Seam one — the runner's render_plate spoke none of the door's
+vocabulary** (fixed mid-sweep, `9906f31`). Moss's first leg reported it
+plainly: the tool "takes only html and file". True — the schema exposed
+`{html, file}` and forwarded `{html}`, so D-148's five modes and
+D-151's finish existed in the door, the brief and the skill, and were
+unreachable from a session. D-097's family, on its fourth appearance.
+Knossos leg 3 proved the fix live: 2120×900 overscans, a real 256×512
+tile, depth at finish smooth, coverage receipts in the reply text.
+
+**Seam two — the setup spiral, a failure shape with no prior row.**
+Aurora leg 1 spent 16 turns in 70 seconds on skill loads, tool searches
+and reads, wrote nothing, and died at max turns for $0.57 — the D-025
+lesson inverted: not too few turns, turns spent on preamble. The reply
+door carried a work-first correction and leg 2 delivered the whole
+smooth stack in 643s. Recorded, not built: a brief line on turn
+economy, if the shape recurs.
+
+**Seams three and four — the folder-shaped delivery, and the stamp that
+should have been a refusal** (fixed, `519f2f9`). Aurora leg 2 delivered
+its pack as an installable folder — PACK.json and rasters one level
+down, the exact shape `pack:check`'s own closing hint coaches ("Drop
+the folder into web/public/packs to install it") — and harvest, which
+reads only the root, saw no draft. The promote then took the worst
+path the code's own comments name: **stamped `promoted`, installed
+nothing, priced the chain, and locked D-143's retry door behind the
+`promoted` status**, returning the stale session error as its reason.
+Fixes: `stampPackDraft` lifts a single child folder's PACK.json and
+files to the root before reading (same bytes; dir-exists guarded for
+never-started jobs; unit test + exact mutation kill), and an authoring
+promote with no draft now refuses naming the truth — proven live on
+Aurora leg 1's own row after the restart. The marker is the
+author-pack route's prompt prefix read at the chain root, chosen after
+the first marker I reached for (`plan.note`) turned out to be an event
+detail no job ever carries — the inert-guard trap caught before it
+shipped this time. Aurora itself was hand-installed byte-identical
+under the install-as-approved precedent, so the world charged for is
+the world on the palette.
+
+**Worlds shipped**: halls-of-knossos, aurora-anchorage, signal-quay —
+each with a level, beside troy-gate-proof. Recorded, not built: the
+checker hint's wording invites the folder shape (now harmless, but one
+line could say "leave PACK.json at the sandbox root when authoring");
+and the resolve route surfacing a job's stored error where a refusal
+reason belongs deserves a sweep of its other branches.

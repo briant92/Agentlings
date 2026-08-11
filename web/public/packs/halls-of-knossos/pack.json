@@ -1,0 +1,126 @@
+{
+  "name": "The Halls of Knossos",
+  "provenance": "Drawn for this format by Moss, an Agentlings designer agent. The backdrop plates, occlusion strip, dust tile and depth map are my own three.js renders made with the render_plate tool — one scene, one camera, one lighting rig, rendered five times with different group visibility. The foreground ops are written by hand. Inspired by the Bronze Age palace at Knossos on Crete and by Minoan fresco convention (the downward-tapering column, ochre and sea-blue banding) — an invented hall, not a reproduction of any excavated room, reconstruction drawing, film design or studio property. No external image, font, texture or reference pack was used, so no third-party rights attach.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "accentLight",
+  "theme": {
+    "void": 720905,
+    "rock": 7165760,
+    "rockLight": 11043420,
+    "rockDark": 3812898,
+    "rockEdge": 2366231,
+    "accent": 14263873,
+    "accentLight": 15779946,
+    "accentDark": 9067038,
+    "grass": 3042700,
+    "grassDark": 1589327,
+    "wood": 9324074,
+    "woodDark": 3351066,
+    "stoneDark": 1182988,
+    "flame": 15764010,
+    "flameCore": 16767370,
+    "hover": 16769184
+  },
+  "backdrop": {
+    "plates": [
+      "far.png",
+      "mid.png"
+    ],
+    "occlusion": "near.png",
+    "depthMap": "depth.png"
+  },
+  "ops": [
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 62,
+      "color": "rockEdge"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 3,
+      "color": "stoneDark"
+    },
+    {
+      "op": "circle",
+      "x": 150,
+      "y": "groundY+70",
+      "r": 66,
+      "color": "accentDark",
+      "alpha": 0.45
+    },
+    {
+      "op": "circle",
+      "x": 138,
+      "y": "groundY+74",
+      "r": 40,
+      "color": "accent",
+      "alpha": 0.3
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 62,
+      "to": 1000,
+      "step": 125,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+6",
+          "w": 2,
+          "h": 56,
+          "color": "stoneDark",
+          "alpha": 0.8
+        }
+      ]
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+26",
+      "w": 1000,
+      "h": 2,
+      "color": "rockDark",
+      "alpha": 0.55
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": "groundY+6",
+      "w": 1000,
+      "h": 54,
+      "count": 210,
+      "light": "rock",
+      "dark": "rockEdge"
+    },
+    {
+      "op": "veins",
+      "x": 0,
+      "y": "groundY+14",
+      "w": 1000,
+      "h": 42,
+      "count": 24,
+      "color": "stoneDark",
+      "alpha": 0.5
+    }
+  ],
+  "ambient": [
+    {
+      "fx": "plateloop",
+      "file": "dust.png",
+      "x": 552,
+      "y": 0,
+      "w": 70,
+      "h": 334,
+      "dx": 3,
+      "dy": 26
+    }
+  ]
+}

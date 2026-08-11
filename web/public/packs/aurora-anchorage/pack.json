@@ -1,0 +1,53 @@
+{
+  "name": "The Aurora Anchorage",
+  "provenance": "Drawn for this format by Rook, an Agentlings designer agent. The three backdrop rasters (far-sky.png, mid-ice.png, near-ship.png) are my own renders, made with the render_plate tool from self-contained HTML canvas pages I wrote for this pack — one composition, one light story (aurora overhead-left, a low moon upper-right), rendered three times at three depths. They are delivered at finish \"smooth\": the aurora curtains, the moonlit ice and the water's glow are continuous gradients and are not snapped to any palette. The foreground ops are written by hand. An invented arctic harbour, not a depiction of any real port, photograph, film design or third-party pack; no external image, font, texture or reference pack was used, so no third-party rights attach.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "rockEdge",
+  "theme": {
+    "void": 263695,
+    "rock": 2442591,
+    "rockLight": 3825532,
+    "rockDark": 1256001,
+    "rockEdge": 10417870,
+    "accent": 6353074,
+    "accentLight": 12517356,
+    "accentDark": 2936470,
+    "grass": 795704,
+    "grassDark": 331288,
+    "wood": 1715002,
+    "woodDark": 726305,
+    "stoneDark": 462617,
+    "flame": 15773800,
+    "flameCore": 16766614,
+    "hover": 11032260
+  },
+  "backdrop": {
+    "finish": "smooth",
+    "plates": ["far-sky.png", "mid-ice.png"],
+    "occlusion": "near-ship.png",
+    "scrim": { "color": "void", "alpha": 0.26, "from": 318, "steps": 12 }
+  },
+  "ops": [
+    { "op": "rect", "x": 0, "y": "groundY", "w": 1000, "h": 62, "color": "stoneDark" },
+    { "op": "rect", "x": 0, "y": "groundY", "w": 1000, "h": 13, "color": "rockDark" },
+    { "op": "rect", "x": 0, "y": "groundY", "w": 1000, "h": 2, "color": "accent", "alpha": 0.34 },
+    { "op": "rect", "x": 0, "y": "groundY+13", "w": 1000, "h": 2, "color": "grassDark", "alpha": 0.7 },
+    { "op": "circle", "x": 172, "y": "groundY+22", "r": 30, "color": "rock", "alpha": 0.5 },
+    { "op": "circle", "x": 318, "y": "groundY+26", "r": 22, "color": "rock", "alpha": 0.4 },
+    { "op": "circle", "x": 1002, "y": "groundY+20", "r": 34, "color": "rock", "alpha": 0.45 },
+    { "op": "circle", "x": 172, "y": "groundY+16", "r": 18, "color": "rockLight", "alpha": 0.3 },
+    { "op": "speckle", "x": 0, "y": "groundY+3", "w": 1000, "h": 56, "count": 240, "light": "rockLight", "dark": "stoneDark" },
+    { "op": "veins", "x": 0, "y": "groundY+16", "w": 1000, "h": 40, "count": 34, "color": "grassDark", "alpha": 0.55 },
+    { "op": "veins", "x": 0, "y": "groundY+8", "w": 1000, "h": 28, "count": 16, "color": "accentDark", "alpha": 0.18 },
+    { "op": "band", "axis": "x", "from": 34, "to": 1000, "step": 118, "of": [
+      { "op": "rect", "x": 0, "y": "groundY+6", "w": 2, "h": 52, "color": "grassDark", "alpha": 0.55 }
+    ] },
+    { "op": "rect", "x": 0, "y": "groundY+44", "w": 1000, "h": 18, "color": "woodDark", "alpha": 0.65 },
+    { "op": "tufts", "x": 20, "y": "groundY+2", "w": 190, "count": 16, "height": 7, "color": "accentDark", "alt": "rockLight", "alpha": 0.5 },
+    { "op": "tufts", "x": 780, "y": "groundY+2", "w": 220, "count": 18, "height": 6, "color": "accentDark", "alt": "rockLight", "alpha": 0.45 }
+  ],
+  "ambient": [
+    { "fx": "motes", "count": 26, "x": 0, "y": 90, "w": 1000, "h": 300 }
+  ]
+}

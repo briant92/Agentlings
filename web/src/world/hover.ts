@@ -1,4 +1,5 @@
-import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
+import { STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
+import type { WorldBox } from '@agentlings/shared';
 
 /**
  * What is clickable in the world, and where.
@@ -10,12 +11,7 @@ import { EXIT_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
  * also the part worth testing without standing up a renderer.
  */
 
-export interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type Box = WorldBox;
 
 /** What the pointer is over. Null when it is over scenery, which is most of it. */
 export type HoverTarget =
@@ -43,13 +39,11 @@ export const OUTLINE_OFFSETS: readonly (readonly [number, number])[] = [
 
 /**
  * The doorway the crew leave and come back through, which opens the crew
- * panel. Until now this was a hit rectangle over scenery with no visual
- * feedback of any kind — the only way to discover it was to click the wall
- * and find out.
+ * panel, and the parcel stand beside it. Geometry lives in shared now
+ * (D-154): the server's occlusion checker reads the same boxes, so a
+ * strip can never legally hide what is clickable here.
  */
-export function doorBox(groundY: number): Box {
-  return { x: EXIT_X - 34, y: groundY - 58, w: 68, h: 58 };
-}
+export { doorBox, parcelsBox } from '@agentlings/shared';
 
 /**
  * A work station's signpost: post, board and pennant. Slots are fixed, so the
@@ -58,13 +52,4 @@ export function doorBox(groundY: number): Box {
 export function stationBox(slot: number, groundY: number): Box {
   const x = STATION_BASE_X + slot * STATION_SPACING;
   return { x: x - 12, y: groundY - 53, w: 28, h: 53 };
-}
-
-/**
- * The parcel pile beside the exit — deliveries waiting for review. Ends
- * exactly where the doorway's box begins, so the two never fight for the
- * pointer.
- */
-export function parcelsBox(groundY: number): Box {
-  return { x: EXIT_X - 66, y: groundY - 44, w: 32, h: 44 };
 }

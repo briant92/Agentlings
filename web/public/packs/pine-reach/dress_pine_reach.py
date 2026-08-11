@@ -67,8 +67,12 @@ MID_PIECES = [
     ("boulder_01_LOD1", 58, 11.0, -0.3, 2.2, 230),
 ]
 NEAR_PIECES = [
-    # The standing stone, right quarter: wx 800-900 -> X 1.96 at d 14.
-    ("boulder_01_LOD1", 14, 1.96, 0, (0.31, 0.31, 3.4), 90),
+    # The standing stone, LEFT quarter (v6): the right spot the checker once
+    # allowed sits over the parcel stand and doorway it now protects (D-154).
+    # Legal there: wx < 200 whole-column, clear of the spawn band 41-119 in
+    # the crew band. Target wx 125-193: X -1.91 at d 14, presented width
+    # 1.83*0.21 = 0.38 m.
+    ("boulder_01_LOD1", 14, -1.91, 0, (0.21, 0.21, 3.4), 90),
 ]
 
 

@@ -173,6 +173,37 @@ function drawCrate(g: Graphics, T: Theme, x: number, y: number): void {
 }
 
 /**
+ * The crew doorway, in the theme's own timbers and stone — every world gets
+ * a visible way in. Until D-154 this was a hit rectangle over bare scenery
+ * in every world whose art did not happen to paint one (hover.ts's own
+ * comment: the only way to discover it was to click the wall).
+ */
+function drawDoor(g: Graphics, T: Theme, b: Box): void {
+  g.rect(b.x + 4, b.y + b.h - 3, b.w - 8, 3).fill(T.stoneDark);
+  g.rect(b.x + 6, b.y, b.w - 12, 6).fill(T.woodDark);
+  g.rect(b.x + 6, b.y, b.w - 12, 2).fill({ color: T.rockLight, alpha: 0.5 });
+  g.rect(b.x + 6, b.y + 4, 5, b.h - 7).fill(T.wood);
+  g.rect(b.x + b.w - 11, b.y + 4, 5, b.h - 7).fill(T.wood);
+  g.rect(b.x + 11, b.y + 6, b.w - 22, b.h - 9).fill(T.void);
+  g.rect(b.x + 11, b.y + 6, 2, b.h - 9).fill(T.rockDark);
+  g.rect(b.x + b.w - 13, b.y + 6, 2, b.h - 9).fill(T.rockDark);
+  g.rect(b.x + b.w - 19, b.y + 18, 4, 6).fill(T.flame);
+  g.rect(b.x + b.w - 18, b.y + 20, 2, 2).fill(T.flameCore);
+}
+
+/**
+ * The parcel stand: a low pallet marking where deliveries land, so the pile
+ * is a place even while nothing waits. Crates stack on its deck.
+ */
+function drawParcelStand(g: Graphics, T: Theme, b: Box): void {
+  g.rect(b.x + 1, b.y + b.h - 5, b.w - 2, 3).fill(T.wood);
+  g.rect(b.x + 1, b.y + b.h - 5, b.w - 2, 1).fill({ color: T.rockLight, alpha: 0.6 });
+  g.rect(b.x + 3, b.y + b.h - 2, 3, 2).fill(T.woodDark);
+  g.rect(b.x + Math.floor(b.w / 2) - 1, b.y + b.h - 2, 2, 2).fill(T.woodDark);
+  g.rect(b.x + b.w - 6, b.y + b.h - 2, 3, 2).fill(T.woodDark);
+}
+
+/**
  * Where the art comes from. The frames built into the app answer immediately;
  * the spritesheet replaces them once it has loaded. Both can hand back the
  * same frames in an agentling's colour, or as flat shapes for the outline.
@@ -748,6 +779,13 @@ export function WorldCanvas({
           const dt = Math.min(ticker.deltaMS, 100) / 1000;
           ambience.tick(ambientLayer, dt, t);
 
+          // App-owned furniture, first onto the dynamic layer so signs,
+          // crates and hover rings paint over it. Drawn from the theme's own
+          // slots, so every world — built-in or pack — furnishes its own
+          // doorway and parcel stand in its own palette (D-154).
+          drawDoor(dynamic, T, door);
+          drawParcelStand(dynamic, T, pBox);
+
           // The drift (v2, D-151): one camera, every layer at its own rate —
           // whole pixels for the quantized medium, raw for the smooth one,
           // the map's displacement scaled by the same camera. A world with
@@ -873,7 +911,8 @@ export function WorldCanvas({
               .rect(EXIT_X - 64, GROUND_Y - 26, 30, 26)
               .fill({ color: T.flameCore, alpha: 0.1 + 0.06 * Math.sin(t * 2.5) });
             waiting.slice(0, 4).forEach((_, i) => {
-              drawCrate(dynamic, T, EXIT_X - 62 + (i % 2) * 14, GROUND_Y - 10 - Math.floor(i / 2) * 10);
+              // Stacked on the stand's deck rather than the bare ground.
+              drawCrate(dynamic, T, EXIT_X - 62 + (i % 2) * 14, GROUND_Y - 14 - Math.floor(i / 2) * 10);
             });
             if (hover?.kind === 'parcels') outlineBox(dynamic, pBox, T.hover);
           }

@@ -29,6 +29,30 @@ export const PLATE_OVERSCAN = 60;
 /** How many plates a backdrop may stack — ~21 MB decoded at 2×, the checked budget. */
 export const MAX_PLATES = 3;
 
+/** An axis-aligned box in world units — hit zones and furniture footprints. */
+export interface WorldBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The crew doorway beside the exit and the parcel stand beside it. One
+ * source for the client (hit zone + drawn furniture) and the checker (an
+ * occlusion strip may not cover either) — the same geometry drifting apart
+ * across the two would give a prop that highlights somewhere other than
+ * where it is clickable, or a checker blessing a strip that hides the door.
+ */
+export function doorBox(groundY: number): WorldBox {
+  return { x: EXIT_X - 34, y: groundY - 58, w: 68, h: 58 };
+}
+
+/** The parcel stand — deliveries pile here. Ends where the doorway begins. */
+export function parcelsBox(groundY: number): WorldBox {
+  return { x: EXIT_X - 66, y: groundY - 44, w: 32, h: 44 };
+}
+
 /**
  * Per-theme palette, every slot drawn from the DB32 master ramp; geometry
  * stays identical across all four.

@@ -8,7 +8,9 @@ import {
   STATION_BASE_X,
   STATION_SPACING,
   WORLD_WIDTH,
+  doorBox,
   packRasterFiles,
+  parcelsBox,
   type LevelPack,
   type PackProblem,
 } from '@agentlings/shared';
@@ -292,8 +294,17 @@ function checkOcclusionPlacement(
   const bandTop = (groundY - CREW_H) * scale;
   const bandBottom = groundY * scale;
 
+  // The doorway and the parcel stand are clickable furniture the app draws
+  // itself (D-154); a strip over either hides a control. Checked within each
+  // box's own height, like the stands — an arch may still fill the frame top.
+  const spots = [
+    { name: 'crew doorway', box: doorBox(groundY), hit: 0 },
+    { name: 'parcel stand', box: parcelsBox(groundY), hit: 0 },
+  ];
+
   for (let py = 0; py < r.h; py++) {
     const inBand = py >= bandTop && py < bandBottom;
+    const wy = py / scale;
     for (let px = 0; px < r.w; px++) {
       if (r.pixels[(py * r.w + px) * 4 + 3] < 128) continue;
       const wx = toWorldX(px);
@@ -302,6 +313,17 @@ function checkOcclusionPlacement(
       if (wx > FURNITURE_LO - margin && wx < FURNITURE_HI + margin) {
         overFurniture++;
         if (firstFurnitureX === null) firstFurnitureX = Math.round(wx);
+      }
+      for (const spot of spots) {
+        const { box } = spot;
+        if (
+          wx > box.x - margin &&
+          wx < box.x + box.w + margin &&
+          wy >= box.y &&
+          wy < box.y + box.h
+        ) {
+          spot.hit++;
+        }
       }
       if (!inBand) continue;
       for (const at of STAND_POSITIONS) {
@@ -325,6 +347,15 @@ function checkOcclusionPlacement(
       `occlusion strip "${strip.file}" covers the standing place at x ${at} — the crew ` +
         'work there, and a strip above the sprites would hide them for good',
     );
+  }
+  for (const spot of spots) {
+    if (spot.hit > 0) {
+      error(
+        `occlusion strip "${strip.file}" is opaque over the ${spot.name} ` +
+          `(x ${spot.box.x}–${spot.box.x + spot.box.w}${overscan ? ', widened by the drift margin' : ''}, ` +
+          `${spot.hit} pixels) — it is clickable, and a strip above the sprites would hide it`,
+      );
+    }
   }
 }
 

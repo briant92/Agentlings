@@ -212,6 +212,33 @@ describe('checkPlates v2 — the occlusion strip', () => {
     expect(errors(withStrip())[0]).toMatch(/standing place at x 80/);
   });
 
+  // The doorway and the parcel stand are clickable furniture the app draws
+  // itself (D-154) — found live when Pine Reach's legally-placed menhir sat
+  // square over the parcel spot the checker never knew about.
+  it('refuses opacity over the crew doorway', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 940 && y === 350 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())[0]).toMatch(/over the crew doorway/);
+  });
+
+  it('refuses opacity over the parcel stand', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 890 && y === 360 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())[0]).toMatch(/over the parcel stand/);
+  });
+
+  it('leaves the frame above the doorway free — an arch may span the top', () => {
+    writeFileSync(
+      path.join(dir, 'near.png'),
+      pngA(1000, 450, (x, y) => (x === 940 && y === 300 ? [0x05050a, 255] : [0, 0])),
+    );
+    expect(errors(withStrip())).toEqual([]);
+  });
+
   it('widens the forbidden span by the drift margin only when the strip drifts', () => {
     // World x 210 sits between the spawn box and the signposts: legal for a
     // pinned strip, inside the widened span for a drifting one.

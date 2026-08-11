@@ -1,0 +1,411 @@
+{
+  "name": "The Rearing Strait",
+  "provenance": "Composed for this pack by Claude (designer agentling), 2026-08-11. Scene, plates and ops are original: the three raster layers (far.png, mid.png, near.png) were drawn by me with HTML canvas through the render_plate tool, from no external art. Staging, palette and light are read from the reference image supplied with the job, input/wine-dark-strait-v1-plate.png — the first version's single plate of this same world, itself a machine render commissioned for this level series; nothing from that file is embedded or traced here, only its mood (low sun-break upper left, storm and rain upper right, dark serpent silhouette right of centre) reproduced with my own geometry. Motif from Homer's Odyssey, public domain; no studio designs, marks or names are used.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "stoneDark",
+  "theme": {
+    "void": 723219,
+    "rock": 2762560,
+    "rockLight": 6972804,
+    "rockDark": 1512486,
+    "rockEdge": 9406888,
+    "accent": 15784352,
+    "accentLight": 16773837,
+    "accentDark": 11569742,
+    "grass": 3814742,
+    "grassDark": 1907248,
+    "wood": 5917242,
+    "woodDark": 2366228,
+    "stoneDark": 854806,
+    "flame": 16176988,
+    "flameCore": 16774864,
+    "hover": 15255946
+  },
+  "backdrop": {
+    "plates": [
+      "far.png",
+      "mid.png"
+    ],
+    "occlusion": "near.png"
+  },
+  "ops": [
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY-12",
+      "w": 1000,
+      "h": 74,
+      "color": "grassDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+16",
+      "w": 1000,
+      "h": 46,
+      "color": "stoneDark",
+      "alpha": 0.55
+    },
+    {
+      "op": "poly",
+      "color": "rockLight",
+      "alpha": 0.16,
+      "points": [
+        [
+          0,
+          "groundY-13"
+        ],
+        [
+          120,
+          "groundY-10"
+        ],
+        [
+          250,
+          "groundY-14"
+        ],
+        [
+          390,
+          "groundY-10"
+        ],
+        [
+          520,
+          "groundY-13"
+        ],
+        [
+          660,
+          "groundY-9"
+        ],
+        [
+          800,
+          "groundY-13"
+        ],
+        [
+          1000,
+          "groundY-10"
+        ],
+        [
+          1000,
+          "groundY-6"
+        ],
+        [
+          0,
+          "groundY-7"
+        ]
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": -4,
+      "to": 1004,
+      "step": 79,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY-8",
+          "w": 29,
+          "h": 2,
+          "color": "rockLight",
+          "alpha": 0.2
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 9,
+      "to": 1004,
+      "step": 53,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+4",
+          "w": 27,
+          "h": 2,
+          "color": "rockLight",
+          "alpha": 0.24
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 23,
+      "to": 1004,
+      "step": 71,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+20",
+          "w": 34,
+          "h": 3,
+          "color": "rock",
+          "alpha": 0.34
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 5,
+      "to": 1004,
+      "step": 89,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+36",
+          "w": 44,
+          "h": 3,
+          "color": "rockLight",
+          "alpha": 0.16
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 40,
+      "to": 1004,
+      "step": 113,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+50",
+          "w": 62,
+          "h": 3,
+          "color": "rockLight",
+          "alpha": 0.12
+        }
+      ]
+    },
+    {
+      "op": "veins",
+      "x": 0,
+      "y": "groundY+6",
+      "w": 1000,
+      "h": 40,
+      "count": 16,
+      "color": "rockLight",
+      "alpha": 0.14
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": "groundY-10",
+      "w": 1000,
+      "h": 72,
+      "count": 90,
+      "light": "rockLight",
+      "dark": "stoneDark"
+    },
+    {
+      "op": "rect",
+      "x": 4,
+      "y": "groundY-6",
+      "w": 44,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.5
+    },
+    {
+      "op": "rect",
+      "x": 62,
+      "y": "groundY+2",
+      "w": 36,
+      "h": 3,
+      "color": "accentLight",
+      "alpha": 0.42
+    },
+    {
+      "op": "rect",
+      "x": 26,
+      "y": "groundY+14",
+      "w": 52,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.36
+    },
+    {
+      "op": "rect",
+      "x": 118,
+      "y": "groundY-2",
+      "w": 30,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.34
+    },
+    {
+      "op": "rect",
+      "x": 96,
+      "y": "groundY+26",
+      "w": 60,
+      "h": 4,
+      "color": "accentDark",
+      "alpha": 0.4
+    },
+    {
+      "op": "rect",
+      "x": 188,
+      "y": "groundY+8",
+      "w": 26,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.24
+    },
+    {
+      "op": "rect",
+      "x": 160,
+      "y": "groundY+40",
+      "w": 70,
+      "h": 4,
+      "color": "accentDark",
+      "alpha": 0.3
+    },
+    {
+      "op": "rect",
+      "x": 262,
+      "y": "groundY+20",
+      "w": 22,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.18
+    },
+    {
+      "op": "rect",
+      "x": 236,
+      "y": "groundY+52",
+      "w": 58,
+      "h": 4,
+      "color": "accentDark",
+      "alpha": 0.22
+    },
+    {
+      "op": "rect",
+      "x": 340,
+      "y": "groundY+34",
+      "w": 18,
+      "h": 3,
+      "color": "accent",
+      "alpha": 0.12
+    },
+    {
+      "op": "poly",
+      "color": "rockDark",
+      "alpha": 0.62,
+      "points": [
+        [
+          0,
+          "groundY+4"
+        ],
+        [
+          140,
+          "groundY-4"
+        ],
+        [
+          300,
+          "groundY+8"
+        ],
+        [
+          470,
+          "groundY-1"
+        ],
+        [
+          640,
+          "groundY+10"
+        ],
+        [
+          810,
+          "groundY+1"
+        ],
+        [
+          1000,
+          "groundY+12"
+        ],
+        [
+          1000,
+          "viewH"
+        ],
+        [
+          0,
+          "viewH"
+        ]
+      ]
+    },
+    {
+      "op": "poly",
+      "color": "stoneDark",
+      "alpha": 0.7,
+      "points": [
+        [
+          0,
+          "groundY+30"
+        ],
+        [
+          210,
+          "groundY+22"
+        ],
+        [
+          400,
+          "groundY+34"
+        ],
+        [
+          600,
+          "groundY+24"
+        ],
+        [
+          780,
+          "groundY+36"
+        ],
+        [
+          1000,
+          "groundY+26"
+        ],
+        [
+          1000,
+          "viewH"
+        ],
+        [
+          0,
+          "viewH"
+        ]
+      ]
+    },
+    {
+      "op": "tufts",
+      "x": 0,
+      "y": "groundY-10",
+      "w": 1000,
+      "count": 12,
+      "height": 5,
+      "color": "rockEdge",
+      "alt": "rockLight"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+44",
+      "w": 1000,
+      "h": 18,
+      "color": "void",
+      "alpha": 0.5
+    }
+  ],
+  "ambient": [
+    {
+      "fx": "plateloop",
+      "file": "water.png",
+      "x": 0,
+      "y": "groundY-10",
+      "w": 1000,
+      "h": 72,
+      "dx": -17,
+      "dy": 0
+    }
+  ]
+}

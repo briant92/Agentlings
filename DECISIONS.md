@@ -158,6 +158,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-146 — 2026-08-10 — The handover the brief promised: a continuation reads its parent's report, and the decoder pointer stops hiding](#d-146--2026-08-10--the-handover-the-brief-promised-a-continuation-reads-its-parents-report-and-the-decoder-pointer-stops-hiding)
 - [D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract](#d-147--2026-08-11--the-floor-that-drew-nothing-op-names-become-the-contract)
 - [D-148 — 2026-08-11 — Backdrop v2 whole: the stack, the drift, the strip, the life](#d-148--2026-08-11--backdrop-v2-whole-the-stack-the-drift-the-strip-the-life)
+- [D-149 — 2026-08-11 — The parcel desk: a pile of forty shows forty](#d-149--2026-08-11--the-parcel-desk-a-pile-of-forty-shows-forty)
 
 ## By theme
 
@@ -9157,3 +9158,44 @@ message could also name the joint quantize, which is what actually
 snapped them. And turnsAllowed 11–15 per leg says the $2-quoted class
 funds ~12 turns; a v2 stack wants most of them for renders, so the class
 rate will want rows (G5's tax, paying itself down as these six file).
+
+## D-149 — 2026-08-11 — The parcel desk: a pile of forty shows forty
+
+Brian clicked the parcel pile reading ×40 and got one ancient job's review,
+blind: "no organized presentation or way to assess properly how to move
+forward." The pile's click had always opened the *oldest* waiting delivery
+— right when the pile was three, absurd at forty. Mockup first, then his
+three calls, all the recommended way: group by **what Approve would do**
+(acts on approval / code patches / files only — the triage question, since
+a delivery whose approval sends or installs is blocked on him in a way a
+files-only run never is); bulk **discard only**, multi-select with the
+press-twice arm (D-134's idiom) — approve acts, so it stays one at a time;
+and **auto-advance** — a verdict inside a review opened from the desk
+slides the next parcel in, with a `◂ pile · n of m · skip ▸` strip in the
+modal head.
+
+Built web-only — the client already holds every waiting job via the world
+socket, and bulk discard is N calls to the existing resolve route, so no
+server surface moved. The shape: `parcels.ts` pure and tested (grouping
+with side-effects outranking the patch, oldest-first, chips that say what
+approving touches, ages); `ParcelDesk.tsx` on the ordinary modal chrome;
+the flow order **snapshotted at entry** so verdicts shrinking the live
+queue never reshuffle a pass mid-walk; `ReviewModal` grew `onDecided` —
+called on promote, discard, more turns, a reply, a redo — beside `onClose`
+(✕ and Esc), which is what lets a verdict advance while a plain close
+returns to the desk. A continued job is not listed (D-139: More turns was
+its decision) — and that surfaced an inconsistency the fix then closed:
+the crates' ×N counted continued jobs the desk refused to show, so
+`waitingReview` in the canvas now applies the same rule and the pile
+cannot disagree with its own desk.
+
+**Evidence.** 175 web tests green (+9 on the pure module), typecheck
+clean. Proven live headless against hq's real backlog: the pile click
+opened the desk at "27 waiting · oldest 10d", two sections, the flow
+entered at 1 of 27, skip advanced to 2 of 27, ◂ pile returned with the
+queue intact — no verdicts given to real jobs. Two post-commit mutations,
+each killed by exactly its test: the continued-filter dropped (the D-139
+test), the acts-priority inverted (the outrank test). Banked for testing:
+synthetic `PointerEvent`s do not drive Pixi v8's interaction at all — the
+door control proved it — so canvas UI is verified with real input
+(headless Edge via playwright-core), the D-145 route now twice-used.

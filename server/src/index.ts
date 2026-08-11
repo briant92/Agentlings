@@ -133,6 +133,7 @@ import {
   costPerTurn,
   ledgerRow,
   readLedger,
+  repriceChain,
   totals,
   totalsBy,
 } from './ledger';
@@ -2061,6 +2062,21 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
             ),
           )
         : null;
+    // The chain's cut legs earn their price the moment the end promotes
+    // (D-150): work that fed an approved delivery finished by any honest
+    // reading, and twice a chain of cut legs shipped a world for $0. Each
+    // leg prices at min(cost, its own quote); real failures in the chain
+    // stay absorbed — only the funded-leash cuts are the seam.
+    const chainPriced =
+      body.action === 'promote'
+        ? repriceChain(
+            SANDBOX_ROOT,
+            rt.queue
+              .ancestry(pending.id)
+              .filter((leg) => leg.meter?.outOfTurns || leg.meter?.timedOut)
+              .map((leg) => leg.id),
+          )
+        : { rows: 0, chargedUsd: 0 };
     rt.eventLog.emit({
       type: 'resolved',
       jobId: job.id,
@@ -2069,11 +2085,14 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       // "approved" is what you did, and the feed is a list of your decisions.
       detail:
         body.action === 'promote'
-          ? sentNow > 0
-            ? `approved — sent ${sentNow} via ${pending.outbox?.channel}`
-            : installedPack
-              ? `approved — installed the ${installedPack} world`
-              : 'approved'
+          ? (sentNow > 0
+              ? `approved — sent ${sentNow} via ${pending.outbox?.channel}`
+              : installedPack
+                ? `approved — installed the ${installedPack} world`
+                : 'approved') +
+            (chainPriced.rows > 0
+              ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`
+              : '')
           : 'discarded — nothing applied, the work stays in the sandbox',
       by: 'you',
     });

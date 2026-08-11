@@ -194,6 +194,24 @@ export class JobQueue {
     return job.prompt;
   }
 
+  /**
+   * The whole chain a job sits at the end of: itself, then each parent up the
+   * `continues` links — rootPrompt's walk, kept whole instead of keeping only
+   * the top. The pricing seam reads it at promote (D-150): the cut legs that
+   * fed a promoted end are the ones whose work landed.
+   */
+  ancestry(id: string): Job[] {
+    const chain: Job[] = [];
+    let job = this.jobs.get(id);
+    const seen = new Set<string>();
+    while (job && !seen.has(job.id)) {
+      chain.push(job);
+      seen.add(job.id);
+      job = job.continues ? this.jobs.get(job.continues) : undefined;
+    }
+    return chain;
+  }
+
   add(spec: NewJobSpec): Job {
     const job: Job = {
       id: randomUUID().slice(0, 8),

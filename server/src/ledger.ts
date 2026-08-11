@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { JobMeter } from '@agentlings/shared';
 
@@ -113,6 +113,16 @@ export interface LedgerEntry {
   toolFellBack?: boolean;
   /** What the user would be charged. Zero for failures: the app absorbs those. */
   priceUsd: number;
+  /**
+   * This row's price was set after the fact, when the chain it fed promoted
+   * (D-150). A cut leg files as a failure priced zero — "charged only if it
+   * finishes" — but a chain of cut legs whose END promotes finished by any
+   * honest reading, and twice it delivered an installed world for $0 (the
+   * Iliad $9.29, the Odyssey $6.22). The marker is the idempotency guard —
+   * a second Approve reprices nothing — and the row's own explanation for
+   * why a failed outcome carries a price.
+   */
+  chainPriced?: boolean;
   /** The ceiling quoted before the work, when there was one. */
   quotedUsd?: number;
   turns?: number;
@@ -301,6 +311,44 @@ export function priceFor(
   if (outcome === 'failed') return 0;
   if (typeof quotedUsd === 'number') return Math.min(costUsd, quotedUsd);
   return costUsd;
+}
+
+/**
+ * Prices a promoted chain's cut legs, after the fact (D-150, D-141's
+ * recorded fix). Each named row that is still an unpriced failure gets
+ * `min(cost, its own quote)` — never above what that leg was quoted (D-012)
+ * — and the `chainPriced` marker, which is also what makes a second Approve
+ * reprice nothing. Rows whose spend was unmeasurable stay absorbed: a price
+ * on an unknown cost would be an invention.
+ *
+ * The whole file is rewritten through a sibling-and-rename, because a torn
+ * ledger is worse than any bug this fixes.
+ */
+export function repriceChain(
+  sandboxRoot: string,
+  jobIds: readonly string[],
+): { rows: number; chargedUsd: number } {
+  if (jobIds.length === 0) return { rows: 0, chargedUsd: 0 };
+  const ids = new Set(jobIds);
+  const entries = readLedger(sandboxRoot);
+  let rows = 0;
+  let chargedUsd = 0;
+  const next = entries.map((entry) => {
+    if (!ids.has(entry.jobId)) return entry;
+    if (entry.chainPriced || entry.priceUsd !== 0 || entry.outcome !== 'failed') return entry;
+    if (entry.costUnknown || entry.costUsd <= 0) return entry;
+    const priceUsd = Math.min(entry.costUsd, entry.quotedUsd ?? entry.costUsd);
+    rows += 1;
+    chargedUsd += priceUsd;
+    return { ...entry, priceUsd, chainPriced: true };
+  });
+  if (rows > 0) {
+    const file = ledgerFile(sandboxRoot);
+    const sibling = `${file}.repricing`;
+    writeFileSync(sibling, next.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
+    renameSync(sibling, file);
+  }
+  return { rows, chargedUsd };
 }
 
 export interface Totals {

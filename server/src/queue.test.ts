@@ -36,6 +36,17 @@ describe('JobQueue', () => {
    * then reproduced on demand (fb19d020, 2026-08-07). The root walk is what
    * the three approval call-sites key by instead.
    */
+  // The pricing seam's walk (D-150): the whole chain, end first, so a
+  // promote can name every cut leg that fed it.
+  it('answers a chain whole through ancestry, end first', () => {
+    const first = queue.add({ title: 'a', prompt: 'author a world' });
+    const mid = queue.add({ title: 'a', prompt: 'author a world', continues: first.id });
+    const end = queue.add({ title: 'a', prompt: 'author a world', continues: mid.id });
+    expect(queue.ancestry(end.id).map((j) => j.id)).toEqual([end.id, mid.id, first.id]);
+    expect(queue.ancestry(first.id).map((j) => j.id)).toEqual([first.id]);
+    expect(queue.ancestry('missing')).toEqual([]);
+  });
+
   it('answers a continuation chain with the sentence it began with', () => {
     const root = queue.add({ title: 'Send', prompt: 'send a telegram to brian' });
     const reply = queue.add({

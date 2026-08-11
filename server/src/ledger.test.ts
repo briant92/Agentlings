@@ -12,6 +12,7 @@ import {
   priceFor,
   rateFor,
   readLedger,
+  repriceChain,
   totals,
   totalsBy,
   type LedgerEntry,
@@ -532,5 +533,63 @@ describe('ledgerRow', () => {
       expect(Object.hasOwn(entry, 'toolCalls')).toBe(false);
       expect(Object.hasOwn(entry, 'lastTool')).toBe(false);
     });
+  });
+});
+
+/**
+ * D-150: a chain of cut legs whose end promotes charges its legs after the
+ * fact — twice it shipped an installed world for $0 (the Iliad $9.29, the
+ * Odyssey $6.22). Each leg prices at min(cost, its own quote), marked so a
+ * second Approve reprices nothing.
+ */
+describe('repriceChain', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-reprice-'));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  const cutLeg = (jobId: string, over: Partial<LedgerEntry> = {}): LedgerEntry =>
+    entry({ jobId, outcome: 'failed', priceUsd: 0, costUsd: 1.39, quotedUsd: 2, ...over });
+
+  it('prices each named cut leg at min(cost, its own quote)', () => {
+    append(root, cutLeg('a'));
+    append(root, cutLeg('b', { costUsd: 3.5, quotedUsd: 2 }));
+    append(root, entry({ jobId: 'other', outcome: 'failed', priceUsd: 0, costUsd: 0.5 }));
+    const result = repriceChain(root, ['a', 'b']);
+    expect(result).toEqual({ rows: 2, chargedUsd: 1.39 + 2 });
+    const rows = readLedger(root);
+    expect(rows.find((r) => r.jobId === 'a')).toMatchObject({ priceUsd: 1.39, chainPriced: true });
+    expect(rows.find((r) => r.jobId === 'b')).toMatchObject({ priceUsd: 2, chainPriced: true });
+    // A failure outside the chain stays absorbed.
+    expect(rows.find((r) => r.jobId === 'other')?.priceUsd).toBe(0);
+  });
+
+  it('reprices nothing twice — the marker is the guard', () => {
+    append(root, cutLeg('a'));
+    repriceChain(root, ['a']);
+    expect(repriceChain(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root).find((r) => r.jobId === 'a')?.priceUsd).toBe(1.39);
+  });
+
+  it('leaves unmeasured spend absorbed — a price on an unknown cost is an invention', () => {
+    append(root, cutLeg('a', { costUsd: 0, costUnknown: true }));
+    expect(repriceChain(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root).find((r) => r.jobId === 'a')?.priceUsd).toBe(0);
+  });
+
+  it('never touches a row that already carries a price or finished done', () => {
+    append(root, entry({ jobId: 'a', outcome: 'done', priceUsd: 0.54, costUsd: 0.54 }));
+    expect(repriceChain(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root).find((r) => r.jobId === 'a')?.priceUsd).toBe(0.54);
+  });
+
+  it('touches nothing on disk when no row qualifies', () => {
+    append(root, entry({ jobId: 'x' }));
+    const before = readLedger(root);
+    expect(repriceChain(root, ['missing'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root)).toEqual(before);
   });
 });

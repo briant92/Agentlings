@@ -28,22 +28,17 @@
     ]
   },
   "ops": [
-    {
-      "kind": "rect",
-      "x": 0,
-      "y": "groundY-4",
-      "w": 1000,
-      "h": 66,
-      "color": "grassDark"
-    },
-    {
-      "kind": "rect",
-      "x": 0,
-      "y": "groundY+30",
-      "w": 1000,
-      "h": 32,
-      "color": "void",
-      "alpha": 0.55
-    }
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 62, "color": "grassDark" },
+    { "op": "rect", "x": 0, "y": "groundY+30", "w": "worldWidth", "h": 32, "color": "stoneDark", "alpha": 0.7 },
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 2, "color": "rockEdge", "alpha": 0.3 },
+    { "op": "rect", "x": 0, "y": "groundY+2", "w": "worldWidth", "h": 1, "color": "stoneDark" },
+    { "op": "speckle", "count": 120, "x": 0, "y": "groundY+8", "w": "worldWidth", "h": 50, "light": "rockLight", "dark": "stoneDark" },
+    { "op": "veins", "count": 9, "x": 0, "y": "groundY+14", "w": "worldWidth", "h": 40, "color": "stoneDark", "alpha": 0.8 },
+    { "op": "tufts", "count": 9, "x": 0, "y": "groundY+3", "w": "worldWidth", "h": 1, "height": 3, "color": "grassDark", "alt": "rock" }
+  ],
+  "ambient": [
+    { "fx": "glints", "points": [[46, 318], [88, 342]], "strips": [{ "x": 8, "y": 308, "w": 110 }, { "x": 22, "y": 332, "w": 88 }] },
+    { "fx": "motes", "count": 10, "x": 620, "y": 60, "w": 330, "h": 240 },
+    { "fx": "flyer" }
   ]
 }

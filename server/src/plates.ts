@@ -12,7 +12,7 @@ import {
 } from '@agentlings/shared';
 import { COLOR_POOL } from './levels';
 import { BACKDROP_COLOURS } from './quantize';
-import { countColours, decodePng, separationAt, type Raster } from './raster';
+import { countColours, decodePng, separationAt, type Raster, type RasterA } from './raster';
 
 /**
  * The raster half of the plate rules (D-108, D-142).
@@ -120,13 +120,16 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
  * each 2×2 block — the same downsample D-108 blessed — and 1× plates under a
  * 2× render repeat pixels, which is what the canvas upscale does live.
  */
-export function blitPlate(target: Raster, plate: Raster): void {
-  const ratio = plate.w / target.w;
+export function blitPlate(target: Raster, plate: Raster, srcX = 0): void {
+  // Ratio from the heights: widths may legitimately differ now — an
+  // overscanned plate is wider than the view by design, and `srcX` is where
+  // the visible window starts in it (the centre, at rest).
+  const ratio = plate.h / target.h;
   for (let y = 0; y < target.h; y++) {
     for (let x = 0; x < target.w; x++) {
       const i = (y * target.w + x) * 3;
       if (ratio === 2) {
-        const px = x * 2;
+        const px = srcX + x * 2;
         const py = y * 2;
         for (let ch = 0; ch < 3; ch++) {
           target.pixels[i + ch] =
@@ -137,12 +140,64 @@ export function blitPlate(target: Raster, plate: Raster): void {
             4;
         }
       } else {
-        const px = Math.min(plate.w - 1, Math.floor(x * ratio));
+        const px = Math.min(plate.w - 1, srcX + Math.floor(x * ratio));
         const py = Math.min(plate.h - 1, Math.floor(y * ratio));
         for (let ch = 0; ch < 3; ch++) {
           target.pixels[i + ch] = plate.pixels[(py * plate.w + px) * 3 + ch];
         }
       }
+    }
+  }
+}
+
+/**
+ * `blitPlate` for a cut-out: source-over with the alpha as weight, so the
+ * holes leave what earlier plates put there. A 2× block averages colour and
+ * coverage together — a half-covered block lands half-strength, which is the
+ * same downsample the browser's linear filter performs live.
+ */
+export function blitPlateA(target: Raster, plate: RasterA, srcX = 0): void {
+  const ratio = plate.h / target.h;
+  for (let y = 0; y < target.h; y++) {
+    for (let x = 0; x < target.w; x++) {
+      const i = (y * target.w + x) * 3;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let a = 0;
+      if (ratio === 2) {
+        const px = srcX + x * 2;
+        const py = y * 2;
+        for (const [ox, oy] of [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+        ]) {
+          const j = ((py + oy) * plate.w + px + ox) * 4;
+          const pa = plate.pixels[j + 3] / 255;
+          r += plate.pixels[j] * pa;
+          g += plate.pixels[j + 1] * pa;
+          b += plate.pixels[j + 2] * pa;
+          a += pa;
+        }
+        r /= 4;
+        g /= 4;
+        b /= 4;
+        a /= 4;
+      } else {
+        const px = Math.min(plate.w - 1, srcX + Math.floor(x * ratio));
+        const py = Math.min(plate.h - 1, Math.floor(y * ratio));
+        const j = (py * plate.w + px) * 4;
+        a = plate.pixels[j + 3] / 255;
+        r = plate.pixels[j] * a;
+        g = plate.pixels[j + 1] * a;
+        b = plate.pixels[j + 2] * a;
+      }
+      if (a === 0) continue;
+      target.pixels[i] = r + target.pixels[i] * (1 - a);
+      target.pixels[i + 1] = g + target.pixels[i + 1] * (1 - a);
+      target.pixels[i + 2] = b + target.pixels[i + 2] * (1 - a);
     }
   }
 }

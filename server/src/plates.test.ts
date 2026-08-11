@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { THEME_SLOTS, type LevelPack } from '@agentlings/shared';
 import { COLOR_POOL } from './levels';
 import { packsDir, scanPacks } from './packs';
-import { blitPlate, checkPlates } from './plates';
-import { encodePng, type Raster } from './raster';
+import { blitPlate, blitPlateA, checkPlates } from './plates';
+import { encodePng, type Raster, type RasterA } from './raster';
 
 const theme = Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233]));
 
@@ -155,5 +155,71 @@ describe('blitPlate', () => {
     });
     blitPlate(target, plate);
     expect([...target.pixels]).toEqual([100, 100, 100]);
+  });
+
+  it('reads from srcX, so an overscanned plate blits its centre window', () => {
+    const target: Raster = { pixels: new Uint8ClampedArray(2 * 1 * 3), w: 2, h: 1 };
+    // A 4-wide plate for a 2-wide view: the visible window starts at 1.
+    const plate: Raster = {
+      pixels: new Uint8ClampedArray([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]),
+      w: 4,
+      h: 1,
+    };
+    blitPlate(target, plate, 1);
+    expect([...target.pixels]).toEqual([2, 2, 2, 3, 3, 3]);
+  });
+});
+
+describe('blitPlateA', () => {
+  const rgba = (px: [number, number][]): RasterA => {
+    const pixels = new Uint8ClampedArray(px.length * 4);
+    px.forEach(([c, a], i) => {
+      pixels[i * 4] = (c >> 16) & 0xff;
+      pixels[i * 4 + 1] = (c >> 8) & 0xff;
+      pixels[i * 4 + 2] = c & 0xff;
+      pixels[i * 4 + 3] = a;
+    });
+    return { pixels, w: px.length, h: 1 };
+  };
+
+  it('lays opaque pixels over and lets holes show what is beneath', () => {
+    const target: Raster = { pixels: new Uint8ClampedArray([200, 0, 0, 200, 0, 0]), w: 2, h: 1 };
+    blitPlateA(
+      target,
+      rgba([
+        [0x0000ff, 255],
+        [0x00ff00, 0],
+      ]),
+    );
+    expect([...target.pixels.subarray(0, 3)]).toEqual([0, 0, 255]);
+    // The hole: the red beneath survives untouched.
+    expect([...target.pixels.subarray(3, 6)]).toEqual([200, 0, 0]);
+  });
+
+  it('downsamples a 2x cut-out by coverage: a half-covered block lands half-strength', () => {
+    const target: Raster = { pixels: new Uint8ClampedArray(3), w: 1, h: 1 };
+    const plate: RasterA = { pixels: new Uint8ClampedArray(4 * 4), w: 2, h: 2 };
+    // Two white opaque pixels, two holes.
+    for (const i of [0, 1]) {
+      plate.pixels[i * 4] = 255;
+      plate.pixels[i * 4 + 1] = 255;
+      plate.pixels[i * 4 + 2] = 255;
+      plate.pixels[i * 4 + 3] = 255;
+    }
+    blitPlateA(target, plate);
+    expect([...target.pixels]).toEqual([128, 128, 128]);
+  });
+
+  it('honours srcX like its opaque sibling', () => {
+    const target: Raster = { pixels: new Uint8ClampedArray(3), w: 1, h: 1 };
+    blitPlateA(
+      target,
+      rgba([
+        [0xff0000, 255],
+        [0x00ff00, 255],
+      ]),
+      1,
+    );
+    expect([...target.pixels]).toEqual([0, 255, 0]);
   });
 });

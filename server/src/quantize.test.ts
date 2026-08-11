@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { applyPalette, BACKDROP_COLOURS, meanError, medianCut, nearest } from './quantize';
-import { countColours, type Raster } from './raster';
+import {
+  applyPalette,
+  applyPaletteA,
+  BACKDROP_COLOURS,
+  histogramOfA,
+  meanError,
+  medianCut,
+  nearest,
+  paletteFrom,
+} from './quantize';
+import { countColours, type Raster, type RasterA } from './raster';
 
 /** A raster from a list of colours, laid out left to right, one row. */
 function strip(colours: number[]): Raster {
@@ -153,6 +162,78 @@ describe('applyPalette', () => {
     const src = strip([0xff0000, 0x00ff00, 0x0000ff]);
     const out = applyPalette(src, medianCut(src, 8), false);
     expect([...out.pixels]).toEqual([...src.pixels]);
+  });
+});
+
+/** An RGBA raster from [rgb, alpha] pairs, one row. */
+function stripA(px: [number, number][]): RasterA {
+  const pixels = new Uint8ClampedArray(px.length * 4);
+  px.forEach(([c, a], i) => {
+    pixels[i * 4] = (c >> 16) & 0xff;
+    pixels[i * 4 + 1] = (c >> 8) & 0xff;
+    pixels[i * 4 + 2] = c & 0xff;
+    pixels[i * 4 + 3] = a;
+  });
+  return { pixels, w: px.length, h: 1 };
+}
+
+describe('the alpha half', () => {
+  it('histogramOfA skips the holes and accumulates across files', () => {
+    const a = stripA([
+      [0xff0000, 255],
+      [0x00ff00, 0],
+    ]);
+    const b = stripA([
+      [0xff0000, 255],
+      [0x0000ff, 255],
+    ]);
+    const union = histogramOfA(b, histogramOfA(a));
+    // Green was a hole, so the union is red (twice) and blue — the layer's
+    // real palette across both files.
+    expect([...union.keys()].sort((a, b) => a - b)).toEqual([0x0000ff, 0xff0000]);
+    expect(union.get(0xff0000)).toBe(2);
+    expect(paletteFrom(union, 8).sort((a, b) => a - b)).toEqual([0x0000ff, 0xff0000]);
+  });
+
+  it('applyPaletteA quantizes the pixels and leaves the holes as holes', () => {
+    const src = stripA([
+      [0xfa0505, 255],
+      [0x123456, 0],
+      [0x05fa05, 255],
+    ]);
+    const out = applyPaletteA(src, [0xff0000, 0x00ff00], true);
+    expect([...out.pixels.subarray(0, 4)]).toEqual([255, 0, 0, 255]);
+    expect([...out.pixels.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
+    expect([...out.pixels.subarray(8, 12)]).toEqual([0, 255, 0, 255]);
+  });
+
+  it('never diffuses error across a hole', () => {
+    // Grey that must round down, against a black-or-white palette. With an
+    // opaque neighbour the pushed-out error brightens it to white; with a
+    // hole between them the far pixel must stay black — a hole has no colour
+    // to owe or collect.
+    const palette = [0x000000, 0xffffff];
+    const joined = applyPaletteA(
+      stripA([
+        [0x646464, 255],
+        [0x646464, 255],
+      ]),
+      palette,
+      true,
+    );
+    expect([...joined.pixels.subarray(4, 8)]).toEqual([255, 255, 255, 255]);
+
+    const cut = applyPaletteA(
+      stripA([
+        [0x646464, 255],
+        [0x646464, 0],
+        [0x646464, 255],
+      ]),
+      palette,
+      true,
+    );
+    expect([...cut.pixels.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
+    expect([...cut.pixels.subarray(8, 12)]).toEqual([0, 0, 0, 255]);
   });
 });
 

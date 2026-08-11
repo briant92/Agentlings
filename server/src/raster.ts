@@ -25,6 +25,23 @@ export interface Raster {
 }
 
 /**
+ * The RGBA sibling of `Raster`, stride 4 — for the plates that are cut-outs
+ * rather than pictures (v2: mid plates, the occlusion strip, plate-life
+ * tiles).
+ *
+ * A separate type rather than alpha on `Raster` itself, deliberately: every
+ * opaque path — the surfaces, the blits, the quantizer, both codecs — walks
+ * stride-3 buffers pinned by tests, and threading a fourth channel through
+ * all of them to serve the minority of files that carry one would touch
+ * everything to change nothing. Alpha work is new code beside the old.
+ */
+export interface RasterA {
+  pixels: Uint8ClampedArray;
+  w: number;
+  h: number;
+}
+
+/**
  * A surface that composites into an RGB pixel buffer.
  *
  * Alpha is composited immediately rather than accumulated: the scrim draws
@@ -308,23 +325,41 @@ export function encodePng(r: Raster): Buffer {
   ]);
 }
 
+/** The RGBA raster as a PNG — truecolour with alpha, otherwise `encodePng`. */
+export function encodePngA(r: RasterA): Buffer {
+  const stride = r.w * 4;
+  const raw = Buffer.alloc((stride + 1) * r.h);
+  for (let y = 0; y < r.h; y++) {
+    raw[y * (stride + 1)] = 0; // filter: none
+    Buffer.from(r.pixels.buffer, y * stride, stride).copy(raw, y * (stride + 1) + 1);
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(r.w, 0);
+  ihdr.writeUInt32BE(r.h, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // colour type: truecolour with alpha
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
 /**
- * A PNG back into pixels — the reverse of `encodePng`, and the half a
- * quantizer needs.
- *
- * Written rather than installed for the same reason the encoder was: `zlib`
- * is in node, and the alternative is a native dependency on a Windows machine
- * inside OneDrive. It handles 8-bit greyscale, truecolour, palette and their
- * alpha variants — everything an image editor or a render actually emits —
- * and refuses interlacing and 16-bit rather than quietly producing a wrong
- * picture.
- *
- * Alpha is composited onto `background` because a `Raster` is opaque RGB. A
- * backdrop is going to sit behind a whole world, so a transparent source has
- * to mean *something*, and saying which is better than dropping the channel
- * and pretending the question did not arise.
+ * The chunk walk and the row unfiltering, shared by both decoders — one
+ * implementation of the part that can be wrong in subtle ways, two answers to
+ * what a transparent pixel means.
  */
-export function decodePng(buf: Buffer, background = 0x000000): Raster {
+function decodeLines(buf: Buffer): {
+  lines: Buffer;
+  width: number;
+  height: number;
+  channels: number;
+  colorType: number;
+  palette: Buffer | null;
+  transparency: Buffer | null;
+} {
   const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   if (buf.length < 8 || signature.some((b, i) => buf[i] !== b)) {
     throw new Error('not a PNG');
@@ -403,6 +438,27 @@ export function decodePng(buf: Buffer, background = 0x000000): Raster {
       row[i] = value & 0xff;
     }
   }
+  return { lines, width, height, channels, colorType, palette, transparency };
+}
+
+/**
+ * A PNG back into pixels — the reverse of `encodePng`, and the half a
+ * quantizer needs.
+ *
+ * Written rather than installed for the same reason the encoder was: `zlib`
+ * is in node, and the alternative is a native dependency on a Windows machine
+ * inside OneDrive. It handles 8-bit greyscale, truecolour, palette and their
+ * alpha variants — everything an image editor or a render actually emits —
+ * and refuses interlacing and 16-bit rather than quietly producing a wrong
+ * picture.
+ *
+ * Alpha is composited onto `background` because a `Raster` is opaque RGB. A
+ * backdrop is going to sit behind a whole world, so a transparent source has
+ * to mean *something*, and saying which is better than dropping the channel
+ * and pretending the question did not arise.
+ */
+export function decodePng(buf: Buffer, background = 0x000000): Raster {
+  const { lines, width, height, channels, colorType, palette, transparency } = decodeLines(buf);
 
   const bg = [(background >> 16) & 0xff, (background >> 8) & 0xff, background & 0xff];
   const pixels = new Uint8ClampedArray(width * height * 3);
@@ -435,6 +491,70 @@ export function decodePng(buf: Buffer, background = 0x000000): Raster {
   return { pixels, w: width, h: height };
 }
 
+/**
+ * The same PNG kept as RGBA — the decoder for the files where transparency
+ * *is* the content: a cut-out plate's holes are what the plates behind it
+ * show through, so compositing them onto a colour would erase the feature.
+ */
+export function decodePngA(buf: Buffer): RasterA {
+  const { lines, width, height, channels, colorType, palette, transparency } = decodeLines(buf);
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const at = i * channels;
+    let r: number;
+    let g: number;
+    let b: number;
+    let alpha = 255;
+    if (colorType === 0 || colorType === 4) {
+      r = g = b = lines[at];
+      if (colorType === 4) alpha = lines[at + 1];
+    } else if (colorType === 3) {
+      const index = lines[at];
+      r = palette![index * 3];
+      g = palette![index * 3 + 1];
+      b = palette![index * 3 + 2];
+      if (transparency && index < transparency.length) alpha = transparency[index];
+    } else {
+      r = lines[at];
+      g = lines[at + 1];
+      b = lines[at + 2];
+      if (colorType === 6) alpha = lines[at + 3];
+    }
+    pixels[i * 4] = r;
+    pixels[i * 4 + 1] = g;
+    pixels[i * 4 + 2] = b;
+    pixels[i * 4 + 3] = alpha;
+  }
+  return { pixels, w: width, h: height };
+}
+
+/**
+ * The alpha channel snapped to on-or-off, in place; returns how many pixels
+ * were partial before the snap.
+ *
+ * Binary alpha is the cut-out contract: a soft edge over another plate blends
+ * at composite time into colours no palette contains, which would make the
+ * 128-colour budget unverifiable — and a crunchy edge is what the pixel look
+ * wants anyway. Transparent pixels are zeroed whole so the same cut-out is
+ * always the same bytes.
+ */
+export function binariseAlpha(r: RasterA, threshold = 128): number {
+  let partial = 0;
+  for (let i = 0; i < r.w * r.h; i++) {
+    const a = r.pixels[i * 4 + 3];
+    if (a > 0 && a < 255) partial++;
+    if (a >= threshold) {
+      r.pixels[i * 4 + 3] = 255;
+    } else {
+      r.pixels[i * 4] = 0;
+      r.pixels[i * 4 + 1] = 0;
+      r.pixels[i * 4 + 2] = 0;
+      r.pixels[i * 4 + 3] = 0;
+    }
+  }
+  return partial;
+}
+
 /** Every distinct colour in the raster. The budget is a fact, not a hope. */
 export function countColours(r: Raster): number {
   const seen = new Set<number>();
@@ -442,4 +562,32 @@ export function countColours(r: Raster): number {
     seen.add((r.pixels[i * 3] << 16) | (r.pixels[i * 3 + 1] << 8) | r.pixels[i * 3 + 2]);
   }
   return seen.size;
+}
+
+/**
+ * Distinct colours among the pixels that are actually there. A cut-out's
+ * transparent region carries no colour anyone will ever see, so counting it
+ * would spend budget on the holes.
+ */
+export function countColoursA(r: RasterA): number {
+  const seen = new Set<number>();
+  for (let i = 0; i < r.w * r.h; i++) {
+    if (r.pixels[i * 4 + 3] < 128) continue;
+    seen.add((r.pixels[i * 4] << 16) | (r.pixels[i * 4 + 1] << 8) | r.pixels[i * 4 + 2]);
+  }
+  return seen.size;
+}
+
+/** How much of a cut-out is there at all — the checker's honesty numbers. */
+export function alphaStats(r: RasterA): { opaque: number; partial: number; transparent: number } {
+  let opaque = 0;
+  let partial = 0;
+  let transparent = 0;
+  for (let i = 0; i < r.w * r.h; i++) {
+    const a = r.pixels[i * 4 + 3];
+    if (a === 255) opaque++;
+    else if (a === 0) transparent++;
+    else partial++;
+  }
+  return { opaque, partial, transparent };
 }

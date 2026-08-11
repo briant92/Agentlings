@@ -2,15 +2,22 @@ import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { anchorsOf, drawScene, type Scene, type Theme } from '@agentlings/shared';
 import {
+  alphaStats,
+  binariseAlpha,
   bufferSurface,
+  countColoursA,
   CREW_H,
   CREW_W,
+  decodePng,
+  decodePngA,
   drawStandIn,
   encodePng,
+  encodePngA,
   meanLuminance,
   relLuminance,
   separationAt,
   type Raster,
+  type RasterA,
 } from './raster';
 
 /** The pixel at (x, y), as one 0xRRGGBB number. */
@@ -235,5 +242,74 @@ describe('encodePng', () => {
     const { raster } = bufferSurface(2, 2, 1, 0x000000);
     const png = encodePng(raster);
     expect(png.subarray(png.length - 8, png.length - 4).toString('ascii')).toBe('IEND');
+  });
+});
+
+/** An RGBA raster from [rgb, alpha] pairs, one row. */
+function stripA(px: [number, number][]): RasterA {
+  const pixels = new Uint8ClampedArray(px.length * 4);
+  px.forEach(([c, a], i) => {
+    pixels[i * 4] = (c >> 16) & 0xff;
+    pixels[i * 4 + 1] = (c >> 8) & 0xff;
+    pixels[i * 4 + 2] = c & 0xff;
+    pixels[i * 4 + 3] = a;
+  });
+  return { pixels, w: px.length, h: 1 };
+}
+
+describe('the alpha pair', () => {
+  it('round-trips RGBA through encodePngA and decodePngA', () => {
+    const source = stripA([
+      [0xff8000, 255],
+      [0x00ff00, 0],
+      [0x0000ff, 120],
+    ]);
+    const back = decodePngA(encodePngA(source));
+    expect(back.w).toBe(3);
+    expect([...back.pixels]).toEqual([...source.pixels]);
+  });
+
+  it('keeps the alpha the opaque decoder composites away', () => {
+    // Half-transparent white: decodePng blends it onto black; decodePngA
+    // hands back the raw pixel and its coverage.
+    const png = encodePngA(stripA([[0xffffff, 128]]));
+    const composited = decodePng(png);
+    expect(composited.pixels[0]).toBeCloseTo(128, -1);
+    const kept = decodePngA(png);
+    expect(kept.pixels[0]).toBe(255);
+    expect(kept.pixels[3]).toBe(128);
+  });
+
+  it('binariseAlpha snaps to on-or-off, zeroes the holes, counts the partials', () => {
+    const r = stripA([
+      [0xffffff, 255],
+      [0xffffff, 200],
+      [0xffffff, 90],
+      [0xffffff, 0],
+    ]);
+    const partial = binariseAlpha(r);
+    expect(partial).toBe(2);
+    expect([...r.pixels.subarray(0, 8)]).toEqual([255, 255, 255, 255, 255, 255, 255, 255]);
+    // Below threshold: the whole pixel is zeroed, colour included.
+    expect([...r.pixels.subarray(8, 16)]).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+  });
+
+  it('countColoursA counts only the pixels that are there', () => {
+    const r = stripA([
+      [0xff0000, 255],
+      [0x00ff00, 0],
+      [0x0000ff, 255],
+      [0xff0000, 255],
+    ]);
+    expect(countColoursA(r)).toBe(2);
+  });
+
+  it('alphaStats reports the three kinds', () => {
+    const r = stripA([
+      [0xffffff, 255],
+      [0xffffff, 128],
+      [0xffffff, 0],
+    ]);
+    expect(alphaStats(r)).toEqual({ opaque: 1, partial: 1, transparent: 1 });
   });
 });

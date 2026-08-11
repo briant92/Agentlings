@@ -1,4 +1,4 @@
-import type { Raster } from './raster';
+import type { Raster, RasterA } from './raster';
 
 /**
  * Reducing an image to a fixed palette, so a raster backdrop can be a
@@ -46,12 +46,37 @@ function bounds(colours: Box['colours']): { min: [number, number, number]; max: 
  * and splitting purely on volume spends the budget on the specks.
  */
 export function medianCut(raster: Raster, max = BACKDROP_COLOURS): number[] {
-  const histogram = new Map<number, number>();
+  return paletteFrom(histogramOf(raster), max);
+}
+
+/** The colour histogram of an opaque raster. */
+export function histogramOf(raster: Raster, into = new Map<number, number>()): Map<number, number> {
   for (let i = 0; i < raster.w * raster.h; i++) {
     const key =
       (raster.pixels[i * 3] << 16) | (raster.pixels[i * 3 + 1] << 8) | raster.pixels[i * 3 + 2];
-    histogram.set(key, (histogram.get(key) ?? 0) + 1);
+    into.set(key, (into.get(key) ?? 0) + 1);
   }
+  return into;
+}
+
+/**
+ * The histogram of a cut-out, opaque pixels only — the holes carry no colour.
+ *
+ * Both builders take `into` so one palette can be cut across several files:
+ * D-108 budgets the backdrop *layer* at 128, and a layer is now every plate a
+ * pack stacks, so the honest cut is over their union, not per file.
+ */
+export function histogramOfA(r: RasterA, into = new Map<number, number>()): Map<number, number> {
+  for (let i = 0; i < r.w * r.h; i++) {
+    if (r.pixels[i * 4 + 3] < 128) continue;
+    const key = (r.pixels[i * 4] << 16) | (r.pixels[i * 4 + 1] << 8) | r.pixels[i * 4 + 2];
+    into.set(key, (into.get(key) ?? 0) + 1);
+  }
+  return into;
+}
+
+/** Median cut over a prepared histogram — the core both entry points share. */
+export function paletteFrom(histogram: Map<number, number>, max = BACKDROP_COLOURS): number[] {
   const colours = [...histogram].map(([key, count]) => ({
     rgb: [(key >> 16) & 0xff, (key >> 8) & 0xff, key & 0xff] as [number, number, number],
     count,
@@ -181,6 +206,48 @@ export function applyPalette(raster: Raster, palette: readonly number[], dither 
     }
   }
   return { pixels: out, w: raster.w, h: raster.h };
+}
+
+/**
+ * `applyPalette` for a cut-out: opaque pixels are quantized and dithered,
+ * transparent ones stay zeroed holes. Error never diffuses into or out of a
+ * hole — a hole has no colour to owe or collect — so a cut-out's edge dithers
+ * exactly as far as its own pixels reach.
+ */
+export function applyPaletteA(r: RasterA, palette: readonly number[], dither = true): RasterA {
+  const out = new Uint8ClampedArray(r.pixels.length);
+  const error = new Float32Array(r.w * r.h * 3);
+  const opaque = (x: number, y: number): boolean => r.pixels[(y * r.w + x) * 4 + 3] >= 128;
+
+  for (let y = 0; y < r.h; y++) {
+    for (let x = 0; x < r.w; x++) {
+      const i = (y * r.w + x) * 4;
+      if (!opaque(x, y)) continue; // the hole stays four zeroes
+      const e = (y * r.w + x) * 3;
+      const red = r.pixels[i] + (dither ? error[e] : 0);
+      const green = r.pixels[i + 1] + (dither ? error[e + 1] : 0);
+      const blue = r.pixels[i + 2] + (dither ? error[e + 2] : 0);
+      const picked = nearest(palette, red, green, blue);
+      out[i] = (picked >> 16) & 0xff;
+      out[i + 1] = (picked >> 8) & 0xff;
+      out[i + 2] = picked & 0xff;
+      out[i + 3] = 255;
+      if (!dither) continue;
+      const de = [red - out[i], green - out[i + 1], blue - out[i + 2]];
+      const spread = (dx: number, dy: number, share: number): void => {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= r.w || ny >= r.h || !opaque(nx, ny)) return;
+        const j = (ny * r.w + nx) * 3;
+        for (let c = 0; c < 3; c++) error[j + c] += de[c] * share;
+      };
+      spread(1, 0, 7 / 16);
+      spread(-1, 1, 3 / 16);
+      spread(0, 1, 5 / 16);
+      spread(1, 1, 1 / 16);
+    }
+  }
+  return { pixels: out, w: r.w, h: r.h };
 }
 
 /**

@@ -265,8 +265,10 @@ cost of three textured quads.
    renderer-owned rates → the occlusion strip → `plateloop` animated
    regions → the door's cut-out/overscan/tile modes → joint quantize →
    Route 2 shipped as untested-live Blender files (`art/blender/`) —
-   then Blender landed and both scripts fired clean the same week
-   (2026-08-11, D-148 amendment); the dressed set is what remains. Two
+   then Blender landed and both scripts fired clean the same day
+   (2026-08-11, D-148 amendment), and the dressed set followed within
+   hours: The Pine Reach (D-153), a CC0 kit through the template into
+   the palette's first smooth world. Two
    items stayed on the shelf on this file's own advice: the smooth finish
    (Option B — amends D-108) and depth-map displacement. The shipped rules
    live in `art/LEVELPACK.md`; the motion law in

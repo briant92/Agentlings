@@ -13,8 +13,16 @@ use the full path; zip sha256-verified against blender.org's manifest).
 far/mid/near at 2120×900 RGBA — fully transparent, correct for the
 undressed template. The MSIX caveat is settled: Brian ran the
 `--version` confirm from his own terminal (2026-08-11) — the extraction
-is real-machine, not sandbox-side. The remaining live gate is a dressed
-set rendering real plates through quantize/check/render.
+is real-machine, not sandbox-side. **And the dressed-set gate is closed
+same day (D-153): The Pine Reach** — a Poly Haven CC0 kit appended into
+the template by `web/public/packs/pine-reach/dress_pine_reach.py`,
+rendered by plates.py at scale 2, installed smooth, live with
+differential DOM drift. Two template lessons from that run: flip
+nearer-as-holdout to plain excludes for drifting packs (layers must
+render complete — the opaque-back rule, and drift reveals picture, not
+holes), and never drive a rotated plane's gradient from `Generated.Z`
+(a plane has no local-Z extent; after an X-rotation the vertical is
+`Generated.Y`).
 
 ## One-time setup
 

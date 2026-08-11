@@ -1,0 +1,41 @@
+{
+  "name": "The Pine Reach",
+  "provenance": "Route 2's first dressed set (D-148 §8, D-153): Poly Haven CC0 models — coastal_cliff_01, fir_tree_01, boulder_01, by Rob Tuytel and Rico Cilliers (polyhaven.com, CC0 1.0) — appended into the art/blender template and rendered headless by Blender 4.5.9 LTS via plates.py at scale 2. finish: smooth keeps the render's own colours (D-151); the dressing is reproducible from dress_pine_reach.py beside this file, against the kit under Tools/assets/polyhaven.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "rockEdge",
+  "theme": {
+    "void": 3027246,
+    "rock": 8288629,
+    "rockLight": 12234148,
+    "rockDark": 6180674,
+    "rockEdge": 15260100,
+    "accent": 9269850,
+    "accentLight": 12036005,
+    "accentDark": 7039608,
+    "grass": 4737606,
+    "grassDark": 3816761,
+    "wood": 9207918,
+    "woodDark": 6049860,
+    "stoneDark": 4799534,
+    "flame": 14260826,
+    "flameCore": 15918018,
+    "hover": 9407638
+  },
+  "backdrop": {
+    "plates": ["far.png", "mid.png"],
+    "occlusion": "near.png",
+    "finish": "smooth",
+    "scrim": { "color": "void", "alpha": 0.3, "from": "groundY-110", "steps": 8 }
+  },
+  "ops": [
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 62, "color": "grassDark" },
+    { "op": "rect", "x": 0, "y": "groundY", "w": "worldWidth", "h": 2, "color": "accentLight", "alpha": 0.85 },
+    { "op": "rect", "x": 0, "y": "groundY+34", "w": "worldWidth", "h": 3, "color": "void", "alpha": 0.5 },
+    { "op": "speckle", "count": 150, "x": 0, "y": "groundY+5", "w": "worldWidth", "h": 55, "light": "grass", "dark": "void" }
+  ],
+  "ambient": [
+    { "fx": "motes", "count": 12, "x": 120, "y": 180, "w": 500, "h": 220 },
+    { "fx": "flyer" }
+  ]
+}

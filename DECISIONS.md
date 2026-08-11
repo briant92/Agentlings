@@ -162,6 +162,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-150 — 2026-08-11 — A promoted chain prices its cut legs: the $0 world stops shipping](#d-150--2026-08-11--a-promoted-chain-prices-its-cut-legs-the-0-world-stops-shipping)
 - [D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map](#d-151--2026-08-11--the-shelf-taken-the-smooth-finish-and-the-depth-map)
 - [D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused](#d-152--2026-08-11--the-seam-sweep-excerpt-named-command-handed-over-arrival-refused)
+- [D-153 — 2026-08-11 — The Pine Reach: Route 2's dressed set, and the first smooth world](#d-153--2026-08-11--the-pine-reach-route-2s-dressed-set-and-the-first-smooth-world)
 
 ## By theme
 
@@ -217,7 +218,10 @@ entry updates one file rather than two.
   smooth finish as a per-pack opt-in (DOM plates under a transparent
   canvas, D-108 amended the narrow way — quantized stays the default) and
   the depth map (quantized-only DisplacementFilter, data never picture,
-  smears named honestly)
+  smears named honestly); and D-153 — Route 2's first dressed set: a CC0
+  kit through the template into The Pine Reach, the first smooth world
+  live with differential DOM drift, and the plane-primitive Generated-Z
+  constant banked as a real trap
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -9380,3 +9384,59 @@ its test fails. Live gates, stated honestly: the next long RESULT.md,
 the next real library collision and the next partial-alpha refusal read
 by a paid session are each their fix's first outing — all three go live
 at the serve restart this pass ends with.
+
+## D-153 — 2026-08-11 — The Pine Reach: Route 2's dressed set, and the first smooth world
+
+Brian's go on the dressing arc, same day as the install. The whole Route
+2 chain ran hand-driven end to end for the first time: a verified-CC0
+kit (Poly Haven — coastal_cliff_01, fir_tree_01, boulder_01; Rob Tuytel,
+Rico Cilliers; 1k blends + textures to `Tools\assets\polyhaven`, outside
+OneDrive), a dressing script that appends it into the template's
+FAR/MID/NEAR, `plates.py` renders at scale 2, and the result installed
+as **web/public/packs/pine-reach** — level `pine-reach-proof` (project
+Route 2) — with `finish: "smooth"`, the finish these gradient-rich
+renders exist for.
+
+**The see-your-work loop earned its keep — five iterations, each moved
+by a measurement or a look.** v1: textures and layer separation worked
+but the sky rendered flat, the cliff read as a close wall, and the near
+stone measured wx 723–989 — 29,343 pixels over the furniture span plus
+the exit stand (a scratch tsx measurer walked the same bands the checker
+does, before the checker ever ran). v2: composition repaired, stone
+slimmed to a menhir at d=14 (wx 802–897 exactly, zero violations — the
+projection arithmetic in the script header landed it first try). v3:
+cliffs had overshot the frame top; lowered. v4 found a real bug worth
+banking: **a Blender plane primitive has no local-Z extent, so
+`Generated.Z` on a rotated sky plane is a constant** — the "gradient"
+was one sampled colour; the vertical axis after an X-rotation is
+`Generated.Y`. Sky and haze both carried it. v5 compressed the moor
+ramp into the band the camera actually sees (Generated 0.05–0.25).
+
+**Template learning, recorded**: the template's nearer-as-holdout
+wiring punches holes where mid scenery overlaps far — but the format
+demands an opaque back plate, and drift must reveal picture behind an
+edge, never a hole. The dress script flips holdouts to plain excludes,
+so every layer renders complete. A future template rebuild should
+default that way for drifting packs.
+
+**Evidence.** `pack:check` clean on the first run (the measurer had
+pre-cleared exactly what it checks); `pack:render` worst separation
+**17.4** — above Ember Gate's 11.3 and the Strait's 16.2 — with the
+menhir clear of every stand-in. Live in headless Edge: `.world-plates`
+holds far/mid as native 2120×900 DOM images at 106% width (the overscan
+hanging half off each side), near.png mounted as the occlusion; a
+dispatched pointer sweep moved far **−0.1741%** against mid's
+**−0.0958%** — differential rates, ~1.8:1, at unrounded offsets
+(−2.22391%), which is D-151's layerOffsetRaw doing exactly what it
+says. Screenshot sent to Brian. Provenance in the pack names authors,
+licence and pipeline; `dress_pine_reach.py` ships beside pack.json so
+the dressing is reproducible; pine-reach.blend stays gitignored as
+regenerable.
+
+**Honest boundaries.** D-151's own gate — a smooth pack authored by a
+DESIGNER through the brief — remains open: this world proves the smooth
+render path live (checker waiver, DOM stack, unrounded drift) but was
+hand-authored through Route 2, not paid through the desk. The occlusion
+strip's counter-drift is still unmeasured individually (D-148's note
+stands). And the moor reads sparse below the treeline — a matter of
+taste, left for a real level to improve on.

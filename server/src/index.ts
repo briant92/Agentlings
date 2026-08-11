@@ -51,7 +51,8 @@ import {
 } from './schedules';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { capabilityTokens, compileBlockers } from './capability';
-import { CHANNELS, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
+import { CHANNELS, outboxRefusal } from './channels';
+import { performOutboxSend } from './outboxsend';
 import { describe, missingSecrets, readConnections } from './connections';
 import {
   enabledNames,
@@ -172,7 +173,7 @@ import {
   telegramChats,
   writeAudience,
 } from './audience';
-import { appendSends, readSends } from './sends';
+import { readSends } from './sends';
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
 import {
@@ -422,37 +423,21 @@ async function autoSendIfApproved(
       });
       return;
     }
-    const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], {
-      env: process.env,
+    // The one send door, claimed per job (D-160): if a manual Approve is
+    // mid-send this instant, auto quietly stands down — the review outcome
+    // is already in a human's hands, which is this path's whole philosophy.
+    const run = await performOutboxSend({
+      outbox,
+      jobId: job.id,
+      levelId,
       dir: queue.sandboxDir(job.id),
+      sandboxRoot: SANDBOX_ROOT,
+      env: process.env,
+      alreadySent: () => queue.get(job.id)?.outboxSent?.sentTo ?? [],
+      record: (r) => queue.recordOutboxSends(job.id, r),
     });
+    if (!run) return;
     const at = Date.now();
-    const usd = sendPriceUsd(outbox.channel, process.env);
-    const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
-    appendSends(SANDBOX_ROOT, [
-      ...run.sentTo.map((to) => ({
-        at,
-        levelId,
-        jobId: job.id,
-        channel: outbox.channel,
-        to,
-        ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
-        ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
-        ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
-        ok: true,
-        ...(usd ? { usd } : {}),
-      })),
-      ...run.failed.map((f) => ({
-        at,
-        levelId,
-        jobId: job.id,
-        channel: outbox.channel,
-        to: f.to,
-        ok: false,
-        reason: f.reason,
-      })),
-    ]);
-    queue.recordOutboxSends(job.id, run);
     if (run.failed.length > 0) {
       eventLog.emit({
         type: 'progress',
@@ -1910,39 +1895,33 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         process.env,
       );
       if (refusal) return c.json({ error: `outbox not sent — ${refusal}` }, 400);
-      const run = await executeOutbox(outbox, alreadySent, {
-        env: process.env,
+      /**
+       * One door, claimed per job (D-160): a second Approve landing while
+       * this one is mid-send is refused by name instead of racing through
+       * the read→send→stamp gap — job 3e14937a sent Pepo the same PDF twice
+       * through exactly that window. The recipients list is re-read under
+       * the claim; the outer `alreadySent` above only decides whether to
+       * enter at all.
+       */
+      const run = await performOutboxSend({
+        outbox,
+        jobId: pending.id,
+        levelId: rt.meta.id,
         dir: rt.queue.sandboxDir(pending.id),
+        sandboxRoot: SANDBOX_ROOT,
+        env: process.env,
+        alreadySent: () => rt.queue.get(pending.id)?.outboxSent?.sentTo ?? [],
+        record: (r) => rt.queue.recordOutboxSends(pending.id, r),
       });
-      const at = Date.now();
-      // The user's own declared rate, when they set one — never a guess
-      // (D-081). Only sends that happened carry it.
-      const usd = sendPriceUsd(outbox.channel, process.env);
-      const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
-      appendSends(SANDBOX_ROOT, [
-        ...run.sentTo.map((to) => ({
-          at,
-          levelId: rt.meta.id,
-          jobId: pending.id,
-          channel: outbox.channel,
-          to,
-          ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
-          ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
-          ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
-          ok: true,
-          ...(usd ? { usd } : {}),
-        })),
-        ...run.failed.map((f) => ({
-          at,
-          levelId: rt.meta.id,
-          jobId: pending.id,
-          channel: outbox.channel,
-          to: f.to,
-          ok: false,
-          reason: f.reason,
-        })),
-      ]);
-      rt.queue.recordOutboxSends(pending.id, run);
+      if (!run) {
+        return c.json(
+          {
+            error:
+              'this outbox is already sending — the first Approve is doing it; the card updates when it lands',
+          },
+          409,
+        );
+      }
       sentNow = run.sentTo.length;
       if (run.failed.length > 0) {
         const detail = run.failed.map((f) => `${f.to}: ${f.reason}`).join('; ');

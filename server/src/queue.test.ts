@@ -235,6 +235,20 @@ describe('JobQueue', () => {
     expect(sent.failed).toEqual([]);
   });
 
+  // The stamp is who has been sent to, not how many times sending happened
+  // (D-160): the double-send recorded 3e14937a's recipient twice.
+  it('stamps a recipient once however many runs delivered to them', () => {
+    const job = queue.add({ title: 'Remind', prompt: 'remind them' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    queue.fail(job.id, 'x');
+
+    queue.recordOutboxSends(job.id, { sentTo: ['1'], failed: [] });
+    queue.recordOutboxSends(job.id, { sentTo: ['1'], failed: [] });
+
+    expect(queue.get(job.id)!.outboxSent!.sentTo).toEqual(['1']);
+  });
+
   it('hands a freed slot to the oldest waiting job', () => {
     const jobs = Array.from({ length: 6 }, (_, i) =>
       queue.add({ title: `Job ${i}`, prompt: 'x' }),

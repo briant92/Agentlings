@@ -527,7 +527,14 @@ export class JobQueue {
   ): Job {
     const job = this.mustGet(jobId);
     const prior = job.outboxSent?.sentTo ?? [];
-    job.outboxSent = { at: Date.now(), sentTo: [...prior, ...run.sentTo], failed: run.failed };
+    // A set, not a concatenation (D-160): the double-send stamped one
+    // recipient twice and this line faithfully kept the duplicate — the
+    // stamp is who has been sent to, not how many times sending happened.
+    job.outboxSent = {
+      at: Date.now(),
+      sentTo: [...new Set([...prior, ...run.sentTo])],
+      failed: run.failed,
+    };
     this.persist();
     return job;
   }

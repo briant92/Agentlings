@@ -169,6 +169,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-157 — 2026-08-11 — Phase 0: the report answers the expansion plan's four questions](#d-157--2026-08-11--phase-0-the-report-answers-the-expansion-plans-four-questions)
 - [D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model](#d-158--2026-08-11--the-reading-desks-calendar-first-sibling-grants-a-clerk-on-the-cheap-model)
 - [D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door](#d-159--2026-08-11--the-outbox-carries-files-telegram-documents-gmail-multipart-review-holds-the-door)
+- [D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam](#d-160--2026-08-11--one-door-for-the-outbox-send-the-double-send-race-closed-at-its-seam)
 
 ## By theme
 
@@ -463,7 +464,9 @@ entry updates one file rather than two.
   every row — presentation only, over the same mechanisms; and D-159,
   where the outbox learns to carry files — telegram documents and gmail
   multipart, existence checked at parse, never auto-sent, review holding
-  the door
+  the door; and D-160, where D-159's first in-app send caught the race
+  D-075's idempotency never covered — two concurrent Approves through the
+  read→send→stamp gap — closed by one claimed send door for both callers
 - **The agentling's file** — two tabs from an approved mock: lessons as
   one-line rows tagged by the job that taught them (stamped at close-out
   going forward, dedup taught to ignore the stamp), a per-member record
@@ -9952,3 +9955,66 @@ endpoint accepting the whole `message/rfc822`. The remaining unobserved
 seam is the in-app leg — queue → paperclip row on the card → Approve —
 which the desk's compose tier makes a $0 check on any real send that
 carries a Start attachment.
+
+The in-app leg then ran the same evening — a session-written PDF to Pepo,
+paperclip on the card, Approve delivering text + document — and running
+live did what running live does: it surfaced a real bug the whole suite
+could not see. The send went out twice. That story is D-160's.
+
+## D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam
+
+Brian asked whether Pepo's PDF summary went out twice. It had:
+`sends.jsonl` lines 33–34 — two `ok=true` rows for job `3e14937a`, same
+recipient, same `agentlings-improvements.pdf`, at 18:26:50 and 18:26:51 —
+and the job's own stamp agreed, `outboxSent.sentTo` holding the same
+chat id twice. Pepo received the text and the document twice each, on
+D-159's first in-app outing.
+
+**The mechanism: a guarantee about a sequence nobody serialized.**
+"Approving twice can never message anyone twice" (D-075) was implemented
+as read `outboxSent` → send → stamp, and it held for *sequential*
+approves. But the send in the middle takes real seconds — a
+`sendMessage` plus a `sendDocument` round trip — and the route yields the
+event loop across that await. A second Approve arriving inside the window
+read a stamp not yet written, saw nobody sent to, and sent again. Two
+requests one second apart is exactly a double-click. The race predates
+D-159 and was latent under every plain send; an attachment just made the
+duplicate visible enough to ask about.
+
+**The fix: one function, both callers, a claim held across the whole
+sequence.** `performOutboxSend` (new `outboxsend.ts`) claims the job id,
+reads the already-sent list *under the claim* — as a thunk, because a
+pre-read array is precisely the stale read that caused the double — sends,
+audits, stamps, and releases in a `finally`. A concurrent caller gets
+`null` and moves nothing: the resolve route answers 409 "this outbox is
+already sending — the first Approve is doing it", and auto-send quietly
+stands down (a manual Approve mid-send means the outcome is already in a
+human's hands, which is that path's whole philosophy, D-082). The resolve
+route and `autoSendIfApproved` had grown two identical execute-audit-stamp
+blocks — D-030's duplication warning in the flesh, the race living once
+per copy — and both now collapse onto the one door. `recordOutboxSends`
+additionally deduplicates the stamp: it records who has been sent to, not
+how many times sending happened. The claim is process-local on purpose;
+both callers live in the one server.
+
+### What proved it
+
+Six new tests — two concurrent Approves produce one send, one audit row
+and one refusal; the claim releases on finish (a later Approve enters and
+skips the stamped) and on failure (the retry door stays open); distinct
+jobs never block each other; the audit row still carries name, body and
+files; the stamp dedups — plus the full suite green at 1,557 + 183. Three
+mutations after committing, three kills: the claim check removed → the
+concurrent test fails; the release removed → four tests fail (a leaked
+claim poisons everything after it); the dedup reverted → the stamp test
+fails.
+
+**Flagged, not fixed** (D-119's sibling rule, applied by inspection): the
+moves replay has the same read→act→stamp shape and `recordMoves` the same
+concatenation merge — a concurrent double-Approve on a reorganization
+would race the filesystem, a worse surface than a duplicate message. Left
+for its own decision rather than folded in here.
+
+The running `serve` predates this commit, so the race is live until the
+next restart — after T5's first firing, per D-158's sequencing. Until
+then the exposure is one double-click on Approve, survivable for a day.

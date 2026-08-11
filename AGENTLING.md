@@ -993,7 +993,10 @@ that file is a deliverable like any other. Review shows the messages, and
 **Approve is the send**: the server replays the reviewed outbox through the
 channel's client with the token from `.env`, exactly as a reviewed patch is
 replayed by `git apply`. Results are stamped per recipient, so approving twice
-can never message anyone twice; a partial failure leaves the job reviewable
+can never message anyone twice — sequentially *and* concurrently since D-160:
+every send goes through one claimed door per job, a second Approve landing
+mid-send is refused by name (409, nothing moved), and the already-sent list
+is read under the claim. A partial failure leaves the job reviewable
 with the channel's own reason per recipient, and a second Approve retries only
 those. The session never holds a send tool or a token — the telegram
 connection grants an **empty tool list**, and `catalog.test.ts` asserts it

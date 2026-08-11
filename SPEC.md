@@ -853,7 +853,10 @@ tried, measured and rejected is in `DECISIONS.md`:
     review shows the messages, and **Approve is the send**, replayed by the
     server through the channel's client exactly as a patch is replayed by
     `git apply`. Results are stamped per recipient so a retry can never
-    message anyone twice; every attempt is audited to `sends.jsonl` beside
+    message anyone twice — and since D-160 the whole read→send→stamp
+    sequence runs behind one per-job claim, so two *concurrent* Approves
+    cannot race it either: the second is refused by name with nothing
+    moved. Every attempt is audited to `sends.jsonl` beside
     the ledger; a channel that is off refuses with the reason and the job
     stays reviewable. Credentials are a Connect button for the OAuth pair
     and paste-a-token for everything else, passwords never (D-076).

@@ -12,9 +12,9 @@ import {
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Job, JobEvent, ThemeId, WorldState } from '@agentlings/shared';
 import {
+  awaitingVerdict,
   EXIT_X,
   MAX_STATIONS,
-  outcomeOf,
   SPAWN_X,
   STATION_BASE_X,
   STATION_SPACING,
@@ -143,14 +143,14 @@ function jobAtSlot(world: WorldState | null, slot: number): Job | undefined {
 }
 
 /**
- * Deliveries waiting by the exit, oldest first — the parcel pile. A continued
- * job is out (D-139: More turns was its decision), so the crates count the
- * same queue the desk lists — a pile saying ×33 over a desk saying 27 would
- * be the app disagreeing with itself.
+ * Deliveries waiting by the exit, oldest first — the parcel pile. Through the
+ * one shared predicate, so the crates count exactly what the desk lists and
+ * the select badge says — a pile saying ×33 over a desk saying 27 would be
+ * the app disagreeing with itself.
  */
 function waitingReview(world: WorldState | null): Job[] {
   return (world?.jobs ?? [])
-    .filter((j) => outcomeOf(j.status) === 'to review' && !j.continuedBy)
+    .filter(awaitingVerdict)
     .sort((a, b) => (a.finishedAt ?? a.createdAt) - (b.finishedAt ?? b.createdAt));
 }
 

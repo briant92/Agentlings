@@ -46,6 +46,33 @@ describe('outcomeOf', () => {
   });
 });
 
+describe('carried-on legs (D-139 in the record)', () => {
+  it('files a continued to-review job under closed, badged as carried on', () => {
+    const [entry] = entriesFor([job({ status: 'partial', continuedBy: 'x' })], []);
+    expect(entry.outcome).toBe('closed');
+    expect(entry.carriedOn).toBe(true);
+  });
+
+  it('leaves an unclaimed delivery pending, and keeps it out of no tallies', () => {
+    const waiting = entriesFor([job({ status: 'partial' })], []);
+    expect(waiting[0].outcome).toBe('to review');
+    expect(waiting[0].carriedOn).toBe(false);
+    // The header's "still to review" follows the outcome, so a carried-on
+    // leg stops inflating it.
+    const both = entriesFor(
+      [job({ status: 'partial' }), job({ id: 'j2', status: 'partial', continuedBy: 'x' })],
+      [],
+    );
+    expect(tally(both).toReview).toBe(1);
+  });
+
+  it('never rebrands a promoted or discarded job', () => {
+    const [kept] = entriesFor([job({ status: 'promoted', continuedBy: 'x' })], []);
+    expect(kept.outcome).toBe('kept');
+    expect(kept.carriedOn).toBe(false);
+  });
+});
+
 describe('producedBy', () => {
   it('counts a diff', () => {
     const changes = { files: 3, added: 40, removed: 2, names: [] };

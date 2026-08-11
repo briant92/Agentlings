@@ -9199,3 +9199,20 @@ test), the acts-priority inverted (the outrank test). Banked for testing:
 synthetic `PointerEvent`s do not drive Pixi v8's interaction at all — the
 door control proved it — so canvas UI is verified with real input
 (headless Edge via playwright-core), the D-145 route now twice-used.
+
+**Amendment, 2026-08-11 — the counting seams, swept.** Brian found the
+rule's remaining siblings within hours: thirteen "pending" items on hq
+that no pile or desk would show — the continued chain legs (the Odyssey's,
+the Strait's, the Iliad's), decided by D-139's own definition yet still
+dressed as to-review by the select screen's badge (`levelInfo.toReview`,
+server-side) and the Backoffice's grouping, each holding a private copy of
+the predicate. The D-119/D-120 shape, called in advance and hit anyway.
+Fixed as one shared `awaitingVerdict(job)` in the domain model — to-review
+AND not carried on — now the only implementation: the badge, the crates,
+the desk and the record's tally all ask it. In the Backoffice a carried-on
+leg files under **closed** wearing a "carried on" badge (Brian's pick):
+the record stays whole, nothing solicits. Statuses and the ledger are
+untouched — history stays true; this is counting and dress. Proven live:
+hq's badge read 13 before the server restart and 0 after, agreeing with
+the desk for the first time. 1499+178 green, three new ledger tests
+(files-under-closed, tally excludes, promoted never rebranded).

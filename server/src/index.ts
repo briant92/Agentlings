@@ -20,9 +20,9 @@ import type {
   WorkPlan,
 } from '@agentlings/shared';
 import {
+  awaitingVerdict,
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS,
-  outcomeOf,
   slugProblem,
   SOCKET_LEVEL_GONE,
   TICK_MS,
@@ -511,8 +511,9 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
     jobsRunning: jobs.filter((j) => j.status === 'queued' || j.status === 'running').length,
     // The select screen's notification blocks (D-137): what waits on a
     // decision, what fires on its own, and the ids whose unread-ness only the
-    // browser can judge — its seen set never reaches the server.
-    toReview: jobs.filter((j) => outcomeOf(j.status) === 'to review').length,
+    // browser can judge — its seen set never reaches the server. Carried-on
+    // legs are decided (D-139), so the badge counts what the desk lists.
+    toReview: jobs.filter(awaitingVerdict).length,
     schedules: readSchedules(rt.dir).filter((s) => !s.paused).length,
     finished: deliveredIds(jobs, DELIVERIES_SHOWN),
   };

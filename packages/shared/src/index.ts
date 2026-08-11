@@ -752,6 +752,20 @@ export function outcomeOf(status: JobStatus): Outcome | null {
   return OUTCOMES[status] ?? null;
 }
 
+/**
+ * Whether a delivery is still waiting on the user — D-139's rule made whole:
+ * in the to-review outcome AND not carried on. A continued job had its
+ * decision (More turns, a reply), so counting it as pending dressed thirteen
+ * decided chain legs as work waiting forever. Every surface that says
+ * "waiting on you" — the select screen's badge, the parcel pile, the desk,
+ * the work record's pending group — asks this one question; the private
+ * copies it replaces had already drifted from each other (D-030's lesson,
+ * again).
+ */
+export function awaitingVerdict(job: { status: JobStatus; continuedBy?: string }): boolean {
+  return outcomeOf(job.status) === 'to review' && !job.continuedBy;
+}
+
 /** Whether a run left something for the user, whatever its ledger outcome. */
 export function isDelivery(status: JobStatus): boolean {
   return status === 'done' || status === 'partial' || status === 'promoted';

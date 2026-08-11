@@ -20,6 +20,12 @@ export { type Outcome, outcomeOf };
 export interface Entry {
   job: Job;
   outcome: Outcome;
+  /**
+   * A to-review status whose decision was a continuation (D-139): filed
+   * under closed — More turns or a reply already happened — and badged
+   * "carried on" so the record says which door closed it.
+   */
+  carriedOn: boolean;
   /** Who did it, by name where the roster still knows them. */
   who: string;
   /** What it left behind, in one line. */
@@ -59,9 +65,13 @@ export function entriesFor(jobs: readonly Job[], crew: readonly CrewMember[]): E
   for (const job of jobs) {
     const outcome = outcomeOf(job.status);
     if (!outcome) continue;
+    // A continued leg is decided (D-139): it files under closed rather than
+    // sitting dressed as pending forever, and the badge names the door.
+    const carriedOn = outcome === 'to review' && Boolean(job.continuedBy);
     done.push({
       job,
-      outcome,
+      outcome: carriedOn ? 'closed' : outcome,
+      carriedOn,
       // Someone who has since been let go still did the work; their id is a
       // poor label but a truer one than pretending nobody did it.
       who: (job.assignedTo && names.get(job.assignedTo)) ?? job.assignedTo ?? '—',

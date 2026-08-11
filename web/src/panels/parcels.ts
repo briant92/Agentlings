@@ -1,4 +1,4 @@
-import { outcomeOf, type Job } from '@agentlings/shared';
+import { awaitingVerdict, type Job } from '@agentlings/shared';
 
 /**
  * The parcel desk's reading of the review backlog (the pile said ×40 and
@@ -30,13 +30,13 @@ export function parcelKindOf(job: Job): ParcelKind {
 }
 
 /**
- * The deliveries actually waiting on a verdict, oldest first. A continued
- * job is excluded by D-139's rule: a card solicits while a decision is open,
- * and not one moment after — More turns was its decision.
+ * The deliveries actually waiting on a verdict, oldest first — the shared
+ * D-139 predicate: a card solicits while a decision is open, and not one
+ * moment after; More turns was a continued job's decision.
  */
 export function waitingParcels(jobs: readonly Job[]): Job[] {
   return jobs
-    .filter((j) => outcomeOf(j.status) === 'to review' && !j.continuedBy)
+    .filter(awaitingVerdict)
     .sort((a, b) => (a.finishedAt ?? a.createdAt) - (b.finishedAt ?? b.createdAt));
 }
 

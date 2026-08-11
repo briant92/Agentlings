@@ -163,7 +163,7 @@ export function Backoffice({
               : '')}
       </p>
 
-      {shown.map(({ job, outcome, who: name, produced, costUsd }) => (
+      {shown.map(({ job, outcome, carriedOn, who: name, produced, costUsd }) => (
         <button key={job.id} className="back-row" onClick={() => onOpenReview(job.id)}>
           <span className="back-when dim">{when(job.finishedAt)}</span>
           <span className="back-main">
@@ -173,7 +173,9 @@ export function Backoffice({
               {costUsd !== null && ` · ${money(costUsd)}`}
             </span>
           </span>
-          <span className={`badge ${job.status}`}>{outcome === 'to review' ? job.status : outcome}</span>
+          <span className={`badge ${job.status}`}>
+            {carriedOn ? 'carried on' : outcome === 'to review' ? job.status : outcome}
+          </span>
         </button>
       ))}
 

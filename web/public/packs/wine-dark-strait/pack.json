@@ -1,0 +1,49 @@
+{
+  "name": "The Wine-Dark Strait",
+  "provenance": "Drawn for this format by Claude (Opus 5). The backdrop is my own three.js render — sky painted to a canvas, a displaced sea plane lit by one directional light, and a galley and sea-beast built from primitives; no external assets, textures or fonts were loaded. The scene is an original composition on a public-domain theme (Homer's Odyssey, the strait between the two perils); no studio's designs, marks or character names are reproduced. Free to use, modify and redistribute.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "stoneDark",
+  "theme": {
+    "void": 594454,
+    "rock": 2765892,
+    "rockLight": 5858170,
+    "rockDark": 1449003,
+    "rockEdge": 8161433,
+    "accent": 11567421,
+    "accentLight": 15916210,
+    "accentDark": 7165488,
+    "grass": 1320508,
+    "grassDark": 663584,
+    "wood": 6047015,
+    "woodDark": 2168334,
+    "stoneDark": 856606,
+    "flame": 16753194,
+    "flameCore": 16773080,
+    "hover": 16765850
+  },
+  "backdrop": {
+    "plates": [
+      "plate.png"
+    ]
+  },
+  "ops": [
+    {
+      "kind": "rect",
+      "x": 0,
+      "y": "groundY-4",
+      "w": 1000,
+      "h": 66,
+      "color": "grassDark"
+    },
+    {
+      "kind": "rect",
+      "x": 0,
+      "y": "groundY+30",
+      "w": 1000,
+      "h": 32,
+      "color": "void",
+      "alpha": 0.55
+    }
+  ]
+}

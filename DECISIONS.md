@@ -161,6 +161,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-149 — 2026-08-11 — The parcel desk: a pile of forty shows forty](#d-149--2026-08-11--the-parcel-desk-a-pile-of-forty-shows-forty)
 - [D-150 — 2026-08-11 — A promoted chain prices its cut legs: the $0 world stops shipping](#d-150--2026-08-11--a-promoted-chain-prices-its-cut-legs-the-0-world-stops-shipping)
 - [D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map](#d-151--2026-08-11--the-shelf-taken-the-smooth-finish-and-the-depth-map)
+- [D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused](#d-152--2026-08-11--the-seam-sweep-excerpt-named-command-handed-over-arrival-refused)
 
 ## By theme
 
@@ -228,7 +229,8 @@ entry updates one file rather than two.
   body ×1, so D-112's reword-to-fix-tipping advice applies to bodies too,
   and the review panel learned to draw a markdown file's mermaid fences;
   and D-126's collision half — a library install onto an existing role name
-  silently overwrites the shipped file, D-111's clash taking the other branch;
+  silently overwrites the shipped file, D-111's clash taking the other branch,
+  closed by D-152's refuse-or-identical at install;
   and D-128, the studio pack — three design skills, scribe gaining bash
   because a role without a shell cannot run the call shapes the brief hands
   it, and the render door whose offline rule is proved against a live
@@ -9278,6 +9280,14 @@ quote cap dropped from `repriceChain` → exactly the min(cost, quote) test
 fails. The honest gate stated plainly: the first real promoted chain
 under this rule is the live proof; nothing has been charged by it yet.
 
+**Amendment, 2026-08-11 — the recorded ask is decided: the shipped chains
+stay $0.** The entry left retroactive billing as "a different decision
+nobody asked for"; Brian asked the same day, reviewing the whole open
+list, and chose to let them lie. The Horse at the Gates ($9.29) and the
+Odyssey chain ($6.22) were the pricing seam's own discovery cost — the
+runs that surfaced and proved the shape this entry fixes — and stay
+absorbed. Forward-only is now the whole rule, not a pending half.
+
 ## D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map
 
 Brian: "do v2's shelf." Both deliberately-parked items land, each as a
@@ -9326,3 +9336,47 @@ kills: the smooth waiver disabled, the map's size rule disabled, the
 reprice quote cap dropped (D-150's). Unexercised live, stated: a smooth
 pack authored by a designer through the brief — the first real smooth
 ask is that gate.
+
+## D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused
+
+Three seams recorded across three entries, closed in one idle-fleet pass
+on Brian's review of the whole open list. None were decisions — each
+entry had already written its fix's shape down; this pass built them.
+
+1. **The close-out excerpt names itself** (D-130's seam,
+`closeOutEvidence` in claude.ts). The close-out got the FIRST 1,500
+characters of RESULT.md, so a complete 28K researcher brief arrived
+visibly cut mid-sentence and the close-out wrote a PENDING claiming a
+truncation the run never suffered — a redo would have forwarded the
+fiction (D-114). Now ≤1,500 rides whole; anything longer arrives as
+head (1,000) + `[… middle omitted …]` + tail (400) under a heading that
+says "an excerpt … the full RESULT.md is in the sandbox". The tail is
+the load-bearing half — it shows the report *concluded*.
+
+2. **The partial-alpha refusals hand the joint cut over verbatim**
+(D-148's tail; plates.ts × plate, strip, tile). The messages named only
+the door re-render as the fix, and three Odyssey legs burned their turns
+hand-rolling pixel scripts — what actually snapped them was the fifth
+grant carrying `npm run pack:quantize -- …` through the reply door
+verbatim. Each refusal now ends with that command, file list included,
+the same idiom the layer-budget message already used.
+
+3. **An arriving role stops overwriting a shipped one** (D-126, G6's
+row; roles.ts). `registry.install` wrote `${name}.md` unconditionally —
+how wshobson's architect landed on P1's. An arrival onto a taken name is
+now refused ("rename the arriving role or retire the installed one
+first") unless the file is identical, endings-agnostic — the retry
+tolerance packs proved out (D-141). The one deliberate updater, the
+add-a-skill line edit (D-089), passes `replace: true` and keeps its
+behaviour. Refuse-or-rename, exactly as G6's row guessed.
+
+**Evidence.** 1518+181 green (5 new tests: refusal, identical-retry
+across endings, replace; the long-report excerpt with its ending intact
+plus a short-report control; the plate refusal asserting both fixes),
+typecheck clean. Three mutations, three exact kills: the install guard
+disabled → only the refusal test fails; the head-only slice restored →
+only the excerpt test fails; the command dropped from the message → only
+its test fails. Live gates, stated honestly: the next long RESULT.md,
+the next real library collision and the next partial-alpha refusal read
+by a paid session are each their fix's first outing — all three go live
+at the serve restart this pass ends with.

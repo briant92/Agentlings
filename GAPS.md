@@ -81,10 +81,12 @@ capability roadmap; this is the short list of what matters most, in order.
       capture now exists (D-126)**: `.agentlings/server.log` keeps stdout,
       stderr and stamped exits; the cause question stays open until a death
       is caught with it armed. Joined the same evening by a new row:
-      **a library install onto an existing role name silently overwrites the
-      shipped file** (D-126 — wshobson's architect landed on P1's; D-111 was
+      ~~**a library install onto an existing role name silently overwrites the
+      shipped file**~~ (D-126 — wshobson's architect landed on P1's; D-111 was
       this shape for packs and refused the arrival, roles took the other
-      branch). Refuse-or-rename at the collision is the candidate fix.
+      branch). **Closed 2026-08-11 — D-152**: refuse-or-identical at
+      `registry.install`, the deliberate add-a-skill update passing
+      `replace` — refuse-or-rename exactly as this row guessed.
 - [x] **G7 — The server listens on every interface.** Found by the first
       architect run (D-125's amendment) and confirmed by netstat 2026-08-09:
       `serve({fetch, port})` at `index.ts:2881` passes no hostname, so

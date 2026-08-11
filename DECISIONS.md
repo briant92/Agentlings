@@ -8947,6 +8947,17 @@ so its legs meet PREVIOUS-RESULT.md only by listing the sandbox; and
 `carryForward` copies top-level files only, so a continuation still starts
 without the parent's `input/` — the reference image among it.
 
+**Amendment, 2026-08-11 — the live gate is closed.** The next More Time
+press came the same night: the Wine-Dark Strait's fourth leg (`a2f60fac`)
+carried `PREVIOUS-RESULT.md` at exactly its parent's 4,099 bytes, opened
+its own report with "this run looked at the previous plate," engaged the
+inherited redesign point by point — and, unlike every leg before the
+handover, finished with **no PENDING.md**: nothing left to reconstruct,
+nothing to hand forward. Its predecessor had spent paid minutes concluding
+"the last run never reported" about a parent that had reported thoroughly;
+the leg after this change spent those minutes executing. The two seams
+observed above remain open as written.
+
 ## D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract
 
 Brian approved The Wine-Dark Strait — four designer legs, the first world

@@ -9563,6 +9563,11 @@ rows read their real trades (worker, scribe ×2, scout, designer,
 architect), 181 web tests green, typecheck clean. No new data, no new
 format surface; the panel keeps being the place the whole story lives.
 
+**Amendment, same day:** on Brian's follow-up the tag took the level
+tag's own pill (`.lvl-tag`'s navy/blue, fully rounded) instead of muted
+text, so "what this is" reads in one voice from the header to the rail —
+computed style verified identical in headless Edge.
+
 ## D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found
 
 Brian's ask, verbatim spine: queue real challenging work to test D-150,

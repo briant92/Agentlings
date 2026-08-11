@@ -3478,9 +3478,14 @@ button.danger:hover {
   color: #d8dce6;
 }
 .rail-role {
+  /* The level tag's own pill (.lvl-tag), so "what they are" reads in the
+     same voice everywhere. */
   margin-left: 6px;
   font-size: 11px;
-  color: #7d8598;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #24344d;
+  color: #6fb7ff;
 }
 .rail-state {
   margin-left: 6px;

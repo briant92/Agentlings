@@ -1023,7 +1023,10 @@ at send — nothing is copied onto the job. A desk-composed send (D-097) rides
 the user's own Start attachments the same way. **Files never auto-send**: a
 standing approval covered words to an allowlist, and `autoBlocker` names that
 rule itself. Built 2026-08-11 against the full suite plus four mutation
-kills; the first live documents are staged and recorded in D-159.
+kills, and proven live the same evening: five API calls, zero failures —
+telegram took a body plus three documents (an `input/` forward and a PNG
+among them) and gmail took a two-attachment multipart through the upload
+endpoint, both to Brian himself (D-159).
 
 **A run can also author a world** (D-110). Given a description, it writes
 `PACK.json` at the sandbox root — a whole level pack, palette and terrain and
@@ -1488,7 +1491,9 @@ list per channel (D-077; SPEC M5.11 has the slices):
       while plain mail keeps the proven raw path. Paperclip row at
       review, names in `sends.jsonl`, never auto-sent, and the desk's
       hold-whole compose rides Start attachments. Suite + four mutation
-      kills 2026-08-11; first live documents staged, evidence in D-159
+      kills 2026-08-11, live the same evening: telegram body + 3
+      documents and a gmail 2-attachment multipart, five calls, zero
+      failures (D-159)
 - [ ] **Open a PR** — needs a pushed branch, which is promote-flow work
       rather than an outbox entry; deliberately left, with the reason in
       D-104

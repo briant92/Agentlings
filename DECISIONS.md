@@ -9928,3 +9928,27 @@ endpoint. The amendment below records what actually arrived. Note the
 running `serve` process predates this commit — the in-app end-to-end
 (queue → review card's paperclip → Approve) needs a restart, deliberately
 after T5's first firing (D-158's sequencing).
+
+### The live proof — same evening, five calls, zero failures
+
+Brian restarted `serve` onto the new code himself (old listeners killed by
+PID after a first attempt collided on :4600), then ran the proof from a
+second tab — `npx.cmd tsx proof-live.mts`, the `.cmd` flavor because the
+machine's PowerShell execution policy blocks npm's `.ps1` wrapper. One
+telegram outbox — body + 3 documents: the CSV, an `input/` forward
+arriving under its leaf name, and a 1x1 PNG as the binary-integrity check —
+and one gmail outbox — subject + body + 2 attachments through the
+media-upload endpoint. Output, verbatim:
+
+```
+TELEGRAM {"sentTo":["8633678680"],"failed":[]}
+GMAIL {"sentTo":["bthorntong@gmail.com"],"failed":[]}
+```
+
+`executeOutbox` stamps `sentTo` only after every call in a recipient's send
+resolved, so the telegram line is four accepted Bot API calls
+(`sendMessage` + 3 × `sendDocument`) and the gmail line is the upload
+endpoint accepting the whole `message/rfc822`. The remaining unobserved
+seam is the in-app leg — queue → paperclip row on the card → Approve —
+which the desk's compose tier makes a $0 check on any real send that
+carries a Start attachment.

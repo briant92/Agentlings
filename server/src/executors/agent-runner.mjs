@@ -96,18 +96,33 @@ try {
         ),
         tool(
           'render_plate',
-          'Render a complete, self-contained HTML page into a 2000×900 level-backdrop plate (PNG, quantized to the 128-colour budget) at the sandbox root. Import three.js from http://three.local/three.module.js — the only URL that resolves during the render; everything else is blocked. Set document.title = "ready" once your scene has drawn.',
+          'Render a complete, self-contained HTML page into a level-backdrop raster (PNG at the sandbox root). Modes: plate 2000×900 opaque (the default), plate-overscan 2120×900 (the app drifts it), cutout / cutout-overscan (keep the page transparency; alpha snapped hard unless finish is smooth), tile (tileWidth×tileHeight, for plateloop). finish: quantized cuts to the 128-colour budget (default); smooth keeps colours and soft alpha exactly as rendered — for smooth-finish packs and depth maps. Import three.js from http://three.local/three.module.js — the only URL that resolves during the render; everything else is blocked. Set document.title = "ready" once your scene has drawn.',
           {
             html: z.string().describe('the whole HTML page'),
             file: z.string().optional().describe('output filename (default plate.png)'),
+            mode: z
+              .enum(['plate', 'plate-overscan', 'cutout', 'cutout-overscan', 'tile'])
+              .optional()
+              .describe('what kind of raster this is (default plate)'),
+            finish: z
+              .enum(['quantized', 'smooth'])
+              .optional()
+              .describe('quantized (default) or smooth: keep as rendered'),
+            tileWidth: z.number().int().optional().describe('tile mode only: 8–512'),
+            tileHeight: z.number().int().optional().describe('tile mode only: 8–512'),
           },
-          async ({ html, file }) => {
+          async ({ html, file, mode, finish, tileWidth, tileHeight }) => {
             let text;
             try {
               const res = await fetch(config.render.endpoint, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ tool: 'render_plate', args: { html } }),
+                // Undefined fields drop out of the JSON; the door's own
+                // refuse-by-name validation stays the authority (D-147).
+                body: JSON.stringify({
+                  tool: 'render_plate',
+                  args: { html, mode, finish, tileWidth, tileHeight },
+                }),
               });
               const reply = await res.json();
               if (reply.error) {
@@ -119,11 +134,17 @@ try {
                     : 'plate.png';
                 if (!/\.png$/i.test(name)) name += '.png';
                 writeFileSync(`${config.cwd}/${name}`, Buffer.from(reply.png, 'base64'));
+                // Cut-out and tile replies carry coverage, not separation —
+                // what a cut-out does to legibility belongs to the composite.
+                const measure =
+                  reply.opaquePct !== undefined
+                    ? `${reply.opaquePct}% of the frame opaque` +
+                      (reply.partialSnapped ? `, ${reply.partialSnapped} soft px snapped` : '')
+                    : `worst crew separation ${reply.worstSeparation} at x ${reply.worstAt} ` +
+                      `(assuming groundY 388 of viewH 450)`;
                 text =
                   `Wrote ${name} — ${reply.width}×${reply.height}, ${reply.colours} colours, ` +
-                  `worst crew separation ${reply.worstSeparation} at x ${reply.worstAt} ` +
-                  `(assuming groundY 388 of viewH 450). ` +
-                  `Read the PNG to look at it before calling it done.`;
+                  `${measure}. Read the PNG to look at it before calling it done.`;
               }
             } catch (err) {
               text = `Could not render: ${err instanceof Error ? err.message : String(err)}`;

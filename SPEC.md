@@ -865,6 +865,19 @@ tried, measured and rejected is in `DECISIONS.md`:
           `sends.ts` (the audit), stamped by the queue on completion, executed
           by the resolve route, shown in the review modal. Telegram's channel
           client ships with it — token via `.env`, the drawer comes later.
+    - [x] **Files on a message** (D-159). `files` on an outbox message —
+          up to 5 sandbox-root deliverables or `input/` forwards, 10 MB
+          each, 15 MB per message — on telegram and gmail only, refused at
+          parse anywhere else exactly as the event block is outside
+          calendar. Existence is checked where the outbox parses and again
+          at send; the review card grows a paperclip row per file; Approve
+          reads the bytes from the sandbox. Telegram sends the body as
+          `sendMessage` then each file its own `sendDocument` (never the
+          1024-cap caption); gmail goes whole to the media-upload endpoint
+          as multipart `message/rfc822` while plain mail keeps the raw
+          path proven since D-080. Files never auto-send, the desk's
+          hold-whole compose rides Start attachments, and `sends.jsonl`
+          records which names left.
     - [x] **The token drawer.** "Add it here" on any credentialed connection:
           the catalog's own walkthrough, paste, one real validation call
           (telegram `getMe` → @botname, github `/user` → login, one Brave

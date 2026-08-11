@@ -168,6 +168,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found](#d-156--2026-08-11--the-full-sweep-three-gates-closed-four-seams-found)
 - [D-157 — 2026-08-11 — Phase 0: the report answers the expansion plan's four questions](#d-157--2026-08-11--phase-0-the-report-answers-the-expansion-plans-four-questions)
 - [D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model](#d-158--2026-08-11--the-reading-desks-calendar-first-sibling-grants-a-clerk-on-the-cheap-model)
+- [D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door](#d-159--2026-08-11--the-outbox-carries-files-telegram-documents-gmail-multipart-review-holds-the-door)
 
 ## By theme
 
@@ -459,7 +460,10 @@ entry updates one file rather than two.
   marks, honest pills, the switch, and a served shelf of planned and
   never-with-why), the drawer's steps get their numbered squares, and the
   outbox review wears the channel's mark with a recipient's initial on
-  every row — presentation only, over the same mechanisms
+  every row — presentation only, over the same mechanisms; and D-159,
+  where the outbox learns to carry files — telegram documents and gmail
+  multipart, existence checked at parse, never auto-sent, review holding
+  the door
 - **The agentling's file** — two tabs from an approved mock: lessons as
   one-line rows tagged by the job that taught them (stamped at close-out
   going forward, dedup taught to ignore the stamp), a per-member record
@@ -9840,3 +9844,87 @@ connections.json entries; builtin callers owning payload size;
 catalog.test.ts pinning the read-only tools lists; matcher replay
 before/after; hire, schedule through the UI, first reviewed runs; then
 SPEC.md's milestone section and AGENTLING.md re-read from source.
+
+## D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door
+
+Brian asked for attachments both ways round — "ones you have available and
+manually attach, or actual deliverables from Agentlings" — and took option A
+of three: one `files` field on the outbox message, serving both. (B, a
+review-time picker, works better as a later addition on top; C, links
+instead of files, dies on localhost.)
+
+**The gap was one-directional and closes at the outbox's own seam.** Inbound
+existed since the Start attachments (`input/`, 5 × 10 MB); outbound, the
+contract was `{to, name, subject?, params?, event?, body}` and nothing else —
+the analyst's honest refusal (D-131) and the Start arrest (D-134) both orbit
+that hole. The fix is the existing idiom, not a new mechanism:
+`files: ["report.pdf", "input/contract.pdf"]` — names of sandbox-root
+deliverables or Start attachments, forward slashes, nothing deeper, each
+leaf held to `safeAttachmentName`'s rules because the name reaches
+`path.join` against the sandbox at send. Validated where the outbox parses —
+existence, 10 MB per file, 15 MB per message (Gmail's 25 MB counts the
+base64 inflation), 5 files per message — and gated to the channels whose
+clients can carry one exactly as the event block is gated to calendar: a
+field that parses and then silently does nothing would put two truths on
+the review card and in the send. Review shows a paperclip row per file
+(root files open in the viewer); Approve reads the bytes from the sandbox
+at send — nothing is copied onto the job, and the sweep (D-121) removes
+only `repo/` clones, so the bytes outlive the wait. `sends.jsonl` records
+which names left.
+
+**Telegram sends the body as `sendMessage`, then each file its own
+`sendDocument` — never a caption**, whose 1024-char cap would refuse bodies
+the contract's 2000 allows (the pre-existing note that shaped this). Bytes
+are read before anything moves, so a vanished file fails the recipient
+whole; a document refusal after the text names the file and admits the text
+went, and the retry re-sends both — a duplicate message is recoverable at
+the far end, a missing attachment the card promised is not.
+
+**Gmail keeps two endpoints on purpose**: plain mail stays on the JSON
+`raw` path proven live since D-080; a message with files goes whole to the
+media-upload endpoint as `message/rfc822`, `emailRfc822` growing
+multipart/mixed with a deterministic boundary stepped past body collisions
+(base64 parts cannot collide — their alphabet has no `_` and no line of one
+starts with `--`).
+
+**Files never auto-send.** `autoBlocker` names the rule — a standing
+approval covered words to an allowlist, never files — rather than leaning
+on the extras net, which an `input/` forward would slip: no root file for
+it to catch. The sibling-seam lesson (D-119/D-120) applied before the bug
+instead of after it.
+
+**The desk rides too**: a hold-whole compose (D-097) on a file-capable
+channel attaches the job's own Start attachments as `input/<name>` — a
+file attached to a job whose whole point is one send was meant to ride it.
+On any other channel they stay input context rather than falling through
+to a session that could not attach them either.
+
+**D-134's arrest learns the outbound shape**: "as an attachment" is
+stripped before the claiming forms are tested, so "email me the report as
+an attachment" queues while "total the attached expenses" still arrests —
+and a sentence carrying both still arrests, pinned in askFacts tests.
+
+### What proved it
+
+Typecheck clean across the three workspaces; the full suite green — 1,551
+server + 183 web tests, ~25 of them new (contract shapes; traversal,
+dotfile, depth and backslash refusals; size caps by file and by message;
+channel gating; FormData document posts with the bytes read back off the
+form; multipart round-trip incl. boundary stepping and RFC 2047 filenames;
+the upload endpoint; `executeOutbox` carrying the dir; the auto-send
+block; both arrest directions). Then four mutations after committing
+(D-021's rule), each killed by name: the channel gate disabled → 1
+failure; the existence check disabled → 5; telegram silently skipping
+documents → 2; the auto-send guard removed → 1.
+
+The live half is staged, not run: the build session's harness refused to
+execute the sending script itself — the right refusal, a first
+file-bearing send wants the human's own click, which is this product's
+whole philosophy. `proof-live.mts` replays two real outboxes through
+`executeOutbox` with the sandbox dir — three documents to Brian's own
+telegram (CSV, an `input/` forward, a 1x1 PNG whose preview proves binary
+integrity) and a two-attachment mail to his own address through the upload
+endpoint. The amendment below records what actually arrived. Note the
+running `serve` process predates this commit — the in-app end-to-end
+(queue → review card's paperclip → Approve) needs a restart, deliberately
+after T5's first firing (D-158's sequencing).

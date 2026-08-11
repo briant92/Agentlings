@@ -1011,6 +1011,20 @@ builds `OUTBOX.json` in code. Free, instant, no model: the same file, held to
 the same contract, and **approval is still the send**. What changed is who
 composed it, not when it goes.
 
+**A message can carry files** (D-159). `files` on an outbox message names up
+to 5 files — deliverables the run wrote at the sandbox root, or `input/<name>`
+for one the user attached at Start — and only on the channels whose clients
+can carry one: telegram (each file its own `sendDocument` under the text,
+never the 1024-char caption) and gmail (multipart/mixed through the
+media-upload endpoint; plain mail keeps the original path). The contract
+checks each named file exists and fits the caps at parse, the review card
+shows a paperclip row per file, and Approve reads the bytes from the sandbox
+at send — nothing is copied onto the job. A desk-composed send (D-097) rides
+the user's own Start attachments the same way. **Files never auto-send**: a
+standing approval covered words to an allowlist, and `autoBlocker` names that
+rule itself. Built 2026-08-11 against the full suite plus four mutation
+kills; the first live documents are staged and recorded in D-159.
+
 **A run can also author a world** (D-110). Given a description, it writes
 `PACK.json` at the sandbox root — a whole level pack, palette and terrain and
 backdrop, in the same op format the four built-in levels are drawn from — and
@@ -1253,7 +1267,11 @@ untouched until you press Approve.
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |
 | `INVENTORY_CAP` | 400 | `organize.ts` | Files shown to a run before "and N more"; metadata only, no contents |
 | `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |
+| `MAX_OUTBOX_FILES` | 5 | `shared` | Files one message may carry (D-159) — the job-attachment bound |
+| `MAX_OUTBOX_FILE_BYTES` | 10 MB | `shared` | Per outbox file, matching what Start may attach |
+| `MAX_OUTBOX_FILES_TOTAL_BYTES` | 15 MB | `shared` | Per message — Gmail's 25 MB counts the base64 inflation |
 | `SEND_TIMEOUT_MS` | 15 s | `channels.ts` | One send call at approval |
+| `SEND_FILE_TIMEOUT_MS` | 120 s | `channels.ts` | One document/upload post — 10 MB on a slow uplink is minutes |
 | `APPROVALS_FOR_AUTO` | 3 | `approvals.ts` | Unchanged reviews before auto-send may be offered (D-082) |
 
 ### Intake and files
@@ -1462,6 +1480,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
       read tools so reading the thread and drafting the comment is one
       job, and the comment posts from the user's own account at approval
       (D-104)
+- [x] **Attach files to a send** — `files` on the outbox message (D-159):
+      sandbox-root deliverables or `input/` forwards, existence and caps
+      checked at parse (5 × 10 MB, 15 MB per message), telegram and gmail
+      only — each telegram file its own `sendDocument`, never the
+      1024-cap caption; gmail multipart/mixed via the upload endpoint
+      while plain mail keeps the proven raw path. Paperclip row at
+      review, names in `sends.jsonl`, never auto-sent, and the desk's
+      hold-whole compose rides Start attachments. Suite + four mutation
+      kills 2026-08-11; first live documents staged, evidence in D-159
 - [ ] **Open a PR** — needs a pushed branch, which is promote-flow work
       rather than an outbox entry; deliberately left, with the reason in
       D-104

@@ -117,6 +117,15 @@ plates back to front, then backdrop ops, then the scrim, then the foreground
   every raster the pack carries. `npm run pack:quantize -- far.png mid.png
   near.png` cuts one palette across them; single-file mode still previews
   the crew standing on it.
+- **`backdrop.finish: "smooth"` opts the whole layer out of the palette
+  world** (D-151, amending D-108 — quantized stays the default): plates
+  render as native-resolution DOM images under a transparent world canvas,
+  soft alpha welcome, no colour budget, drift unrounded. Registration
+  rules — sizes, the opaque back, strip placement, rim — hold unchanged.
+- **`backdrop.depthMap`** (quantized finish only): a grayscale map at the
+  back plate's exact size; the app displaces the picture under the pointer.
+  Data, not picture — outside the colour union. Honestly: it smears at
+  hard silhouettes; prefer a real cut-out layer where an edge matters.
 - **`rim` is required** the moment any raster is present — the outline is
   the one legibility device that survives standing in front of a picture.
 - **Drafts carry every raster as files beside `PACK.json`** (D-143): a run

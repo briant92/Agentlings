@@ -159,6 +159,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-147 — 2026-08-11 — The floor that drew nothing: op names become the contract](#d-147--2026-08-11--the-floor-that-drew-nothing-op-names-become-the-contract)
 - [D-148 — 2026-08-11 — Backdrop v2 whole: the stack, the drift, the strip, the life](#d-148--2026-08-11--backdrop-v2-whole-the-stack-the-drift-the-strip-the-life)
 - [D-149 — 2026-08-11 — The parcel desk: a pile of forty shows forty](#d-149--2026-08-11--the-parcel-desk-a-pile-of-forty-shows-forty)
+- [D-150 — 2026-08-11 — A promoted chain prices its cut legs: the $0 world stops shipping](#d-150--2026-08-11--a-promoted-chain-prices-its-cut-legs-the-0-world-stops-shipping)
+- [D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map](#d-151--2026-08-11--the-shelf-taken-the-smooth-finish-and-the-depth-map)
 
 ## By theme
 
@@ -210,7 +212,11 @@ entry updates one file rather than two.
   the checker's clearance margin, the door's cut-out modes, the layer-wide
   128 budget with joint quantize, and Route 2 shipped as untested-live
   Blender files — the smooth finish and displacement parallax deliberately
-  left on the shelf
+  left on the shelf; and D-151 — that shelf taken when Brian asked: the
+  smooth finish as a per-pack opt-in (DOM plates under a transparent
+  canvas, D-108 amended the narrow way — quantized stays the default) and
+  the depth map (quantized-only DisplacementFilter, data never picture,
+  smears named honestly)
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -9216,3 +9222,82 @@ untouched — history stays true; this is counting and dress. Proven live:
 hq's badge read 13 before the server restart and 0 after, agreeing with
 the desk for the first time. 1499+178 green, three new ledger tests
 (files-under-closed, tally excludes, promoted never rebranded).
+
+## D-150 — 2026-08-11 — A promoted chain prices its cut legs: the $0 world stops shipping
+
+The seam D-141 recorded fired twice before it was closed: the Iliad chain
+cost $9.29 and charged nothing, the Odyssey $6.22 and nothing — every leg
+cut, "charged only if it finishes" pricing each at zero, and the chain's
+END finishing changing nothing. Brian said do it, and the recorded shape
+was built as recorded: at promote, the route walks `queue.ancestry` (the
+rootPrompt walk kept whole instead of keeping only the top), names the
+legs cut by turns or the clock, and `repriceChain` sets each of their
+still-unpriced failed rows to **min(cost, that leg's own quote)** — never
+above what the leg was quoted, D-012 intact per leg. The row gains
+`chainPriced: true`, which is three things at once: the idempotency guard
+(a second Approve reprices nothing), the row's own explanation for a
+failed outcome carrying a price, and the audit marker. Unmeasured spend
+stays absorbed — a price on an unknown cost would be an invention — and
+real failures inside a chain (a refusal someone replied past) stay
+absorbed too: only the funded-leash cuts are the seam. The feed line
+names the charge beside the approve. The ledger rewrite is
+sibling-and-rename atomic, because a torn ledger is worse than any bug
+this fixes. **Forward-only, deliberately**: the two shipped chains stay
+as recorded — retroactively billing settled history is a different
+decision nobody asked for.
+
+**Evidence.** Six new ledger+queue tests (per-leg quote cap, idempotence,
+unmeasured absorbed, done rows untouched, no-op leaves the file alone,
+ancestry end-first) — 1513 green with the day's other work. Mutation: the
+quote cap dropped from `repriceChain` → exactly the min(cost, quote) test
+fails. The honest gate stated plainly: the first real promoted chain
+under this rule is the live proof; nothing has been charged by it yet.
+
+## D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map
+
+Brian: "do v2's shelf." Both deliberately-parked items land, each as a
+per-pack opt-in with quantized untouched as the default — so this amends
+D-108 the narrow way: the *decision* "quantized is the finish" becomes
+"quantized is the default finish; a pack may declare the other medium".
+
+**`backdrop.finish: "smooth"`** — PRERENDER's Option B, built as designed:
+the plates leave the canvas entirely and render as native-resolution DOM
+images under a now-transparent world canvas (the strip over it — document
+order is the depth), browser-scaled, soft alpha welcome, no colour
+budget, the drift applied unrounded (`layerOffsetRaw`: one motion law,
+two media; the clamp identical, because overscan is registration, not
+look). The canvas alone keeps `image-rendering: pixelated`, which is the
+HD-2D contrast doing the work: crew rigidly pixel, picture photographic.
+The checker waives exactly the palette world for smooth — binary alpha,
+the 128 union — and holds everything that is registration: sizes, the
+opaque back, the strip's placement walls. Cards, previews and the CLI
+needed nothing: canvas `drawImage` was never quantizing.
+
+**`backdrop.depthMap`** — continuous micro-depth from one image: a
+grayscale map at the back plate's exact size, riding the plate's own slot
+as a `DisplacementFilter` scaled by the same camera (`DEPTH_SCALE` 0.6 —
+±12px at full pointer, inside the drift bound). Excluded from the colour
+union — data, not picture — and **quantized finish only**, by checker
+rule: the smooth finish carries depth as real layers, and one image
+cannot be two media at once. The honest cost is in every doc that names
+it: displacement smears at hard silhouettes; where an edge matters, a
+cut-out layer beats the map.
+
+The door grew `finish: quantized | smooth` (refused by name): smooth
+keeps a render exactly as the page drew it, which depth maps need — a
+128 cut would band their gradients into steps the displacement would
+show as terraces.
+
+**Evidence.** 1513 + 181 green (+17 across shape, checker, door,
+parallax). Live Edge pair through the door: the same gradient cutout kept
+371-class colours and its soft edge under `finish: "smooth"` and came
+back snapped and ≤128 without it. In-app headless on two throwaway
+installed packs (created, proven, closed and deleted): the smooth world
+ran 2 DOM plates over an `alpha: true` WebGL canvas with the mid plate
+drifting sub-pixel (-2.57% → -2.01%); the depth world displaced a PINNED
+plate 1.56 mean-diff across a pointer sweep against **0.00** settled —
+only the filter moves, and it stops dead. Three mutations, three exact
+kills: the smooth waiver disabled, the map's size rule disabled, the
+reprice quote cap dropped (D-150's). Unexercised live, stated: a smooth
+pack authored by a designer through the brief — the first real smooth
+ask is that gate.

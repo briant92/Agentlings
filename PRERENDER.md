@@ -268,6 +268,11 @@ cost of three textured quads.
    (Option B — amends D-108) and depth-map displacement. The shipped rules
    live in `art/LEVELPACK.md`; the motion law in
    `web/src/world/parallax.ts`.
+   ***And the shelf taken same day — D-151, on Brian's ask:*** Option B
+   built as designed (`backdrop.finish: "smooth"`, per pack, quantized
+   still the default — D-108 amended only that far), and displacement as
+   `backdrop.depthMap` (quantized finish only, this file's smear warning
+   carried into every doc that names it). Nothing of §3 remains unbuilt.
 
 ## Sources
 

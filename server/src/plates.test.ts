@@ -151,15 +151,18 @@ describe('checkPlates v2 — the stack', () => {
     );
   });
 
-  it('refuses an upper plate with soft edges, naming the door fix', () => {
+  // The refusal names BOTH fixes: three Odyssey legs hand-rolled pixel
+  // scripts because the message only offered the door, while the joint
+  // quantize — handed over verbatim — is what actually snapped them (D-148).
+  it('refuses an upper plate with soft edges, naming the door fix and the joint cut', () => {
     writeFileSync(path.join(dir, 'far.png'), backPng());
     writeFileSync(
       path.join(dir, 'mid.png'),
       pngA(1000, 450, (x) => (x < 100 ? [0x101018, 140] : [0, 0])),
     );
-    expect(errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }))[0]).toMatch(
-      /partial-alpha/,
-    );
+    const said = errors(pack({ backdrop: { plates: ['far.png', 'mid.png'] } }))[0];
+    expect(said).toMatch(/partial-alpha/);
+    expect(said).toMatch(/pack:quantize -- far\.png mid\.png/);
   });
 
   it('budgets the layer, not the file: two plates within budget can be over together', () => {

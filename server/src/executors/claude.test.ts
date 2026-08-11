@@ -739,6 +739,25 @@ describe('closeOutEvidence', () => {
     expect(closeOutEvidence(dir)).toContain('Added the tests.');
   });
 
+  // A head-only slice cut a complete 28K brief mid-sentence and the
+  // close-out invented a truncation the run never suffered (D-130's seam).
+  // A long report arrives as a labelled excerpt whose tail shows the
+  // report actually concluded.
+  it('hands a long report over as a named excerpt with its ending intact', () => {
+    const body = `# Big\n${'x'.repeat(2000)}\nAll five citations verified. Done.`;
+    writeFileSync(path.join(dir, 'RESULT.md'), body);
+    const evidence = closeOutEvidence(dir)!;
+    expect(evidence).toContain('an excerpt');
+    expect(evidence).toContain('[… middle omitted …]');
+    expect(evidence).toContain('All five citations verified. Done.');
+    expect(evidence.length).toBeLessThan(body.length);
+  });
+
+  it('hands a short report over whole, with no excerpt talk', () => {
+    writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n\nAdded the tests.');
+    expect(closeOutEvidence(dir)).not.toContain('excerpt');
+  });
+
   // The names, never the patch. The whole point of a separate pass is that it
   // costs about a cent, and a diff is what makes a turn expensive.
   it('names the files it changed without quoting the diff', () => {

@@ -85,10 +85,28 @@ export class RoleRegistry {
     return [...this.roles.values()];
   }
 
-  /** Validates and stores a role definition; returns the loaded role. */
-  install(text: string): LoadedRole {
+  /**
+   * Validates and stores a role definition; returns the loaded role.
+   *
+   * An arriving file that lands on an installed role's name is refused
+   * unless it is the same file (endings-agnostic — the retry path packs
+   * proved out, D-111/D-141): wshobson's architect once silently replaced
+   * P1's shipped one (D-126). A deliberate update — the add-a-skill line
+   * edit, D-089 — passes `replace` and keeps its old behaviour.
+   */
+  install(text: string, opts: { replace?: boolean } = {}): LoadedRole {
     const role = roleFromText(text);
-    writeFileSync(path.join(this.rolesDir, `${role.name}.md`), text.trim() + '\n');
+    const file = path.join(this.rolesDir, `${role.name}.md`);
+    if (!opts.replace && existsSync(file)) {
+      const normalise = (s: string) => s.replace(/\r\n/g, '\n').trim();
+      if (normalise(readFileSync(file, 'utf8')) !== normalise(text)) {
+        throw new Error(
+          `a role named "${role.name}" is already installed and this file differs — ` +
+            'rename the arriving role or retire the installed one first',
+        );
+      }
+    }
+    writeFileSync(file, text.trim() + '\n');
     this.roles.set(role.name, role);
     return role;
   }

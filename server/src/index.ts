@@ -2864,7 +2864,9 @@ app.post('/api/roles/:name/skills', async (c) => {
   if (role.skills.includes(skill)) {
     return c.json({ error: `${role.name} already has ${skill}` }, 400);
   }
-  const updated = registry.install(roleTextWithSkill(ROLES_DIR, role.name, skill));
+  const updated = registry.install(roleTextWithSkill(ROLES_DIR, role.name, skill), {
+    replace: true,
+  });
   const { prompt: _prompt, ...info } = updated;
   return c.json(info);
 });

@@ -105,6 +105,28 @@ describe('RoleRegistry', () => {
     expect(() => registry.install(`---\ndescription: nameless\n---\nBody`)).toThrow(/name/);
     expect(() => registry.install('no frontmatter at all')).toThrow(/frontmatter/);
   });
+
+  // wshobson's architect landed on P1's shipped role file and silently
+  // replaced it (D-126, G6's row). An arrival now refuses a taken name; the
+  // byte-identical file again is the retry path packs proved out (D-141);
+  // a deliberate update says `replace`.
+  it('refuses an arriving role whose name is taken by a different file', () => {
+    registry.install(SCOUT);
+    const other = `---\nname: scout\ndescription: Someone else's scout\n---\nDifferent body`;
+    expect(() => registry.install(other)).toThrow(/already installed/);
+    expect(registry.get('scout')!.prompt).toContain('scout agentling');
+  });
+
+  it('tolerates the identical file again, even across line endings', () => {
+    registry.install(SCOUT);
+    expect(() => registry.install(SCOUT.replace(/\n/g, '\r\n'))).not.toThrow();
+  });
+
+  it('replaces only when the caller says replace', () => {
+    registry.install(SCOUT);
+    const other = `---\nname: scout\ndescription: Updated\n---\nNew body`;
+    expect(registry.install(other, { replace: true }).prompt).toBe('New body');
+  });
 });
 
 describe('skills and memory', () => {

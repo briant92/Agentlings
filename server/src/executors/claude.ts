@@ -636,7 +636,20 @@ export function closeOutEvidence(sandboxDir: string): string | null {
   const resultPath = path.join(sandboxDir, 'RESULT.md');
   if (existsSync(resultPath)) {
     const text = readFileSync(resultPath, 'utf8').trim();
-    if (text) parts.push(`What the run reported:\n${text.slice(0, 1500)}`);
+    // Head AND tail, named as an excerpt. A head-only slice cut a complete
+    // 28K brief mid-sentence and the close-out wrote a PENDING claiming
+    // truncation that never happened (D-130); the tail shows the report
+    // concluded, and the label stops the reader treating the seam as the
+    // author's own trailing off.
+    if (text && text.length <= 1500) {
+      parts.push(`What the run reported:\n${text}`);
+    } else if (text) {
+      parts.push(
+        `What the run reported (an excerpt — head and tail of ${text.length} ` +
+          `characters; the full RESULT.md is in the sandbox):\n` +
+          `${text.slice(0, 1000)}\n[… middle omitted …]\n${text.slice(-400)}`,
+      );
+    }
   }
 
   const patchPath = path.join(sandboxDir, 'DIFF.patch');

@@ -147,7 +147,8 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
         error(
           `backdrop plate "${file}" carries ${stats.partial} partial-alpha pixels — ` +
             'a cut-out is on-or-off (soft edges blend into colours no palette holds); ' +
-            'render it through the door with alpha, which snaps them',
+            'render it through the door with alpha, which snaps them, or snap the ' +
+            `whole stack in one move: npm run pack:quantize -- ${packRasterFiles(pack).join(' ')}`,
         );
       } else if (stats.transparent === 0 && stats.partial === 0) {
         error(
@@ -168,7 +169,8 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
         if (!smooth && stats.partial > 0) {
           error(
             `occlusion strip "${occlusion}" carries ${stats.partial} partial-alpha ` +
-              'pixels — a cut-out is on-or-off; render it through the door with alpha',
+              'pixels — a cut-out is on-or-off; render it through the door with alpha, ' +
+              `or jointly: npm run pack:quantize -- ${packRasterFiles(pack).join(' ')}`,
           );
         } else if (stats.opaque === 0 && stats.partial === 0) {
           warn(`occlusion strip "${occlusion}" is fully transparent — it draws nothing`);
@@ -211,7 +213,8 @@ export function checkPlates(pack: LevelPack, dir: string): PackProblem[] {
     if (!smooth && stats.partial > 0) {
       error(
         `plate-life tile "${file}" carries ${stats.partial} partial-alpha pixels — ` +
-          'a cut-out is on-or-off; snap them before shipping',
+          'a cut-out is on-or-off; snap them before shipping: ' +
+          `npm run pack:quantize -- ${packRasterFiles(pack).join(' ')}`,
       );
       continue;
     }

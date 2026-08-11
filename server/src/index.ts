@@ -1957,6 +1957,29 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * further down cannot be blocked by the work the first attempt did.
    */
   let installedPack: string | null = null;
+  // An authoring job's whole deliverable is the pack. Promoting one with no
+  // draft would stamp "promoted" while installing nothing and lock the
+  // retry door behind the stamp — the first smooth chain did exactly that
+  // (D-156). Refuse with the real reason instead; the job stays reviewable.
+  // The marker is the author-pack route's own prompt prefix, read at the
+  // chain's root so every continuation leg carries it.
+  const rootAsk = rt.queue.rootPrompt(pending.id) ?? pending.prompt;
+  if (
+    body.action === 'promote' &&
+    promotable &&
+    !pending.packDraft &&
+    rootAsk.startsWith('Author a level pack:')
+  ) {
+    return c.json(
+      {
+        error:
+          pending.packDraftError ??
+          'no PACK.json at the sandbox root — if the run wrote it inside a folder, ' +
+            'ask a follow-up run to move it up, then Approve again',
+      },
+      400,
+    );
+  }
   if (body.action === 'promote' && promotable && pending.packDraft && !waitingTool) {
     // The reviewer may rename it on the way through. A pack's name is the one
     // thing about it that is not a matter of taste — it has to be unique — so

@@ -123,6 +123,42 @@ describe('JobQueue', () => {
     expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
   });
 
+  // The first smooth chain delivered its pack as an installable FOLDER —
+  // PACK.json and rasters one level down, the shape the checker's own CLI
+  // hint coaches — and harvest read "no pack" (D-156). The lift normalises
+  // exactly that: same bytes, moved to where the contract reads.
+  it('lifts a pack delivered inside a single subfolder to the sandbox root', () => {
+    const job = queue.add({ title: 'Author', prompt: 'Author a level pack: a quay' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    const folder = path.join(dir, 'signal-quay');
+    mkdirSync(folder);
+    const slots = [
+      'void', 'rock', 'rockLight', 'rockDark', 'rockEdge', 'accent', 'accentLight',
+      'accentDark', 'grass', 'grassDark', 'wood', 'woodDark', 'stoneDark', 'flame',
+      'flameCore', 'hover',
+    ];
+    writeFileSync(
+      path.join(folder, 'PACK.json'),
+      JSON.stringify({
+        slug: 'signal-quay',
+        pack: {
+          name: 'The Signal Quay',
+          provenance: 'drawn for the test',
+          viewH: 450,
+          groundY: 388,
+          theme: Object.fromEntries(slots.map((s) => [s, 0x112233])),
+          ops: [{ op: 'rect', x: 0, y: 'groundY', w: 'worldWidth', h: 62, color: 'wood' }],
+        },
+      }),
+    );
+    queue.complete(job.id, 'left the pack in a folder');
+
+    const done = queue.get(job.id)!;
+    expect(done.packDraft?.slug).toBe('signal-quay');
+    expect(existsSync(path.join(dir, 'PACK.json'))).toBe(true);
+  });
+
   it('stamps a valid OUTBOX.json onto the job when it finishes', () => {
     const job = queue.add({ title: 'Remind', prompt: 'remind them' });
     queue.assign(job.id, 'a1');

@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import type { Job, JobAttachment, JobMeter, MoveOp } from '@agentlings/shared';
 import { MAX_STATIONS } from '@agentlings/shared';
@@ -472,7 +479,28 @@ export class JobQueue {
 
   private stampPackDraft(job: Job): void {
     if (job.compile) return;
-    const read = readPackDraft(this.sandboxDir(job.id));
+    const dir = this.sandboxDir(job.id);
+    // A pack delivered as an installable FOLDER — PACK.json and its rasters
+    // one level down — is lifted to the root before reading (D-156). The
+    // shape is coached by the checker's own CLI hint ("drop the folder into
+    // web/public/packs"), and the first smooth chain followed it to the
+    // letter: harvest found nothing, the promote stamped with no install.
+    // Same bytes, normalised to where the contract reads; only when the
+    // root has no PACK.json and exactly one child folder holds one.
+    if (existsSync(dir) && !existsSync(path.join(dir, PACK_FILE))) {
+      const holders = readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && existsSync(path.join(dir, e.name, PACK_FILE)))
+        .map((e) => e.name);
+      if (holders.length === 1) {
+        const from = path.join(dir, holders[0]);
+        for (const entry of readdirSync(from, { withFileTypes: true })) {
+          if (!entry.isFile()) continue;
+          const dest = path.join(dir, entry.name);
+          if (!existsSync(dest)) copyFileSync(path.join(from, entry.name), dest);
+        }
+      }
+    }
+    const read = readPackDraft(dir);
     if (!read) return;
     if (read.error) job.packDraftError = `${PACK_FILE}: ${read.error}`;
     else job.packDraft = read.draft;

@@ -9726,3 +9726,54 @@ more instance of "recompute, never quote the note".
 
 One honesty note about the count: the 252nd row (`cba5ee82`, worker session,
 failed, cost unknown) predates the instrument and is not its work.
+
+**Amendment, the same evening — the compile-candidates half above was wrong,
+and the wrongness was the instrument's.** The script's CONNECTIONS path
+pointed at `.agentlings/catalog/connections.json`; index.ts's `ROOT` is the
+**repo root**, so the real file is `catalog/connections.json` and
+`readConnections` returned an empty list. An empty list voids the gate
+silently, in both directions at once: `connectionsUsed` has nothing to match
+against, so every recipe with recorded `usedTools` came back "compilable" —
+including three whose own rows say `mcp__search__search_web`,
+`mcp__web__fetch_page`, `mcp__github__list_commits` — and `connectionsIn`
+subtracts no ambient, so every pre-recording recipe blocked with its full
+token list. The rule that caught it is already in the notes: a result from
+an instrument you just built is a claim about the instrument first, and the
+raw recipes contradicted the verdicts before any money moved — the compile
+requests this entry would have queued would have been 400'd by the route's
+own recomputation, which is the gate doing its job where the report did not.
+
+Fixed the same hour: the path now points at the repo-root catalog, and the
+section refuses to print over an empty connections read — exits non-zero
+with the cause — the same discipline as the reconciliation assertion, now
+covering an input as well as the arithmetic.
+
+Corrected verdicts, hand-checked against the recipes' own `usedTools` before
+re-running: **exactly one recipe is compilable today** — hq's anchor2 note
+(successes 5, capabilities-path, ambient `web` subtracted; 16.3c/run, pays
+back in ~7 runs — a training sentence, not queued for compile: ~$1 of
+absorbed compile against 16.3c/run of work nobody real recurs is D-029's
+lesson pre-applied). Everything else blocks on what it *used*: the UF/CLP
+note and the indicators telegram on `web and search`, the training-ground
+commit list on `github`, hq's on `browser and github`, and T5's summary on
+`browser and github and search` even with ambient web subtracted. The
+asymmetry paragraph above also mis-attributed anchor2: it was never on the
+usedTools path — it is the capabilities-path recipe that *passes* under the
+real ambient list.
+
+What the correction does not touch: the absorption buckets, the cross-level
+counts and the clone-tax figures never read connections — the reconciliation
+line is unchanged ($60.05 bucketed + $4.29 clipped = $64.34).
+
+What replaces "three compilable": **the free tier's contract cannot take
+live-data work.** Every recurring fetch-shaped job in the ledger — the two
+~60c indicator recipes and T5's scheduled $1.09/month — blocks on genuine
+use of `web`, `search` or `github`, and the defaultOn asymmetry between the
+two gate paths, while real in the code, decides nothing today: `search` and
+`github` are deliberate grants and block regardless of how ambient `web` is
+treated. If those jobs are ever to graduate, the lever is a decision about
+the tool contract itself — the `ToolManifest.capabilities` comment already
+names its precondition ("a tool manifest to record which connections it was
+compiled against") — a safety-model question (a $0 tier that reaches the
+network is a different animal from plain node), to be proposed with options
+and decided, not slipped in through a report.

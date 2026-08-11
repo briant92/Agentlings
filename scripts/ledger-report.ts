@@ -19,8 +19,13 @@ import { usableTools } from '../server/src/tools';
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
 // Recomputed like LEDGER and LEVELS above: the server's own constant lives in
-// index.ts, which boots a server on import — a report must not.
-const CONNECTIONS = path.join(process.cwd(), '.agentlings', 'catalog', 'connections.json');
+// index.ts, which boots a server on import — a report must not. It is the
+// REPO-ROOT catalog (index.ts ROOT), not .agentlings/catalog — this script's
+// first run pointed there, read an empty list, and printed inverted verdicts:
+// an empty connections list voids the gate silently, passing every usedTools
+// recipe vacuously and blocking every capabilities-path one with nothing
+// subtracted. Hence the loud guard where it is read.
+const CONNECTIONS = path.join(process.cwd(), 'catalog', 'connections.json');
 
 /**
  * Which recipe each job belongs to, including the runs that predate it.
@@ -347,6 +352,14 @@ console.log(
  */
 console.log('\n## Compile candidates — by the gate\'s own criteria\n');
 const connections = readConnections(CONNECTIONS);
+if (!connections.length) {
+  console.error(
+    `\nNO CONNECTIONS read from ${CONNECTIONS} — an empty list silently voids the gate` +
+      ' (every usedTools recipe passes vacuously, every capabilities-path recipe blocks' +
+      ' with no ambient subtracted). Fix the path; nothing below this line can be trusted.',
+  );
+  process.exit(1);
+}
 type Candidate = {
   level: string;
   key: string;

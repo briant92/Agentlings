@@ -11,10 +11,10 @@ Blender 4.5.9 LTS lives as a portable extraction at
 use the full path; zip sha256-verified against blender.org's manifest).
 `build_template.py` wrote template.blend and `plates.py` rendered
 far/mid/near at 2120×900 RGBA — fully transparent, correct for the
-undressed template. One MSIX caveat stands: these tools cannot confirm an
-install as real-machine (PRERENDER §4), so run `--version` once from your
-own terminal; the remaining live gate is a dressed set rendering real
-plates through quantize/check/render.
+undressed template. The MSIX caveat is settled: Brian ran the
+`--version` confirm from his own terminal (2026-08-11) — the extraction
+is real-machine, not sandbox-side. The remaining live gate is a dressed
+set rendering real plates through quantize/check/render.
 
 ## One-time setup
 

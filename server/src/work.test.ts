@@ -8,6 +8,7 @@ import {
   pickAgentling,
   queuedJobSpec,
   redoJobSpec,
+  replyBrief,
   runnerRole,
   titleFrom,
 } from './work';
@@ -385,6 +386,19 @@ describe('continuationBrief', () => {
   // one saves its write-up for an ending it may not reach either.
   it('asks the next run to keep RESULT.md updated too', () => {
     expect(continuationBrief(noRepo)).toContain('keep RESULT.md updated');
+  });
+
+  /**
+   * The reply door said nothing at all (D-146's other seam): its legs met
+   * PREVIOUS-RESULT.md only by listing the sandbox, while the More-turns
+   * door pointed straight at it — two doors into one continuation behaving
+   * differently for no reason anyone chose.
+   */
+  it('replyBrief shares the same pointer, without the ran-out framing', () => {
+    const text = replyBrief();
+    expect(text).toContain('PREVIOUS-RESULT.md');
+    expect(text).toContain('rather than starting again');
+    expect(text).not.toContain('ran out of turns');
   });
 });
 

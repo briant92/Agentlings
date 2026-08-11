@@ -142,4 +142,32 @@ describe('carryForward', () => {
     const second = sandbox('b');
     await expect(carryForward('missing', second, false)).resolves.toBeUndefined();
   });
+
+  /**
+   * The given files follow too (D-146's second seam): outputNames lists
+   * top-level files only, so input/ — the reference image, the attached
+   * CSV — never rode, and a continuation of "work from the attached
+   * picture" started without the picture.
+   */
+  it('carries the parent’s input/ so a reference reaches the leg', async () => {
+    const first = sandbox('a');
+    mkdirSync(path.join(first, 'input'), { recursive: true });
+    writeFileSync(path.join(first, 'input', 'reference.png'), 'PNG BYTES');
+    const second = sandbox('b');
+    await carryForward('a', second, false);
+    expect(readFileSync(path.join(second, 'input', 'reference.png'), 'utf8')).toBe('PNG BYTES');
+  });
+
+  // The leg's own attachments are already on disk when the carry runs, and
+  // they win any name they share — the user's newer file is the one meant.
+  it('never overwrites the leg’s own input files', async () => {
+    const first = sandbox('a');
+    mkdirSync(path.join(first, 'input'), { recursive: true });
+    writeFileSync(path.join(first, 'input', 'data.csv'), 'old rows');
+    const second = sandbox('b');
+    mkdirSync(path.join(second, 'input'), { recursive: true });
+    writeFileSync(path.join(second, 'input', 'data.csv'), 'new rows');
+    await carryForward('a', second, false);
+    expect(readFileSync(path.join(second, 'input', 'data.csv'), 'utf8')).toBe('new rows');
+  });
 });

@@ -448,6 +448,21 @@ export async function carryForward(
     if (PAPERWORK_FORWARD.has(name)) continue;
     cpSync(path.join(previous, name), path.join(sandboxDir, name));
   }
+  // The parent's given files ride too (D-146's second seam): outputNames
+  // lists top-level files only, so `input/` — where a reference image or an
+  // attached CSV waits — never followed, and a continuation of "work from
+  // the attached picture" started without the picture. The new job's own
+  // attachments are already on disk by now and win any name they share.
+  const previousInput = path.join(previous, 'input');
+  if (existsSync(previousInput)) {
+    const inputDir = path.join(sandboxDir, 'input');
+    mkdirSync(inputDir, { recursive: true });
+    for (const entry of readdirSync(previousInput, { withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      const to = path.join(inputDir, entry.name);
+      if (!existsSync(to)) cpSync(path.join(previousInput, entry.name), to);
+    }
+  }
   // The newest report in the chain rides under the inherited name: a leg
   // that was cut before reporting passes on the one it was handed.
   for (const name of ['RESULT.md', PREVIOUS_RESULT]) {

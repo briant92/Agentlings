@@ -145,6 +145,7 @@ import {
   opensInBrowser,
   attachedFiles,
   outputNames,
+  PREVIOUS_RESULT,
   safeOutputPath,
 } from './outputs';
 import { pickFolder } from './pickFolder';
@@ -200,6 +201,7 @@ import {
   planWork,
   queuedJobSpec,
   redoJobSpec,
+  replyBrief,
   runnerRole,
 } from './work';
 
@@ -1618,6 +1620,12 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
   // and handing it to a different specialist loses what they had in mind.
   const tools = granted(previous.tools);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
+  // The carry hands the parent's report over as PREVIOUS-RESULT.md; the
+  // brief points at it exactly when it will be there to read (D-146).
+  const parentDir = rt.queue.sandboxDir(previous.id);
+  const hasHandover = ['RESULT.md', PREVIOUS_RESULT].some((name) =>
+    existsSync(path.join(parentDir, name)),
+  );
   const job = rt.queue.add(
     queuedJobSpec({
       title: previous.title,
@@ -1625,6 +1633,7 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
       repoPath: previous.repoPath,
       tools,
       plan: { ...plan, role: previous.preferredRole ?? plan.role },
+      ...(hasHandover ? { brief: replyBrief() } : {}),
       quote: quoteFor_(
         QUOTE_CTX,
         rt.dir,

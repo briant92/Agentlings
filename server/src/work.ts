@@ -305,6 +305,24 @@ export function continuationBrief(previous: { repoPath?: string }): string {
     : 'anything you produced is already here';
   return [
     `You have already worked on this and ran out of turns — ${carried}.`,
-    `Read ${PREVIOUS_RESULT} first: the previous run's report, carried in under that name because RESULT.md is yours to write. It says what that run established, what is still missing, and what it would do next — carry on from there rather than starting again, and keep RESULT.md updated as you go.`,
+    previousReportNote(),
   ].join('\n');
+}
+
+/** The sentence both continuation shapes share, naming the carried report. */
+function previousReportNote(): string {
+  return `Read ${PREVIOUS_RESULT} first: the previous run's report, carried in under that name because RESULT.md is yours to write. It says what that run established, what is still missing, and what it would do next — carry on from there rather than starting again, and keep RESULT.md updated as you go.`;
+}
+
+/**
+ * The reply leg's brief (D-146's other seam). The reply route composed no
+ * brief at all, so its legs met PREVIOUS-RESULT.md only by listing the
+ * sandbox — the More-turns door pointed at the handover and the reply door
+ * did not, two doors into one continuation behaving differently for no
+ * reason anyone chose. The route attaches this only when the parent
+ * actually left a report for the carry to hand over: a brief naming a file
+ * that is not there recreates the exact false premise D-146 closed.
+ */
+export function replyBrief(): string {
+  return previousReportNote();
 }

@@ -331,6 +331,12 @@ export function WorldCanvas({
         // 1000×320, so the browser holds the aspect.
         app.canvas.style.width = '100%';
         app.canvas.style.height = 'auto';
+        // Positioned, or the smooth finish's absolutely-positioned plates
+        // paint over this static canvas whatever the DOM order — positioned
+        // siblings beat in-flow content, so "doc order = depth" only holds
+        // once every layer is positioned (plates, then canvas, then the
+        // occlusion img appended after it).
+        app.canvas.style.position = 'relative';
         host.appendChild(app.canvas);
 
         // The pointer as a small camera pan (v2 parallax). Normalised across

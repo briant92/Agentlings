@@ -9440,3 +9440,27 @@ hand-authored through Route 2, not paid through the desk. The occlusion
 strip's counter-drift is still unmeasured individually (D-148's note
 stands). And the moor reads sparse below the treeline — a matter of
 taste, left for a real level to improve on.
+
+**Amendment, same evening — the first viewer caught what the live proof
+never asserted: the whole pixel-art layer was invisible.** Brian opened
+the level and the crew, strip, ops and signposts were missing — and they
+are absent from my own hero shot too, unnoticed, because every assertion
+I ran measured PLATES (mount, sizes, drift deltas) and none said "a
+sprite is visible". The mechanism is CSS painting order, not Pixi:
+`.world-plates` is absolutely positioned, the canvas was static, and
+positioned siblings paint above in-flow content whatever the DOM order —
+so `insertBefore(platesDiv, canvas)` never bought the layering it read
+like it did, and every canvas pixel sat behind the plates. D-151's
+throwaway proof measured drift by `style.left` and pixel-diffed the
+plates, so the same hole passed through it unexercised. One line fixes
+it, beside the file's own inline-pin precedent: the canvas gets
+`position: relative`, making all three layers positioned so paint order
+IS document order — plates, then canvas, then the occlusion img appended
+after it ("doc order = depth" finally true as stated). Verified live
+headless both ways: Pine Reach now shows Pip and Dot walking the strip
+with the menhir occluding in front; hq's quantized world renders
+byte-familiar (no DOM siblings, the position is a no-op). The lesson,
+banked where the measure-first habit lives: a "proven live" scoped to
+what was measured proves only that — the missing crew stood outside the
+frame of every assertion I wrote, and one human look caught it in
+seconds.

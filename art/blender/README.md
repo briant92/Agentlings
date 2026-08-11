@@ -19,8 +19,8 @@ set rendering real plates through quantize/check/render.
 ## One-time setup
 
 1. ~~Install Blender~~ Done 2026-08-11: portable 4.5.9 LTS at the path
-   above (delete `C:\Users\MSI\Tools\blender-4.5.9-windows-x64.zip` after
-   confirming from your own terminal).
+   above (zip deleted after the real-terminal confirm; re-download from
+   blender.org if it's ever needed again).
 2. Build the template from a stock file:
 
    ```

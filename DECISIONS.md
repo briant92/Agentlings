@@ -166,6 +166,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-154 — 2026-08-11 — Every world furnishes its own doorway and parcel stand](#d-154--2026-08-11--every-world-furnishes-its-own-doorway-and-parcel-stand)
 - [D-155 — 2026-08-11 — The crew rail names the trade](#d-155--2026-08-11--the-crew-rail-names-the-trade)
 - [D-156 — 2026-08-11 — The full sweep: three gates closed, four seams found](#d-156--2026-08-11--the-full-sweep-three-gates-closed-four-seams-found)
+- [D-157 — 2026-08-11 — Phase 0: the report answers the expansion plan's four questions](#d-157--2026-08-11--phase-0-the-report-answers-the-expansion-plans-four-questions)
 
 ## By theme
 
@@ -295,7 +296,11 @@ entry updates one file rather than two.
   and D-138, where the clock joins the budget grammar — `timedOut` as
   `outOfTurns`'s twin with More time behind it, the wall named in the brief
   so a run can ration, and walls-that-learn deferred until ledger rows
-  carry duration
+  carry duration; and D-157, where the report grows the expansion plan's
+  four numbers before the plan spends — absorption bucketed and reconciled
+  against `totals()`, compile candidates by the gate's own function,
+  D-050's cross-level count, the clone-tax upper bound — and two of the
+  four overturn plan items the same hour
 - **Learning** — recipes, close-out, compiled tools, promotion: D-015,
   D-019–D-025, D-036–D-037; and D-069, the first measurement of a banked method
   against work somebody actually wanted done, which halved the job **without**
@@ -9644,3 +9649,80 @@ Approve installs them. By hand: drop the folder into web/public/packs"),
 and the resolve-refusal sweep ran — every branch names a real, current
 reason, and the suspicion it chased is retracted above, where the
 misread that spawned it is named.
+
+## D-157 — 2026-08-11 — Phase 0: the report answers the expansion plan's four questions
+
+An expansion plan was drafted off the architecture review (broaden the task
+spectrum where repetition is intrinsic; push every repeat down the ladder),
+and its four load-bearing premises were all inferences. Decision: before any
+of it spends, `ledger-report` grows four sections that turn each premise into
+a number read from the live file — instrument first, exactly the habit D-029
+proved (its measurement took its own plan item away, and one of these did the
+same within the hour).
+
+The instrument proves its own output, per D-021's rule for generated
+instruments: the absorbed buckets and clip slices must reconcile against
+`totals()` — the shared function, not a second copy of the arithmetic — or
+the report exits non-zero. Mutation-tested after committing (`f7f4cad`):
+re-introducing D-043's historical bug (`absorbed` keyed on `outcome ===
+'failed'` instead of `priceUsd === 0`) inflates the buckets to $71.07
+against the true $60.05 and the report dies with the reconciliation line;
+reverted by edit, never by checkout. New sections reuse the server's own
+functions throughout — `readRecipes`, `usableTools`, `compileBlockers` with
+the same connections file the route reads, `normalise` over each level's
+schedules — because a report that re-derives a gate drifts from it (D-030).
+
+What the four numbers said, at 252 rows:
+
+**Absorption is a wall phenomenon, not tuition.** Of the $60.05 fully
+absorbed: **$54.33 over 65 rows (90%) is runs cut at the turn wall**;
+compiles are $4.57 over 4 rows (8%); tool fall-backs 83.4c over 2; honest
+within-budget failures 31.3c over 3. A further $4.29 over 19 rows is
+over-quote overruns clipped to the quote (4 of them chain legs repriced at
+promote, D-150). The wall marker is the runner's own `turnsAllowed + 1`
+shape and only failed rows may use it (D-052, D-066). Reading: much of the
+wall bucket is the iterate-until-done authoring pattern that D-150 now
+reprices forward; the actionable slice is wall-cuts that never delivered.
+
+**Three recipes are compilable today, by the gate's own function** — all in
+training-ground: the sourced UF/CLP note (successes 3, 68.2c/run, pays back
+in ~2 runs), the indicators telegram (successes 3, 59.4c/run, ~2), the
+code-host commit list (successes 4, 27.7c/run, ~4). The one SCHEDULED key —
+the monthly indicators summary, successes 6 — is **blocked by its own
+accumulated evidence**: `usedTools` is a union that never narrows (D-100, by
+design), and early runs used browser, github and search, so the standing
+~$1.09/month stays paid unless the sentence is re-earned under a narrower
+method (a new key, three clean deliveries on `web` alone). Left as a
+decision, not taken: rewording a sentence to slip a gate is also how a gate
+gets gamed, and the difference deserves its own entry.
+
+**A found asymmetry, recorded rather than changed:** the `usedTools` path
+counts ambient `web` as a blocker — hq's anchor2 note (successes 5) now
+reads `blocked: used web` — where the pre-evidence `capabilities` path
+subtracts defaultOn connections, and D-044 passed that same recipe when the
+surface was the only evidence. Deliberate conservatism (a method that
+fetched pages cannot be "plain node, no network") or drift between the two
+paths — it needs deciding, not assuming, because it controls whether any
+web-touching method can ever reach the free tier.
+
+**D-050's gate number has moved off zero.** Three sentences have been paid
+for in two or more levels (the Messi question in hq + home-chores; the
+sourced note in training-ground + random + bootcamp; csv→xlsx in
+training-ground + bootcamp), and two recipe keys are stored in more than one
+level. The stage-1 build (graduate a tool independently earned in two
+levels) now has real candidates; what this section does not yet read is
+per-level `successes` for those keys, so "independently earned" stays to be
+confirmed before building.
+
+**The clone tax measured small — B5 deprioritized by its own number.** Of 80
+paid rows that carried a clone, 36 left a DIFF.patch, 44 left none, 0
+unknowable. The no-artifact rows cost $27.76 against ~$19.98 for the same
+grants at the no-repo rate: an upper bound of **~$7.8 over 13 days**, which
+includes every legitimate read-the-clone survey. The plan had a router
+change behind this number; the number does not justify it. Same-hour rates
+also moved under the old prose: session per-turn now reads 4.8c with a repo
+against 2.9c without, where D-017-era figures said 7.4c against 1.8c — one
+more instance of "recompute, never quote the note".
+
+One honesty note about the count: the 252nd row (`cba5ee82`, worker session,
+failed, cost unknown) predates the instrument and is not its work.

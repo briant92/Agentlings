@@ -163,6 +163,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-151 — 2026-08-11 — The shelf taken: the smooth finish and the depth map](#d-151--2026-08-11--the-shelf-taken-the-smooth-finish-and-the-depth-map)
 - [D-152 — 2026-08-11 — The seam sweep: excerpt named, command handed over, arrival refused](#d-152--2026-08-11--the-seam-sweep-excerpt-named-command-handed-over-arrival-refused)
 - [D-153 — 2026-08-11 — The Pine Reach: Route 2's dressed set, and the first smooth world](#d-153--2026-08-11--the-pine-reach-route-2s-dressed-set-and-the-first-smooth-world)
+- [D-154 — 2026-08-11 — Every world furnishes its own doorway and parcel stand](#d-154--2026-08-11--every-world-furnishes-its-own-doorway-and-parcel-stand)
 
 ## By theme
 
@@ -221,7 +222,11 @@ entry updates one file rather than two.
   smears named honestly); and D-153 — Route 2's first dressed set: a CC0
   kit through the template into The Pine Reach, the first smooth world
   live with differential DOM drift, and the plane-primitive Generated-Z
-  constant banked as a real trap
+  constant banked as a real trap; and D-154 — the doorway and parcel
+  stand drawn by the app from each world's own theme slots (no scene ever
+  drew the door), the boxes shared with the checker, and the strip rule
+  growing both spots — its first catches Pine Reach's own menhir and the
+  Strait's paid strip
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -9464,3 +9469,54 @@ banked where the measure-first habit lives: a "proven live" scoped to
 what was measured proves only that — the missing crew stood outside the
 frame of every assertion I wrote, and one human look caught it in
 seconds.
+
+## D-154 — 2026-08-11 — Every world furnishes its own doorway and parcel stand
+
+Brian's second look at Pine Reach: the parcel spot and the crew doorway
+were clickable and invisible, "same in most new levels". True — and
+truer than that: **no scene ever drew the doorway anywhere.** hover.ts
+had confessed it since the box was added ("a hit rectangle over scenery
+with no visual feedback of any kind — the only way to discover it was to
+click the wall"), and the parcel spot had no standing asset in any
+world; crates only appear while deliveries wait. Pack worlds made it
+obvious because their art never happens to paint those spots; the
+built-ins were only ever discovered by clicking the wall.
+
+**The fix follows the crate's own precedent** ("drawn in the theme's own
+timbers"): the app now draws a doorway and a low parcel pallet on the
+dynamic layer, from each world's OWN sixteen theme slots — wood posts
+and lintel, void opening with shadowed jambs, a flame lamp; deck and
+feet for the stand, with the crate stack raised onto its deck. That is
+Brian's "customized for each level design" without new format surface:
+the furniture takes the dusk palette in Pine Reach, cave timbers on hq,
+household wood in Home Chores — verified in pixels on all three, smooth
+and quantized both.
+
+**The geometry moved to shared, and the checker grew the two spots.**
+doorBox/parcelsBox now live in `packages/shared/src/scene.ts` — one
+source for the client's hit zones and the server's occlusion rule
+(D-030's lesson: two copies of "where the door is" would drift). The
+occlusion checker refuses a strip opaque over either box, band-limited
+to each box's own height like the stands, widened by the drift margin.
+Three new tests; the guard mutated away fails exactly the two spot
+tests.
+
+**The rule's first catch was this session's own world, and its second a
+paid one.** Pine Reach's menhir — legally placed under the old rules —
+sat square over the parcel spot (found by eye before the rule existed);
+re-cut to the LEFT quarter (dress v6, wx ~125–193, clear of spawn's
+band), checker-clean, worst separation 17.4 held. Then the grown checker
+REJECTED the-rearing-strait live — its paid strip carried 316 px over
+the two boxes — which would have dropped that world to the cave
+fallback. Fixed mechanically: an exact alpha-erase inside the boxes
+only (the original plate is one git checkout away), re-accepted,
+`rejected: none` on the running server.
+
+**Evidence.** 1521+181 green (+3 checker tests), typecheck clean,
+mutation exact. Live screenshots across three themes show the furniture
+in each palette; Pine Reach's stone occludes on the left with the door
+and stand clear on the right. Honest boundary: gates-of-troy painted its
+own arch at the door spot and no level currently runs it — the default
+door would draw inside that arch in the pack's own palette, judged
+compatible by construction but unverified in pixels; the first troy
+level is that check.

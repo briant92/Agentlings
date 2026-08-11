@@ -2252,6 +2252,22 @@ button.danger:hover {
   color: #8d86a3;
   margin-top: 3px;
 }
+/* Files riding a message as real attachments (D-159). */
+.rv-msg-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 11px;
+  color: #a9b1c4;
+  margin-top: 4px;
+}
+.rv-msg-files a {
+  color: #9ecbff;
+  text-decoration: none;
+}
+.rv-msg-files a:hover {
+  text-decoration: underline;
+}
 /* The outbox dressed as mock screen 4 (D-088): the channel's mark on the
    header, a recipient's initial on each row — same rows, same truth. */
 .rv-outbox-card {

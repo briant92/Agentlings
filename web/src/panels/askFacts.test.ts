@@ -169,6 +169,19 @@ describe('missingAttachment (D-134)', () => {
     expect(missingAttachment('list the unattached fixtures', 0)).toBe(false);
   });
 
+  // The outbound shape (D-159): "as an attachment" asks for the run's own
+  // file to ride the send, which the outbox now really does — no claim
+  // about the queue, so no arrest.
+  it('"as an attachment" asks for output, not input — it queues', () => {
+    expect(missingAttachment('email me the report as an attachment', 0)).toBe(false);
+    expect(missingAttachment('send the summary as attachments to the team', 0)).toBe(false);
+    expect(missingAttachment('telegram it to Brian as an attached file', 0)).toBe(false);
+  });
+
+  it('an inbound claim beside an outbound ask still arrests', () => {
+    expect(missingAttachment('email the attached contract to Ana as an attachment', 0)).toBe(true);
+  });
+
   it('an ordinary sentence says nothing about attachments', () => {
     expect(missingAttachment('tidy the notes', 0)).toBe(false);
   });

@@ -156,6 +156,19 @@ describe('standing approvals', () => {
         PAPER,
       ],
       ['a run that also produced a file', clean, [...PAPER, 'report.pdf']],
+      // The named rule, not just the extras net (D-159): an input/ forward
+      // leaves no root file for the extras check to catch.
+      [
+        'an outbox that sends files',
+        {
+          ...clean,
+          outbox: {
+            channel: 'telegram',
+            messages: [{ to: '1', body: 'x', files: ['input/contract.pdf'] }],
+          },
+        },
+        PAPER,
+      ],
     ])('%s stays in review', (_, job, files) => {
       expect(autoBlocker(job, files)).not.toBeNull();
     });

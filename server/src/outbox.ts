@@ -1,7 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import {
   MAX_OUTBOX_BODY_CHARS,
+  MAX_OUTBOX_FILE_BYTES,
+  MAX_OUTBOX_FILES,
+  MAX_OUTBOX_FILES_TOTAL_BYTES,
   MAX_OUTBOX_MESSAGES,
   MAX_OUTBOX_PARAM_CHARS,
   MAX_OUTBOX_PARAMS,
@@ -12,6 +15,7 @@ import {
   type OutboxMessage,
   type OutboxTemplate,
 } from '@agentlings/shared';
+import { safeAttachmentName } from './outputs';
 
 /**
  * The outbox contract: how a run asks for something to be sent (D-075).
@@ -33,6 +37,61 @@ export type OutboxRead =
   | { outbox?: undefined; error: string };
 
 const MAX_EVENT_ATTENDEES = 20;
+
+/**
+ * The channels that can carry a file (D-159). A `files` block anywhere else
+ * is refused at parse for the event block's reason: a field that parses and
+ * then silently does nothing puts two different truths on the review card
+ * and in the send.
+ */
+export const FILE_CHANNELS = new Set(['telegram', 'gmail']);
+
+/**
+ * Why this is not a valid outbox file name, or null when it is.
+ *
+ * Two shapes exist: a bare name (a file the run wrote at the sandbox root)
+ * or `input/<name>` (a file the user attached at Start). Forward slashes
+ * only, nothing deeper, and the leaf is held to `safeAttachmentName`'s own
+ * rules — the name reaches `path.join` against the sandbox at send, so this
+ * is a security boundary, not tidiness.
+ */
+export function outboxFileNameProblem(name: string): string | null {
+  if (name.includes('\\')) return 'uses backslashes — write forward slashes';
+  const segments = name.split('/');
+  if (segments.length > 2 || (segments.length === 2 && segments[0] !== 'input')) {
+    return 'must be a file at the sandbox root, or input/<name> for an attached one';
+  }
+  const leaf = segments[segments.length - 1];
+  if (safeAttachmentName(leaf) !== leaf) return 'is not a plain visible file name';
+  return null;
+}
+
+/** The file's real path in this sandbox, or null when the name is not one the contract takes. */
+export function outboxFilePath(dir: string, name: string): string | null {
+  if (outboxFileNameProblem(name)) return null;
+  return path.join(dir, ...name.split('/'));
+}
+
+/** The files block, when a message carries one (D-159). Shape only — existence is the caller's dir to ask. */
+function checkFiles(raw: unknown, n: number): { files?: string[]; error?: string } {
+  if (!Array.isArray(raw) || raw.some((f) => typeof f !== 'string')) {
+    return { error: `message ${n}: "files" must be an array of file names when present` };
+  }
+  if (raw.length > MAX_OUTBOX_FILES) {
+    return { error: `message ${n}: ${raw.length} files — the cap is ${MAX_OUTBOX_FILES}` };
+  }
+  const clean: string[] = [];
+  for (const f of raw as string[]) {
+    const name = f.trim();
+    const problem = outboxFileNameProblem(name);
+    if (problem) return { error: `message ${n}: "${name}" ${problem}` };
+    if (clean.includes(name)) {
+      return { error: `message ${n}: "${name}" appears twice in "files"` };
+    }
+    clean.push(name);
+  }
+  return { files: clean };
+}
 
 /**
  * The event block, when a message carries one (D-104). Dates only have to
@@ -89,12 +148,13 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
-  const { to, name, subject, params, event, body } = raw as {
+  const { to, name, subject, params, event, files, body } = raw as {
     to?: unknown;
     name?: unknown;
     subject?: unknown;
     params?: unknown;
     event?: unknown;
+    files?: unknown;
     body?: unknown;
   };
   if (typeof to !== 'string' || to.trim() === '') {
@@ -146,6 +206,12 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
     if (checked.error) return { error: checked.error };
     cleanEvent = checked.event;
   }
+  let cleanFiles: string[] | undefined;
+  if (files !== undefined) {
+    const checked = checkFiles(files, n);
+    if (checked.error) return { error: checked.error };
+    cleanFiles = checked.files;
+  }
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {
@@ -156,6 +222,7 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
       ...(subject && subject.trim() ? { subject: subject.trim() } : {}),
       ...(cleanParams && cleanParams.length > 0 ? { params: cleanParams } : {}),
       ...(cleanEvent ? { event: cleanEvent } : {}),
+      ...(cleanFiles && cleanFiles.length > 0 ? { files: cleanFiles } : {}),
     },
   };
 }
@@ -187,13 +254,34 @@ export function splitRecipient(value: string): { to: string; name?: string } {
  * user's own words, nothing decided. Returns the contract's own error rather
  * than throwing, because the caller's fallback is a session and a refusal
  * here has to be able to say why.
+ *
+ * `files` are the user's own Start attachments as `input/<name>` (D-159) —
+ * a file attached to a job whose whole point is one send can only have been
+ * meant to ride it. `dir` is the sandbox they live in, so the composed
+ * outbox passes the same existence check a session's file would.
  */
-export function composeOutbox(channel: string, recipient: string, words: string): OutboxRead {
+export function composeOutbox(
+  channel: string,
+  recipient: string,
+  words: string,
+  files?: string[],
+  dir?: string,
+): OutboxRead {
   const { to, name } = splitRecipient(recipient);
-  return checkOutbox({
-    channel,
-    messages: [{ to, body: words, ...(name ? { name } : {}) }],
-  });
+  return checkOutbox(
+    {
+      channel,
+      messages: [
+        {
+          to,
+          body: words,
+          ...(name ? { name } : {}),
+          ...(files && files.length > 0 ? { files } : {}),
+        },
+      ],
+    },
+    dir,
+  );
 }
 
 /** The template block, when the outbox carries one — Meta's own shapes. */
@@ -223,7 +311,7 @@ export function readOutbox(dir: string): OutboxRead | null {
   } catch {
     return { error: 'not valid JSON' };
   }
-  return checkOutbox(parsed);
+  return checkOutbox(parsed, dir);
 }
 
 /**
@@ -234,8 +322,14 @@ export function readOutbox(dir: string): OutboxRead | null {
  * one-message-per-recipient rule, the fields that survive parsing. An outbox
  * built in code and an outbox written by a model must be the same object or
  * review and replay are looking at two different things.
+ *
+ * `dir` is the sandbox the outbox's `files` live in. With it, every named
+ * file is required to exist and fit the caps — a message claiming a file the
+ * run never wrote is the lie D-134 arrests at Start, told at the other end,
+ * and it must not reach a review card. Without a dir only the shapes are
+ * checked.
  */
-export function checkOutbox(parsed: unknown): OutboxRead {
+export function checkOutbox(parsed: unknown, dir?: string): OutboxRead {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { error: 'not an object with "channel" and "messages"' };
   }
@@ -292,6 +386,39 @@ export function checkOutbox(parsed: unknown): OutboxRead {
     }
   } else if (out.some((m) => m.event)) {
     return { error: `only the calendar channel takes an "event" block, not "${channelName}"` };
+  }
+  // Files ride only where a client can carry them (D-159) — the event
+  // block's rule again: parsing a field no send would honour splits the
+  // review card from the send.
+  if (!FILE_CHANNELS.has(channelName) && out.some((m) => m.files)) {
+    return {
+      error: `only ${[...FILE_CHANNELS].join(' and ')} send "files", not "${channelName}"`,
+    };
+  }
+  if (dir) {
+    for (const [i, m] of out.entries()) {
+      let total = 0;
+      for (const f of m.files ?? []) {
+        const full = outboxFilePath(dir, f);
+        if (!full || !existsSync(full) || !statSync(full).isFile()) {
+          return {
+            error: `message ${i + 1}: "files" names "${f}" but no such file exists in the sandbox`,
+          };
+        }
+        const bytes = statSync(full).size;
+        if (bytes > MAX_OUTBOX_FILE_BYTES) {
+          return {
+            error: `message ${i + 1}: "${f}" is ${Math.round(bytes / (1024 * 1024))} MB — the cap per file is ${MAX_OUTBOX_FILE_BYTES / (1024 * 1024)} MB`,
+          };
+        }
+        total += bytes;
+      }
+      if (total > MAX_OUTBOX_FILES_TOTAL_BYTES) {
+        return {
+          error: `message ${i + 1}: its files total ${Math.round(total / (1024 * 1024))} MB — the cap per message is ${MAX_OUTBOX_FILES_TOTAL_BYTES / (1024 * 1024)} MB`,
+        };
+      }
+    }
   }
   return {
     outbox: {

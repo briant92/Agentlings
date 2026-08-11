@@ -76,9 +76,14 @@ export function missingRecipient(
  * it" instructs the run about its own output, it does not claim a file
  * rides along. The second press still queues, because the sentence itself
  * may carry the content ("summarise the attached: <pasted text>").
+ *
+ * "As an attachment" is the outbound shape (D-159): it asks for the run's
+ * own file to ride the send, which the outbox now genuinely does — the
+ * sentence claims nothing about the queue, so it must not be arrested.
  */
 export function missingAttachment(text: string, attachedCount: number): boolean {
-  return attachedCount === 0 && /\battach(?:ed|ments?)\b/i.test(text);
+  const inboundClaims = text.replace(/\bas (?:an? )?attach(?:ed|ments?)\b/gi, '');
+  return attachedCount === 0 && /\battach(?:ed|ments?)\b/i.test(inboundClaims);
 }
 
 /**

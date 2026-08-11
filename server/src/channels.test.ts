@@ -1,12 +1,33 @@
-import { describe, expect, it } from 'vitest';
-import { CHANNELS, emailRaw, eventTime, executeOutbox, outboxRefusal, sendPriceUsd } from './channels';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  CHANNELS,
+  emailRaw,
+  emailRfc822,
+  eventTime,
+  executeOutbox,
+  outboxRefusal,
+  sendPriceUsd,
+} from './channels';
 import type { Connection } from './connections';
 
 /** A fetch stand-in that records calls and answers from a script. */
 function fakeFetch(respond: (url: string) => { ok: boolean; status?: number; body?: unknown }) {
   const calls: { url: string; payload: unknown }[] = [];
   const fn = (async (url: string, init?: RequestInit) => {
-    calls.push({ url, payload: init?.body ? JSON.parse(String(init.body)) : undefined });
+    // A document post's body is FormData, kept whole; everything else is JSON.
+    calls.push({
+      url,
+      payload:
+        init?.body instanceof FormData
+          ? init.body
+          : init?.body
+            ? JSON.parse(String(init.body))
+            : undefined,
+    });
     const res = respond(url);
     return {
       ok: res.ok,
@@ -56,6 +77,79 @@ describe('the telegram channel', () => {
   });
 });
 
+/**
+ * Files riding a telegram message (D-159): the text as sendMessage exactly as
+ * before, then each file its own sendDocument — never a caption, whose
+ * 1024-char cap would refuse bodies the contract's 2000 allows.
+ */
+describe('telegram files', () => {
+  let dir: string;
+  const ENV = { TELEGRAM_BOT_TOKEN: 'tok' };
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'agentlings-tg-files-'));
+    mkdirSync(path.join(dir, 'input'), { recursive: true });
+    writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
+    writeFileSync(path.join(dir, 'input', 'contract.pdf'), 'contract bytes');
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('sends the text, then each file as a document under its leaf name', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true }));
+    await CHANNELS.telegram.send(
+      { to: '12345', body: 'here you go', files: ['report.pdf', 'input/contract.pdf'] },
+      { env: ENV, fetchFn: fn, dir },
+    );
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://api.telegram.org/bottok/sendMessage',
+      'https://api.telegram.org/bottok/sendDocument',
+      'https://api.telegram.org/bottok/sendDocument',
+    ]);
+    const first = calls[1].payload as FormData;
+    expect(first.get('chat_id')).toBe('12345');
+    const doc = first.get('document') as File;
+    expect(doc.name).toBe('report.pdf');
+    expect(await doc.text()).toBe('pdf bytes'); // the bytes themselves ride
+    expect(((calls[2].payload as FormData).get('document') as File).name).toBe('contract.pdf');
+  });
+
+  it('a vanished file fails the recipient before anything has moved', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true }));
+    await expect(
+      CHANNELS.telegram.send(
+        { to: '1', body: 'x', files: ['ghost.pdf'] },
+        { env: ENV, fetchFn: fn, dir },
+      ),
+    ).rejects.toThrow('no longer in the sandbox');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('files with no sandbox directory refuse rather than guess', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true }));
+    await expect(
+      CHANNELS.telegram.send({ to: '1', body: 'x', files: ['report.pdf'] }, { env: ENV, fetchFn: fn }),
+    ).rejects.toThrow('no sandbox directory');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('a document refusal names the file and admits the text went', async () => {
+    const { fn } = fakeFetch((url) =>
+      url.endsWith('/sendDocument')
+        ? { ok: false, status: 413, body: { description: 'Request Entity Too Large' } }
+        : { ok: true },
+    );
+    await expect(
+      CHANNELS.telegram.send(
+        { to: '1', body: 'x', files: ['report.pdf'] },
+        { env: ENV, fetchFn: fn, dir },
+      ),
+    ).rejects.toThrow('the message went, then "report.pdf" failed: Request Entity Too Large');
+  });
+});
+
 describe('emailRaw', () => {
   const decode = (raw: string) =>
     Buffer.from(raw.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
@@ -78,6 +172,56 @@ describe('emailRaw', () => {
 
   it('a message without a subject has no Subject header, not an invented one', () => {
     expect(decode(emailRaw({ to: 'a@b.c', body: 'x' }))).not.toContain('Subject:');
+  });
+});
+
+/** The multipart shape a mail with files takes (D-159). */
+describe('emailRfc822 with files', () => {
+  const FILES = [{ name: 'chart.png', data: Buffer.from('png bytes') }];
+
+  it('without files it is exactly the single-part message emailRaw wraps', () => {
+    const message = { to: 'a@b.c', subject: 'Padel', body: 'Thursday' };
+    expect(emailRfc822(message)).not.toContain('multipart');
+    expect(emailRaw(message)).toContain(
+      Buffer.from(emailRfc822(message), 'utf8')
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '')
+        .slice(0, 20),
+    );
+  });
+
+  it('with files it is multipart/mixed: the body, then each file base64 under its name', () => {
+    const text = emailRfc822({ to: 'a@b.c', subject: 'Padel', body: 'chart attached' }, FILES);
+    expect(text).toContain('Content-Type: multipart/mixed; boundary="=_agentlings"');
+    expect(text).toContain('chart attached');
+    expect(text).toContain('Content-Type: image/png; name="chart.png"');
+    expect(text).toContain('Content-Disposition: attachment; filename="chart.png"');
+    expect(text).toContain('Content-Transfer-Encoding: base64');
+    expect(text).toContain(Buffer.from('png bytes').toString('base64'));
+    expect(text.trimEnd().endsWith('--=_agentlings--')).toBe(true);
+  });
+
+  it('an input/ forward arrives under its leaf name', () => {
+    const text = emailRfc822(
+      { to: 'a@b.c', body: 'x' },
+      [{ name: 'input/contract.pdf', data: Buffer.from('c') }],
+    );
+    expect(text).toContain('filename="contract.pdf"');
+    expect(text).not.toContain('filename="input/');
+  });
+
+  it('a body holding the boundary steps past it rather than truncating the mail', () => {
+    const text = emailRfc822({ to: 'a@b.c', body: 'beware --=_agentlings lines' }, FILES);
+    expect(text).toContain('boundary="=_agentlings0"');
+  });
+
+  it('an accented filename is encoded in the headers, not mangled', () => {
+    const text = emailRfc822({ to: 'a@b.c', body: 'x' }, [
+      { name: 'niño.pdf', data: Buffer.from('n') },
+    ]);
+    expect(text).toContain('filename="=?UTF-8?B?');
   });
 });
 
@@ -119,6 +263,32 @@ describe('the gmail channel', () => {
     expect(headers.authorization).toBe('Bearer at-1');
     const sent = JSON.parse(String(calls[1].init?.body)) as { raw: string };
     expect(sent.raw).toBe(emailRaw({ to: 'ana@example.com', subject: 'Padel', body: 'Thursday 9:00' }));
+  });
+
+  it('a message with files goes whole to the upload endpoint as rfc822 (D-159)', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-gm-files-'));
+    writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
+    try {
+      const { fn, calls } = scripted([
+        { ok: true, body: { access_token: 'at-1' } },
+        { ok: true, body: { id: 'm1' } },
+      ]);
+      await CHANNELS.gmail.send(
+        { to: 'ana@example.com', subject: 'Report', body: 'attached', files: ['report.pdf'] },
+        { env: ENV, fetchFn: fn, dir },
+      );
+      expect(calls[1].url).toBe(
+        'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media',
+      );
+      const headers = calls[1].init?.headers as Record<string, string>;
+      expect(headers['content-type']).toBe('message/rfc822');
+      const sent = String(calls[1].init?.body);
+      expect(sent).toContain('multipart/mixed');
+      expect(sent).toContain('filename="report.pdf"');
+      expect(sent).toContain(Buffer.from('pdf bytes').toString('base64'));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('refuses to run half-connected', async () => {
@@ -281,6 +451,36 @@ describe('executeOutbox', () => {
     expect(run.sentTo).toEqual([]);
     expect(run.failed).toEqual([{ to: '1', reason: 'no channel "carrier-pigeon"' }]);
     expect(calls).toHaveLength(0);
+  });
+
+  it('carries the sandbox dir to every send, and a files message without one fails alone', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-exec-files-'));
+    writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
+    try {
+      const { fn } = fakeFetch(() => ({ ok: true }));
+      const withFiles = {
+        channel: 'telegram',
+        messages: [
+          { to: '1', body: 'a', files: ['report.pdf'] },
+          { to: '2', body: 'b' },
+        ],
+      };
+      const carried = await executeOutbox(withFiles, [], {
+        env: { TELEGRAM_BOT_TOKEN: 't' },
+        fetchFn: fn,
+        dir,
+      });
+      expect(carried).toEqual({ sentTo: ['1', '2'], failed: [] });
+      const { fn: fn2 } = fakeFetch(() => ({ ok: true }));
+      const bare = await executeOutbox(withFiles, [], {
+        env: { TELEGRAM_BOT_TOKEN: 't' },
+        fetchFn: fn2,
+      });
+      expect(bare.sentTo).toEqual(['2']);
+      expect(bare.failed[0].reason).toContain('no sandbox directory');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
 

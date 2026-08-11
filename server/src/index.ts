@@ -422,7 +422,10 @@ async function autoSendIfApproved(
       });
       return;
     }
-    const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], { env: process.env });
+    const run = await executeOutbox(outbox, job.outboxSent?.sentTo ?? [], {
+      env: process.env,
+      dir: queue.sandboxDir(job.id),
+    });
     const at = Date.now();
     const usd = sendPriceUsd(outbox.channel, process.env);
     const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
@@ -435,6 +438,7 @@ async function autoSendIfApproved(
         to,
         ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
         ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
+        ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
         ok: true,
         ...(usd ? { usd } : {}),
       })),
@@ -1906,7 +1910,10 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         process.env,
       );
       if (refusal) return c.json({ error: `outbox not sent — ${refusal}` }, 400);
-      const run = await executeOutbox(outbox, alreadySent, { env: process.env });
+      const run = await executeOutbox(outbox, alreadySent, {
+        env: process.env,
+        dir: rt.queue.sandboxDir(pending.id),
+      });
       const at = Date.now();
       // The user's own declared rate, when they set one — never a guess
       // (D-081). Only sends that happened carry it.
@@ -1921,6 +1928,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           to,
           ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
           ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
+          ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
           ok: true,
           ...(usd ? { usd } : {}),
         })),

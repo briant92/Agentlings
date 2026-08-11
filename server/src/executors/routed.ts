@@ -13,7 +13,7 @@ import {
   updateRecipes,
   type Recipe,
 } from '../recipes';
-import { OUTBOX_FILE, composeOutbox } from '../outbox';
+import { FILE_CHANNELS, OUTBOX_FILE, composeOutbox } from '../outbox';
 import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide, recallSignal } from '../router';
 import type { SearchResult } from '../search';
@@ -224,7 +224,21 @@ export class RoutedExecutor implements Executor {
     // run that can explain itself, which is what happened before this tier
     // existed (D-097).
     if (decision.kind === 'compose') {
-      const composed = composeOutbox(decision.channel, decision.to, decision.words);
+      // Files the user attached to a job whose whole point is this one send
+      // can only have been meant to ride it (D-159) — but only where the
+      // channel can carry one; elsewhere they stay what they always were,
+      // input context, rather than falling through to a session that could
+      // not attach them either.
+      const riding = FILE_CHANNELS.has(decision.channel)
+        ? (job.attachments ?? []).map((a) => `input/${a.name}`)
+        : [];
+      const composed = composeOutbox(
+        decision.channel,
+        decision.to,
+        decision.words,
+        riding,
+        sandboxDir,
+      );
       if (composed.outbox) {
         writeFileSync(
           path.join(sandboxDir, OUTBOX_FILE),
@@ -244,6 +258,9 @@ export class RoutedExecutor implements Executor {
             '',
             `> ${message.body.split('\n').join('\n> ')}`,
             '',
+            ...(message.files?.length
+              ? [`**Attached** ${message.files.map((f) => f.replace(/^input\//, '')).join(', ')}`, '']
+              : []),
             'These are your own words, sent exactly as you wrote them — nothing was',
             'rewritten and no agentling session was needed. Approving sends it.',
             '',

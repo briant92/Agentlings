@@ -170,6 +170,12 @@ export function autoBlocker(
   if (job.status !== 'done') return 'only a clean finish may auto-send';
   if (!job.outbox) return 'no outbox';
   if (job.outboxError) return 'the outbox did not parse';
+  // A standing approval covered words to an allowlist, never files (D-159).
+  // The extras check below already stops root deliverables from slipping out,
+  // but an `input/` forward would pass it — this names the rule itself.
+  if (job.outbox.messages.some((m) => m.files?.length)) {
+    return 'the outbox sends files — a file leaves only through review';
+  }
   if (job.changes && job.changes.files > 0) return 'the run also changed code';
   const extras = files.filter((f) => !PAPERWORK.has(f) && f !== OUTBOX_FILE);
   if (extras.length > 0) return `the run also produced ${extras.join(', ')}`;

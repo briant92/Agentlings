@@ -27,6 +27,12 @@ export interface SendRecord {
    * reuses this instead of rebuilding from source and drifting.
    */
   body?: string;
+  /**
+   * The files that rode along, by outbox name (D-159). Names, not bytes —
+   * the audit records that "report.pdf" left and on which send; the bytes
+   * stay in the job's sandbox like every other deliverable.
+   */
+  files?: string[];
   ok: boolean;
   /** The channel's own sentence for a failure ("chat not found"). */
   reason?: string;

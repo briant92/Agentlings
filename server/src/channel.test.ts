@@ -259,6 +259,20 @@ describe('channelBrief', () => {
     expect(channelBrief('carrier-pigeon')).toBeNull();
   });
 
+  // A capability nobody is told about is not one (D-031): the file-carrying
+  // channels hear the files rule, and nobody else hears a word of it (D-159).
+  it('tells telegram and gmail about "files", and no other channel', () => {
+    for (const channel of ['telegram', 'gmail']) {
+      const brief = channelBrief(channel)!;
+      expect(brief).toContain('"files"');
+      expect(brief).toContain('input/');
+      expect(brief).toContain('real attachments');
+    }
+    for (const channel of ['slack', 'whatsapp-business', 'calendar', 'github']) {
+      expect(channelBrief(channel)!).not.toContain('"files"');
+    }
+  });
+
   it('carries the audience legend, and the user-given address still wins (D-092)', () => {
     const brief = channelBrief('telegram', [
       { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 },

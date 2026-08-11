@@ -402,12 +402,32 @@ export interface OutboxMessage {
    * other channel.
    */
   event?: OutboxEvent;
+  /**
+   * Files that ride the message as real attachments (D-159). Names of files
+   * the run wrote at the sandbox root, or `input/<name>` for a file the user
+   * attached at Start — forward slashes, nothing deeper. The bytes stay in
+   * the sandbox until Approve reads them at send, exactly as the messages
+   * themselves wait. Only the channels that can carry a file take the field:
+   * telegram and gmail; everywhere else it is refused at parse.
+   */
+  files?: string[];
   body: string;
 }
 
 export const MAX_OUTBOX_SUBJECT_CHARS = 200;
 export const MAX_OUTBOX_PARAMS = 10;
 export const MAX_OUTBOX_PARAM_CHARS = 500;
+
+/** As many files as one message may carry — the same bound as job attachments. */
+export const MAX_OUTBOX_FILES = 5;
+/** Per file. Matches what a user may attach at Start, so nothing round-trips oversize. */
+export const MAX_OUTBOX_FILE_BYTES = 10 * 1024 * 1024;
+/**
+ * Per message, all files together. Gmail refuses messages over 25 MB counting
+ * the base64 inflation (~4/3), so 15 MB of real bytes is the honest ceiling —
+ * and Telegram's 50 MB bot cap sits comfortably above it.
+ */
+export const MAX_OUTBOX_FILES_TOTAL_BYTES = 15 * 1024 * 1024;
 
 /**
  * The pre-approved template a template-shaped outbox sends — one per outbox,

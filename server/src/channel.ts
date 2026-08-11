@@ -1,5 +1,7 @@
 import {
   MAX_OUTBOX_BODY_CHARS,
+  MAX_OUTBOX_FILE_BYTES,
+  MAX_OUTBOX_FILES,
   MAX_OUTBOX_MESSAGES,
   type AudiencePerson,
   type ChannelAsk,
@@ -407,8 +409,10 @@ export function channelBrief(
 ): string | null {
   if (!CHANNELS[channel]) return null;
   const shape =
-    channel === 'gmail'
-      ? `{"channel":"gmail","messages":[{"to":"<email address>","name":"<who this is, shown at review>","subject":"<short subject>","body":"..."}]}`
+    channel === 'telegram'
+      ? `{"channel":"telegram","messages":[{"to":"<chat id>","name":"<who this is, shown at review>","body":"...","files":["<a file you wrote, only when one should ride>"]}]}`
+      : channel === 'gmail'
+      ? `{"channel":"gmail","messages":[{"to":"<email address>","name":"<who this is, shown at review>","subject":"<short subject>","body":"...","files":["<a file you wrote, only when one should ride>"]}]}`
       : channel === 'whatsapp-business'
         ? `{"channel":"whatsapp-business","template":{"name":"<approved template name>","language":"es"},"messages":[{"to":"<number with country code>","name":"<who this is, shown at review>","params":["<template parameter>","..."],"body":"<the message as it will read, for review>"}]}`
         : channel === 'slack'
@@ -433,6 +437,11 @@ export function channelBrief(
       ? [
           '- "to" is the recipient\'s email address, and every message wants a short "subject". If the user named people but gave no addresses, do not invent any — leave those messages out and say in RESULT.md which addresses are missing.',
           '- The mail arrives from the user\'s own address, so write it in their voice.',
+        ]
+      : []),
+    ...(channel === 'telegram' || channel === 'gmail'
+      ? [
+          `- "files" sends real attachments: names of files you wrote in the working directory ("report.pdf") or a file the user attached ("input/contract.pdf") — forward slashes, up to ${MAX_OUTBOX_FILES} per message, ${MAX_OUTBOX_FILE_BYTES / (1024 * 1024)} MB each. Only files that actually exist, and only when the user asked for a file to ride — otherwise leave "files" out.`,
         ]
       : []),
     ...(channel === 'whatsapp-business'

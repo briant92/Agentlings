@@ -347,6 +347,28 @@ export function ReviewModal({
                           // the body above is the claimed rendering.
                           <div className="rv-msg-params">sends: [{m.params.join(' · ')}]</div>
                         )}
+                        {m.files && m.files.length > 0 && (
+                          // Files that ride this message as real attachments
+                          // (D-159). A sandbox-root file opens in the viewer;
+                          // an input/ forward has no serving route and shows
+                          // as the name it will arrive under.
+                          <div className="rv-msg-files">
+                            {m.files.map((f) =>
+                              f.includes('/') ? (
+                                <span key={f}>📎 {f.split('/').pop()}</span>
+                              ) : (
+                                <a
+                                  key={f}
+                                  href={fileUrl(levelId, job.id, f)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  📎 {f}
+                                </a>
+                              ),
+                            )}
+                          </div>
+                        )}
                       </div>
                     </li>
                   );

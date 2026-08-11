@@ -1,6 +1,9 @@
+import { existsSync, readFileSync } from 'node:fs';
 import type { Outbox, OutboxMessage, OutboxTemplate } from '@agentlings/shared';
 import { missingSecrets, type Connection } from './connections';
 import { accessTokenFromRefresh, base64url } from './google';
+import { outboxFilePath } from './outbox';
+import { contentTypeFor } from './outputs';
 import { connectionEnabled, type StoredSettings } from './settings';
 
 /**
@@ -18,6 +21,13 @@ export interface ChannelDeps {
   fetchFn?: typeof fetch;
   /** The outbox's template, for template-shaped channels; set by executeOutbox. */
   template?: OutboxTemplate;
+  /**
+   * The job's sandbox, where a message's `files` bytes live (D-159). The
+   * bytes are read here at send — never stored on the job — so what leaves
+   * is what the sandbox holds at the moment of Approve, the same moment the
+   * reviewer just looked at it.
+   */
+  dir?: string;
 }
 
 export interface ChannelClient {
@@ -27,6 +37,31 @@ export interface ChannelClient {
 }
 
 const SEND_TIMEOUT_MS = 15_000;
+/** File posts get longer: 10 MB on a slow uplink is minutes, not seconds. */
+const SEND_FILE_TIMEOUT_MS = 120_000;
+
+/**
+ * The bytes a message's `files` name, read from the sandbox at send.
+ *
+ * The contract verified these existed when the outbox was parsed; a file
+ * gone *since* — moved, deleted, a OneDrive hiccup — fails the send with the
+ * file's own name, because silently delivering fewer attachments than the
+ * review card showed is the review lying.
+ */
+function readOutboxFiles(
+  message: OutboxMessage,
+  deps: ChannelDeps,
+): { name: string; data: Buffer }[] {
+  if (!message.files?.length) return [];
+  if (!deps.dir) throw new Error('this message carries files but no sandbox directory was given');
+  return message.files.map((name) => {
+    const full = outboxFilePath(deps.dir!, name);
+    if (!full || !existsSync(full)) {
+      throw new Error(`"${name}" is no longer in the sandbox — nothing was sent to this recipient`);
+    }
+    return { name, data: readFileSync(full) };
+  });
+}
 
 /**
  * Telegram's Bot API. `to` is a chat id — a bot can only message someone who
@@ -38,6 +73,9 @@ const telegram: ChannelClient = {
   async send(message, deps) {
     const token = deps.env.TELEGRAM_BOT_TOKEN;
     if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
+    // Bytes first: a vanished file fails this recipient before any part of
+    // the message has moved, so a retry starts from nothing half-delivered.
+    const files = readOutboxFiles(message, deps);
     const doFetch = deps.fetchFn ?? fetch;
     const res = await doFetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -57,31 +95,100 @@ const telegram: ChannelClient = {
       }
       throw new Error(reason);
     }
+    /**
+     * Each file as its own document under the text (D-159) — never a caption,
+     * whose 1024-char cap would refuse bodies the contract's 2000 allows.
+     * A failure here throws with the text already delivered, so the whole
+     * recipient reads failed and a retry re-sends text and files both: a
+     * duplicate message is recoverable at the far end, a missing attachment
+     * the card promised is not.
+     */
+    for (const file of files) {
+      const form = new FormData();
+      form.append('chat_id', message.to);
+      form.append('document', new Blob([new Uint8Array(file.data)]), file.name.split('/').pop()!);
+      const sent = await doFetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+        method: 'POST',
+        body: form,
+        signal: AbortSignal.timeout(SEND_FILE_TIMEOUT_MS),
+      });
+      if (!sent.ok) {
+        let reason = `HTTP ${sent.status}`;
+        try {
+          const body = (await sent.json()) as { description?: string };
+          if (body?.description) reason = body.description;
+        } catch {
+          // keep the status
+        }
+        throw new Error(`the message went, then "${file.name}" failed: ${reason}`);
+      }
+    }
   },
 };
 
-/** RFC 2047, for a subject with anything beyond printable ASCII in it. */
-function subjectHeader(subject: string): string {
-  if (!/[^\x20-\x7e]/.test(subject)) return `Subject: ${subject}`;
-  return `Subject: =?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`;
+/** RFC 2047's encoded word, for header values with anything beyond printable ASCII. */
+function encodedWord(value: string): string {
+  if (!/[^\x20-\x7e]/.test(value)) return value;
+  return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }
 
 /**
- * The Gmail API's `raw` field: the whole RFC 822 message, base64url-encoded.
+ * The whole RFC 822 message as text. Without files it is exactly the
+ * single-part shape that has sent live since D-080; with them it is
+ * multipart/mixed, each file a base64 part under its own name (D-159).
  * Body stays UTF-8 — the API takes bytes, so no transfer encoding is needed —
  * and a message without a subject simply has no Subject header rather than an
  * invented one.
  */
-export function emailRaw(message: OutboxMessage): string {
-  const lines = [
+export function emailRfc822(
+  message: OutboxMessage,
+  files: { name: string; data: Buffer }[] = [],
+): string {
+  const subject = message.subject ? [`Subject: ${encodedWord(message.subject)}`] : [];
+  if (files.length === 0) {
+    return [
+      `To: ${message.to}`,
+      ...subject,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset="UTF-8"',
+      '',
+      message.body,
+    ].join('\r\n');
+  }
+  // Deterministic boundary, stepped past any collision with the one part a
+  // model writes freely. Base64 parts cannot collide: their alphabet has no
+  // '_' and no line of one starts with '--'.
+  let boundary = '=_agentlings';
+  for (let i = 0; message.body.includes(boundary); i++) boundary = `=_agentlings${i}`;
+  const parts = files.flatMap((file) => {
+    const leaf = encodedWord(file.name.split('/').pop()!);
+    return [
+      `--${boundary}`,
+      `Content-Type: ${contentTypeFor(file.name)}; name="${leaf}"`,
+      `Content-Disposition: attachment; filename="${leaf}"`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      file.data.toString('base64').replace(/(.{76})/g, '$1\r\n'),
+    ];
+  });
+  return [
     `To: ${message.to}`,
-    ...(message.subject ? [subjectHeader(message.subject)] : []),
+    ...subject,
     'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
     '',
     message.body,
-  ];
-  return base64url(Buffer.from(lines.join('\r\n'), 'utf8'));
+    ...parts,
+    `--${boundary}--`,
+  ].join('\r\n');
+}
+
+/** The Gmail API's `raw` field: the RFC 822 message, base64url-encoded. */
+export function emailRaw(message: OutboxMessage): string {
+  return base64url(Buffer.from(emailRfc822(message), 'utf8'));
 }
 
 /**
@@ -99,6 +206,7 @@ const gmail: ChannelClient = {
     if (!clientId || !clientSecret || !refreshToken) {
       throw new Error('Google is not connected');
     }
+    const files = readOutboxFiles(message, deps);
     const doFetch = deps.fetchFn ?? fetch;
     const access = await accessTokenFromRefresh({
       clientId,
@@ -107,15 +215,35 @@ const gmail: ChannelClient = {
       fetchFn: doFetch,
     });
     if ('error' in access) throw new Error(access.error);
-    const res = await doFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${access.token}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ raw: emailRaw(message) }),
-      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-    });
+    /**
+     * Two endpoints on purpose (D-159): the JSON `raw` path is the one that
+     * has sent live since D-080 and stays untouched for plain mail; a message
+     * with files goes to the media-upload endpoint, whose 35 MB ceiling is
+     * what the contract's 15 MB-per-message cap was sized against. One send
+     * either way — a failure leaves nothing half-delivered to this recipient.
+     */
+    const res = files.length
+      ? await doFetch(
+          'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media',
+          {
+            method: 'POST',
+            headers: {
+              authorization: `Bearer ${access.token}`,
+              'content-type': 'message/rfc822',
+            },
+            body: emailRfc822(message, files),
+            signal: AbortSignal.timeout(SEND_FILE_TIMEOUT_MS),
+          },
+        )
+      : await doFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${access.token}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ raw: emailRaw(message) }),
+          signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+        });
     if (!res.ok) {
       let reason = `HTTP ${res.status}`;
       try {

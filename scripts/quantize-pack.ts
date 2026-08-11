@@ -1,5 +1,6 @@
 // Reduces an image to a backdrop-sized palette, and shows the crew standing on it.
 //   npm run pack:quantize -- source.png [out.png] [--colors 128] [--no-dither]
+//   npm run pack:quantize -- far.png mid.png near.png [--colors 128] [--no-dither]
 //
 // D-108 decided the backdrop layer carries its own palette, budgeted at 128
 // and dithered, because snapping a soft-shaded render to DB32's 32 colours
@@ -10,16 +11,35 @@
 // So it writes two files: the quantized image, and a `-crew` preview with
 // gown-coloured stand-ins and the mandatory rim over it, at the seven places
 // agentlings actually stand. Looking at the second one is the point.
+//
+// Given SEVERAL images it cuts ONE palette across their union and applies it
+// to each — the fix the checker names when a stack of plates is inside
+// budget file by file and over it together (v2: the budget is the layer's).
+// Cut-outs keep their holes; each output lands beside its source as
+// `<name>.<colours>.png`.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { EXIT_X, MAX_STATIONS, SPAWN_X, STATION_BASE_X, STATION_SPACING } from '@agentlings/shared';
 import { COLOR_POOL } from '../server/src/levels';
-import { applyPalette, BACKDROP_COLOURS, meanError, medianCut } from '../server/src/quantize';
 import {
+  applyPalette,
+  applyPaletteA,
+  BACKDROP_COLOURS,
+  histogramOfA,
+  meanError,
+  medianCut,
+  paletteFrom,
+} from '../server/src/quantize';
+import {
+  alphaStats,
+  binariseAlpha,
   countColours,
+  countColoursA,
   decodePng,
+  decodePngA,
   drawStandIn,
   encodePng,
+  encodePngA,
   separationAt,
   surfaceOn,
 } from '../server/src/raster';
@@ -35,8 +55,53 @@ const positional = args.filter(
 const target = positional[0];
 
 if (!target || !existsSync(target)) {
-  console.error('Usage: npm run pack:quantize -- source.png [out.png] [--colors 128] [--no-dither]');
+  console.error(
+    'Usage: npm run pack:quantize -- source.png [out.png] [--colors 128] [--no-dither]\n' +
+      '       npm run pack:quantize -- far.png mid.png … (one palette across all)',
+  );
   process.exit(1);
+}
+
+// The joint mode: every positional is a source, one palette rules them all.
+const sources = positional.filter((p) => p.toLowerCase().endsWith('.png') && existsSync(p));
+if (sources.length > 1) {
+  const files = sources.map((file) => {
+    const raster = decodePngA(readFileSync(file));
+    const snapped = binariseAlpha(raster);
+    return { file, raster, snapped, before: countColoursA(raster) };
+  });
+  const union = new Map<number, number>();
+  for (const { raster } of files) histogramOfA(raster, union);
+  const palette = paletteFrom(union, colours);
+
+  console.log(`One palette across ${files.length} files — union ${union.size} → budget ${colours}`);
+  const after = new Map<number, number>();
+  for (const { file, raster, snapped, before } of files) {
+    const quantized = applyPaletteA(raster, palette, dither);
+    histogramOfA(quantized, after);
+    const stats = alphaStats(quantized);
+    const out = file.replace(/\.png$/i, `.${colours}.png`);
+    // Fully opaque sources go back out as plain truecolour, the shape an
+    // opaque back plate is checked as; cut-outs keep their alpha.
+    if (stats.transparent === 0) {
+      const rgb = new Uint8ClampedArray(quantized.w * quantized.h * 3);
+      for (let i = 0; i < quantized.w * quantized.h; i++) {
+        rgb[i * 3] = quantized.pixels[i * 4];
+        rgb[i * 3 + 1] = quantized.pixels[i * 4 + 1];
+        rgb[i * 3 + 2] = quantized.pixels[i * 4 + 2];
+      }
+      writeFileSync(out, encodePng({ pixels: rgb, w: quantized.w, h: quantized.h }));
+    } else {
+      writeFileSync(out, encodePngA(quantized));
+    }
+    console.log(
+      `  ${path.basename(file)} ${before} → ${countColoursA(quantized)} colours` +
+        (snapped > 0 ? ` (${snapped} soft-alpha pixels snapped)` : '') +
+        `  wrote ${out}`,
+    );
+  }
+  console.log(`  union after: ${after.size} — point PACK.json at the new files or rename them back`);
+  process.exit(0);
 }
 
 const source = decodePng(readFileSync(target));

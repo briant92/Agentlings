@@ -1,11 +1,6 @@
-import type { MoveOp } from '@agentlings/shared';
+import { opKey, type MoveOp } from '@agentlings/shared';
 
 /** The rules the review card goes by for a folder reorganization (D-132). */
-
-/** A stable key for an op — the same shape the server uses, so `done` matches. */
-export function opKey(op: MoveOp): string {
-  return op.op === 'mkdir' ? `mkdir:${op.path}` : `move:${op.from} ${op.to}`;
-}
 
 /** The ops not yet applied — the manifest minus what prior Approves did. */
 export function movesLeft(moves: MoveOp[], done: MoveOp[]): MoveOp[] {

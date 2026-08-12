@@ -23,6 +23,8 @@ import {
   awaitingVerdict,
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS,
+  opKey,
+  opLabel,
   slugProblem,
   SOCKET_LEVEL_GONE,
   TICK_MS,
@@ -193,7 +195,7 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
 import { callSearch } from './search';
-import { appendMovesJournal, executeMoves, opKey, reverseMoves } from './moves';
+import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
 import { fetchPage } from './web';
 import { AUTHOR_ROLE } from './packcontract';
@@ -2027,7 +2029,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     rt.queue.recordMoves(pending.id, run);
     movedNow = run.done.length;
     if (run.failed.length > 0) {
-      const detail = run.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
+      const detail = run.failed.map((f) => `${opLabel(f.op)}: ${f.reason}`).join('; ');
       return c.json(
         {
           error: `moved ${run.done.length}, but some failed — ${detail}. Approve again to retry; nothing moves twice.`,
@@ -2143,7 +2145,7 @@ app.post('/api/levels/:lid/jobs/:id/reverse-moves', (c) => {
   const remaining = job.movesRun.done.filter((op) => !reversed.has(opKey(op)));
   const updated = rt.queue.setMovesDone(job.id, remaining);
   if (undo.failed.length > 0) {
-    const detail = undo.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
+    const detail = undo.failed.map((f) => `${opLabel(f.op)}: ${f.reason}`).join('; ');
     return c.json({ error: `undid ${undo.done.length}, some could not be reversed — ${detail}` }, 400);
   }
   return c.json(updated);

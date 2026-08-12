@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_MOVES } from '@agentlings/shared';
-import { checkMoves, executeMoves, opKey, reverseMoves } from './moves';
+import { MAX_MOVES, opKey, opLabel } from '@agentlings/shared';
+import { checkMoves, executeMoves, reverseMoves } from './moves';
 
 describe('checkMoves — the gate', () => {
   it('accepts a mkdir and a move under the root', () => {
@@ -39,6 +39,12 @@ describe('checkMoves — the gate', () => {
     expect(read.error).toContain('both land on');
   });
 
+  it('refuses a path holding a NUL byte — it is the op-key separator', () => {
+    const nul = String.fromCharCode(0);
+    expect(checkMoves({ moves: [{ op: 'mkdir', path: `docs${nul}` }] }).error).toContain('NUL');
+    expect(checkMoves({ moves: [{ op: 'move', from: `a${nul}b`, to: 'c' }] }).error).toContain('NUL');
+  });
+
   it('refuses a move onto itself, an unknown op, and an over-cap manifest', () => {
     expect(checkMoves({ moves: [{ op: 'move', from: 'a', to: 'a' }] }).error).toContain('onto itself');
     expect(checkMoves({ moves: [{ op: 'delete', path: 'a' }] }).error).toContain('unknown op');
@@ -50,6 +56,33 @@ describe('checkMoves — the gate', () => {
     expect(checkMoves({ moves: [] }).error).toContain('empty');
     expect(checkMoves({}).error).toContain('array');
     expect(checkMoves(null).error).toContain('object');
+  });
+});
+
+describe('opKey / opLabel — identity and display, kept apart (D-161)', () => {
+  // Built, never spelled: a NUL literal here would be as invisible as the raw
+  // byte that hid in opKey itself, and would make this file vanish from grep.
+  const SEP = String.fromCharCode(0);
+
+  it('separates with NUL, so spacey paths can never collide', () => {
+    expect(opKey({ op: 'move', from: 'a b', to: 'c' })).toBe(`move:a b${SEP}c`);
+    expect(opKey({ op: 'move', from: 'a', to: 'b c' })).toBe(`move:a${SEP}b c`);
+    expect(opKey({ op: 'mkdir', path: 'docs' })).toBe('mkdir:docs');
+  });
+
+  it('labels are for people — spaced, arrowed, NUL-free', () => {
+    expect(opLabel({ op: 'move', from: 'a b', to: 'c' })).toBe('a b → c');
+    expect(opLabel({ op: 'mkdir', path: 'docs' })).toBe('mkdir docs');
+    expect(opLabel({ op: 'move', from: 'a b', to: 'c' }).includes(SEP)).toBe(false);
+  });
+
+  it('the seam sources spell the byte as an escape, never raw', () => {
+    // The original byte rode committed source unseen and made the file binary
+    // to ripgrep; this is the trap that stops it coming back.
+    const seams = ['./moves.ts', '../../packages/shared/src/index.ts', '../../web/src/panels/moves.ts'];
+    for (const rel of seams) {
+      expect(readFileSync(new URL(rel, import.meta.url), 'utf8').includes(SEP)).toBe(false);
+    }
   });
 });
 

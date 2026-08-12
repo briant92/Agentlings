@@ -173,6 +173,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-161 — 2026-08-11 — The byte nobody could see: opKey's NUL spelled out, one definition, display split from identity](#d-161--2026-08-11--the-byte-nobody-could-see-opkeys-nul-spelled-out-one-definition-display-split-from-identity)
 - [D-162 — 2026-08-11 — The flagged race, measured: node is the moves door, and the real window was a discard mid-send](#d-162--2026-08-11--the-flagged-race-measured-node-is-the-moves-door-and-the-real-window-was-a-discard-mid-send)
 - [D-163 — 2026-08-11 — The parallel settlement reconciled: the second await gets its door, D-162's miscount corrected](#d-163--2026-08-11--the-parallel-settlement-reconciled-the-second-await-gets-its-door-d-162s-miscount-corrected)
+- [D-164 — 2026-08-11 — A bad boot is not for life: the looks registry re-reads on every visit to the select screen](#d-164--2026-08-11--a-bad-boot-is-not-for-life-the-looks-registry-re-reads-on-every-visit-to-the-select-screen)
 
 ## By theme
 
@@ -235,7 +236,10 @@ entry updates one file rather than two.
   stand drawn by the app from each world's own theme slots (no scene ever
   drew the door), the boxes shared with the checker, and the strip rule
   growing both spots — its first catches Pine Reach's own menhir and the
-  Strait's paid strip
+  Strait's paid strip; and D-164, the pack registry unfrozen — boot-once
+  loadLooks re-read on every select-screen visit, after a boot that raced
+  a server restart left the New Level palette four worlds for the page's
+  whole life
 - **Roles, skills and who a job is filed under** — D-006, and D-112, where a
   role turns out to be a price class as much as a prompt: nobody holding it
   means it does nothing, adding one moves the matcher underneath the roles
@@ -10216,3 +10220,52 @@ guard not firing in the fresh worktree. The tell was the suite counting
 *down* while green: 66 files and 1,561 where 1,565 was owed. Restored
 from HEAD, the claim tests appended instead. A green suite that got
 smaller is a red flag with a number on it.
+
+## D-164 — 2026-08-11 — A bad boot is not for life: the looks registry re-reads on every visit to the select screen
+
+Brian: sometimes the New Level panel offers only "the original levels"
+and an F5 brings the rest back. The palette grid reads `allLooks()`, a
+module-level registry seeded with the four built-ins and merged with the
+installed packs by `loadLooks()` — which ran **exactly once, before the
+first render**, with failure swallowed into built-ins-only by design
+("the app comes up with its four built-in worlds"). Nothing ever retried.
+So a page whose boot raced a server restart — vite on :5173 stays alive
+while :4600 goes down, exactly the window tonight's two restarts opened
+under a live tab — held four worlds for its whole life: no Pine Reach,
+no Amber Basin, no Ember Gate, and pack-set level cards drawn as cave.
+The "sometimes" was whether the page's one fetch had won or lost that
+race; F5 rolled the dice again with the server back up.
+
+The layer *below* had already seen this coming: `renderThumbnail`
+refuses to cache a fallback render, and its comment says why — "Boot
+loads packs before the first render so this should not arise; it is one
+line to make sure it cannot." The assumption "boot happens while the
+server is up" was true when written and stopped being true the day the
+server started restarting under a live tab — the ground moved under a
+stored assumption, the D-030-family shape, and only the layer that had
+armed itself survived it. A second, milder form of the same staleness:
+a pack installed mid-session (an authored world Approved) never appeared
+in the panel either, the registry being boot-once even on a good boot.
+
+**The fix, at the surface that shows the list.** The select screen's
+`load()` — already re-run on every visit, since the screen unmounts and
+remounts around level entry — now also calls `loadLooks()` and bumps a
+render when it lands. `loadLooks` was already safely re-callable
+(`Map.set` merges, plates re-decode idempotently), so the change is the
+call and the repaint: both staleness forms heal on the next trip to the
+level list, thumbnails included, because the uncached fallback redraws
+against the healed registry. Web-only — no server restart needed; the
+running `serve` never had the bug.
+
+### What proved it
+
+`loadLooks`'s first test, the whole story in three acts: the fetch
+refused → four built-ins and `pine-reach` missing; called again with the
+server back → five looks, `pine-reach` installed; called a third time
+with the same packs → still five, nothing duplicated. Suite green at
+1,565 + 185 — web up exactly one file and one test, counted against the
+ledger this time. One mutation after committing (`125a409`), one kill: a
+once-guard reintroduced into `loadLooks` — the exact regression a future
+"it only needs to run once" edit would make — fails the heal act. The
+wiring in `SelectScreen.load()` is three lines, review-verified, its
+comment naming D-164 at the seam.

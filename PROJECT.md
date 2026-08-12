@@ -17,8 +17,12 @@ behavioral base lives there alone; this is the project half, split out on
   Live since 2026-08-12 (D-165): Supabase org **Agentlings** on the Free plan,
   project **Agentlings**, region East US (North Virginia), Data API off and
   automatic RLS on; and Vercel project **agentlings-web** on the personal Hobby
-  scope, serving the web client only at `agentlings-web.vercel.app` — the
-  server cannot go there and goes to Railway (the numbers are in D-165).
+  scope, serving the web client only at `agentlings-web.vercel.app`. Both sit
+  at $0 and **are not in service**: D-169 declined hosting, because repo work,
+  the folder organizer, the knowledge store and OCR are all bound to the local
+  disk or to Windows, so a hosted server is a smaller product. The app runs on
+  this machine. Reopen when Brian wants to queue work from a phone, or a second
+  person needs access.
 - Architectural choices (language, engine, framework, storage) extend CLAUDE.md
   rule 1:
   present 2–3 options with a recommendation, wait for the decision, then

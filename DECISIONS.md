@@ -178,6 +178,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-166 — 2026-08-12 — Out of OneDrive: the repo moves to C:\Users\MSI\Dev\Agentlings](#d-166--2026-08-12--out-of-onedrive-the-repo-moves-to-cusersmsidevagentlings)
 - [D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there](#d-167--2026-08-12--the-llm-wiki-skill-stays-uninstalled-it-cannot-read-a-flat-file-and-the-duplicates-i-promised-were-not-there)
 - [D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach](#d-168--2026-08-12--four-browser-tools-refused-for-want-of-demand-and-the-allowlist-found-to-bound-the-offer-rather-than-the-reach)
+- [D-169 — 2026-08-12 — The app stays local: hosting is a capability split, not a deployment choice](#d-169--2026-08-12--the-app-stays-local-hosting-is-a-capability-split-not-a-deployment-choice)
 
 ## By theme
 
@@ -578,7 +579,11 @@ entry updates one file rather than two.
   its own function ceilings against `SESSION_TIMEOUT_MS` — and the first
   time any part of this project stood on the public internet; and D-166, the
   OneDrive exit executed — the plan MIGRATION.md had held since 2026-08-11,
-  run in one window with the suite, the API and the level list as its gate
+  run in one window with the suite, the API and the level list as its gate;
+  and D-169, where hosting was **declined** once it was measured rather than
+  assumed — five Live capabilities are bound to the local filesystem or to
+  Windows, so a hosted server is a different and smaller product, and the
+  accounts stand ready at $0 against a stated trigger
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -10612,3 +10617,75 @@ in making acting **legible and bounded** (one origin, halting assertions, a
 trace as the receipt), not in making it *possible*. A capability that already
 exists without review is a stronger reason to build the reviewed path, not a
 weaker one.
+
+## D-169 — 2026-08-12 — The app stays local: hosting is a capability split, not a deployment choice
+
+Decision 1 of the 2026-08-12 review, and it goes the other way from the
+review's own recommendation. **No hosted server.** The laptop stays the
+primary and only instance. The Supabase organisation and the Vercel project
+created earlier the same day (D-165) stand ready, cost $0, and wait for a
+trigger that is now stated rather than assumed.
+
+**The report recommended single-tenant hosting without checking whether the
+app runs on Linux.** It does not, in the parts that matter most.
+
+### What a hosted server would lose, measured
+
+| Capability | Hosted | Why |
+|---|---|---|
+| Repo work — clone, `DIFF.patch`, promote | **gone** | `gitwork.ts:22` is `git clone --local --no-hardlinks <repoPath>`, and promote `git apply`s back to that same path. Both ends are the local filesystem |
+| Folder reorganization (D-132) | **gone** | `pickFolder.ts` is `powershell.exe` behind `process.platform !== 'win32'`, and there is no desktop on a server to pick from |
+| Knowledge store (D-047, D-048) | **gone** | `store.ts` walks local directories with `readdirSync`/`statSync` |
+| OCR of scans (D-061) | **gone** | `ocr.ts:122` returns false off `win32`; the engine is WinRT through PowerShell |
+| Render — PDF and backdrop plates (D-128) | recoverable | `chromium.launch({ channel: 'msedge' })` at three sites; installable on Linux or a channel change |
+
+None of it crashes, which is worth saying: `renderAvailable()` and
+`ocrAvailable()` are real probes rather than platform guesses, and
+`render.ts:177` refuses the door when the probe fails. The failure mode is a
+smaller app, not a broken one.
+
+**What survives is coherent and substantial**: web fetch and search, scout and
+researcher, every document format, all five send channels plus calendar, pack
+authoring, schedules, recipes, compiled tools, the ladder and the ledger.
+
+### The finding worth keeping
+
+**Agentlings is two products sharing an engine.** One is a local
+coding-and-filesystem assistant — repos, folders, notes, scans. The other is a
+remote research-and-outreach desk — read, compose, produce, send. Hosting
+keeps the second whole and kills the first, and no amount of deployment work
+changes that, because the first is *defined* by having the user's disk under
+it. That is not a portability bug to fix; it is what those capabilities are.
+
+### Why decline rather than build the surviving half
+
+The question that opened the whole thread was a third party wanting to see
+what the crew can do. **That is answered by a recording, not by a server** —
+the demo recorder is P3 of the same review, needs no account, no auth, no
+monthly floor, and no capability loss. Hosting would have cost $5–25/month
+plus the auth work the server has never needed (D-127 pinned `127.0.0.1`
+deliberately; the loopback bind *is* the security today) to buy reach nobody
+has yet asked for.
+
+The trigger to reopen is concrete and belongs to Brian rather than to a
+roadmap: **wanting to queue work from a phone, or a second person needing
+access.** The hybrid shape is the one to build then — laptop primary for the
+filesystem half, a hosted instance for the desk half, one codebase and a
+documented split — and the two accounts already exist to make that a short
+job rather than a project.
+
+**One thread parked with it.** D-168 deferred per-job isolation to "the
+hosting decision" on the grounds that a `Bash` run can already reach
+`playwright-core` and drive a browser unreviewed. The hosting decision is now
+*not to host*, so that concern stays parked with its severity unchanged and
+its trigger intact: it is a localhost, single-user, nobody-has-ever-reached-
+for-it finding, and it becomes load-bearing on the same day this entry
+reopens.
+
+### What the day already banked
+
+Nothing is wasted by declining. The Vercel deploy proved the build half of
+what hosting would need — a real Vite build, a real URL, the title screen
+rendering, `/api/*` failing exactly as designed — for £0 and before the
+decision was taken. The Supabase project is provisioned with tighter security
+than its defaults. Both sit at zero cost until the trigger fires.

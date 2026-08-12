@@ -175,6 +175,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-163 — 2026-08-11 — The parallel settlement reconciled: the second await gets its door, D-162's miscount corrected](#d-163--2026-08-11--the-parallel-settlement-reconciled-the-second-await-gets-its-door-d-162s-miscount-corrected)
 - [D-164 — 2026-08-11 — A bad boot is not for life: the looks registry re-reads on every visit to the select screen](#d-164--2026-08-11--a-bad-boot-is-not-for-life-the-looks-registry-re-reads-on-every-visit-to-the-select-screen)
 - [D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects](#d-165--2026-08-12--agentlings-gets-its-own-accounts-and-the-danger-was-never-the-projects)
+- [D-166 — 2026-08-12 — Out of OneDrive: the repo moves to C:\Users\MSI\Dev\Agentlings](#d-166--2026-08-12--out-of-onedrive-the-repo-moves-to-cusersmsidevagentlings)
 
 ## By theme
 
@@ -565,7 +566,9 @@ entry updates one file rather than two.
   org and its own Vercel project and reaches them by `.env` alone (D-078's
   shape). Carries the measurement that Vercel cannot host this server —
   its own function ceilings against `SESSION_TIMEOUT_MS` — and the first
-  time any part of this project stood on the public internet
+  time any part of this project stood on the public internet; and D-166, the
+  OneDrive exit executed — the plan MIGRATION.md had held since 2026-08-11,
+  run in one window with the suite, the API and the level list as its gate
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -10377,3 +10380,75 @@ holding no data and reaching no server, so the exposure is nil. At P4 the
 same URL fronts a real one, and §11's privacy posture — localhost, no auth,
 no telemetry, no control plane — is written entirely for a machine nobody
 else can reach. That gap is now on the clock.
+
+## D-166 — 2026-08-12 — Out of OneDrive: the repo moves to C:\Users\MSI\Dev\Agentlings
+
+Executed the plan `MIGRATION.md` had been holding since 2026-08-11, on the
+day it was picked. The reason was never tidiness: OneDrive had produced two
+distinct incident classes — replayed file events restarting the server
+minutes after an edit and killing paid sessions (D-140), and a sync grind
+that failed 15 tests by CPU starvation alone. Serve-mode discipline
+mitigated both; leaving ends the family.
+
+**The plan's measurements were re-verified rather than trusted**, which is
+this file's own rule applied to its own notes. All three held: exactly one
+live path key (`hq`'s `repoPath`; every other level empty), `.env` carrying
+no paths at all (7 keys, all tokens), and no extra worktrees. The T5
+window was clear by the clock — 09:00 firing already past, next one seven
+days out.
+
+**What ran.** Preflight: 0 active jobs fleet-wide, both repos pushed,
+server stopped and ports confirmed released, OneDrive paused. Copy rather
+than move, so the old tree stayed as the rollback: **62,573 files,
+631.91 MB, 0 failed, 0 mismatched**, excluding `node_modules`, the
+worktrees dir and the regenerable `web/dist`, with junctions not followed.
+Then hq's `repoPath` rewired and a fresh `npm install` at the target.
+
+**The gate, in five parts.** Full suite green at the new path — **1,565
+server + 185 web = 1,750 tests across 82 files** — and typecheck clean.
+`npm run serve` up, executor `claude-agent-sdk` detected. The API intact
+through real calls: 3 open levels with hq reporting its *new* `repoPath`,
+146 hq jobs with their statuses unchanged (49 promoted, 43 discarded, 37
+failed, 17 partial), 6 crew with careers. `ledger:report` regenerating
+over all 254 rows. And the level list rendering in the browser with real
+crew counts.
+
+**One honest note on that last one.** The Browser pane would not deliver a
+synthetic click to the title menu — the click landed dead-centre on a
+`cursor: pointer` element that hit-tested to itself, and nothing fired. A
+click dispatched in-page advanced correctly to the level list, which
+proves the app rather than the pane. Same pane flakiness this project has
+recorded before; a human click stays unconfirmed and that is stated
+rather than papered over.
+
+### What proved the slug
+
+The plan's sharpest instruction was **do not guess the memory-directory
+slug** — verify it. Worth keeping why that mattered here: the memory
+folder had already been pre-staged at the *predicted* name, so the
+existence of `C--Users-MSI-Dev-Agentlings` was evidence of nothing but my
+own copy. The proof is that **Claude Code then wrote this session's own
+transcript into it** — `cb51e9c2-….jsonl`, 3.1 MB, timestamped mid-session
+— which is the tool choosing the slug independently. Prediction confirmed
+by something that was not the prediction.
+
+The switch itself was made in place: the session's working directory was
+changed rather than a new session started, so this conversation survived
+the move and the remaining work happened in the surviving tree.
+
+**A detour worth recording, because it will recur.** Three attempts to
+start a CLI session failed — `claude` not on PATH, then the full path to
+`claude.cmd` also "not recognized" — after my own tools reported the
+binary present and the PATH entry correct. That is the **MSIX sandbox**:
+tool-side reads of `AppData` see a virtualized store, so an install can
+look confirmed while the user's real shell has nothing. The existing note
+says never report an install as confirmed; the sharper form is that
+`Test-Path` and `Get-Command` under these tools are *not* evidence about
+the user's machine for anything under `AppData`. Paths outside it —
+`C:\Users\MSI\.claude\` among them — read true.
+
+**Still open, deliberately.** The old tree at
+`C:\Users\MSI\OneDrive\Escritorio\Agentlings` is untouched and remains the
+rollback; deleting it, and deciding what becomes of the OneDrive cloud
+copy, is Brian's call. `MIGRATION.md` stays until that happens, since it
+is the reference for the one step left.

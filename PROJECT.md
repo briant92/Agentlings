@@ -30,19 +30,12 @@ behavioral base lives there alone; this is the project half, split out on
 ## Environment
 
 - Windows 11; PowerShell is the primary shell. Prefer cross-platform tooling.
-- This folder lives inside OneDrive (`...\OneDrive\Escritorio\Agentlings`),
-  and consumer OneDrive has **no** per-folder exclusion setting — the
-  "Exclude files" switch an earlier version of this line pointed at is an
-  enterprise GPO, and was hunted for and not found (2026-08-10). OneDrive
-  has now caused two real incidents: replayed edits restarting the server
-  minutes later (D-140) and a 100%-CPU sync grind over worktree copies
-  that failed 15 tests by starvation alone. The workable mitigations, in
-  order: keep `.claude\worktrees` OUT of the synced tree via a junction
-  (`mklink /J` to somewhere under `%LOCALAPPDATA%` — OneDrive does not
-  traverse reparse points, though it may nag about them), pause OneDrive
-  during heavy sessions, or move the repo out of OneDrive entirely — the
-  clean fix, but a planned migration: level `repoPath`s and the session
-  memory directory are keyed to the current absolute path.
+- The repo lives at `C:\Users\MSI\Dev\Agentlings` — **outside OneDrive since
+  2026-08-12 (D-166)**, which closed the two incident classes it caused:
+  replayed edits restarting the server minutes after the fact and killing paid
+  sessions (D-140), and a 100%-CPU sync grind that failed 15 tests by
+  starvation alone. No pausing, no junction, no exclusion hunt is needed any
+  more; a path in these notes that still says OneDrive is stale.
 - Secrets go in `.env` (gitignored) — never in code and never in this file.
 
 ## Commands

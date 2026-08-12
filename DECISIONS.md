@@ -179,6 +179,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there](#d-167--2026-08-12--the-llm-wiki-skill-stays-uninstalled-it-cannot-read-a-flat-file-and-the-duplicates-i-promised-were-not-there)
 - [D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach](#d-168--2026-08-12--four-browser-tools-refused-for-want-of-demand-and-the-allowlist-found-to-bound-the-offer-rather-than-the-reach)
 - [D-169 — 2026-08-12 — The app stays local: hosting is a capability split, not a deployment choice](#d-169--2026-08-12--the-app-stays-local-hosting-is-a-capability-split-not-a-deployment-choice)
+- [D-170 — 2026-08-12 — The demo records itself: our own Playwright drives our own app, and the feed is a log not a queue](#d-170--2026-08-12--the-demo-records-itself-our-own-playwright-drives-our-own-app-and-the-feed-is-a-log-not-a-queue)
 
 ## By theme
 
@@ -583,7 +584,10 @@ entry updates one file rather than two.
   and D-169, where hosting was **declined** once it was measured rather than
   assumed — five Live capabilities are bound to the local filesystem or to
   Windows, so a hosted server is a different and smaller product, and the
-  accounts stand ready at $0 against a stated trigger
+  accounts stand ready at $0 against a stated trigger; and D-170, the thing
+  D-169 pointed at instead — a recorder, not a server: our own Playwright
+  driving our own app with the acting tools no session is ever offered, and
+  three failed takes that each taught something about the UI it drives
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -10689,3 +10693,81 @@ what hosting would need — a real Vite build, a real URL, the title screen
 rendering, `/api/*` failing exactly as designed — for £0 and before the
 decision was taken. The Supabase project is provisioned with tighter security
 than its defaults. Both sit at zero cost until the trigger fires.
+
+## D-170 — 2026-08-12 — The demo records itself: our own Playwright drives our own app, and the feed is a log not a queue
+
+P3 of the 2026-08-12 review, and the row D-169 pointed at when it declined
+hosting: a third party asking *what can it do?* is answered by a recording,
+not by a server. Built as `scripts/record-demo.ts`, run with
+`npm run demo:record`, writing a `.webm` and a Playwright trace into
+`.agentlings/demo/` — gitignored, because a demo is an artefact and not a
+source file.
+
+**It holds the tools a session never gets, and that is the point.** This is
+our own script driving our own app through `playwright-core` — the same
+dependency the render door already uses (D-128) — so it clicks and types
+freely. D-034's refusal is untouched: nothing here is offered to a model, and
+`catalog.test.ts` still pins the twelve absent. The distinction D-168 drew is
+exactly this one, stated the other way round: the allowlist bounds what a
+*session* is handed, and a script in the repo is not a session.
+
+### What proved it, which was mostly the failures
+
+Four takes. The last one worked; the first three each corrected something that
+had been assumed.
+
+**Take one recorded a lie.** `getByText('REVIEW').first()` clicked the first
+review button on screen, which belonged to a finished job from an earlier
+smoke test, and approved it — while the job the recording had just queued was
+still running. The ledger shows it: `733eda85` went `done → promoted` with the
+camera pointed at it, and `6b5cfe6a` was still working. **The feed is a
+chronological log, not a queue of things awaiting you**, so "the first REVIEW"
+names whatever finished most recently, not what you just asked for. The fix is
+to settle the job through the API first — the id that appeared after the press
+— and only then touch the DOM.
+
+**Take one also traced to 183 MB.** `screenshots: true` records a screencast
+into the trace, and over a multi-minute session that dominates it. Turning it
+off left 9.5 MB of DOM snapshots and network, which is an artefact somebody
+can actually be sent. The `.webm` already carries the picture.
+
+**Take two was swallowed by the onboarding tour.** A fresh Playwright profile
+has never seen it, so `Tour.tsx`'s overlay renders over the work bar and
+intercepts every click — `57 × waiting for element … <div class="tour">
+intercepts pointer events`. Seeded with `addInitScript` setting
+`agentlings:tour` before any page script runs.
+
+**Take three failed on a selector built from a wrong assumption.** Having
+learned to scope the review click to *this* job, the obvious anchor was the
+job's summary — and it never matched, because **a `done` job's card is
+rendered without one**: `Terminal.tsx:239` passes no `say` prop, and
+`{say && …}` means the `.summary` div does not exist. Reading the component
+also gave the simpler answer that ended up shipping: `EventEntry` returns a
+fragment, so a done event's line and card are siblings directly under
+`.t-feed`, and the feed appends (`el.scrollTop = el.scrollHeight`). With the
+API already confirming which job just settled, **the last card is ours** — no
+text matching at all.
+
+### The run it captured
+
+The final take: 12 turns, **$0.9215**, tools `Bash` · `Read` · `Write` ·
+`mcp__render__render_pdf`, producing a real one-page PDF through the render
+door, then reviewed and approved from inside the recording. Job `48616aa7`
+reached `promoted` while the two earlier PDF runs stayed `done` and untouched
+— which is how the scoping fix was verified rather than asserted.
+
+**Cost, stated because it was under-quoted at the time.** Five real jobs
+across the session, **$2.55 total**. Each take runs a genuine session; "a few
+cents" was wrong and the ledger is the record.
+
+**And it closed P0's other half.** D-166 shipped the migration with its gate
+only partly met — the suite, the API and the level list were verified, but no
+job had run at the new path. Several now have, end to end: `733eda85` (3
+turns, 26c) proved the executor chain, and the demo's own runs proved it again
+with a document and the render door.
+
+**What it is not.** A 33 MB raw capture at real speed, about three minutes,
+most of it an agentling working. A promo wanting 60–90 seconds needs trimming
+or a speed-up, and `recordVideo` offers neither — that is an editing step
+outside this script. What ships is the reproducible source recording, not a
+finished film.

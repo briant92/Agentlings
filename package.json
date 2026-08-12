@@ -22,7 +22,8 @@
     "pack:check": "tsx scripts/check-pack.ts",
     "pack:render": "tsx scripts/render-pack.ts",
     "pack:quantize": "tsx scripts/quantize-pack.ts",
-    "ledger:report": "tsx scripts/ledger-report.ts"
+    "ledger:report": "tsx scripts/ledger-report.ts",
+    "demo:record": "tsx scripts/record-demo.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

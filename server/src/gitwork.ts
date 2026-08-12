@@ -72,3 +72,28 @@ export async function applyPatch(targetRepoPath: string, patch: string): Promise
   if (!existsSync(patch)) throw new Error('no DIFF.patch to apply');
   await run('git', ['-C', targetRepoPath, 'apply', '--whitespace=nowarn', patch]);
 }
+
+/**
+ * The patch-apply claim (D-163). `applyPatch` is the resolve route's second
+ * await — D-162's recheck guards the first — and a resolve request landing
+ * inside it would either race a second `git apply` onto the real repository
+ * or discard a job whose patch is mid-flight. The route's door refuses both
+ * actions while a job is claimed; the apply block releases in a `finally`,
+ * so a failed apply leaves the job resolvable. Process-local like D-160's
+ * send claim, which is the scope of the race: every caller lives in this
+ * one server.
+ */
+const patching = new Set<string>();
+
+/** Marks the job's patch mid-flight. The route's door is what refuses on it. */
+export function beginPatch(jobId: string): void {
+  patching.add(jobId);
+}
+
+export function endPatch(jobId: string): void {
+  patching.delete(jobId);
+}
+
+export function patchInFlight(jobId: string): boolean {
+  return patching.has(jobId);
+}

@@ -4,7 +4,16 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { applyPatch, cloneRepo, patchFile, summarizePatch, writeDiff } from './gitwork';
+import {
+  applyPatch,
+  beginPatch,
+  cloneRepo,
+  endPatch,
+  patchFile,
+  patchInFlight,
+  summarizePatch,
+  writeDiff,
+} from './gitwork';
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync('git', ['-C', cwd, ...args], { stdio: 'pipe' });
@@ -75,5 +84,28 @@ describe('gitwork', () => {
 
   it('refuses to apply a missing patch', async () => {
     await expect(applyPatch(origin, patchFile(sandbox))).rejects.toThrow(/no DIFF.patch/);
+  });
+});
+
+describe('the patch-apply claim (D-163)', () => {
+  it('holds exactly between begin and end — the resolve door reads it', () => {
+    expect(patchInFlight('j1')).toBe(false);
+    beginPatch('j1');
+    expect(patchInFlight('j1')).toBe(true);
+    endPatch('j1');
+    expect(patchInFlight('j1')).toBe(false);
+  });
+
+  it('is per job — one job mid-patch never blocks another', () => {
+    beginPatch('j2');
+    expect(patchInFlight('j3')).toBe(false);
+    endPatch('j2');
+  });
+
+  it('releasing twice is safe — a finally can never throw or leak', () => {
+    beginPatch('j4');
+    endPatch('j4');
+    endPatch('j4');
+    expect(patchInFlight('j4')).toBe(false);
   });
 });

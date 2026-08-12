@@ -295,6 +295,15 @@ export function promotionPrompt(
     `- ${RUN_SCRIPT} — does the job, exactly as the method describes. It runs with the sandbox as its working directory, the same place a session would work. A repository, when there is one, is at ./repo.`,
     `- ${VERIFY_SCRIPT} — checks that ${RUN_SCRIPT} did the job. Exit 0 when the work is right and non-zero when it is not.`,
     '',
+    // Both scripts sit beside each other in the sandbox while you write them,
+    // and only separate once the tool is installed — so a script that reads
+    // its own source by a bare relative path passes every test you can run
+    // here and fails on its first real run. Measured: the first tool compiled
+    // against a door lost a strike to exactly this, its verify unable to find
+    // the `run.mjs` it had just checked. Said plainly because it cannot be
+    // discovered at compile time.
+    `Once installed, the two scripts run **from the tool's own directory** with the sandbox as the working directory — they are no longer in the same folder. So: write your output to the working directory as usual, but read either script's own source through \`import.meta.dirname\` (e.g. \`readFileSync(path.join(import.meta.dirname, '${RUN_SCRIPT}'), 'utf8')\`), never as a bare \`'${RUN_SCRIPT}'\`. A bare path works while you test and breaks the moment the tool is real.`,
+    '',
     ...(doors.length > 0
       ? [
           'This job reaches outside, so the tool is granted the same doors a session',

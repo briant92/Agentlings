@@ -275,6 +275,24 @@ describe('promotion', () => {
 
   // The check is the whole safety argument for the tier, so the brief has to
   // insist on it: without one, a tool is only a faster way to be wrong.
+  /**
+   * The one fact about the run a compile cannot discover for itself.
+   *
+   * While the scripts are being written they sit together in the sandbox, so a
+   * verify that reads `run.mjs` by a bare relative path passes every test the
+   * session can run — and then fails on the first real run, because installing
+   * moves the scripts to the tool's own directory while the working directory
+   * stays the sandbox. Measured on the first tool ever compiled against a door:
+   * its verify could not find the `run.mjs` it had just finished checking, and
+   * the tool took a strike for our omission.
+   */
+  it('warns that the scripts separate once installed', () => {
+    const prompt = promotionPrompt({ key: 'x', approach: 'y', role: 'analyst' });
+    expect(prompt).toContain('import.meta.dirname');
+    expect(prompt).toContain("from the tool's own directory");
+    expect(prompt).toMatch(/never as a bare/i);
+  });
+
   it('asks for the check as firmly as the script', () => {
     const prompt = promotionPrompt(
       { key: 'total the invoices', approach: 'sum column D', role: 'analyst' },

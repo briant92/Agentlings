@@ -10474,11 +10474,34 @@ says never report an install as confirmed; the sharper form is that
 the user's machine for anything under `AppData`. Paths outside it —
 `C:\Users\MSI\.claude\` among them — read true.
 
-**Still open, deliberately.** The old tree at
-`C:\Users\MSI\OneDrive\Escritorio\Agentlings` is untouched and remains the
-rollback; deleting it, and deciding what becomes of the OneDrive cloud
-copy, is Brian's call. `MIGRATION.md` stays until that happens, since it
-is the reference for the one step left.
+**Closed the same evening.** The old tree at
+`C:\Users\MSI\OneDrive\Escritorio\Agentlings` was kept as the rollback until
+jobs had run end to end at the new path — which they had, several times over
+(D-170) — and then deleted on Brian's word: **93,669 files removed, 0
+remaining.** Verified first rather than trusted: every gitignored and
+therefore ungit-recoverable file was confirmed byte-identical in both trees
+(`.env` at 934 bytes, `pine-reach.blend` at 36,569,955, the Artwork rasters,
+`settings.local.json`, the pine-reach pack PNG), the new `.agentlings` was
+*larger* than the old — 57,743 files against 57,698, because the day's jobs
+had already run there — and the old checkout held nothing uncommitted,
+nothing unpushed and no stashes.
+
+**Four empty directories survived, and the reason was already on file.**
+`Remove-Item` aborted on
+`.claude\worktrees\intelligent-stonebraker-7cee6c` — *the process cannot
+access the file* — which is the locked husk of a dead chip session, holding
+`.claude`, `worktrees` and `server` open behind it. It contains **zero
+files**; it is a directory entry a process still names as its working
+directory, and it releases on reboot. Everything else was removed around it.
+The deletion syncs to the OneDrive cloud copy when syncing resumes, and is
+recoverable from that recycle bin for 30 days.
+
+With that, `MIGRATION.md` was deleted: it was a working doc on `GAPS.md`'s
+precedent — execute, record the result here, remove the file — and the one
+step it was still the reference for is done. **The repo is wholly outside
+OneDrive**, which closes the incident class rather than mitigating it: no
+pausing, no junction, no exclusion hunt, and no advice in these notes that
+still applies.
 
 ## D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there
 

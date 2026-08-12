@@ -170,6 +170,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model](#d-158--2026-08-11--the-reading-desks-calendar-first-sibling-grants-a-clerk-on-the-cheap-model)
 - [D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door](#d-159--2026-08-11--the-outbox-carries-files-telegram-documents-gmail-multipart-review-holds-the-door)
 - [D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam](#d-160--2026-08-11--one-door-for-the-outbox-send-the-double-send-race-closed-at-its-seam)
+- [D-161 — 2026-08-11 — The byte nobody could see: opKey's NUL spelled out, one definition, display split from identity](#d-161--2026-08-11--the-byte-nobody-could-see-opkeys-nul-spelled-out-one-definition-display-split-from-identity)
 
 ## By theme
 
@@ -281,7 +282,11 @@ entry updates one file rather than two.
   it, model-never-touches, never a delete, journaled so it reverses; and
   D-141, one Approve one door — the gates-of-troy install refused by its own
   first half, fixed by authoring dropping the repo and an unchanged slug not
-  counting as a rename, with the cut-legs-never-charge pricing seam recorded
+  counting as a rename, with the cut-legs-never-charge pricing seam recorded;
+  and D-161, the replay's op identity — the tree's one raw NUL byte (U+0000)
+  spelled out as a visible escape, the web copy's space collision closed by
+  one shared opKey, and display split from identity so the byte never
+  reaches the review pane
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on
@@ -10018,3 +10023,74 @@ for its own decision rather than folded in here.
 The running `serve` predates this commit, so the race is live until the
 next restart — after T5's first firing, per D-158's sequencing. Until
 then the exposure is one double-click on Approve, survivable for a day.
+
+## D-161 — 2026-08-11 — The byte nobody could see: opKey's NUL spelled out, one definition, display split from identity
+
+The moves replay's `opKey` read as `move:` from-space-to and was not
+that: between the template holes sat a raw NUL (0x00) — char-code dump
+said `[[66,0]]`, the only NUL in 295 tracked files, present in the file's
+birth commit `1e08d46` — while the web panel's copy of "the same"
+function, born three commits later under a doc comment promising *the
+same shape the server uses, so `done` matches*, used a real space. Two
+definitions of op identity, visually identical, byte-different, and the
+web one wrong: under a space separator `a b`→`c` and `a`→`b c` both key
+`move:a b c`, so the review card's moves-left could mark a live op
+already-done off its spacey lookalike. Keys never persist —
+`movesRun.done` and `moves.jsonl` store ops — so the divergence broke no
+stored data; it waited in the card.
+
+**Why nobody could find it.** A NUL makes ripgrep classify a file as
+binary: every content search silently skipped `server/src/moves.ts`. This
+session hit that live — a repo-wide grep for `opKey` returned the callers
+and the web copy, never the definition. A session fixing "every seam the
+rule touches" by grep would honestly miss the server one; the byte hid
+the very file that carried it. That, more than any single collision, is
+the verdict on raw control bytes in source.
+
+**Origin, honestly.** Whether the birth session *chose* NUL and emitted
+the byte where it meant the escape, or never chose at all, is unknowable.
+The mechanism is not: this session, writing its own byte-dump instrument,
+twice emitted a raw NUL where it intended the six-character escape, and
+then could not type a matching literal to edit it out. The generating
+layer collapses the escape into the byte it names. Every escape spelling
+in this change therefore went in by script, the test literals build the
+byte with `String.fromCharCode(0)` instead of spelling it, and this entry
+names the character U+0000 rather than risk the spelling that started
+all this.
+
+**The settlement.** The byte was right and the spelling was wrong. NUL is
+the one byte no path on Windows or POSIX may contain — the only truly
+unambiguous separator, where the space the key *appeared* to use is
+ambiguous for spacey filenames. So: one `opKey` in `@agentlings/shared`
+beside `MoveOp`, the separator spelled as the visible escape with the why
+in its comment, server and web both importing it — the web copy's prose
+promise of sameness replaced by the module system enforcing it (D-030's
+call-the-shared-function; D-119/D-120's every-seam rule). Display split
+from identity: the resolve and reverse routes built error details from
+`opKey` output — a NUL riding inside review-pane messages — and now go
+through `opLabel` (`a b → c`, `mkdir docs`). And the separator's
+soundness is enforced rather than assumed: `pathProblem` refuses a path
+holding a NUL, which could otherwise forge a key collision and get a live
+op silently skipped as already done — the exact read-as-no-moves
+direction the gate's own header warns about.
+
+### What proved it
+
+The dump before: worktree and HEAD blob both `[[66,0]]` on the server
+line, the web line clean, 1 NUL across 295 tracked files, the birth
+commit already carrying it. After: 0 NULs in 295 files, and the same
+`opKey` search that skipped `moves.ts` returns it again. Five new tests —
+the spacey pair keys distinct, labels NUL-free, the gate refuses NUL
+paths, the web card keeps a spacey lookalike undone, and a hygiene trap
+reads the three seam sources asserting no raw byte 0, so the class of bug
+cannot quietly return. Suite green at 1,561 + 184, typecheck clean. Two
+mutations after committing (`35ff671`), two kills: the separator flipped
+to a space failed the server identity test and the web collision test
+*together* — one definition, two seams, one failure, and vitest's own
+failure output carried the NUL, turning grep binary mid-proof; the NUL
+guard removed failed its gate test. One environment fact worth keeping:
+this worktree had no `node_modules`, so tsc and vitest resolved
+`@agentlings/shared` to the main checkout's copy and the branch's own
+shared edit was invisible to its own gate — first typecheck failed
+honestly, and `npm install` in the worktree (22s) was the fix. A shared
+edit from a worktree needs the local install first.

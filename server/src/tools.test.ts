@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { terms } from './recipes';
 import {
+  DOORS_ENV,
   RUN_SCRIPT,
   STRIKES_ALLOWED,
   VERIFY_SCRIPT,
@@ -63,6 +64,45 @@ describe('findTool', () => {
     const retired = [manifest({ retiredReason: 'failed twice' })];
     expect(findTool(retired, 'total the invoices in the spreadsheet', false)).toBeNull();
   });
+
+  /**
+   * The other half of giving tools doors: a tool compiled against a connection
+   * is refused when the job does not hold it.
+   *
+   * Not a nicety. A tool that reaches a door it was not granted fails, and two
+   * failures retire it — so without this, switching `github` off in Settings
+   * would silently destroy a working compiled tool and bill two fallback
+   * sessions on the way. The same capability-surface rule recipes have carried
+   * since D-036, arriving at the tier that until now could not need it.
+   */
+  const needsGithub = [manifest({ connections: ['github'] })];
+  const ask = 'total the invoices in the spreadsheet';
+
+  it('claims its job when the doors it needs are open', () => {
+    expect(findTool(needsGithub, ask, false, ['github', 'web'])?.name).toBe('tidy-invoice');
+  });
+
+  it('refuses its own job when a door it needs is shut', () => {
+    expect(findTool(needsGithub, ask, false, ['web'])).toBeNull();
+    expect(findTool(needsGithub, ask, false, [])).toBeNull();
+  });
+
+  it('needs every door it was compiled against, not merely one', () => {
+    const both = [manifest({ connections: ['github', 'search'] })];
+    expect(findTool(both, ask, false, ['github'])).toBeNull();
+    expect(findTool(both, ask, false, ['github', 'search'])).not.toBeNull();
+  });
+
+  /**
+   * Every tool compiled before doors existed. Its manifest has no such field,
+   * it requires nothing, and it must keep running for jobs that grant nothing
+   * — which is the whole reason the grant is its own field and not the
+   * capability surface, where ambient `web` rides almost every recipe.
+   */
+  it('asks nothing of a tool compiled under the old contract', () => {
+    expect(findTool(tools, ask, false, [])?.name).toBe('tidy-invoice');
+    expect(findTool([manifest({ connections: [] })], ask, false, [])).not.toBeNull();
+  });
 });
 
 describe('a tool on disk', () => {
@@ -106,16 +146,34 @@ describe('a tool on disk', () => {
 
   /**
    * The surface the method was found under, which is knowable only at compile
-   * time. Recorded and read by nobody — a tool is Node built-ins only, so no
-   * axis a surface records can currently invalidate one, and refusing on a
-   * moved surface would drop a free proven answer into a paid session to buy
-   * nothing. It is kept because a manifest cannot be given a field it never
-   * wrote, and because giving tools the gated doors would make it load-bearing.
+   * time. Recorded and read by nobody — a tool is Node built-ins only plus the
+   * doors it was granted, and refusing on a moved surface would drop a free
+   * proven answer into a paid session to buy nothing.
+   *
+   * This comment used to end "giving tools the gated doors would make it
+   * load-bearing". That day came, and it did not: a surface is what the method
+   * *could* reach, so it carries ambient `web` whether the method touched it or
+   * not, and gating a run on it would refuse a tool over a connection it never
+   * called. The grant is `connections` below, which records what was used.
    */
   it('carries the capability surface it was compiled under', () => {
     const surface = ['conn:web', 'lib:pdf-lib', 'tool:Bash'];
     writeTool(levelDir, manifest({ capabilities: surface }));
     expect(readTools(levelDir)[0].capabilities).toEqual(surface);
+  });
+
+  /**
+   * The doors, which unlike every other provenance field here is read: the
+   * router refuses the tool when the job does not grant them. Absent on every
+   * tool compiled before doors existed, which is exactly right — those require
+   * nothing — so there is nothing to backfill.
+   */
+  it('carries the doors it was compiled against, and none by default', () => {
+    writeTool(levelDir, manifest({ name: 'commits', connections: ['github'] }));
+    expect(readTools(levelDir).find((t) => t.name === 'commits')?.connections).toEqual(['github']);
+
+    complete();
+    expect(readTools(levelDir).find((t) => t.name === 'tidy-invoice')?.connections).toBeUndefined();
   });
 
   // Who compiled it and where, recorded at the only moment either is knowable
@@ -242,5 +300,52 @@ describe('promotion', () => {
     expect(prompt).toContain('compiled before and the result was retired');
     expect(prompt).toContain('multi-line export');
     expect(prompt).toContain('disagreeing about the same input');
+  });
+
+  /**
+   * The contract a tool with doors is written against. Every assertion here is
+   * something a script cannot be expected to guess — the variable it reads, the
+   * literal endpoint, and which of the two body shapes that door takes.
+   */
+  describe('a compile that was granted doors', () => {
+    const recipe = { key: 'last 10 commits', approach: 'ask the code host', role: 'worker' };
+    const withDoors = () =>
+      promotionPrompt(recipe, [], [
+        { name: 'github', endpoint: 'http://127.0.0.1:4600/internal/github', tools: ['list_commits'] },
+      ]);
+
+    it('names the variable, the endpoint and the tools it may call there', () => {
+      const prompt = withDoors();
+      expect(prompt).toContain(DOORS_ENV);
+      expect(prompt).toContain('http://127.0.0.1:4600/internal/github');
+      expect(prompt).toContain('list_commits');
+      expect(prompt).toContain('{"tool": "...", "args": {...}}');
+    });
+
+    /**
+     * The one rule that keeps a networked tool a method rather than a cache.
+     * D-045 caught a compile whose `run.mjs` held the answer as a string
+     * literal and whose `verify.mjs` then checked that same literal — a check
+     * written by the session that wrote what it checks. A door makes that trap
+     * both easier to fall into and worse, since the answer now goes stale.
+     */
+    it('forbids baking the answer in, and says why', () => {
+      expect(withDoors()).toContain('cache rather than a method');
+      expect(withDoors()).toContain('D-045');
+    });
+
+    it('relaxes the no-network rule only as far as the doors', () => {
+      const prompt = withDoors();
+      expect(prompt).toContain(`no network except the ${DOORS_ENV} doors`);
+      expect(prompt).toContain('No dependencies, no shell commands');
+    });
+
+    /** A method that never went outside is told exactly what it always was. */
+    it('leaves the original contract untouched when nothing was granted', () => {
+      const plain = promotionPrompt(recipe);
+      expect(plain).toContain('No dependencies, no shell commands, no network. Node built-ins only.');
+      expect(plain).not.toContain(DOORS_ENV);
+      expect(plain).not.toMatch(/internal\//);
+    });
   });
 });

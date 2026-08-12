@@ -4,7 +4,8 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { Agentling, Job } from '@agentlings/shared';
+import { SERVER_PORT, type Agentling, type Job } from '@agentlings/shared';
+import type { Connection } from '../connections';
 import {
   TOOL_CANDIDATE_RUNS,
   normalise,
@@ -152,6 +153,8 @@ describe('RoutedExecutor', () => {
       web?: { allow?: string[]; maxChars?: number } | null;
       /** Absent by default, which is how a level with no key behaves. */
       search?: (query: string) => Promise<SearchResult>;
+      /** The connection catalog, for a compiled tool's doors and secrets. */
+      connections?: Connection[];
     } = {},
   ): RoutedExecutor {
     return new RoutedExecutor(
@@ -163,6 +166,7 @@ describe('RoutedExecutor', () => {
       () => [],
       fallback,
       over.search,
+      () => over.connections ?? [],
     );
   }
 
@@ -1341,6 +1345,94 @@ describe('RoutedExecutor', () => {
 
       expect(session.runs).toHaveLength(1);
       expect(progress.some((p) => p.includes('could not prove'))).toBe(true);
+    });
+
+    /**
+     * The doors, and the environment a tool is handed with them (D-100
+     * reopened). Both halves are asserted from inside a real child process,
+     * because that is the only place the question is actually settled — the
+     * environment `spawn` composes is not visible to the parent.
+     */
+    describe('a tool compiled against a door', () => {
+      const CATALOG: Connection[] = [
+        {
+          name: 'github',
+          label: 'Code host',
+          transport: 'builtin',
+          tools: ['list_commits'],
+          secrets: { GITHUB_TOKEN: 'to read the code host' },
+        },
+      ];
+      // Writes what it can see of its own environment, for the run to assert on.
+      const REPORTS = `import {writeFileSync} from 'node:fs';
+        writeFileSync('RESULT.md', JSON.stringify({
+          doors: process.env.AGENTLINGS_DOORS ?? null,
+          token: process.env.GITHUB_TOKEN ?? null,
+          path: Boolean(process.env.PATH ?? process.env.Path),
+        }));`;
+
+      function tooled(): void {
+        const name = 'tidy-invoice';
+        writeTool(levelDir, {
+          name,
+          recipeKey: PROMPT,
+          terms: ['total', 'invoice', 'spreadsheet'],
+          hasRepo: false,
+          connections: ['github'],
+          description: 'compiled',
+          learnedAt: 1,
+          runs: 0,
+          failures: 0,
+        });
+        writeFileSync(path.join(toolDir(levelDir, name), RUN_SCRIPT), REPORTS);
+        writeFileSync(path.join(toolDir(levelDir, name), VERIFY_SCRIPT), CHECKS);
+      }
+
+      it('hands over the door it was compiled against, and withholds the key', async () => {
+        tooled();
+        process.env.GITHUB_TOKEN = 'ghp-not-for-the-tool';
+        try {
+          const session = new FakeSession();
+          const out = await run(
+            build(session, { connections: CATALOG }),
+            job({ prompt: PROMPT, tools: ['github'] }),
+            PIP,
+          );
+
+          expect(session.runs).toHaveLength(0);
+          expect(out.meter).toMatchObject({ costUsd: 0, tooled: true });
+          const seen = JSON.parse(result());
+          expect(JSON.parse(seen.doors)).toEqual({
+            github: `http://127.0.0.1:${SERVER_PORT}/internal/github`,
+          });
+          // The whole point of a door: the server holds the key. A script that
+          // inherited it could reach the code host without one, and then the
+          // door bounds nothing.
+          expect(seen.token).toBeNull();
+          // Stripped by name, not by starting from an empty environment — node
+          // still needs the ordinary variables to run at all.
+          expect(seen.path).toBe(true);
+        } finally {
+          process.env.GITHUB_TOKEN = undefined;
+          delete process.env.GITHUB_TOKEN;
+        }
+      });
+
+      /**
+       * The router's refusal, from the outside: the job no longer grants the
+       * connection, so the tool must not be reached for at all. Proven by the
+       * session running instead — and by the tool keeping a clean record, since
+       * a refusal is not a failure and must not count toward retirement.
+       */
+      it('is not reached for once its door is shut, and takes no strike', async () => {
+        tooled();
+        const session = new FakeSession();
+        await run(build(session, { connections: CATALOG }), job({ prompt: PROMPT }), PIP);
+
+        expect(session.runs).toHaveLength(1);
+        expect(readTools(levelDir)[0]).toMatchObject({ runs: 0, failures: 0 });
+        expect(readTools(levelDir)[0].retiredReason).toBeUndefined();
+      });
     });
 
     /**

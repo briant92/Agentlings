@@ -1,3 +1,5 @@
+import { DOORS } from './connections';
+
 /**
  * What a run could do, as a sorted list of tokens.
  *
@@ -95,7 +97,7 @@ export function connectionsUsed(
 }
 
 /**
- * The connections that stop a method becoming a plain-node script, or none.
+ * What a method reached outside its sandbox, before asking what that means.
  *
  * The compile gate's whole question, in one place rather than inline in the
  * route — route wiring is not tested, and every fault of the last two days
@@ -106,14 +108,72 @@ export function connectionsUsed(
  * about what it reached, and absent evidence is not evidence of absence.
  * Reading it as "used nothing" would approve a compile that cannot exist,
  * which is the one thing D-044 was built to stop.
+ *
+ * Private, because "reached something" is no longer a verdict on its own: the
+ * two exported readings below split it, and having one name for the raw list
+ * keeps them from drifting into disagreeing about what a method touched.
  */
-export function compileBlockers(
+function connectionsReached(
   recipe: { capabilities?: string[]; usedTools?: string[] },
   connections: { name: string; tools?: string[]; defaultOn?: boolean }[],
 ): string[] {
   if (recipe.usedTools?.length) return connectionsUsed(recipe.usedTools, connections);
   const ambient = connections.filter((conn) => conn.defaultOn === true).map((conn) => conn.name);
   return connectionsIn(recipe.capabilities, ambient);
+}
+
+/**
+ * The connections that stop a method becoming a compiled tool, or none.
+ *
+ * Narrower than it was: a connection this server owns a door for is no longer a
+ * blocker but a grant, handled by `compileDoors` below. What is left is the
+ * case D-044 was actually built for — a method that reached something no script
+ * can be handed, so no script could do the job however it were written.
+ */
+export function compileBlockers(
+  recipe: { capabilities?: string[]; usedTools?: string[] },
+  connections: { name: string; tools?: string[]; defaultOn?: boolean }[],
+): string[] {
+  const reached = connectionsReached(recipe, connections);
+  // On the fallback path nothing is known, only available — so a door cannot
+  // be granted, and therefore cannot be subtracted either. Clearing `github`
+  // here while `compileDoors` declined to grant it would compile a tool with
+  // no way to do its job: a guaranteed pair of failures and an automatic
+  // retirement, where the old answer was an honest refusal. Silence blocks.
+  if (!recipe.usedTools?.length) return reached;
+  return reached.filter((name) => !(name in DOORS));
+}
+
+/**
+ * The doors a compiled tool must be granted to do this method's job.
+ *
+ * The other half of the same question, and the reason the answer above shrank.
+ * D-100 refused tools the doors on a measurement — every compile-eligible
+ * recipe *also* carried `browser`, which no plain-node script can drive
+ * whatever doors it holds, so the grant would have unlocked nothing. Its stated
+ * reopen condition was a recipe refused for a door it genuinely used and
+ * nothing else, and four now are.
+ *
+ * So a reached connection splits two ways rather than one. A door-backed one is
+ * a *grant*: the server still makes the call, still checks the catalog, still
+ * owns the key, and the script gets an endpoint and nothing more. Anything else
+ * is still a blocker, and for the original reason — there is no door to hand
+ * over, so no script could do the job however it were written.
+ *
+ * Returned as the connections rather than the paths because this is what the
+ * manifest records and what the router later re-checks: a tool compiled against
+ * a connection that is now switched off must not run on stale reach.
+ */
+export function compileDoors(
+  recipe: { capabilities?: string[]; usedTools?: string[] },
+  connections: { name: string; tools?: string[]; defaultOn?: boolean }[],
+): string[] {
+  // Demonstrated use only. Granting on availability would hand a door to a
+  // script that never showed it needed one, and — because this list is what the
+  // router later re-checks — would then refuse that tool the day an unused
+  // connection was switched off. Both halves of the substitution D-100 undid.
+  if (!recipe.usedTools?.length) return [];
+  return connectionsReached(recipe, connections).filter((name) => name in DOORS);
 }
 
 /** Whether two surfaces are the same one. */

@@ -64,6 +64,32 @@ export interface ToolManifest {
    */
   capabilities?: string[];
   /**
+   * The doors this tool was compiled against, and may be handed at run time.
+   *
+   * Absent or empty means the original contract — Node built-ins, nothing
+   * outside — which is true of every tool compiled before doors existed, so
+   * there is nothing to backfill and no reading of an old manifest that is
+   * wrong.
+   *
+   * A separate field from `capabilities` above, though that one's comment
+   * predicted this day and expected to be it. It is the wrong shape for the
+   * job: a surface records what the method *could* reach, so it carries every
+   * ambient connection whether the method touched it or not, plus the tools,
+   * skills and libraries axes. Gating a run on that would refuse a tool the
+   * day an ambient connection it never called was switched off. What a grant
+   * needs is what the method actually *used*, which is what `compileDoors`
+   * computes and what this records. `capabilities` keeps its own job — the
+   * historical surface — and stays unread.
+   *
+   * Read, unlike every other provenance field here, and that is the point: the
+   * router refuses a tool whose doors are no longer granted to the job. A tool
+   * compiled when the code host was on is not merely dated when it is switched
+   * off, it is a script that will fail at its first call, and failing twice
+   * retires it — so an unread field would spend the user two fallback sessions
+   * and then destroy a working tool for a setting they changed on purpose.
+   */
+  connections?: string[];
+  /**
    * Who earned the tool and where: the agentling that compiled it, and the
    * level it was compiled in.
    *
@@ -97,6 +123,13 @@ export interface ToolManifest {
 export const STRIKES_ALLOWED = 2;
 /** A compiled tool should be quick. Anything slower is not doing what it claims. */
 export const TOOL_TIMEOUT_MS = 60_000;
+/**
+ * Where a compiled tool finds its doors: a JSON object of connection → endpoint.
+ *
+ * One variable rather than one per door, so a tool granted a second door later
+ * reads it without the runner and the script having to agree on a new name.
+ */
+export const DOORS_ENV = 'AGENTLINGS_DOORS';
 /** Both are plain node, so nothing here depends on a shell or a platform. */
 export const RUN_SCRIPT = 'run.mjs';
 export const VERIFY_SCRIPT = 'verify.mjs';
@@ -160,9 +193,23 @@ export function findTool(
   tools: ToolManifest[],
   prompt: string,
   hasRepo: boolean,
+  /**
+   * The connections this job has been granted. A tool needing a door the job
+   * does not hold is not a match: the same capability-surface rule recipes
+   * already carry (D-036, D-037), arriving at the tier that until now could
+   * not need it. Defaulting to none is safe rather than strict — a tool with
+   * no doors requires none, which is every tool compiled under the old
+   * contract.
+   */
+  granted: string[] = [],
 ): ToolManifest | null {
   const key = normalise(prompt);
-  const usable = tools.filter((t) => !t.retiredReason && t.hasRepo === hasRepo);
+  const usable = tools.filter(
+    (t) =>
+      !t.retiredReason &&
+      t.hasRepo === hasRepo &&
+      (t.connections ?? []).every((conn) => granted.includes(conn)),
+  );
   const exact = usable.find((t) => t.recipeKey === key);
   if (exact) return exact;
 
@@ -216,6 +263,17 @@ export function promotionPrompt(
   /** Why earlier attempts were retired. A second try that is not told how the
    * first failed is an identical first try, and costs the same to find out. */
   retired: string[] = [],
+  /**
+   * The doors this method reached and the tool is therefore granted, with the
+   * literal endpoint of each and the tools the catalog lets it name there.
+   *
+   * Empty for a method that never went outside, and the prompt then says
+   * exactly what it always said. Passed in whole rather than looked up here,
+   * because this module knows nothing about ports or the catalog, and the
+   * endpoints have to be literal: a script cannot be asked to guess where the
+   * server is listening.
+   */
+  doors: { name: string; endpoint: string; tools?: string[] }[] = [],
 ): string {
   return [
     `The crew has done this job enough times to stop paying for it: "${recipe.key}".`,
@@ -237,9 +295,46 @@ export function promotionPrompt(
     `- ${RUN_SCRIPT} — does the job, exactly as the method describes. It runs with the sandbox as its working directory, the same place a session would work. A repository, when there is one, is at ./repo.`,
     `- ${VERIFY_SCRIPT} — checks that ${RUN_SCRIPT} did the job. Exit 0 when the work is right and non-zero when it is not.`,
     '',
+    ...(doors.length > 0
+      ? [
+          'This job reaches outside, so the tool is granted the same doors a session',
+          'gets and nothing else. The server makes the call, checks the grant against',
+          'its catalog and holds the key; your script gets an endpoint and no secret.',
+          '',
+          `Read them from \`process.env.${DOORS_ENV}\`, a JSON object keyed by connection:`,
+          '',
+          JSON.stringify(Object.fromEntries(doors.map((d) => [d.name, d.endpoint])), null, 2),
+          '',
+          'POST to a door with the built-in `fetch`. Two body shapes:',
+          ...(doors.some((d) => d.name === 'web')
+            ? ['- `web` takes `{"url": "..."}` and answers with the page text.']
+            : []),
+          ...(doors
+            .filter((d) => d.name !== 'web')
+            .map(
+              (d) =>
+                `- \`${d.name}\` takes \`{"tool": "...", "args": {...}}\`, where tool is one of: ${(d.tools ?? []).join(', ') || '(none granted)'}.`,
+            )),
+          '',
+          `Set ${DOORS_ENV} yourself to that exact JSON when you test the scripts — the`,
+          'runner sets it for you on every real run.',
+          '',
+          'The doors are the whole grant. Anything else outbound — another host, a',
+          'package, a shell — is outside the contract and will be read as one at review.',
+          '',
+        ]
+      : []),
     'Rules that matter:',
-    '- No dependencies, no shell commands, no network. Node built-ins only.',
+    doors.length > 0
+      ? `- No dependencies, no shell commands. Node built-ins only, and no network except the ${DOORS_ENV} doors above.`
+      : '- No dependencies, no shell commands, no network. Node built-ins only.',
     `- ${VERIFY_SCRIPT} must actually test the output, not merely check a file exists. It is the only thing standing between a free answer and a wrong one.`,
+    ...(doors.length > 0
+      ? [
+          `- Fetch what you report, every run. Writing today's figures into ${RUN_SCRIPT} as literals makes it a cache rather than a method, and it will be stale the next time it runs. A ${VERIFY_SCRIPT} that checks those same literals proves only that you typed them twice (D-045).`,
+          `- Check what comes back before keeping it. A door can answer with an error, an empty result, or a page that changed shape; ${RUN_SCRIPT} must exit non-zero rather than report a blank as a finding.`,
+        ]
+      : []),
     '- Handle the job going wrong by exiting non-zero. Falling back to a session is fine; pretending to have succeeded is not.',
     '- Finish by writing RESULT.md describing what you built, as usual.',
   ].join('\n');

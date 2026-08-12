@@ -52,10 +52,10 @@ import {
   validCadence,
 } from './schedules';
 import { pickForwards, splitSteps, stepBrief } from './steps';
-import { capabilityTokens, compileBlockers } from './capability';
+import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { performOutboxSend } from './outboxsend';
-import { describe, missingSecrets, readConnections } from './connections';
+import { describe, doorEndpoints, missingSecrets, readConnections } from './connections';
 import {
   enabledNames,
   grantedTools,
@@ -340,6 +340,9 @@ function makeLevel(dir: string): LevelRuntime {
             { http: (url, headers) => fetch(url, { headers }), token: process.env.BRAVE_API_KEY },
           )
       : undefined,
+    // Read fresh per run, not captured: a connection switched off in Settings
+    // must reach the next compiled-tool run, not the next restart.
+    () => readConnections(CONNECTIONS_FILE),
   );
   const roster = readRoster(dir);
   const sim = new Sim(
@@ -2730,15 +2733,28 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
    * as such would approve a compile that cannot exist — the one thing D-044
    * was built to stop.
    */
-  const needs = compileBlockers(recipe, readConnections(CONNECTIONS_FILE));
+  const catalog = readConnections(CONNECTIONS_FILE);
+  const needs = compileBlockers(recipe, catalog);
   if (needs.length > 0) {
     return c.json(
       {
-        error: `that method used ${needs.join(' and ')}, and a compiled tool is plain node with no network — it could never do this job. Compiled tools take the scaffolding; work that has to reach outside stays a session.`,
+        error: `that method used ${needs.join(' and ')}, and there is no door a compiled tool can be handed for that — it could never do this job. Compiled tools take the scaffolding; work that has to reach outside by some other route stays a session.`,
       },
       400,
     );
   }
+
+  /**
+   * The doors this method reached, which the tool is compiled against and
+   * granted at run time (D-100, reopened on its own stated condition).
+   *
+   * The compiling job is granted them too, and must be: a session asked to
+   * write a script against a door it cannot call can only guess at what comes
+   * back, and the one thing that makes this tier safe is that the script was
+   * tested before anyone approved it.
+   */
+  const doors = compileDoors(recipe, catalog);
+  const endpoints = doorEndpoints(doors);
 
   // A recipe compiled before and retired is a second attempt, not a first.
   // Say so, and take a fresh name so the earlier one survives to be read.
@@ -2747,12 +2763,20 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   const prompt = promotionPrompt(
     recipe,
     previous.flatMap((t) => (t.retiredReason ? [t.retiredReason] : [])),
+    doors.map((name) => ({
+      name,
+      endpoint: endpoints[name],
+      tools: catalog.find((conn) => conn.name === name)?.tools,
+    })),
   );
   const job = rt.queue.add({
     title: `Compile "${recipe.key.slice(0, 40)}" into a tool`,
     prompt,
     repoPath: rt.meta.repoPath || undefined,
     preferredRole: recipe.role,
+    // The doors the tool is being written against, so the compiling session can
+    // call them while testing rather than write against a description of them.
+    ...(doors.length > 0 ? { tools: doors } : {}),
     // The compiler must not be handed its own half-written tool as a shortcut.
     noRouter: true,
     // A compile is longer work than the role that owns the recipe does day to
@@ -2780,6 +2804,11 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     // only moment both are in hand. Absent when the recipe predates D-036,
     // which is a fact about the history and not something to invent.
     ...(recipe.capabilities ? { capabilities: recipe.capabilities } : {}),
+    // What it may reach, as against what was merely available when the method
+    // was found. Written only when there is something to grant, so a tool under
+    // the original no-network contract keeps a manifest with no such field —
+    // which is what every tool compiled before today already has.
+    ...(doors.length > 0 ? { connections: doors } : {}),
     // Where it was earned, and by whom. Stamped here for the same reason the
     // capabilities are: this is the only moment both the level and the compile
     // job are in hand. The name is absent when the job has not been picked up

@@ -298,8 +298,11 @@ export function decide(job: Job, context: RouterContext): Decision {
   // Ahead of every recipe tier: if this job has been compiled, run the
   // compilation. The shape has to match as well as the words — a tool written
   // against a clone is simply wrong where there is no clone, and the two jobs
-  // can be worded identically.
-  const tool = findTool(context.tools ?? [], prompt, Boolean(job.repoPath));
+  // can be worded identically. And the doors have to still be open: a tool
+  // compiled against a connection this job does not hold would fail at its
+  // first call, twice, and retire itself over a setting the user changed on
+  // purpose.
+  const tool = findTool(context.tools ?? [], prompt, Boolean(job.repoPath), job.tools ?? []);
   if (tool) {
     return {
       kind: 'tool',

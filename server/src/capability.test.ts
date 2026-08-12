@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   capabilityTokens,
   compileBlockers,
+  compileDoors,
   connectionsIn,
   connectionsUsed,
   sameSurface,
@@ -207,26 +208,49 @@ describe('compileBlockers', () => {
     ).toEqual([]);
   });
 
-  it('still refuses a method that really did reach outside', () => {
-    expect(
-      compileBlockers(
-        { capabilities: ['conn:github', 'conn:web'], usedTools: ['Read', 'list_commits'] },
-        CATALOG,
-      ),
-    ).toEqual(['github']);
+  /**
+   * The refusal D-100 wrote and the one it reopened, side by side. Reaching the
+   * code host was the canonical "could never be a script" case for two
+   * decisions running; it is a grant now, because there is a door to hand over.
+   * What has not changed is the answer for anything without one.
+   */
+  it('no longer refuses a method whose reach has a door', () => {
+    const reachedGithub = {
+      capabilities: ['conn:github', 'conn:web'],
+      usedTools: ['Read', 'list_commits'],
+    };
+    expect(compileBlockers(reachedGithub, CATALOG)).toEqual([]);
+    expect(compileDoors(reachedGithub, CATALOG)).toEqual(['github']);
+  });
+
+  it('still refuses a method that reached something with no door', () => {
+    const reachedBrowser = { capabilities: ['conn:browser'], usedTools: ['navigate'] };
+    expect(compileBlockers(reachedBrowser, CATALOG)).toEqual(['browser']);
+    expect(compileDoors(reachedBrowser, CATALOG)).toEqual([]);
+  });
+
+  /** A method can need one of each, and each half must report only its own. */
+  it('splits a method that reached both', () => {
+    const both = {
+      capabilities: ['conn:browser', 'conn:github'],
+      usedTools: ['navigate', 'list_commits'],
+    };
+    expect(compileBlockers(both, CATALOG)).toEqual(['browser']);
+    expect(compileDoors(both, CATALOG)).toEqual(['github']);
   });
 
   /**
-   * D-044's other stated limit, now closed: a job that genuinely fetched with
-   * nothing but the ambient `web` used to pass the gate and produce a failing
-   * compile, because ambient is subtracted from a *surface*.
+   * D-044's other stated limit, closed by D-100 and now answered differently
+   * again: a job that genuinely fetched with nothing but the ambient `web` is
+   * still *detected* — that was the gain and it is intact — but detecting it
+   * now grants the fetch door instead of refusing the compile.
    */
-  it('refuses a method that only ever used the ambient connection', () => {
-    expect(compileBlockers({ capabilities: ['conn:web'], usedTools: ['fetch_page'] }, CATALOG)).toEqual(
-      ['web'],
-    );
-    // The old question, for contrast — it would have let this through.
-    expect(compileBlockers({ capabilities: ['conn:web'] }, CATALOG)).toEqual([]);
+  it('grants the ambient connection when the method really used it', () => {
+    const fetched = { capabilities: ['conn:web'], usedTools: ['fetch_page'] };
+    expect(compileBlockers(fetched, CATALOG)).toEqual([]);
+    expect(compileDoors(fetched, CATALOG)).toEqual(['web']);
+    // And still tells the two apart: available-but-unused grants nothing.
+    expect(compileDoors({ capabilities: ['conn:web'], usedTools: ['Read'] }, CATALOG)).toEqual([]);
   });
 
   // Silence is not innocence: a recipe whose runs predate the recording gets
@@ -242,5 +266,20 @@ describe('compileBlockers', () => {
 
   it('clears a method that reached nothing and was learned reaching nothing', () => {
     expect(compileBlockers({ capabilities: ['conn:web'], usedTools: ['Read'] }, CATALOG)).toEqual([]);
+  });
+
+  /**
+   * Silence stays careful on both sides. A recipe whose runs predate the
+   * recording tells us nothing, so the surface answers — and a surface is
+   * availability, which must not become a *grant*: handing a tool the fetch
+   * door because `web` was merely switched on when the method was found would
+   * be the availability-for-use substitution D-100 spent a decision undoing.
+   */
+  it('grants nothing on a surface the runs never confirmed, and blocks instead', () => {
+    const unreported = { capabilities: ['conn:github', 'conn:web'] };
+    expect(compileDoors(unreported, CATALOG)).toEqual([]);
+    // And so this must still refuse. Clearing it here while granting no door
+    // would compile a tool that cannot reach the code host it was written for.
+    expect(compileBlockers(unreported, CATALOG)).toEqual(['github']);
   });
 });

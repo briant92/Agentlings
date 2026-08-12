@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import type { ConnectionInfo } from '@agentlings/shared';
+import { SERVER_PORT, type ConnectionInfo } from '@agentlings/shared';
 
 /**
  * The connection registry: what a job may reach outside its sandbox. Nothing
@@ -63,6 +63,60 @@ export interface Connection {
   // stdio server directly, so there is no point of ours in between to trim at.
   // A config field that promises enforcement it cannot deliver is worse than
   // its absence — the budget for a stdio server is that server's own flags.
+}
+
+/**
+ * The connections this server owns a door for, and the path of each.
+ *
+ * A door is the only way anything inside a run reaches outside: the server
+ * makes the call, so it owns the allowlist, the trimming, the size of the
+ * answer, and the secret — which never leaves this process. Four exist, and
+ * they were built one at a time for sessions (D-053, D-128); this is the first
+ * place that names them as a set, because the compiled-tool tier needs to ask
+ * "is there a door for this connection" rather than hardcode a fifth copy of
+ * the list.
+ *
+ * A connection absent from here has no door by definition, not by oversight:
+ * `browser` drives a real browser in the session's own process, and the three
+ * senders grant a run nothing at all (`sendsOnly`) because a send happens at
+ * approval and never inside a run (D-075, D-097).
+ */
+export const DOORS: Record<string, string> = {
+  web: '/internal/fetch',
+  github: '/internal/github',
+  search: '/internal/search',
+  render: '/internal/render',
+};
+
+/**
+ * The literal endpoint of each named door, skipping any connection without one.
+ *
+ * The one place a door's URL is built for anything other than a session, so a
+ * tool and a session cannot end up dialling different addresses for the same
+ * door. Localhost by address rather than by name: `localhost` resolves to ::1
+ * first on this machine and the server binds 127.0.0.1.
+ */
+export function doorEndpoints(names: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const name of names) {
+    if (DOORS[name]) out[name] = `http://127.0.0.1:${SERVER_PORT}${DOORS[name]}`;
+  }
+  return out;
+}
+
+/**
+ * Every environment variable the catalog declares as a secret.
+ *
+ * So a child process can be handed the environment minus the keys. A session
+ * never needed this — it reaches a connection through a door and the SDK gets
+ * only what `toMcpServers` fills in — but a compiled tool is a plain node
+ * child, and `spawn` with no `env` inherits the whole server environment. That
+ * was harmless while the contract was "no network"; it is not once a tool can
+ * call out, because a script holding `GITHUB_TOKEN` can reach the code host
+ * without the door, and then the door is not the boundary it says it is.
+ */
+export function secretNames(connections: Connection[]): string[] {
+  return [...new Set(connections.flatMap((c) => Object.keys(c.secrets ?? {})))];
 }
 
 export function readConnections(file: string): Connection[] {

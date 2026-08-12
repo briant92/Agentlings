@@ -13,12 +13,14 @@ import {
   updateRecipes,
   type Recipe,
 } from '../recipes';
+import { type Connection, doorEndpoints, secretNames } from '../connections';
 import { FILE_CHANNELS, OUTBOX_FILE, composeOutbox } from '../outbox';
 import { deliveredFiles, producedArtefacts } from '../outputs';
 import { type Decision, decide, recallSignal } from '../router';
 import type { SearchResult } from '../search';
 import { storeLines } from '../store';
 import {
+  DOORS_ENV,
   RUN_SCRIPT,
   TOOL_TIMEOUT_MS,
   VERIFY_SCRIPT,
@@ -42,9 +44,9 @@ function first(err: unknown): string {
  * Killed at the timeout, because a compiled tool that hangs has stopped being
  * cheaper than the session it replaced.
  */
-function runNode(script: string, cwd: string): Promise<boolean> {
+function runNode(script: string, cwd: string, env: NodeJS.ProcessEnv): Promise<boolean> {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [script], { cwd, stdio: 'ignore' });
+    const child = spawn(process.execPath, [script], { cwd, stdio: 'ignore', env });
     const timer = setTimeout(() => {
       child.kill();
       resolve(false);
@@ -94,6 +96,17 @@ export class RoutedExecutor implements Executor {
      * simply never route one.
      */
     private searchFor?: (query: string) => Promise<SearchResult>,
+    /**
+     * The connection catalog, for the two things a compiled tool's environment
+     * turns on: which variables are secrets to be withheld, and — through the
+     * manifest — which doors to hand over. Read fresh on every run rather than
+     * captured, so switching a connection off in Settings reaches the next run
+     * and not the next restart.
+     *
+     * Optional and last, so every call site that predates doors keeps working;
+     * absent means no catalog, which strips nothing and grants nothing.
+     */
+    private connections: () => Connection[] = () => [],
   ) {}
 
   /** Work the router answered itself has no session to stop. */
@@ -159,10 +172,28 @@ export class RoutedExecutor implements Executor {
       }
     }
 
-    const ran = await runNode(path.join(dir, RUN_SCRIPT), sandboxDir);
+    /**
+     * What the tool is handed: the server environment, minus every secret the
+     * catalog declares, plus the doors this tool was compiled against.
+     *
+     * Both halves matter and they are the same rule from two sides. The doors
+     * are what it may reach; stripping the keys is what stops it reaching
+     * anything else with our credentials, which `spawn`'s implicit inheritance
+     * had been quietly granting since the tier was built. Harmless under the
+     * old no-network contract, load-bearing now.
+     *
+     * `verify.mjs` gets the same environment as `run.mjs`, because a check
+     * that cannot see what the run saw cannot check it.
+     */
+    const env: NodeJS.ProcessEnv = { ...process.env };
+    for (const name of secretNames(this.connections())) delete env[name];
+    const doors = doorEndpoints(manifest.connections ?? []);
+    if (Object.keys(doors).length > 0) env[DOORS_ENV] = JSON.stringify(doors);
+
+    const ran = await runNode(path.join(dir, RUN_SCRIPT), sandboxDir, env);
     // Checked in a second process on purpose: a run that crashed cannot be
     // trusted to report that it crashed.
-    const proved = ran && (await runNode(path.join(dir, VERIFY_SCRIPT), sandboxDir));
+    const proved = ran && (await runNode(path.join(dir, VERIFY_SCRIPT), sandboxDir, env));
 
     const after = recordToolRun(this.levelDir, manifest, proved);
     if (!proved) {

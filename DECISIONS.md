@@ -176,6 +176,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-164 — 2026-08-11 — A bad boot is not for life: the looks registry re-reads on every visit to the select screen](#d-164--2026-08-11--a-bad-boot-is-not-for-life-the-looks-registry-re-reads-on-every-visit-to-the-select-screen)
 - [D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects](#d-165--2026-08-12--agentlings-gets-its-own-accounts-and-the-danger-was-never-the-projects)
 - [D-166 — 2026-08-12 — Out of OneDrive: the repo moves to C:\Users\MSI\Dev\Agentlings](#d-166--2026-08-12--out-of-onedrive-the-repo-moves-to-cusersmsidevagentlings)
+- [D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there](#d-167--2026-08-12--the-llm-wiki-skill-stays-uninstalled-it-cannot-read-a-flat-file-and-the-duplicates-i-promised-were-not-there)
 
 ## By theme
 
@@ -330,7 +331,10 @@ entry updates one file rather than two.
   the leash and so credits the approach with a saving the tier averages had
   been attributing to the tier change — read with D-071, where the third run
   lands between the first two and turns the halving back into a single step
-  followed by noise, exactly as §8 says a recipe behaves
+  followed by noise, exactly as §8 says a recipe behaves; and D-167, where a
+  third-party knowledge skill was refused on measurement — half the corpus
+  carries no lesson, and the app's own scorer showed that costing one
+  displaced note, because a bare line has fewer terms and loses on its own
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033; and D-114, where the feed stopped being where decisions are made —
   one REVIEW on the row, the whole choice in the panel, the close-out writing
@@ -10452,3 +10456,71 @@ the user's machine for anything under `AppData`. Paths outside it —
 rollback; deleting it, and deciding what becomes of the OneDrive cloud
 copy, is Brian's call. `MIGRATION.md` stays until that happens, since it
 is the reference for the one step left.
+
+## D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there
+
+P1 of the 2026-08-12 review — install the Karpathy LLM-wiki skill and lint
+the knowledge corpus — is **not built**. Refused on measurement, and the
+measurement killed the premise before it killed the plan.
+
+**It cannot do the job that was proposed for it.** The skill's own
+`SKILL.md` requires `raw/` plus `wiki/<topic>/*.md` with `index.md` and
+`log.md`, and states the limit outright: if Query or Lint cannot find that
+structure, *"Run an ingest first to initialize the wiki. Do not
+auto-create."* Level knowledge here is one flat append-only
+`KNOWLEDGE.md`. There is no lint to run against it — the operation named
+in the plan does not exist for our data shape.
+
+**The gate's premise was mine and it was wrong.** I argued that
+`KNOWLEDGE.md.pre-dedupe.bak` proved duplicates were present. It proves a
+dedupe *already ran*: hq holds **129 non-blank lines, 129 distinct, zero
+repeated**, and the backup is **104 lines against the live file's 130** —
+smaller, because notes accrued after the cleanup. A backup filename is
+evidence that a problem was once fixed, not that it is there now. The
+gate was written to fail if the lint found nothing, and it failed at the
+step before.
+
+**The real defect, and why it is smaller than it looks.** Half the corpus
+is contentless: **102 of 203 notes** across six levels are bare job-log
+lines (`Pip (worker) failed "Harden slugify (4 turns)"`) with no lesson
+after the em-dash. But what matters is not the corpus, it is what a
+session is *handed* — `relevantLines(knowledge, prompt, 8)` at
+`executors/claude.ts:921`. Run for real over hq's 128 notes on four
+realistic prompts: **26 notes handed over, 18 carrying a lesson, 8 bare —
+31% waste — and exactly one lesson displaced.** Everywhere but one prompt
+the bare notes fill slots that would otherwise be empty; the NOTES.md
+prompt already receives 8 lessons out of 23 available.
+
+### What proved it, and what it corrected
+
+A hand-rolled scorer written for this check reported 7-of-8 bare on the
+slugify prompt and implied ~50% waste corpus-wide. The app's own
+`relevantLines` reported 6-of-8 there and **31% overall**. The difference
+is structural rather than incidental: a note carrying a lesson has more
+terms, so it matches more of the query and outranks the bare lines on its
+own. **The corpus's noise is partly self-cancelling, and only the real
+instrument could show that.** D-035's rule held again — a negative result
+from an instrument built minutes earlier is a claim about the instrument
+first — and this time it moved the answer from "build the filter" to
+"build nothing".
+
+### The two things left flagged rather than done
+
+**Triage at write.** The idea worth taking from the skill is not lint, it
+is that not every source deserves a page. A close-out that simply does not
+append a note when it has no lesson stops the corpus growing its
+contentless half — no migration, no read-path change, no third party. Fold
+it in whenever `close.ts` is next open; it does not earn a project.
+
+**The slugify family is the canary.** It is the only prompt of the four
+showing displacement, and it is the one that ran ten-plus times. The waste
+concentrates where a prompt family repeats, which is exactly the traffic
+the ladder exists to create — so this is negligible now and structural at
+ten times the volume. Re-measure when any prompt family passes ~10 runs;
+the probe is four lines against `relevantLines` and needs no fixture.
+
+Worth noting the scale gap that made the fit implausible from the start:
+the skill advertises itself on a knowledge base of 94 articles and 99
+sources maintained daily. This corpus is 203 lines total across six
+levels. The machinery was heavier than the problem it was brought in to
+solve.

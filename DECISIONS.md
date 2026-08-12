@@ -172,6 +172,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam](#d-160--2026-08-11--one-door-for-the-outbox-send-the-double-send-race-closed-at-its-seam)
 - [D-161 — 2026-08-11 — The byte nobody could see: opKey's NUL spelled out, one definition, display split from identity](#d-161--2026-08-11--the-byte-nobody-could-see-opkeys-nul-spelled-out-one-definition-display-split-from-identity)
 - [D-162 — 2026-08-11 — The flagged race, measured: node is the moves door, and the real window was a discard mid-send](#d-162--2026-08-11--the-flagged-race-measured-node-is-the-moves-door-and-the-real-window-was-a-discard-mid-send)
+- [D-163 — 2026-08-11 — The parallel settlement reconciled: the second await gets its door, D-162's miscount corrected](#d-163--2026-08-11--the-parallel-settlement-reconciled-the-second-await-gets-its-door-d-162s-miscount-corrected)
 
 ## By theme
 
@@ -290,7 +291,11 @@ entry updates one file rather than two.
   reaches the review pane; and D-162, D-160's moves flag measured — the
   sync replay needs no claim because nothing in it yields, the real window
   was a discard landing mid-outbox-send, closed by a recheck after the
-  route's one await, with recordMoves dedup mirroring the outbox stamp
+  route's one await, with recordMoves dedup mirroring the outbox stamp;
+  and D-163, the parallel chip session's verdict reconciled — its moves
+  door declined (both inspections refuted the mechanism), its applyPatch
+  flag adopted as the route's second await getting its own claim, and
+  D-162's one-await sentence corrected by it
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on
@@ -10153,3 +10158,61 @@ nothing and the assert-before-write exit stopped a wrong mutation from
 reading as a kill, the dev-lessons rule holding on its second live test
 of the night. Boundary kept honest: the recheck, like D-160's claim, is
 process-local — both racers live in the one server.
+
+## D-163 — 2026-08-11 — The parallel settlement reconciled: the second await gets its door, D-162's miscount corrected
+
+A routine "anything pending" audit found a second session had worked
+D-160's moves flag in parallel all evening: the chip D-160 spawned, in
+its own worktree, two commits pushed and unmerged, no PR. Its inspection
+reached the same refutation D-162 measured — the moves middle never
+yields, the queue hands out live references, node cannot interleave two
+Approves inside the window — and then settled the opposite way: it built
+`performMovesReplay`/`performMovesUndo` one-door claims anyway, arguing
+the synchrony is "an accident that happens to hold" — a guarantee stated
+nowhere, likeliest in the repo to stop being true (two hundred renames on
+a OneDrive-synced folder; any future awaited progress event) — with
+slowed-executor tests making the unreachable window real, four mutation
+kills. On its way it found the NUL in `opKey` independently (flagged,
+which became D-161's task) and made the identical `recordMoves` dedup
+D-162 merged — three findings converging from two blind sessions. Its
+entry took the number D-161, which main already owns for the opKey
+settlement, so its work is recorded here rather than renumber-merged,
+and its branch closes unmerged once its session is confirmed done.
+
+**Adopted: the applyPatch flag, which caught D-162 in a false claim.**
+D-162's entry and comment say the route has *one* await. It has two —
+the parallel entry lists them precisely — and `await applyPatch` sits
+after the moves block, past D-162's recheck. Inside that second window a
+second promote races `git apply` against the real repository, and a
+discard disowns a patch already going in: side effects for a dead
+verdict, the exact class D-162 closed one await too early. Now claimed
+at the seam, D-160's idiom: `beginPatch`/`endPatch`/`patchInFlight`
+beside `applyPatch` in gitwork.ts, the resolve route's door refusing
+*both* actions 409 while a job's patch is in flight ("the first Approve
+is doing it"), the apply block releasing in a `finally` so a failed
+apply leaves the job retryable. The door check is the refusal; the flag
+exists so the door can see across the await.
+
+**Declined: the moves door.** Both inspections agree the mechanism is
+unreachable, and D-162's settlement — synchrony named as a load-bearing
+comment rather than armored by construction — was decided the same
+evening and stands. The fragility argument is real and is now carried by
+two independent records plus the comment in the block; if the moves
+middle ever grows an await, this pair of entries is the alarm that says
+which door to build and how it was already built once.
+
+### What proved it
+
+Three claim tests appended to gitwork's existing suite; full suite green
+at 1,565 + 184 — the arithmetic closing exactly (1,562 + 3) — and
+typecheck clean. Two mutations after committing (`e61fda5`), two kills:
+`beginPatch` made a no-op fails the holds-between test; `endPatch` made
+a no-op fails two, the leaked claim poisoning what follows, D-160's
+pattern again. And one process catch worth its sentence: the first
+version of the tests was Written as a "new" gitwork.test.ts on a false
+recollection that none existed — clobbering the tracked suite M1 shipped
+(four tests, including applyPatch's own round trip), with the read-first
+guard not firing in the fresh worktree. The tell was the suite counting
+*down* while green: 66 files and 1,561 where 1,565 was owed. Restored
+from HEAD, the claim tests appended instead. A green suite that got
+smaller is a red flag with a number on it.

@@ -953,6 +953,12 @@ What actually holds, and what the app's guarantees really rest on:
   is enforced by the shape of the flow, not by trust.
 - **The tool allowlist is enforced.** A role without `write` has no `Write`
   tool at all. A connection you switched off contributes no tools.
+- **But the allowlist bounds what the model is *offered*, not what a shell can
+  *reach*.** A sandbox resolves the project root's `node_modules` — `exceljs`
+  (D-100) and, since the render door landed, `playwright-core` (D-128). Proven
+  live 2026-08-12: a script in a real job sandbox drove a browser through
+  `click`, `hover` and `evaluate`, three tools the MCP grant withholds (D-168).
+  A role with `Bash` is bounded by the sandbox convention, not by the grant.
 - **The session inherits nothing.** `settingSources: []` — your own Claude Code
   settings, project rules and skills do not leak into an agentling's session.
 
@@ -982,10 +988,24 @@ movement.
 
 ### Acting on your behalf — at approval only, never in a session (D-075)
 
-An agentling still **cannot act from inside a run**. It cannot click, type,
-submit a form, sign in, place an order, or issue an arbitrary HTTP request —
-the twelve Playwright acting tools stay held back, and nothing here changed
-that.
+An agentling is **not offered any tool that acts** from inside a run. The
+twelve Playwright acting tools stay held back, `catalog.test.ts` asserts their
+absence, and nothing about the outbox changed that.
+
+**That is a statement about the tool surface, not about reachable capability,
+and the difference was measured on 2026-08-12 (D-168).** `playwright-core` is a
+dependency of the server (it drives the render door, D-128) and therefore sits
+in the project's root `node_modules`, which a job sandbox resolves like any
+other — the same reach D-100 recorded for `exceljs`. So a role holding `Bash`
+— six of the eight — can write four lines of Node and drive a real browser:
+`click`, `hover` and `evaluate` were all exercised live from inside a real job
+sandbox against this app's own localhost. Read the withheld twelve as *what
+the model is handed*, not *what the sandbox can do*; §10 is where the actual
+boundary is described, and it says plainly that the sandbox is a convention
+rather than a jail. Nothing has ever reached for this — 254 jobs produced one
+browser call in total, and that one went through MCP and was refused — and it
+is localhost, single-user. It becomes load-bearing the day the app is hosted,
+which is why per-job isolation belongs to that decision rather than this one.
 
 What changed (D-075): it can now **ask** to send. A run writes `OUTBOX.json` —
 one channel, up to 20 messages, refused with the reason when malformed — and

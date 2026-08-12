@@ -177,6 +177,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects](#d-165--2026-08-12--agentlings-gets-its-own-accounts-and-the-danger-was-never-the-projects)
 - [D-166 — 2026-08-12 — Out of OneDrive: the repo moves to C:\Users\MSI\Dev\Agentlings](#d-166--2026-08-12--out-of-onedrive-the-repo-moves-to-cusersmsidevagentlings)
 - [D-167 — 2026-08-12 — The LLM-wiki skill stays uninstalled: it cannot read a flat file, and the duplicates I promised were not there](#d-167--2026-08-12--the-llm-wiki-skill-stays-uninstalled-it-cannot-read-a-flat-file-and-the-duplicates-i-promised-were-not-there)
+- [D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach](#d-168--2026-08-12--four-browser-tools-refused-for-want-of-demand-and-the-allowlist-found-to-bound-the-offer-rather-than-the-reach)
 
 ## By theme
 
@@ -185,7 +186,12 @@ subject but not the ID. Lived in CLAUDE.md until D-038 and moved here so a new
 entry updates one file rather than two.
 
 - **Concept, stack, outside access, identity, executor** — D-001–D-007, D-032,
-  D-034–D-035
+  D-034–D-035; and D-168, where D-034's read-only browser was left unwidened
+  for want of any demand at all — 254 jobs, one browser call — and the grant
+  itself was found to bound what the model is *offered* rather than what a
+  `Bash` run can *reach*, proven by driving click/hover/evaluate out of a real
+  sandbox on `playwright-core`, which D-128 put in the root after D-100 last
+  measured that reach
 - **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
   D-008–D-010, D-014; and D-083 — idle life joining the format as ambient
   idioms, the draw reporting its own stalactite tips, and the cave comment
@@ -10524,3 +10530,85 @@ the skill advertises itself on a knowledge base of 94 articles and 99
 sources maintained daily. This corpus is 203 lines total across six
 levels. The machinery was heavier than the problem it was brought in to
 solve.
+
+## D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach
+
+P2 of the 2026-08-12 review, in two halves. Both came back negative, and the
+second half is the one that matters.
+
+### The four tools stay ungranted
+
+`browser_close`, `browser_hover`, `browser_resize` and `browser_tabs` are the
+four of Playwright MCP's 24 that no file in this repo has ever named — refused
+not by the twelve-name blocklist in `catalog.test.ts` but by the allowlist's
+silence. Granting them was proposed as cheap and obviously useful.
+
+**Demand is not low, it is zero.** The browser connection has been *switched
+on* in `settings.json` this whole time. Against that: **254 ledger rows, 132
+recording tool calls, and exactly one browser-related `lastTool` in the entire
+history** — `mcp__browser__browser_evaluate`, which is one of the twelve the
+run was *refused* (D-053's death). Of 95 recipes, 76 carry `conn:browser` in
+their surface because it is ambient when enabled, and **one** records actually
+calling a browser tool. D-035 measured this on three runs and called the case
+weak; 254 jobs later the crew still routes around the browser unaided.
+
+So granting four more tools adds definition overhead to every request of every
+browser-granted session and unlocks nothing measured — D-100's shape exactly,
+where the doors would have opened onto nothing. And `browser_hover` should not
+have been filed under "reading" in the first place: it fires page handlers and
+pops menus, which is acting on the far end however local the pointer feels.
+
+### The finding: the allowlist bounds the offer, not the reach
+
+Investigating the second half — "add Playwright so a run can drive its own
+build" — turned up that the premise was already false, in the other direction.
+**`playwright-core` is a dependency of `server` (^1.62.1) and hoists to the
+project root**, put there by D-128 to drive the render door through the system
+Edge. A job sandbox resolves the root's `node_modules`, which D-100 recorded on
+2026-08-06 for `exceljs` and the auth-less localhost doors. **D-128 landed
+after that measurement and widened what the sentence covered without anyone
+re-reading it** — the sibling-seam shape of D-119/D-120, a change complete at
+one seam moving a boundary measured at another.
+
+Proven live rather than argued. A four-line script written into a real job
+sandbox (`.agentlings/levels/hq/jobs/0071af6b/`), run with plain node:
+
+```
+title      : Agentlings
+evaluate() : 12 DOM nodes  <- browser_evaluate is NOT granted
+hover()    : ok            <- browser_hover is NOT granted
+click()    : ok            <- browser_click is NOT granted
+after click: SELECT LEVEL | esc title | HQ | AGENTLINGS DEV
+```
+
+It launched Edge, navigated to this app's own localhost, and used three tools
+the MCP grant withholds — including `click`, the one D-034's whole refusal is
+built around. The UI advanced. Six of the eight roles carry `Bash`.
+
+**What this does and does not mean.** It does not mean the allowlist is
+theatre: `allowedTools` genuinely governs what the model is handed, and
+`catalog.test.ts` genuinely pins the twelve. It means the sentence in
+`AGENTLING.md` §11 — *"An agentling still cannot act from inside a run"* — was
+describing the tool surface while reading as a claim about capability. §10 has
+always said the sandbox is a convention and not a jail, and that `Bash` runs
+with the user's permissions; this is that admission's sharpest instance rather
+than a new class. Both sections were corrected the same day, which is what
+"derived, not authored" requires — the code won and the file was wrong.
+
+**Severity, honestly.** Nothing has ever reached for it: one browser call in
+254 jobs, through MCP, refused. It is localhost, single-user, no hosting, and
+the far end of that probe was our own app. So no code changed today. It
+becomes load-bearing the moment the app is hosted, because per-job isolation is
+the only thing that would actually close it — which is why it belongs to the
+hosting decision (single-tenant-per-deploy recommended, still open) rather than
+to a patch now. Chasing `playwright-core` alone would close one library while
+the sandbox still resolves every other root dependency.
+
+**And it sharpens the case for the fourth door.** The argument for WEBPLAN is
+that acting on the real world must be reviewed before it happens. The finding
+here is that acting is *already reachable* unreviewed by any run with a shell.
+That does not weaken the argument — it relocates it: the fourth door's value is
+in making acting **legible and bounded** (one origin, halting assertions, a
+trace as the receipt), not in making it *possible*. A capability that already
+exists without review is a stronger reason to build the reviewed path, not a
+weaker one.

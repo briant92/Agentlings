@@ -94,7 +94,7 @@ import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
 import { categorise, entriesIn, indexedBySource } from './browse';
 import { deliveredIds, DELIVERIES_SHOWN, deliveriesFor } from './deliveries';
-import { applyPatch, patchFile } from './gitwork';
+import { applyPatch, beginPatch, endPatch, patchFile, patchInFlight } from './gitwork';
 import {
   appendKnowledge,
   createLevelFiles,
@@ -1836,6 +1836,18 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   }
   const pending = rt.queue.get(c.req.param('id'));
   if (!pending) return c.json({ error: 'unknown job' }, 404);
+  // A resolve must never land inside this job's own patch-apply await
+  // (D-163): a second promote would race `git apply` on the real
+  // repository, and a discard would disown a patch already going in.
+  if (patchInFlight(pending.id)) {
+    return c.json(
+      {
+        error:
+          "this job's patch is still applying — the first Approve is doing it; try again when it lands",
+      },
+      409,
+    );
+  }
   // Promote replays the reviewed patch onto the real repository first;
   // the job is only marked promoted if the patch applies cleanly.
   //
@@ -1937,7 +1949,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     }
   }
   /**
-   * The send above is this route's one await. If another request resolved the
+   * The send above is the first of this route's two awaits — the patch apply
+   * below is the second, claimed at the door (D-163). If another request resolved the
    * job while it ran — a discard racing a promote through that window; a
    * second promote is already refused by the send's own claim — everything
    * below would reorganize a real folder, apply a patch and install a pack
@@ -2069,11 +2082,14 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   if (body.action === 'promote' && promotable && pending.repoPath && !waitingTool) {
     const patch = patchFile(rt.queue.sandboxDir(pending.id));
     if (existsSync(patch)) {
+      beginPatch(pending.id);
       try {
         await applyPatch(pending.repoPath, patch);
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         return c.json({ error: `patch did not apply: ${detail}` }, 400);
+      } finally {
+        endPatch(pending.id);
       }
     }
   }

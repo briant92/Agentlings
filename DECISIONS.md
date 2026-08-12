@@ -181,6 +181,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-169 — 2026-08-12 — The app stays local: hosting is a capability split, not a deployment choice](#d-169--2026-08-12--the-app-stays-local-hosting-is-a-capability-split-not-a-deployment-choice)
 - [D-170 — 2026-08-12 — The demo records itself: our own Playwright drives our own app, and the feed is a log not a queue](#d-170--2026-08-12--the-demo-records-itself-our-own-playwright-drives-our-own-app-and-the-feed-is-a-log-not-a-queue)
 - [D-171 — 2026-08-12 — Graphify deferred: the repeatable half of the work it would help already runs free](#d-171--2026-08-12--graphify-deferred-the-repeatable-half-of-the-work-it-would-help-already-runs-free)
+- [D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour](#d-172--2026-08-12--the-fourth-door-stays-shut-still-no-errand-and-a-declined-tool-asked-for-within-the-hour)
 
 ## By theme
 
@@ -194,7 +195,10 @@ entry updates one file rather than two.
   itself was found to bound what the model is *offered* rather than what a
   `Bash` run can *reach*, proven by driving click/hover/evaluate out of a real
   sandbox on `playwright-core`, which D-128 put in the root after D-100 last
-  measured that reach
+  measured that reach; and D-172, where the fourth door stayed shut for the
+  third time — D-133's errand condition still unmet after 258 jobs whose
+  recurring web work is entirely reading — while a run asked for one of the
+  four tools declined that same morning, the first demand signal either way
 - **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
   D-008–D-010, D-014; and D-083 — idle life joining the format as ambient
   idioms, the draw reporting its own stalactite tips, and the cave comment
@@ -10835,3 +10839,62 @@ without, turns and cents both ways.
 Until then this is the fifth row of the day to come back negative, and the
 reason is the same each time: **the plan named a capability without checking
 what the ledger already did with that work.**
+
+## D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour
+
+P7 of the 2026-08-12 review — build `WEBPLAN.json`, the reviewed web-acting
+door — is **not built**, for the third time and on the same ground D-133 set:
+*a concrete web errand Brian actually repeats.* Asked directly, with the
+evidence in front of him, he has none.
+
+**The recurring web work here is entirely reading.** Both standing schedules
+are it: an hq Monday email of last week's work, and training-ground's monthly
+economic-indicators table. Each fetches, composes and sends. Neither logs in,
+clicks, or fills anything — and the free `fetch` and `search` tiers already do
+the reading half at $0. Across **258 jobs, two rows ever requested a browser
+tool at all**, and both were refused. There is no errand to build against, and
+D-133's condition is unmet rather than merely unexamined.
+
+**What did change, and it is not enough.** D-168 established that acting is
+*already reachable unreviewed*: `playwright-core` sits in the project root for
+the render door, a job sandbox resolves it, and six of eight roles carry
+`Bash`. That genuinely moves the argument — the fourth door would no longer be
+*creating* a capability, only making an existing one legible and bounded (one
+origin, a halting assertion per step, a trace as the receipt). It lowers the
+marginal risk of building it. **It does not supply an errand**, and D-133's
+other two reasons stand untouched: no demand, and a read case measured weak
+across 254 jobs and now 258.
+
+Building the machinery against a synthetic target was offered and declined.
+That is the option D-133 named as the wrong default — a dual-use web-actuation
+engine with no legitimate use behind it — and it is what five of today's six
+rows have argued against in their own domains.
+
+The design is not lost by waiting: the contract, the inverted `context.route`
+allowlist, the per-step `expect` halts, the trace-and-video receipt and the
+review card are all specified in the 2026-08-12 report, and D-170's recorder
+already proves the harness end of it. **The day an errand exists this is a
+short build, not a project.**
+
+### The thing worth recording, which nobody was looking for
+
+The last row in the ledger — **row 258, today's own demo job**, 12 turns and
+$0.9215 — has `lastTool: mcp__browser__browser_resize`. That is one of the four
+tools declined this morning in D-168 for zero measured demand. **A run asked for
+one of them within hours of the refusal.**
+
+Read it carefully, because the same trap D-053 set is here: `lastTool` is what
+the model *asked for*, not what it got. `browser_resize` is not granted, so the
+request was denied, and the run delivered its PDF regardless. `toolsUsed`
+carries no browser entry at all.
+
+It is still the first genuine demand signal in either direction, and its shape
+is informative: a **scribe that had just rendered a PDF reached for a browser**
+— almost certainly to look at what it had made. That is the self-verification
+case P2's second half was about, arriving on its own rather than being
+theorised. D-168's count was accurate when written (254 rows, one browser
+`lastTool`); this row came after it. **n=1 does not reopen a refusal**, and the
+tool that would actually serve that impulse is a way to view a rendered
+document rather than a viewport resize. But a second such request should
+reopen D-168, and this entry exists so the next recount does not start from
+zero.

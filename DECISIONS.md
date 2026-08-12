@@ -180,6 +180,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach](#d-168--2026-08-12--four-browser-tools-refused-for-want-of-demand-and-the-allowlist-found-to-bound-the-offer-rather-than-the-reach)
 - [D-169 — 2026-08-12 — The app stays local: hosting is a capability split, not a deployment choice](#d-169--2026-08-12--the-app-stays-local-hosting-is-a-capability-split-not-a-deployment-choice)
 - [D-170 — 2026-08-12 — The demo records itself: our own Playwright drives our own app, and the feed is a log not a queue](#d-170--2026-08-12--the-demo-records-itself-our-own-playwright-drives-our-own-app-and-the-feed-is-a-log-not-a-queue)
+- [D-171 — 2026-08-12 — Graphify deferred: the repeatable half of the work it would help already runs free](#d-171--2026-08-12--graphify-deferred-the-repeatable-half-of-the-work-it-would-help-already-runs-free)
 
 ## By theme
 
@@ -342,7 +343,10 @@ entry updates one file rather than two.
   followed by noise, exactly as §8 says a recipe behaves; and D-167, where a
   third-party knowledge skill was refused on measurement — half the corpus
   carries no lesson, and the app's own scorer showed that costing one
-  displaced note, because a bare line has fewer terms and loses on its own
+  displaced note, because a bare line has fewer terms and loses on its own; and
+  D-171, where a code knowledge graph was deferred rather than measured — the
+  two repo-understanding jobs it would help had already compiled to tools and
+  run at $0, so it would have been competing with free
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033; and D-114, where the feed stopped being where decisions are made —
   one REVIEW on the row, the whole choice in the panel, the close-out writing
@@ -10771,3 +10775,63 @@ most of it an agentling working. A promo wanting 60–90 seconds needs trimming
 or a speed-up, and `recordVideo` offers neither — that is an editing step
 outside this script. What ships is the reproducible source recording, not a
 finished film.
+
+## D-171 — 2026-08-12 — Graphify deferred: the repeatable half of the work it would help already runs free
+
+P6 of the 2026-08-12 review — wire Graphify as a stdio connection and measure
+it against a real repo job — is **not built**, and unlike P1 and P2 it is
+deferred rather than refused. The distinction matters: the demand here is real
+and the mechanism is genuinely untested. What is missing is a reason to think
+it beats free.
+
+**The prerequisite is a runtime this project declined.** Graphify installs
+through `uv`/pip and needs Python. This machine has neither: `python` and
+`python3` resolve only to the Windows Store *app-execution alias stubs* under
+`WindowsApps`, which print "Python was not found; run without arguments to
+install from the Microsoft Store" — and there is no `pip`, `uv` or `uvx` at
+all. §15's note that Python was turned down and not installed is accurate.
+That is not fatal on its own — a CLI subprocess is a different question from a
+second runtime *inside* the codebase — but it is a real install on a machine
+that has done without one.
+
+**Demand is real, which is why this is a defer.** 81 of 258 paid rows carried
+a clone, against P2's browser demand of one call in 254 jobs. The ledger even
+prices an upper bound on what the clone costs: rows that took a clone and left
+no artefact cost **$28.51 against ~$20.68** at the no-repo session rate, so
+about **$7.83** of clone tax across the whole history — an upper bound on rows
+that produced nothing, not a verdict.
+
+**But the work it would most help has already descended the ladder.** The two
+repo-*understanding* jobs in the history — `write exports.md at the repo root
+list…` and `list every server module that has no test…` — are both **compiled
+tools now running at $0** (`hq/write-export-repo-root`,
+`hq/list-every-server-module`). A code knowledge graph is exactly what those
+jobs wanted, and they no longer need one. What is left for Graphify is *novel*
+repo work, and that is the case D-049 already measured in this precise shape:
+an index over material the crew already clones, saving 1 turn and 2.45c of 27c
+— about 9%, at n=1 — while making every turn dearer, because its lines are
+input tokens on every subsequent turn.
+
+**Two open questions worth recording, since they are not obvious until you
+try to wire it.** Graphify indexes a *path*; a session works in a per-job
+clone at `./repo`. So the graph would describe the canonical repository while
+the session edits a copy — fine for understanding, stale the moment the run
+edits anything, and re-indexing per job is the cost you were trying to avoid.
+And its "no model call" claim covers **code extraction only**: docs, PDFs and
+SQL schemas go through a model endpoint, so the free-and-local property is
+narrower than the pitch.
+
+### The trigger
+
+**A repo-understanding job that costs real money and is not a repeat** — one a
+compiled tool cannot claim, because it has not been asked three times. That is
+the case Graphify is for and the case the ledger does not yet contain. When
+one appears, install Python, wire the connection with its tool allowlist and
+provenance checked (the real repo is `Graphify-Labs/graphify`; searching turns
+up at least two third-party lookalikes, `graphify-mcp` and the deprecated
+`graphify-mcp-tools`), and run the paired measurement: same prompt, with and
+without, turns and cents both ways.
+
+Until then this is the fifth row of the day to come back negative, and the
+reason is the same each time: **the plan named a capability without checking
+what the ledger already did with that work.**

@@ -174,6 +174,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-162 — 2026-08-11 — The flagged race, measured: node is the moves door, and the real window was a discard mid-send](#d-162--2026-08-11--the-flagged-race-measured-node-is-the-moves-door-and-the-real-window-was-a-discard-mid-send)
 - [D-163 — 2026-08-11 — The parallel settlement reconciled: the second await gets its door, D-162's miscount corrected](#d-163--2026-08-11--the-parallel-settlement-reconciled-the-second-await-gets-its-door-d-162s-miscount-corrected)
 - [D-164 — 2026-08-11 — A bad boot is not for life: the looks registry re-reads on every visit to the select screen](#d-164--2026-08-11--a-bad-boot-is-not-for-life-the-looks-registry-re-reads-on-every-visit-to-the-select-screen)
+- [D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects](#d-165--2026-08-12--agentlings-gets-its-own-accounts-and-the-danger-was-never-the-projects)
 
 ## By theme
 
@@ -558,6 +559,13 @@ entry updates one file rather than two.
   still parked in M6; and D-106, where the repeat row learned to schedule
   **without** running today and to say the first firing's date, found by
   T5's own rule the first evening anyone used the timer
+- **Hosting, and the platform accounts** — D-165, where D-001's separation from
+  IGPL was refined rather than repeated: separate projects were never the
+  risk, the account-scoped connector was, so Agentlings owns a Free Supabase
+  org and its own Vercel project and reaches them by `.env` alone (D-078's
+  shape). Carries the measurement that Vercel cannot host this server —
+  its own function ceilings against `SESSION_TIMEOUT_MS` — and the first
+  time any part of this project stood on the public internet
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -10269,3 +10277,103 @@ once-guard reintroduced into `loadLooks` — the exact regression a future
 "it only needs to run once" edit would make — fails the heal act. The
 wiring in `SelectScreen.load()` is three lines, review-verified, its
 comment naming D-164 at the seam.
+
+## D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects
+
+Opened by Brian correcting a premise of my own: PROJECT.md's ground rule
+treated the Supabase and Vercel connectors as belonging to IGPL Family
+Office and forbade them outright, and the rule was written defensively —
+by a non-expert making sure nothing got broken — rather than from a
+reading of how either platform isolates anything. Asked directly whether
+new projects could simply be created, the honest answer needed measuring
+rather than reassuring.
+
+**Isolation was never the question.** A Supabase project is its own
+Postgres instance with its own keys, storage and auth; a Vercel project
+its own deployments, env and domains. There is no query path from one to
+another. The defensive rule was aimed at a risk that does not exist in
+that form.
+
+**The risk that does exist is the connector.** The Supabase MCP server
+visible in these sessions is *account-scoped* — it carries
+`list_organizations`, `create_project`, `execute_sql` and
+`apply_migration`, so it can reach any project in the account, Family
+Office included. The isolation question was the safe one; the tool sitting
+in my own session was the sharp one. So the boundary is now structural
+rather than a promise: **Agentlings never needs the connector at all.**
+The app reaches Postgres by a connection string in `.env`, which is
+D-078's shape and the same one every other secret here takes. A rule that
+depends on my remembering it is weaker than an architecture that never
+offers the option.
+
+**Where the accounts live, and the money that decided it.** Supabase bills
+per *organisation*, and each project runs its own compute instance charged
+separately; the Pro plan's $10/month credit covers exactly one Micro, so
+Supabase's own worked example puts two Micro projects in one Pro org at
+**$35/month**. Adding Agentlings to the existing Family Office org would
+therefore have cost **+$10/month, not nothing** — the reverse of the
+assumption behind the question. A **new organisation on the Free plan** is
+$0, isolates the bill as well as the data, and its limits (500 MB, pausing
+after a week idle) are comfortably above what the P5 migration gate needs.
+Vercel is the opposite shape: its $20 is a per-*team* platform fee with one
+seat and $20 of usage credit, and there is **no per-project charge**, so a
+project costs nothing wherever it sits. It went to the personal Hobby
+scope regardless, which keeps the two projects out of one dashboard.
+
+**Vercel cannot host this server, and our own constants are what say so.**
+Functions cap at 300 s on Hobby and 800 s on Pro against
+`SESSION_TIMEOUT_MS` of 600 s and the researcher's 1,500 s wall; the
+request body caps at 4.5 MB against `MAX_ATTACHMENT_BYTES` of 10 MB; there
+is no persistent filesystem for a sandbox, no long-lived socket for the
+10 Hz sim, and no child process that outlives a request. This was not
+academic — the import form was already filled in for `./server` with a Hono
+preset and a Deploy button, and Vercel offered `./server` *again* on the
+success page afterwards. A platform that detects a thing it cannot run and
+invites you to deploy it is the shape of this mistake. **Vercel takes the
+web client; the server goes to Railway.**
+
+**The project's security defaults were tightened rather than accepted.**
+Data API **off**, because the server connects to Postgres directly and
+PostgREST would be a public endpoint over our tables that nothing uses;
+auto-expose-new-tables **off**, which Supabase's own form recommends; and
+automatic RLS **on**, because a direct connection bypasses RLS anyway, so
+deny-by-default costs nothing and matches the allowlist posture everywhere
+else here. The console's amber warning — that `supabase-js` can no longer
+query the database — is the intended outcome stated back, not a fault.
+Region **East US (North Virginia)**, fixed at creation and chosen on the
+axis that matters: the query path is server→database, so it tracks where
+Railway will run rather than where Brian is.
+
+### What proved it
+
+The build was run before the deploy rather than asserted: `npm run build`
+at the repo root, **16 MB into `web/dist` in 12.98 s**, no errors. Root
+directory has to stay at the repo root — `web` depends on
+`@agentlings/shared` as a workspace, and Vercel's own monorepo default of
+`npm install --prefix=..` would have climbed out of the repo.
+
+Then the live page, read rather than assumed. `agentlings-web.vercel.app`
+serves the title screen whole — bundles, CSS and the Press Start 2P face
+all 200 — and START reaches the select screen. Four API calls 404:
+`/api/packs`, `/api/levels`, `/api/levels/closed`, and `/api/packs` again.
+That is exactly right: the Vite proxy is dev-server-only and no production
+API base exists yet. Two things fell out of watching it fail. **It does not
+crash** — the client renders an empty list rather than throwing, one
+console error and no error screen, so the P4 cutover is a URL and not a
+rewrite. And **`/api/packs` is fetched twice, once per screen** — D-164's
+re-read on every select-screen visit, visible from outside the app for the
+first time.
+
+**What this entry does not decide.** Whether to host at all, and in what
+shape — single-tenant-per-deploy is recommended and open — along with the
+fourth door, pgvector's tier, and Graphify. Those are the four questions in
+the 2026-08-12 review and none of them is taken. This records the accounts,
+the boundary and the measurements; the architecture is still a decision.
+
+One consequence worth stating plainly, because nothing else records it: a
+Hobby deployment URL is **public**, and this is the first time any part of
+this project has stood on the open internet. Today it is a static client
+holding no data and reaching no server, so the exposure is nil. At P4 the
+same URL fronts a real one, and §11's privacy posture — localhost, no auth,
+no telemetry, no control plane — is written entirely for a machine nobody
+else can reach. That gap is now on the clock.

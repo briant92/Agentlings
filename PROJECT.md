@@ -8,8 +8,17 @@ behavioral base lives there alone; this is the project half, split out on
 
 - IMPORTANT: This project is completely separate from the IGPL Family Office
   project. Account-level connectors visible in sessions here (Supabase, Gmail,
-  Calendar, Carta, Vercel) belong to that other project — NEVER read from or
-  write to them for Agentlings work unless explicitly told otherwise.
+  Calendar, Carta, Vercel) reach **that** project's resources — NEVER read from
+  or write to them for Agentlings work. The Supabase connector is the sharp one:
+  it is account-scoped, so `execute_sql` and `apply_migration` can hit any
+  project in the account, Family Office included.
+  Agentlings owns its own resources instead, and reaches them the way every
+  connection in this app does — a key in `.env`, never a connector (D-078).
+  Live since 2026-08-12 (D-165): Supabase org **Agentlings** on the Free plan,
+  project **Agentlings**, region East US (North Virginia), Data API off and
+  automatic RLS on; and Vercel project **agentlings-web** on the personal Hobby
+  scope, serving the web client only at `agentlings-web.vercel.app` — the
+  server cannot go there and goes to Railway (the numbers are in D-165).
 - Architectural choices (language, engine, framework, storage) extend CLAUDE.md
   rule 1:
   present 2–3 options with a recommendation, wait for the decision, then

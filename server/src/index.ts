@@ -1937,6 +1937,23 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     }
   }
   /**
+   * The send above is this route's one await. If another request resolved the
+   * job while it ran — a discard racing a promote through that window; a
+   * second promote is already refused by the send's own claim — everything
+   * below would reorganize a real folder, apply a patch and install a pack
+   * for a verdict that no longer stands. The finished sends are stamped and
+   * safe; stop here, before anything else real. resolve() at the tail would
+   * throw anyway, but only after those side effects had happened (D-162).
+   */
+  if (promotable && (pending.status === 'promoted' || pending.status === 'discarded')) {
+    return c.json(
+      {
+        error: `while the outbox was sending, this job was ${pending.status} by another request — nothing further was applied`,
+      },
+      409,
+    );
+  }
+  /**
    * A reviewed pack is installed exactly as a reviewed outbox is sent and a
    * reviewed patch applied: at Approve, by us, never by the session (M4).
    *
@@ -2005,6 +2022,12 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * a retry skips what already moved. A partial failure returns 400 with the
    * job reviewable, so "Approve again" finishes the rest and moves nothing
    * twice. This is the one branch that touches a real folder outside the app.
+   *
+   * Deliberately synchronous end to end: with the recheck above, nothing
+   * yields between reading `movesRun.done` and stamping it, so two Approves
+   * cannot interleave here — the property D-160 had to build a claim to get
+   * for the outbox, the event loop grants this block for free, and an await
+   * introduced into this stretch would silently take it away (D-162).
    */
   let movedNow = 0;
   if (

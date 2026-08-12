@@ -9,7 +9,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import type { Job, JobAttachment, JobMeter, MoveOp } from '@agentlings/shared';
-import { MAX_STATIONS } from '@agentlings/shared';
+import { MAX_STATIONS, opKey } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
@@ -543,7 +543,13 @@ export class JobQueue {
   recordMoves(jobId: string, run: MovesRunResult): Job {
     const job = this.mustGet(jobId);
     const prior = job.movesRun?.done ?? [];
-    job.movesRun = { at: Date.now(), done: [...prior, ...run.done], failed: run.failed };
+    // `done` records what is moved, not how many times moving happened — the
+    // undo walks it backwards and a duplicated op would fail its second
+    // reverse. The same set rule recordOutboxSends keeps for its stamp
+    // (D-160; D-162).
+    const seen = new Set(prior.map(opKey));
+    const fresh = run.done.filter((op) => !seen.has(opKey(op)));
+    job.movesRun = { at: Date.now(), done: [...prior, ...fresh], failed: run.failed };
     this.persist();
     return job;
   }

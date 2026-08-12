@@ -4,6 +4,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { MoveOp } from '@agentlings/shared';
 import { SimulatedExecutor } from './executors/simulated';
 import { OUTBOX_FILE } from './outbox';
 import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
@@ -740,6 +741,23 @@ describe('JobQueue', () => {
       queue.start(job.id);
       queue.fail(job.id, 'session timed out');
       expect(queue.get(job.id)!.changes).toBeUndefined();
+    });
+  });
+
+  describe('recordMoves — the accumulator the undo walks back (D-162)', () => {
+    const mk: MoveOp = { op: 'mkdir', path: 'docs' };
+    const mv: MoveOp = { op: 'move', from: 'a b.pdf', to: 'docs/a b.pdf' };
+
+    it('accumulates across Approves and never records the same op twice', () => {
+      const job = queue.add({ title: 'Organize', prompt: 'tidy the folder' });
+      queue.recordMoves(job.id, { done: [mk, mv], failed: [] });
+      // A replay re-reporting a done op must not double it: `done` is what is
+      // moved, and reverseMoves walks it backwards — the second copy would
+      // fail its reverse. Same set rule as the outbox stamp (D-160).
+      const later: MoveOp = { op: 'move', from: 'c.txt', to: 'docs/c.txt' };
+      const after = queue.recordMoves(job.id, { done: [mv, later], failed: [] });
+      expect(after.movesRun?.done).toEqual([mk, mv, later]);
+      expect(after.movesRun?.failed).toEqual([]);
     });
   });
 });

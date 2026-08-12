@@ -9,7 +9,7 @@ import type {
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { readSeen } from '../panels/Inbox';
-import { allLooks, renderThumbnail } from '../world/looks';
+import { allLooks, loadLooks, renderThumbnail } from '../world/looks';
 
 export interface LevelEntry {
   id: string;
@@ -108,12 +108,21 @@ export function SelectScreen({
   const [closed, setClosed] = useState<ClosedLevelInfo[]>([]);
   const [closing, setClosing] = useState<LevelInfo | null>(null);
   const [reopening, setReopening] = useState<ClosedLevelInfo | null>(null);
+  /** Bumped when the looks registry refreshes, so the grid repaints with it. */
+  const [, setLooksRev] = useState(0);
 
   const load = () => {
     void api<LevelInfo[]>('/api/levels').then(setLevels);
     void api<ClosedLevelInfo[]>('/api/levels/closed')
       .then(setClosed)
       .catch(() => setClosed([]));
+    // The looks registry is filled once at boot, and a page whose boot raced a
+    // server restart holds only the four built-ins for its whole life — the
+    // New Level palette missing every installed world until an F5 (D-164).
+    // This screen is where that palette shows, so re-read the packs on every
+    // visit: loadLooks merges idempotently, and the bump repaints the grid
+    // with whatever arrived — a pack installed mid-session included.
+    void loadLooks().then(() => setLooksRev((n) => n + 1));
   };
 
   useEffect(load, []);

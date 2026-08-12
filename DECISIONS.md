@@ -171,6 +171,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door](#d-159--2026-08-11--the-outbox-carries-files-telegram-documents-gmail-multipart-review-holds-the-door)
 - [D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam](#d-160--2026-08-11--one-door-for-the-outbox-send-the-double-send-race-closed-at-its-seam)
 - [D-161 — 2026-08-11 — The byte nobody could see: opKey's NUL spelled out, one definition, display split from identity](#d-161--2026-08-11--the-byte-nobody-could-see-opkeys-nul-spelled-out-one-definition-display-split-from-identity)
+- [D-162 — 2026-08-11 — The flagged race, measured: node is the moves door, and the real window was a discard mid-send](#d-162--2026-08-11--the-flagged-race-measured-node-is-the-moves-door-and-the-real-window-was-a-discard-mid-send)
 
 ## By theme
 
@@ -286,7 +287,10 @@ entry updates one file rather than two.
   and D-161, the replay's op identity — the tree's one raw NUL byte (U+0000)
   spelled out as a visible escape, the web copy's space collision closed by
   one shared opKey, and display split from identity so the byte never
-  reaches the review pane
+  reaches the review pane; and D-162, D-160's moves flag measured — the
+  sync replay needs no claim because nothing in it yields, the real window
+  was a discard landing mid-outbox-send, closed by a recheck after the
+  route's one await, with recordMoves dedup mirroring the outbox stamp
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on
@@ -10094,3 +10098,58 @@ this worktree had no `node_modules`, so tsc and vitest resolved
 shared edit was invisible to its own gate — first typecheck failed
 honestly, and `npm install` in the worktree (22s) was the fix. A shared
 edit from a worktree needs the local install first.
+
+## D-162 — 2026-08-11 — The flagged race, measured: node is the moves door, and the real window was a discard mid-send
+
+D-160 flagged the moves replay as its own open race — "the same
+read→act→stamp shape and `recordMoves` the same concatenation merge" —
+and left it for its own decision. Measured before building: the shape
+alone is not the mechanism. The outbox raced because a real send *awaits*
+mid-sequence and a second Approve entered through the yield. The moves
+block has no yield: `executeMoves` is `renameSync` all the way down, the
+journal append and the stamp are synchronous, and `queue.get()` hands out
+the live Map object, not a copy. Two Approves on a moves job therefore
+run strictly one after the other, and the second reads the first's stamp
+in the same event-loop turn and skips every op. The claim D-160 had to
+build for the outbox, the event loop grants this block for free — so no
+claim was added, and the invariant is named in the block's comment
+instead, because an `await` introduced into that stretch would repeal it
+silently. Promote-vs-promote on an outbox-carrying job is likewise
+already refused before the moves block by the send's own claim.
+
+**The window that is real: a discard landing mid-send.** The route's one
+await is the outbox send, `promotable` is computed before it and trusted
+after it, and a *discard* never touches the outbox claim — its path is
+fully synchronous. So a discard arriving while a promote sat parked in a
+multi-second send stamped the verdict, and the resumed promote would
+then have reorganized the real folder, applied the patch and installed
+the pack for a job the user had just discarded — `resolve()` at the tail
+throws on a resolved job (queue.test.ts pins it), but only after every
+side effect had already happened. Closed at the seam: after the outbox
+block, the route re-reads the live status and answers 409 — "while the
+outbox was sending, this job was discarded by another request — nothing
+further was applied". The finished sends stay stamped, because they
+happened and the stamp is the record of that.
+
+**The stamp made a set.** `recordMoves` now dedups `done` by `opKey`
+before accumulating — D-161's one identity, load-bearing at a third seam
+within the same evening. `done` records *what is moved*, not how many
+times moving happened: `reverseMoves` walks it backwards, and a
+duplicated op would fail its second reverse. The same set rule
+`recordOutboxSends` adopted in D-160 for who-was-sent-to.
+
+### What proved it
+
+The measurement: the route read end to end for its awaits (one — the
+send), `get()` returning `this.jobs.get(id)` live, `resolve()` throwing
+on a resolved job already pinned. `recordMoves`'s first-ever test (the
+accumulator had none): accumulate across Approves, never the same op
+twice. Suite green at 1,562 + 184, typecheck clean. One mutation after
+committing (`451e3c6`), one kill: the dedup reverted fails its test; the
+409 recheck is straight-line route code, review-verified, its backstop
+being the pinned resolve() throw. The first mutation attempt refused
+itself — a literal-newline pattern against the CRLF working tree matched
+nothing and the assert-before-write exit stopped a wrong mutation from
+reading as a kill, the dev-lessons rule holding on its second live test
+of the night. Boundary kept honest: the recheck, like D-160's claim, is
+process-local — both racers live in the one server.

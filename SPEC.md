@@ -123,6 +123,12 @@ the loop runs end to end without one.
   `executeMoves` replays it at Approve refusing to overwrite and re-checking
   each path, `reverseMoves` is the undo. The one place the server moves a
   file in a real folder outside the app.
+- `movesreplay.ts` — the one door those two run behind (D-161, D-160's
+  sibling): a per-job claim held across the whole read→replay→stamp
+  sequence, shared by the replay and the undo, so a concurrent second
+  Approve — or an undo against a mid-flight replay — is refused by name
+  with nothing moved, and approving twice never moves anything twice,
+  sequentially and concurrently.
 - `organize.ts` — reaching that folder: a metadata-only inventory (names,
   types, sizes, dates — no contents) handed to the run in its brief, and the
   under-firing detector that routes an "organize" sentence to worker.

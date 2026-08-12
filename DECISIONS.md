@@ -170,6 +170,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-158 — 2026-08-11 — The reading desks: calendar first, sibling grants, a clerk on the cheap model](#d-158--2026-08-11--the-reading-desks-calendar-first-sibling-grants-a-clerk-on-the-cheap-model)
 - [D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door](#d-159--2026-08-11--the-outbox-carries-files-telegram-documents-gmail-multipart-review-holds-the-door)
 - [D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam](#d-160--2026-08-11--one-door-for-the-outbox-send-the-double-send-race-closed-at-its-seam)
+- [D-161 — 2026-08-11 — One door for the moves replay and undo: D-160's sibling closed by construction, not synchrony](#d-161--2026-08-11--one-door-for-the-moves-replay-and-undo-d-160s-sibling-closed-by-construction-not-synchrony)
 
 ## By theme
 
@@ -281,7 +282,11 @@ entry updates one file rather than two.
   it, model-never-touches, never a delete, journaled so it reverses; and
   D-141, one Approve one door — the gates-of-troy install refused by its own
   first half, fixed by authoring dropping the repo and an unchanged slug not
-  counting as a rename, with the cut-legs-never-charge pricing seam recorded
+  counting as a rename, with the cut-legs-never-charge pricing seam recorded;
+  and D-161, D-160's claim taken for the moves replay and undo before the
+  accident serializing them (a sync executor) could stop holding — one
+  shared per-job door, either direction refused by name mid-flight, the
+  folder race closed by construction rather than by synchrony
 - **Cost** — quotes, ceilings, turn budgets, rates, billing: D-012, D-016–D-018,
   D-026–D-027, D-029; D-130, where a role may raise its own ceiling above the
   global runaway clamp for its class alone (the researcher, measured bound on
@@ -10018,3 +10023,83 @@ for its own decision rather than folded in here.
 The running `serve` predates this commit, so the race is live until the
 next restart — after T5's first firing, per D-158's sequencing. Until
 then the exposure is one double-click on Approve, survivable for a day.
+
+## D-161 — 2026-08-11 — One door for the moves replay and undo: D-160's sibling closed by construction, not synchrony
+
+D-160 flagged this seam on its way out: the moves replay is the same
+read→act→stamp shape that double-sent Pepo's PDF, against a worse surface —
+a real folder. The task was to confirm the race by inspection and close it.
+
+**The inspection's verdict: the interleaving is not reachable today, and
+the reason it isn't is nobody's decision.** The outbox window broke because
+its middle awaits — a `sendMessage` round trip yields the event loop with
+the stamp unwritten. The moves middle is `renameSync` all the way down:
+from the done-list read to `recordMoves` in the resolve route there is no
+suspension point, the undo route was synchronous end to end, and the queue
+hands out live references — so Node cannot interleave two Approves inside
+the window, and the second reads the first's stamp and skips every op. The
+route's real awaits all sit outside it: `c.req.json()` before any state
+read, the outbox door before the block (whose D-160 claim already 409s a
+concurrent Approve out of the whole route), `applyPatch` after.
+
+So the exact D-160 mechanism, replayed here, is refuted — but the thing
+standing in its way is an accident. "The window is synchronous" is a
+guarantee stated nowhere and pinned by no test, and the moves middle is
+the likeliest code in the repo to stop being true: two hundred sync
+renames against a OneDrive-synced folder stall the event loop for seconds,
+and the natural future edit — async fs, an awaited progress event —
+reopens the hole silently, against real files, where a replay racing
+itself fails on gone sources, pollutes the failed list, and interleaves
+the journal the undo walks backwards. D-075 made this same kind of claim
+and D-160 caught it being false; the only difference here is that the
+accident happens to hold.
+
+**The fix: the claim taken by construction.** `performMovesReplay` and
+`performMovesUndo` (new `movesreplay.ts`) mirror `performOutboxSend`: one
+per-job claim held from before the done-list read (a thunk, called under
+the claim) until after the stamp, released in a `finally`, the concurrent
+caller refused by name with nothing moved — the resolve route answers 409
+"these moves are already replaying", the undo route 409 "these moves are
+mid-flight". The two directions share the one claim set on purpose, so an
+undo can never interleave a mid-flight Approve or the reverse: both reach
+for the same files. `recordMoves` now merges `done` by op key instead of
+concatenating — the stamp is what has been done, not how many times a
+replay reported it, the same correction D-160 made to the outbox stamp.
+In production the door still cannot be entered concurrently today, the
+executor being sync; the refusals are armor whose tests inject a slowed
+executor to make the window real.
+
+### What proved it
+
+Eight new tests — two concurrent Approves with a yielding executor move
+once, journal once, stamp once, and the second is refused by the claim;
+the claim releases on finish (a later Approve enters and skips the
+stamped), on a per-op failure (the retry completes the remainder) and on
+a thrown executor; an undo against a mid-flight replay is refused with
+nothing moved, and the reverse; distinct jobs never block each other; the
+undo journals the direction the files actually traveled; the moves stamp
+dedups — full suite green at 1,565 + 183, typecheck clean. Four mutations
+after committing (`69dba90`), four kills: the claim check removed → the
+concurrent and mutual-exclusion tests fail; the release removed → six of
+seven door tests fail (a leaked claim poisons everything after it); the
+dedup reverted → the stamp test fails; the shared claim split into
+per-direction sets → the mutual-exclusion test fails, which is the test
+proving *shared* is the load-bearing part.
+
+Found on the way: `opKey` joins a move's two paths with a raw NUL byte
+(0x00) — invisible in every editor, committed since D-132, discovered when
+this session's first test spelled a key as a literal with a space and
+failed against a visually identical string. It never crosses a process
+boundary (keys are recomputed from ops, never persisted) and a NUL is
+arguably the *right* separator, filenames being allowed spaces — but an
+invisible byte is not a decision, and opKey's output rides inside
+review-pane error messages. Flagged for its own look rather than changed
+here.
+
+**Flagged, not fixed** (D-119's sibling rule, as D-160 applied it):
+`applyPatch` sits after the moves block behind its own await — two
+Approves that both clear every earlier gate can still reach two concurrent
+`git apply` processes on the same real repository. The window is narrower
+(the second must arrive inside the spawn, having skipped outbox, pack and
+moves) and the likely failure is a clean "patch did not apply" 400, but it
+is the same rule at one more seam. Left for its own decision.

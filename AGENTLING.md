@@ -1049,10 +1049,13 @@ never a delete — from a metadata-only inventory the server walked (names,
 types, sizes, dates; no contents, so nothing but a filename ever enters the
 session). Review shows the moves, and **Approve is the reorganization**: the
 server replays the manifest under the picked folder, journals it, and can
-reverse it. The session installs nothing, touches nothing outside its
-sandbox, and has no tool that could — this is the first time the promote
-shape crosses into a real folder outside the app, and it crosses only as a
-reviewed manifest the server carries out.
+reverse it — one replay or undo at a time per job, a concurrent second
+Approve or a mid-flight undo refused with nothing moved (D-161, the outbox
+door's sibling), so approving twice never moves anything twice,
+sequentially and concurrently. The session installs nothing, touches
+nothing outside its sandbox, and has no tool that could — this is the
+first time the promote shape crosses into a real folder outside the app,
+and it crosses only as a reviewed manifest the server carries out.
 
 The structural argument survives intact. Every guarantee rests on one shape —
 **work in a sandbox, review, promote** — and a send goes *through* promote, as

@@ -182,6 +182,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-170 — 2026-08-12 — The demo records itself: our own Playwright drives our own app, and the feed is a log not a queue](#d-170--2026-08-12--the-demo-records-itself-our-own-playwright-drives-our-own-app-and-the-feed-is-a-log-not-a-queue)
 - [D-171 — 2026-08-12 — Graphify deferred: the repeatable half of the work it would help already runs free](#d-171--2026-08-12--graphify-deferred-the-repeatable-half-of-the-work-it-would-help-already-runs-free)
 - [D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour](#d-172--2026-08-12--the-fourth-door-stays-shut-still-no-errand-and-a-declined-tool-asked-for-within-the-hour)
+- [D-173 — 2026-08-12 — Compiled tools get the gated doors, and the grant is what a method used](#d-173--2026-08-12--compiled-tools-get-the-gated-doors-and-the-grant-is-what-a-method-used)
 
 ## By theme
 
@@ -383,7 +384,12 @@ entry updates one file rather than two.
   hand-done runs on five different real datasets, a compile whose verifier was
   mutated against five wrong answers before installing, then the job served at
   0 turns and $0. It also records what the ledger makes of the compile: cut at
-  the cap, so filed a failure and absorbed, while the tool it built is live
+  the cap, so filed a failure and absorbed, while the tool it built is live;
+  and D-173, which reopens D-100 on its own stated condition and gives a tool
+  the gated doors — the grant being what the method *used*, recorded in its own
+  manifest field rather than the capability surface that predicted the day and
+  was the wrong shape for it, with the router refusing a tool whose doors are
+  shut and the tool's environment stripped of every catalog secret
 - **Outside access, continued again** — the knowledge store: options in D-046,
   settled as sync-and-index by D-047, built in D-048; and D-102, where the
   folder it reads is picked in the OS's own Select Folder dialog served by
@@ -10921,3 +10927,137 @@ tool that would actually serve that impulse is a way to view a rendered
 document rather than a viewport resize. But a second such request should
 reopen D-168, and this entry exists so the next recount does not start from
 zero.
+
+## D-173 — 2026-08-12 — Compiled tools get the gated doors, and the grant is what a method used
+
+D-100 refused compiled tools the localhost doors and did it on measurement:
+every compile-eligible recipe *also* carried `browser`, which no plain-node
+script can drive whatever doors it holds, so the grant would have unlocked
+nothing. Its stated reopen condition was **"a recipe refused for a door it
+genuinely used and nothing else."** Four now are, from `ledger:report` over 258
+jobs — three needing web + search, one needing github alone, and a fifth still
+carrying `browser` and still correctly refused. One of the four is the monthly
+economic-indicators schedule at $1.36 a run.
+
+### What was built
+
+A connection a method reached now splits two ways instead of one.
+`compileBlockers` narrows to connections with **no door**; the new
+`compileDoors` returns the rest. `DOORS` in `connections.ts` is the single
+place naming the four — `web`, `github`, `search`, `render` — so the compile
+gate stops being a fifth hardcoded copy of a list the doors already imply. A
+connection absent from it is absent by definition, not oversight: `browser`
+drives a browser inside the session's own process, and the three senders grant
+a run nothing at all (D-075, D-097).
+
+**The grant is its own manifest field, and that corrects a prediction this
+repo had written down twice.** `ToolManifest.capabilities` carried a comment
+saying it existed precisely for the day tools got doors, and the task notes
+agreed. It is the wrong shape. A surface records what a method *could* reach,
+so it carries ambient `web` whether the method touched it or not, plus the
+tools, skills and libraries axes — gating a run on it would refuse a tool the
+day an ambient connection it never called was switched off. The code-host
+recipe is the proof in one object: surface `browser, github, search, web`,
+runs that only ever called `list_commits`. `capabilities` would have granted
+four doors and made the tool refusable on any of them; `connections` grants
+`github`. The old field keeps its own job and stays unread. Absent means no
+doors, which is true of every tool compiled before today — **no backfill**.
+
+**A seam caught mid-build, before it shipped.** On the fallback path — recipes
+whose runs predate tool-recording — nothing is *known*, only available. My
+first version filtered door-backed names out of the blockers unconditionally,
+which would have let a `github` recipe compile with no door granted: a script
+that cannot reach the code host it was written for, two failures, automatic
+retirement, where the old answer was an honest refusal. Availability cannot
+grant a door, so it must not clear one either. Silence now blocks on both
+sides, and a mutation removing that guard dies on its own test.
+
+**The environment is stripped.** `spawn` had been handing every compiled tool
+the entire server environment since the tier was built, `GITHUB_TOKEN`
+included. Harmless while the contract was "no network"; load-bearing the
+moment a script can call out, because a tool holding the key can reach the code
+host *without* the door and the door bounds nothing. Tools now get the
+environment minus every secret the catalog declares, plus `AGENTLINGS_DOORS`.
+Not from an empty environment — node still needs the ordinary variables — and
+by catalog name, so a connection added later is covered without a second list.
+
+The router refuses a tool whose doors the job does not hold. Without it,
+switching `github` off in Settings would have destroyed a working tool through
+two fallback sessions, for a setting the user changed on purpose.
+
+The compile contract names the doors, their literal endpoints and the granted
+tool names, and forbids baking the answer in — D-045's cache trap, sharper now
+that a stale literal is also *wrong* rather than merely circular.
+
+### The live gate, and the fault it exposed
+
+Job `f1e99328` compiled in 12 turns for $1.0670 against a $2 quote, never
+touching the github MCP tool — it went through the door. The generated pair is
+good work: `run.mjs` dies rather than reports on a missing door, a non-JSON
+answer, an `{error}` body (it noticed the door returns that on 200 as well as
+403), a blank payload, a header naming a different repo than it asked for, or
+**any** listing line that fails to parse. `verify.mjs` makes its *own*
+independent door call, checks every table row's sha, date and subject against
+the live listing, rejects any sha-shaped token the door never returned, then
+greps the run script's source for baked-in shas, subjects and date literals —
+and checks itself for the same.
+
+**It failed its first real run anyway, and the fault was the brief's.** While
+the two scripts are written they sit together in the sandbox, so reading
+`run.mjs` by a bare relative path passes every test the session can run.
+Installing separates them: the scripts move to the tool's own directory while
+the working directory stays the sandbox. `verify.mjs` could not find the file
+it had just finished checking, the job fell back to a 23.7c session, and the
+tool took a strike for our omission. The trap was laid *by* the anti-cache rule
+added the same hour, which actively encourages a verify to read the run
+script's source.
+
+**My own verification missed it identically.** I ran both scripts by copying
+them into one directory — reproducing the session's conditions rather than the
+executor's. A tool test that does not separate the script from the working
+directory is not testing an installed tool. This is the D-024/D-030 shape
+again: a green check that measured the wrong arrangement.
+
+Repaired: the brief now states the layout outright and names
+`import.meta.dirname`, the one fact about the real run a compile cannot
+discover for itself. The installed tool was fixed in place — three path
+resolutions, no check altered — and its strike reset to zero on the reasoning
+the clone guard in the same file already uses: a failure that is ours must not
+retire the user's tool.
+
+**Gate closed.** Job `2e42385e`: `costUsd 0.00`, `turns 0`, `tooled: true`,
+delivering a real `STATUS.md` read from the live door — 15 commits, correctly
+reporting that the dominant shape of the period was work that *decided not to
+build* (6 of 15, which is what D-167 through D-172 were) and surfacing the
+do-then-record rhythm on its own.
+
+### Evidence
+
+1,580 server + 185 web green, typecheck clean. Four mutations, four kills:
+`findTool` ignoring the grant (3 tests), the secrets staying in the
+environment (1), availability clearing a door it cannot grant (1), the
+separation warning removed from the brief (1). **A fifth mutation was written
+and did not kill — it replaced only the sentence's opening clause and left
+every asserted phrase standing.** Recorded because a mutation that survives is
+a claim about the mutation first: it was too weak, not the test.
+
+`ledger:report` reads the change without being touched — it calls
+`compileBlockers` directly, and four recipes moved from blocked to compilable
+while the `browser` one stayed refused.
+
+### Recorded, not built
+
+- The generated verify's prose checks (`what the period was mostly about`,
+  `pattern`, `## The arcs`) test for headings the run script always emits —
+  structurally circular, though nothing factual rests on them. The factual
+  checks are genuinely independent.
+- Categorising commits into shipped/recorded/refused is a fixed regex where a
+  session used judgment. The note labels it "a rough read"; that is the honest
+  tradeoff of the tier, and worth re-reading if the classification is ever
+  leaned on.
+- The three remaining door-blocked recipes (web + search) are uncompiled. The
+  indicators one is the money, and also the hardest: this morning's run made
+  real judgment calls a script cannot — reframing "this month's", catching that
+  mindicador's `ipc` field is stale, and **leaving out** a press-reported figure
+  it could not confirm at source. Compiling it trades that judgment for a fixed
+  method, which is a decision and not a mechanical next step.

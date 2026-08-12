@@ -13,7 +13,7 @@ import { MAX_STATIONS } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
-import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
+import { MOVES_FILE, type MovesRunResult, opKey, readMoves } from './moves';
 import { PACK_FILE, readPackDraft } from './packcontract';
 import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
@@ -543,7 +543,15 @@ export class JobQueue {
   recordMoves(jobId: string, run: MovesRunResult): Job {
     const job = this.mustGet(jobId);
     const prior = job.movesRun?.done ?? [];
-    job.movesRun = { at: Date.now(), done: [...prior, ...run.done], failed: run.failed };
+    // Merged by op key, not concatenated (D-161): the stamp is what has been
+    // done, not how many times a replay reported it — the same correction
+    // D-160 made to the outbox stamp.
+    const seen = new Set(prior.map(opKey));
+    job.movesRun = {
+      at: Date.now(),
+      done: [...prior, ...run.done.filter((op) => !seen.has(opKey(op)))],
+      failed: run.failed,
+    };
     this.persist();
     return job;
   }

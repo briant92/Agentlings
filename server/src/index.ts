@@ -193,7 +193,8 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
 import { callSearch } from './search';
-import { appendMovesJournal, executeMoves, opKey, reverseMoves } from './moves';
+import { opKey } from './moves';
+import { performMovesReplay, performMovesUndo } from './movesreplay';
 import { folderInventory, wantsOrganize } from './organize';
 import { fetchPage } from './web';
 import { AUTHOR_ROLE } from './packcontract';
@@ -2016,15 +2017,28 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     if (!existsSync(root)) {
       return c.json({ error: `the folder is not there any more: ${root}` }, 400);
     }
-    const alreadyDone = (pending.movesRun?.done ?? []).map(opKey);
-    const run = executeMoves(pending.moves, root, alreadyDone);
-    appendMovesJournal(rt.queue.sandboxDir(pending.id), {
-      at: Date.now(),
+    /**
+     * One door, claimed per job (D-161, D-160's sibling): the done list is
+     * re-read under the claim, and a second Approve — or an undo — landing
+     * while this replay is mid-flight is refused by name with nothing moved.
+     */
+    const run = await performMovesReplay({
+      manifest: pending.moves,
+      jobId: pending.id,
       root,
-      done: run.done,
-      failed: run.failed,
+      sandboxDir: rt.queue.sandboxDir(pending.id),
+      alreadyDone: () => rt.queue.get(pending.id)?.movesRun?.done ?? [],
+      record: (r) => rt.queue.recordMoves(pending.id, r),
     });
-    rt.queue.recordMoves(pending.id, run);
+    if (!run) {
+      return c.json(
+        {
+          error:
+            'these moves are already replaying — the first click is doing it; the card updates when it lands',
+        },
+        409,
+      );
+    }
     movedNow = run.done.length;
     if (run.failed.length > 0) {
       const detail = run.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
@@ -2117,9 +2131,11 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
  * go back where they were and the empty folders the moves made are removed —
  * a folder that has since gained a file is left whole, because reversing must
  * never delete. Idempotent by the same accumulator: what has been moved back
- * is dropped from `movesRun.done`, so undoing twice is safe.
+ * is dropped from `movesRun.done`, so undoing twice is safe. Since D-161 the
+ * undo shares the replay's per-job claim, so it can never interleave a
+ * mid-flight Approve — either order is refused by name with nothing moved.
  */
-app.post('/api/levels/:lid/jobs/:id/reverse-moves', (c) => {
+app.post('/api/levels/:lid/jobs/:id/reverse-moves', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const job = rt.queue.list().find((j) => j.id === c.req.param('id'));
@@ -2130,18 +2146,22 @@ app.post('/api/levels/:lid/jobs/:id/reverse-moves', (c) => {
   if (!existsSync(job.organizeRoot)) {
     return c.json({ error: `the folder is not there any more: ${job.organizeRoot}` }, 400);
   }
-  const undo = reverseMoves(job.movesRun.done, job.organizeRoot);
-  appendMovesJournal(rt.queue.sandboxDir(job.id), {
-    at: Date.now(),
+  let updated: Job | undefined;
+  const undo = await performMovesUndo({
+    jobId: job.id,
     root: job.organizeRoot,
-    done: undo.done.map((op) => (op.op === 'move' ? { op: 'move', from: op.to, to: op.from } : op)),
-    failed: undo.failed,
+    sandboxDir: rt.queue.sandboxDir(job.id),
+    done: () => rt.queue.get(job.id)?.movesRun?.done ?? [],
+    setDone: (remaining) => {
+      updated = rt.queue.setMovesDone(job.id, remaining);
+    },
   });
-  // Drop what went back from the accumulator; anything that could not reverse
-  // stays recorded, so the picture matches the folder.
-  const reversed = new Set(undo.done.map(opKey));
-  const remaining = job.movesRun.done.filter((op) => !reversed.has(opKey(op)));
-  const updated = rt.queue.setMovesDone(job.id, remaining);
+  if (!undo) {
+    return c.json(
+      { error: 'these moves are mid-flight — the other click is doing it; undo when it lands' },
+      409,
+    );
+  }
   if (undo.failed.length > 0) {
     const detail = undo.failed.map((f) => `${opKey(f.op)}: ${f.reason}`).join('; ');
     return c.json({ error: `undid ${undo.done.length}, some could not be reversed — ${detail}` }, 400);

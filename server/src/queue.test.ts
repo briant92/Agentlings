@@ -249,6 +249,21 @@ describe('JobQueue', () => {
     expect(queue.get(job.id)!.outboxSent!.sentTo).toEqual(['1']);
   });
 
+  // The moves stamp gets the same correction (D-161): what has been done,
+  // not how many times a replay reported it.
+  it('stamps a move once however many replays reported it', () => {
+    const job = queue.add({ title: 'Sort', prompt: 'sort the folder' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    queue.fail(job.id, 'x');
+
+    const op = { op: 'move', from: 'a.pdf', to: 'docs/a.pdf' } as const;
+    queue.recordMoves(job.id, { done: [op], failed: [] });
+    queue.recordMoves(job.id, { done: [op], failed: [] });
+
+    expect(queue.get(job.id)!.movesRun!.done).toEqual([op]);
+  });
+
   it('hands a freed slot to the oldest waiting job', () => {
     const jobs = Array.from({ length: 6 }, (_, i) =>
       queue.add({ title: `Job ${i}`, prompt: 'x' }),

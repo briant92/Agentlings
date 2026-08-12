@@ -516,6 +516,26 @@ export const MAX_MOVES = 200;
 export const MAX_MOVE_PATH_CHARS = 400;
 
 /**
+ * The identity of an op — what "already done" means at every seam: the
+ * replay's skip list, the undo's remainder, the review card's moves-left.
+ * One definition for both sides because two copies diverged invisibly once:
+ * the server's had a raw NUL byte between the holes and the web panel's a
+ * space, so the two keyed spacey paths differently (D-161). The separator is
+ * NUL — the one byte no path on any OS can contain, where a space would
+ * collide `a b` → `c` with `a` → `b c` — and it is spelled `\u0000` so the
+ * choice stays visible to eyes, diffs and grep. Keys live in memory only,
+ * never persisted; what a person reads is `opLabel`, never this.
+ */
+export function opKey(op: MoveOp): string {
+  return op.op === 'mkdir' ? `mkdir:${op.path}` : `move:${op.from}\u0000${op.to}`;
+}
+
+/** The op as a person reads it — error details and cards, never identity. */
+export function opLabel(op: MoveOp): string {
+  return op.op === 'mkdir' ? `mkdir ${op.path}` : `${op.from} → ${op.to}`;
+}
+
+/**
  * When a schedule fires: a calendar cadence in the machine's own local time
  * (D-103). Not cron syntax — the person this app is for says "every
  * Thursday at 9", not "0 9 * * 4".

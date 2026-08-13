@@ -137,7 +137,35 @@ export function listLevelDirs(sandboxRoot: string): string[] {
     .map((e) => path.join(root, e.name));
 }
 
-/** The level's shared brain: every finished job appends a line. */
+/**
+ * The note a finished job leaves in the level's shared brain, or `null` when
+ * it has nothing worth leaving.
+ *
+ * A run that banked no lesson used to append its job-log line regardless, and
+ * those lines had grown to half the corpus (D-167). They carry the title and
+ * the outcome — both already recorded in the ledger and in the agentling's own
+ * memory — and no lesson for anyone to read. Since a session is handed the
+ * eight notes most relevant to *its own* job, a contentless one can only ever
+ * take a slot: measured at 31% of what a session actually received, with one
+ * real lesson displaced.
+ *
+ * Nothing migrates. The bare lines already written stay where they are — this
+ * only stops the corpus growing that half further, which is why it needs no
+ * read-path change and no backfill.
+ */
+export function knowledgeNote(
+  date: string,
+  agentling: { name: string; role: string },
+  title: string,
+  outcome: 'done' | 'failed',
+  lesson?: string,
+): string | null {
+  if (!lesson?.trim()) return null;
+  const verb = outcome === 'done' ? 'delivered' : 'failed';
+  return `${date} · ${agentling.name} (${agentling.role}) ${verb} "${title}" — ${lesson}`;
+}
+
+/** The level's shared brain: every finished job that learnt something appends a line. */
 export function appendKnowledge(dir: string, line: string): void {
   const file = path.join(dir, 'KNOWLEDGE.md');
   if (!existsSync(file)) {

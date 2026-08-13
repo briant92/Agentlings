@@ -10577,6 +10577,38 @@ sources maintained daily. This corpus is 203 lines total across six
 levels. The machinery was heavier than the problem it was brought in to
 solve.
 
+**Amendment (2026-08-12, same day — triage at write is built, and the drift
+this entry predicted was already measurable when it was.)** The first of the
+two flagged items is done. `knowledgeNote()` in `levels.ts` returns `null` for
+a run that banked no lesson, and the finish callback in `index.ts` appends only
+when it returns a line. The rule sits at the **call site's own `lesson`
+variable**, not in `appendKnowledge`, deliberately: the caller holds the fact,
+and making the writer re-derive it by looking for an em-dash in an already
+rendered string would be inferring structure back out of prose — the shape of
+mistake this file keeps recording.
+
+**Re-measured immediately before the change, the corpus had drifted exactly as
+predicted: 114 of 218 notes contentless — 52%, up from 102 of 203 (50%).** Ten
+new lines since this entry was written, and not one of them carried a lesson.
+That is a small number and the right direction to read it in is the derivative,
+not the level.
+
+Nothing migrated, per the entry: the bare lines already written stay where they
+are, `readKnowledge` is untouched, and no backfill runs. Four tests pin the
+seam — refusal on delivered, on failed, and on an empty or whitespace lesson
+(a bare `lesson ? …` would have written the em-dash and nothing after it), plus
+one pinning the surviving line **byte-identical to the format the 218 existing
+notes are in**, since `undated()` dedups on that shape and `relevantLines()`
+scores on it. `npm test`: 1584 server, 185 web, green.
+
+**The second flagged item is untouched and stays the thing to watch.** The
+slugify family is still the only prompt showing displacement, and the
+re-measure trigger — any prompt family past ~10 runs — is unchanged. Worth
+noting that **hosting pulls that trigger closer** (D-169's reopening): a
+container runs schedules unattended, and repeated prompt families at volume are
+precisely what a schedule manufactures. This change is what makes that safe to
+let run.
+
 ## D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach
 
 P2 of the 2026-08-12 review, in two halves. Both came back negative, and the
@@ -10868,6 +10900,35 @@ without, turns and cents both ways.
 Until then this is the fifth row of the day to come back negative, and the
 reason is the same each time: **the plan named a capability without checking
 what the ledger already did with that work.**
+
+**Amendment (2026-08-12, same day — the demand figure above divides by the
+wrong number, and the correction strengthens the case it was cited against.)**
+"81 of 258 paid rows carried a clone" uses the **total** row count as its
+denominator. Recomputed from `ledger.jsonl`: 268 rows, of which **214 are paid**
+(`costUsd > 0`), and **81 of those 214 carry a clone — 38% of paid work, not
+31%**. The numerator was right and has not moved since; only the denominator
+was the wrong figure to hand. Repo work is a larger share of what this project
+actually pays for than the entry records.
+
+This does not reopen the defer, and it is worth being clear why: the argument
+that deferred Graphify was never that demand was small — it was that **the
+repeatable half of that demand already runs free**, and both compiled tools
+named above are still on disk (`hq/list-every-server-module`,
+`hq/write-export-repo-root`). A bigger clone share makes the *upper bound* on
+clone tax bigger and leaves the case for a graph exactly where it was: waiting
+on a repo-understanding job that is novel, paid, and not a repeat.
+
+**What did change is the platform question underneath it.** D-169 is being
+reopened for Railway, and hosting cuts both ways here — and the second cut is
+the deciding one. It removes this entry's *first* blocker outright: a container
+installs Python in one line of a Dockerfile, touching nothing on this machine,
+so "a real install on a machine that has done without one" stops being a cost
+at all. But Graphify indexes a **repository path**, and repo work is precisely
+the capability that does not survive hosting (D-169's own table). On a hosted
+instance there is no repository to index. So if Graphify ever earns its place
+it earns it **here, on the laptop, where the clones are** — which means paying
+the Python install after all, exactly as this entry framed it. The trigger
+above is unchanged; it just cannot be satisfied on the hosted half.
 
 ## D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour
 

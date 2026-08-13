@@ -7,6 +7,7 @@ import { DB } from '@agentlings/shared';
 import {
   appendKnowledge,
   createLevelFiles,
+  knowledgeNote,
   levelDir,
   listLevelDirs,
   migrateLegacy,
@@ -135,5 +136,41 @@ describe('levels', () => {
     // Running it again is a no-op.
     migrateLegacy(root);
     expect(listLevelDirs(root)).toHaveLength(1);
+  });
+});
+
+/**
+ * D-167 measured half the corpus as contentless job-log lines, and 31% of what
+ * a session was actually handed. The fix is at the write, not the read: a run
+ * with no lesson leaves nothing behind.
+ */
+describe('a note is only worth keeping if it carries a lesson', () => {
+  const pip = { name: 'Pip', role: 'worker' };
+
+  it('refuses a delivered run that banked no lesson', () => {
+    expect(knowledgeNote('2026-08-12', pip, 'monthly table', 'done')).toBeNull();
+  });
+
+  it('refuses a failed run that banked no lesson', () => {
+    expect(knowledgeNote('2026-08-12', pip, 'Harden slugify', 'failed')).toBeNull();
+  });
+
+  // A close-out that returns an empty string, or one of whitespace, has said
+  // nothing — and `lesson ? …` alone would have written the em-dash anyway.
+  it('refuses an empty or whitespace lesson', () => {
+    expect(knowledgeNote('2026-08-12', pip, 'monthly table', 'done', '')).toBeNull();
+    expect(knowledgeNote('2026-08-12', pip, 'monthly table', 'done', '   ')).toBeNull();
+  });
+
+  // The format is pinned because the corpus already holds 218 lines in it:
+  // `undated()` dedups on it and relevantLines() scores on it, so a run that
+  // learns something must still land byte-identical to what came before.
+  it('keeps a lesson in exactly the shape the corpus already holds', () => {
+    expect(knowledgeNote('2026-08-12', pip, 'monthly table', 'done', 'Check the date column')).toBe(
+      '2026-08-12 · Pip (worker) delivered "monthly table" — Check the date column',
+    );
+    expect(
+      knowledgeNote('2026-08-12', { name: 'Moss', role: 'designer' }, 'Author a pack', 'failed', 'Use finish: smooth'),
+    ).toBe('2026-08-12 · Moss (designer) failed "Author a pack" — Use finish: smooth');
   });
 });

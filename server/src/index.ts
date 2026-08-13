@@ -98,6 +98,7 @@ import { applyPatch, beginPatch, endPatch, patchFile, patchInFlight } from './gi
 import {
   appendKnowledge,
   createLevelFiles,
+  knowledgeNote,
   levelDir,
   listLevelDirs,
   migrateLegacy,
@@ -362,10 +363,12 @@ function makeLevel(dir: string): LevelRuntime {
           ? `${date} · delivered "${jobTitle}" as ${agentling.role}`
           : `${date} · failed "${jobTitle}" as ${agentling.role} — ${detail}`;
       memory.append(agentling.name, line);
-      appendKnowledge(
-        dir,
-        `${date} · ${agentling.name} (${agentling.role}) ${outcome === 'done' ? 'delivered' : 'failed'} "${jobTitle}"${lesson ? ` — ${lesson}` : ''}`,
-      );
+      // Only a run that learnt something writes to the level's shared brain
+      // (D-167). The bare job-log line is already in the ledger and in the
+      // agentling's own memory on the line above; in KNOWLEDGE.md it could
+      // only take a slot from a lesson a later session needed.
+      const note = knowledgeNote(date, agentling, jobTitle, outcome, lesson);
+      if (note) appendKnowledge(dir, note);
 
       // Every job goes in the ledger, including the ones we absorb — the
       // difference between cost and price is only visible if both are kept.

@@ -183,6 +183,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-171 — 2026-08-12 — Graphify deferred: the repeatable half of the work it would help already runs free](#d-171--2026-08-12--graphify-deferred-the-repeatable-half-of-the-work-it-would-help-already-runs-free)
 - [D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour](#d-172--2026-08-12--the-fourth-door-stays-shut-still-no-errand-and-a-declined-tool-asked-for-within-the-hour)
 - [D-173 — 2026-08-12 — Compiled tools get the gated doors, and the grant is what a method used](#d-173--2026-08-12--compiled-tools-get-the-gated-doors-and-the-grant-is-what-a-method-used)
+- [D-174 — 2026-08-12 — The platform accounts are deleted unused: a live broken URL, and a project whose only real cost was the confusion it invited](#d-174--2026-08-12--the-platform-accounts-are-deleted-unused-a-live-broken-url-and-a-project-whose-only-real-cost-was-the-confusion-it-invited)
 
 ## By theme
 
@@ -601,7 +602,12 @@ entry updates one file rather than two.
   accounts stand ready at $0 against a stated trigger; and D-170, the thing
   D-169 pointed at instead — a recorder, not a server: our own Playwright
   driving our own app with the acting tools no session is ever offered, and
-  three failed takes that each taught something about the UI it drives
+  three failed takes that each taught something about the UI it drives; and
+  **D-174, which closes the thread D-165 opened** — both accounts deleted
+  unused once "$0 and ready" was checked rather than assumed: the Vercel
+  project was *live*, serving a working client over an API that isn't there,
+  and the Supabase project's only real cost was that its existence made the
+  account-scoped connector look permissible here
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -11153,3 +11159,91 @@ while the `browser` one stayed refused.
   mindicador's `ipc` field is stale, and **leaving out** a press-reported figure
   it could not confirm at source. Compiling it trades that judgment for a fixed
   method, which is a decision and not a mechanical next step.
+
+## D-174 — 2026-08-12 — The platform accounts are deleted unused: a live broken URL, and a project whose only real cost was the confusion it invited
+
+Closes the thread D-165 opened and D-169 parked. The Supabase organisation and
+the Vercel project stood up on 2026-08-12 are **deleted without ever entering
+service**. Agentlings has no cloud account of its own; the app runs on this
+machine, D-169 unamended.
+
+D-169 left them in place on the grounds that they "sit at zero cost until the
+trigger fires" and would make a future hybrid "a short job rather than a
+project". Both halves of that turned out to be worth checking rather than
+repeating.
+
+### The Vercel project was not dormant, it was live
+
+`https://agentlings-web.vercel.app/` answers **HTTP 200** with the real client
+bundle. There is no server behind it, so what a visitor gets is the title
+screen and then failure on every action — `/api/*` 404s, exactly as D-169 said
+it would, which was recorded as *proof the build works* and not as a
+description of something still running.
+
+Nothing is exposed by it: the web client is a renderer and server state is
+authoritative (SPEC's transport rule), so there is no data there to leak. It is
+a broken storefront rather than a breach. But "at $0 and not in service" was
+half true — free, and *serving*.
+
+### The Supabase project's real cost was never money
+
+It stores nothing and is wired to nothing. Its cost is that PROJECT.md's
+sharpest ground rule says the Supabase connector is **account-scoped** and can
+reach IGPL Family Office, and an "Agentlings" project sitting inside that same
+account manufactures the exact reasoning error the rule exists to prevent — a
+session sees an Agentlings project and concludes the connector must be safe
+here. Deleting it converts a warning into a fact: there is no Agentlings
+Supabase, so no Supabase call is ever correct in this project. **A rule you
+cannot satisfy by mistake beats a rule you have to remember.**
+
+Worth stating that the deletion was done by hand in both dashboards, and
+deliberately *not* through the Supabase connector. Aiming an account-scoped
+`delete` at the one account that also holds Family Office is the worst
+available way to act on this entry, and the tool that could do it is the tool
+the ground rule forbids.
+
+### What the option value actually was
+
+Near zero, and it is worth being precise about why, because "keep it, it's
+free" is otherwise unanswerable. What was valuable in D-165 was never the
+running infrastructure — it was the **decisions**: Free plan, East US (North
+Virginia), Data API off, automatic RLS on, Hobby scope, web client only. Those
+are recorded here and in PROJECT.md, and re-provisioning from that record is
+minutes of clicking. A free-tier Supabase project also pauses on inactivity, so
+what was being preserved was already decaying.
+
+### What was checked before deciding
+
+- **Coupling: none.** No reference to Supabase or Vercel anywhere in `server`,
+  `web`, `packages`, `catalog`, `scripts` or `.env.example`. `.env` holds seven
+  keys and none is Supabase. Deletion is purely an account action with no code
+  to unpick — the opposite of the usual finding in this file, where a change
+  complete in one place still reaches somewhere unnoticed.
+- **PROJECT.md is lighter for it.** The provisioning paragraph was resident in
+  every session, costing context on every turn to describe infrastructure that
+  no longer exists. Trimmed to the connector prohibition, which stays true and
+  load-bearing regardless. That file's own rule asks for exactly this.
+
+### What verified it, and the half that could not be
+
+**Vercel, by observation and as a pair.** The same request that answered
+`HTTP 200` with the real client bundle before the deletion answers
+`404 DEPLOYMENT_NOT_FOUND` after it. That is the gate this entry was held
+against — the commit waited on the check rather than on either party
+remembering to click.
+
+**Supabase, on Brian's word, and this is stated rather than glossed.** There is
+no way to confirm it from here that does not use the account-scoped connector,
+and that connector is the thing the ground rule forbids — so the one
+instrument that could verify the claim is the one instrument that must not be
+picked up. The asymmetry is recorded rather than smoothed over, because the
+alternative is an entry that reads as fully checked when half of it is
+testimony. If it ever matters, the check belongs in the Supabase dashboard by
+hand, exactly as the deletion did.
+
+### The trigger, unchanged
+
+D-169's reopen condition stands word for word: **wanting to queue work from a
+phone, or a second person needing access.** What changes is only that reopening
+now starts by creating an account rather than by finding one — a difference of
+minutes against a decision that has been declined twice.

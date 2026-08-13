@@ -184,6 +184,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour](#d-172--2026-08-12--the-fourth-door-stays-shut-still-no-errand-and-a-declined-tool-asked-for-within-the-hour)
 - [D-173 — 2026-08-12 — Compiled tools get the gated doors, and the grant is what a method used](#d-173--2026-08-12--compiled-tools-get-the-gated-doors-and-the-grant-is-what-a-method-used)
 - [D-174 — 2026-08-12 — The platform accounts are deleted unused: a live broken URL, and a project whose only real cost was the confusion it invited](#d-174--2026-08-12--the-platform-accounts-are-deleted-unused-a-live-broken-url-and-a-project-whose-only-real-cost-was-the-confusion-it-invited)
+- [D-175 — 2026-08-13 — The horde on a phone: D-169's reopen answered without hosting, and the IPv6 default that would have refused it](#d-175--2026-08-13--the-horde-on-a-phone-d-169s-reopen-answered-without-hosting-and-the-ipv6-default-that-would-have-refused-it)
 
 ## By theme
 
@@ -607,7 +608,11 @@ entry updates one file rather than two.
   unused once "$0 and ready" was checked rather than assumed: the Vercel
   project was *live*, serving a working client over an API that isn't there,
   and the Supabase project's only real cost was that its existence made the
-  account-scoped connector look permissible here
+  account-scoped connector look permissible here; and **D-175, where D-169's
+  reopen condition finally arrived and was answered without hosting** — a
+  private tailnet reaches the machine from Brian's phone, the app is unchanged
+  and still local, and the boundary protecting an unauthenticated API moved
+  from the loopback interface to tailnet membership (`serve`, never `funnel`)
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -11247,3 +11252,93 @@ D-169's reopen condition stands word for word: **wanting to queue work from a
 phone, or a second person needing access.** What changes is only that reopening
 now starts by creating an account rather than by finding one — a difference of
 minutes against a decision that has been declined twice.
+
+## D-175 — 2026-08-13 — The horde on a phone: D-169's reopen answered without hosting, and the IPv6 default that would have refused it
+
+D-169 declined hosting and named its own reopen condition: **wanting to queue
+work from a phone, or a second person needing access.** D-174 restated it word
+for word. The first half arrived on 2026-08-12 — Brian wanted the horde
+available away from the desk — and it turned out to need neither a host nor a
+rewrite, because a private network answers "reach my machine from my phone"
+without making the machine reachable by anyone else.
+
+**The app is unchanged and still runs only here.** Nothing is served to the
+public internet, no Agentlings-owned platform account was created, and D-169
+and D-174 stand unamended. Stated rather than glossed: Tailscale is a
+third-party account and its coordination server brokers the connection, so
+this is a new outside dependency — but the data path is a direct WireGuard
+tunnel between two of Brian's own devices, and the app itself never leaves
+this machine.
+
+### The options, and why the cheapest won
+
+Three were put up: a private tailnet with the app as-is; the same plus a
+built bundle served from :4600 and a thumb-sized route; and Telegram as a
+command surface with no network exposure at all. The third was rejected on the
+ask — it delivers a command line, not a horde, and seeing the world is most of
+the point. The second was rejected as **premature**: building a phone-shaped
+UI before knowing the desktop one fails on a phone is the speculative work
+CLAUDE.md rule 2 forbids. So the first was taken explicitly as a *measurement*,
+and the phone was the instrument.
+
+### What verified it
+
+**The client was already origin-relative, which is why this cost almost
+nothing.** No host or port is hardcoded anywhere in `web/src`; `vite.config.ts`
+proxies `/api` and `/ws` to `127.0.0.1:4600`. A browser pointed at any origin
+serving the app calls the API and opens the socket on that same origin. The
+whole change is two lines of Vite config.
+
+**The IPv6 default would have refused the tunnel, and only a port listing
+showed it.** Vite's default host is `localhost`, which Node resolved to `::1`
+here, so the dev server was listening on IPv6 loopback **alone** — while
+`tailscale serve` forwards to `127.0.0.1`. That is a refused connection with
+nothing visibly wrong at either end. `host: '127.0.0.1'` fixes it, and the
+listener moved from `::1:5173` to `127.0.0.1:5173` under observation. It is
+the same trap the file already documented for the *proxy target* (D-127),
+pointed the other way — worth noting that a hazard written down once was still
+live in the adjacent setting, the sibling-seam shape D-119/D-120 named.
+
+**The host gate opened exactly as wide as intended.** `allowedHosts: ['.ts.net']`
+answered `200` to a `Host:` of `agentlings.tail1234.ts.net` and **403** to
+`evil.example.com`. A raw `100.x` tailnet IP is refused too, so the MagicDNS
+name is the address to use — a wrong URL there looks like a broken app.
+
+**The chain was proven layer by layer before the phone was touched**, over
+`https://desktop-km12e2b.tail97d572.ts.net`: app root `200`; `/api/levels`
+`200` returning real level data through Tailscale → Vite → :4600; and `/ws`
+answering **`101 Switching Protocols`**. That last one mattered — without it
+the world would have rendered once and frozen, which on a phone reads as a
+broken app rather than a dead socket.
+
+**The phone itself: usable.** Brian's verdict, in Desktop Mode — cramped, some
+elements small and harder to read, but it works from an interface standpoint.
+Reviewing and queueing are reachable.
+
+### What changed in the trust model, and the one-letter neighbour to avoid
+
+The API has **no authentication** — no middleware, no bearer check. Its entire
+security model was the `127.0.0.1` bind, whose own comment records the time it
+listened on `0.0.0.0`. That model is not weakened here (`tailscale serve`
+proxies *to* loopback, so the listener never widened) but the **boundary
+moved**: what protects the horde is now the tailnet's device membership rather
+than the loopback interface. Anything admitted to the tailnet can drive it.
+
+So: **`tailscale serve`, never `tailscale funnel`.** Funnel is the same
+command's public-internet sibling and would put an unauthenticated API in front
+of the world. The distinction is one word and the failure is total. This is
+also the exact class of mistake that produced OpenClaw's 923 internet-exposed
+gateways, reviewed the same day.
+
+Operationally the machine must not sleep, and it is driven with
+`npm run serve` — never `dev` with jobs live (D-140).
+
+### What is not built, and the measurement that says so
+
+**The phone-shaped view is declined for now**, on evidence rather than taste:
+the desktop UI measured usable on the actual device, so a second UI would be
+solving a problem the instrument did not find. What the measurement *did* find
+is narrower — small type at phone scale — which is a readability question, not
+an architecture one, and is the thing to reopen on if it starts costing
+approvals. Reopen with the same discipline: name the two screens that fail
+before building anything.

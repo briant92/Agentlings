@@ -20,8 +20,10 @@ behavioral base lives there alone; this is the project half, split out on
   **The app runs on this machine.** Hosting was declined on measurement
   (D-169) — repo work, the folder organizer, the knowledge store and OCR are
   all bound to the local disk or to Windows, so a hosted server is a smaller
-  product. Reopen only when Brian wants to queue work from a phone, or a
-  second person needs access.
+  product. **Phone access is done and did not need hosting** (D-175): a
+  private tailnet reaches this machine, the app is unchanged and still local.
+  So the only live reopen trigger left is a second person needing access —
+  wanting the horde on a phone is no longer one.
 - Architectural choices (language, engine, framework, storage) extend CLAUDE.md
   rule 1:
   present 2–3 options with a recommendation, wait for the decision, then
@@ -49,6 +51,10 @@ behavioral base lives there alone; this is the project half, split out on
 - Run stable: `npm run serve` — same server and log, **no file watching**, so
   a source edit or a OneDrive echo cannot restart it mid-session (D-140).
   Drive the app with this; use `dev` only while changing server code.
+- Run on the phone: `tailscale serve --bg 5173`, then `tailscale serve status`
+  for the URL — use the MagicDNS name, not the `100.x` IP (D-175). Never
+  `tailscale funnel`: the API has no auth and funnel is the public-internet
+  sibling of the same command.
 - Test: `npm test`
 - Lint / typecheck: `npm run typecheck`
 

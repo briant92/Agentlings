@@ -10635,10 +10635,10 @@ environment, not the one asserting the result.
 **The second flagged item is untouched and stays the thing to watch.** The
 slugify family is still the only prompt showing displacement, and the
 re-measure trigger — any prompt family past ~10 runs — is unchanged. Worth
-noting that **hosting pulls that trigger closer** (D-169's reopening): a
-container runs schedules unattended, and repeated prompt families at volume are
-precisely what a schedule manufactures. This change is what makes that safe to
-let run.
+Anything that raises the rate at which one prompt family
+repeats brings it forward, and the schedules of D-103 are the mechanism most
+likely to do so — repeated prompt families at volume are precisely what a
+cadence manufactures. This change is what makes that safe to let run.
 
 ## D-168 — 2026-08-12 — Four browser tools refused for want of demand, and the allowlist found to bound the offer rather than the reach
 
@@ -10949,17 +10949,17 @@ named above are still on disk (`hq/list-every-server-module`,
 clone tax bigger and leaves the case for a graph exactly where it was: waiting
 on a repo-understanding job that is novel, paid, and not a repeat.
 
-**What did change is the platform question underneath it.** D-169 is being
-reopened for Railway, and hosting cuts both ways here — and the second cut is
-the deciding one. It removes this entry's *first* blocker outright: a container
-installs Python in one line of a Dockerfile, touching nothing on this machine,
-so "a real install on a machine that has done without one" stops being a cost
-at all. But Graphify indexes a **repository path**, and repo work is precisely
-the capability that does not survive hosting (D-169's own table). On a hosted
-instance there is no repository to index. So if Graphify ever earns its place
-it earns it **here, on the laptop, where the clones are** — which means paying
-the Python install after all, exactly as this entry framed it. The trigger
-above is unchanged; it just cannot be satisfied on the hosted half.
+**One conditional note, recorded because it is not obvious and cost nothing to
+find.** Hosting was looked at again on 2026-08-12 and dropped without being
+built; **D-169 stands unamended and the app is local.** Should it ever be
+reconsidered, it cuts both ways here and the second cut decides: a container
+would remove this entry's *first* blocker outright, since Python installs in
+one line of an image and touches nothing on this machine — but Graphify indexes
+a **repository path**, and repo work is precisely the capability that does not
+survive hosting (D-169's own table). A hosted instance has no repository to
+index. Either way Graphify earns its place **here, on the laptop, where the
+clones are**, which means paying the Python install exactly as this entry
+framed it. The trigger above is unchanged.
 
 ## D-172 — 2026-08-12 — The fourth door stays shut: still no errand, and a declined tool asked for within the hour
 

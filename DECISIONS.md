@@ -10601,6 +10601,37 @@ one pinning the surviving line **byte-identical to the format the 218 existing
 notes are in**, since `undated()` dedups on that shape and `relevantLines()`
 scores on it. `npm test`: 1584 server, 185 web, green.
 
+**The tests were not enough, and mutation testing is what said so.** Breaking
+the guard killed three tests and breaking the format killed one — but
+**reverting the call site while leaving `knowledgeNote()` intact kept all 1584
+green.** The finish callback is an inline lambda in `index.ts`, so no test
+reaches it: the pure function was pinned and the wiring was not. That is this
+file's most-repeated fault — complete in the type, the spec and the route, and
+reaching nothing — caught here only because the mutation was run.
+
+**Closed by a paired live run**, on a scratch level, against a server actually
+restarted onto the new code:
+
+| | Old code | New code |
+|---|---|---|
+| Lessonless run's note | `- 2026-08-13 · Pip (worker) failed "Probe job"` **written** | **no `KNOWLEDGE.md` at all** |
+| Agentling's own memory | written | **still written** |
+
+The second row is the one that makes it surgical rather than merely effective:
+`memory.append` on the line above is untouched, so a career record still shows
+the run. The delivered branch is the one that ran (`done`, no `LESSON.md`), so
+the gate is proved on the path the corpus grows fastest along.
+
+**A process note worth keeping, since it nearly produced a false pass.** The
+first attempt at this live run measured the *old* code: a server was already
+listening on 4600, the new one died on `EADDRINUSE`, and the bare line duly
+appeared — which reads exactly like the fix having failed. The check that was
+supposed to prevent this — `netstat | grep "LISTENING.*:4600"` — could never
+match, because netstat prints the port *before* the state. **An instrument that
+cannot fail is not a check**, which is D-035's rule arriving from a new
+direction: this time the faulty instrument was the one asserting the
+environment, not the one asserting the result.
+
 **The second flagged item is untouched and stays the thing to watch.** The
 slugify family is still the only prompt showing displacement, and the
 re-measure trigger — any prompt family past ~10 runs — is unchanged. Worth

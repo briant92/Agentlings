@@ -77,6 +77,46 @@ describe('working copies', () => {
     expect(await sweepWorkingCopies(root)).toEqual({ clones: 0, bytes: 0, skipped: 0 });
   });
 
+  /**
+   * D-176. A failed job has no outcome left to take: nothing reads its clone —
+   * promote applies DIFF.patch to the real repo and a continuation applies it
+   * to a fresh one — so the clone is residue while `done` and `partial`, which
+   * are still awaiting review, keep theirs.
+   */
+  it('sweeps a failed job’s clone and still keeps done and partial', async () => {
+    const dir = level(root, 'l1', [
+      job('f', 'failed'),
+      job('b', 'done'),
+      job('p', 'partial'),
+    ]);
+    const swept = clone(dir, 'f');
+    const keptDone = clone(dir, 'b');
+    const keptPartial = clone(dir, 'p');
+
+    const info = await workingCopies(root);
+    expect(info.sweepable).toEqual({ clones: 1, bytes: 64 });
+    expect(info.kept).toEqual({ clones: 2, bytes: 128 });
+
+    expect(await sweepWorkingCopies(root)).toEqual({ clones: 1, bytes: 64, skipped: 0 });
+    expect(existsSync(swept)).toBe(false);
+    expect(existsSync(keptDone)).toBe(true);
+    expect(existsSync(keptPartial)).toBe(true);
+  });
+
+  /**
+   * The patch is what promote and carryForward actually read, and it lives at
+   * the sandbox root — so sweeping the clone must never take it with it.
+   */
+  it('leaves a failed job’s DIFF.patch, which is what continuation reads', async () => {
+    const dir = level(root, 'l1', [job('f', 'failed')]);
+    clone(dir, 'f');
+    const patch = path.join(dir, 'jobs', 'f', 'DIFF.patch');
+    writeFileSync(patch, 'diff --git a/x b/x\n');
+
+    await sweepWorkingCopies(root);
+    expect(existsSync(patch)).toBe(true);
+  });
+
   it('includes closed levels — the rule is per job, not per level', async () => {
     const dir = level(root, 'shut', [job('a', 'promoted')], true);
     const repo = clone(dir, 'a');

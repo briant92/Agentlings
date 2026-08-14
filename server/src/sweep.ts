@@ -9,13 +9,28 @@ import { readStoredJobs } from './queue';
 /**
  * The disk weight is not the levels, it is the repo/ working copies inside
  * job sandboxes — measured 2026-08-08 at 1,003 MB of a 1,019 MB store. The
- * sweep removes only those clones, and only under promoted or discarded
- * jobs: a done, partial or failed job's clone is where a reply's
- * continuation still works ("the review gate recovers work from runs
- * nobody was billed for"), and a sandbox with no job row proves nothing
- * about itself, so it is kept rather than guessed at. Transcripts,
- * close-outs, outputs and everything else in the sandbox stay — a redo
- * clones fresh anyway.
+ * sweep removes only those clones, and only under promoted, discarded or
+ * failed jobs. A sandbox with no job row proves nothing about itself, so it
+ * is kept rather than guessed at. Transcripts, close-outs, outputs and
+ * everything else in the sandbox stay — a redo clones fresh anyway.
+ *
+ * **`failed` joined the set on 2026-08-13 (D-176), and the reason it was
+ * excluded turned out to be untrue.** This comment used to say a failed
+ * job's clone "is where a reply's continuation still works". It is not:
+ * `carryForward` rebuilds a continuation from the parent's **DIFF.patch**
+ * against a fresh clone (`executors/claude.ts:442`) and never reads the
+ * parent's repo/ at all — and promote applies that same patch to the real
+ * repository (`index.ts:2089`). `DIFF.patch` sits at the sandbox root, which
+ * this sweep keeps. So nothing a finished job can still be asked to do
+ * depends on its clone surviving; holding one only costs disk. Measured on
+ * the 20 failed jobs that prompted this: 18 had no DIFF.patch at all, so
+ * their changes were already unrecoverable with the clone still sitting there.
+ *
+ * `done` and `partial` stay out, and that is a review decision rather than a
+ * technical one: they are the statuses still waiting for the user to act, and
+ * the line is drawn at "nobody is going to look at this again". By the reading
+ * above their clones are residue too — worth its own entry before it is worth
+ * a change.
  *
  * The walk is async because the store is not small: the first live call
  * measured 19 seconds over ~150k files, and a synchronous walk holds the
@@ -23,7 +38,7 @@ import { readStoredJobs } from './queue';
  * it. Sizes ride the thread pool instead; the world keeps ticking.
  */
 
-const SWEEPABLE = new Set<Job['status']>(['promoted', 'discarded']);
+const SWEEPABLE = new Set<Job['status']>(['promoted', 'discarded', 'failed']);
 
 async function dirBytes(dir: string): Promise<number> {
   let entries;

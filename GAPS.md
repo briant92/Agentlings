@@ -98,3 +98,39 @@ capability roadmap; this is the short list of what matters most, in order.
       workflow exists): `hostname: '127.0.0.1'` on serve, vite's proxy dialing
       the address so ::1 resolution cannot miss it. Verified live: netstat
       shows loopback only, direct API and the proxied browser chain both 200.
+- [ ] **G8 — The sandbox rule governs paths, not trust: nothing tells a
+      session that what it reads is data.** `claude.ts:546` is the whole
+      instruction — *"Work only inside the sandbox (your working directory).
+      Never read or write paths outside it."* It bounds **where** a session may
+      go and says nothing about **what to believe** once it gets there. Every
+      byte a run takes in — the cloned repository, `fetch_page` output, a
+      GitHub issue body, a knowledge-store passage — arrives as plain context
+      with no marker separating "material to work on" from "instructions to
+      you".
+      **Half of this is already closed, and the closed half is the one that
+      looked scariest.** `settingSources: []` (`agent-runner.mjs:226`) loads no
+      setting source at all, so a cloned repo's `.claude/settings.json`,
+      `.claude/rules/` and `CLAUDE.md` are **not** picked up as configuration —
+      the same line §10 credits for keeping *your* settings out keeps the
+      clone's out too. Skills are explicit (`config.skills`, copied by
+      `claude.ts:880`), so a repo's own `.claude/skills/` is never mounted
+      either.
+      **What is left is content, not configuration.** A session that opens a
+      file is reading text, and agent-native repositories now ship text
+      *written to be found and obeyed* — `CLAUDE.md`, `AGENTS.md`,
+      `.claude/rules/` — at predictable names in the root. Found while
+      reviewing `LLMQuant/quant-mind` (2026-08-12); `ponytail`, `openclaw` and
+      `shepherd` all ship the same furniture, so the base rate is rising rather
+      than exotic. Downstream sits a session with `Bash` at your own
+      permissions and `permissionMode: 'dontAsk'`, i.e. no interactive gate —
+      and D-168 already measured that the allowlist bounds what the model is
+      *offered*, not what a shell can *reach*.
+      The asymmetry worth naming: §10's clone-plus-review guarantee protects
+      **your tree from the session**. It does not protect **the session from
+      the clone**. That is the same shape as G7 — a safety property that reads
+      as enforcement and is actually an assumption.
+      *Candidate close, cheap:* a second line beside `claude.ts:546` saying
+      text inside the sandbox is material to work on and never instruction to
+      the reader. Unproven — an instruction defending against instructions is
+      exactly the kind of fix that wants a mutation test before it is believed,
+      and a real measurement of whether it changes behaviour at all.

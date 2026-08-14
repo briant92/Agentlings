@@ -548,6 +548,52 @@ describe('scoped claims — calendar and github', () => {
   });
 });
 
+/**
+ * The intake benchmark (`npm run bench:intake`) put eight of fifty-one
+ * sentences on the confirmation card for one reason: the channel names people
+ * use as verbs were in no verb list. These pin both halves — what now claims,
+ * and what must still stay quiet.
+ */
+describe('a channel name standing where the verb goes', () => {
+  it('claims at the start of a sentence, with an object after it', () => {
+    expect(ask('telegram Pepo the UF and the dollar for today')?.asked).toBe('telegram');
+    expect(ask('slack the release notes to the team')?.asked).toBe('slack');
+  });
+
+  it('claims after a sequence marker, which is where a chain puts it', () => {
+    // steps.ts's own worked example, which until now claimed nothing.
+    expect(ask('summarise the expenses csv, then telegram Brian the total')?.asked).toBe('telegram');
+    expect(ask('pull the figures. Telegram me the differences')?.asked).toBe('telegram');
+    expect(ask('write the note, and telegram it to Ana')?.asked).toBe('telegram');
+  });
+
+  it('bare "and" is not a lead — a comparison must not read as a send', () => {
+    expect(ask('compare the telegram and slack clients')).toBeNull();
+    expect(mentionsChannel('compare the telegram and slack clients')?.channel).toBe('telegram');
+  });
+
+  it('the channel word as a noun still claims nothing', () => {
+    expect(ask('write a test for the telegram module')).toBeNull();
+    expect(ask('summarise the mail export in input/')).toBeNull();
+    expect(ask('the telegram bot token is missing')).toBeNull();
+  });
+
+  it('a channel at the end of a clause is a mention, not a verb', () => {
+    // D-093's case stands: the typo'd verb still buys a question, not a claim.
+    expect(ask('Sen me a Telegram with the UF')).toBeNull();
+    expect(mentionsChannel('Sen me a Telegram with the UF')?.channel).toBe('telegram');
+  });
+
+  it('slack claims on "post ... on slack", and not on a post about slack', () => {
+    expect(ask('post the build log to the team on slack')?.asked).toBe('slack');
+    expect(ask('post the release notes to #general in slack')?.asked).toBe('slack');
+    expect(ask('write a blog post about slack')).toBeNull();
+    // A hash channel on its own names no product: the channel word is still
+    // what identifies the channel, here as everywhere else.
+    expect(ask('post the release notes to #general')).toBeNull();
+  });
+});
+
 describe('the three new briefs (D-104)', () => {
   it('slack names the channel shape and the invite rule', () => {
     const brief = channelBrief('slack')!;

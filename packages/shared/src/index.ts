@@ -648,6 +648,22 @@ export interface Job {
   /** Which step this job is, for the cards: 2 of 3. */
   step?: { n: number; of: number };
   /**
+   * What the user typed on the card, carried so the rest of the chain can
+   * still hear it (measured 2026-08-14).
+   *
+   * The desk asks its questions of the whole sentence — "then email it to Ana"
+   * makes the card ask for the address — and then the split hands step one a
+   * sentence that asks nothing of the kind, so `clarificationLines` dropped
+   * every answer and no later step was queued with any. The user typed the
+   * address and the sending step reported it missing.
+   *
+   * Raw answers rather than composed lines, because the guard is the recompute
+   * (D-097): each step re-derives its own questions from its own sentence, so
+   * an answer only reaches a session that asks for it, and no step can be
+   * handed an instruction the user was never shown.
+   */
+  answers?: Record<string, string>;
+  /**
    * The channel this job sends on, when intake detected one (D-079). The
    * session is told the outbox contract for it and nothing else changes —
    * composing happens in the run, sending stays at approval (D-075).

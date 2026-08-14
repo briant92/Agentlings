@@ -52,6 +52,10 @@ const INTENT: Record<string, string[]> = {
   lookup: ['research', 'survey', 'read'],
   investigate: ['research', 'reconnaissance', 'survey', 'findings'],
   explore: ['research', 'survey', 'reconnaissance'],
+  // "Have a look around the codebase" is reconnaissance in everyday words, and
+  // the word `reconnaissance` is what the scout leads with — measured, the
+  // sentence went to architect at 4.88 against scout's 4.20 without it.
+  around: ['reconnaissance', 'survey'],
   browse: ['research', 'read', 'web'],
   compare: ['research', 'survey', 'findings'],
   survey: ['research', 'survey', 'reconnaissance'],
@@ -67,6 +71,23 @@ const INTENT: Record<string, string[]> = {
   implement: ['implement', 'feature', 'build'],
   build: ['build', 'implement', 'builder'],
   develop: ['implement', 'build'],
+
+  // Choosing between options is what an ADR is, and the everyday word for it
+  // reached nothing: "decide whether we should store jobs in SQLite or keep
+  // them on disk" matched the designer at 0.54 confidence.
+  decide: ['architecture', 'decision', 'adr', 'blueprint'],
+  decides: ['architecture', 'decision', 'adr'],
+  deciding: ['architecture', 'decision', 'adr'],
+  choose: ['architecture', 'decision', 'adr'],
+  choosing: ['architecture', 'decision', 'adr'],
+
+  // `draw` is left alone deliberately: the catalog already knows it, and which
+  // agentling draws depends on the object — a diagram is the architect's, a
+  // dusk sky is the designer's, and that is DOMAIN's job to say. Only the
+  // forms nothing in the catalog carries are bridged.
+  redraw: ['draw', 'design', 'visual', 'render'],
+  redrawing: ['draw', 'design', 'visual', 'render'],
+  restyle: ['design', 'visual', 'palette'],
 
   tidy: ['maintain', 'documentation'],
   organize: ['maintain', 'documentation'],
@@ -111,6 +132,18 @@ const DOMAIN: Record<string, string[]> = {
   web: ['web', 'sources'],
   internet: ['web', 'sources'],
   online: ['web', 'sources'],
+
+  // What this app's own visual work is made of. The catalog knows `plate`,
+  // `world` and `palette`; the words a person uses for them — a background, a
+  // sprite, the American spelling of colour — it did not.
+  background: ['plate', 'world', 'palette'],
+  backgrounds: ['plate', 'world', 'palette'],
+  sprite: ['plate', 'world'],
+  sprites: ['plate', 'world'],
+  color: ['palette', 'colour', 'visual'],
+  colors: ['palette', 'colour', 'visual'],
+  colour: ['palette', 'colour', 'visual'],
+  colours: ['palette', 'colour', 'visual'],
 };
 
 const INTENT_WEIGHT = 1.5;

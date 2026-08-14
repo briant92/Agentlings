@@ -24,6 +24,50 @@ describe('splitSteps — when it splits', () => {
   });
 });
 
+/**
+ * The markers past "then", added after the intake benchmark measured four of
+ * fifty-one sentences running as one job because the user wrote the order out
+ * in ordinary words instead. Each still needs a boundary in front of it, and
+ * bare "and" is still not a marker.
+ */
+describe('splitSteps — the other ways people write a sequence', () => {
+  it('splits on "after that", "next", "finally"', () => {
+    expect(
+      splitSteps('look up this week UF values. After that, write them into a table'),
+    ).toEqual(['look up this week UF values', 'write them into a table']);
+    expect(
+      splitSteps('first read the PDF, next pull out the figures, finally email me a table'),
+    ).toEqual(['first read the PDF', 'pull out the figures', 'email me a table']);
+  });
+
+  it('splits a hand-numbered list', () => {
+    expect(
+      splitSteps('1. pull the indicator figures 2. check them against SII 3. telegram me the differences'),
+    ).toEqual([
+      'pull the indicator figures',
+      'check them against SII',
+      'telegram me the differences',
+    ]);
+    expect(splitSteps('1) draft the note 2) send it to Ana')).toEqual([
+      'draft the note',
+      'send it to Ana',
+    ]);
+  });
+
+  it('a number that is not a list stays one job', () => {
+    // Not at the start, so nothing says these digits are an ordering.
+    expect(splitSteps('reduce the timeout to 1. check nothing hangs')).toBeNull();
+    // Out of order, and not starting at one.
+    expect(splitSteps('3. do this 7. do that')).toBeNull();
+    expect(splitSteps('2. do this 1. do that')).toBeNull();
+  });
+
+  it('the words that only look like markers do not split', () => {
+    expect(splitSteps('write up the next release notes')).toBeNull();
+    expect(splitSteps('summarise the report after that meeting')).toBeNull();
+  });
+});
+
 describe('splitSteps — when it refuses (the never-guess side)', () => {
   it('no marker, no split', () => {
     expect(splitSteps('summarise the expenses csv and email me')).toBeNull();

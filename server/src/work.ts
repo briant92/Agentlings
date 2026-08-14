@@ -174,6 +174,8 @@ export function queuedJobSpec(args: {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The card's answers, for the steps that have not been queued yet. */
+  answers?: Record<string, string>;
 }): {
   title: string;
   prompt: string;
@@ -191,6 +193,7 @@ export function queuedJobSpec(args: {
   channelMention?: { channel: string; label: string };
   steps?: string[];
   step?: { n: number; of: number };
+  answers?: Record<string, string>;
 } {
   return {
     title: args.title,
@@ -215,6 +218,12 @@ export function queuedJobSpec(args: {
     // name does not exist, which is this file's own hard-won rule.
     ...(args.steps?.length ? { steps: args.steps } : {}),
     ...(args.step ? { step: args.step } : {}),
+    // Only while a chain still has steps to queue: once the last one is
+    // running there is nobody left to hand them to, and the answers this job
+    // itself uses are already in its clarifications.
+    ...(args.steps?.length && args.answers && Object.keys(args.answers).length
+      ? { answers: args.answers }
+      : {}),
     // Free work carries no ceiling, which is not the same as carrying none by
     // accident: `quoteFor` returns a zero ceiling only for the tiers that never
     // spend, and every paying tier is bounded below at a cent. So a job that

@@ -1334,7 +1334,7 @@ untouched until you press Approve.
 | Constant | Value | Where | What it does |
 |---|---|---|---|
 | `MIN_CONFIDENCE` | 0.35 | `match.ts` | Below it the app says so instead of guessing |
-| `MAX_STEPS` | 3 | `steps.ts` | "Then"-steps one sentence may split into; past it the box is a script (D-105) |
+| `MAX_STEPS` | 3 | `steps.ts` | Steps one sentence may split into; past it the box is a script (D-105) |
 | `INTENT_WEIGHT` / `DOMAIN_WEIGHT` | 1.5 / 0.55 | `match.ts` | The verb decides the role, not the noun |
 | `MAX_QUESTIONS` | 3 | `clarify.ts` | Above this the box has become a form |
 | `MAX_ATTACHMENTS` | 5 | `shared` | Per job |
@@ -1376,11 +1376,15 @@ without an API key.
   unchanged reviews, locked to the approved recipient set. A scheduled
   send holding both is the loop closed whole — it queues itself and sends
   itself, audited — and everything else runs only when you queue it.
-- **Not a planner.** A sentence splits into steps only where *you* wrote
-  "then" (D-105) — shown before Start, at most three, each step an ordinary
-  job whose delivery queues the next with its files. The app never invents
-  steps you did not write; that open-ended decomposition stays parked in
-  M6.
+- **Not a planner.** A sentence splits into steps only where *you* wrote the
+  order out — "then", "after that", "next", "finally", or a numbered list
+  (D-105, D-177) — shown before Start, at most three, each step an ordinary
+  job whose delivery queues the next with its files and with the answers you
+  gave at the desk. Bare "and" is not a marker and is not meant to become
+  one: "summarise the CSV and the XLSX" and "summarise the CSV and telegram
+  Brian the total" are the same shape to any rule that does not understand
+  the words. The app never invents steps you did not write; that open-ended
+  decomposition stays parked in M6.
 - **Not a chat.** A reply is a new job that carries the previous sandbox
   forward; there is no live conversation with a running session.
 - **Not shared.** No multi-user, no auth, no hosting — localhost only.
@@ -1496,7 +1500,10 @@ list per channel (D-077; SPEC M5.11 has the slices):
       what a session hears is narrower than the roster: the legend
       carries only people the sentence names or the user has sent to,
       capped at 20 — the never-invent rule intact, the whole address
-      book never riding a prompt. A channel word with
+      book never riding a prompt. A channel's own name claims when it is
+      standing where the verb goes — "Telegram Pepo the total", "Slack the
+      notes to the team", and the same after a sequence marker (D-177) — so
+      a chain's sending step is recognised as one. A channel word with
       no send verb beside it — a typo'd "Sen", a bare mention — raises a
       near-miss question at the desk instead of silence, one click turns
       it into the full send surface, and a job that mentioned a channel it

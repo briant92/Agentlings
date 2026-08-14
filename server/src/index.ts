@@ -1242,7 +1242,15 @@ function queueSentence(
   // through the one function both ways in share — a desk that promised free
   // and a queue that then billed a session would be the worst of both (D-097).
   const names = rosterNames(channel ?? channelAsk?.asked);
-  const send = sendFacts(text, { channel, names }, opts.answers);
+  // Never for a step of a chain. The desk asked its send questions of the
+  // whole sentence, so a chain's answers were given under whichever promise
+  // that sentence earned — "what should it say, roughly?" — and a step whose
+  // own sentence happens to read as a bare send would then compose those words
+  // verbatim under the other promise. That is D-097's fault inverted, and the
+  // shortcut is not owed here anyway: before the answers travelled at all, a
+  // chain could never take it.
+  const inChain = Boolean(steps?.length || step);
+  const send = inChain ? null : sendFacts(text, { channel, names }, opts.answers);
   const quote = quoteFor_(
     QUOTE_CTX,
     rt.dir,
@@ -1286,6 +1294,10 @@ function queueSentence(
       ...(opts.brief ? { brief: opts.brief } : {}),
       ...(steps?.length ? { steps } : {}),
       ...(step ? { step } : {}),
+      // The card's answers ride on while the chain has steps left, so a
+      // question the desk asked of the whole sentence still reaches the step
+      // that asks it too — the recompute below decides which ones those are.
+      ...(opts.answers ? { answers: opts.answers } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.
@@ -1353,6 +1365,10 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
       attachments,
       steps: job.steps.slice(1),
       step: { n, of },
+      // What the user typed on the card, still travelling with the chain: this
+      // step re-derives its own questions from its own sentence, so it hears
+      // only the answers it would itself have asked for.
+      ...(job.answers ? { answers: job.answers } : {}),
       brief: stepBrief({
         previousPrompt: job.prompt,
         n,

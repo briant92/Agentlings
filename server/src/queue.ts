@@ -51,6 +51,8 @@ export interface NewJobSpec {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The card's answers, carried so the rest of the chain can hear them. */
+  answers?: Record<string, string>;
 }
 
 export function jobsFile(sandboxRoot: string): string {
@@ -239,6 +241,7 @@ export class JobQueue {
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
       ...(spec.step ? { step: spec.step } : {}),
+      ...(spec.answers && Object.keys(spec.answers).length ? { answers: spec.answers } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

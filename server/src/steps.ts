@@ -29,8 +29,44 @@ import { PAPERWORK } from './outputs';
  */
 export const MAX_STEPS = 3;
 
-/** The explicit sequence markers, and only these. */
-const MARKER = /[,;.]?\s+(?:and\s+)?then\s+/i;
+/**
+ * The explicit sequence markers, and only these.
+ *
+ * "then" may stand on its own anywhere; the rest need a boundary in front of
+ * them, because they are ordinary words elsewhere in a sentence — "the next
+ * release" and "after that meeting" are not sequence markers, and only the
+ * comma or full stop says a second instruction has started.
+ *
+ * Bare "and" is deliberately absent, and stays absent. "Summarise the CSV and
+ * the XLSX" and "summarise the CSV and telegram Brian the total" are the same
+ * shape to any rule that does not understand the words, and this splitter's
+ * governing rule is the router's: never guess.
+ */
+const MARKER =
+  /[,;.]?\s+(?:and\s+)?then\s+|[,;.]\s*(?:and\s+)?(?:next|finally|lastly|after\s+that|afterwards|after\s+which)[,]?\s+/i;
+
+/**
+ * A hand-numbered list — "1. pull the figures 2. check them 3. telegram me".
+ *
+ * As explicit as a sequence marker gets, and unreachable by MARKER: the user
+ * wrote the order out as digits instead of words. Kept a separate rule rather
+ * than another branch of MARKER because its evidence is different — a lone
+ * "1." proves nothing ("reduce it by 1. Then check"), and what makes this a
+ * list is that the numbers start at one, at the very start, and run in order.
+ */
+const NUMBERED = /(?:^|\s)(\d{1,2})[.)]\s+/g;
+
+function numberedSteps(text: string): string[] | null {
+  const marks = [...text.matchAll(NUMBERED)];
+  if (marks.length < 2) return null;
+  if (marks[0].index !== 0) return null;
+  if (marks.some((mark, i) => Number(mark[1]) !== i + 1)) return null;
+  return marks
+    .map((mark, i) =>
+      text.slice((mark.index ?? 0) + mark[0].length, marks[i + 1]?.index ?? text.length).trim(),
+    )
+    .filter(Boolean);
+}
 
 /**
  * A conditional before the first marker means the "then" is a consequence,
@@ -39,13 +75,18 @@ const MARKER = /[,;.]?\s+(?:and\s+)?then\s+/i;
 const CONDITIONAL_LEAD = /\b(if|when|whenever|unless|until)\b/i;
 
 export function splitSteps(text: string): string[] | null {
+  const numbered = numberedSteps(text);
   const first = MARKER.exec(text);
-  if (!first) return null;
-  if (CONDITIONAL_LEAD.test(text.slice(0, first.index))) return null;
-  const parts = text
-    .split(new RegExp(MARKER.source, 'gi'))
-    .map((part) => part.trim())
-    .filter(Boolean);
+  if (!numbered && !first) return null;
+  // The conditional guard reads the words before the first marker, and a
+  // numbered list has none — its first marker is the string's own start.
+  if (!numbered && first && CONDITIONAL_LEAD.test(text.slice(0, first.index))) return null;
+  const parts =
+    numbered ??
+    text
+      .split(new RegExp(MARKER.source, 'gi'))
+      .map((part) => part.trim())
+      .filter(Boolean);
   if (parts.length < 2 || parts.length > MAX_STEPS) return null;
   // A one-word part is a fragment the marker tore off ("…and then some"),
   // not a step anyone meant — refuse the whole split rather than queue it.

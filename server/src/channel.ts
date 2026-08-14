@@ -76,7 +76,45 @@ const SCOPED_CLAIMS: Record<string, RegExp> = {
   calendar:
     /\b(add(?:s|ed|ing)?|put(?:s|ting)?|creat(?:e[sd]?|ing)|book(?:s|ed|ing)?|schedul(?:e[sd]?|ing)|invit(?:e[sd]?|ing))\b/,
   github: /\b(comment on|repl(?:y|ies|ied|ying)\s+(?:to|on)|post(?:s|ed|ing)?\s+a\s+comment)\b/,
+  // "Post the release notes to the team on Slack". `post` cannot be a global
+  // send verb — "write a blog post about slack" would fire one — so it claims
+  // only when the channel word is standing where a destination stands.
+  slack: /\bpost(?:s|ed|ing)?\b[^.]*\b(?:on|to|in)\s+(?:the\s+)?(?:#[\w-]+|slack)\b/,
 };
+
+/**
+ * Where a verb stands: the start, after a full stop or a comma, or after a
+ * sequence marker. Bare "and" is deliberately not a lead — "compare the
+ * telegram and slack clients" would claim a send on a question about code,
+ * and this file's rule is that a missed card costs a lesson while a wrong
+ * card costs trust. ", and telegram Brian" still leads, because the comma is
+ * the evidence that a second instruction has started.
+ */
+const VERB_LEAD = String.raw`(?:^|[,;.]\s*(?:and\s+)?|\bthen\s+)`;
+
+/**
+ * A channel word standing where the verb goes (measured 2026-08-14): "Telegram
+ * Pepo the total", "Slack the release notes to the team".
+ *
+ * `SEND_VERBS` knew email, text, dm and ping but not the channel names people
+ * use as verbs, so eight of fifty-one benchmark sentences fell to D-093's
+ * confirmation card — including the one `steps.ts` uses as its own worked
+ * example, "…then telegram Brian the total". D-090's lesson at a new seam: a
+ * verb list that claims one form and misses the rest lets the same sentence
+ * read two ways on two screens.
+ *
+ * Only channels whose names are actually spoken as verbs. Nobody says "Gmail
+ * Ana the report" — "email" is already a send verb — and a calendar is not
+ * something you do to a person.
+ */
+const CHANNEL_AS_VERB: Record<string, RegExp> = Object.fromEntries(
+  ['telegram', 'slack', 'sms', 'discord'].map((word) => [
+    word,
+    // A following word is required: "send it on telegram." is a mention with
+    // the channel at the end of the clause, not a verb with an object.
+    new RegExp(`${VERB_LEAD}${word}\\s+\\w`, 'i'),
+  ]),
+);
 
 const LABELS: Record<string, string> = {
   telegram: 'Telegram',
@@ -259,9 +297,16 @@ export function detectChannelAsk(
   }
   if (!asked) return null;
   // The global send verbs claim for every channel; a channel's own scoped
-  // verbs claim only beside its word (D-104). Anything less is a mention,
-  // and mentions are D-093's question, never a claim.
-  if (!SEND_VERBS.test(p) && !SCOPED_CLAIMS[asked]?.test(p)) return null;
+  // verbs claim only beside its word (D-104), and its own name claims when it
+  // is standing where the verb goes. Anything less is a mention, and mentions
+  // are D-093's question, never a claim.
+  if (
+    !SEND_VERBS.test(p) &&
+    !SCOPED_CLAIMS[asked]?.test(p) &&
+    !CHANNEL_AS_VERB[asked]?.test(p)
+  ) {
+    return null;
+  }
 
   const askedLabel = LABELS[asked] ?? asked;
   const own = optionFor(asked, connections, settings, env);

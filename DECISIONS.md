@@ -186,6 +186,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-174 — 2026-08-12 — The platform accounts are deleted unused: a live broken URL, and a project whose only real cost was the confusion it invited](#d-174--2026-08-12--the-platform-accounts-are-deleted-unused-a-live-broken-url-and-a-project-whose-only-real-cost-was-the-confusion-it-invited)
 - [D-175 — 2026-08-13 — The horde on a phone: D-169's reopen answered without hosting, and the IPv6 default that would have refused it](#d-175--2026-08-13--the-horde-on-a-phone-d-169s-reopen-answered-without-hosting-and-the-ipv6-default-that-would-have-refused-it)
 - [D-176 — 2026-08-13 — The sweep takes failed clones too: the reason they were spared was written down and was not true](#d-176--2026-08-13--the-sweep-takes-failed-clones-too-the-reason-they-were-spared-was-written-down-and-was-not-true)
+- [D-177 — 2026-08-14 — The intake benchmark: fifty-one sentences measured, the blind spots separated from the refusals](#d-177--2026-08-14--the-intake-benchmark-fifty-one-sentences-measured-the-blind-spots-separated-from-the-refusals)
 
 ## By theme
 
@@ -593,6 +594,14 @@ entry updates one file rather than two.
   still parked in M6; and D-106, where the repeat row learned to schedule
   **without** running today and to say the first firing's date, found by
   T5's own rule the first evening anyone used the timer
+- **What the desk understands, measured** — D-177, the intake benchmark: 51
+  labelled sentences through the real intake functions, misses cut 13 → 3 by
+  claiming a channel name used as a verb, reading the sequence markers past
+  "then", carrying a chain's answers to the step that asks for them, and four
+  concept-map bridges checked against the catalog first — with the four
+  structural gaps it exposed left open and named as corpus cases: one channel
+  per job (multi-channel dropped **silently**), `MAX_STEPS` at 3, no
+  redaction anywhere, and a cadence in the sentence going unread
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -11414,3 +11423,114 @@ here unproven, because the evidence was removed by the operation that revealed
 it. **The lesson is D-035's for the third time in one day: a number from an
 instrument built minutes ago is a claim about the instrument first.** The app's
 figures are the ones that were checked against the filesystem, and they agree.
+
+## D-177 — 2026-08-14 — The intake benchmark: fifty-one sentences measured, the blind spots separated from the refusals
+
+Everything a plain sentence has to survive at the desk — `splitSteps`,
+`detectChannelAsk`, `wantsOrganize`, `MatchIndex`, `decide`, `questionsFor` —
+was covered by unit tests written beside each rule and by nothing that read a
+whole sentence the way a person writes one. So the question "what does the desk
+*not* understand" had no answer, only anecdotes.
+
+`npm run bench:intake` is the answer: 51 labelled sentences through the real
+intake functions on a cold level with every channel treated as connected, so it
+measures recognition and never wiring. Labels are written from the sentence
+alone — a corpus written off the implementation measures its own agreement
+(D-024). Two of my own labels were wrong on the first pass and were corrected
+against the role descriptions, not the code: "draw me a diagram" is the
+architect's (its description names dependency diagrams), and an organize
+sentence is force-routed to `worker` by the route, so scoring the matcher's own
+answer scored the wrong thing.
+
+**Four verdicts, not two.** `ok`, `miss`, `structural` — and `asked`, because
+D-093's near-miss card recovers a sentence with one click, which is neither a
+hit nor a loss. Collapsing it into either would have misreported the desk in
+whichever direction the collapse chose.
+
+### What it found, and what was fixed
+
+| | before | after |
+| --- | --- | --- |
+| sentences handled exactly right | 27 / 50 | 36 / 51 |
+| recovered by asking (`asked`) | 8 | 2 |
+| misses | 13 | 3 |
+| structural gaps | 12 | 13 |
+
+The denominator moves with the behaviour and is not smoothed here: the corpus
+gained one case, and a sentence that now splits acquires handoff checks it did
+not have, so total checks went 89 → 93. The comparable figures are the misses
+and the `asked` count.
+
+**A channel name standing where the verb goes now claims** (`channel.ts`).
+`SEND_VERBS` knew email, text, dm and ping but not the channel names people use
+as verbs, so eight sentences fell to the confirmation card — including the one
+`steps.ts` uses as its own worked example, "…then telegram Brian the total".
+D-090's lesson at a new seam. Bare "and" is deliberately not a lead: "compare
+the telegram and slack clients" must not read as a send, so a comma or a
+sequence marker is required, and D-093's typo'd "Sen me a Telegram" still buys
+a question rather than a claim.
+
+**The sequence markers past "then"** (`steps.ts`): "after that", "next",
+"finally", "lastly", "after which", and a hand-numbered list whose numbers
+start at one, at the very start, and run in order. Four sentences ran as one
+job for want of them. Bare "and" stays out, permanently — the two readings are
+the same shape to any rule that does not understand the words.
+
+**The chain's answers now travel with it** (`Job.answers`), and this is the
+real bug the benchmark found. The desk asks its send questions of the *whole*
+sentence — "…then email it to Ana" makes the card ask for the address — and
+then the split handed step one a sentence that asks nothing of the kind, so
+`clarificationLines` dropped every answer, and later steps were queued at their
+delivery with no answers at all. The user typed the address and the sending
+step would report it missing. The guard is the recompute, unchanged: each step
+re-derives its own questions from its own sentence, so an answer reaches only a
+session that asks for it. The free-compose shortcut (D-097) is explicitly
+refused for a chain step — a chain's answers were given under whichever promise
+the whole sentence earned, and a step whose own sentence reads as a bare send
+would otherwise compose those words verbatim under the other one.
+
+**Four concept-map entries** (`match.ts`), each checked against
+`MatchIndex.knows` first so a bridge lands on a word the catalog actually uses:
+`decide`/`choose` → the architect's own vocabulary (the SQLite-or-disk question
+matched *designer* at 0.54), `around` → reconnaissance, `redraw` → draw/design,
+and the visual nouns this app is made of — background, sprite, and the American
+spelling of colour. Role routing went 7/10 to 10/10 with no unit-test
+regression.
+
+### What was left open, and why
+
+- **A job carries one channel.** All five multi-channel sentences drop the
+  second **silently** — earliest mention wins in `detectChannelAsk` *and* in
+  `mentionsChannel`, so there is not even a near-miss card. "Telegram Pepo the
+  UF and email the same figures to Ana" queues a Telegram job and the email is
+  gone without a trace. This is a data-model decision (the outbox is
+  per-channel and approval is per-message, so one job per channel is the
+  natural shape), taken separately rather than smuggled in here.
+- **`MAX_STEPS` is 3**, so research → review → redact → send refuses to split
+  whole and runs as one unladdered session.
+- **No classification, redaction or masking** (§11 of `AGENTLING.md` says so).
+  "with the customer names removed" survives only as prose inside the prompt —
+  no gate, no review check. Sends are the one irreversible act, so this is the
+  largest of the four.
+- **A cadence in the sentence is not read.** "Every Monday at 9" queues once,
+  silently; schedules exist but only through the UI (D-103).
+
+Each is a case in the corpus, so the day any of them is built the benchmark
+says so by itself rather than by anyone remembering to check.
+
+### What proved it
+
+The suite: 1,596 server tests and 185 web across 66 + 16 files, all passing,
+with new tests pinning both halves of each new rule — what now claims, and what
+must still stay quiet. One of my own new assertions was wrong and the code was
+right: `#general` on its own names no product, so it claims nothing, and the
+test now says so.
+
+The benchmark itself is the other half, and it is a scorecard rather than a
+gate — it is not wired into `npm test`, so a regression in role routing shows
+up on the next run of `npm run bench:intake` and not before.
+
+Not proven live: the app was on `npm run serve` with `jobsRunning: 0`
+throughout, and `--no-watch` means it is still running the old code. The chain
+handoff is proven by the benchmark's model of the queue path and by
+typechecking, not by a real chain running end to end.

@@ -567,9 +567,16 @@ describe('a channel name standing where the verb goes', () => {
     expect(ask('write the note, and telegram it to Ana')?.asked).toBe('telegram');
   });
 
-  it('bare "and" is not a lead — a comparison must not read as a send', () => {
-    expect(ask('compare the telegram and slack clients')).toBeNull();
-    expect(mentionsChannel('compare the telegram and slack clients')?.channel).toBe('telegram');
+  it('bare "and" is not a lead — an ordinary "and" must not read as a send', () => {
+    // The sentence has to put the channel word itself after the bare "and",
+    // and be the earliest channel mentioned, or the claim is refused for a
+    // different reason and the assertion proves nothing. Found by mutation:
+    // widening the lead to `\s+and\s+` left the whole file green.
+    expect(ask('summarise the csv and telegram usage for the month')).toBeNull();
+    expect(ask('compare the slack and telegram clients')).toBeNull();
+    expect(mentionsChannel('summarise the csv and telegram usage for the month')?.channel).toBe(
+      'telegram',
+    );
   });
 
   it('the channel word as a noun still claims nothing', () => {

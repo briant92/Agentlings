@@ -55,7 +55,13 @@ describe('splitSteps — the other ways people write a sequence', () => {
   });
 
   it('a number that is not a list stays one job', () => {
-    // Not at the start, so nothing says these digits are an ordering.
+    // Numbers that do not open the sentence: whatever came before them is
+    // instruction too, and a numbered split would drop it silently. Found by
+    // mutation — the single-mark case below is refused by a different guard,
+    // so it proved nothing about this one.
+    expect(splitSteps('read the attached csv and 1. total the rows 2. email Ana')).toBeNull();
+    expect(splitSteps('the plan is 1. draft the note 2. send it to Ana')).toBeNull();
+    // One mark is not a list at all.
     expect(splitSteps('reduce the timeout to 1. check nothing hangs')).toBeNull();
     // Out of order, and not starting at one.
     expect(splitSteps('3. do this 7. do that')).toBeNull();

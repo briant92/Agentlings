@@ -185,6 +185,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-173 — 2026-08-12 — Compiled tools get the gated doors, and the grant is what a method used](#d-173--2026-08-12--compiled-tools-get-the-gated-doors-and-the-grant-is-what-a-method-used)
 - [D-174 — 2026-08-12 — The platform accounts are deleted unused: a live broken URL, and a project whose only real cost was the confusion it invited](#d-174--2026-08-12--the-platform-accounts-are-deleted-unused-a-live-broken-url-and-a-project-whose-only-real-cost-was-the-confusion-it-invited)
 - [D-175 — 2026-08-13 — The horde on a phone: D-169's reopen answered without hosting, and the IPv6 default that would have refused it](#d-175--2026-08-13--the-horde-on-a-phone-d-169s-reopen-answered-without-hosting-and-the-ipv6-default-that-would-have-refused-it)
+- [D-176 — 2026-08-13 — The sweep takes failed clones too: the reason they were spared was written down and was not true](#d-176--2026-08-13--the-sweep-takes-failed-clones-too-the-reason-they-were-spared-was-written-down-and-was-not-true)
 
 ## By theme
 
@@ -297,7 +298,11 @@ entry updates one file rather than two.
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
   clones, answered by a per-job sweep rather than by deleting anything; and
-  D-137, the select screen wearing SMW switch-palace blocks — dashed when
+  **D-176, which widens that sweep to `failed` after the reason for excluding
+  it was read and found untrue** — nothing reads a finished job's clone, since
+  both promote and a reply's continuation work from `DIFF.patch` at the sandbox
+  root, so the clone was residue the rule was protecting on a false premise;
+  and D-137, the select screen wearing SMW switch-palace blocks — dashed when
   quiet, a filled ! per signal (working, to review, scheduled, unread),
   the unread population shared with the inbox so the two cannot drift
 - **Acting on the real world through review** — the promote grammar applied to
@@ -11342,3 +11347,70 @@ is narrower — small type at phone scale — which is a readability question, n
 an architecture one, and is the thing to reopen on if it starts costing
 approvals. Reopen with the same discipline: name the two screens that fail
 before building anything.
+
+## D-176 — 2026-08-13 — The sweep takes failed clones too: the reason they were spared was written down and was not true
+
+Asked to sweep 27 remaining working copies, the sweep refused them all: every
+one belonged to a `failed` job or to a sandbox with no job row, and
+`SWEEPABLE` was `['promoted', 'discarded']`. `failed` now joins it.
+
+### The comment said why, and the code said otherwise
+
+`sweep.ts`'s own header carried the justification: a failed job's clone *"is
+where a reply's continuation still works"*. That is a specific, checkable claim,
+and it is wrong.
+
+- **A continuation never reads the parent's clone.** `carryForward`
+  (`executors/claude.ts:442`) clones **fresh** from `repoPath` and replays the
+  parent's `DIFF.patch` onto it.
+- **Promote never reads it either** — `index.ts:2089` applies that same patch
+  to the real repository.
+- `DIFF.patch` lives at the **sandbox root**, which this sweep has always kept.
+
+Confirmed by grep rather than by reading: `repoDir()` is only ever called
+against the *new* sandbox, plus `gitwork`'s own internals and the sweep itself.
+**Nothing anywhere reads a finished job's `repo/`.** Once `writeDiff` has run,
+the clone is residue.
+
+Measured on the 20 failed jobs that prompted this: **18 had no `DIFF.patch` at
+all**, so their changes were already unrecoverable while the clone sat there
+costing disk. The rule was protecting a recovery path that did not exist, for
+jobs that mostly had nothing to recover.
+
+### `done` and `partial` stay out, and that is a review decision
+
+By the reading above their clones are residue too. They stay because they are
+the statuses still waiting on the user, and the line is drawn at *nobody is
+going to look at this again* rather than at what the code strictly needs. Worth
+its own entry before it is worth a change — recorded here so the asymmetry is
+deliberate rather than forgotten.
+
+### What proved it
+
+Two tests, both mutation-checked after committing: a failed clone goes while
+`done` and `partial` keep theirs, and the sweep leaves `DIFF.patch` behind.
+Three mutations, three kills — reverting `failed` out (1 failure), widening to
+`done`/`partial` (3), and sweeping the whole sandbox instead of `repo/` (2). The
+suite binds in both directions, which a one-sided test would not have.
+
+Live, against a server **restarted onto the new code** — the same trap that
+produced a false negative earlier the same day: **25 clones, 569.1 MB, 0
+skipped.** `.agentlings` went 655 MB → 100 MB across the day's two sweeps. The
+7 orphaned clones (0.19 MB, no job row) were correctly left: a sandbox with no
+job record proves nothing about itself.
+
+Verified afterwards rather than assumed: `883bdc67`'s sandbox — the pending
+indicators compile — is untouched, both surviving `DIFF.patch` files are still
+there (2 before, 2 after), and the app's own count now matches the filesystem
+exactly.
+
+### The number that did not reconcile, stated rather than smoothed
+
+A hand-rolled pre-scan predicted **20 clones, 190.4 MB**; the app removed **25,
+569.1 MB**. The discrepancy is in *my* instrument, not the app's — the walker
+swallowed `lstat` failures with a bare `catch { return }`, and deep git object
+paths on Windows are exactly where that silently returns zero. It is stated
+here unproven, because the evidence was removed by the operation that revealed
+it. **The lesson is D-035's for the third time in one day: a number from an
+instrument built minutes ago is a claim about the instrument first.** The app's
+figures are the ones that were checked against the filesystem, and they agree.

@@ -20,7 +20,14 @@ describe('splitSteps — when it splits', () => {
   it('takes up to MAX_STEPS steps', () => {
     const three = splitSteps('parse the log, then chart the errors, then write a summary');
     expect(three).toHaveLength(3);
-    expect(MAX_STEPS).toBe(3);
+    // Four since D-183, which is what "research, then review, then redact,
+    // then send" needs — the four-stage shape the corpus was built around.
+    expect(MAX_STEPS).toBe(4);
+    expect(
+      splitSteps(
+        'research the pricing, then review the draft, then redact the client names, then email it to the partners',
+      ),
+    ).toHaveLength(4);
   });
 });
 
@@ -153,7 +160,9 @@ describe('splitSteps — when it refuses (the never-guess side)', () => {
 
   it('more steps than the cap refuses whole — past that the box is a script', () => {
     expect(
-      splitSteps('do a thing, then do more work, then do another pass, then write it up'),
+      splitSteps(
+        'do a thing, then do more work, then do another pass, then write it up, then file it',
+      ),
     ).toBeNull();
   });
 });

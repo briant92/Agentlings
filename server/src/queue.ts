@@ -52,6 +52,8 @@ export interface NewJobSpec {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The chain asked for something to be kept out (D-183). */
+  withholding?: boolean;
   /** The card's answers, carried so the rest of the chain can hear them. */
   answers?: Record<string, string>;
   /**
@@ -299,6 +301,7 @@ export class JobQueue {
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
       ...(spec.step ? { step: spec.step } : {}),
       ...(spec.answers && Object.keys(spec.answers).length ? { answers: spec.answers } : {}),
+      ...(spec.withholding ? { withholding: true } : {}),
       ...(spec.channelMention ? { channelMention: spec.channelMention } : {}),
       ...(spec.alsoAsked?.length ? { alsoAsked: spec.alsoAsked } : {}),
       status: 'queued',

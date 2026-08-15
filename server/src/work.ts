@@ -176,6 +176,8 @@ export function queuedJobSpec(args: {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The chain asked for something to be kept out (D-183). */
+  withholding?: boolean;
   /** The card's answers, for the steps that have not been queued yet. */
   answers?: Record<string, string>;
 }): {
@@ -197,6 +199,7 @@ export function queuedJobSpec(args: {
   steps?: string[];
   step?: { n: number; of: number };
   answers?: Record<string, string>;
+  withholding?: boolean;
 } {
   return {
     title: args.title,
@@ -225,6 +228,7 @@ export function queuedJobSpec(args: {
     // Only while a chain still has steps to queue: once the last one is
     // running there is nobody left to hand them to, and the answers this job
     // itself uses are already in its clarifications.
+    ...(args.withholding ? { withholding: true } : {}),
     ...(args.steps?.length && args.answers && Object.keys(args.answers).length
       ? { answers: args.answers }
       : {}),

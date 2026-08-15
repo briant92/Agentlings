@@ -191,6 +191,31 @@ function readSentence(test: BenchCase) {
         () => [],
         () => undefined,
       ) ?? null,
+    /**
+     * The brief of the step that actually *sends* (D-183) — the last one whose
+     * own sentence claims a channel — carrying the chain's withholding flag,
+     * set from the whole sentence exactly as `queueSentence` sets it. A chain
+     * redacts in one step and sends in another, so asking the whole sentence
+     * would credit the desk with a gate the sending job never receives.
+     */
+    sendBrief: (() => {
+      const sentences2 = steps ?? [prompt];
+      const last = [...sentences2]
+        .reverse()
+        .find((s) => detectChannelAsk(s, connections, settings, env));
+      if (!last) return null;
+      return (
+        briefForJob(
+          {
+            channels: carried.length ? carried : channel ? [channel] : [],
+            prompt: last,
+            withholding: steps ? wantsWithholding(prompt) : undefined,
+          },
+          () => [],
+          () => undefined,
+        ) ?? null
+      );
+    })(),
   };
 }
 
@@ -371,7 +396,11 @@ function run(test: BenchCase): Ran {
     // And where there is a send, the session has to be told the contract it
     // will be judged against. Where there is none, there is nothing to gate:
     // the sentence is the session's own instruction and no message goes out.
-    const told = seen.brief ? seen.brief.includes('WITHHELD.json') : true;
+    // Read off the *sending step*, not the whole sentence (D-183). A four-step
+    // chain redacts in one step and sends in another, and asking the whole
+    // sentence would credit the desk with a gate the sending job never gets —
+    // measured: without the chain flag this check drops to 3 of 4.
+    const told = seen.sendBrief ? seen.sendBrief.includes('WITHHELD.json') : true;
     const ok = noticed && !shortcut && told;
     add(
       'redact',

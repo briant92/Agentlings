@@ -5,7 +5,10 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Outbox } from '@agentlings/shared';
 import { autoBlocker } from './approvals';
+import { briefForJob } from './channel';
 import { JobQueue } from './queue';
+import { decide } from './router';
+import { splitSteps } from './steps';
 import {
   WITHHELD_FILE,
   checkWithheld,
@@ -244,6 +247,64 @@ describe('the gate, from the sandbox to the refusal', () => {
     expect(done.withheld).toBeUndefined();
     expect(done.withheldError).toContain('"values"');
     expect(autoBlocker(done, ['RESULT.md'])).toContain('withheld');
+  });
+});
+
+/**
+ * The gate follows the chain, not the sentence (D-183). Raising MAX_STEPS to
+ * four unlocked "…then redact the client names, then email it to the partners"
+ * — and split, the *sending* step's own words say nothing about withholding,
+ * so a gate reading only that step would arm the redaction and leave the send
+ * open. Found by probing the raise before trusting it.
+ */
+describe('a withholding that lives in an earlier step', () => {
+  const full =
+    'Research the competitor pricing, then review the draft for errors, then redact the client names, then email it to the partners';
+
+  it('the sending step does not say it itself — which is the whole problem', () => {
+    const steps = splitSteps(full)!;
+    expect(steps).toHaveLength(4);
+    expect(wantsWithholding(steps[2])).toBe(true);
+    expect(wantsWithholding(steps[3])).toBe(false);
+  });
+
+  it('the chain flag tells the sending step anyway', () => {
+    const sending = splitSteps(full)![3];
+    const told = (withholding: boolean) =>
+      briefForJob(
+        { channels: ['gmail'], prompt: sending, withholding },
+        () => [],
+        () => undefined,
+      )?.includes('WITHHELD.json') ?? false;
+    expect(told(false)).toBe(false);
+    expect(told(true)).toBe(true);
+  });
+
+  it('and keeps that step off the shortcut tiers', () => {
+    const sending = splitSteps(full)![3];
+    const context = {
+      knowledge: [],
+      store: [],
+      recipes: [],
+      tools: [],
+      canFetch: true,
+      capabilities: [],
+    };
+    const job = (withholding: boolean) => ({
+      id: '',
+      title: '',
+      prompt: sending,
+      status: 'queued' as const,
+      slot: -1,
+      createdAt: 0,
+      channels: ['gmail'],
+      send: { to: 'ana@example.com', words: 'the draft' },
+      ...(withholding ? { withholding: true } : {}),
+    });
+    // Without the flag the desk would compose this send for nothing, carrying
+    // no redaction at all.
+    expect(decide(job(false), context).kind).toBe('compose');
+    expect(decide(job(true), context).kind).toBe('agent');
   });
 });
 

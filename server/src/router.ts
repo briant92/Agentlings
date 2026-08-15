@@ -238,7 +238,7 @@ export function decide(job: Job, context: RouterContext): Decision {
    * those sentences, not a guard — the first recipe or compiled tool to claim
    * one would remove it — so the guard is written down.
    */
-  const withholding = wantsWithholding(prompt);
+  const withholding = job.withholding === true || wantsWithholding(prompt);
 
   // Mid-flight work — a continuation, or a reply — carries its sandbox
   // forward, and every shortcut below starts from nothing: a stored answer

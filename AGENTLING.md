@@ -1176,7 +1176,11 @@ What is **not built**, and should not be assumed:
   On the way *out* there is now a gate, and its promise is narrow enough to
   state exactly (D-181). When a sentence asks for something to be kept out
   — "with the customer names removed", "mask everything except the totals" —
-  the job is refused every shortcut tier, the run is told to declare what it
+  the job is refused every shortcut tier, **and so is every later step of the
+  same chain** (D-183): "…then redact the client names, then email it to the
+  partners" splits into steps whose sending half says nothing about
+  withholding, so the flag follows the chain rather than the sentence. The run
+  is told to declare what it
   removed in `WITHHELD.json`, and **Approve searches every message, subject and
   readable attachment for those values and refuses the whole send if one is
   still there.** What that is not: it does not find sensitive data the run
@@ -1372,7 +1376,7 @@ untouched until you press Approve.
 | Constant | Value | Where | What it does |
 |---|---|---|---|
 | `MIN_CONFIDENCE` | 0.35 | `match.ts` | Below it the app says so instead of guessing |
-| `MAX_STEPS` | 3 | `steps.ts` | Steps one sentence may split into; past it the box is a script (D-105) |
+| `MAX_STEPS` | 4 | `steps.ts` | Steps one sentence may split into; past it the box is a script (D-105, raised D-183) |
 | `INTENT_WEIGHT` / `DOMAIN_WEIGHT` | 1.5 / 0.55 | `match.ts` | The verb decides the role, not the noun |
 | `MAX_QUESTIONS` | 3 | `clarify.ts` | Above this the box has become a form |
 | `MAX_ATTACHMENTS` | 5 | `shared` | Per job |
@@ -1416,7 +1420,7 @@ without an API key.
   itself, audited — and everything else runs only when you queue it.
 - **Not a planner.** A sentence splits into steps only where *you* wrote the
   order out — "then", "after that", "next", "finally", or a numbered list
-  (D-105, D-177) — shown before Start, at most three, each step an ordinary
+  (D-105, D-177) — shown before Start, at most four, each step an ordinary
   job whose delivery queues the next with its files and with the answers you
   gave at the desk. Bare "and" splits in exactly one case (D-182) — a **send**
   after it and no send before it, "summarise the CSV **and telegram Brian the

@@ -31,7 +31,7 @@ import { PAPERWORK } from './outputs';
  * invents the steps. That is M6's question and stays parked — this splits
  * what the user already wrote, nothing more.
  */
-export const MAX_STEPS = 3;
+export const MAX_STEPS = 4;
 
 /**
  * The explicit sequence markers, and only these.

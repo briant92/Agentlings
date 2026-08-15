@@ -505,7 +505,14 @@ export function legendAudience(prompt: string, people: AudiencePerson[]): Audien
 }
 
 export function briefForJob(
-  job: { channels?: string[]; prompt: string; send?: { words: string } },
+  job: {
+    channels?: string[];
+    prompt: string;
+    send?: { words: string };
+    /** The chain asked for something to be kept out, even if this step's own
+     *  sentence does not say so (D-183). */
+    withholding?: boolean;
+  },
   audience: (channel: string) => AudiencePerson[],
   lastSend: (channel: string) => string | undefined,
 ): string | undefined {
@@ -530,7 +537,11 @@ export function briefForJob(
     )
     .filter((brief): brief is string => brief !== null);
   if (briefs.length === 0) return undefined;
-  const withholding = wantsWithholding(job.prompt) ? withholdingBlock() : [];
+  // The chain's flag counts as much as this step's own words (D-183): a
+  // sentence that redacted in step three and sends in step four says nothing
+  // about withholding *here*, and that is exactly the step the gate is for.
+  const withholding =
+    job.withholding || wantsWithholding(job.prompt) ? withholdingBlock() : [];
   if (briefs.length === 1) return [briefs[0], ...withholding].join('\n');
   return [...briefs, ...severalChannelsBlock(job.channels), ...withholding].join('\n');
 }

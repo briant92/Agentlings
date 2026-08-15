@@ -192,6 +192,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-180 — 2026-08-15 — A recipient per channel: the id carries which, and the card says so before an address is typed](#d-180--2026-08-15--a-recipient-per-channel-the-id-carries-which-and-the-card-says-so-before-an-address-is-typed)
 - [D-181 — 2026-08-15 — The withholding gate: a promise narrow enough to check, refused loudly when it fails](#d-181--2026-08-15--the-withholding-gate-a-promise-narrow-enough-to-check-refused-loudly-when-it-fails)
 - [D-182 — 2026-08-15 — The one "and" that splits: a send after it, and none before it](#d-182--2026-08-15--the-one-and-that-splits-a-send-after-it-and-none-before-it)
+- [D-183 — 2026-08-15 — MAX_STEPS goes to four, and the withholding follows the chain rather than the sentence](#d-183--2026-08-15--max_steps-goes-to-four-and-the-withholding-follows-the-chain-rather-than-the-sentence)
 
 ## By theme
 
@@ -600,7 +601,10 @@ entry updates one file rather than two.
   shape — a send after it and none before it, the split D-105 exists for —
   while a second object, two stages of one job, and two sends on two channels
   all stay one job, and where a mislabelled corpus case was corrected rather
-  than built towards; and D-106, where the repeat row learned to schedule
+  than built towards; and D-183, raising `MAX_STEPS` to four — where the
+  four-stage chain the raise exists for turned out to be a redact-then-send
+  whose *sending* step lost D-181's gate on the split, so the withholding now
+  rides the chain rather than the sentence; and D-106, where the repeat row learned to schedule
   **without** running today and to say the first firing's date, found by
   T5's own rule the first evening anyone used the timer
 - **What the desk understands, measured** — D-177, the intake benchmark: 51
@@ -11974,3 +11978,69 @@ in a send. Their sentences changed so they still test what they say.
 1,647 server and 192 web tests, typecheck clean. Verified live against a
 restarted server: the four readings behave as written, including the two that
 must *not* split.
+
+## D-183 — 2026-08-15 — MAX_STEPS goes to four, and the withholding follows the chain rather than the sentence
+
+Asked for as a one-constant change: raise `MAX_STEPS` from three to four so the
+four-stage sentence the corpus was built around — "research the competitor
+pricing, then review the draft, then redact the client names, then email it to
+the partners" — splits instead of refusing whole.
+
+The constant moved. What made it a decision rather than an edit is what the
+raise *unlocked*: **the chain it exists for is a redact-then-send, and split,
+D-181's gate stops covering the send.**
+
+### The hole the raise opened, found before trusting it
+
+Probed rather than assumed. Split into four:
+
+```
+1. Research the competitor pricing        wantsWithholding: false
+2. review the draft for errors            wantsWithholding: false
+3. redact the client names                wantsWithholding: true
+4. email it to the partners               wantsWithholding: false
+```
+
+The redaction is step three and the send is step four, and step four's own
+words say nothing about withholding — so it is told no contract, writes no
+declaration, and is gated by nothing. Worse, the desk would have composed it
+for free: `decide` on that step returns `compose`, the tier that copies words
+without a session at all. Raising the cap and stopping there would have shipped
+a hole in a safety gate on precisely the sentence the raise was for.
+
+### The fix, and the shape that was refused
+
+The withholding now rides the **chain**: `queueSentence` reads it off the whole
+sentence *before* the split loses it, and every later step carries the flag.
+The router and the brief both consult it beside the step's own words.
+
+Not the previous step's prompt, which `stepBrief` already carries — that looks
+back exactly one step, and at four steps "redact, then review, then send" puts
+the redaction two back. A rule that works for the shortest arrangement of the
+thing and fails for the next one is not a rule.
+
+### What proved it
+
+1,650 server and 192 web tests. New coverage pins the three-part claim: that
+the sending step does *not* say it itself (which is the whole problem), that
+the chain flag tells it anyway, and that the flag keeps that step off the
+shortcut tiers — `compose` without it, `agent` with it.
+
+The benchmark's `redact` check was reading the brief of the *whole sentence*,
+which would have passed this happily. It now reads the brief of the step that
+actually sends, and the difference is measured rather than asserted: with the
+chain flag removed the check drops to **3 of 4**, which is the fault this entry
+is about, reproduced on demand.
+
+`split` reaches 24 of 24 with no structural gaps, and the corpus's four-stage
+case runs as four jobs, each on its own tier.
+
+### A rule of my own, broken by me, for the third time
+
+Testing that the bench check genuinely depended on the flag, I edited the
+script, ran it, and reverted with `git checkout` — while the file held
+uncommitted work. It ate the change. That is the same trap recorded twice
+already today, and the rule it produced was mine: **the mutation must be the
+only uncommitted change in that file.** Restored by hand; noted here because a
+lesson learned twice and broken a third time is a lesson that needs writing
+where it will be read.

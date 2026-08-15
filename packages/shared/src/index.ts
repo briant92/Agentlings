@@ -693,6 +693,22 @@ export interface Job {
   /** Which step this job is, for the cards: 2 of 3. */
   step?: { n: number; of: number };
   /**
+   * This job belongs to a chain whose sentence asked for something to be kept
+   * out (D-183).
+   *
+   * A withholding instruction lives in one step and the send lives in another
+   * — "…then redact the client names, then email it to the partners" — so a
+   * gate reading only the step's own sentence would arm the redacting step and
+   * leave the *sending* one open. That is the exact chain raising `MAX_STEPS`
+   * to four unlocked, so the flag rides the whole chain rather than being
+   * re-derived per step.
+   *
+   * Not the previous step's prompt, which the step brief already carries: that
+   * looks back exactly one step, and "redact, then review, then send" puts the
+   * redaction two back.
+   */
+  withholding?: boolean;
+  /**
    * What the user typed on the card, carried so the rest of the chain can
    * still hear it (measured 2026-08-14).
    *

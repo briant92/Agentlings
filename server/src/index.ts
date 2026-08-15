@@ -55,7 +55,7 @@ import { pickForwards, splitSteps, stepBrief } from './steps';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
-import { withholdingLeaks, withholdingRefusal } from './redact';
+import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
 import { performOutboxSend } from './outboxsend';
 import { describe, doorEndpoints, missingSecrets, readConnections } from './connections';
 import {
@@ -1213,6 +1213,8 @@ function queueSentence(
      * collided with each other.
      */
     noRepo?: boolean;
+    /** The chain asked for something to be kept out (D-183). */
+    withholding?: boolean;
   } = {},
 ): Job {
   // The split happens inside the glue (D-105), so every way in composes:
@@ -1222,12 +1224,19 @@ function queueSentence(
   let text = fullText;
   let steps = opts.steps;
   let step = opts.step;
+  let withholding = opts.withholding === true;
   if (!opts.noSplit && steps === undefined && step === undefined) {
     const split = splitSteps(fullText);
     if (split) {
       text = split[0];
       steps = split.slice(1);
       step = { n: 1, of: split.length };
+      // Read off the WHOLE sentence, before the split loses it (D-183). "…then
+      // redact the client names, then email it to the partners" asks for a
+      // withholding in step three and sends in step four, and step four's own
+      // words say nothing about it — so the chain carries the flag rather than
+      // each step re-deriving it from a sentence that no longer contains it.
+      if (wantsWithholding(fullText)) withholding = true;
     }
   }
   const jobRepoPath = opts.noRepo ? '' : rt.meta.repoPath;
@@ -1340,6 +1349,7 @@ function queueSentence(
       // question the desk asked of the whole sentence still reaches the step
       // that asks it too — the recompute below decides which ones those are.
       ...(opts.answers ? { answers: opts.answers } : {}),
+      ...(withholding ? { withholding: true } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.
@@ -1419,6 +1429,8 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
       // step re-derives its own questions from its own sentence, so it hears
       // only the answers it would itself have asked for.
       ...(job.answers ? { answers: job.answers } : {}),
+      // The chain's withholding rides to every later step (D-183).
+      ...(job.withholding ? { withholding: true } : {}),
       brief: stepBrief({
         previousPrompt: job.prompt,
         n,

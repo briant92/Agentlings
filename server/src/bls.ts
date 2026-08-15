@@ -202,11 +202,34 @@ export async function callBls(
   }
   if (series.length === 0) return { error: 'BLS returned no series' };
 
-  // Named rather than silently short: asking for four ids and getting three
-  // back is the shape that ships a table with a row quietly missing.
-  const missing = seriesIds.filter((id) => !series.some((s) => s.seriesId === id));
-  if (missing.length > 0) {
-    return { error: `BLS returned nothing for ${missing.join(', ')}` };
+  /**
+   * Named rather than silently short: asking for three ids and getting two
+   * usable ones back is the shape that ships a table with a row quietly gone.
+   *
+   * **An unusable series is not an absent one, which is what a live call had
+   * to teach.** A bad id comes back `REQUEST_SUCCEEDED`, echoed into
+   * `Results.series` with an empty `data` array and the real answer — "Invalid
+   * Series for Series NOTASERIES00" — sitting in `message`. So a check looking
+   * for ids BLS *omitted* finds nothing wrong, because BLS omits nothing; the
+   * first version of this passed its own test against a payload shape the
+   * service never produces. Emptiness is the signal, and `message` is the
+   * explanation, so both are read.
+   *
+   * Fails the whole call rather than returning the good rows, on the same rule
+   * the indicators tool already follows: a partial answer that reads as a
+   * complete one is worse than no answer.
+   */
+  const unusable = seriesIds.filter((id) => {
+    const got = series.find((s) => s.seriesId === id);
+    return !got || got.observations.length === 0;
+  });
+  if (unusable.length > 0) {
+    const said = Array.isArray(payload.message)
+      ? payload.message.filter((m) => typeof m === 'string').join('; ').trim()
+      : '';
+    return {
+      error: `BLS returned no monthly observations for ${unusable.join(', ')}${said ? ` — ${said}` : ''}`,
+    };
   }
 
   return { series };

@@ -90,7 +90,37 @@ describe('callBls', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('names a series that came back missing rather than shipping a short table', async () => {
+  /**
+   * The shape a live call produced, and the reason this test exists in this
+   * form: a bad id is **not** omitted. BLS answers REQUEST_SUCCEEDED, echoes
+   * the id back with an empty `data`, and explains itself in `message`. The
+   * first version of this test asserted the omitted-id shape — which the
+   * service never produces — so it passed while the door shipped an empty
+   * series to the caller as if it were an answer.
+   */
+  it('names a series that came back empty, and carries the reason BLS gave', async () => {
+    const { http } = fake({
+      status: 'REQUEST_SUCCEEDED',
+      message: ['Invalid Series for Series NOTASERIES00'],
+      Results: {
+        series: [
+          { seriesID: 'CUUR0000SA0', data: [{ year: '2026', period: 'M07', periodName: 'July', value: '324.1' }] },
+          { seriesID: 'NOTASERIES00', data: [] },
+        ],
+      },
+    });
+    const got = await callBls(
+      'bls_series',
+      { seriesIds: 'CUUR0000SA0,NOTASERIES00' },
+      { http, token: 'k', now: NOW },
+    );
+    // Fails the whole call: the good row alone would read as a complete answer.
+    expect(got.series).toBeUndefined();
+    expect(got.error).toContain('NOTASERIES00');
+    expect(got.error).toContain('Invalid Series');
+  });
+
+  it('names a series BLS leaves out altogether, for the same reason', async () => {
     const { http } = fake({
       status: 'REQUEST_SUCCEEDED',
       Results: { series: [{ seriesID: 'CUUR0000SA0', data: [] }] },

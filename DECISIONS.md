@@ -12378,13 +12378,59 @@ cover the POST shape (the key in the body, never in the URL), batching with
 dedupe and upper-casing, the 200-with-a-refusal, the missing-key path making no
 call at all, and the unreachable/unreadable/HTTP-error endings.
 
-**Not yet proven live, and the gap is stated rather than glossed.** Registration
-is a free sign-up that must be done by Brian, so no real call has been made
-through this door — the route seam (`/internal/bls` resolving the connection
-and enforcing the grant) is verified by construction and by its siblings, not
-by a live call. It is also **not yet reachable by the indicators tool**, whose
-`run.mjs` calls v1 through the web door and would have to be recompiled to use
-`bls_series`. That recompile is a separate, costed step, and it is the one that
-finally dissolves the trap in the middle of this: a compile that self-tests
-against 25 calls a day can never gate its own output the same day, and against
-500 it comfortably can.
+It is **not yet reachable by the indicators tool**, whose `run.mjs` calls v1
+through the web door and would have to be recompiled to use `bls_series`. That
+recompile is a separate, costed step, and it is the one that finally dissolves
+the trap in the middle of this: a compile that self-tests against 25 calls a
+day can never gate its own output the same day, and against 500 it comfortably
+can.
+
+### Amendment, same day — proven live, and the live call found a defect
+
+Brian registered and put the key in `.env`. The door answered on the first real
+call, and answered *once* for three series where v1 needed three calls:
+
+```
+CUUR0000SA0    July 2026  333.918   (18 observations)
+LNS14000000    July 2026  4.1
+CES0000000001  July 2026  158858
+```
+
+Cross-checked against the reference baseline the gate produced on 2026-08-14,
+computed from what the door returned rather than compared by eye: **CPI 3.36%
+year-on-year and payrolls −23k month-on-month, both exact, unemployment 4.1
+exact.** The refusals hold at the route too — an ungranted tool 403, a missing
+tool 400.
+
+**And then the case that had never been run: an invalid series id.** The door
+returned this, cheerfully:
+
+```json
+{"series":[{"seriesId":"NOTASERIES00","observations":[]}]}
+```
+
+No error. An empty answer handed back as an answer — the exact shape the
+"named rather than silently short" check was written to prevent, sailing
+straight through it. The reason is worth keeping: **BLS does not omit a bad
+id.** It answers `REQUEST_SUCCEEDED`, echoes the id into `Results.series` with
+an empty `data`, and puts the real explanation — *"Invalid Series for Series
+NOTASERIES00"* — in `message`, which the door was discarding. The check looked
+for ids BLS left out, and BLS leaves nothing out.
+
+So the test that covered it **passed by agreeing with its author**. It was
+built on a payload I constructed from what I assumed the service would do,
+which is D-024's lesson arriving in a new costume: a scripted check that
+reimplements what it checks confirms itself. The fake was faithful to the
+design and wrong about the world; one live call settled it in seconds.
+
+Fixed by reading emptiness as the signal and `message` as the explanation, and
+failing the whole call rather than returning the good rows — a partial answer
+that reads as a complete one is the fault, not the missing row. Live again
+afterwards: an invalid id alone, and an invalid id beside a good one, both now
+answer *"BLS returned no monthly observations for NOTASERIES00 — Invalid Series
+for Series NOTASERIES00"*, and the real three still come back whole. 1,672
+server and 192 web tests, typecheck clean.
+
+**Both tests are kept**, the corrected one and one for the omitted-id shape that
+BLS does not currently produce, because "does not currently" is a claim about a
+service rather than about a contract.

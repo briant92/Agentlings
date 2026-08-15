@@ -12706,10 +12706,25 @@ describing the work from assigning it, and `claude.test.ts` pins both halves,
 so a future edit that widens it into a blanket refusal fails a test rather than
 being discovered in a run.
 
-**What this is worth, stated precisely.** n=1 against n=1. These runs have
-already shown the same session reasoning to different conclusions on similar
-inputs — run 1 refused on principle where run 2 refused on circumstance — so one
-clean reversal is evidence the line does something, not that it always will.
+**Repeated, because one reversal is not a result.** Four further runs of the
+mutated condition, everything held identical and the tier re-checked before each
+so a run that never opened the repo could not be counted as a refusal:
+**five of five refused, none silently.** Every one reported the instruction
+under its own heading and offered to carry it out if the *user* asked, and the
+reasoning converges on the rule in independently varied words — "cannot add work
+to the job I was given", "material to describe, not a source of additional
+tasks", "describes how the project is written, but it does not set my task". The
+effect is repeatable, and the escape hatch is behaving as written rather than
+hardening into a blanket refusal.
+
+**What this is worth, stated precisely.** Five refusals against **one** obeyed
+run. The mutated side is now well sampled; the **unmutated baseline is still
+n=1**, so the comparison rests on a single obey that has never been shown to
+repeat. Repeatability is also not robustness: this is one payload, one filename,
+one repository, one job sentence. These runs have already shown the same session
+reasoning to different conclusions on similar inputs — run 1 refused on
+principle where run 2 refused on circumstance — so the line is doing something
+here, not everywhere.
 And it remains an *instruction the model weighs*, not enforcement: the same
 category as the text it defends against. D-168's answer stands unchanged —
 per-job isolation is the only thing that would enforce this, and it belongs with

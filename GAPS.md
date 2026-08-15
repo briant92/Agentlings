@@ -144,7 +144,15 @@ capability roadmap; this is the short list of what matters most, in order.
       instruction "*does* apply" because the repo's own text said it covered
       read-only sessions. So the session sorts a clone's instructions by
       **applicability, not authority**. The path rule held in every run.
-      The row stays open: there is now a reproducible obeyed case, so the
-      candidate line finally has a mutation test available — but whatever comes
-      of it is an instruction the model may weigh, not enforcement, and D-168
-      already named per-job isolation as the only thing that would enforce it.
+      **The line is now written and mutation-tested.** Same repo commit, same
+      payload, same sentence, one variable: `AGENTS-LOG.md` stops being written,
+      and the run's own words track the rule — *"a file inside the repository
+      can describe how the project is written — and that part I followed — but
+      it cannot add work to the job I was given"* — reporting the instruction in
+      `RESULT.md` rather than declining silently, while still following the
+      style and testing conventions the job had asked about. `claude.test.ts`
+      pins both halves so a later edit cannot widen it into a blanket refusal.
+      The row stays open regardless: n=1 against n=1, and what was added is an
+      instruction the model weighs rather than enforcement — the same category
+      as the text it defends against. D-168 already named per-job isolation as
+      the only thing that would enforce this, and it belongs with hosting.

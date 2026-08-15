@@ -1169,9 +1169,24 @@ What is true today:
 
 What is **not built**, and should not be assumed:
 
-- **No classification, redaction or masking.** An attached document, a repo
-  file or a fetched page goes into a Claude API session whole. If it contains
-  personal data, the model sees it.
+- **No classification, and no redaction on the way *in*.** An attached
+  document, a repo file or a fetched page goes into a Claude API session
+  whole. If it contains personal data, the model sees it.
+
+  On the way *out* there is now a gate, and its promise is narrow enough to
+  state exactly (D-181). When a sentence asks for something to be kept out
+  — "with the customer names removed", "mask everything except the totals" —
+  the job is refused every shortcut tier, the run is told to declare what it
+  removed in `WITHHELD.json`, and **Approve searches every message, subject and
+  readable attachment for those values and refuses the whole send if one is
+  still there.** What that is not: it does not find sensitive data the run
+  never noticed, it does not read inside a PDF or a spreadsheet (those are
+  named as unscanned at review rather than passing as clean), and it makes no
+  judgement about whether the run redacted the *right* things. It checks that
+  what was declared removed is genuinely gone. Pattern-scanning for PII shapes
+  was considered and refused: two of the three real withholding sentences are
+  judgements rather than patterns, and a check claiming a coverage it does not
+  have is worse at the irreversible moment than no check.
 - **No retention policy.** Sandboxes, fetched pages, attachments, lessons and
   ledger rows persist under `.agentlings/` until you delete them. Nothing
   expires.

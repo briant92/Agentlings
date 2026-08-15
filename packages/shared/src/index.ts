@@ -494,6 +494,38 @@ export interface OutboxEvent {
  * the model proposes, the server moves, and the server is the only thing that
  * touches the real folder.
  */
+/**
+ * What a run took out before sending, declared so it can be checked (D-181).
+ *
+ * The app cannot promise that nothing sensitive leaves: two of the three real
+ * withholding sentences — "with the customer names removed", "leaving out
+ * anything confidential" — are judgements, not patterns, and a rule that
+ * claimed to catch them would be claiming a coverage no rule has. False
+ * confidence at the one irreversible moment is worse than no promise at all.
+ *
+ * So the promise is narrower and mechanical: the run says which literal values
+ * it removed, and Approve refuses to send anything that still contains one.
+ * `what` is for the human at review — "the customer names" — and `values` are
+ * the strings the gate actually looks for.
+ */
+export interface WithheldItem {
+  /** What kind of thing this was, in the user's terms. Shown at review. */
+  what: string;
+  /** The literal strings that must not appear in anything sent. */
+  values: string[];
+}
+
+export interface Withheld {
+  items: WithheldItem[];
+  /** Anything the run wants the reviewer to know about its judgement. */
+  note?: string;
+}
+
+/** Values shorter than this are refused: they match everything and would block every send. */
+export const MIN_WITHHELD_CHARS = 3;
+export const MAX_WITHHELD_ITEMS = 20;
+export const MAX_WITHHELD_VALUES = 200;
+
 export type MoveOp =
   | { op: 'mkdir'; path: string }
   | { op: 'move'; from: string; to: string };
@@ -810,6 +842,20 @@ export interface Job {
   organizeRoot?: string;
   /** MOVES.json existed and was not a valid manifest — the reason, never a silent drop. */
   movesError?: string;
+  /**
+   * What this run says it took out before sending (D-181), when the sentence
+   * asked for something to be withheld.
+   *
+   * The same promise shape as `outbox` and `moves` — written by the session,
+   * checked and performed by the server — but the check is the point here:
+   * Approve greps every outgoing body, subject and readable file for these
+   * values and refuses the send if one survived. That is the whole of what
+   * the app promises about redaction: not that nothing sensitive leaves, but
+   * that what the run *declared* it removed is genuinely gone.
+   */
+  withheld?: Withheld;
+  /** WITHHELD.json existed and was not a valid declaration — the reason, never a silent drop. */
+  withheldError?: string;
   /** Move results so far, merged across retries — the accumulator behind the journal. */
   movesRun?: MovesRun;
   /**

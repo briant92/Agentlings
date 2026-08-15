@@ -13,6 +13,7 @@ import { MAX_STATIONS, opKey } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
+import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
 import { PACK_FILE, readPackDraft } from './packcontract';
 import { deliveredFiles, safeAttachmentName } from './outputs';
@@ -489,6 +490,7 @@ export class JobQueue {
 
   private finish(job: Job): void {
     this.stampOutbox(job);
+    this.stampWithheld(job);
     this.stampPackDraft(job);
     this.stampMoves(job);
     this.stampPending(job);
@@ -514,6 +516,21 @@ export class JobQueue {
     if (!read) return;
     if (read.error) job.outboxError = `OUTBOX.json: ${read.error}`;
     else job.outbox = read.outboxes;
+  }
+
+  /**
+   * What the run says it took out before sending (D-181), read at the same
+   * seam as the outbox — the two are judged together at Approve, so a
+   * declaration that arrived and a declaration that parsed have to be the
+   * same question. A malformed one surfaces as its reason rather than reading
+   * as "nothing was withheld", which would turn the gate off in silence.
+   */
+  private stampWithheld(job: Job): void {
+    if (job.compile) return;
+    const read = readWithheld(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.error) job.withheldError = `WITHHELD.json: ${read.error}`;
+    else job.withheld = read.withheld;
   }
 
   /**

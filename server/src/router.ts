@@ -1,6 +1,7 @@
 import type { Job } from '@agentlings/shared';
 import { findRecipe, terms, type Recipe } from './recipes';
 import { findTool, type ToolManifest } from './tools';
+import { wantsWithholding } from './redact';
 import { extractUrls } from './web';
 
 /**
@@ -224,6 +225,21 @@ export function isFetchOnly(prompt: string, urls: string[]): boolean {
 export function decide(job: Job, context: RouterContext): Decision {
   const prompt = job.prompt ?? '';
 
+  /**
+   * A sentence asking for something to be kept out never takes a shortcut
+   * (D-181). Every tier below the session either replays text decided before
+   * the instruction existed — a banked answer, a compiled tool's output — or
+   * copies words the desk is holding, and none of them can withhold anything:
+   * they would send the unredacted thing at the speed of free and the review
+   * would show a send nobody judged.
+   *
+   * Measured before it was built: all four withholding sentences in the
+   * benchmark corpus happen to route to `agent` today. That is an accident of
+   * those sentences, not a guard — the first recipe or compiled tool to claim
+   * one would remove it — so the guard is written down.
+   */
+  const withholding = wantsWithholding(prompt);
+
   // Mid-flight work — a continuation, or a reply — carries its sandbox
   // forward, and every shortcut below starts from nothing: a stored answer
   // would replay instead of resuming, a compiled tool would redo the job from
@@ -248,7 +264,7 @@ export function decide(job: Job, context: RouterContext): Decision {
   // so a job carrying two has nothing composed for the second and must go to a
   // session that can write both (D-179). Silently composing the first would
   // send half of what was asked for and call it free.
-  if (job.send && job.channels?.length === 1) {
+  if (job.send && job.channels?.length === 1 && !withholding) {
     return {
       kind: 'compose',
       channel: job.channels[0],
@@ -260,7 +276,7 @@ export function decide(job: Job, context: RouterContext): Decision {
 
   // A question about what the crew already knows is answerable from the file
   // the crew already wrote. No session, no tokens.
-  if (RECALL.test(prompt)) {
+  if (RECALL.test(prompt) && !withholding) {
     // The crew's own notes and your indexed material are one corpus here: both
     // are lines on file, scored the same way. A store line carries its source
     // and sync date inside the line, so an answer built from them says where
@@ -306,7 +322,9 @@ export function decide(job: Job, context: RouterContext): Decision {
   // compiled against a connection this job does not hold would fail at its
   // first call, twice, and retire itself over a setting the user changed on
   // purpose.
-  const tool = findTool(context.tools ?? [], prompt, Boolean(job.repoPath), job.tools ?? []);
+  const tool = withholding
+    ? null
+    : findTool(context.tools ?? [], prompt, Boolean(job.repoPath), job.tools ?? []);
   if (tool) {
     return {
       kind: 'tool',
@@ -321,7 +339,9 @@ export function decide(job: Job, context: RouterContext): Decision {
   if (found) {
     // Only an exact repeat with no outside inputs may reuse an answer: the
     // same words with a different repository is a different question.
-    if (found.exact && found.recipe.answer && !job.repoPath && urls.length === 0) {
+    // A banked answer is text decided before this instruction existed, so it
+    // cannot have withheld anything (D-181) — the method may still ride.
+    if (found.exact && found.recipe.answer && !job.repoPath && urls.length === 0 && !withholding) {
       return {
         kind: 'answer',
         summary: 'Answered from the last time this exact job was done.',

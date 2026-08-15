@@ -11,6 +11,7 @@ import {
 import { CHANNELS } from './channels';
 import { missingSecrets, type Connection } from './connections';
 import { connectionEnabled, type StoredSettings } from './settings';
+import { wantsWithholding } from './redact';
 
 /**
  * Intake detection for sending (D-079): does this sentence want to message
@@ -515,8 +516,33 @@ export function briefForJob(
     )
     .filter((brief): brief is string => brief !== null);
   if (briefs.length === 0) return undefined;
-  if (briefs.length === 1) return briefs[0];
-  return [...briefs, ...severalChannelsBlock(job.channels)].join('\n');
+  const withholding = wantsWithholding(job.prompt) ? withholdingBlock() : [];
+  if (briefs.length === 1) return [briefs[0], ...withholding].join('\n');
+  return [...briefs, ...severalChannelsBlock(job.channels), ...withholding].join('\n');
+}
+
+/**
+ * The withholding contract, told to the session (D-181).
+ *
+ * Told because a capability nobody is told about is not one (D-031) — but more
+ * than that: the gate at Approve checks this file, so a run that withholds
+ * something and never declares it gets no credit for it, and a run that
+ * declares nothing has its send judged as an ordinary one. The instruction and
+ * the check are the same sentence, said once.
+ */
+function withholdingBlock(): string[] {
+  return [
+    '',
+    '## You were asked to keep something out',
+    'This job asks for something to be withheld from what goes out. Do it, and then **declare it**: write WITHHELD.json in the working directory, exactly this shape:',
+    '{"items":[{"what":"the customer names","values":["Acme Corp","Jane Doe"]}],"note":"<anything the reviewer should know about your judgement>"}',
+    '- "values" are the literal strings you took out, exactly as they appeared in the source. Approve searches every message, subject and readable attachment for them and **refuses to send** if one is still there — so this is a check on your own work, not paperwork.',
+    '- "what" is for the person reviewing: "the customer names", "the salary figures". One item per kind of thing.',
+    '- Every value must be at least 3 characters. A shorter one matches almost any message and would block the send outright.',
+    '- Declare what you actually removed, never what you merely intended to. An empty or missing file means you withheld nothing, and the send is judged as an ordinary one.',
+    '- If you could not do it — the source did not say which names are the clients, say — do not send. Write RESULT.md explaining what you could not tell apart, and leave the outbox out.',
+    '- The check is on the text and on attachments it can read. A PDF or a spreadsheet is named as unscanned at review rather than assumed clean, so take extra care with what rides as a file.',
+  ];
 }
 
 /** How one OUTBOX.json holds a send per channel (D-179). */

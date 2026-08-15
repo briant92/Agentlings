@@ -28,7 +28,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clarificationLines, questionsFor } from '../server/src/clarify';
-import { channelBrief, detectChannelAsk, mentionsChannel } from '../server/src/channel';
+import { briefForJob, detectChannelAsk, mentionsChannel } from '../server/src/channel';
 import { CHANNELS } from '../server/src/channels';
 import { readConnections } from '../server/src/connections';
 import { MatchIndex, suggestSetup } from '../server/src/match';
@@ -36,6 +36,7 @@ import { wantsOrganize } from '../server/src/organize';
 import { FILE_CHANNELS } from '../server/src/outbox';
 import { RoleRegistry, listSkills } from '../server/src/roles';
 import { decide, type Decision } from '../server/src/router';
+import { wantsWithholding } from '../server/src/redact';
 import { MAX_STEPS, splitSteps } from '../server/src/steps';
 import { quoteFor_ } from '../server/src/quote';
 import { CASES, type BenchCase } from './intake-bench-cases';
@@ -180,7 +181,16 @@ function readSentence(test: BenchCase) {
     quote,
     questions,
     delivered,
-    brief: channel ? channelBrief(channel) : null,
+    // The brief a *job* gets, not the raw channel contract: `briefForJob` is
+    // what the executor calls, and it is where the per-channel blocks and the
+    // withholding contract are assembled. Reading `channelBrief` here credited
+    // the desk with a brief no run ever sees.
+    brief:
+      briefForJob(
+        { channels: carried.length ? carried : channel ? [channel] : [], prompt },
+        () => [],
+        () => undefined,
+      ) ?? null,
   };
 }
 
@@ -352,18 +362,28 @@ function run(test: BenchCase): Ran {
   // Withholding, and recurrence: probed rather than assumed absent, so this
   // check starts passing by itself the day a surface for either is built.
   if (want.redacts) {
-    const heard = [
-      ...seen.questions.flatMap((q) => [q.ask, q.hint ?? '']),
-      seen.brief ?? '',
-      seen.decision.kind === 'agent' ? (seen.decision.approach ?? '') : '',
-    ].join(' ');
-    const carries = /redact|mask|withhold|confidential|leave out|remove the/i.test(heard);
+    // Recognised at all (D-181). Everything else follows from this: the
+    // shortcut tiers are refused on it and the brief is written from it.
+    const noticed = wantsWithholding(test.prompt);
+    // A shortcut tier cannot withhold anything — a banked answer and a
+    // compiled tool were both decided before the instruction existed.
+    const shortcut = ['answer', 'tool', 'compose'].includes(seen.decision.kind);
+    // And where there is a send, the session has to be told the contract it
+    // will be judged against. Where there is none, there is nothing to gate:
+    // the sentence is the session's own instruction and no message goes out.
+    const told = seen.brief ? seen.brief.includes('WITHHELD.json') : true;
+    const ok = noticed && !shortcut && told;
     add(
       'redact',
-      carries ? 'ok' : 'structural',
-      'the withholding is carried somewhere',
-      carries ? 'carried' : 'nothing at intake mentions it',
-      'no classification, redaction or masking exists (AGENTLING.md §11)',
+      ok ? 'ok' : 'miss',
+      'recognised, kept off the shortcut tiers, and the contract told',
+      !noticed
+        ? 'the sentence is not read as withholding anything'
+        : shortcut
+          ? `routed to ${seen.decision.kind}, which cannot withhold`
+          : told
+            ? 'recognised and briefed'
+            : 'a send with no withholding contract in its brief',
     );
   }
   if (want.recurs) {

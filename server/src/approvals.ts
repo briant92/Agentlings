@@ -228,10 +228,17 @@ export function autoSendable(approval: SendApproval | undefined, outboxes: Outbo
  * produced files is work somebody has to look at, whatever its outbox says.
  */
 export function autoBlocker(
-  job: Pick<Job, 'status' | 'outbox' | 'outboxError' | 'changes' | 'compile'>,
+  job: Pick<Job, 'status' | 'outbox' | 'outboxError' | 'changes' | 'compile' | 'withheld' | 'withheldError'>,
   files: string[],
 ): string | null {
   if (job.compile) return 'a compile is never auto-sent';
+  // A run that withheld something is a run that made a judgement about what a
+  // person may see (D-181). A standing grant covered *recipients*, never that
+  // — and the one thing worse than a redaction nobody checked is a redaction
+  // nobody looked at, sent automatically. The declaration failing to parse
+  // blocks for the same reason: something was withheld and the record of it
+  // is broken.
+  if (job.withheld || job.withheldError) return 'a run that withheld something is always reviewed';
   if (job.status !== 'done') return 'only a clean finish may auto-send';
   if (!job.outbox?.length) return 'no outbox';
   if (job.outboxError) return 'the outbox did not parse';

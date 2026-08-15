@@ -55,6 +55,7 @@ import { pickForwards, splitSteps, stepBrief } from './steps';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
+import { withholdingLeaks, withholdingRefusal } from './redact';
 import { performOutboxSend } from './outboxsend';
 import { describe, doorEndpoints, missingSecrets, readConnections } from './connections';
 import {
@@ -1994,6 +1995,34 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         process.env,
       );
       if (refusal) return c.json({ error: `outbox not sent — ${refusal}` }, 400);
+      /**
+       * The withholding gate (D-181), before the door and before any send.
+       *
+       * The run said it took these values out; this looks for them in every
+       * message, subject and readable attachment and refuses the whole send if
+       * one is still there. Whole, not partial: the values are one decision,
+       * and sending the clean half of a redaction is sending half a leak.
+       *
+       * A declaration that did not parse blocks too. `withheldError` means the
+       * run tried to say what it withheld and the file was wrong, and reading
+       * that as "nothing was withheld" would turn the gate off exactly where
+       * it was asked for.
+       */
+      if (pending.withheldError) {
+        return c.json(
+          { error: `outbox not sent — ${pending.withheldError}. Nothing was sent.` },
+          400,
+        );
+      }
+      if (pending.withheld) {
+        const gate = withholdingLeaks(
+          outboxes,
+          pending.withheld,
+          rt.queue.sandboxDir(pending.id),
+        );
+        const leaked = withholdingRefusal(gate);
+        if (leaked) return c.json({ error: `outbox not sent — ${leaked}` }, 400);
+      }
       /**
        * One door, claimed per job (D-160): a second Approve landing while
        * this one is mid-send is refused by name instead of racing through

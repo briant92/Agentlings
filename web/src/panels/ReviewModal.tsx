@@ -312,6 +312,38 @@ export function ReviewModal({
               send the rest, queue it as its own job.
             </p>
           )}
+          {/* What the run says it kept out, and what that promise covers
+              (D-181). Above the messages on purpose: the reviewer should know
+              a redaction was claimed before reading what is going out, not
+              after. The limits are stated in the same breath as the claim —
+              the app checks what the run declared, not everything sensitive. */}
+          {job.withheldError && (
+            <p className="rv-error">
+              {job.withheldError} — approving sends nothing until the run says properly what it
+              took out.
+            </p>
+          )}
+          {job.withheld && (
+            <div className="rv-withheld">
+              <div className="rv-withheld-t">Kept out of these messages</div>
+              <ul className="rv-withheld-list">
+                {job.withheld.items.map((item) => (
+                  <li key={item.what}>
+                    <span className="rv-withheld-what">{item.what}</span>
+                    <span className="rv-withheld-n">
+                      {item.values.length} {item.values.length === 1 ? 'value' : 'values'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {job.withheld.note && <p className="rv-withheld-note">{job.withheld.note}</p>}
+              <p className="rv-withheld-foot">
+                Approve checks every message, subject and readable attachment for these and refuses
+                to send if one is still there. It checks what the run said it removed — not
+                everything that might be sensitive, and not inside a PDF or a spreadsheet.
+              </p>
+            </div>
+          )}
           {(job.outbox ?? []).map((outbox) => {
             // One card per channel (D-179), each with its own sent/failed
             // truth — a job may have reached everyone on Telegram and nobody

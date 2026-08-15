@@ -190,6 +190,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-178 — 2026-08-14 — Two channels in one sentence: the drop made loud before it is made possible](#d-178--2026-08-14--two-channels-in-one-sentence-the-drop-made-loud-before-it-is-made-possible)
 - [D-179 — 2026-08-14 — Two channels, one job: the work happens once and each channel gets its own message set](#d-179--2026-08-14--two-channels-one-job-the-work-happens-once-and-each-channel-gets-its-own-message-set)
 - [D-180 — 2026-08-15 — A recipient per channel: the id carries which, and the card says so before an address is typed](#d-180--2026-08-15--a-recipient-per-channel-the-id-carries-which-and-the-card-says-so-before-an-address-is-typed)
+- [D-181 — 2026-08-15 — The withholding gate: a promise narrow enough to check, refused loudly when it fails](#d-181--2026-08-15--the-withholding-gate-a-promise-narrow-enough-to-check-refused-loudly-when-it-fails)
 
 ## By theme
 
@@ -619,7 +620,12 @@ entry updates one file rather than two.
   raised that box back up one per channel — the id carrying which, each
   picker fed its own roster, the message still asked once because it is one,
   and the question cap corrected to bound the questions that *narrow* a run
-  rather than the facts a send cannot exist without
+  rather than the facts a send cannot exist without; and D-181, the last of
+  the four gaps — a withholding gate whose promise is narrow enough to keep
+  (what the run *declared* it removed is genuinely gone, checked at Approve
+  and refused whole when it is not), with PII pattern-scanning refused
+  because two of the three real sentences are judgements and a check
+  claiming a coverage it lacks is worse than none
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -11816,3 +11822,89 @@ channel is asked rather than merely that something was.
 Not verified in a browser: the server here runs `--no-watch` and is still on
 older code, so the grouped card is proven by its extracted logic, its styles and
 typecheck, not by being looked at.
+
+## D-181 — 2026-08-15 — The withholding gate: a promise narrow enough to check, refused loudly when it fails
+
+The last of D-177's four structural gaps, and the one where the wrong build is
+worse than none. `AGENTLING.md` §11 said plainly that no redaction existed; a
+sentence asking for the customer names to be kept out was carried nowhere,
+gated nowhere, and sent like any other.
+
+### The shape, and the one that was refused
+
+The obvious build is pattern scanning: look for emails, card numbers, national
+IDs in what is about to go out, and mask or block. It was refused. Of the three
+real withholding sentences this was built against, **only one names a pattern
+at all** — "with the customer names removed" and "leaving out anything
+confidential" are judgements, and a scanner would pass both while appearing to
+have checked them. False confidence at the one irreversible moment in this
+product is worse than an honest absence, and a gate that quietly misses two of
+three cases is exactly that.
+
+So the promise was made narrow enough to keep:
+
+> **What the run declared it removed is genuinely absent from what goes out.**
+
+Not "nothing sensitive leaves" — the app cannot know what is sensitive. The run
+writes `WITHHELD.json` naming the literal values it took out, and Approve
+searches every message, subject, file name and readable attachment for them,
+**refusing the whole send** if one survived. Whole, not partial: the values are
+one decision, and sending the clean half of a redaction is sending half a leak.
+
+### What the check is, exactly
+
+Case-insensitive substring, the loosest match available, and deliberately: this
+decides whether a send is *refused*, and a refusal is recoverable while a leak
+is not. "Acme" must catch "ACME's", which a boundary-aware match would miss.
+Values under three characters are refused at the door with the reason — one
+would match almost every message and turn every future send of that job into a
+block with no discoverable cause.
+
+Attachments the gate can read are read. A PDF or a spreadsheet is **named as
+unscanned at review** rather than passing as clean, because the alternative is
+to say nothing and let the reviewer assume a sweep that never happened.
+
+### The three seams around it
+
+**Intake refuses every shortcut tier.** A banked answer and a compiled tool
+were both decided before the instruction existed, and the desk's free compose
+copies words it is already holding — none of them can withhold anything, and
+all three would send at the speed of free. Measured before building: all four
+withholding sentences in the corpus happen to route to `agent` today, which is
+an accident of those sentences rather than a guard — the first recipe to claim
+one would remove it — so the guard is written down.
+
+**The brief carries the contract**, because a check nobody is told about is a
+trap rather than a gate (D-031's rule with teeth): the instruction and the
+check are the same sentence, said once, and the run is told plainly that if it
+cannot tell which names are the clients it must not send at all.
+
+**A run that withheld anything never auto-sends.** A standing grant covered
+recipients, never a judgement about what a person may see, and the one thing
+worse than a redaction nobody checked is a redaction nobody looked at. A
+declaration that failed to parse blocks for the same reason — something was
+withheld and the record of it is broken.
+
+### What proved it
+
+1,638 server and 191 web tests, typecheck clean. The gate's own suite pins both
+directions: a clean message passes, a survivor is caught and located, case and
+possessives are caught, subjects and file names are checked, every channel of a
+multi-channel send is checked, a text attachment is read, and **a binary is
+reported as unscanned rather than clean** — that last one pinned precisely so
+the limit cannot quietly become a claim.
+
+The benchmark's `redact` surface was a probe that could only ever report
+"nothing at intake mentions it". It is now a real check — recognised, kept off
+the shortcut tiers, and the contract present in the brief — at **4 of 4**.
+
+Fixing it exposed the benchmark reading `channelBrief` where a job actually
+gets `briefForJob`: it had been crediting the desk with a brief no run ever
+sees, which mattered the moment the two stopped being the same string.
+
+`AGENTLING.md` §11 is corrected rather than deleted: no classification and no
+redaction on the way *in*, a gate on the way *out*, and the four things it
+explicitly does not do stated beside it.
+
+Not verified in a browser: the server here runs `--no-watch` and is still on
+older code.

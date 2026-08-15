@@ -187,6 +187,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-175 — 2026-08-13 — The horde on a phone: D-169's reopen answered without hosting, and the IPv6 default that would have refused it](#d-175--2026-08-13--the-horde-on-a-phone-d-169s-reopen-answered-without-hosting-and-the-ipv6-default-that-would-have-refused-it)
 - [D-176 — 2026-08-13 — The sweep takes failed clones too: the reason they were spared was written down and was not true](#d-176--2026-08-13--the-sweep-takes-failed-clones-too-the-reason-they-were-spared-was-written-down-and-was-not-true)
 - [D-177 — 2026-08-14 — The intake benchmark: fifty-one sentences measured, the blind spots separated from the refusals](#d-177--2026-08-14--the-intake-benchmark-fifty-one-sentences-measured-the-blind-spots-separated-from-the-refusals)
+- [D-178 — 2026-08-14 — Two channels in one sentence: the drop made loud before it is made possible](#d-178--2026-08-14--two-channels-in-one-sentence-the-drop-made-loud-before-it-is-made-possible)
 
 ## By theme
 
@@ -601,7 +602,13 @@ entry updates one file rather than two.
   concept-map bridges checked against the catalog first — with the four
   structural gaps it exposed left open and named as corpus cases: one channel
   per job (multi-channel dropped **silently**), `MAX_STEPS` at 3, no
-  redaction anywhere, and a cadence in the sentence going unread
+  redaction anywhere, and a cadence in the sentence going unread; and D-178,
+  the first of those four taken — the drop made **loud** before it is made
+  possible, one job per channel refused on a taxonomy (only one of five
+  two-channel sentences is the same message twice) and on two code facts
+  (standing approval resets forever, recipe keys collide), with the older bug
+  it uncovered: `Job.channelMention` had never once been set, because the
+  queue's job builder never named the field
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -11534,3 +11541,102 @@ Not proven live: the app was on `npm run serve` with `jobsRunning: 0`
 throughout, and `--no-watch` means it is still running the old code. The chain
 handoff is proven by the benchmark's model of the queue path and by
 typechecking, not by a real chain running end to end.
+
+## D-178 — 2026-08-14 — Two channels in one sentence: the drop made loud before it is made possible
+
+D-177 left four structural gaps named as corpus cases. This is the first, and
+it was the worst-behaved of them: every other way the desk can be wrong about a
+send is loud — a near-miss raises a question (D-093), an unavailable channel
+forks honestly (D-077), a job that mentioned a channel it never carried says so
+at review — and this one was **silent**. "Telegram Pepo the UF for today and
+email the same figures to Ana" queued a Telegram job, and the email was gone
+with no card, no question and no mention, because the near-miss line fires only
+when *no* channel was settled.
+
+### The taxonomy that decided the shape
+
+The obvious fix is a fan-out: one job per channel. Classifying the five
+multi-channel sentences in the corpus refuses it — **only one of them is the
+same message twice**:
+
+| sentence | what it is |
+| --- | --- |
+| Telegram Pepo the UF **and email the same figures to Ana** | one body, two audiences |
+| Email the board **and telegram me when it has gone out** | a delivery and a *receipt* |
+| Release notes to the team on Slack **and email the investors** | two audiences, two wordings |
+| …email it to Ana **and telegram me the headline** | explicitly different bodies |
+| Book the review on my calendar **and email the agenda to everyone invited** | an act, and a send that depends on it |
+
+Four of five want a different body per channel, two have a dependency between
+the halves, and duplicating the last one would book the calendar event twice.
+
+Two further blockers, read off the code rather than reasoned about:
+
+- **Standing approval would die for exactly the sentences that repeat.**
+  `approvalKey` is `normalise(prompt)`, and `recordApproval` resets `approvals`
+  to 1 whenever the stored signature's channel differs. Two jobs alternating
+  channels under one prompt key reset each other forever, so `APPROVALS_FOR_AUTO`
+  is unreachable and D-082 can never fire again for that sentence.
+- **The recipe keys collide.** Same `normalise(prompt)`, so both halves bank
+  one method — and the second half's method is a send, not the work. D-072's
+  fault, reintroduced deliberately.
+
+Avoiding both needs a generated sentence for the second job, which is the app
+inventing steps — the one thing `steps.ts` says it will not do.
+
+So the destination is **one job, several outboxes**: the run does the work once,
+so the figures agree across channels, and composes a message set per channel, so
+the bodies may differ. That is the next entry. This one makes the drop loud,
+which is worth having on its own and is needed by that build anyway — a
+two-channel ask can include a channel that is `planned` or `never`, and that
+fork has to exist however the sends are carried.
+
+### The rule, and why it is not the one above it
+
+A second channel claims on **local** evidence: its name standing where a verb
+goes, its own scoped verbs, or a send verb in the stretch of sentence between
+the channel before it and itself. `SEND_VERBS` is tested against the whole
+prompt for the *asked* channel and rightly so — "to be sent to my friend on
+Telegram" puts its verb far from its word (D-090) — but reused for a later
+channel it claims on any send verb anywhere, and "email Ana the summary of the
+telegram export" would report a Telegram send nobody asked for. The asked
+channel's gate is untouched.
+
+One form was added to the shared claim rule: a channel name with a *person* as
+its object — "…and telegram me the headline". A pronoun cannot be the noun half
+of "the telegram clients", so it is the one shape safe to claim after a bare
+"and", and it is how a second channel is usually written once the first has
+taken the sentence.
+
+### The bug found on the way, which is older than this one
+
+`queuedJobSpec` has built `channelMention` since D-093, and `NewJobSpec` never
+declared it — so `JobQueue.add`, which builds a job field by field, never copied
+it. `Job.channelMention` has therefore **never once been set**, and D-093's
+review line, the one that tells a user approving sends nothing, could not
+render. Nothing failed: an excess property on a function's return value is not
+checked at the call, and no test ever asked the queue for the field.
+
+Proven rather than argued — the spec was handed straight to `add` and the job
+read back: `spec carries {telegram}`, `job carries undefined`. The third field
+this builder has dropped in silence (D-097 recorded two), and the longest-lived.
+`alsoAsked` would have inherited it exactly, which is how it was found: writing
+the new field's path and asking why the old one had no test.
+
+### What proved it
+
+1,603 server and 189 web tests, all passing. New coverage pins both halves of
+the claim rule — what is now named, and that "email Ana the summary of the
+telegram export" still names nothing — plus the fork-pick case, where picking
+Gmail on the card makes *Telegram* the dropped one, and the queue round trip for
+both stamped fields.
+
+The benchmark gained a `dropped-said` check: whatever the job ends up carrying,
+every channel the sentence asked for must be named at the desk. **5 of 5**,
+where before this entry the answer was 0 of 5 and nothing was measuring it.
+Panel logic went into `askFacts.ts` rather than the component, because the web
+suite renders nothing and logic left in JSX is logic nothing checks.
+
+Not verified in a browser: the server on this machine runs `--no-watch` and is
+still on older code, so the two lines are proven by their extracted logic and by
+typecheck, not by being looked at.

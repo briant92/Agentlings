@@ -11,6 +11,7 @@ import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
 import {
+  alsoAskedLine,
   authoringSentence,
   matchRecipient,
   missingAttachment,
@@ -643,6 +644,35 @@ export function WorkBar({
           sends via {plan.channelAsk.askedLabel} · every message waits for your review
         </p>
       )}
+
+      {/* Two channels in one sentence (D-178). A job carries one, and until
+          this line existed the other one vanished without a card, a question
+          or a mention — the only silent way the desk could be wrong about a
+          send. Says which one is being dropped, and offers the swap, because
+          picking the other half is the remedy the desk can actually give
+          today. */}
+      {!!plan?.channelAsk?.also?.length && !askingRepo && (() => {
+        const line = alsoAskedLine(plan.channelAsk!, effectiveChannel);
+        if (!line) return null;
+        const { carried, dropped } = line;
+        return (
+          <p className="work-gaps work-also">
+            also asks for {dropped.map((d) => d.label).join(' and ')} — one channel per job, so
+            this one sends {carried ? `only via ${carried.label}` : 'nothing yet'}
+            {dropped
+              .filter((d) => d.state === 'ready' || d.state === 'connectable')
+              .map((d) => (
+                <span key={d.channel}>
+                  {' · '}
+                  <button className="work-link" onClick={() => setChannel(d.channel)}>
+                    send via {d.label} instead
+                  </button>
+                </span>
+              ))}
+            <span className="dim"> · queue the other half as its own job</span>
+          </p>
+        );
+      })()}
 
       {/* Organizing wants a folder, and only the native picker yields an
           absolute path (D-132) — never a text box for a path nobody can type.

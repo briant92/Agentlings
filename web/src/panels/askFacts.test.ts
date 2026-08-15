@@ -1,4 +1,38 @@
 import { describe, expect, it } from 'vitest';
+import { alsoAskedLine } from './askFacts';
+
+describe('alsoAskedLine (D-178)', () => {
+  const ask = {
+    asked: 'telegram',
+    askedLabel: 'Telegram',
+    state: 'ready',
+    channel: 'telegram',
+    also: [{ channel: 'gmail', label: 'Gmail', state: 'connectable' as const, detail: '' }],
+  };
+
+  it('says nothing when one channel was asked for', () => {
+    expect(alsoAskedLine({ ...ask, also: [] }, null)).toBeNull();
+    expect(alsoAskedLine({ asked: 'gmail', askedLabel: 'Gmail', state: 'ready' }, null)).toBeNull();
+  });
+
+  it('names the carried channel and the dropped one', () => {
+    const line = alsoAskedLine(ask, null);
+    expect(line?.carried).toEqual({ channel: 'telegram', label: 'Telegram' });
+    expect(line?.dropped.map((d) => d.channel)).toEqual(['gmail']);
+  });
+
+  it('a fork-pick makes the asked channel the dropped one', () => {
+    const line = alsoAskedLine(ask, 'gmail');
+    expect(line?.carried).toEqual({ channel: 'gmail', label: 'Gmail' });
+    expect(line?.dropped.map((d) => d.channel)).toEqual(['telegram']);
+  });
+
+  it('a job carrying neither drops both', () => {
+    const line = alsoAskedLine({ ...ask, channel: undefined, state: 'never' }, null);
+    expect(line?.carried).toBeNull();
+    expect(line?.dropped.map((d) => d.channel)).toEqual(['telegram', 'gmail']);
+  });
+});
 import {
   authoringSentence,
   matchRecipient,

@@ -1,3 +1,5 @@
+import type { ChannelOption } from '@agentlings/shared';
+
 /**
  * What the desk can say about a recipient before money moves (D-091): the
  * channel names its own shape — a chat id has digits, an address has an @ —
@@ -26,6 +28,33 @@ const SHAPES: Record<string, { test: RegExp; wants: string }> = {
     wants: 'email addresses, comma-separated',
   },
 };
+
+/**
+ * What the desk has to say when a sentence asked for more channels than a job
+ * can carry (D-178): which one it is taking, which it is dropping, and which
+ * of the dropped ones the user could switch to instead.
+ *
+ * Here rather than inside the JSX for this panel's usual reason — the web
+ * suite renders nothing, so logic left in a component is logic nothing checks.
+ * The picked channel wins over the ask's own, because a fork-pick can make the
+ * *asked* channel the dropped one.
+ */
+export function alsoAskedLine(
+  ask: { asked: string; askedLabel: string; state: string; channel?: string; also?: ChannelOption[] },
+  picked: string | null,
+): { carried: { channel: string; label: string } | null; dropped: ChannelOption[] } | null {
+  if (!ask.also?.length) return null;
+  const named: ChannelOption[] = [
+    { channel: ask.asked, label: ask.askedLabel, state: ask.state as ChannelOption['state'], detail: '' },
+    ...ask.also,
+  ];
+  const carrying = picked ?? ask.channel ?? null;
+  const carried = named.find((n) => n.channel === carrying) ?? null;
+  return {
+    carried: carried ? { channel: carried.channel, label: carried.label } : null,
+    dropped: named.filter((n) => n.channel !== carrying),
+  };
+}
 
 export function recipientProblem(channel: string, to: string): string | null {
   const shape = SHAPES[channel];

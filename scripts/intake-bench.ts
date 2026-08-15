@@ -208,6 +208,22 @@ function run(test: BenchCase): Ran {
         `${actual} — the rest dropped`,
         'a job carries one channel',
       );
+      // Structural is not the same as silent. Whatever the job ends up
+      // carrying, the desk has to name every other channel the sentence asked
+      // for — this is the check that was failing invisibly before D-178.
+      const named = new Set([
+        seen.ask?.asked,
+        ...(seen.ask?.also ?? []).map((option) => option.channel),
+      ]);
+      const unsaid = want.channels.filter((channel) => !named.has(channel));
+      add(
+        'dropped-said',
+        unsaid.length === 0 ? 'ok' : 'miss',
+        'every channel asked for is named at the desk',
+        unsaid.length === 0
+          ? `names ${[...named].filter(Boolean).join(' + ')}`
+          : `says nothing about ${unsaid.join(', ')}`,
+      );
     } else add('channel', one, expected, actual);
   }
 

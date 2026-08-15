@@ -293,6 +293,20 @@ export function ReviewModal({
               &ldquo;Send it to … on {job.channelMention.label}&rdquo;.
             </p>
           )}
+          {/* The other half of the same honesty (D-178): this job did carry a
+              channel, and the sentence asked for another one it could not
+              take. Approving sends what is below and nothing on the rest, so
+              the card says which — it renders beside a real outbox, because
+              a send having happened is exactly when the missing one is
+              easiest to assume happened too. */}
+          {!!job.alsoAsked?.length && (
+            <p className="rv-mention-guard">
+              This job also asked to send via {job.alsoAsked.map((a) => a.label).join(' and ')},
+              and a job carries one channel — approving sends{' '}
+              {job.channel ? 'only what is shown here' : 'nothing'} and nothing there. To send
+              the rest, queue it as its own job.
+            </p>
+          )}
           {job.outbox && (
             // The outbox as mock screen 4 drew it (D-088): the channel's mark
             // on the header, a recipient's initial on each row — same rows,

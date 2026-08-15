@@ -37,6 +37,29 @@ describe('JobQueue', () => {
    * then reproduced on demand (fb19d020, 2026-08-07). The root walk is what
    * the three approval call-sites key by instead.
    */
+  /**
+   * The third field this builder dropped in silence, and the one that had
+   * been dropped the longest (D-178). `queuedJobSpec` has built
+   * `channelMention` since D-093 and `NewJobSpec` never declared it, so `add`
+   * never copied it: `Job.channelMention` was never once set on any job, and
+   * the review line telling a user that approving sends nothing could not
+   * render. Nothing failed — an excess property on a function's return value
+   * is not checked at the call, and no test asked the queue for it.
+   */
+  it('stores the channels a job could not carry, both kinds', () => {
+    const job = queue.add({
+      title: 'Note',
+      prompt: 'summarise the warzone meta',
+      channelMention: { channel: 'telegram', label: 'Telegram' },
+      alsoAsked: [{ channel: 'gmail', label: 'Gmail' }],
+    });
+    expect(job.channelMention).toEqual({ channel: 'telegram', label: 'Telegram' });
+    expect(job.alsoAsked).toEqual([{ channel: 'gmail', label: 'Gmail' }]);
+    // And they survive the round trip to disk, which is what the review reads.
+    expect(new JobQueue(root).get(job.id)?.channelMention?.channel).toBe('telegram');
+    expect(new JobQueue(root).get(job.id)?.alsoAsked?.[0]?.channel).toBe('gmail');
+  });
+
   // The pricing seam's walk (D-150): the whole chain, end first, so a
   // promote can name every cut leg that fed it.
   it('answers a chain whole through ancestry, end first', () => {

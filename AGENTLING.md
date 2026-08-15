@@ -1036,6 +1036,12 @@ browser call in total, and that one went through MCP and was refused — and it
 is localhost, single-user. It becomes load-bearing the day the app is hosted,
 which is why per-job isolation belongs to that decision rather than this one.
 
+A job carries **one channel**, and a sentence asking for two — "telegram Pepo
+the UF and email the same figures to Ana" — takes the first and drops the rest.
+Since D-178 it says so: the desk names every channel it cannot take, offers the
+swap, and the review repeats it before Approve, so the drop is visible rather
+than silent. Carrying two at once is not built.
+
 What changed (D-075): it can now **ask** to send. A run writes `OUTBOX.json` —
 one channel, up to 20 messages, refused with the reason when malformed — and
 that file is a deliverable like any other. Review shows the messages, and

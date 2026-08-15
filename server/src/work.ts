@@ -170,6 +170,8 @@ export function queuedJobSpec(args: {
   send?: { to: string; words: string };
   /** A mentioned channel the job never carried (D-093), for the review. */
   channelMention?: { channel: string; label: string };
+  /** Channels it asked for that a one-channel job could not take (D-178). */
+  alsoAsked?: { channel: string; label: string }[];
   /** The sentences still to run after this one (D-105). */
   steps?: string[];
   /** Which step this job is, for the cards. */
@@ -191,6 +193,7 @@ export function queuedJobSpec(args: {
   organizeRoot?: string;
   send?: { to: string; words: string };
   channelMention?: { channel: string; label: string };
+  alsoAsked?: { channel: string; label: string }[];
   steps?: string[];
   step?: { n: number; of: number };
   answers?: Record<string, string>;
@@ -214,6 +217,7 @@ export function queuedJobSpec(args: {
     // message the desk was already holding is the receipt (D-097).
     ...(args.send ? { send: args.send } : {}),
     ...(args.channelMention ? { channelMention: args.channelMention } : {}),
+    ...(args.alsoAsked?.length ? { alsoAsked: args.alsoAsked } : {}),
     // The chain rides the job (D-105) — the field this function does not
     // name does not exist, which is this file's own hard-won rule.
     ...(args.steps?.length ? { steps: args.steps } : {}),

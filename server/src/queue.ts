@@ -53,6 +53,20 @@ export interface NewJobSpec {
   step?: { n: number; of: number };
   /** The card's answers, carried so the rest of the chain can hear them. */
   answers?: Record<string, string>;
+  /**
+   * A channel the prompt mentioned that this job never carried (D-093), and
+   * the channels it asked for that a one-channel job could not take (D-178).
+   *
+   * `channelMention` is here because it was *missing*: `queuedJobSpec` has
+   * built it since D-093 and this interface never declared it, so `add` below
+   * never copied it and `Job.channelMention` was never once set — the review
+   * line telling a user that approving sends nothing could not render. Proven
+   * by handing the spec straight to `add` and reading the job back. The exact
+   * shape D-097 recorded twice: a correct function, a correct route, and the
+   * thing building the object silently dropping the field.
+   */
+  channelMention?: { channel: string; label: string };
+  alsoAsked?: { channel: string; label: string }[];
 }
 
 export function jobsFile(sandboxRoot: string): string {
@@ -242,6 +256,8 @@ export class JobQueue {
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
       ...(spec.step ? { step: spec.step } : {}),
       ...(spec.answers && Object.keys(spec.answers).length ? { answers: spec.answers } : {}),
+      ...(spec.channelMention ? { channelMention: spec.channelMention } : {}),
+      ...(spec.alsoAsked?.length ? { alsoAsked: spec.alsoAsked } : {}),
       status: 'queued',
       slot: this.freeSlot(),
       createdAt: Date.now(),

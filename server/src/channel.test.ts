@@ -601,6 +601,70 @@ describe('a channel name standing where the verb goes', () => {
   });
 });
 
+/**
+ * The silent drop (D-178). A job carries one channel and the earliest mention
+ * wins, so a second channel used to vanish with no card, no question and no
+ * near-miss line — the only way the desk could be wrong about a send without
+ * saying so. These pin what is now named, and that the naming did not become
+ * a second, looser claim rule.
+ */
+describe('the channels an ask could not take', () => {
+  it('names the second channel, whichever way round the sentence puts them', () => {
+    const one = ask('telegram Pepo the UF for today and email the same figures to Ana');
+    expect(one?.asked).toBe('telegram');
+    expect(one?.also?.map((o) => o.channel)).toEqual(['gmail']);
+
+    const two = ask('email the board the quarterly numbers and send me a telegram when it lands');
+    expect(two?.asked).toBe('gmail');
+    expect(two?.also?.map((o) => o.channel)).toEqual(['telegram']);
+  });
+
+  it('carries each one with its own state, so the card can offer the swap', () => {
+    const got = ask(
+      'telegram Pepo the UF and email the figures to Ana',
+      { connections: { telegram: true } },
+      TOKEN,
+    );
+    expect(got?.state).toBe('ready');
+    // Google is not connected in this fixture, so its option says so rather
+    // than inheriting Telegram's state.
+    expect(got?.also?.[0]).toMatchObject({ channel: 'gmail', state: 'connectable' });
+  });
+
+  it('names a second channel beside a scoped claim, and a planned one too', () => {
+    expect(
+      ask('book the review on my calendar and email the agenda to everyone invited')?.also?.map(
+        (o) => o.channel,
+      ),
+    ).toEqual(['gmail']);
+    expect(ask('email Ana the note and sms me when it lands')?.also?.[0]).toMatchObject({
+      channel: 'sms',
+      state: 'planned',
+    });
+  });
+
+  it('a send verb anywhere does NOT claim a second channel — the evidence is local', () => {
+    // The over-fire this rule exists to refuse: `SEND_VERBS` is tested against
+    // the whole prompt for the asked channel, and reusing it here would read
+    // a Telegram send into a sentence about a Telegram export.
+    expect(ask('email Ana the summary of the telegram export')?.also).toBeUndefined();
+    expect(ask('email Ana a note about the slack outage')?.also).toBeUndefined();
+  });
+
+  it('a sentence with one channel carries no also at all', () => {
+    expect(ask('email Ana the Q3 expenses')?.also).toBeUndefined();
+    expect(ask('telegram Pepo the total')?.also).toBeUndefined();
+  });
+
+  it('a channel name with a person as its object claims after a bare "and"', () => {
+    expect(ask('email it to Ana and telegram me the headline')?.also?.[0]?.channel).toBe(
+      'telegram',
+    );
+    // Still not a claim where the object is a thing rather than a person.
+    expect(ask('email Ana the report and telegram usage for the month')?.also).toBeUndefined();
+  });
+});
+
 describe('the three new briefs (D-104)', () => {
   it('slack names the channel shape and the invite rule', () => {
     const brief = channelBrief('slack')!;

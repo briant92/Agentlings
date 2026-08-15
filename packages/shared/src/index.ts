@@ -608,6 +608,18 @@ export interface ChannelAsk {
   /** The card's header sentence. */
   note: string;
   options: ChannelOption[];
+  /**
+   * The other channels this sentence asks to send on, which this job cannot
+   * carry (D-178).
+   *
+   * A job holds one channel and the earliest mention wins, so "telegram Pepo
+   * the UF and email the same figures to Ana" queued a Telegram job and the
+   * email vanished — no card, no question, not even the near-miss line, since
+   * that fires only when *no* channel was settled. Every other way the desk
+   * can be wrong about a send is loud; this one was silent, which is why it
+   * is reported before it is solved.
+   */
+  also?: ChannelOption[];
 }
 
 /**
@@ -686,6 +698,16 @@ export interface Job {
    * sends nothing, with the reply path as the way out.
    */
   channelMention?: { channel: string; label: string };
+  /**
+   * Channels the prompt asked to send on that this job is not carrying
+   * (D-178) — a sibling of `channelMention` above and deliberately not the
+   * same field: that one says a channel was *mentioned* and nothing claimed,
+   * this one says a channel was genuinely asked for and a one-channel job
+   * could not take it. The consequence is the same sentence at review —
+   * approving sends nothing there — and the cause the user has to act on is
+   * not.
+   */
+  alsoAsked?: { channel: string; label: string }[];
   /**
    * The job this one answers. Its sandbox is carried forward, so a reply picks
    * up where that run stopped instead of paying to redo it.

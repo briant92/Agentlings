@@ -110,9 +110,18 @@ const VERB_LEAD = String.raw`(?:^|[,;.]\s*(?:and\s+)?|\bthen\s+)`;
 const CHANNEL_AS_VERB: Record<string, RegExp> = Object.fromEntries(
   ['telegram', 'slack', 'sms', 'discord'].map((word) => [
     word,
-    // A following word is required: "send it on telegram." is a mention with
-    // the channel at the end of the clause, not a verb with an object.
-    new RegExp(`${VERB_LEAD}${word}\\s+\\w`, 'i'),
+    new RegExp(
+      // A following word is required: "send it on telegram." is a mention with
+      // the channel at the end of the clause, not a verb with an object.
+      `${VERB_LEAD}${word}\\s+\\w` +
+        // Or the name with a person as its object, which needs no lead at all:
+        // "…and telegram me the headline". A pronoun cannot be the noun half
+        // of a phrase like "the telegram clients", so this is the one form
+        // safe to claim after a bare "and" — and it is how a second channel
+        // is usually written when the first one already took the sentence.
+        `|\\b${word}\\s+(?:me|us|him|her|them|everyone)\\b`,
+      'i',
+    ),
   ]),
 );
 
@@ -279,6 +288,52 @@ function forkOptions(
     .map((channel) => optionFor(channel, connections, settings, env));
 }
 
+/** Every channel word in the sentence, earliest first, with where it ends. */
+function channelHits(p: string): { channel: string; at: number; end: number }[] {
+  const hits: { channel: string; at: number; end: number }[] = [];
+  for (const [re, channel] of CHANNEL_WORDS) {
+    const hit = re.exec(p);
+    if (hit) hits.push({ channel, at: hit.index, end: hit.index + hit[0].length });
+  }
+  return hits.sort((a, b) => a.at - b.at);
+}
+
+/**
+ * The channels the sentence asks to send on *besides* the one this job will
+ * carry (D-178) — "…and email the same figures to Ana".
+ *
+ * The evidence has to be local, which is the whole difficulty. `SEND_VERBS` is
+ * tested against the whole prompt, and rightly so for the asked channel: "to
+ * be sent to my friend on Telegram" puts its verb far from its word (D-090).
+ * Reused as-is for a *second* channel it would claim on any send verb anywhere
+ * — "email Ana the summary of the telegram export" would report a Telegram
+ * send nobody asked for, and a wrong card costs trust.
+ *
+ * So a later channel claims on evidence of its own: its name standing where a
+ * verb goes, its own scoped verbs, or a send verb in the stretch of sentence
+ * between the channel before it and itself. Nothing here loosens the asked
+ * channel's gate, which is untouched above.
+ */
+function alsoAsked(p: string, asked: string): string[] {
+  const hits = channelHits(p);
+  const from = hits.findIndex((hit) => hit.channel === asked);
+  if (from < 0) return [];
+  const found: string[] = [];
+  let previousEnd = hits[from].end;
+  for (const hit of hits.slice(from + 1)) {
+    const stretch = p.slice(previousEnd, hit.end);
+    if (
+      CHANNEL_AS_VERB[hit.channel]?.test(p) ||
+      SCOPED_CLAIMS[hit.channel]?.test(p) ||
+      SEND_VERBS.test(stretch)
+    ) {
+      found.push(hit.channel);
+    }
+    previousEnd = hit.end;
+  }
+  return found;
+}
+
 export function detectChannelAsk(
   prompt: string,
   connections: Connection[],
@@ -310,43 +365,51 @@ export function detectChannelAsk(
 
   const askedLabel = LABELS[asked] ?? asked;
   const own = optionFor(asked, connections, settings, env);
+  // Every card carries them, whatever the asked channel's own state: a job
+  // that cannot send at all still asked for two, and the second must not
+  // disappear because the first happened to be unwired.
+  const also = alsoAsked(p, asked).map((channel) =>
+    optionFor(channel, connections, settings, env),
+  );
+  const withAlso = <T extends ChannelAsk>(ask: T): T =>
+    also.length > 0 ? { ...ask, also } : ask;
 
   if (own.state === 'ready') {
-    return {
+    return withAlso({
       asked,
       askedLabel,
       state: 'ready',
       channel: asked,
       note: `Sends via ${askedLabel} — every message waits for your review before anything goes out.`,
       options: [],
-    };
+    });
   }
   if (own.state === 'connectable') {
-    return {
+    return withAlso({
       asked,
       askedLabel,
       state: 'connectable',
       channel: asked,
       note: `${askedLabel} isn't connected yet. Connect it now, or Start queues the job anyway — you connect before approving the messages.`,
       options: [own],
-    };
+    });
   }
   if (own.state === 'planned') {
-    return {
+    return withAlso({
       asked,
       askedLabel,
       state: 'planned',
       note: `${askedLabel} isn't wired yet — it's on the roadmap. Pick a channel that works today, or Start queues this as a draft job that sends nothing.`,
       options: [...forkOptions(asked, connections, settings, env), own],
-    };
+    });
   }
-  return {
+  return withAlso({
     asked,
     askedLabel,
     state: 'never',
     note: `${NEVER[asked] ?? `${askedLabel} is not available`}. Pick a channel that can, or Start queues this as a draft job that sends nothing.`,
     options: forkOptions(asked, connections, settings, env),
-  };
+  });
 }
 
 /**

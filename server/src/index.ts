@@ -1224,14 +1224,18 @@ function queueSentence(
       : matched;
   const tools = granted(opts.tools);
   const requestedChannel = opts.channel;
-  const channelAsk = requestedChannel
-    ? null
-    : detectChannelAsk(
-        text,
-        readConnections(CONNECTIONS_FILE),
-        readSettings(SANDBOX_ROOT),
-        process.env,
-      );
+  // Detected once and read twice. `channelAsk` keeps its old meaning — the ask
+  // the *card* made, which a caller's own pick supersedes — while the stamp
+  // below needs what the sentence asked for however the channel was settled:
+  // picking Gmail on the fork card makes Telegram the dropped one, and a
+  // stamp built from `channelAsk` alone would name neither.
+  const detected = detectChannelAsk(
+    text,
+    readConnections(CONNECTIONS_FILE),
+    readSettings(SANDBOX_ROOT),
+    process.env,
+  );
+  const channelAsk = requestedChannel ? null : detected;
   const channel =
     requestedChannel && CHANNELS[requestedChannel]
       ? requestedChannel
@@ -1309,6 +1313,18 @@ function queueSentence(
               ? { channelMention: { channel: mention.channel, label: mention.label } }
               : {};
           })()),
+      // The channels this sentence genuinely asked for that a one-channel job
+      // cannot take (D-178). Every channel the ask named, minus the one being
+      // carried — so the set is right whichever of them the job ended up on,
+      // and a draft job that asked for two still says it sends neither.
+      ...(() => {
+        if (!detected?.also?.length) return {};
+        const dropped = [
+          { channel: detected.asked, label: detected.askedLabel },
+          ...detected.also.map((option) => ({ channel: option.channel, label: option.label })),
+        ].filter((named) => named.channel !== channel);
+        return dropped.length > 0 ? { alsoAsked: dropped } : {};
+      })(),
     }),
   );
   rt.eventLog.emit({

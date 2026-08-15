@@ -22,8 +22,8 @@ export interface BenchCase {
     steps?: number | null;
     /**
      * Every channel the sentence asks to send on, in the order a reader meets
-     * them. One entry is an ordinary send; two or more is a sentence the job
-     * record cannot hold, and the runner reports that separately.
+     * them. Two or more is one job on all of them (D-179), so the runner also
+     * checks that each is named at the desk and asked its own recipient.
      */
     channels?: string[];
     /**
@@ -56,25 +56,25 @@ export const CASES: BenchCase[] = [
     id: 'send-01',
     family: 'send-single',
     prompt: 'Telegram Pepo the UF and the dollar for today',
-    expect: { channels: ['telegram'], steps: null, asks: ['send-to'], tier: 'agent' },
+    expect: { channels: ['telegram'], steps: null, asks: ['send-to:telegram'], tier: 'agent' },
   },
   {
     id: 'send-02',
     family: 'send-single',
     prompt: 'Email Ana the Q3 expenses summary',
-    expect: { channels: ['gmail'], steps: null, asks: ['send-to'] },
+    expect: { channels: ['gmail'], steps: null, asks: ['send-to:gmail'] },
   },
   {
     id: 'send-03',
     family: 'send-single',
     prompt: 'Send a Telegram to Brian saying A DARLE',
-    expect: { channels: ['telegram'], steps: null, asks: ['send-to', 'send-say'] },
+    expect: { channels: ['telegram'], steps: null, asks: ['send-to:telegram', 'send-say'] },
   },
   {
     id: 'send-04',
     family: 'send-single',
     prompt: 'Put a dentist appointment on my calendar for Thursday at 6pm',
-    expect: { channels: ['calendar'], steps: null, asks: ['send-to', 'send-say'] },
+    expect: { channels: ['calendar'], steps: null, asks: ['send-to:calendar', 'send-say:calendar'] },
   },
   {
     id: 'send-05',

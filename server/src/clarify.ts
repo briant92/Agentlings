@@ -78,6 +78,48 @@ const CHANNEL_WORDS =
  */
 const WRITE_IT_OUT = /^\s*write it out\b[:,\s-]*/i;
 
+/**
+ * The recipient field's id for one channel (D-180) — scoped always, even when
+ * there is only one channel, so there is a single rule rather than a rule and
+ * an exception. `answers` is a flat map keyed by id, and an unscoped key would
+ * be an address with no channel attached the moment a second one appears.
+ */
+export function sendToId(channel: string): string {
+  return `send-to:${channel}`;
+}
+
+/**
+ * The recipient the user gave for this channel.
+ *
+ * Reads the scoped key, then the bare `send-to` a card written before D-180
+ * would have left on a chain's stored answers (D-177 carries them forward, so
+ * a chain queued yesterday can still be mid-flight today). Only for the first
+ * channel: the legacy key belongs to whichever channel the job then had, and
+ * handing it to a second one would be attributing an address to a channel the
+ * user never typed it for.
+ */
+export function recipientFor(
+  answers: Record<string, string> | undefined,
+  channel: string,
+  first = true,
+): string | undefined {
+  const own = answers?.[sendToId(channel)]?.trim();
+  if (own) return own;
+  return first ? answers?.['send-to']?.trim() || undefined : undefined;
+}
+
+/** Channel labels for the questions that name one. */
+const CHANNEL_LABELS: Record<string, string> = {
+  telegram: 'Telegram',
+  gmail: 'Gmail',
+  slack: 'Slack',
+  'whatsapp-business': 'WhatsApp Business',
+  github: 'GitHub',
+  calendar: 'Google Calendar',
+  sms: 'SMS',
+  discord: 'Discord',
+};
+
 const SEND_TO_HINTS: Record<string, string> = {
   gmail: 'A name and email address — no run may invent one.',
   telegram: 'A numeric chat id — each person taps Start on your bot once.',
@@ -164,7 +206,7 @@ export function sendFacts(
   // never takes the D-097 shortcut, even with both answers in hand (D-124).
   if (channel === 'calendar') return null;
   if (!bareSend(text, names)) return null;
-  const to = answers['send-to']?.trim();
+  const to = recipientFor(answers, channel);
   const said = answers['send-say']?.trim();
   if (!to || !said) return null;
   // Asked for a draft after all: hand it back to a session, which is the one
@@ -216,47 +258,64 @@ export function questionsFor(
   // dentist appointment has no invitees, which is the 'Invitees' label the
   // arrest reads — and the title, used verbatim. Times stay the sentence's
   // job; the session parses them under the brief's contract.
-  if (channel === 'calendar') {
+  //
+  // One recipient question per channel (D-180). D-179 gave a job several
+  // channels and left this field standing down, because one To box cannot
+  // mean two channels — a single answer would be given for one and applied
+  // to both. The answer is not to ask less but to ask per channel: the id
+  // carries the channel, so an address can never be attributed to a channel
+  // the user did not type it for.
+  //
+  // The message is asked *once*, because it is one. Bodies may differ per
+  // channel (D-179's brief says so) but the direction behind them does not,
+  // and asking "what should it say" twice is the form this box exists not to
+  // be. Calendar is the exception and not really one: its second fact is a
+  // *title*, not a message, so it stays beside its own channel.
+  const sending = (channels?.length ? channels : channel ? [channel] : []).filter(
+    (name, i, all) => all.indexOf(name) === i,
+  );
+  const many = sending.length > 1;
+  for (const each of sending) {
+    if (each === 'calendar') {
+      asked.push({
+        id: sendToId('calendar'),
+        channel: 'calendar',
+        ask: many ? 'Who’s invited to the event?' : 'Who’s invited?',
+        hint: 'Names or emails, comma-separated. Leave it empty for an event that’s just for you.',
+        label: 'Invitees',
+        options: [],
+        freeText: true,
+      });
+      asked.push({
+        id: `send-say:calendar`,
+        channel: 'calendar',
+        ask: 'What’s the event called?',
+        hint: 'Used as the title, exactly as written. Your sentence carries the rest.',
+        label: 'Title',
+        options: [],
+        freeText: true,
+      });
+      continue;
+    }
     asked.push({
-      id: 'send-to',
-      ask: 'Who’s invited?',
-      hint: 'Names or emails, comma-separated. Leave it empty for an event that’s just for you.',
-      label: 'Invitees',
-      options: [],
-      freeText: true,
-    });
-    asked.push({
-      id: 'send-say',
-      ask: 'What’s the event called?',
-      hint: 'Used as the title, exactly as written. Your sentence carries the rest.',
-      label: 'Title',
+      id: sendToId(each),
+      channel: each,
+      // Named only when there is more than one — "Who should this go to on
+      // Telegram?" beside a single Telegram card is noise, and the same
+      // question has to read naturally on both cards.
+      ask: many ? `Who should this go to on ${CHANNEL_LABELS[each] ?? each}?` : 'Who should this go to?',
+      hint: SEND_TO_HINTS[each] ?? 'A name and where to reach them — no run may invent one.',
       options: [],
       freeText: true,
     });
   }
-  // One To box cannot mean two channels (D-179). "Telegram Pepo and email Ana"
-  // has a recipient per channel in a shape this one-line card has no way to
-  // hold, and a single field would either be answered for one channel and
-  // applied to both, or answered ambiguously and used for neither. So the
-  // recipient question stands down and the run resolves names through the
-  // per-channel legend, reporting whatever it cannot reach — the honest
-  // behaviour the outbox contract already has, rather than a field that
-  // promises something the card cannot deliver.
-  const several = (channels ?? []).length > 1;
-  if (channel && channel !== 'calendar' && !several) {
-    asked.push({
-      id: 'send-to',
-      ask: 'Who should this go to?',
-      hint: SEND_TO_HINTS[channel] ?? 'A name and where to reach them — no run may invent one.',
-      options: [],
-      freeText: true,
-    });
-    // Two promises, and the wording is the whole difference. A sentence that
-    // carries content is asking for a message to be *written*, so a rough
-    // direction is the right ask and steering it is the job. A sentence that
-    // carries none has no message anywhere but in the user's head, and asking
-    // for it "roughly" both mislabels it and licenses a rewrite — which is
-    // where "A DARLE" acquired an emoji nobody asked for (D-097).
+  // Two promises, and the wording is the whole difference. A sentence that
+  // carries content is asking for a message to be *written*, so a rough
+  // direction is the right ask and steering it is the job. A sentence that
+  // carries none has no message anywhere but in the user's head, and asking
+  // for it "roughly" both mislabels it and licenses a rewrite — which is
+  // where "A DARLE" acquired an emoji nobody asked for (D-097).
+  if (sending.some((each) => each !== 'calendar')) {
     asked.push(
       bareSend(text, names)
         ? {
@@ -289,7 +348,7 @@ export function questionsFor(
   // as they finished typing. The rule was written when free meant "the router
   // already knows the answer"; a tier whose freeness *depends* on the answers
   // breaks that assumption.
-  if (!costsMoney(tier)) return asked.slice(0, MAX_QUESTIONS);
+  if (!costsMoney(tier)) return capped(asked);
 
   if (dangling(text)) {
     asked.push({
@@ -353,7 +412,24 @@ export function questionsFor(
     });
   }
 
-  return asked.slice(0, MAX_QUESTIONS);
+  return capped(asked);
+}
+
+/**
+ * The cap, applied to the questions it was written for (D-180).
+ *
+ * "Above this many the box has become a form" was aimed at questions that
+ * *narrow a paid run* — there are always alternatives to asking one, and the
+ * user can reword instead. A send fact has no alternative: the outbox contract
+ * refuses to invent a recipient at any price, so dropping the third one off a
+ * two-channel send does not save a question, it queues a job that must come
+ * back and ask. Two channels is four fields at worst, and they arrive grouped
+ * under their own channels, which is a card rather than a form.
+ */
+function capped(asked: ClarifyQuestion[]): ClarifyQuestion[] {
+  const facts = asked.filter((q) => q.id.startsWith('send-'));
+  const narrowing = asked.filter((q) => !q.id.startsWith('send-'));
+  return [...facts, ...narrowing.slice(0, Math.max(0, MAX_QUESTIONS - facts.length))];
 }
 
 /**
@@ -376,8 +452,17 @@ export function clarificationLines(
 ): string[] {
   if (!answers) return [];
   const lines: string[] = [];
+  let firstRecipient = true;
   for (const question of questionsFor(text, context)) {
-    const given = answers[question.id]?.trim();
+    // A recipient reads through the same door `sendFacts` uses, so a chain
+    // whose answers were collected before the ids carried a channel (D-177
+    // carries them forward; D-180 renamed them) still hands its address to
+    // the step that asks for it. Only the first one may claim the old key.
+    const scoped = question.channel && question.id.startsWith('send-to');
+    const given = scoped
+      ? recipientFor(answers, question.channel!, firstRecipient)
+      : answers[question.id]?.trim();
+    if (scoped) firstRecipient = false;
     if (!given) continue;
     const chosen = question.options.find((o) => o.label === given);
     // "write it out" is the hint's escape hatch, addressed to the desk rather

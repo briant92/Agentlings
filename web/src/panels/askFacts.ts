@@ -92,18 +92,24 @@ export function missingWords(
 }
 
 /**
- * An empty To that dooms the queue — every channel's contract but one
- * refuses to invent a recipient. The exception is the 'Invitees' label
- * (D-124): an event for just you is the ordinary case, so an empty
- * invitees field queues exactly as a dentist appointment should.
+ * The channels whose To is empty and dooms the queue — every channel's
+ * contract but one refuses to invent a recipient. The exception is the
+ * 'Invitees' label (D-124): an event for just you is the ordinary case, so an
+ * empty invitees field queues exactly as a dentist appointment should.
+ *
+ * Returns the channels rather than a boolean (D-180), because with a field per
+ * channel "no recipient" is no longer the whole story — a job with Telegram
+ * filled and Gmail empty would send half of what was asked, and the arrest has
+ * to say which half is missing or the user has to guess which box to look at.
  */
 export function missingRecipient(
-  questions: { id: string; label?: string }[],
-  to: string | undefined,
-): boolean {
-  return (
-    questions.some((q) => q.id === 'send-to' && q.label !== 'Invitees') && !to?.trim()
-  );
+  questions: { id: string; label?: string; channel?: string }[],
+  answers: Record<string, string>,
+): string[] {
+  return questions
+    .filter((q) => q.id.startsWith('send-to') && q.label !== 'Invitees')
+    .filter((q) => !answers[q.id]?.trim())
+    .map((q) => q.channel ?? 'this channel');
 }
 
 /**

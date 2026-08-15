@@ -28,8 +28,8 @@ export function ChannelAskCard({
   questions = [],
   answers = {},
   onAnswer,
-  audience = [],
-  audienceProblem,
+  audienceFor = () => [],
+  audienceProblemFor = () => undefined,
 }: {
   ask: ChannelAsk;
   /** The alternative the user chose on the fork, when they chose one. */
@@ -45,21 +45,21 @@ export function ChannelAskCard({
   questions?: ClarifyQuestion[];
   answers?: Record<string, string>;
   onAnswer?: (id: string, value: string) => void;
-  /** The channel's opted-in people, behind the To field (D-092). */
-  audience?: AudiencePerson[];
-  /** Why the live audience source refused, shown in the picker (D-122). */
-  audienceProblem?: string;
+  /** That channel's opted-in people, behind its own To field (D-092, D-180). */
+  audienceFor?: (channel: string | undefined) => AudiencePerson[];
+  /** Why that channel's live audience source refused (D-122). */
+  audienceProblemFor?: (channel: string | undefined) => string | undefined;
 }) {
   const factInput = (q: ClarifyQuestion, className: string) =>
-    q.id === 'send-to' ? (
+    q.id.startsWith('send-to') ? (
       <RecipientPicker
         id={`ask-${q.id}`}
         className={className}
         placeholder={q.hint ?? q.ask}
         value={answers[q.id] ?? ''}
         onChange={(value) => onAnswer?.(q.id, value)}
-        people={audience}
-        problem={audienceProblem}
+        people={audienceFor(q.channel)}
+        problem={audienceProblemFor(q.channel)}
       />
     ) : (
       <input
@@ -70,24 +70,64 @@ export function ChannelAskCard({
         onChange={(e) => onAnswer?.(q.id, e.target.value)}
       />
     );
+  /**
+   * The facts, grouped under the channel they belong to (D-180).
+   *
+   * A job may send on two, and two bare "To" rows one above the other say
+   * nothing about which is which — the group heading, with the channel's own
+   * mark, is what makes an address unambiguous before it is typed rather than
+   * after it has gone. The shared message keeps no heading, because it belongs
+   * to all of them.
+   */
+  const groups: { channel: string | undefined; questions: ClarifyQuestion[] }[] = [];
+  for (const q of questions) {
+    const last = groups[groups.length - 1];
+    if (last && last.channel === q.channel) last.questions.push(q);
+    else groups.push({ channel: q.channel, questions: [q] });
+  }
+  const named = groups.filter((g) => g.channel).length > 1;
+  const label = (q: ClarifyQuestion) => q.label ?? FACT_LABELS[q.id] ?? q.ask;
   const facts =
     questions.length === 0 ? null : variant === 'bubble' ? (
       <>
-        {questions.map((q) => (
-          <div key={q.id} className="ask-fact">
-            <label className="ask-fact-label" htmlFor={`ask-${q.id}`}>
-              {q.label ?? FACT_LABELS[q.id] ?? q.ask}
-            </label>
-            {factInput(q, 'ask-fact-input')}
+        {groups.map((group) => (
+          <div key={group.channel ?? 'shared'} className={named ? 'ask-fact-group' : undefined}>
+            {named && group.channel && (
+              <div className="ask-fact-head">
+                <ChannelLogo channel={group.channel} />
+                <span className="ask-fact-ch">
+                  {ask.also?.find((o) => o.channel === group.channel)?.label ??
+                    (group.channel === ask.asked ? ask.askedLabel : group.channel)}
+                </span>
+              </div>
+            )}
+            {group.questions.map((q) => (
+              <div key={q.id} className="ask-fact">
+                <label className="ask-fact-label" htmlFor={`ask-${q.id}`}>
+                  {label(q)}
+                </label>
+                {factInput(q, 'ask-fact-input')}
+              </div>
+            ))}
           </div>
         ))}
       </>
     ) : (
       <>
-        {questions.map((q) => (
-          <div key={q.id} className="work-channel-opt">
-            <span className="work-channel-name">{q.label ?? FACT_LABELS[q.id] ?? q.ask}</span>
-            {factInput(q, 'work-q-text')}
+        {groups.map((group) => (
+          <div key={group.channel ?? 'shared'}>
+            {named && group.channel && (
+              <div className="work-channel-sub">
+                {ask.also?.find((o) => o.channel === group.channel)?.label ??
+                  (group.channel === ask.asked ? ask.askedLabel : group.channel)}
+              </div>
+            )}
+            {group.questions.map((q) => (
+              <div key={q.id} className="work-channel-opt">
+                <span className="work-channel-name">{label(q)}</span>
+                {factInput(q, 'work-q-text')}
+              </div>
+            ))}
           </div>
         ))}
       </>

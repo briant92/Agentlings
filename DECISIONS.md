@@ -189,6 +189,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-177 — 2026-08-14 — The intake benchmark: fifty-one sentences measured, the blind spots separated from the refusals](#d-177--2026-08-14--the-intake-benchmark-fifty-one-sentences-measured-the-blind-spots-separated-from-the-refusals)
 - [D-178 — 2026-08-14 — Two channels in one sentence: the drop made loud before it is made possible](#d-178--2026-08-14--two-channels-in-one-sentence-the-drop-made-loud-before-it-is-made-possible)
 - [D-179 — 2026-08-14 — Two channels, one job: the work happens once and each channel gets its own message set](#d-179--2026-08-14--two-channels-one-job-the-work-happens-once-and-each-channel-gets-its-own-message-set)
+- [D-180 — 2026-08-15 — A recipient per channel: the id carries which, and the card says so before an address is typed](#d-180--2026-08-15--a-recipient-per-channel-the-id-carries-which-and-the-card-says-so-before-an-address-is-typed)
 
 ## By theme
 
@@ -614,7 +615,11 @@ entry updates one file rather than two.
   done once so the figures agree and a message set per channel so the bodies
   may differ, with the send stamp per channel because a pooled one would
   suppress a real send, and the desk's single To box deliberately standing
-  down rather than promising to mean two channels at once
+  down rather than promising to mean two channels at once; and D-180, which
+  raised that box back up one per channel — the id carrying which, each
+  picker fed its own roster, the message still asked once because it is one,
+  and the question cap corrected to bound the questions that *narrow* a run
+  rather than the facts a send cannot exist without
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -11735,3 +11740,79 @@ the suite agreeing with a rule the product no longer follows.
 
 Not verified in a browser: the server on this machine runs `--no-watch` and is
 still on older code.
+
+## D-180 — 2026-08-15 — A recipient per channel: the id carries which, and the card says so before an address is typed
+
+D-179's own entry named this as its follow-up. A job could send on two channels
+but the desk still asked "Who should this go to?" once — and, rather than
+attribute one answer to both, it asked *nothing* and left the run to resolve
+names through the legend. That was the honest stopgap; it is not the answer.
+
+### The rule, and the one exception
+
+**One recipient question per channel, scoped in its id** — `send-to:telegram`,
+`send-to:gmail`. Scoped even when there is a single channel, because a rule with
+an exception is two rules: `answers` is a flat map keyed by id, and an unscoped
+key is an address with no channel attached the moment a second one appears.
+The question also carries `channel` outright, so the client never parses an id
+to know which picker, which roster and which address shape apply.
+
+**The message is asked once, because it is one.** Bodies may differ per channel
+— D-179's brief says so — but the direction behind them does not, and asking
+"what should it say" twice is the form this box exists not to be. Calendar is
+the exception and barely one: its second fact is a *title*, not a message, so it
+stays beside its own channel as `send-say:calendar` while the shared Say serves
+the channels that actually send a message. A calendar-only job is asked no
+message at all, which is what it always should have been.
+
+### What the card does with them
+
+Fields group under their channel, with its mark and name, and only when there is
+more than one — a heading over a single Telegram card is noise. Each picker is
+fed **that channel's own roster**: a Telegram chat id has no business being
+offered in a Gmail field, and offering it there is how a recipient ends up on
+the wrong contract. Prefill runs per channel against per-channel people, so a
+name the roster knows fills each channel with *its* id for that person, and a
+bare address in the sentence fills only a channel that takes addresses.
+
+The Start arrest names the gap: **"no recipient for gmail"**, not "no recipient"
+beside two boxes. The 71¢ shape check (D-091) likewise runs per field, each
+channel judging its own.
+
+### The cap, corrected rather than raised
+
+`MAX_QUESTIONS` was aimed at questions that *narrow a paid run* — there is
+always an alternative to asking one, and the user can reword instead. A send
+fact has no alternative: the outbox contract refuses to invent a recipient at
+any price, so slicing the third field off a two-channel send does not save a
+question, it queues a job that must come back and ask. The cap now applies to
+the narrowing questions alone. Worst case is four fields, arriving grouped under
+two channels, which is a card rather than a form.
+
+### The compatibility this needed
+
+A chain carries its answers forward (D-177) and can be mid-flight across this
+change, so a bare `send-to` on a stored job still resolves — **for the first
+channel only**, through one function both `sendFacts` and `clarificationLines`
+read. Handing that legacy key to a second channel would be attributing an
+address to a channel the user never typed it for, which is the exact fault the
+scoping exists to prevent.
+
+### What proved it
+
+1,617 server and 191 web tests, typecheck clean. The clarify suite's existing
+tests kept using the old key deliberately for one pass — they all passed, which
+is the compatibility path proving itself — and then the ones about *ids* were
+updated to the new contract. New coverage pins the per-channel asks, the shared
+message, calendar's title beside its own channel, an address given for one
+channel never riding as another's, and the legacy key reaching the first channel
+and no further.
+
+The benchmark gained `asks-each`: every channel a job carries must have a
+recipient field of its own. **5 of 5.** Its four `send-*` labels were updated
+from `send-to` to the scoped ids, which is a corpus that now says *which*
+channel is asked rather than merely that something was.
+
+Not verified in a browser: the server here runs `--no-watch` and is still on
+older code, so the grouped card is proven by its extracted logic, its styles and
+typecheck, not by being looked at.

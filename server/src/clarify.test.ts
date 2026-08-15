@@ -39,7 +39,7 @@ describe('questionsFor: a send job asks its two facts first', () => {
   const SEND = { hasRepo: false, tier: 'session' as const, channel: 'gmail' };
 
   it('asks who and what, ahead of everything else', () => {
-    expect(ids('I need to send an email to a friend', SEND)).toEqual(['send-to', 'send-say']);
+    expect(ids('I need to send an email to a friend', SEND)).toEqual(['send-to:gmail', 'send-say']);
   });
 
   it('never asks without a channel — the same sentence stays as it was', () => {
@@ -49,7 +49,7 @@ describe('questionsFor: a send job asks its two facts first', () => {
   it('hints per channel, and neutrally for a fork whose channel is unsettled', () => {
     const hintFor = (channel: string) =>
       questionsFor('send the reminder', { hasRepo: false, tier: 'session', channel }).find(
-        (q) => q.id === 'send-to',
+        (q) => q.id.startsWith('send-to'),
       )?.hint;
     expect(hintFor('gmail')).toContain('email address');
     expect(hintFor('telegram')).toContain('chat id');
@@ -66,7 +66,7 @@ describe('questionsFor: a send job asks its two facts first', () => {
   it('the three-question cap holds, send facts first', () => {
     const got = ids('send everything about the launch', SEND);
     expect(got.length).toBeLessThanOrEqual(3);
-    expect(got.slice(0, 2)).toEqual(['send-to', 'send-say']);
+    expect(got.slice(0, 2)).toEqual(['send-to:gmail', 'send-say']);
   });
 
   /**
@@ -82,7 +82,7 @@ describe('questionsFor: a send job asks its two facts first', () => {
    */
   it('still asks its two facts when the work is free, because they are the work', () => {
     expect(ids('send the reminder', { hasRepo: false, tier: 'tool', channel: 'gmail' })).toEqual([
-      'send-to',
+      'send-to:gmail',
       'send-say',
     ]);
   });
@@ -97,7 +97,7 @@ describe('clarificationLines: send answers ride only with the channel context', 
     const lines = clarificationLines(
       'I need to send an email to a friend',
       { hasRepo: false, tier: 'session', channel: 'gmail' },
-      { 'send-to': 'Ana <ana@gmail.com>', 'send-say': 'happy birthday from me' },
+      { 'send-to:gmail': 'Ana <ana@gmail.com>', 'send-say': 'happy birthday from me' },
     );
     expect(lines).toEqual([
       'Who should this go to? Ana <ana@gmail.com>',
@@ -112,6 +112,141 @@ describe('clarificationLines: send answers ride only with the channel context', 
       { 'send-to': 'ana@gmail.com' },
     );
     expect(lines).toEqual([]);
+  });
+});
+
+/**
+ * One recipient per channel (D-180). D-179 gave a job several channels and
+ * left the To field standing down entirely, because one box cannot mean two
+ * channels; this asks per channel instead, and the id carries which.
+ */
+describe('questionsFor: a send on more than one channel', () => {
+  const both = (over: Record<string, unknown> = {}) =>
+    questionsFor('telegram Pepo the UF and email the figures to Ana', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'telegram',
+      channels: ['telegram', 'gmail'],
+      ...over,
+    });
+
+  it('asks a recipient for each, and the message once', () => {
+    expect(both().map((q) => q.id)).toEqual(['send-to:telegram', 'send-to:gmail', 'send-say']);
+  });
+
+  it('each recipient names its channel, and carries it for the client', () => {
+    const [tg, gm] = both();
+    expect(tg.channel).toBe('telegram');
+    expect(gm.channel).toBe('gmail');
+    expect(tg.ask).toContain('Telegram');
+    expect(gm.ask).toContain('Gmail');
+    // Each keeps its own channel's shape hint — a chat id is not an address.
+    expect(tg.hint).toContain('chat id');
+    expect(gm.hint).toContain('email address');
+  });
+
+  it('a single channel is asked the same way, without naming itself', () => {
+    const one = questionsFor('email Ana the figures', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'gmail',
+    });
+    expect(one.map((q) => q.id)).toEqual(['send-to:gmail', 'send-say']);
+    expect(one[0].ask).toBe('Who should this go to?');
+  });
+
+  it('the send facts survive the cap, because they are the job’s own content', () => {
+    // A sentence that would also earn narrowing questions: unbounded, no
+    // format named. Four facts would have pushed the message out of a
+    // three-question slice.
+    const got = questionsFor('improve everything about the launch and tell them all', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'calendar',
+      channels: ['calendar', 'gmail'],
+    });
+    expect(got.filter((q) => q.id.startsWith('send-')).map((q) => q.id)).toEqual([
+      'send-to:calendar',
+      'send-say:calendar',
+      'send-to:gmail',
+      'send-say',
+    ]);
+  });
+
+  it('calendar keeps its title beside itself — a title is not a message', () => {
+    const got = questionsFor('book the review and email the agenda', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'calendar',
+      channels: ['calendar', 'gmail'],
+    });
+    expect(got.find((q) => q.id === 'send-say:calendar')?.label).toBe('Title');
+    // And the shared Say is still the message for the channels that send one.
+    expect(got.find((q) => q.id === 'send-say')?.label).toBe('Say');
+  });
+
+  it('a calendar-only job is asked no message at all', () => {
+    const got = questionsFor('add the dentist to my calendar thursday 4pm', {
+      hasRepo: false,
+      tier: 'session',
+      channel: 'calendar',
+    });
+    expect(got.map((q) => q.id)).toEqual(['send-to:calendar', 'send-say:calendar']);
+  });
+
+  it('each channel’s answer rides as its own line, naming the channel', () => {
+    const lines = clarificationLines(
+      'telegram Pepo the UF and email the figures to Ana',
+      {
+        hasRepo: false,
+        tier: 'session',
+        channel: 'telegram',
+        channels: ['telegram', 'gmail'],
+      },
+      {
+        'send-to:telegram': '6783316106',
+        'send-to:gmail': 'ana@example.com',
+        'send-say': 'the UF and the dollar for today',
+      },
+    );
+    expect(lines).toEqual([
+      'Who should this go to on Telegram? 6783316106',
+      'Who should this go to on Gmail? ana@example.com',
+      'What should it say, roughly? the UF and the dollar for today',
+    ]);
+  });
+
+  it('an address given for one channel never rides as another’s', () => {
+    const lines = clarificationLines(
+      'telegram Pepo the UF and email the figures to Ana',
+      {
+        hasRepo: false,
+        tier: 'session',
+        channel: 'telegram',
+        channels: ['telegram', 'gmail'],
+      },
+      { 'send-to:gmail': 'ana@example.com' },
+    );
+    expect(lines).toEqual(['Who should this go to on Gmail? ana@example.com']);
+  });
+
+  /**
+   * A chain queued before the ids carried a channel still has its answers on
+   * the job (D-177), so the old key has to keep working — for the first
+   * channel only, which is the one it was collected for.
+   */
+  it('an answer stored under the old key still reaches the first channel', () => {
+    const lines = clarificationLines(
+      'telegram Pepo the UF and email the figures to Ana',
+      {
+        hasRepo: false,
+        tier: 'session',
+        channel: 'telegram',
+        channels: ['telegram', 'gmail'],
+      },
+      { 'send-to': '6783316106' },
+    );
+    expect(lines).toEqual(['Who should this go to on Telegram? 6783316106']);
   });
 });
 
@@ -425,8 +560,8 @@ describe('questionsFor: the calendar channel', () => {
 
   it('asks who is invited and what it is called, in calendar words', () => {
     const got = questionsFor('add the dentist to my calendar thursday 4pm', CAL);
-    const to = got.find((q) => q.id === 'send-to');
-    const say = got.find((q) => q.id === 'send-say');
+    const to = got.find((q) => q.id.startsWith('send-to'));
+    const say = got.find((q) => q.id.startsWith('send-say'));
     expect(to?.label).toBe('Invitees');
     expect(to?.hint).toContain('empty');
     expect(say?.label).toBe('Title');
@@ -454,12 +589,12 @@ describe('questionsFor: the calendar channel', () => {
       tier: 'session',
       channel: 'slack',
     });
-    expect(slackQs.find((q) => q.id === 'send-to')?.hint).toContain('#general');
+    expect(slackQs.find((q) => q.id.startsWith('send-to'))?.hint).toContain('#general');
     const ghQs = questionsFor('comment on the issue on github', {
       hasRepo: false,
       tier: 'session',
       channel: 'github',
     });
-    expect(ghQs.find((q) => q.id === 'send-to')?.hint).toContain('owner/repo#123');
+    expect(ghQs.find((q) => q.id.startsWith('send-to'))?.hint).toContain('owner/repo#123');
   });
 });

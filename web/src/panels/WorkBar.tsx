@@ -123,8 +123,13 @@ export function WorkBar({
   // is free depends on them: with both in hand a bare send is composed in
   // code, and the card has to say "Free" while the user is still deciding
   // rather than after they have paid (D-097). Debounced like the sentence.
-  const sendTo = answers['send-to'] ?? '';
-  const sendSay = answers['send-say'] ?? '';
+  // Every send fact, not two named ones (D-180): a job may ask a recipient
+  // per channel, and a re-plan that carried only the first would price the
+  // card on half of what the user has typed.
+  const sendAnswers = Object.fromEntries(
+    Object.entries(answers).filter(([id]) => id.startsWith('send-')),
+  );
+  const sendKey = JSON.stringify(sendAnswers);
   useEffect(() => {
     const query = text.trim();
     if (!query) {
@@ -138,7 +143,7 @@ export function WorkBar({
           text: query,
           ...(channel ? { channel } : {}),
           ...(single ? { single: true } : {}),
-          answers: { 'send-to': sendTo, 'send-say': sendSay },
+          answers: sendAnswers,
         }),
       )
         .then((next) => {
@@ -154,7 +159,7 @@ export function WorkBar({
         .catch(() => setPlan(null));
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, levelId, channel, sendTo, sendSay, single]);
+  }, [text, levelId, channel, sendKey, single]);
 
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
@@ -165,38 +170,68 @@ export function WorkBar({
    * also the quiet refresh, by decision — the route merges getUpdates and
    * the send audit before answering.
    */
-  const [audience, setAudience] = useState<AudiencePerson[]>([]);
-  /** Why the live source refused (D-122) — shown in the picker, not swallowed. */
-  const [audienceProblem, setAudienceProblem] = useState<string | undefined>(undefined);
+  /**
+   * One roster per channel (D-180). A job can ask for two, and each picker
+   * has to offer the people *that* channel knows — a Telegram chat id has no
+   * business in the Gmail field, and offering it there is how a recipient
+   * ends up on the wrong contract.
+   */
+  const [audiences, setAudiences] = useState<Record<string, AudienceReply>>({});
   const effectiveChannel = channel ?? plan?.channelAsk?.channel ?? null;
+  /** Every channel with a field on the card, so each is fetched exactly once. */
+  const askChannels = [
+    ...new Set(
+      (plan?.questions ?? [])
+        .map((q) => q.channel)
+        .filter((c): c is string => !!c)
+        .concat(effectiveChannel ? [effectiveChannel] : []),
+    ),
+  ];
+  const audienceKey = askChannels.join(',');
   useEffect(() => {
-    if (!effectiveChannel) {
-      setAudience([]);
-      setAudienceProblem(undefined);
-      return;
+    for (const each of audienceKey ? audienceKey.split(',') : []) {
+      if (audiences[each]) continue;
+      void api<AudienceReply>(`/api/channels/${each}/audience`)
+        .then((reply) => setAudiences((prev) => ({ ...prev, [each]: reply })))
+        .catch(() => setAudiences((prev) => ({ ...prev, [each]: { people: [] } })));
     }
-    void api<AudienceReply>(`/api/channels/${effectiveChannel}/audience`)
-      .then((reply) => {
-        setAudience(reply.people);
-        setAudienceProblem(reply.problem);
-      })
-      .catch(() => {
-        setAudience([]);
-        setAudienceProblem(undefined);
-      });
-  }, [effectiveChannel]);
+    // `audiences` is deliberately not a dependency: it is what this writes,
+    // and reading it here only skips work already done.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audienceKey]);
+  const peopleOn = (c: string | undefined) => (c ? (audiences[c]?.people ?? []) : []);
+  const problemOn = (c: string | undefined) => (c ? audiences[c]?.problem : undefined);
 
   // An address already in the sentence answers "who" — and so does a name
   // the roster knows uniquely, aliases included (D-094): "to Pepo" prefills
   // Jose through the name a reviewed send taught it. Prefill, never
   // overwrite, and never on ambiguity — the arrest catches an empty field.
   useEffect(() => {
-    if (!plan?.questions.some((q) => q.id === 'send-to')) return;
+    const recipients = (plan?.questions ?? []).filter(
+      (q) => q.id.startsWith('send-to') && q.channel,
+    );
+    if (recipients.length === 0) return;
+    // Per channel, against that channel's own roster (D-180). An address
+    // typed in the sentence fills the channel that takes addresses; a name
+    // fills whichever channels know it, each with their own id for them.
     const addr = text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/)?.[0];
-    const known = addr ? null : matchRecipient(text, audience);
-    const fill = addr ?? (known ? `${known.name} — ${known.id}` : null);
-    if (fill) setAnswers((prev) => (prev['send-to']?.trim() ? prev : { ...prev, 'send-to': fill }));
-  }, [plan, text, audience]);
+    setAnswers((prev) => {
+      let next = prev;
+      for (const q of recipients) {
+        if (next[q.id]?.trim()) continue;
+        const known = matchRecipient(text, peopleOn(q.channel));
+        const takesAddress = peopleOn(q.channel).some((p) => p.id.includes('@'));
+        const fill = known
+          ? `${known.name} — ${known.id}`
+          : addr && (q.channel === 'gmail' || takesAddress)
+            ? addr
+            : null;
+        if (fill) next = next === prev ? { ...prev, [q.id]: fill } : { ...next, [q.id]: fill };
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, text, audienceKey, audiences]);
   const looseQuestions = plan?.questions.filter((q) => !(cardUp && q.id.startsWith('send-'))) ?? [];
   const answerFact = (id: string, value: string) =>
     setAnswers((prev) => ({ ...prev, [id]: value }));
@@ -222,17 +257,29 @@ export function WorkBar({
     if (authoringSentence(text)) parts.push('worlds are authored from + New Level');
     const ask = plan?.channelAsk;
     if (!ask && !mentionPicked) return parts.length ? parts.join(' · ') : null;
-    const to = answers['send-to']?.trim();
     // 'Invitees' never counts as missing (D-124) — an event for just you
     // queues; only a filled field can be wrong, caught just below.
-    if (missingRecipient(sendQuestions, to)) parts.push('no recipient');
-    const effective = channel ?? ask?.channel;
+    const empty = missingRecipient(sendQuestions, answers);
+    if (empty.length > 0) {
+      // Named when there is more than one field, because "no recipient"
+      // beside two boxes does not say which (D-180).
+      parts.push(
+        sendQuestions.filter((q) => q.id.startsWith('send-to')).length > 1
+          ? `no recipient for ${empty.join(' or ')}`
+          : 'no recipient',
+      );
+    }
     // A filled recipient the channel's contract cannot reach — a name where
     // a chat id belongs — is the 71¢ wall, caught before money moves (D-091).
-    if (to && effective) {
-      const problem = recipientProblem(effective, to);
+    // Per field now: each channel judges its own by its own shape.
+    for (const q of sendQuestions) {
+      const value = answers[q.id]?.trim();
+      const on = q.channel ?? channel ?? ask?.channel;
+      if (!value || !on || !q.id.startsWith('send-to')) continue;
+      const problem = recipientProblem(on, value);
       if (problem) parts.push(problem);
     }
+    const effective = channel ?? ask?.channel;
     // The message is the contract's other un-inventable fact: a bare send
     // queued without it can only spend a session asking for it (D-087).
     if (missingWords(sendQuestions, answers['send-say'])) parts.push('no message');
@@ -756,8 +803,8 @@ export function WorkBar({
                   questions={sendQuestions}
                   answers={answers}
                   onAnswer={answerFact}
-                  audience={audience}
-                  audienceProblem={audienceProblem}
+                  audienceFor={peopleOn}
+                  audienceProblemFor={problemOn}
                 />
               </div>
             </AskBubble>
@@ -773,8 +820,8 @@ export function WorkBar({
                 questions={sendQuestions}
                 answers={answers}
                 onAnswer={answerFact}
-                audience={audience}
-                audienceProblem={audienceProblem}
+                audienceFor={peopleOn}
+                audienceProblemFor={problemOn}
               />
             </div>
           )}
@@ -809,14 +856,14 @@ export function WorkBar({
                     {o.label}
                   </button>
                 ))}
-                {q.freeText && q.id === 'send-to' ? (
+                {q.freeText && q.id.startsWith('send-to') ? (
                   <RecipientPicker
                     className="work-q-text"
                     placeholder="or say which"
                     value={answers[q.id] ?? ''}
                     onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
-                    people={audience}
-                    problem={audienceProblem}
+                    people={peopleOn(q.channel)}
+                    problem={problemOn(q.channel)}
                   />
                 ) : q.freeText ? (
                   <input

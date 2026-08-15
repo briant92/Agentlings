@@ -191,21 +191,38 @@ describe('recipientProblem — slack and github (D-104)', () => {
   });
 });
 
-describe('missingRecipient (D-124)', () => {
-  const TO = (label?: string) => [{ id: 'send-to', ...(label ? { label } : {}) }];
+describe('missingRecipient (D-124, D-180)', () => {
+  const TO = (channel: string, label?: string) => ({
+    id: `send-to:${channel}`,
+    channel,
+    ...(label ? { label } : {}),
+  });
 
   it('an empty To dooms every messaging channel, as before', () => {
-    expect(missingRecipient(TO(), '')).toBe(true);
-    expect(missingRecipient(TO(), '  ')).toBe(true);
-    expect(missingRecipient(TO(), 'Brian — 8633678680')).toBe(false);
+    expect(missingRecipient([TO('telegram')], {})).toEqual(['telegram']);
+    expect(missingRecipient([TO('telegram')], { 'send-to:telegram': '  ' })).toEqual(['telegram']);
+    expect(
+      missingRecipient([TO('telegram')], { 'send-to:telegram': 'Brian — 8633678680' }),
+    ).toEqual([]);
+  });
+
+  it('names only the channels actually empty, so the fix is obvious', () => {
+    const both = [TO('telegram'), TO('gmail')];
+    expect(missingRecipient(both, { 'send-to:telegram': '123' })).toEqual(['gmail']);
+    expect(missingRecipient(both, {})).toEqual(['telegram', 'gmail']);
+    expect(
+      missingRecipient(both, { 'send-to:telegram': '123', 'send-to:gmail': 'a@b.com' }),
+    ).toEqual([]);
   });
 
   it('empty Invitees queue — an event for just you is the ordinary case', () => {
-    expect(missingRecipient(TO('Invitees'), '')).toBe(false);
+    expect(missingRecipient([TO('calendar', 'Invitees')], {})).toEqual([]);
+    // And a calendar beside a real send still reports only the send's gap.
+    expect(missingRecipient([TO('calendar', 'Invitees'), TO('gmail')], {})).toEqual(['gmail']);
   });
 
   it('no To question, nothing missing', () => {
-    expect(missingRecipient([], '')).toBe(false);
+    expect(missingRecipient([], {})).toEqual([]);
   });
 });
 

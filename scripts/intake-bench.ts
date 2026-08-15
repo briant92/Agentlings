@@ -128,10 +128,19 @@ function readSentence(test: BenchCase) {
     match.role,
     test.hasRepo ? ROOT : undefined,
   );
+  const carried = [
+    ...(ask?.channel && CHANNELS[ask.channel] ? [ask.channel] : []),
+    ...(ask?.also ?? [])
+      .map((option) => option.channel)
+      .filter((name) => CHANNELS[name] && name !== ask?.channel),
+  ];
   const context = {
     hasRepo: !!test.hasRepo,
     tier: quote.tier,
     channel,
+    // The channels the job would carry, so the card asks what Start will ask
+    // (D-179, D-180) — a recipient field per channel.
+    channels: carried,
     // No roster on a cold level, which is the safe direction: an unknown name
     // leaves a residue and reads as content-bearing (clarify.ts, bareSend).
     names: [] as string[],
@@ -159,12 +168,7 @@ function readSentence(test: BenchCase) {
     channel,
     // The channels the queued job would carry — the same wired-only rule
     // `queueSentence` settles by (D-179).
-    carried: [
-      ...(ask?.channel && CHANNELS[ask.channel] ? [ask.channel] : []),
-      ...(ask?.also ?? [])
-        .map((option) => option.channel)
-        .filter((name) => CHANNELS[name] && name !== ask?.channel),
-    ],
+    carried,
     // The near-miss the desk questions rather than claims (D-093), per step
     // for the same reason the ask is.
     mention: sentences.map((s) => mentionsChannel(s)).find(Boolean) ?? null,
@@ -236,6 +240,21 @@ function run(test: BenchCase): Ran {
         ...(seen.ask?.also ?? []).map((option) => option.channel),
       ]);
       const unsaid = want.channels.filter((channel) => !named.has(channel));
+      // Every channel the job carries must have a recipient field of its own
+      // (D-180) — a card that asks once for two channels is a card that
+      // attributes an address to a channel nobody typed it for.
+      const asksFor = new Set(
+        seen.questions.filter((q) => q.id.startsWith('send-to')).map((q) => q.channel),
+      );
+      const unasked = seen.carried.filter((channel) => !asksFor.has(channel));
+      add(
+        'asks-each',
+        unasked.length === 0 ? 'ok' : 'miss',
+        'a recipient field per channel carried',
+        unasked.length === 0
+          ? `asks for ${[...asksFor].join(' + ')}`
+          : `never asks who on ${unasked.join(', ')}`,
+      );
       add(
         'dropped-said',
         unsaid.length === 0 ? 'ok' : 'miss',

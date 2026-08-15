@@ -424,6 +424,46 @@ button.ghost {
   outline: none;
   border-color: #597dce;
 }
+/* One send's facts, grouped under the channel they belong to (D-180). Two
+   bare To rows say nothing about which is which; the heading is what makes an
+   address unambiguous before it is typed rather than after it has gone. */
+.ask-fact-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 0 3px;
+  border-top: 1px solid #e4e0ea;
+}
+.ask-fact-group:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.ask-fact-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ask-fact-head svg,
+.ask-fact-head img {
+  width: 14px;
+  height: 14px;
+}
+.ask-fact-ch {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a4455;
+}
+/* The bar dress keeps its denser one-line heading. */
+.work-channel-sub {
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9a94a8;
+}
 /* The near-miss question (D-093): a channel word with no send verb —
    asked, never claimed. */
 .work-mention {

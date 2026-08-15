@@ -1043,6 +1043,14 @@ may differ — which is what most two-channel sentences actually want. The revie
 shows a card per channel and Approve sends them all, each with its own
 already-sent stamp so a retry can never message anyone twice.
 
+The desk asks **a recipient per channel** (D-180), each grouped under its own
+channel with that channel's roster behind it and that channel's address shape
+checked against what you type — a chat id where a chat id belongs, an address
+where an address does. The message is asked once, because it is one; only a
+calendar keeps its own second field, since a title is not a message. Start
+arrests an empty recipient by name: "no recipient for gmail" rather than "no
+recipient" beside two boxes.
+
 What is still dropped is a channel nothing can send — WhatsApp personal, or a
 planned one — and the desk names it rather than swallowing it (D-178). Two
 limits stand: at most three channels in one job, and the sends all happen at

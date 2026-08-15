@@ -1269,6 +1269,15 @@ export interface ClarifyQuestion {
    * or the two can disagree (D-097).
    */
   label?: string;
+  /**
+   * The channel this fact belongs to, when it belongs to one (D-180).
+   *
+   * A job can send on several channels (D-179) and each needs its own
+   * recipient, so the id carries the channel — but the client must not have
+   * to parse an id to know which picker, which audience and which address
+   * shape apply. Said here instead, by whoever already knew.
+   */
+  channel?: string;
   /** Suggested answers; `answer` is what the session is actually told. */
   options: { label: string; answer: string }[];
   /** The user may type something instead of picking. */

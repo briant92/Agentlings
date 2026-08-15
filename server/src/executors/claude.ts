@@ -29,6 +29,7 @@ import type { MemoryStore } from '../memory';
 import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
+import { BLS_TOOLS } from '../bls';
 import { GITHUB_TOOLS } from '../github';
 import { SEARCH_TOOLS } from '../search';
 import { extractUrls, fetchPage } from '../web';
@@ -852,6 +853,7 @@ export class ClaudeAgentExecutor implements Executor {
     const codeHost = granted.find((c) => c.name === 'github');
     const searchConn = granted.find((c) => c.name === 'search');
     const render = granted.find((c) => c.name === 'render');
+    const blsConn = granted.find((c) => c.name === 'bls');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -986,6 +988,21 @@ export class ClaudeAgentExecutor implements Executor {
               search: {
                 endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/search`,
                 tools: SEARCH_TOOLS.filter((t) => (searchConn.tools ?? []).includes(t.name)),
+              },
+            }
+          : {}),
+        // Statistics rather than pages (D-187). Wired here for a reason worth
+        // stating: a door in the catalog reaches nobody until it is named in
+        // this list, and until a *session* can call it no recipe can ever
+        // record having used it — which is what `compileDoors` reads before it
+        // will grant the door to a compiled tool. So the session wiring is not
+        // the smaller half of the door; it is the half that lets the other one
+        // ever be earned.
+        ...(blsConn
+          ? {
+              bls: {
+                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/bls`,
+                tools: BLS_TOOLS.filter((t) => (blsConn.tools ?? []).includes(t.name)),
               },
             }
           : {}),

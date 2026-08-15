@@ -197,6 +197,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-185 — 2026-08-15 — The boot that never came, and two more the browser found](#d-185--2026-08-15--the-boot-that-never-came-and-two-more-the-browser-found)
 - [D-186 — 2026-08-15 — The file that cannot ride, said before the run instead of after](#d-186--2026-08-15--the-file-that-cannot-ride-said-before-the-run-instead-of-after)
 - [D-187 — 2026-08-15 — The BLS door: a key that cannot ride in a URL](#d-187--2026-08-15--the-bls-door-a-key-that-cannot-ride-in-a-url)
+- [D-188 — 2026-08-15 — A door reaches nobody until something can knock: the bootstrap under `compileDoors`](#d-188--2026-08-15--a-door-reaches-nobody-until-something-can-knock-the-bootstrap-under-compiledoors)
 
 ## By theme
 
@@ -400,7 +401,14 @@ entry updates one file rather than two.
   The shared `Http` type was widened with an optional `init` rather than
   joined by a second poster, and the measurement behind it overturned a
   standing explanation: a fresh day's first BLS call was already refused
-  with nothing of ours having spent one
+  with nothing of ours having spent one; and D-188, which found that door
+  reachable by **nobody** — a session is offered only the builtins named by
+  hand in its config, and `compileDoors` grants demonstrated use only, so a
+  door built today can never appear in what ran yesterday and a recompile
+  would have rebuilt the same defect. Not a fault in `compileDoors` but the
+  shape of learning from what happened, with the tier's own grammar as the
+  exit: demonstrate in a session, record it, then compile — which makes the
+  session wiring the half that lets the other half ever be earned
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
@@ -12434,3 +12442,73 @@ server and 192 web tests, typecheck clean.
 **Both tests are kept**, the corrected one and one for the omitted-id shape that
 BLS does not currently produce, because "does not currently" is a claim about a
 service rather than about a contract.
+
+## D-188 — 2026-08-15 — A door reaches nobody until something can knock: the bootstrap under `compileDoors`
+
+D-187 built the BLS door, and the entry closed by saying the indicators tool
+"would have to be recompiled to use `bls_series`". Looking into what that
+recompile would actually involve found something better worth knowing: **the
+door was reachable by nobody at all**, and a recompile on its own would not
+have changed that.
+
+### Two consumers, two different walls
+
+**A session could not see it.** Every builtin door is named by hand in the
+session config — `web`, `render`, `github`, `search` (`claude.ts`), each with
+its endpoint and the tool specs the catalog granted. There is no generic path
+from a catalog connection to a session tool, by design: every visible tool is
+definition overhead in every request the session makes. A connection nobody
+lists is a connection nobody is offered. The catalog entry and the route were
+both real and both inert.
+
+**A recompile could not have granted it either**, and this is the interesting
+half. `compileDoors` grants **demonstrated use only** — D-100's whole finding,
+that granting on availability hands a door to a script that never showed it
+needed one and then refuses that tool the day an unused connection is switched
+off. The recipe's record:
+
+```
+usedTools: ["Bash","Edit","ToolSearch","Write","mcp__search__search_web","mcp__web__fetch_page"]
+```
+
+BLS cannot appear there. The door did not exist during any of the seven runs
+that taught this recipe. So a compile fired the day after building the door
+would have granted `web` and `search`, and the new `run.mjs` would have reached
+BLS through the GET web door exactly as the retired one does — a paid compile
+whose output was guaranteed to have the same defect as its predecessor.
+
+**This is not a bug in `compileDoors`, and it must not be "fixed" there.** It
+is the shape of learning from what happened: a door built today can never
+appear in what ran yesterday. PROJECT.md already carries the rule — *ask what a
+mechanism learned from, and what it assumed* — and this is that rule pointed at
+a mechanism that is behaving correctly. Granting on availability to escape it
+would re-import the substitution D-100 measured and undid.
+
+### The exit was already designed: demonstrate, then compile
+
+The tier's own grammar answers it. Use is demonstrated by a session, recorded
+in `usedTools`, and only then compiled. So the session wiring is not the
+smaller half of a door — **it is the half that lets the other half ever be
+earned.** A door offered only to compiled tools can never be granted to one.
+
+Sequence, with the ordering correction that mattered: retire **before** the
+session run, not after. The installed tool claims its own recipe key exactly,
+so queueing that sentence with the tool still live would have been answered for
+free by the very tool being replaced, and no session would have run at all.
+
+Retirement is the right instrument and discard is not. Retiring keeps the
+scripts on disk, records *why* in a field the promote route reads back into the
+next compile's prompt — "This job has been compiled before and the result was
+retired. Do not…" — and `freeToolName` takes a fresh name so the earlier
+attempt survives to be read. The reason written here carries forward both the
+defect and, deliberately, the list of what was proven on 2026-08-14 and must be
+kept: the staleness guard, INE for Chile CPI, `ALLOWED_HOSTS` as data, failing
+closed on a refused source.
+
+### One shape fixed on the way
+
+The runner's generic builtin loop reads `reply.text` and knows nothing else,
+while a compiled tool calling the same door wants numbers to do arithmetic on.
+The door answered only in `series`, so a session would have received
+`undefined`. It now answers in both — `series` for the tool, `text` for the
+session — rather than making either caller parse the other's shape.

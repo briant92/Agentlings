@@ -75,7 +75,36 @@ export interface BlsSeries {
 
 export interface BlsResult {
   series?: BlsSeries[];
+  /**
+   * The same answer as prose, because this door has two callers who want
+   * different things from it.
+   *
+   * A compiled tool reads `series` and does arithmetic on the numbers — asking
+   * it to parse them back out of a formatted string would be absurd. A session
+   * reads `text`, which is what the runner hands the model and the only field
+   * the generic builtin loop knows about. Serving one and not the other leaves
+   * whichever caller was forgotten holding `undefined`.
+   */
+  text?: string;
   error?: string;
+}
+
+/** The latest observations, small enough to read and enough to work from. */
+const SHOWN = 3;
+
+function render(series: BlsSeries[]): string {
+  return series
+    .map((s) => {
+      const shown = s.observations.slice(0, SHOWN);
+      const head = `${s.seriesId} — ${s.observations.length} monthly observations, newest first:`;
+      const rows = shown.map((o) => `  ${o.label}: ${o.value}`);
+      const rest =
+        s.observations.length > shown.length
+          ? [`  …and ${s.observations.length - shown.length} earlier, back to ${s.observations.at(-1)!.label}`]
+          : [];
+      return [head, ...rows, ...rest].join('\n');
+    })
+    .join('\n\n');
 }
 
 interface RawRow {
@@ -232,5 +261,5 @@ export async function callBls(
     };
   }
 
-  return { series };
+  return { series, text: render(series) };
 }

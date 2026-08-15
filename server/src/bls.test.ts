@@ -181,6 +181,20 @@ describe('callBls', () => {
     expect((await callBls('bls_series', { seriesIds: 'X' }, { http, token: 'k' })).error).toContain('503');
   });
 
+  /**
+   * Two callers, two shapes. The runner's generic builtin loop reads
+   * `reply.text` and knows nothing else, so a door answering only in `series`
+   * hands a session `undefined` — while a compiled tool doing arithmetic needs
+   * the numbers and must not have to parse them back out of prose.
+   */
+  it('answers in both shapes, because a tool and a session want different ones', async () => {
+    const { http } = fake(CPI);
+    const got = await callBls('bls_series', { seriesIds: 'CUUR0000SA0' }, { http, token: 'k', now: NOW });
+    expect(got.series?.[0].observations[0].value).toBe(324.1);
+    expect(got.text).toContain('CUUR0000SA0');
+    expect(got.text).toContain('July 2026: 324.1');
+  });
+
   it('exposes exactly the one tool the catalog grants', () => {
     expect(BLS_TOOL_NAMES).toEqual(['bls_series']);
   });

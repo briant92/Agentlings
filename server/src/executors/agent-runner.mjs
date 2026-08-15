@@ -168,6 +168,7 @@ try {
   for (const [name, subject] of [
     ['github', 'the code host'],
     ['search', 'the search service'],
+    ['bls', 'the statistics service'],
   ]) {
     const builtin = config[name];
     if (!builtin?.tools?.length) continue;

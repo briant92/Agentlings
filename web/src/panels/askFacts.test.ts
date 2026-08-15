@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { alsoAskedLine } from './askFacts';
 
-describe('alsoAskedLine (D-178)', () => {
+/**
+ * D-178 made the second channel visible; D-179 made it *sendable*, so what
+ * this line says changed with it. Carried is now every wired channel the
+ * sentence asked for — one job, one message set each — and dropped is only a
+ * channel no client can send, which is still named rather than swallowed.
+ */
+describe('alsoAskedLine (D-178, D-179)', () => {
   const ask = {
     asked: 'telegram',
     askedLabel: 'Telegram',
@@ -15,22 +21,44 @@ describe('alsoAskedLine (D-178)', () => {
     expect(alsoAskedLine({ asked: 'gmail', askedLabel: 'Gmail', state: 'ready' }, null)).toBeNull();
   });
 
-  it('names the carried channel and the dropped one', () => {
+  it('carries every wired channel, and drops none of them', () => {
     const line = alsoAskedLine(ask, null);
-    expect(line?.carried).toEqual({ channel: 'telegram', label: 'Telegram' });
-    expect(line?.dropped.map((d) => d.channel)).toEqual(['gmail']);
+    expect(line?.carried.map((c) => c.channel)).toEqual(['telegram', 'gmail']);
+    expect(line?.dropped).toEqual([]);
   });
 
-  it('a fork-pick makes the asked channel the dropped one', () => {
+  it('a pick leads the list without dropping the other', () => {
     const line = alsoAskedLine(ask, 'gmail');
-    expect(line?.carried).toEqual({ channel: 'gmail', label: 'Gmail' });
-    expect(line?.dropped.map((d) => d.channel)).toEqual(['telegram']);
+    expect(line?.carried.map((c) => c.channel)).toEqual(['gmail', 'telegram']);
+    expect(line?.dropped).toEqual([]);
   });
 
-  it('a job carrying neither drops both', () => {
-    const line = alsoAskedLine({ ...ask, channel: undefined, state: 'never' }, null);
-    expect(line?.carried).toBeNull();
-    expect(line?.dropped.map((d) => d.channel)).toEqual(['telegram', 'gmail']);
+  it('a channel nothing can send is still named as dropped', () => {
+    const line = alsoAskedLine(
+      {
+        asked: 'whatsapp',
+        askedLabel: 'WhatsApp',
+        state: 'never',
+        also: [{ channel: 'gmail', label: 'Gmail', state: 'ready' as const, detail: '' }],
+      },
+      null,
+    );
+    expect(line?.carried.map((c) => c.channel)).toEqual(['gmail']);
+    expect(line?.dropped.map((d) => d.channel)).toEqual(['whatsapp']);
+  });
+
+  it('a sentence whose channels can none of them send carries nothing', () => {
+    const line = alsoAskedLine(
+      {
+        asked: 'whatsapp',
+        askedLabel: 'WhatsApp',
+        state: 'never',
+        also: [{ channel: 'sms', label: 'SMS', state: 'planned' as const, detail: 'planned' }],
+      },
+      null,
+    );
+    expect(line?.carried).toEqual([]);
+    expect(line?.dropped.map((d) => d.channel)).toEqual(['whatsapp', 'sms']);
   });
 });
 import {

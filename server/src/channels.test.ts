@@ -496,12 +496,12 @@ describe('outboxRefusal', () => {
     tools: [],
     secrets: { TELEGRAM_BOT_TOKEN: 'why' },
   };
-  const outbox = { channel: 'telegram', messages: [{ to: '1', body: 'x' }] };
+  const outbox = [{ channel: 'telegram', messages: [{ to: '1', body: 'x' }] }];
   const TOKEN = { TELEGRAM_BOT_TOKEN: 't' };
 
   it('refuses a channel that does not exist', () => {
     expect(
-      outboxRefusal({ ...outbox, channel: 'carrier-pigeon' }, [telegram], {}, TOKEN),
+      outboxRefusal([{ ...outbox[0], channel: 'carrier-pigeon' }], [telegram], {}, TOKEN),
     ).toContain('no channel');
   });
 

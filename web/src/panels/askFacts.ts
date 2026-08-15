@@ -42,17 +42,27 @@ const SHAPES: Record<string, { test: RegExp; wants: string }> = {
 export function alsoAskedLine(
   ask: { asked: string; askedLabel: string; state: string; channel?: string; also?: ChannelOption[] },
   picked: string | null,
-): { carried: { channel: string; label: string } | null; dropped: ChannelOption[] } | null {
+): { carried: { channel: string; label: string }[]; dropped: ChannelOption[] } | null {
   if (!ask.also?.length) return null;
   const named: ChannelOption[] = [
     { channel: ask.asked, label: ask.askedLabel, state: ask.state as ChannelOption['state'], detail: '' },
     ...ask.also,
   ];
-  const carrying = picked ?? ask.channel ?? null;
-  const carried = named.find((n) => n.channel === carrying) ?? null;
+  // One job now sends on every wired channel the sentence asked for (D-179),
+  // so what is *dropped* is only what no client can send: a `planned` or
+  // `never` channel. `ready` and `connectable` are exactly the wired states —
+  // a channel with no client never reaches either — which is the same rule
+  // the server settles the job's channels by.
+  const wired = (option: ChannelOption) =>
+    option.state === 'ready' || option.state === 'connectable';
+  // A pick still leads, so the line names the channels in the order the job
+  // will carry them rather than the order the sentence happened to mention.
+  const carried = named
+    .filter(wired)
+    .sort((a, b) => Number(b.channel === picked) - Number(a.channel === picked));
   return {
-    carried: carried ? { channel: carried.channel, label: carried.label } : null,
-    dropped: named.filter((n) => n.channel !== carrying),
+    carried: carried.map((c) => ({ channel: c.channel, label: c.label })),
+    dropped: named.filter((option) => !wired(option)),
   };
 }
 

@@ -188,6 +188,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-176 — 2026-08-13 — The sweep takes failed clones too: the reason they were spared was written down and was not true](#d-176--2026-08-13--the-sweep-takes-failed-clones-too-the-reason-they-were-spared-was-written-down-and-was-not-true)
 - [D-177 — 2026-08-14 — The intake benchmark: fifty-one sentences measured, the blind spots separated from the refusals](#d-177--2026-08-14--the-intake-benchmark-fifty-one-sentences-measured-the-blind-spots-separated-from-the-refusals)
 - [D-178 — 2026-08-14 — Two channels in one sentence: the drop made loud before it is made possible](#d-178--2026-08-14--two-channels-in-one-sentence-the-drop-made-loud-before-it-is-made-possible)
+- [D-179 — 2026-08-14 — Two channels, one job: the work happens once and each channel gets its own message set](#d-179--2026-08-14--two-channels-one-job-the-work-happens-once-and-each-channel-gets-its-own-message-set)
 
 ## By theme
 
@@ -608,7 +609,12 @@ entry updates one file rather than two.
   two-channel sentences is the same message twice) and on two code facts
   (standing approval resets forever, recipe keys collide), with the older bug
   it uncovered: `Job.channelMention` had never once been set, because the
-  queue's job builder never named the field
+  queue's job builder never named the field; and D-179, which made it
+  possible — one job sends on every channel the sentence asked for, the work
+  done once so the figures agree and a message set per channel so the bodies
+  may differ, with the send stamp per channel because a pooled one would
+  suppress a real send, and the desk's single To box deliberately standing
+  down rather than promising to mean two channels at once
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -11640,3 +11646,92 @@ suite renders nothing and logic left in JSX is logic nothing checks.
 Not verified in a browser: the server on this machine runs `--no-watch` and is
 still on older code, so the two lines are proven by their extracted logic and by
 typecheck, not by being looked at.
+
+## D-179 — 2026-08-14 — Two channels, one job: the work happens once and each channel gets its own message set
+
+D-178 made the silent drop loud and named the destination. This is it: a
+sentence asking for two channels is now **one job that sends on both**.
+
+The shape follows from D-178's taxonomy rather than from convenience. Only one
+of the five two-channel sentences in the corpus is the same message twice; four
+want a different body per channel, and two have a dependency between the halves.
+So the run does the work once — the figures behind both messages come from one
+piece of work and cannot disagree — and composes a message set per channel,
+which is the only shape that serves all five.
+
+### What changed
+
+`OUTBOX.json` may now hold a **list** of the object it always held, one per
+channel. A bare object is still exactly what it was, so every recipe, every
+compiled tool and every job already on disk parses unchanged. Two outboxes for
+one channel are refused by name: both would send, and the second's recipients
+would be deduplicated against the first's stamp — half a send, silently.
+
+`Job.channel`, `Job.outbox` and `Job.outboxSent` became lists, and jobs written
+before today are lifted on read rather than rewritten on disk — backfill by
+identification (D-033), so a legacy send stamp takes its channel from the outbox
+it was written for and never from a guess. A stamp with nothing to identify it
+is dropped rather than given a channel it might not belong to: a wrong name
+there would suppress a real send.
+
+**The send stamp is per channel, and that is the load-bearing part.** `sentTo`
+is what stops a second Approve messaging anyone twice (D-160); pooled across
+channels, an address reached on Gmail would silently suppress the same address
+on Telegram — D-160's double-send inverted into a send that never happens. One
+claim still covers the whole job, because a per-channel claim would let a second
+Approve start channel two while the first is still on channel one — the same
+race, one layer down — and each channel is stamped as it lands, so a throw on
+the second cannot lose the first's record of who it reached.
+
+**Standing approval keeps the job as its scope**, with an allowlist per channel
+inside one grant. A grant that could auto-send one channel and hold the other
+would send *some* of a send nobody reviewed, which is worse than either whole
+answer; covered means covered everywhere. A grant written before today lifts
+into a one-entry list, and a row too damaged to say what was approved keeps its
+count and grants nothing.
+
+**A refusal is checked for every channel before any of them sends.** Half a send
+followed by the other half's reason is not recoverable — the half that went
+cannot be unsent.
+
+### What was deliberately not built
+
+**The desk still asks for one recipient, or none.** One To box cannot mean two
+channels: a single field would be answered for one and applied to both, or
+answered ambiguously and used for neither. So a multi-channel job asks no
+recipient question at all and leans on the per-channel legend and the
+never-invent rule — the honest behaviour the outbox contract already has,
+rather than a field promising something the card cannot deliver. A per-channel
+send card is the follow-up.
+
+**Ordering across a send.** "Email the board and telegram me *when it has gone
+out*" now sends both, at one Approve, rather than one after the other. Naming it
+is the point: the sentence asks for something the product does not do, and
+pretending otherwise would be worse than the old silent drop.
+
+**The desk's free compose (D-097) stays single-channel.** It holds one recipient
+and one message, so a job carrying two has nothing composed for the second;
+composing the first silently would send half of what was asked and call it free.
+
+### What proved it
+
+1,608 server and 190 web tests, all passing, typecheck clean across three
+workspaces. New coverage pins the two-channel file end to end (stamped whole,
+bodies allowed to differ), the duplicate-channel refusal, and the per-channel
+send stamp in both directions — kept apart, and a retry that reaches the address
+that failed without reaching anyone twice.
+
+The brief was read rather than assumed: a real two-channel job's brief carries
+both contracts, both legends and the list instruction, and the file it describes
+parses back into `['telegram', 'gmail']`. D-026's question — what does this
+change actually reach — asked and answered before the entry was written.
+
+The benchmark's `channel` surface went from 5 structural to **0**: every
+multi-channel sentence in the corpus is now carried whole, and `dropped-said`
+still holds at 5 of 5 for the channels nothing can send. Three tests of my own
+from D-178 had to be rewritten rather than kept: they encoded "one channel
+survives", which this entry supersedes, and leaving them green would have meant
+the suite agreeing with a rule the product no longer follows.
+
+Not verified in a browser: the server on this machine runs `--no-watch` and is
+still on older code.

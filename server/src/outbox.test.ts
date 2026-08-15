@@ -41,7 +41,7 @@ describe('readOutbox', () => {
     );
     const read = readOutbox(dir);
     expect(read?.error).toBeUndefined();
-    expect(read?.outbox).toEqual({
+    expect(read?.outboxes?.[0]).toEqual({
       channel: 'telegram',
       messages: [
         { to: '12345', name: 'Ana', body: 'padel on Thursday' },
@@ -61,8 +61,8 @@ describe('readOutbox', () => {
       }),
     );
     const read = readOutbox(dir);
-    expect(read?.outbox?.messages[0].subject).toBe('Padel Thursday');
-    expect(read?.outbox?.messages[1].subject).toBeUndefined();
+    expect(read?.outboxes?.[0].messages[0].subject).toBe('Padel Thursday');
+    expect(read?.outboxes?.[0].messages[1].subject).toBeUndefined();
   });
 
   it('keeps a template outbox whole: name, language, per-message params', () => {
@@ -77,8 +77,8 @@ describe('readOutbox', () => {
     );
     const read = readOutbox(dir);
     expect(read?.error).toBeUndefined();
-    expect(read?.outbox?.template).toEqual({ name: 'padel_reminder', language: 'es' });
-    expect(read?.outbox?.messages[0].params).toEqual(['Ana', 'jueves 9:00']);
+    expect(read?.outboxes?.[0].template).toEqual({ name: 'padel_reminder', language: 'es' });
+    expect(read?.outboxes?.[0].messages[0].params).toEqual(['Ana', 'jueves 9:00']);
   });
 
   it.each([
@@ -113,7 +113,10 @@ describe('readOutbox', () => {
 
   it.each([
     ['not JSON at all', 'nope{', 'not valid JSON'],
-    ['a bare array', '[]', 'not an object'],
+    // An array is the several-channels shape now (D-179), so the refusal is
+    // about it being empty rather than about it being a list.
+    ['an empty list', '[]', 'sends nothing'],
+    ['a list of non-objects', '["telegram"]', 'not an object'],
     ['no channel', '{"messages":[{"to":"1","body":"x"}]}', '"channel"'],
     ['empty messages', '{"channel":"telegram","messages":[]}', '"messages"'],
     ['a message with no recipient', '{"channel":"telegram","messages":[{"body":"x"}]}', '"to"'],
@@ -130,7 +133,7 @@ describe('readOutbox', () => {
   ])('refuses %s with the reason', (_, content, reason) => {
     write(content);
     const read = readOutbox(dir);
-    expect(read?.outbox).toBeUndefined();
+    expect(read?.outboxes).toBeUndefined();
     expect(read?.error).toContain(reason);
   });
 
@@ -199,8 +202,8 @@ describe('splitRecipient', () => {
 
 describe('composeOutbox', () => {
   it('builds the same object a session would have written', () => {
-    const { outbox } = composeOutbox('telegram', 'Jose Dussaillant — 6783316106', 'A DARLE');
-    expect(outbox).toEqual({
+    const { outboxes } = composeOutbox('telegram', 'Jose Dussaillant — 6783316106', 'A DARLE');
+    expect(outboxes?.[0]).toEqual({
       channel: 'telegram',
       messages: [{ to: '6783316106', body: 'A DARLE', name: 'Jose Dussaillant' }],
     });
@@ -250,7 +253,7 @@ describe('the event block', () => {
       }),
     );
     expect(got.error).toBeUndefined();
-    expect(got.outbox?.messages[0].event?.attendees).toEqual(['ana@example.com']);
+    expect(got.outboxes?.[0].messages[0].event?.attendees).toEqual(['ana@example.com']);
   });
 
   it('takes exactly one event per outbox', () => {
@@ -338,7 +341,7 @@ describe('the files block', () => {
   it('parses files that exist, root and input/ both', () => {
     const got = checkOutbox(withFiles([' report.pdf ', 'input/contract.pdf']), dir);
     expect(got.error).toBeUndefined();
-    expect(got.outbox?.messages[0].files).toEqual(['report.pdf', 'input/contract.pdf']);
+    expect(got.outboxes?.[0].messages[0].files).toEqual(['report.pdf', 'input/contract.pdf']);
   });
 
   it('gmail takes files too; every other channel refuses them', () => {
@@ -406,7 +409,7 @@ describe('the files block', () => {
   it('composeOutbox rides the attachments it is given, verified in the dir', () => {
     const got = composeOutbox('telegram', 'Brian — 123', 'here it is', ['input/contract.pdf'], dir);
     expect(got.error).toBeUndefined();
-    expect(got.outbox?.messages[0].files).toEqual(['input/contract.pdf']);
+    expect(got.outboxes?.[0].messages[0].files).toEqual(['input/contract.pdf']);
     expect(
       composeOutbox('telegram', 'Brian — 123', 'x', ['input/ghost.pdf'], dir).error,
     ).toContain('"input/ghost.pdf"');

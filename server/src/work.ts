@@ -162,8 +162,8 @@ export function queuedJobSpec(args: {
   continues?: string;
   /** Standing instructions for the session, kept out of the prompt (D-074). */
   brief?: string;
-  /** The channel this job sends on, when intake detected one (D-079). */
-  channel?: string;
+  /** The channels this job sends on, when intake detected any (D-079, D-179). */
+  channels?: string[];
   /** The folder this job reorganizes, picked at intake (D-132). */
   organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
@@ -189,7 +189,7 @@ export function queuedJobSpec(args: {
   attachments?: { name: string; data: Buffer }[];
   continues?: string;
   brief?: string;
-  channel?: string;
+  channels?: string[];
   organizeRoot?: string;
   send?: { to: string; words: string };
   channelMention?: { channel: string; label: string };
@@ -208,7 +208,7 @@ export function queuedJobSpec(args: {
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
     ...(args.continues ? { continues: args.continues } : {}),
     ...(args.brief ? { brief: args.brief } : {}),
-    ...(args.channel ? { channel: args.channel } : {}),
+    ...(args.channels?.length ? { channels: args.channels } : {}),
     ...(args.organizeRoot ? { organizeRoot: args.organizeRoot } : {}),
     // Dropped here once, and the route, the type and the router were all
     // correct while the job reached the queue without it — the field this
@@ -277,7 +277,7 @@ export function redoJobSpec(
     noRouter: true,
     ...(previous.clarifications?.length ? { clarifications: previous.clarifications } : {}),
     ...(previous.brief ? { brief: previous.brief } : {}),
-    ...(previous.channel ? { channel: previous.channel } : {}),
+    ...(previous.channels?.length ? { channels: previous.channels } : {}),
     ...(attachments.length ? { attachments } : {}),
     ...(quotedUsd ? { quotedUsd } : {}),
     // Redoing a step redoes the step, not the chain's end: the remaining

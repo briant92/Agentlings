@@ -270,12 +270,15 @@ export class RoutedExecutor implements Executor {
         riding,
         sandboxDir,
       );
-      if (composed.outbox) {
+      if (composed.outboxes) {
+        // The desk composes one send on one channel (D-097), so this writes
+        // the single-outbox shape a run has always written — the list form
+        // (D-179) is for a session composing several, never for this path.
         writeFileSync(
           path.join(sandboxDir, OUTBOX_FILE),
-          `${JSON.stringify(composed.outbox, null, 2)}\n`,
+          `${JSON.stringify(composed.outboxes[0], null, 2)}\n`,
         );
-        const [message] = composed.outbox.messages;
+        const [message] = composed.outboxes[0].messages;
         writeFileSync(
           path.join(sandboxDir, 'RESULT.md'),
           [
@@ -468,7 +471,7 @@ export class RoutedExecutor implements Executor {
     // replayable answer — served for free on the next identical sentence,
     // with no outbox behind it. Exactly job 57bbff81's PDF, one channel over.
     const answer =
-      result && !job.repoPath && !job.channel && !job.tools?.length && !midFlight
+      result && !job.repoPath && !job.channels?.length && !job.tools?.length && !midFlight
         ? result.summary
         : undefined;
 

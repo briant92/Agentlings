@@ -185,7 +185,7 @@ describe('RoutedExecutor', () => {
     const composed = () =>
       job({
         prompt: 'I need to send a Telegram to Pepo',
-        channel: 'telegram',
+        channels: ['telegram'],
         send: { to: 'Jose Dussaillant — 6783316106', words: 'A DARLE' },
       });
     const outbox = () => JSON.parse(readFileSync(path.join(sandboxDir, 'OUTBOX.json'), 'utf8'));
@@ -238,7 +238,7 @@ describe('RoutedExecutor', () => {
         build(session),
         job({
           prompt: 'I need to send a Telegram to Pepo',
-          channel: 'telegram',
+          channels: ['telegram'],
           // Over the body cap — the one refusal a real desk can produce,
           // since the words are free text and nothing upstream limits them.
           send: { to: '6783316106', words: 'x'.repeat(5000) },
@@ -251,7 +251,7 @@ describe('RoutedExecutor', () => {
 
     it('stays a session when the desk holds only half of it', async () => {
       const session = new FakeSession();
-      await run(build(session), job({ prompt: 'I need to send a Telegram to Pepo', channel: 'telegram' }), PIP);
+      await run(build(session), job({ prompt: 'I need to send a Telegram to Pepo', channels: ['telegram'] }), PIP);
       expect(session.runs).toHaveLength(1);
     });
   });
@@ -884,7 +884,7 @@ describe('RoutedExecutor', () => {
             approach: 'resolve the recipient, then write OUTBOX.json',
           }),
         ),
-        job({ prompt: 'send the reminder', channel: 'telegram' }),
+        job({ prompt: 'send the reminder', channels: ['telegram'] }),
         PIP,
       );
 

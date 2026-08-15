@@ -185,7 +185,15 @@ export function questionsFor(
     tier,
     channel,
     names,
-  }: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
+    channels,
+  }: {
+    hasRepo: boolean;
+    tier: Quote['tier'];
+    channel?: string;
+    /** Every channel the job will carry, when it carries more than one (D-179). */
+    channels?: string[];
+    names?: string[];
+  },
 ): ClarifyQuestion[] {
   if (!text.trim()) return [];
   // An organize job has exactly one input — the folder — and it comes from
@@ -226,7 +234,16 @@ export function questionsFor(
       freeText: true,
     });
   }
-  if (channel && channel !== 'calendar') {
+  // One To box cannot mean two channels (D-179). "Telegram Pepo and email Ana"
+  // has a recipient per channel in a shape this one-line card has no way to
+  // hold, and a single field would either be answered for one channel and
+  // applied to both, or answered ambiguously and used for neither. So the
+  // recipient question stands down and the run resolves names through the
+  // per-channel legend, reporting whatever it cannot reach — the honest
+  // behaviour the outbox contract already has, rather than a field that
+  // promises something the card cannot deliver.
+  const several = (channels ?? []).length > 1;
+  if (channel && channel !== 'calendar' && !several) {
     asked.push({
       id: 'send-to',
       ask: 'Who should this go to?',
@@ -348,7 +365,13 @@ export function questionsFor(
  */
 export function clarificationLines(
   text: string,
-  context: { hasRepo: boolean; tier: Quote['tier']; channel?: string; names?: string[] },
+  context: {
+    hasRepo: boolean;
+    tier: Quote['tier'];
+    channel?: string;
+    channels?: string[];
+    names?: string[];
+  },
   answers: Record<string, string> | undefined,
 ): string[] {
   if (!answers) return [];

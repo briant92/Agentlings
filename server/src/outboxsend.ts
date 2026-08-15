@@ -24,7 +24,16 @@ import { appendSends } from './sends';
 const inFlight = new Set<string>();
 
 export interface OutboxSendOpts {
-  outbox: Outbox;
+  /**
+   * Every outbox this job asked for (D-179), sent under one claim in the
+   * order the sentence asked for the channels.
+   *
+   * One claim rather than one per channel: the claim's job is to stop a
+   * second Approve entering the read→send→stamp window, and a per-channel
+   * claim would let the second Approve start channel two while the first is
+   * still on channel one — the same race, one layer down.
+   */
+  outboxes: Outbox[];
   jobId: string;
   levelId: string;
   /** The job's sandbox — where a message's `files` bytes live (D-159). */
@@ -38,9 +47,15 @@ export interface OutboxSendOpts {
    * writing — a plain array argument would be the pre-claim stale read that
    * caused the double.
    */
-  alreadySent: () => readonly string[];
-  /** Stamps the run onto the job (queue.recordOutboxSends); runs before the claim releases. */
-  record: (run: OutboxRun) => void;
+  alreadySent: (channel: string) => readonly string[];
+  /**
+   * Stamps one channel's run onto the job (queue.recordOutboxSends), called
+   * as each channel finishes rather than once at the end — so a failure on
+   * the second channel cannot lose the first channel's record of who it
+   * already reached, which is the only thing standing between a retry and a
+   * double send.
+   */
+  record: (channel: string, run: OutboxRun) => void;
   /** Injectable for tests; the real one is global fetch. */
   fetchFn?: typeof fetch;
 }
@@ -51,45 +66,53 @@ export interface OutboxSendOpts {
  * should say so. The claim always releases, success or failure: a failed
  * run must leave the job retryable, not locked.
  */
-export async function performOutboxSend(opts: OutboxSendOpts): Promise<OutboxRun | null> {
+export async function performOutboxSend(
+  opts: OutboxSendOpts,
+): Promise<{ channel: string; run: OutboxRun }[] | null> {
   if (inFlight.has(opts.jobId)) return null;
   inFlight.add(opts.jobId);
   try {
-    const run = await executeOutbox(opts.outbox, opts.alreadySent(), {
-      env: opts.env,
-      dir: opts.dir,
-      ...(opts.fetchFn ? { fetchFn: opts.fetchFn } : {}),
-    });
-    const at = Date.now();
-    // The user's own declared rate, when they set one — never a guess
-    // (D-081). Only sends that happened carry it.
-    const usd = sendPriceUsd(opts.outbox.channel, opts.env);
-    const messageOf = (to: string) => opts.outbox.messages.find((m) => m.to === to);
-    appendSends(opts.sandboxRoot, [
-      ...run.sentTo.map((to) => ({
-        at,
-        levelId: opts.levelId,
-        jobId: opts.jobId,
-        channel: opts.outbox.channel,
-        to,
-        ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
-        ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
-        ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
-        ok: true,
-        ...(usd ? { usd } : {}),
-      })),
-      ...run.failed.map((f) => ({
-        at,
-        levelId: opts.levelId,
-        jobId: opts.jobId,
-        channel: opts.outbox.channel,
-        to: f.to,
-        ok: false,
-        reason: f.reason,
-      })),
-    ]);
-    opts.record(run);
-    return run;
+    const runs: { channel: string; run: OutboxRun }[] = [];
+    for (const outbox of opts.outboxes) {
+      const run = await executeOutbox(outbox, opts.alreadySent(outbox.channel), {
+        env: opts.env,
+        dir: opts.dir,
+        ...(opts.fetchFn ? { fetchFn: opts.fetchFn } : {}),
+      });
+      const at = Date.now();
+      // The user's own declared rate, when they set one — never a guess
+      // (D-081). Only sends that happened carry it.
+      const usd = sendPriceUsd(outbox.channel, opts.env);
+      const messageOf = (to: string) => outbox.messages.find((m) => m.to === to);
+      appendSends(opts.sandboxRoot, [
+        ...run.sentTo.map((to) => ({
+          at,
+          levelId: opts.levelId,
+          jobId: opts.jobId,
+          channel: outbox.channel,
+          to,
+          ...(messageOf(to)?.name ? { name: messageOf(to)?.name } : {}),
+          ...(messageOf(to)?.body ? { body: messageOf(to)?.body } : {}),
+          ...(messageOf(to)?.files?.length ? { files: messageOf(to)?.files } : {}),
+          ok: true,
+          ...(usd ? { usd } : {}),
+        })),
+        ...run.failed.map((f) => ({
+          at,
+          levelId: opts.levelId,
+          jobId: opts.jobId,
+          channel: outbox.channel,
+          to: f.to,
+          ok: false,
+          reason: f.reason,
+        })),
+      ]);
+      // Stamped per channel as it lands, not at the end: a throw on the next
+      // channel must not take this one's record of who it reached with it.
+      opts.record(outbox.channel, run);
+      runs.push({ channel: outbox.channel, run });
+    }
+    return runs;
   } finally {
     inFlight.delete(opts.jobId);
   }

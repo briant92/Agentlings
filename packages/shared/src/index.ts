@@ -460,6 +460,8 @@ export interface Outbox {
  */
 export interface OutboxSent {
   at: number;
+  /** Which outbox this is the result of (D-179). */
+  channel: string;
   sentTo: string[];
   failed: { to: string; reason: string }[];
 }
@@ -576,9 +578,8 @@ export interface ScheduleInfo {
  */
 export interface SendApprovalInfo {
   key: string;
-  channel: string;
-  recipients: string[];
-  template?: string;
+  /** One entry per channel the grant covers, each with its own allowlist (D-179). */
+  channels: { channel: string; recipients: string[]; template?: string }[];
   approvals: number;
   auto: boolean;
   eligible: boolean;
@@ -676,11 +677,17 @@ export interface Job {
    */
   answers?: Record<string, string>;
   /**
-   * The channel this job sends on, when intake detected one (D-079). The
-   * session is told the outbox contract for it and nothing else changes —
+   * The channels this job sends on, when intake detected any (D-079). The
+   * session is told the outbox contract for each and nothing else changes —
    * composing happens in the run, sending stays at approval (D-075).
+   *
+   * A list since D-179: one sentence can ask for two, and one job does the
+   * work once and writes an outbox per channel. Ordered as the sentence asked
+   * for them, so the first is the one a single-channel path means when it
+   * needs to pick one. A job stored before D-179 holds a bare string, lifted
+   * to a one-entry list on read.
    */
-  channel?: string;
+  channels?: string[];
   /**
    * A send the desk already holds whole (D-097): the recipient and the words
    * themselves, from a sentence that named no message for a run to write.
@@ -755,8 +762,21 @@ export interface Job {
   quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
-  /** Parsed from OUTBOX.json when the run left a valid one. Approve executes it (D-075). */
-  outbox?: Outbox;
+  /**
+   * Parsed from OUTBOX.json when the run left a valid one. Approve executes it
+   * (D-075).
+   *
+   * A list since D-179, because a sentence can ask for two channels and the
+   * work behind them is one job: the run does it once, so the figures agree,
+   * and composes a message set per channel, so the bodies may differ — which
+   * four of the five two-channel sentences in the benchmark corpus want. One
+   * per channel, never two for the same one.
+   *
+   * A job stored before D-179 holds a bare object here; `readStoredJobs` and
+   * `restore` lift it into a one-entry list on the way in, so nothing on disk
+   * needs rewriting and no reader has to know both shapes.
+   */
+  outbox?: Outbox[];
   /**
    * A world this run authored, offered for review (M4). Approve installs it.
    * The same shape of promise as `outbox`: written by the session, performed
@@ -767,8 +787,17 @@ export interface Job {
   packDraftError?: string;
   /** OUTBOX.json existed and was not a valid outbox — the reason, never a silent drop. */
   outboxError?: string;
-  /** Send results so far, merged across retries. */
-  outboxSent?: OutboxSent;
+  /**
+   * Send results so far, merged across retries — one entry per channel that
+   * has been attempted (D-179).
+   *
+   * Per channel because the dedup is per channel: `sentTo` is what stops a
+   * second Approve messaging anyone twice, and a flat list across channels
+   * would let an address sent on one suppress the same address on another.
+   * Legacy single objects are lifted on read, keyed to the outbox they were
+   * written for.
+   */
+  outboxSent?: OutboxSent[];
   /**
    * A folder reorganization this run proposed, offered for review (D-132).
    * The same promise as `outbox` and `packDraft`: written by the session,

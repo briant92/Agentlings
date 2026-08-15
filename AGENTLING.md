@@ -1036,14 +1036,22 @@ browser call in total, and that one went through MCP and was refused — and it
 is localhost, single-user. It becomes load-bearing the day the app is hosted,
 which is why per-job isolation belongs to that decision rather than this one.
 
-A job carries **one channel**, and a sentence asking for two — "telegram Pepo
-the UF and email the same figures to Ana" — takes the first and drops the rest.
-Since D-178 it says so: the desk names every channel it cannot take, offers the
-swap, and the review repeats it before Approve, so the drop is visible rather
-than silent. Carrying two at once is not built.
+A job carries **every channel the sentence asks for** (D-179). "Telegram Pepo
+the UF and email the same figures to Ana" is one job: the work happens once, so
+the figures agree, and the run writes one message set per channel, so the bodies
+may differ — which is what most two-channel sentences actually want. The review
+shows a card per channel and Approve sends them all, each with its own
+already-sent stamp so a retry can never message anyone twice.
+
+What is still dropped is a channel nothing can send — WhatsApp personal, or a
+planned one — and the desk names it rather than swallowing it (D-178). Two
+limits stand: at most three channels in one job, and the sends all happen at
+one Approve, so "email the board and telegram me **when it has gone out**"
+sends both at once rather than one after the other.
 
 What changed (D-075): it can now **ask** to send. A run writes `OUTBOX.json` —
-one channel, up to 20 messages, refused with the reason when malformed — and
+one message set per channel it was queued with, up to 20 messages each, refused
+with the reason when malformed — and
 that file is a deliverable like any other. Review shows the messages, and
 **Approve is the send**: the server replays the reviewed outbox through the
 channel's client with the token from `.env`, exactly as a reviewed patch is
@@ -1324,7 +1332,8 @@ untouched until you press Approve.
 | `PLATE_OVERSCAN` | 60 | `shared/scene.ts` | Extra width that opts a plate into the pointer drift; half of it is the hard drift bound and the checker's clearance margin (D-148) |
 | `MAX_PLATES` | 3 | `shared/scene.ts` | Backdrop stack depth — three 2× plates ≈ 21 MB decoded (D-148) |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
-| `MAX_OUTBOX_MESSAGES` | 20 | `shared` | One outbox, one channel, per job |
+| `MAX_OUTBOX_MESSAGES` | 20 | `shared` | Messages in one outbox — one outbox per channel (D-179) |
+| `MAX_OUTBOX_CHANNELS` | 3 | `outbox.ts` | Outboxes one job may write, one per channel (D-179) |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |
 | `INVENTORY_CAP` | 400 | `organize.ts` | Files shown to a run before "and N more"; metadata only, no contents |
 | `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |

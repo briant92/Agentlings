@@ -225,13 +225,19 @@ export function mentionsChannel(
  */
 export function droppedChannels(
   ask: ChannelAsk | null,
-  carried: string | undefined,
+  /**
+   * Every channel the job carries, not just the first (D-179). A job that now
+   * sends on both must name neither as dropped, and one that carries a wired
+   * channel beside a `planned` one must still name the planned one.
+   */
+  carried: string[] | undefined,
 ): { channel: string; label: string }[] {
   if (!ask?.also?.length) return [];
+  const carrying = new Set(carried ?? []);
   return [
     { channel: ask.asked, label: ask.askedLabel },
     ...ask.also.map((option) => ({ channel: option.channel, label: option.label })),
-  ].filter((named) => named.channel !== carried);
+  ].filter((named) => !carrying.has(named.channel));
 }
 
 /**
@@ -484,23 +490,48 @@ export function legendAudience(prompt: string, people: AudiencePerson[]): Audien
 }
 
 export function briefForJob(
-  job: { channel?: string; prompt: string; send?: { words: string } },
+  job: { channels?: string[]; prompt: string; send?: { words: string } },
   audience: (channel: string) => AudiencePerson[],
   lastSend: (channel: string) => string | undefined,
 ): string | undefined {
-  if (!job.channel) return undefined;
-  return (
-    channelBrief(
-      job.channel,
-      legendAudience(job.prompt, audience(job.channel)),
-      // "The same again" reuses the audited body instead of rebuilding and
-      // drifting (D-094).
-      RESEND_WORDS.test(job.prompt) ? lastSend(job.channel) : undefined,
-      // Words the desk already holds, reaching a session anyway — the outbox
-      // contract refused them and the job fell through (D-097).
-      job.send?.words,
-    ) ?? undefined
-  );
+  if (!job.channels?.length) return undefined;
+  // One brief per channel, each with its own legend and its own contract
+  // (D-179), then the block that says how the file holds both — the brief a
+  // run is given has to describe the file it is asked to write, and a session
+  // told two contracts and no way to combine them would write the second over
+  // the first.
+  const briefs = job.channels
+    .map((channel) =>
+      channelBrief(
+        channel,
+        legendAudience(job.prompt, audience(channel)),
+        // "The same again" reuses the audited body instead of rebuilding and
+        // drifting (D-094).
+        RESEND_WORDS.test(job.prompt) ? lastSend(channel) : undefined,
+        // Words the desk already holds, reaching a session anyway — the outbox
+        // contract refused them and the job fell through (D-097).
+        job.send?.words,
+      ),
+    )
+    .filter((brief): brief is string => brief !== null);
+  if (briefs.length === 0) return undefined;
+  if (briefs.length === 1) return briefs[0];
+  return [...briefs, ...severalChannelsBlock(job.channels)].join('\n');
+}
+
+/** How one OUTBOX.json holds a send per channel (D-179). */
+function severalChannelsBlock(channels: string[]): string[] {
+  return [
+    '',
+    '## This job sends on more than one channel',
+    `You were asked to send via ${channels.map((c) => LABELS[c] ?? c).join(' and ')}, and the work behind them is one job — do it once, then write one message set per channel.`,
+    'Write OUTBOX.json as a LIST of the objects described above, one per channel and never two for the same one:',
+    `[{"channel":"${channels[0]}","messages":[...]}, {"channel":"${channels[1]}","messages":[...]}]`,
+    '- Each channel keeps its own rules exactly as described above — its own recipients, its own limits, and its own "files" rule.',
+    '- The message bodies do not have to match. Write what suits each channel and each audience; the figures behind them must agree, because they came from one piece of work.',
+    '- If you can only reach one of them — an address you were not given, say — write the outbox for the one you can and say plainly in RESULT.md what is missing for the other. Never invent a recipient, and never drop a channel silently.',
+    '- The user reviews every message on every channel, and approving sends them all.',
+  ];
 }
 
 /**

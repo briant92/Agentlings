@@ -244,10 +244,14 @@ export function decide(job: Job, context: RouterContext): Decision {
   // sat in the paid tier because the desk asked for a gist instead of the
   // message. Sending is still not happening here: this writes the outbox the
   // session would have written, and approval remains the send (D-075, D-097).
-  if (job.send && job.channel) {
+  // Exactly one channel: the desk holds one recipient and one message (D-097),
+  // so a job carrying two has nothing composed for the second and must go to a
+  // session that can write both (D-179). Silently composing the first would
+  // send half of what was asked for and call it free.
+  if (job.send && job.channels?.length === 1) {
     return {
       kind: 'compose',
-      channel: job.channel,
+      channel: job.channels[0],
       to: job.send.to,
       words: job.send.words,
       reason: 'you wrote the message yourself',

@@ -282,7 +282,7 @@ describe('queuedJobSpec', () => {
       prompt: 'I need to send a Telegram to Brian',
       plan: planFor('I need to send a Telegram to Brian'),
       quote: quote(0),
-      channel: 'telegram',
+      channels: ['telegram'],
       send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
     });
     expect(spec.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
@@ -339,8 +339,8 @@ describe('queuedJobSpec', () => {
   it('carries the channel a send job rides on, and only then', () => {
     const plan = planFor('remind them on telegram');
     expect(
-      queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1), channel: 'telegram' })
-        .channel,
+      queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1), channels: ['telegram'] })
+        .channels?.[0],
     ).toBe('telegram');
     expect('channel' in queuedJobSpec({ title: 't', prompt: 'p', plan, quote: quote(0.1) })).toBe(
       false,
@@ -427,7 +427,7 @@ describe('redoJobSpec', () => {
   // Without it the redone send has no outbox contract in its brief at all,
   // so the run cannot even know it is supposed to be sending.
   it('carries the channel', () => {
-    expect(redoJobSpec(job({ channel: 'telegram' }), [], 2, undefined).channel).toBe('telegram');
+    expect(redoJobSpec(job({ channels: ['telegram'] }), [], 2, undefined).channels?.[0]).toBe('telegram');
   });
 
   it('carries the answers the user already gave', () => {
@@ -461,13 +461,13 @@ describe('redoJobSpec', () => {
    */
   it('drops the send, so asking properly asks for judgement', () => {
     const spec = redoJobSpec(
-      job({ channel: 'telegram', send: { to: '8633678680', words: 'A DARLE' } }),
+      job({ channels: ['telegram'], send: { to: '8633678680', words: 'A DARLE' } }),
       [],
       2,
       undefined,
     );
     expect(spec.send).toBeUndefined();
-    expect(spec.channel).toBe('telegram');
+    expect(spec.channels?.[0]).toBe('telegram');
   });
 
   it('keeps the role that ran it, and falls back when there was none', () => {

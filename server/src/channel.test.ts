@@ -368,7 +368,7 @@ describe('RESEND_WORDS (D-094)', () => {
 describe('briefForJob', () => {
   const audience = () => [];
   const lastSend = () => 'the last thing sent on this channel';
-  const job = (over: Partial<{ channel: string; prompt: string; send: { words: string } }> = {}) => ({
+  const job = (over: Partial<{ channels: string[]; prompt: string; send: { words: string } }> = {}) => ({
     prompt: 'send the reminder',
     ...over,
   });
@@ -379,7 +379,7 @@ describe('briefForJob', () => {
 
   it('hands the words to the brief when the desk held them', () => {
     const brief = briefForJob(
-      job({ channel: 'telegram', send: { words: 'A DARLE' } }),
+      job({ channels: ['telegram'], send: { words: 'A DARLE' } }),
       audience,
       lastSend,
     )!;
@@ -388,7 +388,7 @@ describe('briefForJob', () => {
   });
 
   it('leaves the block out when it held none', () => {
-    const brief = briefForJob(job({ channel: 'telegram' }), audience, lastSend)!;
+    const brief = briefForJob(job({ channels: ['telegram'] }), audience, lastSend)!;
     expect(brief).not.toContain('wrote this message themselves');
   });
 
@@ -396,18 +396,18 @@ describe('briefForJob', () => {
   // when the sentence asked for the same thing again.
   it('reaches for the last body only when the prompt asks for the same', () => {
     const asked = briefForJob(
-      job({ channel: 'telegram', prompt: 'send the same again to Pepo' }),
+      job({ channels: ['telegram'], prompt: 'send the same again to Pepo' }),
       audience,
       lastSend,
     )!;
     expect(asked).toContain('the last thing sent on this channel');
-    const plain = briefForJob(job({ channel: 'telegram' }), audience, lastSend)!;
+    const plain = briefForJob(job({ channels: ['telegram'] }), audience, lastSend)!;
     expect(plain).not.toContain('the last thing sent on this channel');
   });
 
   it('carries both when the sentence asks for the same and the desk holds words', () => {
     const brief = briefForJob(
-      job({ channel: 'telegram', prompt: 'send the same again', send: { words: 'A DARLE' } }),
+      job({ channels: ['telegram'], prompt: 'send the same again', send: { words: 'A DARLE' } }),
       audience,
       lastSend,
     )!;
@@ -473,7 +473,7 @@ describe('briefForJob filters the legend (D-122)', () => {
 
   it('a job naming nobody gets no legend from a book of unused contacts', () => {
     const brief = briefForJob(
-      { channel: 'gmail', prompt: 'email the weekly summary' },
+      { channels: ['gmail'], prompt: 'email the weekly summary' },
       () => roster,
       () => undefined,
     )!;
@@ -483,7 +483,7 @@ describe('briefForJob filters the legend (D-122)', () => {
 
   it('a job naming a contact carries exactly them', () => {
     const brief = briefForJob(
-      { channel: 'gmail', prompt: 'email Ana the weekly summary' },
+      { channels: ['gmail'], prompt: 'email Ana the weekly summary' },
       () => roster,
       () => undefined,
     )!;
@@ -659,15 +659,15 @@ describe('the channels an ask could not take', () => {
 
   it('the dropped list is everything asked for minus what is carried', () => {
     const got = ask('telegram Pepo the UF and email the figures to Ana');
-    expect(droppedChannels(got, 'telegram')).toEqual([{ channel: 'gmail', label: 'Gmail' }]);
+    expect(droppedChannels(got, ['telegram'])).toEqual([{ channel: 'gmail', label: 'Gmail' }]);
     // The case that cannot be seen from `also` alone: picking the second
     // channel on the fork card makes the asked one the dropped one.
-    expect(droppedChannels(got, 'gmail')).toEqual([{ channel: 'telegram', label: 'Telegram' }]);
+    expect(droppedChannels(got, ['gmail'])).toEqual([{ channel: 'telegram', label: 'Telegram' }]);
     // A draft job carrying neither drops both, in the order they were asked.
     expect(droppedChannels(got, undefined).map((d) => d.channel)).toEqual(['telegram', 'gmail']);
     // One channel, or none at all, drops nothing.
-    expect(droppedChannels(ask('email Ana the note'), 'gmail')).toEqual([]);
-    expect(droppedChannels(null, 'gmail')).toEqual([]);
+    expect(droppedChannels(ask('email Ana the note'), ['gmail'])).toEqual([]);
+    expect(droppedChannels(null, ['gmail'])).toEqual([]);
   });
 
   it('a channel name with a person as its object claims after a bare "and"', () => {

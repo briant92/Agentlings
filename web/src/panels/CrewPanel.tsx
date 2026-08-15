@@ -241,9 +241,18 @@ export function CrewPanel({
                       two grants to the same person render as identical rows,
                       and a list of duplicates reads as a bug. */}
                   <span className="bo-standing-key">“{a.key}”</span>
+                  {/* One line per channel the grant covers (D-179): a grant
+                      that reaches two channels reaches two allowlists, and
+                      collapsing them would hide who it can actually message. */}
                   <span className="bo-standing-what">
-                    {a.channel} → {a.recipients.join(', ')}
-                    {a.template ? ` · template ${a.template}` : ''}
+                    {a.channels
+                      .map(
+                        (c) =>
+                          `${c.channel} → ${c.recipients.join(', ')}${
+                            c.template ? ` · template ${c.template}` : ''
+                          }`,
+                      )
+                      .join(' · ')}
                   </span>
                   {a.auto ? (
                     <>

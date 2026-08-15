@@ -645,31 +645,28 @@ export function WorkBar({
         </p>
       )}
 
-      {/* Two channels in one sentence (D-178). A job carries one, and until
-          this line existed the other one vanished without a card, a question
-          or a mention — the only silent way the desk could be wrong about a
-          send. Says which one is being dropped, and offers the swap, because
-          picking the other half is the remedy the desk can actually give
-          today. */}
+      {/* Two channels in one sentence (D-178, D-179). The job now carries every
+          wired one — one run, one message set each — and what is left over is
+          only a channel no client can send, which the line still names rather
+          than dropping in silence. */}
       {!!plan?.channelAsk?.also?.length && !askingRepo && (() => {
         const line = alsoAskedLine(plan.channelAsk!, effectiveChannel);
         if (!line) return null;
         const { carried, dropped } = line;
         return (
           <p className="work-gaps work-also">
-            also asks for {dropped.map((d) => d.label).join(' and ')} — one channel per job, so
-            this one sends {carried ? `only via ${carried.label}` : 'nothing yet'}
-            {dropped
-              .filter((d) => d.state === 'ready' || d.state === 'connectable')
-              .map((d) => (
-                <span key={d.channel}>
-                  {' · '}
-                  <button className="work-link" onClick={() => setChannel(d.channel)}>
-                    send via {d.label} instead
-                  </button>
-                </span>
-              ))}
-            <span className="dim"> · queue the other half as its own job</span>
+            {carried.length > 1
+              ? `sends via ${carried.map((c) => c.label).join(' and ')} — one job, one message set each`
+              : carried.length === 1
+                ? `sends via ${carried[0].label}`
+                : 'sends nothing yet'}
+            {dropped.length > 0 && (
+              <>
+                {' · '}
+                also asks for {dropped.map((d) => d.label).join(' and ')}, which cannot send —{' '}
+                {dropped.map((d) => d.detail).filter(Boolean)[0] ?? 'not available'}
+              </>
+            )}
           </p>
         );
       })()}

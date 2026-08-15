@@ -205,8 +205,13 @@ export function ReviewModal({
     }
   };
 
-  const sentTo = job.outboxSent?.sentTo ?? [];
-  const unsent = job.outbox ? job.outbox.messages.filter((m) => !sentTo.includes(m.to)) : [];
+  // Per channel throughout (D-179): who has been reached on Gmail says
+  // nothing about the same address on Telegram, so the two are never pooled.
+  const sentOn = (channel: string) =>
+    job.outboxSent?.find((stamp) => stamp.channel === channel)?.sentTo ?? [];
+  const unsent = (job.outbox ?? []).flatMap((outbox) =>
+    outbox.messages.filter((m) => !sentOn(outbox.channel).includes(m.to)),
+  );
   const moveLeft = job.moves ? movesLeft(job.moves.moves, job.movesRun?.done ?? []) : [];
   const movedCount = job.movesRun?.done.length ?? 0;
 
@@ -286,7 +291,7 @@ export function ReviewModal({
           {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
               was approved in good faith and sent nothing — this says so
               before the button does it again. */}
-          {job.channelMention && !job.channel && !job.outbox && (
+          {job.channelMention && !job.channels?.length && !job.outbox?.length && (
             <p className="rv-mention-guard">
               This job mentions {job.channelMention.label} but never carried a send channel —
               approving keeps the files and sends nothing. To send, reply on the job's card:
@@ -302,34 +307,41 @@ export function ReviewModal({
           {!!job.alsoAsked?.length && (
             <p className="rv-mention-guard">
               This job also asked to send via {job.alsoAsked.map((a) => a.label).join(' and ')},
-              and a job carries one channel — approving sends{' '}
-              {job.channel ? 'only what is shown here' : 'nothing'} and nothing there. To send
-              the rest, queue it as its own job.
+              which it could not carry — approving sends{' '}
+              {job.channels?.length ? 'only what is shown here' : 'nothing'} and nothing there. To
+              send the rest, queue it as its own job.
             </p>
           )}
-          {job.outbox && (
+          {(job.outbox ?? []).map((outbox) => {
+            // One card per channel (D-179), each with its own sent/failed
+            // truth — a job may have reached everyone on Telegram and nobody
+            // on Gmail, and one merged card could only lie about one of them.
+            const sent = sentOn(outbox.channel);
+            const stamp = job.outboxSent?.find((s) => s.channel === outbox.channel);
+            const left = outbox.messages.filter((m) => !sent.includes(m.to)).length;
+            return (
             // The outbox as mock screen 4 drew it (D-088): the channel's mark
             // on the header, a recipient's initial on each row — same rows,
             // same sent/failed truth, dressed.
-            <div className="rv-outbox-card">
+            <div className="rv-outbox-card" key={outbox.channel}>
               <div className="rv-outbox-head">
-                <ChannelLogo channel={job.outbox.channel} />
+                <ChannelLogo channel={outbox.channel} />
                 <div>
                   <div className="rv-outbox-t">
-                    Outbox — {job.outbox.messages.length} message
-                    {job.outbox.messages.length === 1 ? '' : 's'} via{' '}
-                    {CHANNEL_LABELS[job.outbox.channel] ?? job.outbox.channel}
+                    Outbox — {outbox.messages.length} message
+                    {outbox.messages.length === 1 ? '' : 's'} via{' '}
+                    {CHANNEL_LABELS[outbox.channel] ?? outbox.channel}
                   </div>
                   <div className="rv-outbox-s">
-                    {job.outbox.template &&
-                      `template ${job.outbox.template.name} (${job.outbox.template.language}) · `}
-                    {unsent.length > 0 ? 'approving sends them' : 'all sent'}
+                    {outbox.template &&
+                      `template ${outbox.template.name} (${outbox.template.language}) · `}
+                    {left > 0 ? 'approving sends them' : 'all sent'}
                   </div>
                 </div>
               </div>
               <ul className="rv-outbox">
-                {job.outbox.messages.map((m) => {
-                  const failure = job.outboxSent?.failed.find((f) => f.to === m.to);
+                {outbox.messages.map((m) => {
+                  const failure = stamp?.failed.find((f) => f.to === m.to);
                   return (
                     <li key={m.to}>
                       <span className="rv-av" aria-hidden="true">
@@ -341,7 +353,7 @@ export function ReviewModal({
                             {m.name ?? m.to}
                             {m.name && <span className="rv-msg-addr"> · {m.to}</span>}
                           </span>
-                          {sentTo.includes(m.to) && <span className="rv-msg-sent">sent</span>}
+                          {sent.includes(m.to) && <span className="rv-msg-sent">sent</span>}
                           {failure && <span className="rv-msg-failed">{failure.reason}</span>}
                         </div>
                         {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
@@ -389,7 +401,8 @@ export function ReviewModal({
                 })}
               </ul>
             </div>
-          )}
+            );
+          })}
           {job.movesError && <p className="rv-error">{job.movesError}</p>}
           {job.moves && job.organizeRoot && (
             // A folder reorganization (D-132): from→to rows, the plain-words
@@ -470,10 +483,17 @@ export function ReviewModal({
                 send itself?
               </div>
               <p className="rv-standing-b">
-                Auto-send stays locked to {offer.recipients.join(', ')} on {offer.channel}
-                {offer.template ? ` with the ${offer.template} template` : ''}. Anyone new, a
-                changed template or another channel always comes back to you — and every send
-                still lands in the inbox and the audit.
+                Auto-send stays locked to{' '}
+                {offer.channels
+                  .map(
+                    (c) =>
+                      `${c.recipients.join(', ')} on ${c.channel}${
+                        c.template ? ` with the ${c.template} template` : ''
+                      }`,
+                  )
+                  .join('; ')}
+                . Anyone new, a changed template or another channel always comes back to you — and
+                every send still lands in the inbox and the audit.
               </p>
               <div className="rv-standing-btns">
                 <button onClick={onClose}>Keep reviewing</button>

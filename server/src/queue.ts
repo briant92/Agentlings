@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
-import type { Job, JobAttachment, JobMeter, MoveOp } from '@agentlings/shared';
+import type { Job, JobAttachment, JobMeter, MoveOp, Outbox, OutboxSent } from '@agentlings/shared';
 import { MAX_STATIONS, opKey } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
@@ -39,8 +39,8 @@ export interface NewJobSpec {
   continues?: string;
   /** Standing instructions for the session, kept out of the prompt (D-074). */
   brief?: string;
-  /** The channel this job sends on, when intake detected one (D-079). */
-  channel?: string;
+  /** The channels this job sends on, when intake detected any (D-079, D-179). */
+  channels?: string[];
   /** The real folder this job reorganizes, picked at intake (D-132). */
   organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
@@ -83,10 +83,49 @@ export function readStoredJobs(sandboxRoot: string): Job[] {
   if (!existsSync(file)) return [];
   try {
     const stored = JSON.parse(readFileSync(file, 'utf8')) as Job[];
-    return Array.isArray(stored) ? stored.filter((job) => job?.id) : [];
+    return Array.isArray(stored) ? stored.filter((job) => job?.id).map(liftJob) : [];
   } catch {
     return []; // a torn file reads as empty, the same tolerance restore() has
   }
+}
+
+/**
+ * A job written before D-179 made channels, outboxes and send stamps into
+ * lists — lifted on the way in, so no reader has to know both shapes and
+ * nothing on disk has to be rewritten to be readable.
+ *
+ * Backfill by identification, never by guess (D-033): a legacy stamp belongs
+ * to the one outbox that job had, and its channel is read off that outbox
+ * rather than assumed. A stamp with no outbox to name keeps whatever channel
+ * the job carried, and failing that is dropped — a send record naming no
+ * channel cannot be deduplicated against anything, and a wrong name would
+ * suppress a real send.
+ */
+function liftJob(job: Job): Job {
+  // Read through a shape that describes what may be *on disk*, not what the
+  // type says today — an intersection with `Job` would keep the new list
+  // types and hide exactly the old ones this has to find.
+  const legacy = job as unknown as {
+    channel?: string;
+    outbox?: Outbox | Outbox[];
+    outboxSent?: OutboxSent | OutboxSent[];
+  };
+  if (typeof legacy.channel === 'string') {
+    job.channels = [legacy.channel];
+    delete legacy.channel;
+  }
+  const outboxes = Array.isArray(legacy.outbox)
+    ? legacy.outbox
+    : legacy.outbox
+      ? [legacy.outbox]
+      : undefined;
+  if (outboxes) job.outbox = outboxes;
+  const stamp = legacy.outboxSent;
+  if (stamp && !Array.isArray(stamp)) {
+    const channel = outboxes?.[0]?.channel ?? job.channels?.[0];
+    job.outboxSent = channel ? [{ ...stamp, channel }] : undefined;
+  }
+  return job;
 }
 
 export const INTERRUPTED = 'interrupted — the app restarted while this was running';
@@ -119,8 +158,11 @@ export class JobQueue {
     }
     if (!Array.isArray(stored)) return;
 
-    for (const job of stored) {
-      if (!job?.id) continue;
+    for (const raw of stored) {
+      if (!raw?.id) continue;
+      // The same lift `readStoredJobs` does, because both are ways in and a
+      // way in that skipped it would put a legacy shape back in the map.
+      const job = liftJob(raw);
       if (job.status === 'running') {
         job.status = 'failed';
         job.error = INTERRUPTED;
@@ -249,7 +291,7 @@ export class JobQueue {
       ...(spec.compile ? { compile: true } : {}),
       ...(spec.continues ? { continues: spec.continues } : {}),
       ...(spec.brief ? { brief: spec.brief } : {}),
-      ...(spec.channel ? { channel: spec.channel } : {}),
+      ...(spec.channels?.length ? { channels: spec.channels } : {}),
       ...(spec.organizeRoot ? { organizeRoot: spec.organizeRoot } : {}),
       ...(spec.send ? { send: spec.send } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
@@ -471,7 +513,7 @@ export class JobQueue {
     const read = readOutbox(this.sandboxDir(job.id));
     if (!read) return;
     if (read.error) job.outboxError = `OUTBOX.json: ${read.error}`;
-    else job.outbox = read.outbox;
+    else job.outbox = read.outboxes;
   }
 
   /**
@@ -542,18 +584,27 @@ export class JobQueue {
   /** Merges one Approve's send results; `sentTo` accumulates so retries skip them. */
   recordOutboxSends(
     jobId: string,
+    channel: string,
     run: { sentTo: string[]; failed: { to: string; reason: string }[] },
   ): Job {
     const job = this.mustGet(jobId);
-    const prior = job.outboxSent?.sentTo ?? [];
+    const stamps = job.outboxSent ?? [];
+    // Merged into this channel's own stamp (D-179), never across channels:
+    // an address reached on Gmail says nothing about the same address on
+    // Telegram, and one flat list would suppress the second send.
+    const prior = stamps.find((s) => s.channel === channel);
     // A set, not a concatenation (D-160): the double-send stamped one
     // recipient twice and this line faithfully kept the duplicate — the
     // stamp is who has been sent to, not how many times sending happened.
-    job.outboxSent = {
+    const merged = {
       at: Date.now(),
-      sentTo: [...new Set([...prior, ...run.sentTo])],
+      channel,
+      sentTo: [...new Set([...(prior?.sentTo ?? []), ...run.sentTo])],
       failed: run.failed,
     };
+    job.outboxSent = prior
+      ? stamps.map((s) => (s.channel === channel ? merged : s))
+      : [...stamps, merged];
     this.persist();
     return job;
   }

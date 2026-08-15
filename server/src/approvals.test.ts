@@ -16,12 +16,15 @@ import {
 
 const PROMPT = 'Every Thursday 9:00, remind Ana, Luis and Marta about padel — on telegram';
 
-function outbox(tos: string[], extra: Partial<Outbox> = {}): Outbox {
-  return {
-    channel: 'telegram',
-    messages: tos.map((to) => ({ to, body: `padel — ${to}` })),
-    ...extra,
-  };
+/** One outbox, in the list every send path now takes (D-179). */
+function outbox(tos: string[], extra: Partial<Outbox> = {}): Outbox[] {
+  return [
+    {
+      channel: 'telegram',
+      messages: tos.map((to) => ({ to, body: `padel — ${to}` })),
+      ...extra,
+    },
+  ];
 }
 
 describe('standing approvals', () => {
@@ -55,12 +58,12 @@ describe('standing approvals', () => {
       const moved = recordApproval(dir, PROMPT, outbox(['1', '2', '4']), 6);
       expect(moved.approvals).toBe(1);
       expect(moved.auto).toBe(false);
-      expect(moved.recipients).toEqual(['1', '2', '4']);
+      expect(moved.channels[0].recipients).toEqual(['1', '2', '4']);
     });
 
     it('a changed channel or template also starts over', () => {
       approveTimes(2);
-      const otherChannel = recordApproval(dir, PROMPT, { ...outbox(['1', '2', '3']), channel: 'gmail' }, 5);
+      const otherChannel = recordApproval(dir, PROMPT, outbox(['1', '2', '3'], { channel: 'gmail' }), 5);
       expect(otherChannel.approvals).toBe(1);
       const withTemplate = recordApproval(
         dir,
@@ -69,7 +72,7 @@ describe('standing approvals', () => {
         6,
       );
       expect(withTemplate.approvals).toBe(1);
-      expect(withTemplate.template).toBe('padel_reminder');
+      expect(withTemplate.channels[0].template).toBe('padel_reminder');
     });
 
     it('different jobs count separately — the key is the prompt', () => {
@@ -121,7 +124,7 @@ describe('standing approvals', () => {
 
     it('a different channel or template blocks it', () => {
       const a = approved();
-      expect(autoSendable(a, { ...outbox(['1']), channel: 'gmail' })).toBe(false);
+      expect(autoSendable(a, outbox(['1'], { channel: 'gmail' }))).toBe(false);
       expect(
         autoSendable(a, outbox(['1'], { template: { name: 'other_template', language: 'es' } })),
       ).toBe(false);
@@ -162,10 +165,12 @@ describe('standing approvals', () => {
         'an outbox that sends files',
         {
           ...clean,
-          outbox: {
-            channel: 'telegram',
-            messages: [{ to: '1', body: 'x', files: ['input/contract.pdf'] }],
-          },
+          outbox: [
+            {
+              channel: 'telegram',
+              messages: [{ to: '1', body: 'x', files: ['input/contract.pdf'] }],
+            },
+          ],
         },
         PAPER,
       ],

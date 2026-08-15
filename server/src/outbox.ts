@@ -13,6 +13,7 @@ import {
   type Outbox,
   type OutboxEvent,
   type OutboxMessage,
+  type OutboxSent,
   type OutboxTemplate,
 } from '@agentlings/shared';
 import { safeAttachmentName } from './outputs';
@@ -33,8 +34,8 @@ import { safeAttachmentName } from './outputs';
 export const OUTBOX_FILE = 'OUTBOX.json';
 
 export type OutboxRead =
-  | { outbox: Outbox; error?: undefined }
-  | { outbox?: undefined; error: string };
+  | { outboxes: Outbox[]; error?: undefined }
+  | { outboxes?: undefined; error: string };
 
 const MAX_EVENT_ATTENDEES = 20;
 
@@ -45,6 +46,28 @@ const MAX_EVENT_ATTENDEES = 20;
  * and in the send.
  */
 export const FILE_CHANNELS = new Set(['telegram', 'gmail']);
+
+/**
+ * Outboxes one job may write (D-179) — one per channel it was queued with.
+ *
+ * Three rather than the channel count, because a job is only ever given
+ * channels the sentence asked for and a sentence asking for four is a script,
+ * not a send. The cap is here so a malformed list is refused by name rather
+ * than sending its way through.
+ */
+export const MAX_OUTBOX_CHANNELS = 3;
+
+/**
+ * Who this job has already reached on one channel (D-179).
+ *
+ * One function because both send sites read it and both must read it the same
+ * way: this is what stops a second Approve messaging anyone twice, and two
+ * call sites with two slightly different notions of "already sent" is how a
+ * double-send happened in the first place (D-160).
+ */
+export function sentOn(job: { outboxSent?: OutboxSent[] } | undefined, channel: string): string[] {
+  return job?.outboxSent?.find((stamp) => stamp.channel === channel)?.sentTo ?? [];
+}
 
 /**
  * Why this is not a valid outbox file name, or null when it is.
@@ -330,6 +353,34 @@ export function readOutbox(dir: string): OutboxRead | null {
  * checked.
  */
 export function checkOutbox(parsed: unknown, dir?: string): OutboxRead {
+  // One channel or several (D-179). An array is how a run asks to send the
+  // same work two ways — the shape the brief now shows whenever a job carries
+  // more than one channel — and a bare object is still exactly what it was,
+  // so every recipe, every compiled tool and every job already on disk keeps
+  // parsing unchanged.
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) return { error: 'an empty list sends nothing' };
+    if (parsed.length > MAX_OUTBOX_CHANNELS) {
+      return { error: `${parsed.length} outboxes — the cap is ${MAX_OUTBOX_CHANNELS}` };
+    }
+    const outboxes: Outbox[] = [];
+    for (const entry of parsed) {
+      const one = checkOneOutbox(entry, dir);
+      if (one.error) return one;
+      // Two outboxes for one channel would each be sent, and the second's
+      // recipients would be deduplicated against the first's stamp — half a
+      // send, silently. One per channel, refused with the reason.
+      if (outboxes.some((o) => o.channel === one.outboxes![0].channel)) {
+        return { error: `two outboxes for "${one.outboxes![0].channel}" — one per channel` };
+      }
+      outboxes.push(one.outboxes![0]);
+    }
+    return { outboxes };
+  }
+  return checkOneOutbox(parsed, dir);
+}
+
+function checkOneOutbox(parsed: unknown, dir?: string): OutboxRead {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { error: 'not an object with "channel" and "messages"' };
   }
@@ -421,10 +472,12 @@ export function checkOutbox(parsed: unknown, dir?: string): OutboxRead {
     }
   }
   return {
-    outbox: {
-      channel: channelName,
-      ...(cleanTemplate ? { template: cleanTemplate } : {}),
-      messages: out,
-    },
+    outboxes: [
+      {
+        channel: channelName,
+        ...(cleanTemplate ? { template: cleanTemplate } : {}),
+        messages: out,
+      },
+    ],
   };
 }

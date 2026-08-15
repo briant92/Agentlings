@@ -54,6 +54,7 @@ import {
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
+import { sentOn } from './outbox';
 import { performOutboxSend } from './outboxsend';
 import { describe, doorEndpoints, missingSecrets, readConnections } from './connections';
 import {
@@ -411,13 +412,13 @@ async function autoSendIfApproved(
 ): Promise<void> {
   try {
     if (autoBlocker(job, outputNames(queue.sandboxDir(job.id))) !== null) return;
-    const outbox = job.outbox!;
+    const outboxes = job.outbox!;
     const approval = readApprovals(dir).find(
       (a) => a.key === approvalKey(queue.rootPrompt(job.id) ?? job.prompt),
     );
-    if (!autoSendable(approval, outbox)) return;
+    if (!autoSendable(approval, outboxes)) return;
     const refusal = outboxRefusal(
-      outbox,
+      outboxes,
       readConnections(CONNECTIONS_FILE),
       readSettings(SANDBOX_ROOT),
       process.env,
@@ -434,34 +435,36 @@ async function autoSendIfApproved(
     // The one send door, claimed per job (D-160): if a manual Approve is
     // mid-send this instant, auto quietly stands down — the review outcome
     // is already in a human's hands, which is this path's whole philosophy.
-    const run = await performOutboxSend({
-      outbox,
+    const runs = await performOutboxSend({
+      outboxes,
       jobId: job.id,
       levelId,
       dir: queue.sandboxDir(job.id),
       sandboxRoot: SANDBOX_ROOT,
       env: process.env,
-      alreadySent: () => queue.get(job.id)?.outboxSent?.sentTo ?? [],
-      record: (r) => queue.recordOutboxSends(job.id, r),
+      alreadySent: (channel) => sentOn(queue.get(job.id), channel),
+      record: (channel, r) => queue.recordOutboxSends(job.id, channel, r),
     });
-    if (!run) return;
+    if (!runs) return;
     const at = Date.now();
-    if (run.failed.length > 0) {
+    const sent = runs.reduce((n, r) => n + r.run.sentTo.length, 0);
+    const failed = runs.reduce((n, r) => n + r.run.failed.length, 0);
+    if (failed > 0) {
       eventLog.emit({
         type: 'progress',
         jobId: job.id,
         title: job.title,
-        detail: `standing approval sent ${run.sentTo.length} of ${run.sentTo.length + run.failed.length} — the rest waits for your review`,
+        detail: `standing approval sent ${sent} of ${sent + failed} — the rest waits for your review`,
       });
       return;
     }
     queue.resolve(job.id, 'promote');
-    recordApproval(dir, queue.rootPrompt(job.id) ?? job.prompt, outbox, at);
+    recordApproval(dir, queue.rootPrompt(job.id) ?? job.prompt, outboxes, at);
     eventLog.emit({
       type: 'resolved',
       jobId: job.id,
       title: job.title,
-      detail: `sent automatically — ${run.sentTo.length} via ${outbox.channel}, standing approval`,
+      detail: `sent automatically — ${sent} via ${runs.map((r) => r.channel).join(' and ')}, standing approval`,
       by: 'app',
     });
   } catch (err) {
@@ -1069,6 +1072,16 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // a send the desk holds whole is composed in code (D-097), and the card has
   // to say so while the user is still deciding.
   const askChannel = channelAsk?.channel ?? channelAsk?.asked ?? confirmed;
+  // The channels Start would carry (D-179) — the same wired-only rule
+  // `queueSentence` settles by, so the card and the queued job agree about
+  // how many sends this is.
+  const askChannels = [
+    ...(channelAsk?.channel && CHANNELS[channelAsk.channel] ? [channelAsk.channel] : []),
+    ...(confirmed && CHANNELS[confirmed] && confirmed !== channelAsk?.channel ? [confirmed] : []),
+    ...(channelAsk?.also ?? [])
+      .map((option) => option.channel)
+      .filter((name) => CHANNELS[name] && name !== channelAsk?.channel && name !== confirmed),
+  ];
   const names = rosterNames(askChannel);
   const send = sendFacts(text, { channel: askChannel, names }, body.answers);
   // The quote decides whether asking is worth it at all, and the quote needs
@@ -1096,6 +1109,10 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
       hasRepo: !!rt.meta.repoPath,
       tier: quote.tier,
       channel: askChannel,
+      // What Start will actually carry, so the card asks the questions the
+      // queued job would ask — a To box shown here and refused there is the
+      // drift `clarificationLines` exists to prevent (D-179).
+      channels: askChannels,
       names,
     }),
     ...(channelAsk ? { channelAsk } : {}),
@@ -1242,6 +1259,25 @@ function queueSentence(
       : channelAsk?.channel && CHANNELS[channelAsk.channel]
         ? channelAsk.channel
         : undefined;
+  /**
+   * Every channel this job will carry (D-179), the settled one first.
+   *
+   * The others come from the same ask the card was built from, and only ones
+   * that exist and are not the settled one — a `planned` or `never` channel
+   * fell out of the ask already, and adding it here would put a contract in
+   * the brief for a client that cannot send. A caller's explicit pick keeps
+   * its meaning: it settles which channel leads, it does not cancel the rest
+   * of the sentence.
+   */
+  const alsoWired = (detected?.also ?? [])
+    .map((option) => option.channel)
+    .filter((name) => CHANNELS[name] && name !== channel);
+  // A settled channel is not required for the rest to ride: "send it on
+  // WhatsApp and email Ana" settles nothing (WhatsApp is refused) while Gmail
+  // is perfectly sendable, and dropping it because the *first* channel was
+  // impossible would lose the half the app can actually do.
+  const carried = [...(channel ? [channel] : []), ...alsoWired];
+  const channels = carried.length > 0 ? carried : undefined;
   // Read from the same sentence and the same answers the card was quoted on,
   // through the one function both ways in share — a desk that promised free
   // and a queue that then billed a session would be the worst of both (D-097).
@@ -1287,12 +1323,13 @@ function queueSentence(
           hasRepo: !!rt.meta.repoPath,
           tier: quote.tier,
           channel: channel ?? channelAsk?.asked,
+          channels,
           names,
         },
         opts.answers,
       ),
       attachments: opts.attachments ?? [],
-      channel,
+      channels,
       ...(opts.organizeRoot ? { organizeRoot: opts.organizeRoot } : {}),
       ...(send ? { send } : {}),
       ...(opts.brief ? { brief: opts.brief } : {}),
@@ -1318,7 +1355,7 @@ function queueSentence(
       // carried — so the set is right whichever of them the job ended up on,
       // and a draft job that asked for two still says it sends neither.
       ...(() => {
-        const dropped = droppedChannels(detected, channel);
+        const dropped = droppedChannels(detected, channels);
         return dropped.length > 0 ? { alsoAsked: dropped } : {};
       })(),
     }),
@@ -1679,10 +1716,21 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
       // own words may supply it through the same gates (D-090): "send it to
       // Pepo on telegram" is detection, not invention. The brief is derived
       // from job.channel at run time.
-      channel:
-        previous.channel ??
-        detectChannelAsk(reply, readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env)
-          ?.channel,
+      channels:
+        previous.channels ??
+        (() => {
+          const found = detectChannelAsk(
+            reply,
+            readConnections(CONNECTIONS_FILE),
+            readSettings(SANDBOX_ROOT),
+            process.env,
+          );
+          // The reply's own channels, the asked one first — the same list the
+          // desk would have carried had the detector caught it first time.
+          return found?.channel
+            ? [found.channel, ...(found.also ?? []).map((o) => o.channel)]
+            : undefined;
+        })(),
     }),
   );
   // The parent is answered (D-139): its card stops offering the reply box
@@ -1931,13 +1979,16 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * failed and can never message anyone twice.
    */
   let sentNow = 0;
-  if (body.action === 'promote' && promotable && pending.outbox && !waitingTool) {
-    const outbox = pending.outbox;
-    const alreadySent = pending.outboxSent?.sentTo ?? [];
-    const remaining = outbox.messages.filter((m) => !alreadySent.includes(m.to));
+  if (body.action === 'promote' && promotable && pending.outbox?.length && !waitingTool) {
+    const outboxes = pending.outbox;
+    // Counted per channel (D-179): the same address on two channels is two
+    // messages, and one flat list would call the second one already sent.
+    const remaining = outboxes.flatMap((outbox) =>
+      outbox.messages.filter((m) => !sentOn(pending, outbox.channel).includes(m.to)),
+    );
     if (remaining.length > 0) {
       const refusal = outboxRefusal(
-        outbox,
+        outboxes,
         readConnections(CONNECTIONS_FILE),
         readSettings(SANDBOX_ROOT),
         process.env,
@@ -1951,17 +2002,17 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
        * the claim; the outer `alreadySent` above only decides whether to
        * enter at all.
        */
-      const run = await performOutboxSend({
-        outbox,
+      const runs = await performOutboxSend({
+        outboxes,
         jobId: pending.id,
         levelId: rt.meta.id,
         dir: rt.queue.sandboxDir(pending.id),
         sandboxRoot: SANDBOX_ROOT,
         env: process.env,
-        alreadySent: () => rt.queue.get(pending.id)?.outboxSent?.sentTo ?? [],
-        record: (r) => rt.queue.recordOutboxSends(pending.id, r),
+        alreadySent: (channel) => sentOn(rt.queue.get(pending.id), channel),
+        record: (channel, r) => rt.queue.recordOutboxSends(pending.id, channel, r),
       });
-      if (!run) {
+      if (!runs) {
         return c.json(
           {
             error:
@@ -1970,12 +2021,17 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           409,
         );
       }
-      sentNow = run.sentTo.length;
-      if (run.failed.length > 0) {
-        const detail = run.failed.map((f) => `${f.to}: ${f.reason}`).join('; ');
+      sentNow = runs.reduce((n, r) => n + r.run.sentTo.length, 0);
+      const failures = runs.flatMap((r) =>
+        r.run.failed.map((f) => ({ ...f, channel: r.channel })),
+      );
+      if (failures.length > 0) {
+        // The channel is named per failure now: with two of them in play, "ana@x
+        // — not connected" leaves the user guessing which send it belonged to.
+        const detail = failures.map((f) => `${f.to} on ${f.channel}: ${f.reason}`).join('; ');
         return c.json(
           {
-            error: `sent ${run.sentTo.length} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
+            error: `sent ${sentNow} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
           },
           400,
         );
@@ -2171,7 +2227,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       detail:
         body.action === 'promote'
           ? (sentNow > 0
-              ? `approved — sent ${sentNow} via ${pending.outbox?.channel}`
+              ? `approved — sent ${sentNow} via ${(pending.outbox ?? []).map((o) => o.channel).join(' and ')}`
               : installedPack
                 ? `approved — installed the ${installedPack} world`
                 : 'approved') +

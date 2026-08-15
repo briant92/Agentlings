@@ -507,6 +507,22 @@ export function sendPriceUsd(
  * reviewable behind it and the user's next move should be obvious.
  */
 export function outboxRefusal(
+  outboxes: Outbox[],
+  connections: Connection[],
+  settings: StoredSettings,
+  env: Record<string, string | undefined>,
+): string | null {
+  // Every channel or none (D-179): a job sending two ways must not send half
+  // and report the other half's reason afterwards, because the half that
+  // went cannot be unsent. The first reason is the whole answer.
+  for (const outbox of outboxes) {
+    const reason = oneOutboxRefusal(outbox, connections, settings, env);
+    if (reason) return reason;
+  }
+  return null;
+}
+
+function oneOutboxRefusal(
   outbox: Outbox,
   connections: Connection[],
   settings: StoredSettings,

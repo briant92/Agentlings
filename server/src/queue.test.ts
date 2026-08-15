@@ -118,7 +118,7 @@ describe('JobQueue', () => {
     const job = queue.add({
       title: 'Telegram to Brian',
       prompt: 'I need to send a Telegram to Brian',
-      channel: 'telegram',
+      channels: ['telegram'],
       send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
     });
     expect(job.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
@@ -200,11 +200,60 @@ describe('JobQueue', () => {
     // The outbox file is a deliverable by the top-level rule, so this is a
     // delivery even with nothing else in the sandbox.
     expect(done.status).toBe('done');
-    expect(done.outbox).toEqual({
-      channel: 'telegram',
-      messages: [{ to: '12345', name: 'Ana', body: 'padel on Thursday' }],
-    });
+    expect(done.outbox).toEqual([
+      {
+        channel: 'telegram',
+        messages: [{ to: '12345', name: 'Ana', body: 'padel on Thursday' }],
+      },
+    ]);
     expect(done.outboxError).toBeUndefined();
+  });
+
+  /**
+   * The several-channels file (D-179), stamped whole: one job, one run, a
+   * message set per channel. Written as a list by the session, and read back
+   * as one — the review renders a card each, and Approve sends them all.
+   */
+  it('stamps an OUTBOX.json that carries two channels', () => {
+    const job = queue.add({ title: 'Both', prompt: 'telegram Pepo and email Ana' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify([
+        { channel: 'telegram', messages: [{ to: '12345', body: 'the UF today' }] },
+        {
+          channel: 'gmail',
+          messages: [{ to: 'ana@example.com', subject: 'UF', body: 'The UF today is…' }],
+        },
+      ]),
+    );
+    queue.complete(job.id, 'wrote both');
+
+    const done = queue.get(job.id)!;
+    expect(done.outboxError).toBeUndefined();
+    expect(done.outbox?.map((o) => o.channel)).toEqual(['telegram', 'gmail']);
+    // The bodies differ on purpose — that is the point of one job per channel
+    // rather than one message copied twice.
+    expect(done.outbox?.[1].messages[0].subject).toBe('UF');
+  });
+
+  it('refuses two outboxes for one channel, by name', () => {
+    const job = queue.add({ title: 'Both', prompt: 'telegram Pepo twice' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify([
+        { channel: 'telegram', messages: [{ to: '1', body: 'a' }] },
+        { channel: 'telegram', messages: [{ to: '2', body: 'b' }] },
+      ]),
+    );
+    queue.complete(job.id, 'wrote two');
+
+    const done = queue.get(job.id)!;
+    expect(done.outbox).toBeUndefined();
+    expect(done.outboxError).toContain('one per channel');
   });
 
   it('surfaces an invalid OUTBOX.json as its reason, never as "no messages"', () => {
@@ -232,14 +281,14 @@ describe('JobQueue', () => {
 
     const failed = queue.get(job.id)!;
     expect(failed.status).toBe('partial'); // delivered something, so not a failure
-    expect(failed.outbox?.messages).toHaveLength(1);
+    expect(failed.outbox?.[0].messages).toHaveLength(1);
   });
 
   it('carries the channel a send job rides on, and only then', () => {
-    expect(queue.add({ title: 'Remind', prompt: 'x', channel: 'telegram' }).channel).toBe(
+    expect(queue.add({ title: 'Remind', prompt: 'x', channels: ['telegram'] }).channels?.[0]).toBe(
       'telegram',
     );
-    expect(queue.add({ title: 'Plain', prompt: 'x' }).channel).toBeUndefined();
+    expect(queue.add({ title: 'Plain', prompt: 'x' }).channels).toBeUndefined();
   });
 
   it('merges send results so a retry skips everyone already messaged', () => {
@@ -248,15 +297,41 @@ describe('JobQueue', () => {
     queue.start(job.id);
     queue.fail(job.id, 'x');
 
-    queue.recordOutboxSends(job.id, {
+    queue.recordOutboxSends(job.id, 'telegram', {
       sentTo: ['1'],
       failed: [{ to: '2', reason: 'chat not found' }],
     });
-    queue.recordOutboxSends(job.id, { sentTo: ['2'], failed: [] });
+    queue.recordOutboxSends(job.id, 'telegram', { sentTo: ['2'], failed: [] });
 
     const sent = queue.get(job.id)!.outboxSent!;
-    expect(sent.sentTo).toEqual(['1', '2']);
-    expect(sent.failed).toEqual([]);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].sentTo).toEqual(['1', '2']);
+    expect(sent[0].failed).toEqual([]);
+  });
+
+  /**
+   * Per channel, never pooled (D-179). The same address on two channels is two
+   * different messages, and one flat sent-list would read the first as having
+   * already delivered the second — a send silently skipped, which is the
+   * opposite failure to D-160's double and just as bad.
+   */
+  it('keeps each channel’s send stamp apart', () => {
+    const job = queue.add({ title: 'Both', prompt: 'telegram Ana and email Ana' });
+    queue.recordOutboxSends(job.id, 'telegram', { sentTo: ['ana'], failed: [] });
+    queue.recordOutboxSends(job.id, 'gmail', {
+      sentTo: [],
+      failed: [{ to: 'ana', reason: 'no address' }],
+    });
+
+    const stamps = queue.get(job.id)!.outboxSent!;
+    expect(stamps.map((s) => s.channel)).toEqual(['telegram', 'gmail']);
+    expect(stamps.find((s) => s.channel === 'telegram')!.sentTo).toEqual(['ana']);
+    expect(stamps.find((s) => s.channel === 'gmail')!.sentTo).toEqual([]);
+    // The retry reaches the address that failed, and nobody twice.
+    queue.recordOutboxSends(job.id, 'gmail', { sentTo: ['ana'], failed: [] });
+    const after = queue.get(job.id)!.outboxSent!;
+    expect(after).toHaveLength(2);
+    expect(after.find((s) => s.channel === 'gmail')!.sentTo).toEqual(['ana']);
   });
 
   // The stamp is who has been sent to, not how many times sending happened
@@ -267,10 +342,10 @@ describe('JobQueue', () => {
     queue.start(job.id);
     queue.fail(job.id, 'x');
 
-    queue.recordOutboxSends(job.id, { sentTo: ['1'], failed: [] });
-    queue.recordOutboxSends(job.id, { sentTo: ['1'], failed: [] });
+    queue.recordOutboxSends(job.id, 'telegram', { sentTo: ['1'], failed: [] });
+    queue.recordOutboxSends(job.id, 'telegram', { sentTo: ['1'], failed: [] });
 
-    expect(queue.get(job.id)!.outboxSent!.sentTo).toEqual(['1']);
+    expect(queue.get(job.id)!.outboxSent![0].sentTo).toEqual(['1']);
   });
 
   it('hands a freed slot to the oldest waiting job', () => {

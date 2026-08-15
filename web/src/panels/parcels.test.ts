@@ -35,7 +35,7 @@ describe('parcelKindOf', () => {
   it('side-effects outrank the patch: an outbox with a diff is still acts', () => {
     const both = job({
       changes: { files: 1, added: 3, removed: 0, names: [] },
-      outbox: { channel: 'telegram', messages: [{ to: '1', body: 'hi' }] },
+      outbox: [{ channel: 'telegram', messages: [{ to: '1', body: 'hi' }] }],
     });
     expect(parcelKindOf(both)).toBe('acts');
   });
@@ -70,7 +70,7 @@ describe('parcelSections and parcelOrder', () => {
   it('groups acts, then patches, then files, oldest first within each', () => {
     const patch = job({ changes: { files: 1, added: 1, removed: 0, names: [] }, finishedAt: 50 });
     const send = job({
-      outbox: { channel: 'telegram', messages: [{ to: '1', body: 'hi' }] },
+      outbox: [{ channel: 'telegram', messages: [{ to: '1', body: 'hi' }] }],
       finishedAt: 900,
     });
     const plain = job({ finishedAt: 10 });
@@ -88,14 +88,16 @@ describe('parcelSections and parcelOrder', () => {
 describe('parcelChips', () => {
   it('says what approving would touch, unsent counted honestly', () => {
     const sent = job({
-      outbox: {
-        channel: 'telegram',
-        messages: [
-          { to: 'a', body: 'x' },
-          { to: 'b', body: 'y' },
-        ],
-      },
-      outboxSent: { at: 1, sentTo: ['a'], failed: [] },
+      outbox: [
+        {
+          channel: 'telegram',
+          messages: [
+            { to: 'a', body: 'x' },
+            { to: 'b', body: 'y' },
+          ],
+        },
+      ],
+      outboxSent: [{ at: 1, channel: 'telegram', sentTo: ['a'], failed: [] }],
       changes: { files: 2, added: 9, removed: 1, names: [] },
     });
     expect(parcelChips(sent)).toEqual(['1 send', '+9 −1']);

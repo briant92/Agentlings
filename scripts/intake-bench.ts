@@ -18,15 +18,18 @@
 // point of running this:
 //
 //   MISS       — the rule could have fired and did not. Tunable.
-//   STRUCTURAL — the label cannot be expressed at all: a job carries one
-//                channel, a chain carries three steps, and nothing anywhere
-//                carries "redact this first". Not tunable; a decision.
+//   STRUCTURAL — the label cannot be expressed at all: a chain carries three
+//                steps, some channels have no client that could send, and
+//                nothing anywhere carries "redact this first". Not tunable;
+//                a decision. (One channel per job was on this list until
+//                D-179 took it off.)
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clarificationLines, questionsFor } from '../server/src/clarify';
 import { channelBrief, detectChannelAsk, mentionsChannel } from '../server/src/channel';
+import { CHANNELS } from '../server/src/channels';
 import { readConnections } from '../server/src/connections';
 import { MatchIndex, suggestSetup } from '../server/src/match';
 import { wantsOrganize } from '../server/src/organize';
@@ -154,6 +157,14 @@ function readSentence(test: BenchCase) {
     steps,
     ask,
     channel,
+    // The channels the queued job would carry — the same wired-only rule
+    // `queueSentence` settles by (D-179).
+    carried: [
+      ...(ask?.channel && CHANNELS[ask.channel] ? [ask.channel] : []),
+      ...(ask?.also ?? [])
+        .map((option) => option.channel)
+        .filter((name) => CHANNELS[name] && name !== ask?.channel),
+    ],
     // The near-miss the desk questions rather than claims (D-093), per step
     // for the same reason the ask is.
     mention: sentences.map((s) => mentionsChannel(s)).find(Boolean) ?? null,
@@ -197,16 +208,25 @@ function run(test: BenchCase): Ran {
         : 'none';
     const first = want.channels[0] ?? null;
     // Recognised outright, recovered by a confirmation, or lost — and, when
-    // the sentence asks for more than one, the model's own ceiling.
+    // the sentence asks for more than one, whether the job carries them all.
     const one: Verdict =
       first === claimed ? 'ok' : first !== null && first === questioned ? 'asked' : 'miss';
     if (want.channels.length > 1) {
+      // One job now sends on every wired channel the sentence asked for
+      // (D-179), so the question is no longer "which one survived" but "are
+      // they all carried" — a channel no client can send is still a real
+      // limit and still counts as structural.
+      const carried = new Set(seen.carried);
+      const unsendable = want.channels.filter((channel) => !CHANNELS[channel]);
+      const missing = want.channels.filter(
+        (channel) => !carried.has(channel) && CHANNELS[channel],
+      );
       add(
         'channel',
-        one === 'miss' ? 'miss' : 'structural',
+        missing.length > 0 ? 'miss' : unsendable.length > 0 ? 'structural' : 'ok',
         expected,
-        `${actual} — the rest dropped`,
-        'a job carries one channel',
+        carried.size > 0 ? `carries ${[...carried].join(' + ')}` : actual,
+        unsendable.length > 0 ? `${unsendable.join(', ')} cannot send at all` : undefined,
       );
       // Structural is not the same as silent. Whatever the job ends up
       // carrying, the desk has to name every other channel the sentence asked

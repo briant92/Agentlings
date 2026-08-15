@@ -24,7 +24,7 @@ export const PARCEL_SECTIONS: { kind: ParcelKind; title: string; note: string }[
  * carrying both an outbox and a diff is above all a thing that will *send*.
  */
 export function parcelKindOf(job: Job): ParcelKind {
-  if (job.outbox || job.packDraft || job.moves) return 'acts';
+  if (job.outbox?.length || job.packDraft || job.moves) return 'acts';
   if ((job.changes?.files ?? 0) > 0) return 'patch';
   return 'files';
 }
@@ -64,9 +64,13 @@ export function parcelOrder(jobs: readonly Job[]): string[] {
 export function parcelChips(job: Job): string[] {
   const chips: string[] = [];
   if (job.packDraft) chips.push(`world “${job.packDraft.pack.name}”`);
-  if (job.outbox) {
-    const sent = job.outboxSent?.sentTo ?? [];
-    const unsent = job.outbox.messages.filter((m) => !sent.includes(m.to)).length;
+  if (job.outbox?.length) {
+    // Counted per channel (D-179): the same address on two channels is two
+    // sends, and one flat sent-list would call the second one already done.
+    const unsent = job.outbox.reduce((n, outbox) => {
+      const sent = job.outboxSent?.find((s) => s.channel === outbox.channel)?.sentTo ?? [];
+      return n + outbox.messages.filter((m) => !sent.includes(m.to)).length;
+    }, 0);
     chips.push(unsent === 1 ? '1 send' : `${unsent} sends`);
   }
   if (job.moves) chips.push(`${job.moves.moves.length} moves`);

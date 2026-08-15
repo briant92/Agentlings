@@ -51,14 +51,14 @@ describe('performOutboxSend', () => {
   });
 
   const opts = (fetchFn: typeof fetch, over: Partial<OutboxSendOpts> = {}): OutboxSendOpts => ({
-    outbox: { channel: 'telegram', messages: [{ to: '1', name: 'Ana', body: 'the words' }] },
+    outboxes: [{ channel: 'telegram', messages: [{ to: '1', name: 'Ana', body: 'the words' }] }],
     jobId: 'j1',
     levelId: 'hq',
     dir,
     sandboxRoot: root,
     env: { TELEGRAM_BOT_TOKEN: 't' },
     alreadySent: () => stamped,
-    record: (run) => {
+    record: (_channel, run) => {
       stamped = [...new Set([...stamped, ...run.sentTo])];
     },
     fetchFn,
@@ -71,7 +71,7 @@ describe('performOutboxSend', () => {
     const [a, b] = await Promise.all([performOutboxSend(shared), performOutboxSend(shared)]);
     const runs = [a, b].filter(Boolean);
     expect(runs).toHaveLength(1);
-    expect(runs[0]!.sentTo).toEqual(['1']);
+    expect(runs[0]![0].run.sentTo).toEqual(['1']);
     expect(count()).toBe(1);
     // The audit shows one send, because one send happened.
     expect(readSends(root)).toHaveLength(1);
@@ -84,7 +84,7 @@ describe('performOutboxSend', () => {
     await performOutboxSend(shared);
     const again = await performOutboxSend(shared);
     expect(again).not.toBeNull(); // entered — the door is not locked
-    expect(again!.sentTo).toEqual([]); // but the stamp, read under the claim, skips them
+    expect(again![0].run.sentTo).toEqual([]); // but the stamp, read under the claim, skips them
     expect(count()).toBe(1);
     expect(readSends(root)).toHaveLength(1);
   });
@@ -99,10 +99,10 @@ describe('performOutboxSend', () => {
     });
     const shared = opts(fn);
     const first = await performOutboxSend(shared);
-    expect(first!.failed).toEqual([{ to: '1', reason: 'chat not found' }]);
+    expect(first![0].run.failed).toEqual([{ to: '1', reason: 'chat not found' }]);
     const second = await performOutboxSend(shared);
     expect(second).not.toBeNull();
-    expect(second!.sentTo).toEqual(['1']);
+    expect(second![0].run.sentTo).toEqual(['1']);
     const audit = readSends(root);
     expect(audit.map((r) => r.ok)).toEqual([false, true]);
   });
@@ -123,10 +123,10 @@ describe('performOutboxSend', () => {
     const { fn } = fakeFetch(() => ({ ok: true }));
     await performOutboxSend(
       opts(fn, {
-        outbox: {
+        outboxes: [{
           channel: 'telegram',
           messages: [{ to: '1', name: 'Ana', body: 'here', files: ['report.pdf'] }],
-        },
+        }],
       }),
     );
     const [row] = readSends(root);

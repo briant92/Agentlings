@@ -20,13 +20,30 @@ import { normalise } from './recipes';
  * design — and an auto-sent job still lands in the inbox as promoted work
  * with every message on its card, plus a row per send in sends.jsonl.
  */
-export interface SendApproval {
-  key: string;
+/** One channel's half of an approved signature (D-179). */
+export interface ApprovedChannel {
   channel: string;
   /** Sorted and deduplicated. THE allowlist — auto-send reaches these and nobody else. */
   recipients: string[];
   /** The template name, where the channel sends templates. */
   template?: string;
+}
+
+export interface SendApproval {
+  key: string;
+  /**
+   * Every channel this job sends on, with its own allowlist (D-179).
+   *
+   * The scope stays the job, which is why this is a list inside one approval
+   * rather than an approval per channel: a two-channel job that could
+   * auto-send one half and hold the other would send *some* of a send nobody
+   * reviewed, which is worse than either whole answer. Covered means covered
+   * everywhere.
+   *
+   * Approvals written before D-179 carry a flat channel and recipients; they
+   * are lifted into a one-entry list on read.
+   */
+  channels: ApprovedChannel[];
   /** Consecutive unchanged approvals; any signature change starts over. */
   approvals: number;
   auto: boolean;
@@ -46,10 +63,41 @@ export function readApprovals(dir: string): SendApproval[] {
   if (!existsSync(file)) return [];
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as SendApproval[];
-    return Array.isArray(parsed) ? parsed.filter((a) => a?.key) : [];
+    return Array.isArray(parsed) ? parsed.filter((a) => a?.key).map(liftApproval) : [];
   } catch {
     return []; // a torn file must not take the level down
   }
+}
+
+/**
+ * An approval written before D-179 made the signature a list, lifted on read.
+ *
+ * A grant is a security boundary, so this must never widen one: the lifted
+ * entry carries exactly the channel, recipients and template that were
+ * approved, and a row too damaged to say what was approved keeps its count
+ * but grants nothing — `channels: []` matches no outbox, so `autoSendable`
+ * refuses and the send goes back to a human.
+ */
+function liftApproval(approval: SendApproval): SendApproval {
+  if (Array.isArray(approval.channels)) return approval;
+  const legacy = approval as SendApproval & {
+    channel?: string;
+    recipients?: string[];
+    template?: string;
+  };
+  approval.channels = legacy.channel
+    ? [
+        {
+          channel: legacy.channel,
+          recipients: legacy.recipients ?? [],
+          ...(legacy.template ? { template: legacy.template } : {}),
+        },
+      ]
+    : [];
+  delete legacy.channel;
+  delete legacy.recipients;
+  delete legacy.template;
+  return approval;
 }
 
 function writeApprovals(dir: string, list: SendApproval[]): void {
@@ -69,12 +117,28 @@ function sameRecipients(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
-function signatureMatches(approval: SendApproval, outbox: Outbox): boolean {
-  return (
-    approval.channel === outbox.channel &&
-    (approval.template ?? null) === (outbox.template?.name ?? null) &&
-    sameRecipients(approval.recipients, recipientsOf(outbox))
-  );
+/** The signature of what is being sent, channels in the order they arrive. */
+function signatureOf(outboxes: Outbox[]): ApprovedChannel[] {
+  return outboxes.map((outbox) => ({
+    channel: outbox.channel,
+    recipients: recipientsOf(outbox),
+    ...(outbox.template?.name ? { template: outbox.template.name } : {}),
+  }));
+}
+
+function signatureMatches(approval: SendApproval, outboxes: Outbox[]): boolean {
+  const now = signatureOf(outboxes);
+  // A channel added or dropped is a change like any other: what was trusted
+  // is not what is now being sent.
+  if (approval.channels.length !== now.length) return false;
+  return now.every((sending) => {
+    const approved = approval.channels.find((c) => c.channel === sending.channel);
+    return (
+      !!approved &&
+      (approved.template ?? null) === (sending.template ?? null) &&
+      sameRecipients(approved.recipients, sending.recipients)
+    );
+  });
 }
 
 /**
@@ -86,13 +150,13 @@ function signatureMatches(approval: SendApproval, outbox: Outbox): boolean {
 export function recordApproval(
   dir: string,
   prompt: string,
-  outbox: Outbox,
+  outboxes: Outbox[],
   now: number,
 ): SendApproval {
   const key = approvalKey(prompt);
   const list = readApprovals(dir);
   const existing = list.find((a) => a.key === key);
-  if (existing && signatureMatches(existing, outbox)) {
+  if (existing && signatureMatches(existing, outboxes)) {
     existing.approvals += 1;
     existing.lastAt = now;
     writeApprovals(dir, list);
@@ -100,19 +164,14 @@ export function recordApproval(
   }
   const fresh: SendApproval = {
     key,
-    channel: outbox.channel,
-    recipients: recipientsOf(outbox),
-    ...(outbox.template?.name ? { template: outbox.template.name } : {}),
+    channels: signatureOf(outboxes),
     approvals: 1,
     auto: false,
     lastAt: now,
   };
   if (existing) {
     Object.assign(existing, { auto: false, approvals: 1 });
-    existing.channel = fresh.channel;
-    existing.recipients = fresh.recipients;
-    if (fresh.template) existing.template = fresh.template;
-    else delete existing.template;
+    existing.channels = fresh.channels;
     delete existing.grantedAt;
     existing.lastAt = now;
     writeApprovals(dir, list);
@@ -150,11 +209,17 @@ export function setAuto(
  * only moment it matters. Subset on purpose: sending to *fewer* approved
  * people is fine; anyone new is not.
  */
-export function autoSendable(approval: SendApproval | undefined, outbox: Outbox): boolean {
+export function autoSendable(approval: SendApproval | undefined, outboxes: Outbox[]): boolean {
   if (!approval?.auto) return false;
-  if (approval.channel !== outbox.channel) return false;
-  if ((approval.template ?? null) !== (outbox.template?.name ?? null)) return false;
-  return outbox.messages.every((m) => approval.recipients.includes(m.to));
+  // Every channel being sent must be one this grant covers. Sending fewer
+  // channels than were approved is fine for the same reason sending to fewer
+  // people is: the grant bounds the reach, it does not require using it.
+  return outboxes.every((outbox) => {
+    const approved = approval.channels.find((c) => c.channel === outbox.channel);
+    if (!approved) return false;
+    if ((approved.template ?? null) !== (outbox.template?.name ?? null)) return false;
+    return outbox.messages.every((m) => approved.recipients.includes(m.to));
+  });
 }
 
 /**
@@ -168,12 +233,12 @@ export function autoBlocker(
 ): string | null {
   if (job.compile) return 'a compile is never auto-sent';
   if (job.status !== 'done') return 'only a clean finish may auto-send';
-  if (!job.outbox) return 'no outbox';
+  if (!job.outbox?.length) return 'no outbox';
   if (job.outboxError) return 'the outbox did not parse';
   // A standing approval covered words to an allowlist, never files (D-159).
   // The extras check below already stops root deliverables from slipping out,
   // but an `input/` forward would pass it — this names the rule itself.
-  if (job.outbox.messages.some((m) => m.files?.length)) {
+  if (job.outbox.some((outbox) => outbox.messages.some((m) => m.files?.length))) {
     return 'the outbox sends files — a file leaves only through review';
   }
   if (job.changes && job.changes.files > 0) return 'the run also changed code';
@@ -185,9 +250,7 @@ export function autoBlocker(
 export function describeApproval(approval: SendApproval): SendApprovalInfo {
   return {
     key: approval.key,
-    channel: approval.channel,
-    recipients: approval.recipients,
-    ...(approval.template ? { template: approval.template } : {}),
+    channels: approval.channels,
     approvals: approval.approvals,
     auto: approval.auto,
     eligible: !approval.auto && approval.approvals >= APPROVALS_FOR_AUTO,

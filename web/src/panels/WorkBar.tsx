@@ -686,11 +686,19 @@ export function WorkBar({
         </p>
       )}
 
-      {plan?.channelAsk && !askingRepo && plan.channelAsk.state === 'ready' && (
-        <p className="work-gaps work-channel-ready">
-          sends via {plan.channelAsk.askedLabel} · every message waits for your review
-        </p>
-      )}
+      {/* The single-channel chip. It stands down when the sentence asked for
+          more than one, because the line below says the whole truth and this
+          one would contradict it — seen in the running app, which said "sends
+          via Telegram" and "sends via Telegram and Gmail" one under the
+          other. */}
+      {plan?.channelAsk &&
+        !askingRepo &&
+        plan.channelAsk.state === 'ready' &&
+        !plan.channelAsk.also?.length && (
+          <p className="work-gaps work-channel-ready">
+            sends via {plan.channelAsk.askedLabel} · every message waits for your review
+          </p>
+        )}
 
       {/* Two channels in one sentence (D-178, D-179). The job now carries every
           wired one — one run, one message set each — and what is left over is

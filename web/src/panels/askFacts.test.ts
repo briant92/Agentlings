@@ -33,6 +33,28 @@ describe('alsoAskedLine (D-178, D-179)', () => {
     expect(line?.dropped).toEqual([]);
   });
 
+  /**
+   * Seen in the running app: the line read "which cannot send — not
+   * available" while the real reason sat one field away, because the asked
+   * channel has no option row of its own to carry a detail. Its reason is the
+   * first sentence of the card's note; the rest is the fork's advice.
+   */
+  it('the asked channel carries its reason from the note', () => {
+    const line = alsoAskedLine(
+      {
+        asked: 'whatsapp',
+        askedLabel: 'WhatsApp',
+        state: 'never',
+        note: 'Personal WhatsApp has no API, and unofficial routes get numbers banned. Pick a channel that can, or Start queues this as a draft job that sends nothing.',
+        also: [{ channel: 'gmail', label: 'Gmail', state: 'ready' as const, detail: '' }],
+      },
+      null,
+    );
+    expect(line?.dropped[0].detail).toBe(
+      'Personal WhatsApp has no API, and unofficial routes get numbers banned.',
+    );
+  });
+
   it('a channel nothing can send is still named as dropped', () => {
     const line = alsoAskedLine(
       {

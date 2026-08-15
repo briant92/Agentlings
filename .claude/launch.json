@@ -9,6 +9,13 @@
       "autoPort": false
     },
     {
+      "name": "agentlings-serve",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "serve"],
+      "port": 5173,
+      "autoPort": false
+    },
+    {
       "name": "agentlings-attached",
       "url": "http://localhost:5173",
       "port": 5173

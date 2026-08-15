@@ -40,12 +40,29 @@ const SHAPES: Record<string, { test: RegExp; wants: string }> = {
  * *asked* channel the dropped one.
  */
 export function alsoAskedLine(
-  ask: { asked: string; askedLabel: string; state: string; channel?: string; also?: ChannelOption[] },
+  ask: {
+    asked: string;
+    askedLabel: string;
+    state: string;
+    note?: string;
+    channel?: string;
+    also?: ChannelOption[];
+  },
   picked: string | null,
 ): { carried: { channel: string; label: string }[]; dropped: ChannelOption[] } | null {
   if (!ask.also?.length) return null;
   const named: ChannelOption[] = [
-    { channel: ask.asked, label: ask.askedLabel, state: ask.state as ChannelOption['state'], detail: '' },
+    {
+      channel: ask.asked,
+      label: ask.askedLabel,
+      state: ask.state as ChannelOption['state'],
+      // The asked channel has no option row of its own, so its reason has to
+      // come from the card's note — its first sentence is exactly the reason
+      // ("Personal WhatsApp has no API…"), the rest being the fork's advice.
+      // Seen in the running app, which said "which cannot send — not
+      // available" while the real reason sat unused one field away.
+      detail: (ask.note ?? '').split(/(?<=\.)\s/)[0] ?? '',
+    },
     ...ask.also,
   ];
   // One job now sends on every wired channel the sentence asked for (D-179),

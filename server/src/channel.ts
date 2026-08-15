@@ -362,13 +362,19 @@ function alsoAsked(p: string, asked: string): string[] {
   return found;
 }
 
-export function detectChannelAsk(
-  prompt: string,
-  connections: Connection[],
-  settings: StoredSettings,
-  env: Record<string, string | undefined>,
-): ChannelAsk | null {
-  const p = prompt.toLowerCase();
+/**
+ * The channel this text claims to send on, or null — the gate itself, with
+ * nothing about connections in it (D-182).
+ *
+ * Split out of `detectChannelAsk` because a second caller needs exactly this
+ * question and nothing else: the step splitter has to know whether the clause
+ * after an "and" is a *send*, and it has no business asking what is connected.
+ * One notion, one place — the alternative was a second, quietly different idea
+ * of "this is a send" living in `steps.ts`, which is how two rules that sound
+ * alike start disagreeing (D-030).
+ */
+export function claimedChannel(text: string): string | null {
+  const p = text.toLowerCase();
   let asked: string | null = null;
   let at = Infinity;
   for (const [re, channel] of CHANNEL_WORDS) {
@@ -383,13 +389,21 @@ export function detectChannelAsk(
   // verbs claim only beside its word (D-104), and its own name claims when it
   // is standing where the verb goes. Anything less is a mention, and mentions
   // are D-093's question, never a claim.
-  if (
-    !SEND_VERBS.test(p) &&
-    !SCOPED_CLAIMS[asked]?.test(p) &&
-    !CHANNEL_AS_VERB[asked]?.test(p)
-  ) {
+  if (!SEND_VERBS.test(p) && !SCOPED_CLAIMS[asked]?.test(p) && !CHANNEL_AS_VERB[asked]?.test(p)) {
     return null;
   }
+  return asked;
+}
+
+export function detectChannelAsk(
+  prompt: string,
+  connections: Connection[],
+  settings: StoredSettings,
+  env: Record<string, string | undefined>,
+): ChannelAsk | null {
+  const p = prompt.toLowerCase();
+  const asked = claimedChannel(prompt);
+  if (!asked) return null;
 
   const askedLabel = LABELS[asked] ?? asked;
   const own = optionFor(asked, connections, settings, env);

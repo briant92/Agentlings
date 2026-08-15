@@ -109,8 +109,8 @@ export const CASES: BenchCase[] = [
     family: 'send-multi',
     prompt:
       'Research this week AI funding rounds, write it up, then email it to Ana and telegram me the headline',
-    expect: { channels: ['gmail', 'telegram'], steps: 3 },
-    note: 'A chain whose last step is itself two channels.',
+    expect: { channels: ['gmail', 'telegram'], steps: 2 },
+    note: 'A chain whose last step is itself two channels. Two steps, not three: "research X, write it up" is one deliverable, and the tail is one job on two channels (D-179). Labelled 3 until 2026-08-15 — my error, not the desk’s.',
   },
   {
     id: 'multi-05',
@@ -190,6 +190,30 @@ export const CASES: BenchCase[] = [
     family: 'chain-implicit',
     prompt: 'First read the PDF, next pull out the figures, finally email me a table',
     expect: { steps: 3, channels: ['gmail'] },
+  },
+
+  // ── "and" joining two things that are not two steps. The cases that kept
+  //    bare "and" out of the splitter, kept beside the ones that now split. ─
+  {
+    id: 'implicit-05',
+    family: 'chain-implicit',
+    prompt: 'Summarise the expenses CSV and the XLSX',
+    expect: { steps: null, channels: [] },
+    note: 'A second object, not a second instruction.',
+  },
+  {
+    id: 'implicit-06',
+    family: 'chain-implicit',
+    prompt: 'Read the incident report and summarise it',
+    expect: { steps: null },
+    note: 'Two stages of one job — a verb after "and" is not enough, or this splits into a read that delivers nothing.',
+  },
+  {
+    id: 'implicit-07',
+    family: 'chain-implicit',
+    prompt: 'Summarise the expenses CSV and the telegram export',
+    expect: { steps: null, channels: [] },
+    note: 'A channel word with no send verb splits nothing, exactly as it claims nothing.',
   },
 
   // ── Files riding with a message. ─────────────────────────────────────────

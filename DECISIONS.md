@@ -191,6 +191,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-179 — 2026-08-14 — Two channels, one job: the work happens once and each channel gets its own message set](#d-179--2026-08-14--two-channels-one-job-the-work-happens-once-and-each-channel-gets-its-own-message-set)
 - [D-180 — 2026-08-15 — A recipient per channel: the id carries which, and the card says so before an address is typed](#d-180--2026-08-15--a-recipient-per-channel-the-id-carries-which-and-the-card-says-so-before-an-address-is-typed)
 - [D-181 — 2026-08-15 — The withholding gate: a promise narrow enough to check, refused loudly when it fails](#d-181--2026-08-15--the-withholding-gate-a-promise-narrow-enough-to-check-refused-loudly-when-it-fails)
+- [D-182 — 2026-08-15 — The one "and" that splits: a send after it, and none before it](#d-182--2026-08-15--the-one-and-that-splits-a-send-after-it-and-none-before-it)
 
 ## By theme
 
@@ -595,7 +596,11 @@ entry updates one file rather than two.
   an ordinary job with its own recipe key, tier and quote, files flowing
   forward as the next step's input/ and a failed step halting the chain:
   D-105, the review's G3 — with open-ended goal decomposition deliberately
-  still parked in M6; and D-106, where the repeat row learned to schedule
+  still parked in M6; and D-182, which reopened bare "and" for exactly one
+  shape — a send after it and none before it, the split D-105 exists for —
+  while a second object, two stages of one job, and two sends on two channels
+  all stay one job, and where a mislabelled corpus case was corrected rather
+  than built towards; and D-106, where the repeat row learned to schedule
   **without** running today and to say the first firing's date, found by
   T5's own rule the first evening anyone used the timer
 - **What the desk understands, measured** — D-177, the intake benchmark: 51
@@ -11908,3 +11913,64 @@ explicitly does not do stated beside it.
 
 Not verified in a browser: the server here runs `--no-watch` and is still on
 older code.
+
+## D-182 — 2026-08-15 — The one "and" that splits: a send after it, and none before it
+
+Bare "and" was refused as a step marker three times, and the note in `steps.ts`
+said it "stays absent". This reopens exactly one shape of it, and the reason it
+is reopenable is that the old argument was true of most sentences and not of
+this one.
+
+The old argument: "summarise the CSV and the XLSX" and "summarise the CSV and
+telegram Brian the total" are the same shape to any rule that does not
+understand the words. That holds for a second *object* and it holds for a
+second *stage* — "read the report and summarise it" is one job, and splitting
+it produces a first step that delivers nothing anyone asked for. It does not
+hold for a **send**: the desk already has a gate that names one, and it is the
+same gate the ask-card claims with.
+
+So: **an "and" splits when the clause after it claims a channel and the clause
+before it does not.** That is the shape D-105's own docstring is about — "a
+compiled tool and a cheap send wearing a 50c session's clothes" — and it is
+the only one where splitting pays, because the point of splitting is to put a
+send on its own cheap tier.
+
+Two sends is the exception inside the exception. "Email it to Ana and telegram
+me the headline" is one job on two channels (D-179), and splitting it would
+have undone that entry a week after it landed.
+
+`claimedChannel` was extracted from `detectChannelAsk` rather than re-derived,
+so the splitter and the desk cannot disagree about what a send is — the
+alternative was a second, quietly different notion of "this is a send" living
+in `steps.ts` (D-030's fault, invited).
+
+### A label of mine was wrong, and the fix was the label
+
+`multi-04` — "Research this week AI funding rounds, write it up, then email it
+to Ana and telegram me the headline" — was labelled three steps and read as a
+miss. It is **two**: "research X, write it up" is one deliverable, and the tail
+is one job on two channels. Building a comma-splitter to satisfy that label
+would have been tuning the product to my own error. The corpus carries the
+correction and the date, because a benchmark whose labels are quietly edited to
+match the code is worth nothing.
+
+### What proved it
+
+Misses **3 → 0**. The corpus went to 54 sentences, and the three added are all
+counter-cases written *before* the rule: a second object, two stages of one
+job, and a channel word with no send verb. Tuning to three failing cases
+without them would have measured nothing.
+
+A second-order gain, unlooked for: the `channel` surface went from two
+recovered-by-asking to one. Splitting "summarise the CSV and telegram Brian the
+total" leaves a step that *starts* with its channel-as-verb, so it claims
+outright where the joined sentence needed the confirmation card.
+
+Two of my own tests failed on the new rule and were corrected rather than
+deleted: both were about something else — the numbered-list guard and "no
+marker, no split" — and both had picked example sentences that happened to end
+in a send. Their sentences changed so they still test what they say.
+
+1,647 server and 192 web tests, typecheck clean. Verified live against a
+restarted server: the four readings behave as written, including the two that
+must *not* split.

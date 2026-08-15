@@ -59,7 +59,10 @@ describe('splitSteps — the other ways people write a sequence', () => {
     // instruction too, and a numbered split would drop it silently. Found by
     // mutation — the single-mark case below is refused by a different guard,
     // so it proved nothing about this one.
-    expect(splitSteps('read the attached csv and 1. total the rows 2. email Ana')).toBeNull();
+    // No send in the tail, so this isolates the numbered guard — the version
+    // ending "2. email Ana" now splits on its send-"and" (D-182) and would
+    // have stopped testing what it says it tests.
+    expect(splitSteps('read the attached csv and 1. total the rows 2. check the dates')).toBeNull();
     expect(splitSteps('the plan is 1. draft the note 2. send it to Ana')).toBeNull();
     // One mark is not a list at all.
     expect(splitSteps('reduce the timeout to 1. check nothing hangs')).toBeNull();
@@ -74,9 +77,60 @@ describe('splitSteps — the other ways people write a sequence', () => {
   });
 });
 
+/**
+ * The one "and" that splits (D-182). Bare "and" was refused three times and
+ * still is for almost everything; what changed is that a *send* after it can
+ * be told apart from a second object, and that is the split D-105 exists for.
+ */
+describe('splitSteps — an "and" before a send', () => {
+  it('splits work from the send that follows it', () => {
+    expect(splitSteps('summarise the expenses csv and telegram Brian the total')).toEqual([
+      'summarise the expenses csv',
+      'telegram Brian the total',
+    ]);
+    expect(splitSteps('write them into a table and email it to Ana')).toEqual([
+      'write them into a table',
+      'email it to Ana',
+    ]);
+  });
+
+  it('splits inside a worded step too, not only the whole sentence', () => {
+    expect(
+      splitSteps('look up the UF values. After that, write them into a table and email it to Ana'),
+    ).toEqual(['look up the UF values', 'write them into a table', 'email it to Ana']);
+  });
+
+  it('leaves a second object alone — the case that kept "and" out for so long', () => {
+    expect(splitSteps('summarise the expenses csv and the xlsx')).toBeNull();
+    expect(splitSteps('fix the failing test and the lint error')).toBeNull();
+  });
+
+  it('leaves two stages of one job alone: a verb after "and" is not enough', () => {
+    // The reason the rule is "a send follows", not "a verb follows". Reading
+    // and summarising is one job, and splitting it buys nothing — the second
+    // step would have to be handed the first one's output to say anything.
+    expect(splitSteps('read the report and summarise it')).toBeNull();
+    expect(splitSteps('total the rows and chart them')).toBeNull();
+  });
+
+  it('two sends are one job on two channels, never two steps (D-179)', () => {
+    expect(splitSteps('email it to Ana and telegram me the headline')).toBeNull();
+    expect(splitSteps('telegram Pepo the UF and email the same figures to Ana')).toBeNull();
+  });
+
+  it('a mentioned channel is not a send — the split needs a real claim', () => {
+    // `claimedChannel` is the desk's own gate, so a channel word with no verb
+    // beside it splits nothing, exactly as it claims nothing (D-093).
+    expect(splitSteps('summarise the expenses csv and the telegram export')).toBeNull();
+  });
+});
+
 describe('splitSteps — when it refuses (the never-guess side)', () => {
   it('no marker, no split', () => {
-    expect(splitSteps('summarise the expenses csv and email me')).toBeNull();
+    // "…and email me" splits now (D-182) — it is a send after an "and", the
+    // one shape that can be told from a second object. Something with no send
+    // in it keeps this test about what it was about.
+    expect(splitSteps('summarise the expenses csv and the xlsx')).toBeNull();
     expect(splitSteps('write a note about the launch')).toBeNull();
   });
 

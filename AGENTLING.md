@@ -1418,10 +1418,13 @@ without an API key.
   order out — "then", "after that", "next", "finally", or a numbered list
   (D-105, D-177) — shown before Start, at most three, each step an ordinary
   job whose delivery queues the next with its files and with the answers you
-  gave at the desk. Bare "and" is not a marker and is not meant to become
-  one: "summarise the CSV and the XLSX" and "summarise the CSV and telegram
-  Brian the total" are the same shape to any rule that does not understand
-  the words. The app never invents steps you did not write; that open-ended
+  gave at the desk. Bare "and" splits in exactly one case (D-182) — a **send**
+  after it and no send before it, "summarise the CSV **and telegram Brian the
+  total**" — because that is the one reading the desk's own send gate can tell
+  from a second object. "Summarise the CSV and the XLSX" stays one job, so
+  does "read the report and summarise it", and so does "email it to Ana and
+  telegram me the headline", which is one job on two channels rather than two
+  steps. The app never invents steps you did not write; that open-ended
   decomposition stays parked in M6.
 - **Not a chat.** A reply is a new job that carries the previous sandbox
   forward; there is no live conversation with a running session.

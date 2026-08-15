@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Outbox } from '@agentlings/shared';
+import { autoBlocker } from './approvals';
+import { JobQueue } from './queue';
 import {
   WITHHELD_FILE,
   checkWithheld,
@@ -173,6 +175,75 @@ describe('withholdingLeaks — attachments', () => {
     const got = withholdingLeaks(withFile('report.pdf'), withheld, dir);
     expect(got.leaks).toEqual([]);
     expect(got.unscanned).toEqual(['report.pdf']);
+  });
+});
+
+/**
+ * The seam, end to end: a file in a sandbox becomes a stamped declaration,
+ * blocks auto-send, and refuses a leaking outbox by name. Route wiring is
+ * where this codebase's faults have lived (D-097, D-178), and every piece
+ * below was correct on its own before this test existed.
+ */
+describe('the gate, from the sandbox to the refusal', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-gate-'));
+  });
+  afterEach(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
+  );
+
+  const runThatWithheld = (body: string) => {
+    const queue = new JobQueue(root);
+    const job = queue.add({
+      title: 'Incident report',
+      prompt: 'Email Ana the incident report with the customer names removed',
+      channels: ['gmail'],
+    });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, 'OUTBOX.json'),
+      JSON.stringify({
+        channel: 'gmail',
+        messages: [{ to: 'ana@example.com', subject: 'Incident report', body }],
+      }),
+    );
+    writeFileSync(
+      path.join(dir, WITHHELD_FILE),
+      JSON.stringify({ items: [{ what: 'the customer names', values: ['Acme Corp', 'Jane Doe'] }] }),
+    );
+    queue.complete(job.id, 'wrote the report');
+    return { job: queue.get(job.id)!, dir };
+  };
+
+  it('stamps the declaration, blocks auto-send, and refuses a leak by name', () => {
+    const { job, dir } = runThatWithheld('Three incidents. ACME CORP reported two of them.');
+    expect(job.withheld?.items[0].values).toEqual(['Acme Corp', 'Jane Doe']);
+    // A judgement about what a person may see is never sent unlooked-at.
+    expect(autoBlocker(job, ['RESULT.md', 'OUTBOX.json', WITHHELD_FILE])).toContain('withheld');
+    const refusal = withholdingRefusal(withholdingLeaks(job.outbox ?? [], job.withheld!, dir));
+    // Caught across a case change, and it says which value and where.
+    expect(refusal).toContain('Acme Corp');
+    expect(refusal).toContain('ana@example.com');
+  });
+
+  it('lets a genuinely clean send through — the gate is not a wall', () => {
+    const { job, dir } = runThatWithheld('Three incidents last month, all resolved.');
+    expect(withholdingRefusal(withholdingLeaks(job.outbox ?? [], job.withheld!, dir))).toBeNull();
+  });
+
+  it('a declaration that did not parse is an error, never "nothing was withheld"', () => {
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'T', prompt: 'email it with the names removed' });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(path.join(dir, WITHHELD_FILE), '{"items":[{"what":"names"}]}');
+    queue.complete(job.id, 'done');
+    const done = queue.get(job.id)!;
+    expect(done.withheld).toBeUndefined();
+    expect(done.withheldError).toContain('"values"');
+    expect(autoBlocker(done, ['RESULT.md'])).toContain('withheld');
   });
 });
 

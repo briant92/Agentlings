@@ -6,6 +6,7 @@ import {
   detectChannelAsk,
   LEGEND_CAP,
   legendAudience,
+  droppedChannels,
   mentionsChannel,
   RESEND_WORDS,
 } from './channel';
@@ -654,6 +655,19 @@ describe('the channels an ask could not take', () => {
   it('a sentence with one channel carries no also at all', () => {
     expect(ask('email Ana the Q3 expenses')?.also).toBeUndefined();
     expect(ask('telegram Pepo the total')?.also).toBeUndefined();
+  });
+
+  it('the dropped list is everything asked for minus what is carried', () => {
+    const got = ask('telegram Pepo the UF and email the figures to Ana');
+    expect(droppedChannels(got, 'telegram')).toEqual([{ channel: 'gmail', label: 'Gmail' }]);
+    // The case that cannot be seen from `also` alone: picking the second
+    // channel on the fork card makes the asked one the dropped one.
+    expect(droppedChannels(got, 'gmail')).toEqual([{ channel: 'telegram', label: 'Telegram' }]);
+    // A draft job carrying neither drops both, in the order they were asked.
+    expect(droppedChannels(got, undefined).map((d) => d.channel)).toEqual(['telegram', 'gmail']);
+    // One channel, or none at all, drops nothing.
+    expect(droppedChannels(ask('email Ana the note'), 'gmail')).toEqual([]);
+    expect(droppedChannels(null, 'gmail')).toEqual([]);
   });
 
   it('a channel name with a person as its object claims after a bare "and"', () => {

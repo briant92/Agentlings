@@ -66,7 +66,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
-import { channelShelf, detectChannelAsk, mentionsChannel } from './channel';
+import { channelShelf, detectChannelAsk, droppedChannels, mentionsChannel } from './channel';
 import {
   closeBlocker,
   closeLevelFiles,
@@ -1318,11 +1318,7 @@ function queueSentence(
       // carried — so the set is right whichever of them the job ended up on,
       // and a draft job that asked for two still says it sends neither.
       ...(() => {
-        if (!detected?.also?.length) return {};
-        const dropped = [
-          { channel: detected.asked, label: detected.askedLabel },
-          ...detected.also.map((option) => ({ channel: option.channel, label: option.label })),
-        ].filter((named) => named.channel !== channel);
+        const dropped = droppedChannels(detected, channel);
         return dropped.length > 0 ? { alsoAsked: dropped } : {};
       })(),
     }),

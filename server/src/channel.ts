@@ -214,6 +214,27 @@ export function mentionsChannel(
 }
 
 /**
+ * The channels this job is not carrying, out of everything the sentence asked
+ * for (D-178) — what the review says approving will not send.
+ *
+ * Here rather than inline in the route, for `queuedJobSpec`'s reason: the
+ * layers between a route and a job are where the faults have been, and this
+ * one has a case that is easy to get wrong and impossible to see — picking
+ * Gmail on the fork card makes the *asked* channel the dropped one, so a list
+ * built from `also` alone names neither.
+ */
+export function droppedChannels(
+  ask: ChannelAsk | null,
+  carried: string | undefined,
+): { channel: string; label: string }[] {
+  if (!ask?.also?.length) return [];
+  return [
+    { channel: ask.asked, label: ask.askedLabel },
+    ...ask.also.map((option) => ({ channel: option.channel, label: option.label })),
+  ].filter((named) => named.channel !== carried);
+}
+
+/**
  * The honest shelf Settings shows under the wired connections (D-088): the
  * planned tier, and the refused one with its reason on the row — D-077's
  * tiers, served from the same maps the ask-card reads so the two can never

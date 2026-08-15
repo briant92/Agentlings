@@ -1396,6 +1396,8 @@ untouched until you press Approve.
 | `SERVER_PORT` | 4600 | API and WebSocket; the runner calls back here for fetches |
 | `WORLD_WIDTH` | 1000 | Logical units the client scales |
 | `SCHEDULE_SWEEP_MS` | 30 s | How often due schedules are looked for; boot is a sweep too (D-103) |
+| `DECODE_TIMEOUT_MS` | 5 s | A plate that has not decoded by then is a plate that failed to load (D-185) |
+| `BOOT_WAIT_MS` | 10 s | The first render happens by then whatever the pack load is doing (D-185) |
 
 ### Authentication
 

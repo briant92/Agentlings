@@ -84,6 +84,13 @@ let rejected: { slug: string; problems: PackProblem[] }[] = [];
  * Failure is not fatal. If the server cannot be reached the app still has four
  * worlds, and a level set in a pack falls back rather than refusing to open.
  */
+/**
+ * How long one plate may take to decode before it is treated as a plate that
+ * failed to load (D-185). Generous for a local file that is already on disk —
+ * this is a stall detector, not a performance budget.
+ */
+const DECODE_TIMEOUT_MS = 5_000;
+
 export async function loadLooks(): Promise<void> {
   try {
     const body = await api<{
@@ -107,7 +114,19 @@ export async function loadLooks(): Promise<void> {
       try {
         const img = new Image();
         img.src = url;
-        await img.decode();
+        // Bounded, because `decode()` can never answer at all (D-185).
+        // Measured: in a browser pane that is not compositing, decoding a
+        // plate the server had already served with a 200 simply never
+        // settled — not resolved, not rejected. Every plate of every
+        // installed pack is awaited here, and the first render waits on all
+        // of them, so one silent stall was a blank app with no error in it.
+        // A stall now costs exactly what a failed load costs: this image.
+        await Promise.race([
+          img.decode(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`decode timed out: ${url}`)), DECODE_TIMEOUT_MS),
+          ),
+        ]);
         return img;
       } catch {
         return null;

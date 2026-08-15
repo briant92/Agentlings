@@ -171,7 +171,28 @@ export function WorkBar({
   useEffect(() => {
     const read = plan?.cadence;
     const sentence = text.trim();
-    if (!read || !sentence || cadenceFor.current === sentence) return;
+    if (!sentence) return;
+    // Only ever act on a plan that belongs to *this* sentence. `text` changes
+    // a beat before its plan arrives, so without this the effect applies the
+    // previous sentence's reading to the new words and then records it as
+    // this sentence's own — which is how "telegram me the UF on Monday",
+    // typed over a weekly sentence, kept the weekly chip armed. Seen live;
+    // the clearing branch below could not fire because the ref already
+    // matched.
+    if (plannedFor.current !== sentence) return;
+    if (!read) {
+      // The sentence no longer reads as a repeat, so a repeat *this effect*
+      // set no longer applies — seen live: reading "every Monday at 9", then
+      // typing "telegram me the UF on Monday" over it, left the weekly chip
+      // armed, and Start would have made a schedule out of a one-off. Only a
+      // fill of ours is cleared; a repeat the user chose by hand is theirs.
+      if (cadenceFor.current && cadenceFor.current !== sentence) {
+        cadenceFor.current = '';
+        setRepeatKind('off');
+      }
+      return;
+    }
+    if (cadenceFor.current === sentence) return;
     cadenceFor.current = sentence;
     setRepeatKind(read.cadence.kind);
     if (read.cadence.dow !== undefined) setRepeatDow(read.cadence.dow);
@@ -697,7 +718,7 @@ export function WorkBar({
                       passes silently — and "not a repeat" is one click. */}
                   {plan?.cadence && repeatKind === plan.cadence.cadence.kind && (
                     <span className="work-cadence-read">
-                      read “{plan.cadence.phrase}” as {plan.cadence.label}
+                      {'· '}read “{plan.cadence.phrase}” as {plan.cadence.label}
                       {' · '}
                       <button className="work-link" onClick={() => setRepeatKind('off')}>
                         not a repeat

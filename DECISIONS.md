@@ -194,6 +194,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-182 — 2026-08-15 — The one "and" that splits: a send after it, and none before it](#d-182--2026-08-15--the-one-and-that-splits-a-send-after-it-and-none-before-it)
 - [D-183 — 2026-08-15 — MAX_STEPS goes to four, and the withholding follows the chain rather than the sentence](#d-183--2026-08-15--max_steps-goes-to-four-and-the-withholding-follows-the-chain-rather-than-the-sentence)
 - [D-184 — 2026-08-15 — The cadence in the sentence: read and quoted back, never acted on](#d-184--2026-08-15--the-cadence-in-the-sentence-read-and-quoted-back-never-acted-on)
+- [D-185 — 2026-08-15 — The boot that never came, and two more the browser found](#d-185--2026-08-15--the-boot-that-never-came-and-two-more-the-browser-found)
 
 ## By theme
 
@@ -297,7 +298,10 @@ entry updates one file rather than two.
   D-140, the capture's first catch closing the case — the deaths were tsx
   watch restarts on source events (live edits, OneDrive echoes minutes
   late) killing whatever session was running, answered by `npm run serve`:
-  same server and log, no watching
+  same server and log, no watching; and D-185, the *client's* own death — the
+  first render gated on decoding every installed pack's plates with nothing
+  bounding the wait, so a decode that never answered left a blank page with
+  no error in it at all, now bounded per image and again at the boot
 - **The listening surface** — D-127: the first architect run found `serve()`
   passed no hostname (0.0.0.0, netstat-confirmed, G7), and Brian's decision
   pinned it to 127.0.0.1 with vite's proxy dialing the address so a ::1
@@ -12118,3 +12122,74 @@ decode simply never answers. Diagnosed rather than guessed: the plate serves
 here because it is not this entry's subject; recorded because it is severe and
 because it also bounds the DOM-verification path recorded this morning — that
 path works only if the app boots.
+
+## D-185 — 2026-08-15 — The boot that never came, and two more the browser found
+
+Three faults, one sitting, none of them reachable by 1,851 passing tests.
+
+### The app was a blank page, and said nothing about it
+
+`main.tsx` gated the first render on `loadLooks()`. `loadLooks` awaits an
+un-timed fetch and then `img.decode()` for **every plate of every installed
+pack** — fourteen of them here — and `decode()` can never answer at all: in a
+browser pane that is not compositing, decoding a plate the server had already
+served with a 200 simply never settled. Not resolved, not rejected. So the
+promise never completed, `createRoot().render()` never ran, and the app was a
+blank page with **no error anywhere** — no console message, no failed request,
+nothing to read.
+
+The comment above that boot said a server being down "delays the boot rather
+than blocking it". That was the intent and it was not true: nothing bounded
+the wait.
+
+Diagnosed rather than guessed, and the order matters — the change under test
+was stashed first, and the blank page reproduced on committed code, which is
+what turned "did I break it" into "this is older than today". Then: the plate
+served 200, `loadLooks()` was raced against a six-second timer and lost, and a
+single `img.decode()` on a real plate never settled in five.
+
+Two bounds, because there are two ways to hang:
+
+- **Per image.** A decode that stalls now costs exactly what a decode that
+  *fails* has always cost — that image, and nothing else. The surrounding code
+  already said so: "a file that fails to load costs only itself".
+- **At the boot.** Whatever `loadLooks` grows to await, the first render
+  happens. This is what makes the file's own sentence true, and it is a
+  backstop rather than the fix: the per-image bound is what actually catches
+  today's fault.
+
+Worlds are worth waiting a moment for. They are never worth an app that never
+appears.
+
+### Two in the cadence card, both from driving it
+
+**A one-off inherited the previous sentence's repeat.** Reading "every Monday
+at 9" armed the weekly chip; typing "telegram me the UF on Monday" over it left
+the chip armed, and Start with a repeat set *creates a schedule*. D-184 was
+written to stop a typo becoming a standing charge, and this was that hazard
+arriving from the other side — not a wrong reading, but a stale one.
+
+**And the first fix did not work, for a better reason than it looked.** The
+effect runs on `text`, which changes a beat before its plan arrives, so it was
+applying the *previous* sentence's reading to the new words and recording it as
+the new sentence's own — after which the clearing branch could not fire,
+because the ref already matched. The fix is to act only on a plan that belongs
+to this sentence, which `plannedFor` already knew.
+
+### What proved it
+
+The app boots in the very pane it hung in, and a fresh tab comes up with zero
+console errors. Live, in the running desk: a cadence sentence arms weekly at
+09:00 with the line *read "Every Monday at 9" as every Monday at 09:00 · not a
+repeat*; a one-off typed over it clears to **no**; a second cadence arms daily;
+a plain sentence clears again. 1,659 server and 192 web tests, typecheck clean.
+
+### What this says about the last three days
+
+Every UI decision since D-178 shipped green and was checked in a browser
+afterwards, and every time the browser found something: a card contradicting
+itself, an unused reason string, and now a boot that never completes and a
+control that armed itself on the wrong sentence. **A suite that renders
+nothing cannot see any of them**, and the honest reading is not that the tests
+are weak — they caught plenty — but that "green" and "works" are different
+claims, and only one of them was ever being made.

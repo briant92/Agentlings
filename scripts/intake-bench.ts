@@ -19,17 +19,27 @@
 //
 //   MISS       — the rule could have fired and did not. Tunable.
 //   STRUCTURAL — the label cannot be expressed at all. Not tunable; a
-//                decision. The list has been worked down to one — Slack
-//                cannot carry a file, and nothing at intake says so before
-//                the run. One channel per job left it at D-179, the
-//                three-step cap at D-183, "nothing carries a withholding" at
-//                D-181, and "no sentence makes a schedule" at D-184.
+//                decision. The list is empty: one channel per job left it at
+//                D-179, the three-step cap at D-183, "nothing carries a
+//                withholding" at D-181, "no sentence makes a schedule" at
+//                D-184, and the last of them — a file asked for on a channel
+//                that cannot carry one, with nothing said until after the run
+//                — at D-186.
+//
+// An empty list is not a finished intake, and this file is the wrong place to
+// look for the next gap: every label here is one somebody thought to write
+// down. The corpus grows when a real sentence does something these do not.
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clarificationLines, questionsFor } from '../server/src/clarify';
-import { briefForJob, detectChannelAsk, mentionsChannel } from '../server/src/channel';
+import {
+  briefForJob,
+  detectChannelAsk,
+  filelessChannels,
+  mentionsChannel,
+} from '../server/src/channel';
 import { CHANNELS } from '../server/src/channels';
 import { readConnections } from '../server/src/connections';
 import { MatchIndex, suggestSetup } from '../server/src/match';
@@ -185,6 +195,9 @@ function readSentence(test: BenchCase) {
     delivered,
     // The cadence the sentence carries, exactly as the plan route reads it.
     cadence: cadenceFrom(prompt),
+    // The channels a file was asked to ride on that cannot carry one, read
+    // against what the job carries — the same call the plan route makes.
+    noFiles: filelessChannels(prompt, carried.length ? carried : channel ? [channel] : []),
     // The brief a *job* gets, not the raw channel contract: `briefForJob` is
     // what the executor calls, and it is where the per-channel blocks and the
     // withholding contract are assembled. Reading `channelBrief` here credited
@@ -375,17 +388,36 @@ function run(test: BenchCase): Ran {
   // that "files" exists at all, so its absence is the whole answer.
   if (want.attaches) {
     const allowed = seen.channel ? FILE_CHANNELS.has(seen.channel) : false;
-    const told = seen.brief?.includes('"files"') ?? false;
-    if (told) add('attach', 'ok', 'file may ride', `${seen.channel} carries files`);
-    else if (seen.channel && !allowed)
+    if (!seen.channel) add('attach', 'miss', 'file may ride', 'no channel settled, so no brief');
+    else if (allowed) {
+      // The brief is what tells a session that "files" exists at all, so its
+      // absence is the whole answer.
+      const told = seen.brief?.includes('"files"') ?? false;
       add(
         'attach',
-        'structural',
+        told ? 'ok' : 'miss',
         'file may ride',
-        `${seen.channel} cannot carry files`,
-        'nothing at intake says so',
+        told ? `${seen.channel} carries files` : 'brief never names the field',
       );
-    else add('attach', 'miss', 'file may ride', 'no channel settled, so no brief');
+    } else {
+      // It cannot ride, which is not a fault — the fault was saying nothing.
+      // Both halves are required and they are different promises: the desk
+      // tells the *user* while the sentence can still change, the brief tells
+      // the *run* so it does not compose an attachment the contract will
+      // refuse after the money is spent. Read `allowed` first, because the
+      // brief's own line quotes "files" to say there is no such field.
+      const atDesk = seen.noFiles.length > 0;
+      const inBrief = seen.brief?.includes('cannot carry attachments') ?? false;
+      add(
+        'attach',
+        atDesk && inBrief ? 'ok' : 'structural',
+        'said before the run',
+        `${seen.channel} cannot carry files`,
+        atDesk && inBrief
+          ? undefined
+          : `${!atDesk ? 'the desk' : 'the brief'} says nothing`,
+      );
+    }
   }
 
   // Withholding, and recurrence: probed rather than assumed absent, so this

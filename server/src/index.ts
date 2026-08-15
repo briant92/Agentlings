@@ -69,7 +69,13 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
-import { channelShelf, detectChannelAsk, droppedChannels, mentionsChannel } from './channel';
+import {
+  channelShelf,
+  detectChannelAsk,
+  droppedChannels,
+  filelessChannels,
+  mentionsChannel,
+} from './channel';
 import {
   closeBlocker,
   closeLevelFiles,
@@ -1126,6 +1132,14 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
       return read
         ? { cadence: { ...read, label: describeCadence(read.cadence) } }
         : {};
+    })(),
+    // A file asked to ride on a channel that cannot carry one. Said here
+    // because the outbox contract only refuses it at the end, once the run is
+    // written and paid for. Read against the channels Start would actually
+    // carry, so a file that rides on one of two channels names only the other.
+    ...(() => {
+      const noFiles = filelessChannels(text, askChannels.length ? askChannels : askChannel ? [askChannel] : []);
+      return noFiles.length ? { noFiles } : {};
     })(),
     // A folder reorganization is asked for by picking the folder, the way a
     // send asks for its recipient (D-132): the sentence wants organizing, but

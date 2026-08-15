@@ -469,6 +469,11 @@ button.ghost {
 .work-mention {
   color: #e8b478;
 }
+/* A file named for a channel that cannot carry one. The same amber as the
+   near-miss above: something was read and is being said back, not refused. */
+.work-nofiles {
+  color: #e8b478;
+}
 .rv-mention-guard {
   margin: 0;
   font-size: 12px;

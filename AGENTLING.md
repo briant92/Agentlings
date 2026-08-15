@@ -1102,6 +1102,16 @@ telegram took a body plus three documents (an `input/` forward and a PNG
 among them) and gmail took a two-attachment multipart through the upload
 endpoint, both to Brian himself (D-159).
 
+**Every other channel is told it cannot** (D-186). Slack, WhatsApp, calendar
+and GitHub have no `files` field, and the contract has always refused one —
+but only at parse, once the run had written it and the money was spent. Both
+ends now say so first: the channel's brief states there is no such field and
+tells the run to send the message without it and name the missing file in
+`RESULT.md`, and the desk puts a line on the card before Start — *Slack can't
+carry files — the "file" you named goes into the message as words, not as an
+attachment*. Nothing is blocked; a send that names a file on two channels
+warns about only the one that cannot carry it.
+
 **A run can also author a world** (D-110). Given a description, it writes
 `PACK.json` at the sandbox root — a whole level pack, palette and terrain and
 backdrop, in the same op format the four built-in levels are drawn from — and

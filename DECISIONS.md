@@ -195,6 +195,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-183 — 2026-08-15 — MAX_STEPS goes to four, and the withholding follows the chain rather than the sentence](#d-183--2026-08-15--max_steps-goes-to-four-and-the-withholding-follows-the-chain-rather-than-the-sentence)
 - [D-184 — 2026-08-15 — The cadence in the sentence: read and quoted back, never acted on](#d-184--2026-08-15--the-cadence-in-the-sentence-read-and-quoted-back-never-acted-on)
 - [D-185 — 2026-08-15 — The boot that never came, and two more the browser found](#d-185--2026-08-15--the-boot-that-never-came-and-two-more-the-browser-found)
+- [D-186 — 2026-08-15 — The file that cannot ride, said before the run instead of after](#d-186--2026-08-15--the-file-that-cannot-ride-said-before-the-run-instead-of-after)
 
 ## By theme
 
@@ -644,7 +645,15 @@ entry updates one file rather than two.
   (what the run *declared* it removed is genuinely gone, checked at Approve
   and refused whole when it is not), with PII pattern-scanning refused
   because two of the three real sentences are judgements and a check
-  claiming a coverage it lacks is worse than none
+  claiming a coverage it lacks is worse than none; and D-186, the last
+  structural label of all — a file asked for on a channel with no `files`
+  field, refused by the contract only after the run was written and paid for,
+  now said at the desk before Start and in the brief to the run, both derived
+  from `FILE_CHANNELS` — where the first detector fired on eight sentences
+  that name a file as the work's *input* rather than the send's object, found
+  by scanning the whole corpus for what it fires on that nobody labelled,
+  because a benchmark that checks only the labelled cases scores a detector
+  firing on everything exactly as well as a correct one
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -12193,3 +12202,86 @@ control that armed itself on the wrong sentence. **A suite that renders
 nothing cannot see any of them**, and the honest reading is not that the tests
 are weak — they caught plenty — but that "green" and "works" are different
 claims, and only one of them was ever being made.
+
+## D-186 — 2026-08-15 — The file that cannot ride, said before the run instead of after
+
+The last structural gap in the intake corpus, and the smallest of the five:
+`attach-03`, *"Post the build log file to the team on Slack"*. Slack has no
+`files` field. The outbox contract already knew — `only telegram and gmail send
+"files", not "slack"` — but it is a **parse-time** refusal, so it fires once the
+run has been quoted, spent and written. The user learned at review, or never;
+the run learned nothing at all, because its brief said nothing either.
+
+So the decision is not a capability. Nothing was built to carry a file where it
+cannot go, and nothing is blocked: the message still sends, the file simply
+stays behind. What changed is **when it is said, and to whom** — both ends, in
+the same edit:
+
+- **The desk**, before Start: *Slack can't carry files — the "file" you named
+  goes into the message as words, not as an attachment.*
+- **The brief**, to the run: there is no such field on this channel; send the
+  message without it and name the missing file in `RESULT.md`.
+
+Both are derived from `FILE_CHANNELS` rather than written per channel, so
+WhatsApp, calendar and GitHub got the same sentence for free, and a channel
+that learns to carry files later loses it the same way.
+
+### The half that was wrong, and only a scan could see it
+
+The first detector fired on any file word in the sentence. Against the four
+labelled cases it looked perfect. Run across all 54, it fired on **twelve** —
+eight of them wrong, and every one the same shape:
+
+> Summarise the expenses **CSV** and telegram Brian the total
+
+The CSV is what the work *reads*. The send is a total. Warning that it will not
+be attached is a warning about an attachment nobody asked for — and it would
+have appeared on the card, in front of the user, about their own sentence.
+
+The discriminator is position, not vocabulary: **a file has to sit on the
+sending side of the send verb.** "Attach" is exempt, because it can only ever
+mean one thing. That rule takes all five wanted cases and none of the eight,
+and it is deliberately quiet when unsure — a file named before its verb reads
+as no ride. A missed warning costs what it always cost, since the contract
+still refuses the file and the run still reports it; a wrong warning is a lie
+on the card.
+
+**The benchmark could not have caught this**, and that is the part worth
+keeping. It checks the sentences labelled `attaches`, so a detector that fires
+on everything scores exactly as well as one that fires correctly. The scan that
+found it asked the opposite question — *which sentences does this fire on that
+nobody labelled?* — which is the population check PROJECT.md keeps asking for,
+pointed at an instrument built ten minutes earlier.
+
+### A test that had to be inverted rather than loosened
+
+`channelBrief` had an assertion from D-159, resting on D-031's rule that a
+capability nobody is told about is not one: telegram and gmail hear the files
+rule, and *no other channel hears a word of it*. The new brief quotes `"files"`
+to deny the field, so that test failed — correctly. It was rewritten to state
+the rule that now holds — every channel is told where it stands, and only two
+are told there is a field — rather than relaxed to let the new string through.
+The bench's own `attach` check needed the same care in the other direction: it
+reads `allowed` before the brief now, because otherwise the sentence saying
+there is no `"files"` field would have been read as proof that there is one.
+
+### What proved it
+
+The corpus: **53 of 54 handled exactly right, 0 misses, 0 structural gaps**,
+across 111 checks — the first time the list has been empty since D-177 opened
+it with four. 1,661 server and 192 web tests green, typecheck clean.
+
+Then the parts no suite covers, in the running app. `/api/levels/:lid/work/plan`
+answered live on three sentences — the Slack file warned, the CSV-as-input said
+nothing, the Telegram PDF said nothing — which is the route seam this project
+keeps finding empty after a change is complete in the type and the function.
+And on the card itself: the line renders; typing a plain send over it clears it
+(the stale-reading hazard D-185 had just been bitten by, which does not
+reproduce here because the note reads from the plan rather than from an effect
+on `text`); and a two-channel sentence — *send the report PDF to Pepo on
+telegram and post it on slack* — shows **sends via Telegram and Slack** beside a
+warning naming Slack alone, which is the whole reason the function takes the
+carried list rather than a single channel. Zero console errors.
+
+An empty structural list is not a finished intake. It means every gap someone
+thought to write down is closed, which is a statement about the corpus.

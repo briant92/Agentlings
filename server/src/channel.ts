@@ -10,6 +10,7 @@ import {
 } from '@agentlings/shared';
 import { CHANNELS } from './channels';
 import { missingSecrets, type Connection } from './connections';
+import { FILE_CHANNELS } from './outbox';
 import { connectionEnabled, type StoredSettings } from './settings';
 import { wantsWithholding } from './redact';
 
@@ -239,6 +240,72 @@ export function droppedChannels(
     { channel: ask.asked, label: ask.askedLabel },
     ...ask.also.map((option) => ({ channel: option.channel, label: option.label })),
   ].filter((named) => !carrying.has(named.channel));
+}
+
+/**
+ * Attaching, said outright. These words have one meaning, wherever they fall.
+ */
+const ATTACH_WORD = /\b(attach|attaches|attaching|attached|attachments?)\b/i;
+
+/**
+ * A named file, which is only half an answer — see `filelessChannels`.
+ *
+ * Narrow on purpose: a named format or the word "file", never a noun that
+ * merely *could* be one. "Email Ana the incident report" asks for a message
+ * about a report; "email Ana the report as a PDF" asks for a file.
+ */
+const FILE_WORD =
+  /\b(files?|pdfs?|csvs?|xlsx|xls|docx|pptx|zips?|pngs?|jpe?gs?|svgs?|spreadsheets?|screenshots?)\b/i;
+
+/**
+ * The send itself, so a file can be placed on one side of it or the other.
+ */
+const SEND_VERB =
+  /\b(sends?|sent|sending|emails?|emailed|mails?|mailed|messages?|messaged|posts?|posted|posting|shares?|shared|forwards?|forwarded|telegrams?|dms?|repl(?:y|ies))\b/i;
+
+/**
+ * The channels this send cannot carry the sentence's file on.
+ *
+ * Only `FILE_CHANNELS` send "files", and the outbox contract already refuses
+ * the rest (`outbox.ts`) — but it refuses at the *end*, once the run is written
+ * and paid for, which is the wrong moment to learn that the one thing asked for
+ * was never possible. This says it at the desk, before Start.
+ *
+ * A sibling of `droppedChannels` above and shaped like it for the same reason:
+ * a job may carry several channels (D-179), and a file that rides on Telegram
+ * still cannot ride on the Slack beside it. Naming the channel rather than the
+ * send is what keeps that case honest.
+ *
+ * Nothing is blocked. The message can still go — the file simply stays behind,
+ * and both the user and the run are told so rather than finding out.
+ *
+ * A file word alone does not mean a file is being sent, which the corpus said
+ * plainly the moment it was asked: eight of its sentences name one as the
+ * *input* to the work — "Summarise the expenses CSV and telegram Brian the
+ * total" sends a total, not a spreadsheet. So the file has to sit on the
+ * sending side of the send verb, and a warning fires on the object of the send
+ * rather than on any file the sentence happens to mention. "Attach" is exempt
+ * because it can only mean one thing wherever it appears.
+ *
+ * Deliberately quiet when unsure: a file named before its verb ("the contract
+ * PDF, send it to Pepo") reads as no ride and says nothing. Missing a warning
+ * costs what it always cost — the contract still refuses the file, and the run
+ * still reports it — while a warning on a send carrying no file is wrong on the
+ * card, in front of the user, about their own sentence.
+ */
+export function filelessChannels(
+  text: string,
+  carried: string[] | undefined,
+): { channel: string; label: string; phrase: string }[] {
+  const verb = SEND_VERB.exec(text);
+  const asked =
+    ATTACH_WORD.exec(text) ??
+    (verb ? FILE_WORD.exec(text.slice(verb.index + verb[0].length)) : null);
+  if (!asked) return [];
+  return (carried ?? [])
+    .filter((name, i, all) => all.indexOf(name) === i)
+    .filter((name) => !FILE_CHANNELS.has(name))
+    .map((name) => ({ channel: name, label: LABELS[name] ?? name, phrase: asked[0] }));
 }
 
 /**
@@ -650,11 +717,19 @@ export function channelBrief(
           '- The mail arrives from the user\'s own address, so write it in their voice.',
         ]
       : []),
-    ...(channel === 'telegram' || channel === 'gmail'
+    ...(FILE_CHANNELS.has(channel)
       ? [
           `- "files" sends real attachments: names of files you wrote in the working directory ("report.pdf") or a file the user attached ("input/contract.pdf") — forward slashes, up to ${MAX_OUTBOX_FILES} per message, ${MAX_OUTBOX_FILE_BYTES / (1024 * 1024)} MB each. Only files that actually exist, and only when the user asked for a file to ride — otherwise leave "files" out.`,
         ]
-      : []),
+      : [
+          // Said because its absence was the whole answer: the shape above has
+          // no "files" field on this channel, and a session with nothing
+          // telling it why would compose one anyway — to have the contract
+          // refuse it after the work was done and paid for. The user is told
+          // the same thing at the desk before Start; this is the half that
+          // stops the run wasting a turn on an attachment that cannot exist.
+          `- ${LABELS[channel] ?? channel} cannot carry attachments — there is no "files" field on this channel, and only ${[...FILE_CHANNELS].join(' and ')} have one. If the user asked for a file to ride, send the message without it and say plainly in RESULT.md which file could not go and why.`,
+        ]),
     ...(channel === 'whatsapp-business'
       ? [
           '- Business-initiated WhatsApp only sends pre-approved templates. Use exactly the template name the user gave; if they named none, do not invent one — write RESULT.md saying an approved template name is needed.',

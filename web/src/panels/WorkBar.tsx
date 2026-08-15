@@ -780,6 +780,18 @@ export function WorkBar({
         );
       })()}
 
+      {/* A file asked for on a channel that cannot carry one. The outbox
+          contract refuses it too, but only once the run has written it — so
+          this is the same refusal moved to where the sentence can still be
+          changed. It never blocks Start: the message goes, the file stays. */}
+      {!!plan?.noFiles?.length && !askingRepo && (
+        <p className="work-gaps work-nofiles">
+          {plan.noFiles.map((n) => n.label).join(' and ')} can’t carry files — the “
+          {plan.noFiles[0].phrase}” you named goes into the message as words, not as an
+          attachment
+        </p>
+      )}
+
       {/* Organizing wants a folder, and only the native picker yields an
           absolute path (D-132) — never a text box for a path nobody can type.
           Until one is picked, Start has nothing to organize, so the pick is

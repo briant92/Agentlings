@@ -7,6 +7,7 @@ import {
   LEGEND_CAP,
   legendAudience,
   droppedChannels,
+  filelessChannels,
   mentionsChannel,
   RESEND_WORDS,
 } from './channel';
@@ -262,15 +263,29 @@ describe('channelBrief', () => {
 
   // A capability nobody is told about is not one (D-031): the file-carrying
   // channels hear the files rule, and nobody else hears a word of it (D-159).
-  it('tells telegram and gmail about "files", and no other channel', () => {
+  //
+  // "Not a word" was the rule until the corpus asked what a session does when
+  // the user wants a file on Slack: it composes a "files" array, because
+  // nothing said otherwise, and the contract refuses it once the work is
+  // written and paid for. So the silence became a sentence. The assertion
+  // below is the same one inverted — every channel is told where it stands,
+  // and only two of them are told there is a field.
+  it('tells telegram and gmail how "files" works, and every other channel that it has none', () => {
     for (const channel of ['telegram', 'gmail']) {
       const brief = channelBrief(channel)!;
       expect(brief).toContain('"files"');
       expect(brief).toContain('input/');
       expect(brief).toContain('real attachments');
+      expect(brief).not.toContain('cannot carry attachments');
     }
     for (const channel of ['slack', 'whatsapp-business', 'calendar', 'github']) {
-      expect(channelBrief(channel)!).not.toContain('"files"');
+      const brief = channelBrief(channel)!;
+      expect(brief).toContain('cannot carry attachments');
+      // Told what to do about it, not merely that it cannot — an unusable
+      // file has to be reported, or the user learns nothing at review.
+      expect(brief).toContain('RESULT.md');
+      // And never the shape: there is no field to fill in here.
+      expect(brief).not.toContain('real attachments');
     }
   });
 
@@ -668,6 +683,45 @@ describe('the channels an ask could not take', () => {
     // One channel, or none at all, drops nothing.
     expect(droppedChannels(ask('email Ana the note'), ['gmail'])).toEqual([]);
     expect(droppedChannels(null, ['gmail'])).toEqual([]);
+  });
+
+  it('a file is named for the channels that cannot carry it, and only those', () => {
+    // Slack has no "files" field, so the one thing this sentence asks for is
+    // the one thing that cannot happen — said at the desk, not after the run.
+    expect(filelessChannels('Post the build log file to the team on Slack', ['slack'])).toEqual([
+      { channel: 'slack', label: 'Slack', phrase: 'file' },
+    ]);
+    // The same file on a channel that carries one is not worth a word.
+    expect(filelessChannels('Send Pepo the contract PDF on Telegram', ['telegram'])).toEqual([]);
+    // Two channels, one of each (D-179): the file rides on Telegram and the
+    // warning names Slack alone. A warning that named the send rather than
+    // the channel would be wrong about half of it.
+    expect(
+      filelessChannels('send the report PDF to Pepo on telegram and post it on slack', [
+        'telegram',
+        'slack',
+      ]).map((f) => f.channel),
+    ).toEqual(['slack']);
+    // No send at all carries nothing, so there is nothing to warn about.
+    expect(filelessChannels('Produce a PDF', [])).toEqual([]);
+  });
+
+  it('a file the work reads is not a file the send carries', () => {
+    // The fault the corpus scan found and the benchmark could not: eight of
+    // its sentences name a file as the *input*. Here the send is the total,
+    // and warning that the CSV will not be attached is a warning about an
+    // attachment nobody asked for.
+    expect(filelessChannels('Summarise the expenses CSV and post the total on Slack', ['slack'])).toEqual(
+      [],
+    );
+    expect(filelessChannels('First read the PDF, then post me a table on Slack', ['slack'])).toEqual(
+      [],
+    );
+    // "Attach" is exempt from the position rule because it can only mean one
+    // thing — here it precedes the channel and still asks for a ride.
+    expect(
+      filelessChannels('Read the contract, then attach it to a Slack post', ['slack']).length,
+    ).toBe(1);
   });
 
   it('a channel name with a person as its object claims after a bare "and"', () => {

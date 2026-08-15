@@ -1395,6 +1395,15 @@ export interface WorkPlan {
    * the reading can be checked rather than taken on trust.
    */
   cadence?: { cadence: Cadence; phrase: string; label: string };
+  /**
+   * Channels this send asks a file to ride on that cannot carry one.
+   *
+   * The outbox contract refuses a file on these channels anyway, but only once
+   * the run has written it — so the desk says it first, while the sentence can
+   * still be changed. Nothing is blocked: the message goes, the file stays.
+   * `phrase` is the word it was read from, so the reading can be checked.
+   */
+  noFiles?: { channel: string; label: string; phrase: string }[];
 }
 
 export interface WorldState {

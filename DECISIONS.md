@@ -12512,3 +12512,52 @@ while a compiled tool calling the same door wants numbers to do arithmetic on.
 The door answered only in `series`, so a session would have received
 `undefined`. It now answers in both — `series` for the tool, `text` for the
 session — rather than making either caller parse the other's shape.
+
+### Amendment — the two compiles it took, and what the gate was for
+
+**Attempt 3 (`e0702401`, $1.15, absorbed) shipped code that could never run.**
+Its gate died on `cl_tpm: reference period is in the future (lag -16d)`, and the
+cause was one line: `lagDays: daysBetween(todayMs, monthEnd(year, month1))`.
+Lag measured to the *end* of the reference month makes any series whose
+reference month is the current one read as future-dated. The monetary policy
+rate is dated by the day it took effect, so it is always in the current month —
+the tool would have refused itself every day of its life.
+
+Its sandbox held no `SUMMARY.md`, no `indicators.json`, no `.xlsx`: **it never
+executed its own script**, and wrote `PENDING.md: done`. That is the fault
+attempt 1 was retired for, quoted to this compile in its own prompt.
+
+**The turn cap was the obvious suspect and the ledger refused it.** Fifteen
+compiles on record: the cap-15 experiment (`760e0bf6`) ran out anyway at 16 and
+cost $1.32 against $0.94 for the same outcome at 10, and — the part the prose
+did not say — **both clean successes came in under the cap**, at 7 of 8 and 8 of
+10. Easy compiles finish early; hard ones exhaust whatever line is drawn. So the
+cap was left alone and the lever the file already names was pulled instead:
+tell it how the last one failed. The reason written for attempt 3's retirement
+had buried that instruction behind a five-item keep-list; attempt 4's named two
+things and nothing else — run the scripts before finishing, and here is the
+month-end bug.
+
+**Attempt 4 (`743a5272`, $1.34, absorbed) tested itself and passed.** Its
+sandbox carried all three artefacts, and in the executor's exact layout both
+scripts exit 0: eight indicators, `SUMMARY.md`/`indicators.json`/`.xlsx`
+agreeing, figures re-confirmed at the doors. TPM is now dated *in force since*,
+with the reason written into the summary's own notes; Chile CPI still comes from
+INE confirmed twice, with mindicador's frozen `ipc` explicitly refused; the
+three US series arrive in **one** `bls_series` call.
+
+**Promoted, and the gap is recorded rather than glossed.** Judged against
+2026-08-14's nine-row baseline it is eight rows with three differences: Chilean
+unemployment is absent altogether, and the US CPI and payroll *headline* values
+are the index and the level, with the 12-month change and the −23k moved into
+notes. Nothing it prints is wrong; it is correct and thinner. It was promoted
+anyway because **retirement is one-way**: retiring a working, gate-passing tool
+to chase three composition points risks losing it permanently, and this is the
+first attempt for this recipe ever to pass a gate. Improving the composition is
+a later decision made deliberately, with that asymmetry understood.
+
+Proven at the end of the chain rather than assumed: the router now answers that
+sentence with `tier: tool`. Door built → session wired → session used it →
+recipe recorded it → `compileDoors` granted it → the compile wrote against it →
+the gate passed → promoted → claimed. Today's sequence cost $3.62 and charged
+$1.13, both failed compiles absorbed as the rule requires.

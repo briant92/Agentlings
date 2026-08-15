@@ -196,6 +196,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-184 — 2026-08-15 — The cadence in the sentence: read and quoted back, never acted on](#d-184--2026-08-15--the-cadence-in-the-sentence-read-and-quoted-back-never-acted-on)
 - [D-185 — 2026-08-15 — The boot that never came, and two more the browser found](#d-185--2026-08-15--the-boot-that-never-came-and-two-more-the-browser-found)
 - [D-186 — 2026-08-15 — The file that cannot ride, said before the run instead of after](#d-186--2026-08-15--the-file-that-cannot-ride-said-before-the-run-instead-of-after)
+- [D-187 — 2026-08-15 — The BLS door: a key that cannot ride in a URL](#d-187--2026-08-15--the-bls-door-a-key-that-cannot-ride-in-a-url)
 
 ## By theme
 
@@ -391,7 +392,15 @@ entry updates one file rather than two.
   calendar-read first because it sits inside the consent already granted,
   read tools as sendsOnly-preserving sibling connections, a clerk trade on
   the cheap model, the morning brief as first standing desk; build gated
-  behind T5's first firing
+  behind T5's first firing; and D-187, the third key-bearing door — BLS v2
+  takes its registration key in a POST body, which the deliberately generic
+  GET web door cannot carry, so the choice was a host-matched secret
+  injection into that door (rejected: that is how a credential leaks to
+  whatever else matches) or a tool-shaped door like the code host's (taken).
+  The shared `Http` type was widened with an optional `init` rather than
+  joined by a second poster, and the measurement behind it overturned a
+  standing explanation: a fresh day's first BLS call was already refused
+  with nothing of ours having spent one
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
@@ -12285,3 +12294,97 @@ carried list rather than a single channel. Zero console errors.
 
 An empty structural list is not a finished intake. It means every gap someone
 thought to write down is closed, which is a statement about the corpus.
+
+## D-187 — 2026-08-15 — The BLS door: a key that cannot ride in a URL
+
+The crew could already read `api.bls.gov`. The indicators tool has been calling
+the v1 series endpoint through the web door since it was compiled — v1 is a
+plain GET and `fetchPage` is a plain GET, so nothing had to be built for it to
+work. What v1 is not is **usable**.
+
+### What was measured, and what it overturned
+
+Two probes on 2026-08-15, forty-five minutes apart, the first of them the first
+BLS call of the day from this machine, with nothing local having spent one and
+no schedule having fired:
+
+```
+status: REQUEST_NOT_PROCESSED
+"the daily threshold ... allocated to the user with registration key  has been reached"
+```
+
+Note the empty key in BLS's own sentence. The standing explanation — *a
+compiling session self-tests against a 25/day ceiling and eats its own quota,
+so gate it tomorrow* — predicted a clean day. **The day was not clean, and
+nothing of ours had touched it.** That is consistent with the keyless bucket
+being shared across all unregistered callers rather than per-IP, which would
+mean there is no "tomorrow" to wait for. One day of evidence is not a
+population and the entry claims no more than that; what it does establish is
+that waiting is not a plan.
+
+Registered v2 answers it either way: **500 requests a day instead of 25**, and
+**up to 50 series in one call instead of one**, which collapses the indicators
+tool's three calls to one.
+
+### Why it could not ride the web door
+
+v2 takes `registrationkey` in a **JSON POST body**. `/internal/fetch` is
+`fetchPage(url)` — deliberately generic, deliberately GET, and shaped around
+`{url}` rather than `{tool, args}`. Two ways to close that were on the table
+and only one is honest:
+
+- **Teach the web door POST and inject the key by host.** Rejected. It makes a
+  generic door secret-bearing, and host-matched injection is precisely the
+  mechanism that leaks a credential to whatever else matches loosely.
+- **A third key-bearing door, built like the two that exist.** Taken. `bls` is
+  tool-shaped exactly as `/internal/github` and `/internal/search` are: the
+  catalog's own `tools` list is the grant, checked at the door so the allowlist
+  and the catalog cannot drift, and the key is read from the server's
+  environment and never handed out.
+
+That last clause is not a nicety here. A compiled tool's environment has every
+catalog-declared secret **stripped** from it (D-173), so a door is the only
+route a tool has to a credential — by construction, not by convention.
+
+### One http seam, widened rather than duplicated
+
+`Http` was `(url, headers) => Promise<HttpResponse>`: GET-only, because the
+code host, the search box and the library sync are all GET. It now takes an
+optional third `init`. The alternative was a second injected poster type for
+this one caller, and two ways to reach the network is the duplicated notion
+this project keeps paying for. Every existing caller and every test double is
+unchanged — a two-parameter function still satisfies the wider type.
+
+### What the door refuses, and why each refusal exists
+
+Three of the nine tests are about failing rather than fetching. BLS reports
+refusal **inside a 200**, so the `status` field is the real result code and a
+door reading only the HTTP status would hand back an empty answer as an answer.
+The quota message is named specifically, because it is the one thing
+registering was meant to fix. A missing key refuses **without touching the
+network**, on the search box's precedent — falling back to the keyless bucket
+is falling back to the exhausted thing this door exists to stop using. And a
+batch that comes back short names the missing series rather than returning what
+arrived, which is the shape that ships a table with a row quietly gone.
+
+`M13` — BLS's annual average, wearing a month's shape — is dropped before any
+of that. A caller taking "the latest observation" without dropping it compares
+a year's average against a month and calls the difference a change.
+
+### What proved it, and what has not
+
+1,671 server and 192 web tests green, typecheck clean. The door's own nine
+cover the POST shape (the key in the body, never in the URL), batching with
+dedupe and upper-casing, the 200-with-a-refusal, the missing-key path making no
+call at all, and the unreachable/unreadable/HTTP-error endings.
+
+**Not yet proven live, and the gap is stated rather than glossed.** Registration
+is a free sign-up that must be done by Brian, so no real call has been made
+through this door — the route seam (`/internal/bls` resolving the connection
+and enforcing the grant) is verified by construction and by its siblings, not
+by a live call. It is also **not yet reachable by the indicators tool**, whose
+`run.mjs` calls v1 through the web door and would have to be recompiled to use
+`bls_series`. That recompile is a separate, costed step, and it is the one that
+finally dissolves the trap in the middle of this: a compile that self-tests
+against 25 calls a day can never gate its own output the same day, and against
+500 it comfortably can.

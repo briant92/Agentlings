@@ -204,6 +204,7 @@ import { type QuoteContext, quoteFor_ } from './quote';
 import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
+import { callBls } from './bls';
 import { callSearch } from './search';
 import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
@@ -247,7 +248,7 @@ function matcher(): MatchIndex {
 }
 
 /** Real HTTP for the library; the sync logic itself takes this as a parameter. */
-const http: Http = (url, headers) => fetch(url, { headers });
+const http: Http = (url, headers, init) => fetch(url, { headers, ...init });
 
 let library: LibraryIndex | null = loadIndex(SANDBOX_ROOT);
 let syncing: Promise<LibraryIndex> | null = null;
@@ -3059,6 +3060,24 @@ app.post('/internal/search', async (c) => {
   }
   return c.json(
     await callSearch(body.tool, body.args ?? {}, { http, token: process.env.BRAVE_API_KEY }),
+  );
+});
+
+/**
+ * US labour statistics, gated exactly as `/internal/github` and
+ * `/internal/search` are. Its own door rather than the web one because the
+ * registration key rides in a POST body and `fetchPage` is GET (D-187).
+ */
+app.post('/internal/bls', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'bls');
+  if (!connection) return c.json({ error: 'the BLS connection is not configured' }, 404);
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(
+    await callBls(body.tool, body.args ?? {}, { http, token: process.env.BLS_REGISTRATION_KEY }),
   );
 });
 

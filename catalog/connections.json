@@ -183,6 +183,20 @@
       ]
     },
     {
+      "name": "bls",
+      "label": "US labour statistics",
+      "description": "Reads US Bureau of Labor Statistics series — consumer prices, unemployment, payrolls — by series id, newest observations first. A registered key gets 500 calls a day and up to 50 series in one call; without one the only route is the keyless allowance, a shared bucket that is usually already empty.",
+      "transport": "builtin",
+      "tools": ["bls_series"],
+      "secrets": {
+        "BLS_REGISTRATION_KEY": "a BLS API registration key — free at data.bls.gov/registrationEngine"
+      },
+      "setup": [
+        "Register free at data.bls.gov/registrationEngine — the key arrives by email",
+        "Paste it here — it is sent to api.bls.gov only, in the request body"
+      ]
+    },
+    {
       "name": "browser",
       "label": "Use a web browser",
       "description": "Opens pages in a real browser and reads what they show, including sites that need JavaScript. Reads only — it cannot click, type or submit anything.",

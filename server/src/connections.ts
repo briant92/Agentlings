@@ -86,6 +86,7 @@ export const DOORS: Record<string, string> = {
   github: '/internal/github',
   search: '/internal/search',
   render: '/internal/render',
+  bls: '/internal/bls',
 };
 
 /**

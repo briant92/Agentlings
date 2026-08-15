@@ -36,7 +36,21 @@ export interface HttpResponse {
   status: number;
   text(): Promise<string>;
 }
-export type Http = (url: string, headers: Record<string, string>) => Promise<HttpResponse>;
+/**
+ * `init` is optional and every caller but one omits it: the code host, the
+ * search box and this file's own sync are all GET, and were the whole reason
+ * this type had two parameters.
+ *
+ * Widened rather than joined by a second injection type (D-187). A door that
+ * needs a body — BLS v2 takes its registration key in a POST payload — would
+ * otherwise need its own poster, and two ways to reach the network is the
+ * duplicated notion this project keeps paying for. One seam, one test double.
+ */
+export type Http = (
+  url: string,
+  headers: Record<string, string>,
+  init?: { method?: string; body?: string },
+) => Promise<HttpResponse>;
 
 /**
  * Per source, so one enormous repo can't stall a sync. Overflow is reported,

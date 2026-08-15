@@ -281,6 +281,7 @@ off, so the app's fetch was gated and this second door was not.
 | `render` — print a run's own HTML to a styled PDF, or render a level-backdrop plate | builtin | **on** | Live; offline by construction — every request the page makes is aborted, except the vendored three.js pair served from the server's own disk (D-128, D-143) |
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only in a session; its one write is a reviewed comment, replayed at approval (D-104) |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
+| `bls` — read US labour statistics | builtin | off, needs `BLS_REGISTRATION_KEY` | Live, read-only; its own door because the key rides in a POST body and the web door is GET (D-187). One batched call carries up to 50 series |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
@@ -1671,13 +1672,18 @@ list per channel (D-077; SPEC M5.11 has the slices):
       read by nobody, because a tool is Node built-ins only and so cannot today
       be invalidated by a surface that moved (D-050). The day tools get the
       doors, that field is load-bearing — and it could not have been added
-      backwards. **Decided 2026-08-06 and the answer was no, on measurement
-      (D-100):** granting the doors would have unlocked *nothing*, because all
+      backwards. Decided 2026-08-06 and the answer was **no** on measurement
+      (D-100) — granting the doors would have unlocked *nothing*, because all
       three compile-eligible recipes it would have helped also carry `browser`,
       which no plain-node script can run whatever doors it holds. The real
-      blocker was the gate reading availability rather than use, and that is
-      what changed. *Reopen when a recipe is refused for a door it genuinely
-      used and nothing else — the first one has yet to exist.*
+      blocker was the gate reading availability rather than use.
+      **Reversed 2026-08-12 — D-173, and this row is Live.** A compiled tool
+      now receives `AGENTLINGS_DOORS`, a JSON map of connection → endpoint, and
+      the server environment **minus** every secret the catalog declares — the
+      two halves of one rule, since a script holding the key could reach the
+      host without the door and the door would bound nothing. The router
+      refuses a tool whose doors the job does not hold, and availability can
+      neither grant a door nor clear one.
 - [ ] **A job that waits for a specialist, or times out to anyone free** — one
       scribe currently serialises every document job while others idle.
       *Blocked on: choosing which behaviour is right; both are defensible.*

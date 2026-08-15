@@ -4384,3 +4384,10 @@ button.danger:hover {
   line-height: 1.45;
   color: #8a8172;
 }
+
+/* What the sentence itself was read as, quoted back (D-184). Amber like the
+   near-miss line: it is a reading the user should check, not a fact. */
+.work-cadence-read {
+  color: #e8b478;
+  font-size: 11px;
+}

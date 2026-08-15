@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Cadence } from '@agentlings/shared';
 import {
+  cadenceFrom,
   computeNextDue,
   createSchedule,
   describeCadence,
@@ -224,5 +225,76 @@ describe('the store', () => {
     expect(info.cadenceLabel).toBe('every Monday at 18:30');
     expect(info.paused).toBe(false);
     expect(info.lastError).toBeUndefined();
+  });
+});
+
+/**
+ * A cadence written into the sentence (D-184). Read and shown, never acted on
+ * — Start with a repeat set creates a schedule that spends money on a timer,
+ * so these pin both halves: what it reads, and what it leaves alone.
+ */
+describe('cadenceFrom', () => {
+  it('reads the two sentences the corpus was built around', () => {
+    expect(cadenceFrom('Every Monday at 9, telegram me the UF and the dollar')).toEqual({
+      cadence: { kind: 'weekly', dow: 1, hour: 9, minute: 0 },
+      phrase: 'Every Monday at 9',
+    });
+    expect(cadenceFrom('Email me the open PR list every morning')?.cadence).toEqual({
+      kind: 'daily',
+      hour: 9,
+      minute: 0,
+    });
+  });
+
+  it('reads the weekdays, in the numbering Date.getDay uses', () => {
+    expect(cadenceFrom('every Sunday')?.cadence.dow).toBe(0);
+    expect(cadenceFrom('every Friday')?.cadence.dow).toBe(5);
+    expect(cadenceFrom('on Tuesdays')?.cadence.dow).toBe(2);
+    expect(cadenceFrom('every Weds')?.cadence.dow).toBe(3);
+  });
+
+  it('reads a clock time, am and pm alike', () => {
+    expect(cadenceFrom('every day at 18:30')?.cadence).toMatchObject({ hour: 18, minute: 30 });
+    expect(cadenceFrom('every day at 6pm')?.cadence).toMatchObject({ hour: 18, minute: 0 });
+    expect(cadenceFrom('every day at 7 am')?.cadence).toMatchObject({ hour: 7, minute: 0 });
+    // Bare "at 9" is nine in the morning; a person who means the evening says so.
+    expect(cadenceFrom('every day at 9')?.cadence.hour).toBe(9);
+  });
+
+  it('reads monthly, with or without the day', () => {
+    expect(cadenceFrom('monthly on the 12th')?.cadence).toEqual({
+      kind: 'monthly',
+      day: 12,
+      hour: 9,
+      minute: 0,
+    });
+    expect(cadenceFrom('every month')?.cadence).toMatchObject({ kind: 'monthly', day: 1 });
+  });
+
+  it('says nothing without a recurrence word — a one-off keeps its date', () => {
+    expect(cadenceFrom('telegram me the UF on Monday')).toBeNull();
+    expect(cadenceFrom('put the dentist on my calendar for Thursday at 6pm')).toBeNull();
+    expect(cadenceFrom('summarise the expenses CSV')).toBeNull();
+  });
+
+  it('a weekday as a subject is not a cadence', () => {
+    // "every Monday's standup notes" names what to work on, not when to run.
+    expect(cadenceFrom("summarise every Monday's standup notes")).toBeNull();
+  });
+
+  it('refuses a time that is not one, rather than inventing an hour', () => {
+    expect(cadenceFrom('every day at 99')).toBeNull();
+    expect(cadenceFrom('every day at 9:77')).toBeNull();
+  });
+
+  /** The phrase is quoted on the card, so it has to be the words that were read. */
+  it('hands back the words it read, for the card to quote', () => {
+    expect(cadenceFrom('Email me the open PR list every morning')?.phrase).toBe('every morning');
+    expect(cadenceFrom('run it monthly on the 12th at 07:30')?.phrase).toContain('monthly on the 12th');
+  });
+
+  it('the wording it produces is the one every surface already uses', () => {
+    const read = cadenceFrom('every Monday at 9')!;
+    expect(describeCadence(read.cadence)).toBe('every Monday at 09:00');
   });
 });

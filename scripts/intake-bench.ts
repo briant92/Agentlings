@@ -18,11 +18,12 @@
 // point of running this:
 //
 //   MISS       — the rule could have fired and did not. Tunable.
-//   STRUCTURAL — the label cannot be expressed at all: a chain carries three
-//                steps, some channels have no client that could send, and
-//                nothing anywhere carries "redact this first". Not tunable;
-//                a decision. (One channel per job was on this list until
-//                D-179 took it off.)
+//   STRUCTURAL — the label cannot be expressed at all. Not tunable; a
+//                decision. The list has been worked down to one — Slack
+//                cannot carry a file, and nothing at intake says so before
+//                the run. One channel per job left it at D-179, the
+//                three-step cap at D-183, "nothing carries a withholding" at
+//                D-181, and "no sentence makes a schedule" at D-184.
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -39,6 +40,7 @@ import { decide, type Decision } from '../server/src/router';
 import { wantsWithholding } from '../server/src/redact';
 import { MAX_STEPS, splitSteps } from '../server/src/steps';
 import { quoteFor_ } from '../server/src/quote';
+import { cadenceFrom, describeCadence } from '../server/src/schedules';
 import { CASES, type BenchCase } from './intake-bench-cases';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -181,6 +183,8 @@ function readSentence(test: BenchCase) {
     quote,
     questions,
     delivered,
+    // The cadence the sentence carries, exactly as the plan route reads it.
+    cadence: cadenceFrom(prompt),
     // The brief a *job* gets, not the raw channel contract: `briefForJob` is
     // what the executor calls, and it is where the per-channel blocks and the
     // withholding contract are assembled. Reading `channelBrief` here credited
@@ -416,14 +420,15 @@ function run(test: BenchCase): Ran {
     );
   }
   if (want.recurs) {
-    const heard = seen.questions.map((q) => q.ask).join(' ');
-    const carries = /every|cadence|schedule|repeat/i.test(heard);
+    // The desk reads the cadence and fills the repeat controls in (D-184).
+    // It never acts on it: Start still makes the schedule, and the card quotes
+    // the words it read so the reading can be checked.
+    const read = seen.cadence;
     add(
       'recurring',
-      carries ? 'ok' : 'structural',
-      'the cadence is recognised',
-      carries ? 'carried' : 'queued once, silently',
-      'a schedule is made in the UI; no sentence creates one',
+      read ? 'ok' : 'miss',
+      'the cadence is read off the sentence',
+      read ? `${describeCadence(read.cadence)} — from “${read.phrase}”` : 'queued once, silently',
     );
   }
 

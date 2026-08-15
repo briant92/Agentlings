@@ -1386,6 +1386,15 @@ export interface WorkPlan {
    * whenever a real ask fired.
    */
   channelMention?: { channel: string; label: string; wired: boolean };
+  /**
+   * A cadence the sentence itself carries (D-184) — "every Monday at 9".
+   *
+   * Fills the repeat controls in and is said in words on the card, because
+   * Start with a repeat set both runs the job now *and* creates a schedule
+   * that spends money on a timer. `phrase` is the words it was read from, so
+   * the reading can be checked rather than taken on trust.
+   */
+  cadence?: { cadence: Cadence; phrase: string; label: string };
 }
 
 export interface WorldState {

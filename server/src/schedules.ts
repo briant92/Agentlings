@@ -143,6 +143,125 @@ function ordinal(n: number): string {
   return `${n}${last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th'}`;
 }
 
+/**
+ * A cadence written into the sentence (D-184): "every Monday at 9", "email me
+ * the open PR list every morning".
+ *
+ * Read, never acted on. A schedule spends money on a timer, so this only
+ * *fills in* the repeat controls the desk already has and says in words what
+ * it read — Start still creates the schedule, and one click turns it off. That
+ * is the split's doctrine rather than the send card's: a wrong reading here is
+ * visible before anything is queued, so under-firing costs the feature while
+ * over-firing costs a glance.
+ *
+ * The phrase comes back with the cadence because the line has to quote what it
+ * matched. "Reads *every Monday at 9* as weekly" is checkable by the person
+ * reading it; "this repeats weekly" is a claim they cannot check.
+ */
+export interface ReadCadence {
+  cadence: Cadence;
+  /** The words this was read from, quoted back on the card. */
+  phrase: string;
+}
+
+/**
+ * Recurrence words. Without one of these, nothing here claims anything.
+ *
+ * A *plural* weekday is its own recurrence word — "on Mondays" is a cadence
+ * where "on Monday" is a date — which is the whole difference between a
+ * standing job and a one-off, carried by one letter.
+ */
+const RECURS = /\b(every|each|daily|weekly|monthly|nightly)\b/i;
+const PLURAL_DAY = /\bon\s+(?:sun|mon|tues?|wed(?:nes)?|thur?s?|fri|sat(?:ur)?)(?:day)?s\b/i;
+
+const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+/**
+ * A weekday named as a recurrence — "every Monday", "on Mondays". The
+ * possessive is excluded: "every Monday's standup notes" names a subject, not
+ * a cadence.
+ */
+const WEEKDAY =
+  /\b(?:every|each|on)\s+(sun|mon|tues?|wed(?:nes)?|thur?s?|fri|sat(?:ur)?)(?:day)?s?\b(?!['’]s)/i;
+
+/** "on the 12th", "on the 1st of each month" — the day a monthly cadence lands. */
+const MONTH_DAY = /\bon the (\d{1,2})(?:st|nd|rd|th)?\b/i;
+
+/**
+ * A clock time — "at 9", "at 9am", "at 18:30", "at 6 pm". Bare "at 9" reads as
+ * 09:00 rather than 21:00: a person who means the evening says so, and the
+ * control is right there to correct either way.
+ */
+const AT_TIME = /\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i;
+
+/** Parts of the day, for sentences that name one instead of a clock time. */
+const PART_OF_DAY: [RegExp, number][] = [
+  [/\bevery morning\b|\beach morning\b|\bmornings\b/i, 9],
+  [/\bevery afternoon\b|\bafternoons\b/i, 14],
+  [/\bevery evening\b|\bevenings\b|\bevery night\b|\bnightly\b|\bnights\b/i, 18],
+];
+
+export function cadenceFrom(text: string): ReadCadence | null {
+  if (!RECURS.test(text) && !PLURAL_DAY.test(text)) return null;
+  const said: string[] = [];
+
+  let hour = 9;
+  let minute = 0;
+  const clock = AT_TIME.exec(text);
+  if (clock) {
+    const raw = Number(clock[1]);
+    if (raw > 23) return null;
+    const suffix = clock[3]?.toLowerCase();
+    hour = suffix === 'pm' && raw < 12 ? raw + 12 : suffix === 'am' && raw === 12 ? 0 : raw;
+    minute = Number(clock[2] ?? 0);
+    if (minute > 59) return null;
+    said.push(clock[0].trim());
+  } else {
+    for (const [re, at] of PART_OF_DAY) {
+      const part = re.exec(text);
+      if (part) {
+        hour = at;
+        said.push(part[0].trim());
+        break;
+      }
+    }
+  }
+
+  const weekday = WEEKDAY.exec(text);
+  if (weekday) {
+    const stem = weekday[1].toLowerCase();
+    const dow = DAYS.findIndex((name) => name.startsWith(stem.replace(/s$/, '')));
+    if (dow < 0) return null;
+    said.unshift(weekday[0].trim());
+    return { cadence: { kind: 'weekly', dow, hour, minute }, phrase: said.join(' ') };
+  }
+
+  const monthly = /\b(monthly|every month|each month)\b/i.exec(text);
+  if (monthly) {
+    const day = MONTH_DAY.exec(text);
+    const on = day ? Number(day[1]) : 1;
+    if (on < 1 || on > 31) return null;
+    said.unshift(day ? `${monthly[0]} ${day[0]}`.trim() : monthly[0]);
+    return { cadence: { kind: 'monthly', day: on, hour, minute }, phrase: said.join(' ') };
+  }
+
+  const daily = /\b(daily|every day|each day|every morning|every afternoon|every evening|every night|nightly)\b/i.exec(
+    text,
+  );
+  if (daily) {
+    if (!said.includes(daily[0].trim())) said.unshift(daily[0].trim());
+    return { cadence: { kind: 'daily', hour, minute }, phrase: said.join(' ') };
+  }
+
+  const weekly = /\b(weekly|every week|each week)\b/i.exec(text);
+  if (weekly) {
+    // No day named, so the control's own default stands and the line says so.
+    said.unshift(weekly[0].trim());
+    return { cadence: { kind: 'weekly', dow: 1, hour, minute }, phrase: said.join(' ') };
+  }
+  return null;
+}
+
 /** The cadence in words — one wording, used by the panel and the terminal alike. */
 export function describeCadence(cadence: Cadence): string {
   const pad = (n: number) => String(n).padStart(2, '0');

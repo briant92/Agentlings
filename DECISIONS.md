@@ -193,6 +193,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-181 — 2026-08-15 — The withholding gate: a promise narrow enough to check, refused loudly when it fails](#d-181--2026-08-15--the-withholding-gate-a-promise-narrow-enough-to-check-refused-loudly-when-it-fails)
 - [D-182 — 2026-08-15 — The one "and" that splits: a send after it, and none before it](#d-182--2026-08-15--the-one-and-that-splits-a-send-after-it-and-none-before-it)
 - [D-183 — 2026-08-15 — MAX_STEPS goes to four, and the withholding follows the chain rather than the sentence](#d-183--2026-08-15--max_steps-goes-to-four-and-the-withholding-follows-the-chain-rather-than-the-sentence)
+- [D-184 — 2026-08-15 — The cadence in the sentence: read and quoted back, never acted on](#d-184--2026-08-15--the-cadence-in-the-sentence-read-and-quoted-back-never-acted-on)
 
 ## By theme
 
@@ -588,7 +589,12 @@ entry updates one file rather than two.
   failed card's button saying SEE WHAT HAPPENED instead of promising a
   verdict, and every review opening with `the ask` — the verbatim prompt
   and its desk clarifications, the trace from result back to question
-- **Recurrence** — the timer that queues a sentence again on its own cadence,
+- **Recurrence** — and D-184, where the *sentence* learned to carry the
+  cadence: read off the words, quoted back so the reading can be checked, the
+  repeat row filled in once per sentence and never acted on — because Start
+  with a repeat set creates a job that spends money on a timer, and "on
+  Mondays" is a cadence where "on Monday" is a date. Before it, the timer that
+  queues a sentence again on its own cadence,
   fired by a server sweep through the same glue `/work` uses so the new way
   in is quoted like every other, with downtime collapsing to a single
   catch-up firing: D-103, the first row ticked off the 2026-08-06 capability
@@ -12044,3 +12050,71 @@ already today, and the rule it produced was mine: **the mutation must be the
 only uncommitted change in that file.** Restored by hand; noted here because a
 lesson learned twice and broken a third time is a lesson that needs writing
 where it will be read.
+
+## D-184 — 2026-08-15 — The cadence in the sentence: read and quoted back, never acted on
+
+The last recognition gap D-177 named. "Every Monday at 9, telegram me the UF"
+queued once and said nothing; schedules existed, but only through the repeat
+row, so a sentence that named its own cadence was heard as a one-off.
+
+### Read, not obeyed
+
+`cadenceFrom` returns the cadence **and the words it read it from**, and the
+desk fills the repeat controls in and says so: *read "every Monday at 9" as
+every Monday at 09:00 · not a repeat*.
+
+That shape is not decoration. **Start with a repeat set both runs the job now
+and creates a schedule** — a job that spends money on a timer — so a silent
+prefill would turn a typo into a standing charge. Quoting the phrase makes the
+reading checkable by the person reading it, which "this repeats weekly" is not;
+and one click turns it off. This is the split's doctrine (D-105) rather than
+the send card's (D-093): the reading is visible before anything is queued, so
+under-firing costs the feature while over-firing costs a glance.
+
+The controls are filled **once per sentence**, remembered the way a channel
+pick is — turning the repeat off stays off while the user keeps typing.
+
+### What it reads, and the one letter that decides
+
+Daily, weekly and monthly, with a clock time or a part of the day. The guard is
+a recurrence word, and *a plural weekday is one*: **"on Mondays" is a cadence
+where "on Monday" is a date**, and the whole difference is one letter. So
+"telegram me the UF on Monday" stays a one-off and "on Tuesdays" does not.
+
+A weekday in the possessive is not a cadence either — "summarise every Monday's
+standup notes" names what to work on, not when to run.
+
+A time that is not one is refused rather than rounded: "at 99" and "at 9:77"
+read as no cadence at all, on the same principle as the withholding gate's
+too-short value — better no reading than a wrong one nobody can see.
+
+### What proved it
+
+1,659 server and 192 web tests. The parser's suite pins the corpus sentences,
+every weekday spelling including "Weds", am/pm and 24-hour times, monthly with
+and without a day, and the refusals: no recurrence word, a possessive weekday,
+an impossible clock. The wording it produces is fed back through
+`describeCadence`, so the card and the schedule panel cannot word a cadence
+differently.
+
+The benchmark's `recurring` surface was a probe that could only ever report
+"queued once, silently". It is now a real check at **2 of 2**, and the corpus
+has one structural gap left — Slack cannot carry a file, and nothing at intake
+says so.
+
+Verified live against a restarted server: "Every Monday at 9…" reads weekly at
+09:00, "every morning" reads daily at 09:00, and "on Monday" reads nothing.
+
+**Not verified in the browser, for a reason worth its own entry:** the app
+would not boot in the Browser pane. `main.tsx` gates the first render on
+`loadLooks()`, which awaits `img.decode()` for every installed pack's plates
+with no timeout — and `decode()` never settles in a pane that is not
+compositing. Fourteen packs are installed. The result is a blank page with no
+error at all, and the comment above that boot claims a down server "delays the
+boot rather than blocking it", which is exactly what it does not do when a
+decode simply never answers. Diagnosed rather than guessed: the plate serves
+200, `loadLooks()` was raced against a timer and lost, and a single
+`img.decode()` on a real plate never settled in five seconds. Left unfixed
+here because it is not this entry's subject; recorded because it is severe and
+because it also bounds the DOM-verification path recorded this morning — that
+path works only if the app boots.

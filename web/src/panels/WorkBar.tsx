@@ -161,6 +161,26 @@ export function WorkBar({
     return () => clearTimeout(timer);
   }, [text, levelId, channel, sendKey, single]);
 
+  /**
+   * A cadence the sentence carries (D-184), filled into the controls once per
+   * sentence — never re-applied, so turning it off stays off while the user
+   * keeps typing. `cadenceFor` remembers which sentence it filled, the way
+   * `plannedFor` remembers which sentence a pick belongs to.
+   */
+  const cadenceFor = useRef('');
+  useEffect(() => {
+    const read = plan?.cadence;
+    const sentence = text.trim();
+    if (!read || !sentence || cadenceFor.current === sentence) return;
+    cadenceFor.current = sentence;
+    setRepeatKind(read.cadence.kind);
+    if (read.cadence.dow !== undefined) setRepeatDow(read.cadence.dow);
+    if (read.cadence.day !== undefined) setRepeatDay(read.cadence.day);
+    setRepeatTime(
+      `${String(read.cadence.hour).padStart(2, '0')}:${String(read.cadence.minute).padStart(2, '0')}`,
+    );
+  }, [plan, text]);
+
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
   const cardUp = !!plan?.channelAsk && plan.channelAsk.state !== 'ready';
@@ -671,6 +691,19 @@ export function WorkBar({
                     />
                   </label>
                   <span className="dim">· queued again then, reviewed like any job</span>
+                  {/* What the sentence itself was read as (D-184), quoted so
+                      the reading can be checked. Start with a repeat set makes
+                      a schedule that spends money on a timer, so this never
+                      passes silently — and "not a repeat" is one click. */}
+                  {plan?.cadence && repeatKind === plan.cadence.cadence.kind && (
+                    <span className="work-cadence-read">
+                      read “{plan.cadence.phrase}” as {plan.cadence.label}
+                      {' · '}
+                      <button className="work-link" onClick={() => setRepeatKind('off')}>
+                        not a repeat
+                      </button>
+                    </span>
+                  )}
                   {/* Start runs today as well; a job on a real cadence may
                       want its first run ON the cadence (D-106). Hidden on a
                       doomed send — the arrest owns that conversation. */}

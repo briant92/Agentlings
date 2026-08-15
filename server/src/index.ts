@@ -40,6 +40,7 @@ import {
 } from './approvals';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import {
+  cadenceFrom,
   createSchedule,
   describeCadence,
   describeSchedule,
@@ -1117,6 +1118,15 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
       names,
     }),
     ...(channelAsk ? { channelAsk } : {}),
+    // A cadence written into the sentence (D-184). Read and shown, never
+    // acted on: Start with a repeat set creates a schedule, so the desk fills
+    // the controls in and says what it read rather than deciding quietly.
+    ...(() => {
+      const read = cadenceFrom(text);
+      return read
+        ? { cadence: { ...read, label: describeCadence(read.cadence) } }
+        : {};
+    })(),
     // A folder reorganization is asked for by picking the folder, the way a
     // send asks for its recipient (D-132): the sentence wants organizing, but
     // only the native picker yields the absolute path, so the desk shows a

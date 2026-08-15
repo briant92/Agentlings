@@ -1624,7 +1624,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       rather than firing a backlog, attachments do not repeat, and a firing
       job says so on its queued line (D-103). The repeat row can also
       **schedule only** — no run today — with the first firing's date said
-      from the server's own arithmetic (D-106)
+      from the server's own arithmetic (D-106). Since D-184 the **sentence
+      itself** can carry the cadence — "every Monday at 9", "every morning",
+      "monthly on the 12th", "on Tuesdays" — and the desk fills the repeat row
+      in and quotes the words it read back at you. It never acts on it: Start
+      still makes the schedule, "not a repeat" is one click, and a date rather
+      than a cadence ("on Monday", singular) is left alone
 - [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
       editing without destroying formatting does not, because Node has no good
       round-tripper. *Blocked on: a second runtime. Python would do it and was

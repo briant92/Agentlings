@@ -22,9 +22,10 @@ import { safeAttachmentName } from './outputs';
  * The outbox contract: how a run asks for something to be sent (D-075).
  *
  * A session never holds a send tool. It writes this file at the sandbox root —
- * one channel, up to MAX_OUTBOX_MESSAGES messages — where it counts as a
- * deliverable by the existing top-level rule. Review shows the messages, and
- * Approve is the send: the server replays the reviewed outbox through the
+ * one message set per channel it was queued with (D-179), up to
+ * MAX_OUTBOX_MESSAGES messages each — where it counts as a deliverable by the
+ * existing top-level rule. Review shows the messages, a card per channel, and
+ * Approve is the send: the server replays each reviewed outbox through its own
  * channel's client, exactly as a reviewed patch is replayed by `git apply`.
  *
  * Validation is strict and every refusal names its reason: this file is

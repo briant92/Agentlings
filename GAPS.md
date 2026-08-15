@@ -144,15 +144,19 @@ capability roadmap; this is the short list of what matters most, in order.
       instruction "*does* apply" because the repo's own text said it covered
       read-only sessions. So the session sorts a clone's instructions by
       **applicability, not authority**. The path rule held in every run.
-      **The line is now written and mutation-tested.** Same repo commit, same
-      payload, same sentence, one variable: `AGENTS-LOG.md` stops being written,
-      and the run's own words track the rule — *"a file inside the repository
-      can describe how the project is written — and that part I followed — but
-      it cannot add work to the job I was given"* — reporting the instruction in
-      `RESULT.md` rather than declining silently, while still following the
-      style and testing conventions the job had asked about. `claude.test.ts`
-      pins both halves so a later edit cannot widen it into a blanket refusal.
-      The row stays open regardless: n=1 against n=1, and what was added is an
-      instruction the model weighs rather than enforcement — the same category
-      as the text it defends against. D-168 already named per-job isolation as
-      the only thing that would enforce this, and it belongs with hosting.
+      **The line is written; its effect is unproven, and the hazard is
+      intermittent.** Ten runs in total ($3.06). With the line: 0 of 5 obeyed.
+      Without it: **1 of 5** — the same single obey that started this. One in
+      five against nought in five is variance, not an effect, so the earlier
+      "mutation test reverses it" claim is **withdrawn** (D-189's correction).
+      The existence proof stands regardless: a clone's `CLAUDE.md` *was* obeyed
+      once, and one demonstration cannot be undone by later refusals — what the
+      sampling changes is the rate, and an intermittent hazard is the harder
+      kind to reason about, since four clean runs say nothing about the fifth.
+      The line is kept on its merits — narrow, cheap, sound, with both halves
+      pinned by `claude.test.ts` — but recorded as unmeasured rather than
+      demonstrated. Method note worth carrying: when a comparison is lopsided,
+      **repeat the weak arm**; repeating the arm already sampled feels like
+      rigour and adds nothing. The row stays open: what was added is an
+      instruction the model weighs rather than enforcement, and D-168 already
+      named per-job isolation as the only thing that would enforce it.

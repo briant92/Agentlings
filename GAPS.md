@@ -182,4 +182,15 @@ capability roadmap; this is the short list of what matters most, in order.
       at n=5; the added line is unmeasured; and what actually refuses is the
       model reasoning by channel — a property of the model, not of this code,
       which is the same class of assumption this row exists to complain about.
-      Re-test when the model changes. Still untested: `.claude/rules/`.
+      Re-test when the model changes.
+      **`.claude/rules/` completed the set — 0 of 5, control holding**, with a
+      pointer from `CLAUDE.md` so the arm tested obedience rather than whether a
+      model opens dot-directories (reported as a design choice; it makes this
+      arm not strictly comparable to `AGENTS.md`, which was found unprompted).
+      **Twenty-five runs, $7.50, and the measurement is complete:** the hazard
+      is proven once and bounded at ~1 in 5; no location or framing effect is
+      detectable at n=5, including a payload impersonating the requester; the
+      added line is unmeasured; and what refuses is the model reasoning by
+      channel. G8 is now **measured rather than argued, and still open** —
+      because the only thing that would *enforce* it is per-job isolation
+      (D-168), which belongs with hosting.

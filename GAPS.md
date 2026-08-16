@@ -160,3 +160,12 @@ capability roadmap; this is the short list of what matters most, in order.
       rigour and adds nothing. The row stays open: what was added is an
       instruction the model weighs rather than enforcement, and D-168 already
       named per-job isolation as the only thing that would enforce it.
+      **`AGENTS.md` tested too, and shows no filename effect**: 0 of 5 obeyed
+      with the same payload moved wholesale into it, and the control reported
+      rather than inferred — 5 of 5 opened the file and engaged with the
+      instruction, so these are refusals of something read. Fifteen runs, $4.63:
+      `CLAUDE.md` no line 1/5, `CLAUDE.md` with line 0/5, `AGENTS.md` with line
+      0/5. Five clean runs cannot separate "never" from "one in five", which is
+      the rate already measured, so this is *not obeyed in five attempts* rather
+      than safe. Untested: a payload framed as part of the user's own task, and
+      `.claude/rules/`.

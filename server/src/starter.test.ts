@@ -166,6 +166,21 @@ describe('shipped starter set', () => {
   });
 
   /**
+   * The reach row above proves the clerk wins the sentence; this proves it
+   * wins it on the desk's own word. Measured while writing it: with
+   * "calendar" stripped from the role file the row still passed at 0.41,
+   * riding on "brief" alone — researcher-adjacent vocabulary, a margin too
+   * thin to survive the next catalog change. The desk trade's anchor is
+   * "calendar", so a clerk that no longer says it must fail here rather
+   * than coast.
+   */
+  it('the clerk wins its desk sentence on the calendar word, not on "brief" alone', () => {
+    const result = suggest('brief me on my calendar this morning');
+    expect(result.role).toBe('clerk');
+    expect(result.matchedTerms).toContain('calendar');
+  });
+
+  /**
    * This used to be "design me a logo and pick brand colours", and that is
    * exactly what shipping a designer overturned — it now reaches `designer`,
    * correctly. The assertion is still worth keeping, so it moved to work the

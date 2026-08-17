@@ -123,7 +123,18 @@
     "pack checker holds a plate to. One stated exception to the offline rule:",
     "http://three.local/three.module.js (and the core file it imports) is",
     "fulfilled from the server's own pinned copy of three.js and never leaves",
-    "the machine; every other URL still aborts."
+    "the machine; every other URL still aborts.",
+    "",
+    "'calendar' is the first READING sibling on the Google consent (D-158). It",
+    "declares the same three GOOGLE_OAUTH_* secrets the Connect flow stores, so",
+    "it is ready the moment 'google' is and never before — but it carries its",
+    "own switch and its own tools list, because one switch must never gate both",
+    "reading and sending, and 'google' stays a sender that grants a session",
+    "nothing. The one tool reads events off the user's primary calendar as",
+    "compact lines, times as the calendar states them. There is deliberately no",
+    "compiled-tool door for it: a desk brief is live-data judgement work, so a",
+    "method that read the calendar must never compile into a $0 tool that runs",
+    "with nobody looking (D-158's uncompilable-by-construction)."
   ],
   "connections": [
     {
@@ -194,6 +205,22 @@
       "setup": [
         "Register free at data.bls.gov/registrationEngine — the key arrives by email",
         "Paste it here — it is sent to api.bls.gov only, in the request body"
+      ]
+    },
+    {
+      "name": "calendar",
+      "label": "Read your calendar",
+      "description": "Reads the events on your own Google Calendar — times, titles, what still awaits your reply, who is invited, where. Rides the same Google sign-in as sending, behind its own switch; reading grants no way to change anything.",
+      "transport": "builtin",
+      "tools": ["calendar_events"],
+      "secrets": {
+        "GOOGLE_OAUTH_CLIENT_ID": "the google connection's OAuth client id — stored by its Connect flow, nothing new to paste",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "that client's secret — stored by the same Connect flow",
+        "GOOGLE_OAUTH_REFRESH_TOKEN": "the refresh token the Connect flow stores after you approve on Google's page"
+      },
+      "setup": [
+        "Nothing to paste here — press Connect on the 'Send Gmail, as you' connection; one consent already covers reading the calendar",
+        "Then switch this on: it only gates reading, and sending stays the google connection's own switch"
       ]
     },
     {

@@ -30,6 +30,7 @@ import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { BLS_TOOLS } from '../bls';
+import { CALENDAR_TOOLS } from '../calendar';
 import { GITHUB_TOOLS } from '../github';
 import { SEARCH_TOOLS } from '../search';
 import { extractUrls, fetchPage } from '../web';
@@ -867,6 +868,7 @@ export class ClaudeAgentExecutor implements Executor {
     const searchConn = granted.find((c) => c.name === 'search');
     const render = granted.find((c) => c.name === 'render');
     const blsConn = granted.find((c) => c.name === 'bls');
+    const calendarConn = granted.find((c) => c.name === 'calendar');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -1016,6 +1018,18 @@ export class ClaudeAgentExecutor implements Executor {
               bls: {
                 endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/bls`,
                 tools: BLS_TOOLS.filter((t) => (blsConn.tools ?? []).includes(t.name)),
+              },
+            }
+          : {}),
+        // The read side of D-158, named here on D-188's lesson from day one:
+        // a door reaches nobody until a session is offered it. Deliberately
+        // absent from DOORS — desk work is live-data judgement, so a method
+        // that read the calendar may never compile.
+        ...(calendarConn
+          ? {
+              calendar: {
+                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/calendar`,
+                tools: CALENDAR_TOOLS.filter((t) => (calendarConn.tools ?? []).includes(t.name)),
               },
             }
           : {}),

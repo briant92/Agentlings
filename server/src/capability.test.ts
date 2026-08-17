@@ -229,6 +229,20 @@ describe('compileBlockers', () => {
     expect(compileDoors(reachedBrowser, CATALOG)).toEqual([]);
   });
 
+  /**
+   * D-158's uncompilable-by-construction, held as a test against the real
+   * DOORS map: the calendar connection deliberately has no door, so a desk
+   * method that read the calendar is refused a compile rather than granted a
+   * way to run with nobody looking. Adding `calendar` to DOORS is a decision
+   * about that, not a wiring convenience — which is why this should break.
+   */
+  it('refuses a method that read the calendar — desks never compile (D-158)', () => {
+    const withCalendar = [...CATALOG, { name: 'calendar', tools: ['calendar_events'] }];
+    const readTheDay = { capabilities: ['conn:calendar'], usedTools: ['calendar_events'] };
+    expect(compileBlockers(readTheDay, withCalendar)).toEqual(['calendar']);
+    expect(compileDoors(readTheDay, withCalendar)).toEqual([]);
+  });
+
   /** A method can need one of each, and each half must report only its own. */
   it('splits a method that reached both', () => {
     const both = {

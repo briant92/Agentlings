@@ -235,6 +235,61 @@ describe('the search connection', () => {
 });
 
 /**
+ * The first reading sibling on the Google consent (D-158): it reuses the
+ * three secrets the Connect flow stores — ready the moment google is, never
+ * before — behind its own switch and its own grant. The connection it rides
+ * stays a sender granting nothing, because one switch and one grant must
+ * never cover both reading and sending.
+ */
+describe('the calendar connection reads only', () => {
+  const calendar = all.find((c) => c.name === 'calendar');
+  const google = all.find((c) => c.name === 'google');
+
+  const callable = (settings: object, env: Record<string, string>): string[] => {
+    const names = grantedTools(['calendar'], all, settings, env);
+    return mcpToolNames(resolveForJob(names, all, env).granted);
+  };
+
+  it('ships off and grants exactly the one reading tool', () => {
+    expect(calendar).toBeDefined();
+    expect(calendar?.defaultOn).not.toBe(true);
+    expect(calendar?.sendsOnly).not.toBe(true);
+    expect(calendar?.tools).toEqual(['calendar_events']);
+  });
+
+  it('declares the google secrets rather than minting its own', () => {
+    expect(Object.keys(calendar?.secrets ?? {}).sort()).toEqual([
+      'GOOGLE_OAUTH_CLIENT_ID',
+      'GOOGLE_OAUTH_CLIENT_SECRET',
+      'GOOGLE_OAUTH_REFRESH_TOKEN',
+    ]);
+  });
+
+  it('leaves google a sender that grants a session nothing', () => {
+    expect(google?.sendsOnly).toBe(true);
+    expect(google?.tools).toEqual([]);
+  });
+
+  it('is nothing while off, and nothing while on but unconnected', () => {
+    expect(callable({}, {})).not.toContain('mcp__calendar__calendar_events');
+    expect(callable({ connections: { calendar: true } }, {})).not.toContain(
+      'mcp__calendar__calendar_events',
+    );
+  });
+
+  it('becomes callable once the Connect flow has run and the switch is on', () => {
+    const env = {
+      GOOGLE_OAUTH_CLIENT_ID: 'id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'secret',
+      GOOGLE_OAUTH_REFRESH_TOKEN: 'token',
+    };
+    expect(callable({ connections: { calendar: true } }, env)).toContain(
+      'mcp__calendar__calendar_events',
+    );
+  });
+});
+
+/**
  * Slack is the fourth sender (D-104) and holds telegram's whole shape: a
  * paste-a-token connection that grants a session nothing and sends only at
  * approval.

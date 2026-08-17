@@ -205,6 +205,7 @@ import { validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
 import { callBls } from './bls';
+import { callCalendar } from './calendar';
 import { callSearch } from './search';
 import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
@@ -3079,6 +3080,24 @@ app.post('/internal/bls', async (c) => {
   return c.json(
     await callBls(body.tool, body.args ?? {}, { http, token: process.env.BLS_REGISTRATION_KEY }),
   );
+});
+
+/**
+ * Calendar reads for a running session, gated exactly as the doors above. The
+ * access token is minted from the stored refresh token per call and never
+ * kept (google.ts's rule for sends, applied to reads). Deliberately absent
+ * from DOORS: a compiled tool can never be granted this one, which is D-158's
+ * uncompilable-by-construction — desk work is live-data judgement.
+ */
+app.post('/internal/calendar', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'calendar');
+  if (!connection) return c.json({ error: 'the calendar connection is not configured' }, 404);
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(await callCalendar(body.tool, body.args ?? {}, { http, env: process.env }));
 });
 
 app.post('/internal/render', async (c) => {

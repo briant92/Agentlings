@@ -169,6 +169,7 @@ try {
     ['github', 'the code host'],
     ['search', 'the search service'],
     ['bls', 'the statistics service'],
+    ['calendar', 'the calendar'],
   ]) {
     const builtin = config[name];
     if (!builtin?.tools?.length) continue;

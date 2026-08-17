@@ -10050,6 +10050,45 @@ the UI, first reviewed runs, then SPEC.md's milestone line and the full
 AGENTLING.md re-read — §5's connections table got its row now rather than
 lying for the interim.
 
+**Amendment (2026-08-16, later) — the clerk is shipped, and the replay
+earned its keep twice.** `roles/clerk.md` (`edc3a99`, `209e51d`): Haiku, 6
+turns, read+write only, concise-reports, a terse body on D-117's own
+finding about long ones. The replay harness is now a committed instrument —
+`scripts/matcher-replay.ts`, every distinct prompt the app has ever queued
+(157 today, against D-117's 83) through the production matcher, `--out` for
+a snapshot and `--diff` for the movement — because this was the second role
+addition to need it and it will not be the last.
+
+What it caught: **the first draft of the clerk reproduced the designer
+drift in miniature.** Two unrelated sentences moved to clerk on incidental
+rare body words — "connected" (from *connected calendar*) took a WhatsApp
+sentence, "empty" (from *a window is empty*) took a pack-authoring sentence
+at 0.61 — the D-117 mechanism exactly: a body-only word, sole occurrence in
+any role doc, carrying a sentence whose confidence rides on skill docs.
+Reworded before landing. Settled movement, 5 of 157: one legitimate clerk
+capture ("Add a calendar event…" on `[calendar, event]` — the calendar
+trade hearing a calendar sentence), one pack sentence shielded in practice
+by `AUTHOR_ROLE`'s force-route, two pre-existing tie flips
+(researcher→scribe at 0.49, and a coding prompt already mis-filed analyst
+flipping to designer at 0.57 — wrong both ways, no worse), and one
+improvement (a look-up-and-summarise sentence found scribe from no-match).
+Desk sentences reach clerk at 0.59–0.71.
+
+**And a survived mutation earned a sharper pin.** Stripping "calendar" from
+the description — then from the whole role file — left the reach row
+passing at 0.41: the sentence rode in on "brief" alone, researcher-adjacent
+vocabulary, with *calendar* and *morning* as gaps. A reach row binds
+reachability, not vocabulary. The new starter.test case demands the clerk
+win its desk sentence with `calendar` among the matched terms; it was
+proven failing against the mutated file before the revert. The reusable
+lesson is D-177's, sharpened: **a survived mutation is a finding about what
+the test binds, and the response is a sharper test, not a shrug.**
+
+starter.test pins nine roles; SPEC's built-ins line and AGENTLING.md §2 got
+their row. Left: hire, the scheduled morning brief through the UI, first
+reviewed runs (all after the serve restart makes the door and the role
+live), then the milestone line and the full AGENTLING.md re-read.
+
 ## D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door
 
 Brian asked for attachments both ways round — "ones you have available and

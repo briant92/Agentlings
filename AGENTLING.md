@@ -94,7 +94,7 @@ the SDK session, not advised in a prompt.
 | `analyst` | Numbers — computes over records in a kept script, draws the result as an SVG chart | read, write, grep, bash | concise-reports, tables-and-numbers, cite-sources, data-analysis | Haiku 4.5 | 6 |
 | `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
 | `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
-| `clerk` | Standing desks — reads the connected calendar and briefs the day: events, conflicts, invites awaiting a reply (D-158) | read, write | concise-reports | Haiku 4.5 | 6 |
+| `clerk` | Standing desks — reads the connected calendar and mail and briefs the day: events, conflicts, invites and mail awaiting a reply (D-158, D-191) | read, write | concise-reports | Haiku 4.5 | 6 |
 
 Role tool names map onto SDK tools (`grep` → `Grep` + `Glob`, `web_fetch` →
 `WebFetch`). A role naming no tools gets the default set: Read, Write, Edit,

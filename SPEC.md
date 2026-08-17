@@ -436,7 +436,8 @@ tried, measured and rejected is in `DECISIONS.md`:
   clerk trade, the daily morning brief → D-158
 - M5.23 mail-read (EXPANSION A1): the second reading sibling — Gmail
   search and one-message read on the find/read split, behind one fresh
-  `gmail.readonly` consent walked last → D-191
+  `gmail.readonly` consent walked last; and the second standing desk,
+  the daily mail brief on its own sentence → D-191
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

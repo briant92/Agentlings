@@ -13206,3 +13206,35 @@ was the horde's own weekly expenses report, approved and sent the same
 morning. The pre-consent wall pointing at its own fix is what turned a
 failed probe into a one-press diagnosis — the sentence paid for itself on
 its first firing.
+
+**Amendment (2026-08-17, later) — the mail desk is armed, on its own
+sentence.** Deliberately a second schedule rather than a widened first:
+editing `bd651cfd` would reset the calendar brief's standing-approval
+count (D-082, sitting at one of three), and a combined brief would let
+mail content — the riskier half — ride the calendar's clean record into
+auto-send. Separate sentences, separate earned trust.
+
+The clerk learned the trade's words first, under D-158's own discipline
+(`0137ddf`): the replay ran both sides — 163 prompts, **exactly one
+moved**, the T5 indicators sentence drifting no-match 0.3 → worker 0.45
+on the avgdl shift, inert twice over (the installed tool claims it at
+`tier: tool` before any role matters, and worker is the generalist
+anyway). No incidental capture this time: `urgent`, `sender` and `answer`
+were kept out of the doc on D-117's sole-occurrence rule. starter.test
+gained the reach row and the mail-anchor twin — the clerk must win
+"brief me on my mail this morning" with `mail` among the matched terms —
+and the mutation proved it: `mail` stripped from the whole role file
+killed exactly that pin while the calendar pin survived.
+
+The desk itself: schedule `b3bde121`, daily **08:10** (ten minutes behind
+the calendar brief, so the two telegrams arrive in order), channel pinned
+`telegram` at creation, the recipient riding as the stored
+`send-to:telegram` answer, reviewed until its own three unchanged
+approvals. The live plan probe answered one job, no split, clerk (Tam),
+**~9c quoted off the clerk class's own first ledger row** — and the
+channel ask heard telegram alone: `mail` in content position claimed
+nothing, D-178's local-evidence rule holding where the calendar desk had
+heard a phantom second channel. Never hand-queue it; the first firing is
+Tue 18 Aug. The running server routes the sentence to the clerk at 0.55
+on its pre-edit registry, so tomorrow works without a restart; the next
+restart picks up the pinned vocabulary (0.77, `mail` matched).

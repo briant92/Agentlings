@@ -432,6 +432,8 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.21 pre-rendered backdrops v1 (plates, the render door, the road) →
   D-142–D-144 · v2 (the stack, parallax, the occlusion strip, plate life,
   Route 2 as files) → D-148
+- M5.22 the reading desks (EXPANSION A1): the calendar connection, the
+  clerk trade, the daily morning brief → D-158
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

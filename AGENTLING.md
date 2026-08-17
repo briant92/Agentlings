@@ -17,10 +17,11 @@ Every capability carries a status:
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
 
-Written 2026-08-01 against `e5c80c9`, last re-read against `8df28b6`
-(2026-08-12) — §8 regenerated from the ledger, and §§10–11 corrected where the
-code disagreed with them (D-168). §8's figures regenerate with
-`npm run ledger:report`, and §15 is the list of what is not here yet.
+Written 2026-08-01 against `e5c80c9`, last re-read against `3839d4d`
+(2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,
+the calendar connection, sixteen skills, and the reading row ticked. §8's
+figures regenerate with `npm run ledger:report`, and §15 is the list of what
+is not here yet.
 
 ---
 
@@ -108,13 +109,14 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Fourteen ship, written against this app's contract — sandbox only,
+session. Sixteen ship, written against this app's contract — sandbox only,
 `RESULT.md` out — which third-party skills know nothing about:
 
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
 `cite-sources` · `concise-reports` · `data-analysis` · `deck-design` ·
-`deep-research` · `document-design` · `pdf-report` · `plain-language` ·
-`see-your-work` · `small-diffs` · `tables-and-numbers`
+`deep-research` · `document-design` · `organizing-folders` · `pdf-report` ·
+`plain-language` · `plate-design` · `see-your-work` · `small-diffs` ·
+`tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was
@@ -364,9 +366,10 @@ whose secret is missing is listed as not ready and can never be switched on.
 
 ### Connecting to other apps — Partial
 
-Two credentialed connections are plugged in — the code host above and the
-telegram sender — and both are builtin, so the *external* socket still
-carries nothing but the browser. An external MCP server is declared with
+Eight credentialed connections are plugged in — four that read (the code
+host, the search box, the statistics service, the calendar) and four that
+send — every one builtin, so the *external* socket still carries nothing but
+the browser. An external MCP server is declared with
 `name`, `label`, `transport: "stdio"`, `command`, `args`, `tools` and
 optional `secrets: {ENV_NAME: "why it is needed"}`.
 
@@ -1030,7 +1033,7 @@ and the difference was measured on 2026-08-12 (D-168).** `playwright-core` is a
 dependency of the server (it drives the render door, D-128) and therefore sits
 in the project's root `node_modules`, which a job sandbox resolves like any
 other — the same reach D-100 recorded for `exceljs`. So a role holding `Bash`
-— six of the eight — can write four lines of Node and drive a real browser:
+— six of the nine — can write four lines of Node and drive a real browser:
 `click`, `hover` and `evaluate` were all exercised live from inside a real job
 sandbox against this app's own localhost. Read the withheld twelve as *what
 the model is handed*, not *what the sandbox can do*; §10 is where the actual
@@ -1521,10 +1524,17 @@ judgement — *which of its tools are reading, and which are acting*.
       What stays open is a *session* reading or writing across repositories
       live, which is still §10's refusal — a reviewed-and-replayed manifest is
       not a live tool, which is exactly why this one was buildable.
-- [ ] **Email / calendar / chat, reading** — unlocks context the crew cannot
-      otherwise see. *Blocked on: nothing technical. Note that reading a mailbox
-      moves personal data into a session, which §11 says there is no control
-      plane for.*
+- [x] **Calendar, reading** — the first reading desk (D-158): a `calendar`
+      sibling connection on the Google consent already stored, one tool over
+      the primary calendar, worked by the clerk trade as a daily reviewed
+      brief. Uncompilable by construction — desk work is live-data judgement,
+      so it can never become a $0 tool running with nobody looking.
+- [ ] **Email / chat, reading** — unlocks context the crew cannot otherwise
+      see. Mail is D-158's own named second step, behind a `gmail.readonly`
+      re-consent on the user's published client. *Blocked on: nothing
+      technical. Note that reading a mailbox moves personal data into a
+      session, which §11 says there is no control plane for on the way in —
+      D-181's gate checks only what leaves.*
 
 ### Acting, not reading — decided (D-075), now per-channel tasks
 

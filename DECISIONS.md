@@ -10089,6 +10089,25 @@ their row. Left: hire, the scheduled morning brief through the UI, first
 reviewed runs (all after the serve restart makes the door and the role
 live), then the milestone line and the full AGENTLING.md re-read.
 
+**Amendment (2026-08-17) — the checklist is complete.** Tam was hired in hq
+and the desk armed the evening before (schedule `bd651cfd`, daily 08:00,
+channel pinned telegram, the recipient riding as a stored answer — and the
+sentence leads with the channel verb because "…and telegram it to me" would
+have split under D-182). The desk fired on time on its first morning
+(08:00:12, job `e7ef8dfc`), the brief was reviewed and approved, and the
+clerk class's first ledger row reads **9.2c** against the 56c
+no-history quote — the clean Haiku price class the entry wanted, now
+earning its own rate. The same morning closed D-181's last unseen: a
+purpose-built withholding test (`ee3b86dc`) rendered the withheld-review
+panel for the first time — counts shown, values never printed, no declared
+name anywhere in the modal — and its Approve ran the gate's live search and
+sent clean. SPEC gained M5.22; AGENTLING.md was re-read against `3839d4d`
+and corrected in §§2, 3, 5, 10 and 15 — sixteen skills, eight credentialed
+connections, six-of-nine on the Bash count, the calendar reading row ticked
+and mail left open as this entry's named second step. What remains of A1 is
+operation rather than build: standing approval sits at one of D-082's
+three, and mail-read waits on its own re-consent.
+
 ## D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door
 
 Brian asked for attachments both ways round — "ones you have available and

@@ -434,6 +434,9 @@ tried, measured and rejected is in `DECISIONS.md`:
   Route 2 as files) → D-148
 - M5.22 the reading desks (EXPANSION A1): the calendar connection, the
   clerk trade, the daily morning brief → D-158
+- M5.23 mail-read (EXPANSION A1): the second reading sibling — Gmail
+  search and one-message read on the find/read split, behind one fresh
+  `gmail.readonly` consent walked last → D-191
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

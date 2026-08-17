@@ -19,9 +19,11 @@ Every capability carries a status:
 
 Written 2026-08-01 against `e5c80c9`, last re-read against `3839d4d`
 (2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,
-the calendar connection, sixteen skills, and the reading row ticked. §8's
-figures regenerate with `npm run ledger:report`, and §15 is the list of what
-is not here yet.
+the calendar connection, sixteen skills, and the reading row ticked; §§5 and
+15 corrected again the same day where D-191 landed: the mail connection, nine
+credentialed connections, the email reading row ticked. §8's figures
+regenerate with `npm run ledger:report`, and §15 is the list of what is not
+here yet.
 
 ---
 
@@ -288,6 +290,7 @@ off, so the app's fetch was gated and this second door was not.
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `bls` — read US labour statistics | builtin | off, needs `BLS_REGISTRATION_KEY` | Live, read-only; its own door because the key rides in a POST body and the web door is GET (D-187). One batched call carries up to 50 series |
 | `calendar` — read the user's own Google Calendar | builtin | off; ready the moment `google` is connected | Live, read-only; the first reading sibling on the Google consent (D-158), reusing the Connect flow's stored secrets behind its own switch. One tool returns compact event lines — times as the calendar states them, replies still owed, who is invited. Deliberately no compiled-tool door: desk work never compiles |
+| `mail` — search and read the user's own Gmail | builtin | off; ready the moment `google` is connected | Live, read-only; the second reading sibling (D-158, D-191) — two tools on the find/read split (D-053): Gmail's own query language in, compact lines out, one message's text on request, attachments named and never fetched. The stored consent predates `gmail.readonly`, so reads answer with the fresh-sign-in sentence until Connect is walked once more. Same deliberate absence from the compiled-tool doors |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
@@ -368,10 +371,10 @@ whose secret is missing is listed as not ready and can never be switched on.
 
 ### Connecting to other apps — Partial
 
-Eight credentialed connections are plugged in — four that read (the code
-host, the search box, the statistics service, the calendar) and four that
-send — every one builtin, so the *external* socket still carries nothing but
-the browser. An external MCP server is declared with
+Nine credentialed connections are plugged in — five that read (the code
+host, the search box, the statistics service, the calendar, the mailbox) and
+four that send — every one builtin, so the *external* socket still carries
+nothing but the browser. An external MCP server is declared with
 `name`, `label`, `transport: "stdio"`, `command`, `args`, `tools` and
 optional `secrets: {ENV_NAME: "why it is needed"}`.
 
@@ -390,8 +393,7 @@ optional `secrets: {ENV_NAME: "why it is needed"}`.
 - **They all ship off.** Credentialed connections carry credentials and act on
   the user's behalf, which is a different decision from reading a page (D-005).
 
-**Not built:** everything else credentialed. Not a mail reader (D-158's own
-second step, behind a `gmail.readonly` re-consent), not a ticket tracker, not
+**Not built:** everything else credentialed. Not a ticket tracker, not
 a database — the batch, its order and its refusals are decided (D-076, D-077;
 SPEC M5.11), not yet wired. And one shape the registry
 cannot express at all: `transport` is `builtin | stdio`, so a **hosted MCP
@@ -1531,12 +1533,18 @@ judgement — *which of its tools are reading, and which are acting*.
       the primary calendar, worked by the clerk trade as a daily reviewed
       brief. Uncompilable by construction — desk work is live-data judgement,
       so it can never become a $0 tool running with nobody looking.
-- [ ] **Email / chat, reading** — unlocks context the crew cannot otherwise
-      see. Mail is D-158's own named second step, behind a `gmail.readonly`
-      re-consent on the user's published client. *Blocked on: nothing
-      technical. Note that reading a mailbox moves personal data into a
-      session, which §11 says there is no control plane for on the way in —
-      D-181's gate checks only what leaves.*
+- [x] **Email, reading** — D-158's named second step, built (D-191): a
+      `mail` sibling on the calendar's frame, two tools on the find/read
+      split — Gmail's own query language in, compact lines out, one
+      message's text on request, attachments named and never fetched.
+      `gmail.readonly` joined the consent walk, so one fresh Connect is the
+      last step; until then reads answer with the sentence naming it. Note
+      that reading a mailbox moves personal data into a session, which §11
+      says there is no control plane for on the way in — D-181's gate checks
+      only what leaves.
+- [ ] **Chat, reading** — Slack/Telegram as *context* remains unbuilt and
+      undecided; the mail pattern (a read-only sibling connection whose tool
+      list is the grant) is the shape it would copy.
 
 ### Acting, not reading — decided (D-075), now per-channel tasks
 

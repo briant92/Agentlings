@@ -200,6 +200,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-188 — 2026-08-15 — A door reaches nobody until something can knock: the bootstrap under `compileDoors`](#d-188--2026-08-15--a-door-reaches-nobody-until-something-can-knock-the-bootstrap-under-compiledoors)
 - [D-189 — 2026-08-15 — G8 measured: a cloned repository can tell a session what to do](#d-189--2026-08-15--g8-measured-a-cloned-repository-can-tell-a-session-what-to-do)
 - [D-190 — 2026-08-17 — Ponytail measured: the ladder compresses sprawl, the body tax eats the saving](#d-190--2026-08-17--ponytail-measured-the-ladder-compresses-sprawl-the-body-tax-eats-the-saving)
+- [D-191 — 2026-08-17 — Mail-read: the second reading sibling, consent walked last](#d-191--2026-08-17--mail-read-the-second-reading-sibling-consent-walked-last)
 
 ## By theme
 
@@ -426,7 +427,12 @@ entry updates one file rather than two.
   would have rebuilt the same defect. Not a fault in `compileDoors` but the
   shape of learning from what happened, with the tier's own grammar as the
   exit: demonstrate in a session, record it, then compile — which makes the
-  session wiring the half that lets the other half ever be earned
+  session wiring the half that lets the other half ever be earned; and
+  D-191, the second reading sibling — mail on the calendar's frame, two
+  tools on D-053's find/read split, the `gmail.readonly` scope pinned onto
+  the consent walk itself, and the working notes' "blocked on the
+  re-consent" corrected against source: a token never grows scopes, so
+  consent is the build's last step, not its gate
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
@@ -13108,3 +13114,75 @@ absorbed, not a skill effect. Cost of the whole measurement: $9.02 real
 across eight paid runs, all discarded at review; Pip and Dot rested for
 determinism and woken after; the unmount is a role-file edit the running
 server picks up at its next restart.
+
+## D-191 — 2026-08-17 — Mail-read: the second reading sibling, consent walked last
+
+D-158's named second step, built the session Brian said go (`004978f`).
+One premise was corrected before any code: the working notes said the
+build was "blocked on the gmail.readonly re-consent", and the source said
+otherwise — the consent walk asks for `GOOGLE_SCOPES` as written in
+`google.ts`, and a token never grows scopes it was not asked, so a Connect
+pressed before the scope joined the list would have granted nothing.
+Consent is the last step, not the gate; nothing was ever blocked. Both
+memory notes were corrected the same hour the code said so.
+
+**Two tools rather than one, asked and taken as recommended.** The
+calendar grants a single tool because a brief is its whole trade; mail
+splits along the house's own seam (D-053: finding and reading are separate
+steps — search returns pointers, reading one is its own call).
+`mail_search` takes Gmail's native query language and answers one compact
+line per message — local arrival time, sender, subject, unread, the first
+words, and the id — and `mail_read` takes that id and answers the
+message's text. Attachments are named with their sizes and never fetched.
+An HTML-only mail still reads: styles and scripts go, block ends become
+breaks, entities resolve — layout is not the content.
+
+**Everything else is the calendar's frame, copied deliberately**: the
+catalog sibling declares the three GOOGLE_OAUTH_* names — ready exactly
+when `google` is, its own switch, the tools list as the grant checked at
+the door; `/internal/mail` mints the access token from the stored refresh
+token per call and never keeps it; no validator, so the drawer refuses
+hand-pasted GOOGLE_* and the Connect flow stays the secrets' only writer
+(D-078); absent from DOORS on purpose, with capability.test refusing a
+mailbox-reading method a compile by name; session wiring in the same
+commit (D-188's a-door-reaches-nobody, applied day one — and
+`grantedTools` hands every enabled connection to a job that names none, so
+the moment the switch is on, sessions can knock).
+
+New against the calendar, each with its reason:
+
+- **The scope is pinned onto the consent walk.** `gmail.readonly` joined
+  `GOOGLE_SCOPES`, and catalog.test demands it stay — unlike the calendar,
+  whose read the first consent already carried, a Connect that never asks
+  for this scope can never grant this connection, so dropping the line
+  would quietly unbuild mail-read while every other test stayed green.
+- **Times render in the machine's own clock, and the head says so.** The
+  calendar reads times textually because a calendar states its zone; a
+  mail states none, and the app runs on the machine whose mailbox it reads
+  (D-169), so local receipt time is the honest rendering — the opposite
+  choice for the same reason.
+- **The insufficient-scopes wall names this exact moment.** Until the
+  fresh Connect, every read answers "Google needs a fresh sign-in for
+  this…" — the pre-consent state is a sentence, never a silently empty
+  mailbox.
+
+Evidence: 1,714 server + 192 web green (22 new), typecheck clean. Three
+mutations, three kills, each by the test built for it: `mail` added to
+DOORS died on the desks-never-compile pin by name; `gmail.readonly`
+stripped from the scopes died on the consent pin; the not-connected
+refusal flipped `||`→`&&` died on the half-connected env before the mint
+was asked. Live before any restart: the running server — a process older
+than this build — already lists `mail ready:true enabled:false`, the
+catalog-read-from-disk mechanism proving sibling readiness for the second
+time.
+
+Not changed, deliberately: `google` stays `sendsOnly` with an empty grant;
+no role text was touched, so no matcher replay was owed (adding or editing
+a role is what moves BM25 under the others, D-112 — the clerk keeps its
+calendar vocabulary until a mail desk is actually wanted); no desk, no
+schedule, no hire. What remains is operation: Brian restarts serve (the
+door compiles at boot; the same restart clears D-190's inert
+ponytail-on-mason), walks Connect once — `gmail.readonly` is a restricted
+scope, so his own unverified client shows Google's warning interstitial,
+walkable for his own account — switches `mail` on, and the first live read
+is the proof. A mail desk sentence, if wanted, is a separate decision.

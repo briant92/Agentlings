@@ -199,6 +199,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-187 — 2026-08-15 — The BLS door: a key that cannot ride in a URL](#d-187--2026-08-15--the-bls-door-a-key-that-cannot-ride-in-a-url)
 - [D-188 — 2026-08-15 — A door reaches nobody until something can knock: the bootstrap under `compileDoors`](#d-188--2026-08-15--a-door-reaches-nobody-until-something-can-knock-the-bootstrap-under-compiledoors)
 - [D-189 — 2026-08-15 — G8 measured: a cloned repository can tell a session what to do](#d-189--2026-08-15--g8-measured-a-cloned-repository-can-tell-a-session-what-to-do)
+- [D-190 — 2026-08-17 — Ponytail measured: the ladder compresses sprawl, the body tax eats the saving](#d-190--2026-08-17--ponytail-measured-the-ladder-compresses-sprawl-the-body-tax-eats-the-saving)
 
 ## By theme
 
@@ -319,6 +320,13 @@ entry updates one file rather than two.
   apply". The path rule held throughout; it is only the belief question that is
   open. Sits downstream of D-168, which measured that the allowlist bounds the
   offer rather than the reach
+- **Third-party instruction, adopted only on our own numbers** — D-190: the
+  first outside skill run through a pre-registered paired trial — ponytail's
+  ladder halved the one genuinely sprawling diff and its body cost ~14% a
+  turn, cancelling on this class; unmounted, kept installed at zero measured
+  routing cost, re-test triggers named. The trial also priced two instrument
+  faults: redo-pairing inherits budget drift from arm A's own ledger rows,
+  and nothing persisted can prove a mounted skill was read
 - **Levels as workspaces, and the non-expert setup path** — D-011, D-013; and
   D-121, where deletion becomes closing — an archive in place that keeps the
   id off the market — and the measured disk weight turns out to be repo
@@ -13035,3 +13043,68 @@ opened to complain about. Re-test when the model changes.
 asked has an answer except the one that matters most, and D-168 already gave
 that one: per-job isolation is the only thing that would *enforce* any of this,
 and it belongs with hosting.
+
+## D-190 — 2026-08-17 — Ponytail measured: the ladder compresses sprawl, the body tax eats the saving
+
+The fork-and-measure agreed on 2026-08-12, run to the protocol Brian
+approved: fork the skill, mount on mason alone, four paired runs (same
+prompt, same repo commit, arm B through the redo door so `noRouter`
+guarantees no recipe rides), verdict against a bar registered before any
+number existed — ≥15% mean paired saving with ≥3 of 4 pairs cheaper, no
+delivery regression, diffs no larger, replay clean, net positive after the
+always-on body tax.
+
+**Decided: unmounted.** The adopt bar failed on cost. `skills/ponytail`
+stays installed and unmounted — the replay priced carrying it at exactly
+zero — with two re-test triggers: reviews showing chronic mason sprawl
+(the diff-compression axis the cost bar does not price), or a model change.
+
+**The fork** (upstream `DietrichGebert/ponytail` @ `2ed6c52c9d`, 6.6k →
+2.9k chars): the 7-rung ladder, runs-after-understanding, root-cause-not-
+symptom, the rules, when-not-to-be-lazy, one-check-left-behind. Dropped:
+Persistence and Intensity (hang off absent slash commands), the hardware
+paragraph, Boundaries, and the `ponytail:` comment convention — deliberate
+ceilings are named in RESULT.md, never as comments landing in the real tree
+at Approve. The description was rewritten terse on the clerk's lesson, and
+it worked: **0 of 163 replayed prompts moved** when the doc entered the
+index, every reach row held.
+
+**The paired table** (real cost; four pairs, two clean):
+
+| Pair | A cost (turns) | B cost (turns) | A→B diff lines | Verdict |
+|---|---|---|---|---|
+| formatUsd helper | $2.05 (39/40) | $1.92 (32/40) | **115 → 57** | clean, −7% |
+| schedule cap | $1.14 (30/40) | $1.21 (28/40) | 40 → 41 | clean, +6% |
+| health route | $0.60 (17/15) | $1.15 (21/40) | 8 → 8 | budget-asymmetric |
+| ledger `--json` | $0.75 (15/40) | failed (6/5) | — | strangled, invalid |
+
+Clean-pair mean ≈ 0. Both clean pairs paid **~+14% per turn** — D-049's
+shape measured live: ~2.9k of skill text rides every turn, and buys turn
+*reduction* only where sprawl exists to remove (39→32 on the one genuine
+sprawler; nothing on the tight job). The mechanism is real — the sprawler's
+diff halved, still delivering exactly the asked scope with a test — and the
+tax is real too, and on this class they cancel.
+
+**Two instrument findings worth more than the verdict:**
+
+- **Pairing by redo inherits budget drift from arm A's own rows.** The
+  quote engine is alive during the test: arm A's four rows moved the
+  mason-with-repo rate before arm B priced, so one pair ran 15-granted
+  against 40-granted and another was quoted $0.16 and strangled at five
+  turns — half the sample lost to the instrument, not the treatment. A
+  future paired test pins the granted turns, or compares per-turn cost,
+  or accepts the loss up front.
+- **The treatment-read check has no home.** The mount is provable
+  (`.session.json` lists the skill) but nothing persisted proves the model
+  *read* it — sandboxes keep no transcript, and the `skipped:` output
+  signature appeared in no RESULT.md. The diff compression is behavioural
+  evidence on one pair; the next skill trial should decide before running
+  what artefact will prove delivery of the treatment.
+
+Delivery held everywhere it could be judged: both clean arm-B runs shipped
+the asked scope (helper + the one named call site + a test; the cap with
+its clear 400 and test). The one arm-B failure was the strangled budget,
+absorbed, not a skill effect. Cost of the whole measurement: $9.02 real
+across eight paid runs, all discarded at review; Pip and Dot rested for
+determinism and woken after; the unmount is a role-file edit the running
+server picks up at its next restart.

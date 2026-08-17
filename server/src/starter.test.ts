@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships nine generalist jobs and sixteen abilities', () => {
+  it('ships nine generalist jobs and seventeen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -91,6 +91,10 @@ describe('shipped starter set', () => {
       // backdrop with three.js through render_plate, reads the PNG back,
       // and delivers it in a PACK.json world whose plates Approve copies.
       'plate-design',
+      // ponytail is the fork-and-measure trial (D-158's board follow-on):
+      // upstream 2ed6c52c9d stripped to the ladder, mounted on mason alone.
+      // If the paired measurement unmounts it, this line goes with it.
+      'ponytail',
       'see-your-work',
       'small-diffs',
       'tables-and-numbers',

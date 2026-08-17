@@ -109,14 +109,16 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Sixteen ship, written against this app's contract — sandbox only,
-`RESULT.md` out — which third-party skills know nothing about:
+session. Seventeen are installed: sixteen written against this app's
+contract — sandbox only, `RESULT.md` out — which third-party skills know
+nothing about, and one third-party fork adapted to it (`ponytail`, D-190 —
+measured in a paired trial, currently mounted on no role):
 
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
 `cite-sources` · `concise-reports` · `data-analysis` · `deck-design` ·
 `deep-research` · `document-design` · `organizing-folders` · `pdf-report` ·
-`plain-language` · `plate-design` · `see-your-work` · `small-diffs` ·
-`tables-and-numbers`
+`plain-language` · `plate-design` · `ponytail` · `see-your-work` ·
+`small-diffs` · `tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was

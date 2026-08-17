@@ -282,6 +282,7 @@ off, so the app's fetch was gated and this second door was not.
 | `github` — read a code host | builtin | off, needs `GITHUB_TOKEN` | Live, read-only in a session; its one write is a reviewed comment, replayed at approval (D-104) |
 | `search` — find pages | builtin | off, needs `BRAVE_API_KEY` | Live, read-only |
 | `bls` — read US labour statistics | builtin | off, needs `BLS_REGISTRATION_KEY` | Live, read-only; its own door because the key rides in a POST body and the web door is GET (D-187). One batched call carries up to 50 series |
+| `calendar` — read the user's own Google Calendar | builtin | off; ready the moment `google` is connected | Live, read-only; the first reading sibling on the Google consent (D-158), reusing the Connect flow's stored secrets behind its own switch. One tool returns compact event lines — times as the calendar states them, replies still owed, who is invited. Deliberately no compiled-tool door: desk work never compiles |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
@@ -383,9 +384,10 @@ optional `secrets: {ENV_NAME: "why it is needed"}`.
 - **They all ship off.** Credentialed connections carry credentials and act on
   the user's behalf, which is a different decision from reading a page (D-005).
 
-**Not built:** everything else credentialed. Not Gmail, not a calendar, not a
-ticket tracker, not a database — the batch, its order and its refusals are
-decided (D-076, D-077; SPEC M5.11), not yet wired. And one shape the registry
+**Not built:** everything else credentialed. Not a mail reader (D-158's own
+second step, behind a `gmail.readonly` re-consent), not a ticket tracker, not
+a database — the batch, its order and its refusals are decided (D-076, D-077;
+SPEC M5.11), not yet wired. And one shape the registry
 cannot express at all: `transport` is `builtin | stdio`, so a **hosted MCP
 server reached over HTTP** — which is how most vendors now ship, GitHub's and
 Google's own included — has no place to go. Verified 2026-08-04 that this

@@ -10014,6 +10014,42 @@ catalog.test.ts pinning the read-only tools lists; matcher replay
 before/after; hire, schedule through the UI, first reviewed runs; then
 SPEC.md's milestone section and AGENTLING.md re-read from source.
 
+**Amendment (2026-08-16) — the connection is built; the clerk and the desk
+remain.** The read side opened on the house pattern (`be3d6dc`): `calendar`
+in the catalog as a builtin with one tool, `calendar_events`, reading the
+primary calendar between two local days — compact lines, soonest first,
+times read textually off what Google states rather than converted through
+the machine's zone, the reply-still-owed flag from the self attendee,
+invited count, location, and Google asked for only those fields so a
+description-heavy calendar costs what a bare one does. The door is
+`/internal/calendar`, gated by the catalog's tools list like the other four;
+an access token is minted from the stored refresh token per call and never
+kept. The session wiring landed in the same commit, on D-188's lesson — a
+door reaches nobody until a session is offered it, and without that no clerk
+recipe could ever record the use the compile gate reads.
+
+The sibling grant holds its two invariants, both pinned rather than stated:
+catalog.test.ts holds `calendar` to exactly the one reading tool and the
+three GOOGLE_OAUTH_* names — ready the moment google is, never before, and
+still nothing while switched on but unconnected — and holds `google` to
+`sendsOnly` with an empty grant. Uncompilable-by-construction stopped being
+prose: `calendar` is absent from DOORS on purpose, and capability.test.ts
+refuses a method that read the calendar a compile. Also deliberate: there is
+no validator for `calendar`, so the drawer's submit route refuses to store
+its secrets by hand and the Connect flow stays their only writer (D-078).
+
+Evidence: 1,692 server + 192 web green, typecheck clean; three mutations,
+three kills, each by the test built to catch it — the needsAction flag
+silenced (the render test), `||` flipped to `&&` on the not-connected
+refusal (the mint was asked with a half-connected env), and `calendar` added
+to DOORS (the desks-never-compile pin died by name).
+
+Still open from the checklist: `roles/clerk.md` with the D-117 matcher
+replay before and after, the hire and the scheduled morning brief through
+the UI, first reviewed runs, then SPEC.md's milestone line and the full
+AGENTLING.md re-read — §5's connections table got its row now rather than
+lying for the interim.
+
 ## D-159 — 2026-08-11 — The outbox carries files: telegram documents, gmail multipart, review holds the door
 
 Brian asked for attachments both ways round — "ones you have available and

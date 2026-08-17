@@ -13186,3 +13186,23 @@ ponytail-on-mason), walks Connect once — `gmail.readonly` is a restricted
 scope, so his own unverified client shows Google's warning interstitial,
 walkable for his own account — switches `mail` on, and the first live read
 is the proof. A mail desk sentence, if wanted, is a separate decision.
+
+**Amendment (2026-08-17, same day) — live-proven, and the wall earned its
+keep on the way.** The first probe after "restarted and connected" answered
+with the insufficient-scopes sentence — correctly: the stored token
+predated the scope, because the consent had not been re-walked on the
+restarted server (the scope list is baked into the consent URL by the
+running process at press time, so a walk done against the old process — or
+a switch flipped instead of Connect pressed — grants the old five). The
+diagnosis took one minted URL: `/oauth/start` on the restarted server
+showed `gmail.readonly` present, so the build's half was proven and the
+token was the stale half. Brian walked Connect once more and the second
+probe returned his real inbox: **18 messages on the default query**,
+compact lines UTF-8-clean through node (PS 5.1 kept out of the decode path,
+D-158's lesson), ids in place — then `mail_read` on the top hit answered
+the full decoded body with **both attachments named with sizes and never
+fetched** (a 17 KB xlsx, a 73 KB pdf). The first mail the reader ever read
+was the horde's own weekly expenses report, approved and sent the same
+morning. The pre-consent wall pointing at its own fix is what turned a
+failed probe into a one-press diagnosis — the sentence paid for itself on
+its first firing.

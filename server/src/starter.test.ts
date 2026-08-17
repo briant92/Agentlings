@@ -161,6 +161,7 @@ describe('shipped starter set', () => {
       ['draw an architecture blueprint of this system', 'architect'],
       ['do deep research on the european drone delivery market', 'researcher'],
       ['brief me on my calendar this morning', 'clerk'],
+      ['brief me on my mail this morning', 'clerk'],
     ];
     for (const [text, expected] of reach) {
       const result = suggest(text);
@@ -182,6 +183,17 @@ describe('shipped starter set', () => {
     const result = suggest('brief me on my calendar this morning');
     expect(result.role).toBe('clerk');
     expect(result.matchedTerms).toContain('calendar');
+  });
+
+  /**
+   * The second desk's twin (D-191): a reach row proves the sentence arrives,
+   * this proves it arrives on the desk trade's own word — a clerk that no
+   * longer says "mail" must fail here rather than coast on "brief".
+   */
+  it('the clerk wins its mail desk sentence on the mail word, not on "brief" alone', () => {
+    const result = suggest('brief me on my mail this morning');
+    expect(result.role).toBe('clerk');
+    expect(result.matchedTerms).toContain('mail');
   });
 
   /**

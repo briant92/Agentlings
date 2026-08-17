@@ -243,6 +243,14 @@ describe('compileBlockers', () => {
     expect(compileDoors(readTheDay, withCalendar)).toEqual([]);
   });
 
+  /** The second reading desk holds the same rule under its own name. */
+  it('refuses a method that read the mailbox — desks never compile (D-158)', () => {
+    const withMail = [...CATALOG, { name: 'mail', tools: ['mail_search', 'mail_read'] }];
+    const readTheMail = { capabilities: ['conn:mail'], usedTools: ['mail_search'] };
+    expect(compileBlockers(readTheMail, withMail)).toEqual(['mail']);
+    expect(compileDoors(readTheMail, withMail)).toEqual([]);
+  });
+
   /** A method can need one of each, and each half must report only its own. */
   it('splits a method that reached both', () => {
     const both = {

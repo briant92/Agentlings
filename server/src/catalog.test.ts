@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { mcpToolNames, readConnections, resolveForJob } from './connections';
+import { GOOGLE_SCOPES } from './google';
 import { grantedTools } from './settings';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -286,6 +287,57 @@ describe('the calendar connection reads only', () => {
     expect(callable({ connections: { calendar: true } }, env)).toContain(
       'mcp__calendar__calendar_events',
     );
+  });
+});
+
+/**
+ * The second reading sibling (D-158): the same three stored secrets, its own
+ * switch and its own grant. Unlike the calendar, the stored consent does not
+ * already carry this read — so the scope is pinned onto the walk itself: a
+ * Connect that never asks for gmail.readonly can never grant this connection,
+ * and dropping the scope from GOOGLE_SCOPES quietly unbuilds mail-read.
+ */
+describe('the mail connection reads only', () => {
+  const mail = all.find((c) => c.name === 'mail');
+
+  const callable = (settings: object, env: Record<string, string>): string[] => {
+    const names = grantedTools(['mail'], all, settings, env);
+    return mcpToolNames(resolveForJob(names, all, env).granted);
+  };
+
+  it('ships off and grants exactly the two reading tools', () => {
+    expect(mail).toBeDefined();
+    expect(mail?.defaultOn).not.toBe(true);
+    expect(mail?.sendsOnly).not.toBe(true);
+    expect(mail?.tools).toEqual(['mail_search', 'mail_read']);
+  });
+
+  it('declares the google secrets rather than minting its own', () => {
+    expect(Object.keys(mail?.secrets ?? {}).sort()).toEqual([
+      'GOOGLE_OAUTH_CLIENT_ID',
+      'GOOGLE_OAUTH_CLIENT_SECRET',
+      'GOOGLE_OAUTH_REFRESH_TOKEN',
+    ]);
+  });
+
+  it('the consent walk asks for the scope this reader needs', () => {
+    expect(GOOGLE_SCOPES).toContain('https://www.googleapis.com/auth/gmail.readonly');
+  });
+
+  it('is nothing while off, and nothing while on but unconnected', () => {
+    expect(callable({}, {})).not.toContain('mcp__mail__mail_search');
+    expect(callable({ connections: { mail: true } }, {})).not.toContain('mcp__mail__mail_search');
+  });
+
+  it('becomes callable once the Connect flow has run and the switch is on', () => {
+    const env = {
+      GOOGLE_OAUTH_CLIENT_ID: 'id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'secret',
+      GOOGLE_OAUTH_REFRESH_TOKEN: 'token',
+    };
+    const granted = callable({ connections: { mail: true } }, env);
+    expect(granted).toContain('mcp__mail__mail_search');
+    expect(granted).toContain('mcp__mail__mail_read');
   });
 });
 

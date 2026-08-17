@@ -170,6 +170,7 @@ try {
     ['search', 'the search service'],
     ['bls', 'the statistics service'],
     ['calendar', 'the calendar'],
+    ['mail', 'the mailbox'],
   ]) {
     const builtin = config[name];
     if (!builtin?.tools?.length) continue;

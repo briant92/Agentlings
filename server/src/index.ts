@@ -206,6 +206,7 @@ import { callGithub } from './github';
 import { callRender } from './render';
 import { callBls } from './bls';
 import { callCalendar } from './calendar';
+import { callMail } from './mail';
 import { callSearch } from './search';
 import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
@@ -3098,6 +3099,23 @@ app.post('/internal/calendar', async (c) => {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
   return c.json(await callCalendar(body.tool, body.args ?? {}, { http, env: process.env }));
+});
+
+/**
+ * Mail reads for a running session — D-158's second reader, gated exactly as
+ * `/internal/calendar` above: the access token is minted per call and never
+ * kept, and the connection is deliberately absent from DOORS so a method that
+ * read the mailbox can never compile into a $0 tool.
+ */
+app.post('/internal/mail', async (c) => {
+  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'mail');
+  if (!connection) return c.json({ error: 'the mail connection is not configured' }, 404);
+  if (!(connection.tools ?? []).includes(body.tool)) {
+    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+  }
+  return c.json(await callMail(body.tool, body.args ?? {}, { http, env: process.env }));
 });
 
 app.post('/internal/render', async (c) => {

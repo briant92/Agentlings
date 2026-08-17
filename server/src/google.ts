@@ -18,18 +18,22 @@ export const GOOGLE_SECRETS = {
 } as const;
 
 /**
- * One consent, four capabilities (D-076) — sends, calendar, saved contacts,
- * and the people Gmail's own compose field knows (D-123: "other contacts",
- * everyone the user has emailed), so nobody re-consents per feature.
+ * One consent, five capabilities (D-076, D-158) — sends, reading mail,
+ * calendar, saved contacts, and the people Gmail's own compose field knows
+ * (D-123: "other contacts", everyone the user has emailed), so nobody
+ * re-consents per feature.
  * `openid email` is what lets the exchange say who connected, for free.
  * A token minted before a scope joined this list does not grow it —
  * reconnecting once is what grants the new slice, and the audience GET says
- * so in a sentence until then.
+ * so in a sentence until then. gmail.readonly is a restricted scope, so an
+ * unverified own-client shows Google's warning interstitial on that walk —
+ * the user's own account may continue through it.
  */
 export const GOOGLE_SCOPES = [
   'openid',
   'email',
   'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/contacts.readonly',
   'https://www.googleapis.com/auth/contacts.other.readonly',

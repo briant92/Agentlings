@@ -31,6 +31,7 @@ import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { BLS_TOOLS } from '../bls';
 import { CALENDAR_TOOLS } from '../calendar';
+import { MAIL_TOOLS } from '../mail';
 import { GITHUB_TOOLS } from '../github';
 import { SEARCH_TOOLS } from '../search';
 import { extractUrls, fetchPage } from '../web';
@@ -869,6 +870,7 @@ export class ClaudeAgentExecutor implements Executor {
     const render = granted.find((c) => c.name === 'render');
     const blsConn = granted.find((c) => c.name === 'bls');
     const calendarConn = granted.find((c) => c.name === 'calendar');
+    const mailConn = granted.find((c) => c.name === 'mail');
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -1030,6 +1032,17 @@ export class ClaudeAgentExecutor implements Executor {
               calendar: {
                 endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/calendar`,
                 tools: CALENDAR_TOOLS.filter((t) => (calendarConn.tools ?? []).includes(t.name)),
+              },
+            }
+          : {}),
+        // The second reading sibling (D-158), named here the day it was built
+        // for the calendar's reason exactly. Absent from DOORS too — reading
+        // the mailbox is live-data judgement, so it may never compile.
+        ...(mailConn
+          ? {
+              mail: {
+                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/mail`,
+                tools: MAIL_TOOLS.filter((t) => (mailConn.tools ?? []).includes(t.name)),
               },
             }
           : {}),

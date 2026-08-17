@@ -224,6 +224,23 @@
       ]
     },
     {
+      "name": "mail",
+      "label": "Read your mail",
+      "description": "Searches your own Gmail with its native query language and reads a chosen message's text — attachments named, never fetched. Rides the same Google sign-in as sending, behind its own switch; reading grants no way to send, reply, label or delete anything.",
+      "transport": "builtin",
+      "tools": ["mail_search", "mail_read"],
+      "secrets": {
+        "GOOGLE_OAUTH_CLIENT_ID": "the google connection's OAuth client id — stored by its Connect flow, nothing new to paste",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "that client's secret — stored by the same Connect flow",
+        "GOOGLE_OAUTH_REFRESH_TOKEN": "the refresh token the Connect flow stores after you approve on Google's page"
+      },
+      "setup": [
+        "Press Connect on the 'Send Gmail, as you' connection again — reading mail is a consent the stored sign-in does not carry yet",
+        "Google may warn that the app is unverified: it is your own client, and Advanced → continue covers your own account",
+        "Then switch this on: it only gates reading, and sending stays the google connection's own switch"
+      ]
+    },
+    {
       "name": "browser",
       "label": "Use a web browser",
       "description": "Opens pages in a real browser and reads what they show, including sites that need JavaScript. Reads only — it cannot click, type or submit anything.",

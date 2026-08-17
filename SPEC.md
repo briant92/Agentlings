@@ -345,7 +345,7 @@ sprite to open its profile; assignments persist in
   (`name`, `description`, `tools`, `skills`, optional `model`, optional
   `maxTurns`, optional `timeoutMinutes` — D-129) plus the system prompt as
   body. Built-ins: worker, mason, scout, scribe, analyst, designer,
-  architect, researcher. The catalog is global; the crews are per level.
+  architect, researcher, clerk. The catalog is global; the crews are per level.
 - **Skills** are `SKILL.md` folders in `skills/` — built-in:
   check-your-work, cite-sources, concise-reports, plain-language,
   small-diffs, tables-and-numbers. Both roles and skills install from

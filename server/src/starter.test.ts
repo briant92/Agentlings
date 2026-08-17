@@ -42,10 +42,13 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships eight generalist jobs and sixteen abilities', () => {
+  it('ships nine generalist jobs and sixteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
+      // clerk works the reading desks (D-158): calendar briefs on Haiku, its
+      // own price class from day one, uncompilable work by construction.
+      'clerk',
       'designer',
       'mason',
       // researcher is P3: deep multi-source research on the default model
@@ -153,6 +156,7 @@ describe('shipped starter set', () => {
       ['make the layout look better', 'designer'],
       ['draw an architecture blueprint of this system', 'architect'],
       ['do deep research on the european drone delivery market', 'researcher'],
+      ['brief me on my calendar this morning', 'clerk'],
     ];
     for (const [text, expected] of reach) {
       const result = suggest(text);

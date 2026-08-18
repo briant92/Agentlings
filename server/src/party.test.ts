@@ -84,9 +84,13 @@ describe('planParty — the sentence own enumeration, or the reason it parks', (
 
   it.each([
     [
+      // Three pieces and an ask of four: only the ask-cap can park this —
+      // a survived mutation taught that a four-piece list trips the list
+      // cap too, and the two messages shared words (D-158's lesson: a
+      // survived mutation is a finding about what the test binds).
       `over the cap parks by name`,
-      'research A, B, C and D as a team of four',
-      `at most ${MAX_HANDS}`,
+      'research A, B and C as a team of four',
+      `at most ${MAX_HANDS} hands today`,
     ],
     ['no list parks with the example', 'fix the login bug as a team of three', 'pieces named'],
     [

@@ -83,6 +83,20 @@ describe('checkBrief', () => {
     const brief = checkBrief({ ...base, leftBehind: ['huge.bin'] });
     expect(brief).toContain('huge.bin');
   });
+
+  // Named, not forwarded (D-194 amendment): the gate run that hid a false
+  // premise in an attachment got its honest Unchecked only because the
+  // checker deduced the file existed. The brief now says so by rule.
+  it('names the checked job input files the check was not handed', () => {
+    const brief = checkBrief({ ...base, inputsNotHanded: ['briefing.txt', 'data.csv'] });
+    expect(brief).toContain('not handed: briefing.txt, data.csv');
+    expect(brief).toContain('unchecked rather than guessed');
+  });
+
+  it('says nothing about inputs when there were none', () => {
+    const brief = checkBrief({ ...base, inputsNotHanded: [] });
+    expect(brief).not.toContain('not handed');
+  });
 });
 
 describe('parseCheck', () => {

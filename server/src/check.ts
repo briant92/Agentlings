@@ -80,6 +80,15 @@ export function checkBrief(args: {
   hadReport: boolean;
   forwarded: string[];
   leftBehind: string[];
+  /**
+   * The checked job's own input files, which this check is deliberately not
+   * handed (forwarding them has a cap and cost fork of its own — D-194
+   * amendment records it as parked). Named so the unverifiable is
+   * deterministic rather than inferred: the gate run that hid a false
+   * premise in an attachment got an honest Unchecked only because the
+   * checker deduced the file existed from the report's mention of it.
+   */
+  inputsNotHanded?: string[];
 }): string {
   const instructions = clip(args.checkedBrief, 1200);
   return [
@@ -97,6 +106,11 @@ export function checkBrief(args: {
       : ['It left no files beyond its report.']),
     ...(args.leftBehind.length
       ? [`Too many files to carry — these stayed behind: ${args.leftBehind.join(', ')}. Name any you needed in CHECK.md.`]
+      : []),
+    ...(args.inputsNotHanded?.length
+      ? [
+          `The checked job also had input files this check was not handed: ${args.inputsNotHanded.join(', ')}. A claim resting only on them cannot be verified here — list it as unchecked rather than guessed.`,
+        ]
       : []),
     'Verify what the report claims against what is actually true: recompute what can be recomputed, read what can be read, and use the connections you have — they are the same ones that run had.',
     `Then write ${CHECK_REPORT}:`,

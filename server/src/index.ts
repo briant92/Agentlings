@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -1568,6 +1568,12 @@ function queueCheck(rt: LevelRuntime, job: Job): void {
         hadReport: attachments.some((a) => a.name === CHECKED_WORK_REPORT),
         forwarded: attachments.filter((a) => a.name !== CHECKED_WORK_REPORT).map((a) => a.name),
         leftBehind: [...leftBehind, ...oversize],
+        // Named, not forwarded (D-194 amendment): the checker is told what
+        // it cannot see, so an unverifiable claim is marked by rule rather
+        // than by the checker's own detective work.
+        inputsNotHanded: existsSync(rt.queue.inputDir(job.id))
+          ? readdirSync(rt.queue.inputDir(job.id))
+          : [],
       }),
       note: `check pass — verifying "${job.title}"`,
     });

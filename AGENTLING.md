@@ -1384,7 +1384,7 @@ untouched until you press Approve.
 | `MAX_OUTBOX_CHANNELS` | 3 | `outbox.ts` | Outboxes one job may write, one per channel (D-179) |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |
 | `INVENTORY_CAP` | 400 | `organize.ts` | Files shown to a run before "and N more"; metadata only, no contents |
-| `MAX_OUTBOX_BODY_CHARS` | 2,000 | `shared` | Under every Tier-1 channel's own cap |
+| `OUTBOX_BODY_CHARS` | telegram 4,096 · gmail 50,000 · slack 40,000 | `shared` | Each channel's own limit (telegram's is protocol, D-193); `MAX_OUTBOX_BODY_CHARS` 2,000 stays only as the undeclared-channel fallback |
 | `MAX_OUTBOX_FILES` | 5 | `shared` | Files one message may carry (D-159) — the job-attachment bound |
 | `MAX_OUTBOX_FILE_BYTES` | 10 MB | `shared` | Per outbox file, matching what Start may attach |
 | `MAX_OUTBOX_FILES_TOTAL_BYTES` | 15 MB | `shared` | Per message — Gmail's 25 MB counts the base64 inflation |

@@ -202,6 +202,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-190 — 2026-08-17 — Ponytail measured: the ladder compresses sprawl, the body tax eats the saving](#d-190--2026-08-17--ponytail-measured-the-ladder-compresses-sprawl-the-body-tax-eats-the-saving)
 - [D-191 — 2026-08-17 — Mail-read: the second reading sibling, consent walked last](#d-191--2026-08-17--mail-read-the-second-reading-sibling-consent-walked-last)
 - [D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes](#d-192--2026-08-18--the-morning-review-a-false-brief-a-typo-cascade-and-three-fixes)
+- [D-193 — 2026-08-18 — The cap was ours, not the channel's: three refusals, zero sends](#d-193--2026-08-18--the-cap-was-ours-not-the-channels-three-refusals-zero-sends)
 
 ## By theme
 
@@ -331,7 +332,12 @@ entry updates one file rather than two.
   brief was false with no trace to diagnose it by. Three fixes built the
   same morning — the door-call trail, continue-leg labels on the feed, the
   no-match nudge on the desk card — and the wall, quote and withholding
-  findings left recorded, not decided
+  findings left recorded, not decided; and D-193, the review's second bite:
+  the flat 2000-character outbox cap refused a message Telegram itself
+  carries, three runs in a row, and the last approval promoted a job whose
+  claimed Gmail send did not exist — body caps became each channel's own
+  truth, the brief says the channel is fixed before the run instead of
+  after, and Approve now says out loud when a send-job will send nothing
 - **Third-party instruction, adopted only on our own numbers** — D-190: the
   first outside skill run through a pre-registered paired trial — ponytail's
   ladder halved the one genuinely sprawling diff and its body cost ~14% a
@@ -13261,7 +13267,10 @@ that would have said is D-192's first fix). Two things held: the desk was
 without an Approve — the reviewed-until-earned design caught it on its
 first opportunity — and the running server still predated the clerk's
 mail vocabulary, including the "never invent a message" line, which the
-next restart loads. Brian was told to discard, not approve.
+next restart loads. Brian was told to discard, not approve. (He approved
+it instead, before the advice landed, and the false "no mail" telegram
+went out — the mail desk's first trust row is a false one, noted so the
+standing count is read accordingly.)
 
 ## D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes
 
@@ -13333,3 +13342,65 @@ they are (both have measured history that a one-review tune would
 disrespect), and the withholding detector's verb-only trigger is recorded
 as a finding for the next withholding session rather than patched in
 passing.
+
+## D-193 — 2026-08-18 — The cap was ours, not the channel's: three refusals, zero sends
+
+Brian asked why "the hotel research task couldn't finish — the output was
+longer than Telegram allows." The records say the length story belongs to
+a different job from the same evening — the hotel chain never touched
+Telegram; its trouble was D-192's timeout cascade, and it delivered its
+PDF — but the misattributed half was real and worse than remembered:
+
+The personal-finances workflow send (step 2 of the "Redact a plan" chain,
+22:30–23:10) composed a **3,325-character Telegram message** three times.
+Run one was refused at parse — `"body" is over 2000 characters`. Run two
+concluded Telegram could not carry it, asked for a Gmail address, and
+wrote the same refused body again. Run three wrote it as Gmail — refused
+by the same flat cap before the channel mismatch (the job's channel froze
+as telegram at the desk, D-079) could even matter — and its summary read
+"Done. OUTBOX.json is updated to send via Gmail." All three were
+approved. **Nothing was ever sent, on either channel, and nothing said so
+at Approve.**
+
+The root: `MAX_OUTBOX_BODY_CHARS = 2000` was one invented number across
+channels whose real limits differ by orders of magnitude. Telegram's
+sendMessage cap is **4096** — the refused message fit the channel that
+refused it. AGENTLING.md's own constants row had recorded the rationale
+("under every Tier-1 channel's own cap") without the question it begged:
+under it for whose benefit?
+
+**Three parts, built and shipped (`b2054c0`):**
+
+1. **Body caps are the channels' own.** `OUTBOX_BODY_CHARS` in shared —
+   telegram 4096 (protocol), gmail 50k and slack 40k (sanity, not
+   protocol) — behind one function, `outboxBodyCap`, that the parse and
+   the brief both call (D-030: one notion, one home). A channel declaring
+   nothing keeps the 2000 fallback. The refusal now names the message's
+   length, the channel and its limit in one sentence.
+2. **The channel is fixed, said before the run.** The brief tells every
+   send job its channel cannot be switched in OUTBOX.json and what to do
+   with content the cap cannot hold — a file on the file channels,
+   RESULT.md on the rest. The gmail pivot that burned run three is now
+   warned off before a turn is spent on it.
+3. **A refused send is loud at Approve.** `noSendLine` — the third
+   mention-guard beside D-093's and D-178's: a job that carried a channel
+   and reaches review with a refused or missing outbox says "approving
+   keeps the files and sends nothing", with the contract's own reason.
+   The reviewer reads it where the button is, not in an error line's
+   absence of a card.
+
+Evidence: 1,723 server + 200 web green, typecheck clean; the regression
+case is literal — the exact 3,325-character body that was refused three
+times now parses on telegram and dies at 4097 naming 4096. Three
+mutations, three kills: the cap function flattened back to 2000 (five
+tests died across two files), the fixed-channel line stripped (the brief
+pin died), the guard's gate inverted (three of four died). One test pin
+was corrected, not deleted — compose's `/over/` match followed the
+refusal's new wording.
+
+What this does not change: `MAX_OUTBOX_MESSAGES`, the files caps (D-159)
+and the per-recipient idempotence rule stand; whatsapp-business and
+calendar stay on the conservative fallback until their own shapes are
+measured; and a job's channel stays frozen at the desk (D-079) — the fix
+for wanting a different channel is a new sentence, which is what worked
+the night this happened.

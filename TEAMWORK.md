@@ -334,7 +334,7 @@ T2's gate.
 2. Whether the planner may propose cross-class hands (architect + scribe +
    worker) v1, or same-class only until one cross-class party has landed.
 
-### T4 — Repo parties *(the summit; waits on a trial)*
+### T4 — Repo parties *(the summit; waits on a trial)* — **built, D-197; wiring until the pre-registered trial below reports, run pair by pair after the next restart, promotes never**
 
 **Unlocks:** 2–3 masons/workers on one repository at once — the flagship
 "challenging coding task" case — with disjoint scopes and one merged

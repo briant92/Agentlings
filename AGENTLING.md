@@ -1768,6 +1768,17 @@ list per channel (D-077; SPEC M5.11 has the slices):
       hand ran, and the reviewed plan's own consistency checks produced
       the briefing's doubly-sourced central claim. The load-bearing halt
       path stands on its unit tests.*
+- [x] **Repo parties** — the planner partitions a repository by disjoint
+      path scopes (TEAMWORK T4, D-197): hands clone as any repo job and
+      edit only inside their fences (strays computed in code from the
+      patch's own paths and named, never silent), the gather merges the
+      hand patches on a fresh clone — plain git apply in hand order,
+      never --3way, refusals reconciled by hand — and its single
+      DIFF.patch is what Approve applies; promote unchanged. *Wiring
+      tested and mutation-proven; ADOPTION GATED on the pre-registered
+      trial (wall-clock −30% and fewer wall-deaths at ≤1.8× solo spend
+      over 3 pairs, merges clean, checks passing) — until it reports,
+      this row is machinery, not a capability.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

@@ -206,6 +206,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-194 — 2026-08-18 — The check pass: a second agentling verifies a delivered job](#d-194--2026-08-18--the-check-pass-a-second-agentling-verifies-a-delivered-job)
 - [D-195 — 2026-08-18 — Work parties: hands in parallel, the gather when the last settles](#d-195--2026-08-18--work-parties-hands-in-parallel-the-gather-when-the-last-settles)
 - [D-196 — 2026-08-18 — The planned party: the model proposes, approving queues the hands](#d-196--2026-08-18--the-planned-party-the-model-proposes-approving-queues-the-hands)
+- [D-197 — 2026-08-18 — Repo parties: scoped hands, one merged patch, the trial to earn them](#d-197--2026-08-18--repo-parties-scoped-hands-one-merged-patch-the-trial-to-earn-them)
 
 ## By theme
 
@@ -353,7 +354,12 @@ entry updates one file rather than two.
   architect-class plan job proposes PARTY.json, the review card renders it,
   and **approving is what queues the hands** — M6's goal-decomposition
   trust question answered by the promote grammar, with load-bearing hands
-  halting the gather rather than delivering around a hole
+  halting the gather rather than delivering around a hole; and D-197, the
+  summit built to face its trial: repo parties — the planner clones and
+  partitions by disjoint path scopes, hands patch only inside their fences
+  (strays computed in code from the patch's own paths), the gather merges
+  on a fresh clone with plain git apply and its one patch is what Approve
+  applies — adoption gated on the pre-registered bar, wiring until then
 - **The crew checks the crew** — D-194: the first collaboration shape off
   the `TEAMWORK.md` board (T1, taken as recommended): "have it checked"
   queues a second agentling on the primary's delivery — fixed prompt,
@@ -13890,3 +13896,58 @@ plus the refused first plan's 48c as the trap's tuition. The load-bearing
 halt path remains live-unexercised (both marked hands delivered), standing
 on its unit tests. T3 is live-proven end to end: the model proposes, the
 person disposes, and the hands run only after.
+
+## D-197 — 2026-08-18 — Repo parties: scoped hands, one merged patch, the trial to earn them
+
+Brian green-lit TEAMWORK T4 — the summit, the flagship "challenging
+coding task" case — the same day the other three shapes proved live. The
+build makes repo parties real; **the pre-registered trial gates whether
+they stay**, and its bar is restated below so this entry carries its own
+sentence.
+
+**The shape, riding T3 whole:** repo parties arrive only through the
+planner. On a repo level the plan job now clones and surveys (an
+architect cannot partition paths it cannot see), and its contract gains
+the partition: every hand carries a `scope` — repo-relative files or
+directory prefixes it alone may edit — **disjoint by instruction,
+all-or-none by validation** (one unscoped hand beside fenced ones would
+bound nothing), absolute and climbing paths refused unrepaired (the
+library-install rule). Brian's Approve queues hands that clone as any
+repo job does, each carrying its scope fence in its brief: read anywhere,
+edit only inside, name the needed-but-outside in RESULT.md. Hands never
+share a working copy and only the gather writes the final patch — D-163's
+merge-and-identity lessons paid up front, as the board priced them.
+
+**The merge:** each delivered hand's DIFF.patch forwards to the gather
+renamed `hand-N.patch`, and the server computes **scope strays from the
+patch's own paths** — `patchPaths` reads the diff headers both sides so
+renames count under the old name too, `outOfScope` matches exact-file or
+subtree — because that check is the trial's pre-registered in-scope
+artefact, and a run's account of itself is not (D-021). Strays are named
+in the feed and in the gather's brief, never silently. The gather merges
+on a fresh clone: plain `git apply` in hand order — **never `--3way`**,
+tested negative in this repo — refusals reconciled by hand with the patch
+as material and said in RESULT.md, the repo's checks run, and the final
+clone state harvests into the one DIFF.patch the review shows. Promote is
+exactly what it always was: one patch, one apply, one job. Hands
+self-file as every party's do; their clones sweep as finished jobs.
+
+**Decisions taken with the build:** the scope check ships in code (the
+board's own parenthetical — "small and honest, do it" — and the trial
+needs it); the hand cap stays the shared 3 with the planner choosing 2 or
+3. **Evidence:** 1,806 server + 200 web green, typecheck clean; three
+mutations, three kills (outOfScope flattened, the boundary checks
+dropped, the all-or-none rule dropped — each died on its named test).
+
+**The trial, pre-registered (TEAMWORK T4's bar, verbatim):** over 3
+paired tasks, the party arm must cut wall-clock ≥ 30% AND wall-deaths per
+task, at ≤ 1.8× solo spend, with the merged patch applying clean and its
+checks passing on every pair. Miss the bar → repo parties stay unbuilt in
+spirit — the machinery is disabled by recording, T1–T3 stand on their
+own, and this entry takes the numbers either way. D-190's corrections
+apply: granted turns pinned on both arms of a pair, and the in-scope
+artefact is the patch paths, now checkable by the shipped code. Tasks are
+picked at trial time against this repository, promoted **never** — trial
+work is measured and discarded. The trial runs pair by pair after the
+next restart, with Brian judging each plan at review exactly as T3
+demands; until it reports, this entry claims wiring, not behaviour.

@@ -450,6 +450,11 @@ tried, measured and rejected is in `DECISIONS.md`:
   gets a priced planner offer — a plan job proposes PARTY.json, the
   review renders it, and approving is what queues the hands; a
   load-bearing hand failing halts the party before the gather → D-196
+- M5.27 repo parties (TEAMWORK T4): the planner partitions a repository
+  by disjoint path scopes, hands clone and patch only inside their
+  fences, and the gather merges the patches on a fresh clone into the
+  one DIFF.patch Approve applies — adoption gated on the pre-registered
+  trial → D-197
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

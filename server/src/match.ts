@@ -164,8 +164,13 @@ function expansionsFor(word: string): { terms: string[]; weight: number } {
     terms,
     weight: weight / Math.sqrt(terms.length),
   });
-  if (INTENT[word]) return spread(INTENT[word], INTENT_WEIGHT);
-  if (DOMAIN[word]) return spread(DOMAIN[word], DOMAIN_WEIGHT);
+  // Own keys only: INTENT['constructor'] is truthy on any object literal —
+  // the inherited Object machinery, not a concept — and iterating it threw
+  // on the first real sentence that mentioned a class's constructor
+  // (D-197's trial, hand one). toString, valueOf and friends were the same
+  // hole; every one 500'd the desk for as long as the maps have existed.
+  if (Object.hasOwn(INTENT, word)) return spread(INTENT[word], INTENT_WEIGHT);
+  if (Object.hasOwn(DOMAIN, word)) return spread(DOMAIN[word], DOMAIN_WEIGHT);
   return { terms: [], weight: 0 };
 }
 

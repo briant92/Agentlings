@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { parsePickOutput, pickFolder } from './pickFolder';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PICK_TIMEOUT_MS, parsePickOutput, pickFolder } from './pickFolder';
 
 // The dialog itself is a person and a window, so tests only ever run the
 // seams around it: the output contract, and the one-at-a-time gate.
@@ -48,5 +48,81 @@ describe('pickFolder — one dialog at a time', () => {
   it('the gate reopens after the answer, including a refused one', async () => {
     expect(await pickFolder(slow('CANCELLED\r\n'))).toEqual({ cancelled: true });
     expect(await pickFolder(slow('C:\\again\r\n'))).toEqual({ path: 'C:\\again' });
+  });
+
+  it('the gate reopens after a dialog that threw, not just one that answered', async () => {
+    const broken = () => Promise.reject(new Error('COM said no'));
+    await expect(pickFolder(broken)).rejects.toThrow('COM said no');
+    expect(await pickFolder(slow('C:\\after\r\n'))).toEqual({ path: 'C:\\after' });
+  });
+
+  it('the gate reopens after the script failed, too', async () => {
+    const failing = () => Promise.resolve({ stdout: '', stderr: 'it broke', code: 1 });
+    expect(await pickFolder(failing)).toEqual({ error: 'the folder dialog failed — it broke' });
+    expect(await pickFolder(slow('C:\\after\r\n'))).toEqual({ path: 'C:\\after' });
+  });
+});
+
+describe('parsePickOutput — the edges of that contract', () => {
+  it('a folder actually called CANCELLED is a path, because a real answer is absolute', () => {
+    // Why the sentinel can be a bare word at all: it cannot collide with one.
+    expect(parsePickOutput('C:\\Users\\MSI\\CANCELLED\r\n', 0, '')).toEqual({
+      path: 'C:\\Users\\MSI\\CANCELLED',
+    });
+  });
+
+  it('whitespace on a clean exit is silence, not a path', () => {
+    expect(parsePickOutput('\r\n   \r\n\t\r\n', 0, '')).toEqual({
+      error: 'the folder dialog closed without an answer',
+    });
+  });
+
+  it('a failure with nothing to say says only that', () => {
+    expect(parsePickOutput('', 1, '   \r\n')).toEqual({ error: 'the folder dialog failed' });
+  });
+
+  it('a killed shell — no code at all — is a failure, told with its reason', () => {
+    // The timeout path resolves with code 1, but a signalled child gives null;
+    // anything that is not a clean 0 must not be read as a pick.
+    expect(parsePickOutput('C:\\half-written', null, 'nobody picked within 5 minutes')).toEqual({
+      error: 'the folder dialog failed — nobody picked within 5 minutes',
+    });
+  });
+
+  it('a bare newline-only unix reply parses the same way', () => {
+    expect(parsePickOutput('Compiling…\n/home/msi/papers\n', 0, '')).toEqual({
+      path: '/home/msi/papers',
+    });
+  });
+});
+
+describe('pickFolder off Windows', () => {
+  const platform = process.platform;
+  afterEach(() =>
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true }),
+  );
+
+  it('points at the typed path instead, and opens nothing', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    const run = vi.fn();
+    expect(await pickFolder(run)).toEqual({
+      error: 'the folder dialog needs Windows — type the path instead',
+    });
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('and the refusal does not hold the gate shut', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    await pickFolder(vi.fn());
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    const run = () => Promise.resolve({ stdout: 'C:\\ok\r\n', stderr: '', code: 0 });
+    expect(await pickFolder(run)).toEqual({ path: 'C:\\ok' });
+  });
+});
+
+describe('how long a person may browse', () => {
+  it('is five minutes, and the message that quotes it agrees', () => {
+    expect(PICK_TIMEOUT_MS).toBe(300_000);
+    expect(PICK_TIMEOUT_MS / 60000).toBe(5);
   });
 });

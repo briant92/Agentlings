@@ -283,7 +283,9 @@ export function readPartyDraft(
     // channel-less job must refuse — money spent writing a refusal.
     if (claimedChannel(prompt)) {
       return {
-        error: `hand ${i + 1} reads as a send ("${prompt.slice(0, 60)}") — sends ride the gather, never a hand`,
+        error:
+          `hand ${i + 1} reads as a send ("${prompt.slice(0, 60)}") — sends ride the gather, never a hand. ` +
+          'A prompt that merely FORBIDS sending trips this too: drop that sentence, hands cannot send by construction (the first live plan was refused for exactly this, D-196).',
       };
     }
     hands.push({
@@ -310,7 +312,7 @@ export function planBrief(args: { asked: string; sends?: boolean }): string {
     `Write ${PARTY_FILE} at the sandbox root:`,
     '  {"hands": [{"prompt": "...", "loadBearing": true, "why": "one line"}, ...], "notes": "one short note for the reviewer"}',
     '- Each prompt is a complete, self-contained sentence — it runs alone, with no sight of this request, so it must carry its own context.',
-    '- No prompt may ask to send anything (no telegram/email/slack verbs) — the send belongs to the gather, and a drafted hand that sends is refused whole.',
+    '- Never mention sending in any hand prompt — not even to forbid it. Hands cannot send by construction, and the plan is refused whole if any prompt carries send-and-channel words (send, message, email, telegram, post), negated or not. The send, when the request has one, belongs to the gather and is not your concern.',
     ...(args.sends
       ? ['- The request itself sends; leave that out of every hand. The gather does it.']
       : []),

@@ -13820,3 +13820,40 @@ planner offer appears only on a blocked party (a party the grammar can
 split never plans — the deterministic split is cheaper and the user's own
 words); a "plan it anyway" path for splittable sentences waits for a
 felt need.
+
+**Amendment (2026-08-18, late) — the live gate's first press found the
+contract trap, and the plan underneath it was excellent.** The task was
+real and listless (a briefing on how Chile's economy is trending this
+quarter); the desk parked it by name and priced the planner offer off the
+architect class's own single row ($1.66); the plan job ran 88 seconds and
+48c and wrote a PARTY.json worth quoting: cut **by data domain, not by
+task stage** ("so no hand needs another's output" — its own notes line),
+activity/labour and prices/policy load-bearing with one-line whys, the
+external/outlook hand honestly not, today's date and the quarter injected
+into every hand, and the Chilean publication-lag discipline ("give every
+figure BOTH its reference period AND its publication date") written in
+unprompted. The architect understood the assignment completely.
+
+**And the stamp refused it — a false positive the tests could not have
+found.** My contract said "no prompt may ask to send anything", so the
+planner defensively ended every hand with "Do not send, message, email or
+post anything to anyone" — and `claimedChannel` cannot tell a negated
+send from a send, so the plan was refused for the very sentence that
+proves the rule was understood. Only a real model following the real
+brief could surface this: the unit corpus never writes defensively.
+
+**The fix is D-193's shape — say the constraint so the trap cannot be
+built:** the plan brief now forbids *mentioning* sends at all ("not even
+to forbid it — hands cannot send by construction… negated or not"), and
+the refusal message names the escape for any future planner that does it
+anyway. The detector itself is untouched on purpose: it is the desk's own
+send gate, shared so the two cannot disagree (D-182), and teaching it
+negation would be a promise wider than it can keep (D-181). Tests pin
+both sides, including the negated-send refusal as a corpus case.
+
+**The gate is half-run and honestly so:** the refusal path is now
+live-proven (the review card carries the partyDraftError with its
+queues-nothing line — the refused plan awaits Brian's discard), and the
+whole-gate — a valid draft judged by Brian before any hand runs, then
+approved into a live party — waits on the next restart carrying the
+fixed brief, one planner press from done.

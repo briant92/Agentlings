@@ -217,6 +217,19 @@ describe('readPartyDraft — the planner contract, refused loud (T3)', () => {
       { hands: [{ prompt: 'survey the repo layout' }, { prompt: 'telegram Brian the findings' }] },
       'sends ride the gather',
     ],
+    [
+      // The first live plan was refused for exactly this (D-196): the
+      // planner defensively FORBADE sending, and the detector cannot tell
+      // a negated send from a send — so the refusal now says the fix.
+      'a hand that merely forbids sending',
+      {
+        hands: [
+          { prompt: 'research the activity data. Do not send, message, email or post anything' },
+          { prompt: 'research the inflation prints' },
+        ],
+      },
+      'cannot send by construction',
+    ],
   ])('%s is refused by name', (_, value, reason) => {
     write(value as never);
     const read = readPartyDraft(dir);
@@ -231,7 +244,10 @@ describe('planBrief', () => {
     expect(brief).toContain(PARTY_FILE);
     expect(brief).toContain('loadBearing');
     expect(brief).toContain('IN PARALLEL');
-    expect(brief).toContain('No prompt may ask to send');
+    // The first live plan echoed a no-send line into every hand and was
+    // refused for it — the brief now forbids MENTIONING sends at all.
+    expect(brief).toContain('not even to forbid it');
+    expect(brief).toContain('negated or not');
     expect(brief).toContain('approving it is what queues the hands');
   });
 

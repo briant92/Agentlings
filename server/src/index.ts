@@ -57,11 +57,13 @@ import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
 import {
   GATHER_SENTENCE,
+  PLAN_SENTENCE,
   type PartyPlan,
   gatherBrief,
   handFileName,
   handReportName,
   newPartyId,
+  planBrief,
   planParty,
 } from './party';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
@@ -1179,7 +1181,21 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     quote,
     ...(stepPlans ? { steps: stepPlans } : {}),
     ...(partyPlans ? { party: partyPlans } : {}),
-    ...(partyPlanned && 'blocked' in partyPlanned ? { partyBlocked: partyPlanned.blocked } : {}),
+    // A blocked party carries the planner offer, priced (TEAMWORK T3): the
+    // desk can say what pressing the button costs before it is pressed.
+    ...(partyPlanned && 'blocked' in partyPlanned
+      ? {
+          partyBlocked: partyPlanned.blocked,
+          planQuote: quoteFor_(
+            QUOTE_CTX,
+            rt.dir,
+            PLAN_SENTENCE,
+            granted(body.tools),
+            registry.get('architect') ? 'architect' : null,
+            undefined,
+          ),
+        }
+      : {}),
     // A detected send asks its facts even when the ask fell to a fork — the
     // asked name stands in for the channel so the hint has something to say,
     // and a confirmed near-miss (D-093) counts like a detection.
@@ -1757,16 +1773,26 @@ function queueParty(
     channel?: string;
     answers?: Record<string, string>;
     attachments?: { name: string; data: Buffer }[];
+    /** Channels already settled (the planned party's path) — skips detection. */
+    channels?: string[];
+    /** Hands the gather halts without, from a reviewed plan (T3). */
+    loadBearing?: number[];
+    /** Carry the plan job's party id forward, so the trace is one thread. */
+    partyId?: string;
   },
 ): Job[] {
-  const id = newPartyId();
-  const detected = detectChannelAsk(
-    text,
-    readConnections(CONNECTIONS_FILE),
-    readSettings(SANDBOX_ROOT),
-    process.env,
-  );
-  const { carried } = settledChannels(detected, opts.channel);
+  const id = opts.partyId ?? newPartyId();
+  const carried =
+    opts.channels ??
+    settledChannels(
+      detectChannelAsk(
+        text,
+        readConnections(CONNECTIONS_FILE),
+        readSettings(SANDBOX_ROOT),
+        process.env,
+      ),
+      opts.channel,
+    ).carried;
   const withholding = wantsWithholding(text);
   const of = plan.hands.length;
   const spec: NonNullable<Job['party']> = {
@@ -1778,6 +1804,7 @@ function queueParty(
     ...(carried.length ? { channels: carried } : {}),
     ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
     ...(wantsCheck(text) ? { checked: true } : {}),
+    ...(opts.loadBearing?.length ? { loadBearing: opts.loadBearing } : {}),
   };
   return plan.hands.map((piece, i) =>
     queueSentence(rt, piece, {
@@ -1791,6 +1818,56 @@ function queueParty(
       note: `hand ${i + 1} of ${of} — a party on "${plan.asked.words}"`,
     }),
   );
+}
+
+/**
+ * Queue a plan job (TEAMWORK T3, D-196): the user asked for a party and
+ * wrote no list, so an architect-class run proposes the split as PARTY.json
+ * — and queues nothing. Approving the reviewed proposal is what queues the
+ * hands (the resolve route's branch), which is how the promote grammar
+ * answers M6's goal-decomposition trust question: the model proposes, the
+ * person disposes, exactly the organizer's MOVES.json shape (D-132).
+ */
+function queuePartyPlan(
+  rt: LevelRuntime,
+  text: string,
+  opts: {
+    tools?: string[];
+    channel?: string;
+    answers?: Record<string, string>;
+    attachments?: { name: string; data: Buffer }[];
+  },
+): Job {
+  const carried = settledChannels(
+    detectChannelAsk(
+      text,
+      readConnections(CONNECTIONS_FILE),
+      readSettings(SANDBOX_ROOT),
+      process.env,
+    ),
+    opts.channel,
+  ).carried;
+  return queueSentence(rt, PLAN_SENTENCE, {
+    noSplit: true,
+    noRepo: true,
+    ...(registry.get('architect') ? { role: 'architect' } : {}),
+    ...(opts.tools?.length ? { tools: opts.tools } : {}),
+    ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
+    channelsOverride: [],
+    ...(wantsWithholding(text) ? { withholding: true } : {}),
+    party: {
+      id: newPartyId(),
+      hand: 0,
+      of: 0,
+      plan: true,
+      asked: text,
+      ...(carried.length ? { channels: carried } : {}),
+      ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
+      ...(wantsCheck(text) ? { checked: true } : {}),
+    },
+    brief: planBrief({ asked: text, sends: carried.length > 0 }),
+    note: 'planning a party — the split is reviewed before any hand runs',
+  });
 }
 
 /** Deliverables forwarded per hand, beside its report; the rest is named. */
@@ -1810,10 +1887,35 @@ const HAND_FILES = 2;
 function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
   const p = job.party;
   if (!p || p.gather) return;
-  const siblings = rt.queue.list().filter((j) => j.party?.id === p.id && !j.party?.gather);
+  // A plan job proposes and never gathers (T3): its "party" has no hands
+  // until the proposal is approved, and treating the settled plan job as a
+  // one-hand party would queue a gather over nothing.
+  if (p.plan) return;
+  const siblings = rt.queue
+    .list()
+    .filter((j) => j.party?.id === p.id && !j.party?.gather && !j.party?.plan);
   if (siblings.some((j) => j.status === 'queued' || j.status === 'running')) return;
   if (rt.queue.list().some((j) => j.party?.id === p.id && j.party?.gather)) return;
   const delivered = siblings.filter((j) => j.status === 'done' || j.status === 'partial');
+  // A load-bearing hand failing halts the party before the gather (T3,
+  // D-196): the deliverable is worthless without it, and delivering around
+  // the hole would paper over exactly what the reviewer marked as
+  // essential. The delivered hands stay in review — their work is real.
+  const lost = siblings.filter(
+    (j) =>
+      j.status !== 'done' &&
+      j.status !== 'partial' &&
+      p.loadBearing?.includes(j.party?.hand ?? -1),
+  );
+  if (lost.length > 0) {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `the party halted — load-bearing hand ${lost.map((j) => j.party?.hand).join(' and ')} failed; the delivered hands stay in review`,
+    });
+    return;
+  }
   if (delivered.length === 0) {
     rt.eventLog.emit({
       type: 'progress',
@@ -2000,6 +2102,8 @@ app.post('/api/levels/:lid/work', async (c) => {
     organizeRoot?: string;
     /** The user chose "run as one job" on the steps row (D-105). */
     single?: boolean;
+    /** The user asked a planner to propose the split (TEAMWORK T3). */
+    planParty?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -2025,6 +2129,18 @@ app.post('/api/levels/:lid/work', async (c) => {
     writeMeta(rt.dir, rt.meta);
   }
 
+  // The planner path (TEAMWORK T3): the user pressed the offer, so the
+  // split is proposed by an architect-class run and reviewed before any
+  // hand exists — never queued from here.
+  if (body.planParty === true && body.single !== true && splitSteps(text) === null) {
+    const job = queuePartyPlan(rt, text, {
+      tools: body.tools,
+      channel: typeof body.channel === 'string' ? body.channel : undefined,
+      answers: body.answers,
+      attachments,
+    });
+    return c.json(job, 201);
+  }
   // A party queues here and only here (TEAMWORK T2): the desk previewed it,
   // Start carries it, and the schedule sweep deliberately does not — a
   // schedule that wants a party will say so in its own sentence once
@@ -2646,6 +2762,48 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // Remember the name it went in under, so the job's record matches the
     // world that now exists rather than the one it asked to be.
     if (renamed) pending.packDraft = draft;
+  }
+  /**
+   * A reviewed party plan is performed exactly as a reviewed pack is
+   * installed (TEAMWORK T3, D-196): approving it queues the hands as an
+   * ordinary T2 party, carrying the spec the plan job stored — channels,
+   * answers, the check flag, and the load-bearing marks the reviewer just
+   * read. The model proposed, the person disposed, and only now does
+   * anything run. The plan job's own input files ride to every hand, since
+   * they are the request's material.
+   */
+  if (
+    body.action === 'promote' &&
+    promotable &&
+    pending.partyDraft &&
+    pending.party?.plan &&
+    !waitingTool
+  ) {
+    const spec = pending.party;
+    const draft = pending.partyDraft;
+    const loadBearing = draft.hands.flatMap((h, i) => (h.loadBearing ? [i + 1] : []));
+    const inputDir = rt.queue.inputDir(pending.id);
+    const carried: { name: string; data: Buffer }[] = existsSync(inputDir)
+      ? readdirSync(inputDir, { withFileTypes: true })
+          .filter((e) => e.isFile())
+          .map((e) => ({ name: e.name, data: readFileSync(path.join(inputDir, e.name)) }))
+      : [];
+    queueParty(
+      rt,
+      spec.asked ?? pending.prompt,
+      {
+        hands: draft.hands.map((h) => h.prompt),
+        asked: { n: draft.hands.length, words: 'a planned party' },
+      },
+      {
+        ...(pending.tools?.length ? { tools: pending.tools } : {}),
+        ...(spec.channels?.length ? { channels: spec.channels } : {}),
+        ...(spec.answers ? { answers: spec.answers } : {}),
+        ...(loadBearing.length ? { loadBearing } : {}),
+        ...(carried.length ? { attachments: carried } : {}),
+        partyId: spec.id,
+      },
+    );
   }
   /**
    * A reviewed folder reorganization is replayed exactly as a reviewed outbox

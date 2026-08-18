@@ -403,7 +403,7 @@ export function WorkBar({
     }
   };
 
-  const queue = async (folder?: string) => {
+  const queue = async (folder?: string, planned = false) => {
     setBusy(true);
     setError(null);
     try {
@@ -421,6 +421,9 @@ export function WorkBar({
           ...(channel ? { channel } : {}),
           ...(organizeRoot ? { organizeRoot } : {}),
           ...(single ? { single: true } : {}),
+          // The planner proposes the split, reviewed before any hand runs
+          // (TEAMWORK T3) — asked by the button, never inferred.
+          ...(planned ? { planParty: true } : {}),
         }),
       );
       // The schedule stores what Start carried — the sentence verbatim (the
@@ -682,6 +685,11 @@ export function WorkBar({
       {plan?.partyBlocked && !single && !askingRepo && (
         <p className="work-gaps work-steps">
           <span className="dim">a party was asked, and cannot run: {plan.partyBlocked}</span>
+          {plan.planQuote && (
+            <button className="work-link" disabled={busy} onClick={() => void queue(undefined, true)}>
+              let a planner propose the split ({plan.planQuote.wording})
+            </button>
+          )}
         </p>
       )}
 

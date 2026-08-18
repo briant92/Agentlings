@@ -660,6 +660,44 @@ describe('JobQueue', () => {
     expect(reopened?.party?.asked).toContain('team of three');
   });
 
+  // The planner's proposal is stamped at the one seam every contract enters
+  // through, and only off a plan job (TEAMWORK T3, D-196).
+  describe('stampPartyDraft', () => {
+    const plan = { id: 'p9', hand: 0, of: 0, plan: true, asked: 'reorganise the tests' };
+
+    it('stamps a sound plan onto the plan job at finish', () => {
+      const job = queue.add({ title: 'Plan', prompt: 'plan a work party', party: plan });
+      queue.assign(job.id, 'a1');
+      const dir = queue.start(job.id);
+      writeFileSync(
+        path.join(dir, 'PARTY.json'),
+        JSON.stringify({ hands: [{ prompt: 'survey the suite' }, { prompt: 'list the gaps' }] }),
+      );
+      queue.complete(job.id, 'planned');
+      expect(queue.get(job.id)?.partyDraft?.hands).toHaveLength(2);
+    });
+
+    it('a malformed plan surfaces as its reason, never as no plan', () => {
+      const job = queue.add({ title: 'Plan', prompt: 'plan a work party', party: plan });
+      queue.assign(job.id, 'a1');
+      writeFileSync(path.join(queue.start(job.id), 'PARTY.json'), '{"hands": [');
+      queue.complete(job.id, 'planned');
+      expect(queue.get(job.id)?.partyDraftError).toContain('not valid JSON');
+    });
+
+    it('a PARTY.json on a job that is not a plan stamps nothing', () => {
+      const job = queue.add({ title: 'Ordinary', prompt: 'write a note about parties' });
+      queue.assign(job.id, 'a1');
+      writeFileSync(
+        path.join(queue.start(job.id), 'PARTY.json'),
+        JSON.stringify({ hands: [{ prompt: 'survey the suite' }, { prompt: 'list the gaps' }] }),
+      );
+      queue.complete(job.id, 'done');
+      expect(queue.get(job.id)?.partyDraft).toBeUndefined();
+      expect(queue.get(job.id)?.partyDraftError).toBeUndefined();
+    });
+  });
+
   // The verdict a check pass lands on the job it checked (TEAMWORK T1).
   describe('recordCheckVerdict', () => {
     it('stamps the verdict, moves the revision, and survives a restart', () => {

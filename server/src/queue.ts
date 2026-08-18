@@ -23,6 +23,7 @@ import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
 import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
+import { PARTY_FILE, readPartyDraft } from './party';
 import { PACK_FILE, readPackDraft } from './packcontract';
 import { deliveredFiles, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
@@ -536,6 +537,7 @@ export class JobQueue {
     this.stampOutbox(job);
     this.stampWithheld(job);
     this.stampPackDraft(job);
+    this.stampPartyDraft(job);
     this.stampMoves(job);
     this.stampPending(job);
     job.finishedAt = Date.now();
@@ -590,6 +592,21 @@ export class JobQueue {
    * same question. A malformed one surfaces as its reason rather than reading
    * as "nothing was withheld", which would turn the gate off in silence.
    */
+  /**
+   * The split a plan job proposed (TEAMWORK T3, D-196), read at the same
+   * seam as every contract and only off a plan job — a PARTY.json on any
+   * other job means nothing and stamps nothing. A malformed plan surfaces
+   * as its reason, never as "no plan": promoting an unreviewable proposal
+   * is exactly the trust hole the reviewed step exists to close.
+   */
+  private stampPartyDraft(job: Job): void {
+    if (!job.party?.plan) return;
+    const read = readPartyDraft(this.sandboxDir(job.id));
+    if (!read) return;
+    if ('error' in read) job.partyDraftError = `${PARTY_FILE}: ${read.error}`;
+    else job.partyDraft = read.draft;
+  }
+
   private stampWithheld(job: Job): void {
     if (job.compile) return;
     const read = readWithheld(this.sandboxDir(job.id));

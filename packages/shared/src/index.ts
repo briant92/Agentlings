@@ -807,6 +807,14 @@ export interface Job {
     of: number;
     /** This job is the gather. */
     gather?: boolean;
+    /**
+     * This job is a plan (TEAMWORK T3, D-196): it proposes the split as
+     * PARTY.json and queues nothing — approving it is what queues the
+     * hands, carrying this spec forward.
+     */
+    plan?: boolean;
+    /** Hands the gather halts without, by number (from the reviewed plan). */
+    loadBearing?: number[];
     /** The original request, quoted into the gather's brief. */
     asked?: string;
     /** A trailing send clause the hands were cut from; the gather's to do. */
@@ -952,6 +960,18 @@ export interface Job {
   organizeRoot?: string;
   /** MOVES.json existed and was not a valid manifest — the reason, never a silent drop. */
   movesError?: string;
+  /**
+   * The party split a plan job proposed (TEAMWORK T3, D-196), parsed from
+   * PARTY.json. The same promise shape as `outbox`, `packDraft` and
+   * `moves`: written by the session, performed by the server at Approve —
+   * promoting this job is what queues the hands.
+   */
+  partyDraft?: {
+    hands: { prompt: string; loadBearing?: boolean; why?: string }[];
+    notes?: string;
+  };
+  /** PARTY.json existed and was not a valid plan — the reason, never a silent drop. */
+  partyDraftError?: string;
   /**
    * What this run says it took out before sending (D-181), when the sentence
    * asked for something to be withheld.
@@ -1467,6 +1487,11 @@ export interface WorkPlan {
   };
   /** A party was asked for and cannot run — the reason, said at the desk. */
   partyBlocked?: string;
+  /**
+   * What a plan job would cost (TEAMWORK T3), shown beside `partyBlocked`
+   * so the planner offer is priced before it is pressed.
+   */
+  planQuote?: Quote;
   /** The sentence asked for a check pass (TEAMWORK T1, D-194). */
   checked?: boolean;
   /** True when nobody in this level's crew holds the matched role. */

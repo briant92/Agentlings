@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { claimedChannel } from './channel';
 
 /**
@@ -210,6 +212,111 @@ export function planParty(text: string): PartyPlan | PartyBlocked | null {
 /** A fresh party id, the job-id shape. */
 export function newPartyId(): string {
   return randomUUID().slice(0, 8);
+}
+
+/**
+ * The planned party (TEAMWORK T3, D-196): when the user asked for a party
+ * and wrote no list, a plan job proposes the split — and queueing the hands
+ * happens only at Approve. The model proposes; the person disposes; the
+ * promote grammar answers M6's goal-decomposition trust question the way it
+ * answered the organizer's (D-132: the manifest is reviewed, then replayed).
+ *
+ * One fixed sentence, the gather's and the check's precedent: every plan
+ * banks method under one recipe key, and nothing of the task's words leaks
+ * into detection or the matcher. The task rides the brief and the party
+ * spec.
+ */
+export const PLAN_SENTENCE = 'plan a work party for the request in its brief';
+
+/** The planner's contract file, at its sandbox root like every contract. */
+export const PARTY_FILE = 'PARTY.json';
+
+export interface PartyDraftHand {
+  /** The hand's own sentence — self-contained, since it runs alone. */
+  prompt: string;
+  /** The gather halts rather than delivering around this hand's hole. */
+  loadBearing?: boolean;
+  /** Why this piece, one line — shown on the review card. */
+  why?: string;
+}
+
+export interface PartyDraft {
+  hands: PartyDraftHand[];
+  /** Anything the planner wants the reviewer to know, one short note. */
+  notes?: string;
+}
+
+/**
+ * Read the planner's proposal off its sandbox — the same promise shape as
+ * OUTBOX.json and MOVES.json: written by the session, checked and performed
+ * by the server, never the other way round. Anything malformed is a named
+ * refusal (`error`), never a silent drop: an unreviewable plan queued anyway
+ * would be exactly the trust hole T3 exists to close.
+ */
+export function readPartyDraft(
+  sandboxDir: string,
+): { draft: PartyDraft } | { error: string } | null {
+  const file = path.join(sandboxDir, PARTY_FILE);
+  if (!existsSync(file)) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return { error: `${PARTY_FILE} is not valid JSON` };
+  }
+  const raw = (parsed ?? {}) as { hands?: unknown; notes?: unknown };
+  if (!Array.isArray(raw.hands)) return { error: `${PARTY_FILE} names no hands list` };
+  if (raw.hands.length < 2 || raw.hands.length > MAX_HANDS) {
+    return {
+      error: `${PARTY_FILE} names ${raw.hands.length} hand(s) — a party is 2 to ${MAX_HANDS}`,
+    };
+  }
+  const hands: PartyDraftHand[] = [];
+  for (const [i, entry] of raw.hands.entries()) {
+    const h = (entry ?? {}) as { prompt?: unknown; loadBearing?: unknown; why?: unknown };
+    const prompt = typeof h.prompt === 'string' ? h.prompt.trim() : '';
+    if (prompt.split(/\s+/).filter(Boolean).length < 2) {
+      return { error: `hand ${i + 1} has no usable prompt` };
+    }
+    // A hand never sends (TEAMWORK T2's rule): the send rides the gather,
+    // and a drafted hand that claims a channel would compose an outbox its
+    // channel-less job must refuse — money spent writing a refusal.
+    if (claimedChannel(prompt)) {
+      return {
+        error: `hand ${i + 1} reads as a send ("${prompt.slice(0, 60)}") — sends ride the gather, never a hand`,
+      };
+    }
+    hands.push({
+      prompt,
+      ...(h.loadBearing === true ? { loadBearing: true } : {}),
+      ...(typeof h.why === 'string' && h.why.trim() ? { why: h.why.trim().slice(0, 200) } : {}),
+    });
+  }
+  const notes =
+    typeof raw.notes === 'string' && raw.notes.trim() ? raw.notes.trim().slice(0, 500) : undefined;
+  return { draft: { hands, ...(notes ? { notes } : {}) } };
+}
+
+/**
+ * The standing instructions a plan job carries (Job.brief, D-074's seam):
+ * the task, the contract, and the rules a draft is refused on — said before
+ * the run rather than discovered at the stamp (D-193's lesson).
+ */
+export function planBrief(args: { asked: string; sends?: boolean }): string {
+  return [
+    '## Plan a work party',
+    `The request to split: "${args.asked}".`,
+    `Propose 2 to ${MAX_HANDS} hands that can work IN PARALLEL, each blind to the others. A later gather job assembles their work into the one deliverable — hands must not depend on each other.`,
+    `Write ${PARTY_FILE} at the sandbox root:`,
+    '  {"hands": [{"prompt": "...", "loadBearing": true, "why": "one line"}, ...], "notes": "one short note for the reviewer"}',
+    '- Each prompt is a complete, self-contained sentence — it runs alone, with no sight of this request, so it must carry its own context.',
+    '- No prompt may ask to send anything (no telegram/email/slack verbs) — the send belongs to the gather, and a drafted hand that sends is refused whole.',
+    ...(args.sends
+      ? ['- The request itself sends; leave that out of every hand. The gather does it.']
+      : []),
+    '- Mark a hand loadBearing only if the deliverable is worthless without it: a load-bearing hand failing halts the party instead of delivering around the hole.',
+    'Nothing runs from this job: the proposal is reviewed, and approving it is what queues the hands. Write RESULT.md with one paragraph on how you cut it.',
+  ].join('\n');
 }
 
 /**

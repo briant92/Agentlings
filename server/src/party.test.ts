@@ -1,12 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   GATHER_SENTENCE,
   MAX_HANDS,
+  PARTY_FILE,
+  PLAN_SENTENCE,
   gatherBrief,
   handFileName,
   handReportName,
   partyAsk,
+  planBrief,
   planParty,
+  readPartyDraft,
 } from './party';
 
 describe('partyAsk — licensed by a number beside worker-words, nothing less', () => {
@@ -157,5 +165,82 @@ describe('gatherBrief', () => {
     });
     expect(brief).toContain('telegram me the result');
     expect(brief).toContain('8633678680');
+  });
+});
+
+describe('readPartyDraft — the planner contract, refused loud (T3)', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'party-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+  const write = (value: unknown) =>
+    writeFileSync(path.join(dir, PARTY_FILE), typeof value === 'string' ? value : JSON.stringify(value));
+
+  it('reads a sound plan whole, with loadBearing and why', () => {
+    write({
+      hands: [
+        { prompt: 'Survey the module layout of the repo', loadBearing: true, why: 'everything hangs off it' },
+        { prompt: 'List the untested exported functions' },
+      ],
+      notes: 'two hands suffice',
+    });
+    const read = readPartyDraft(dir);
+    expect(read && 'draft' in read ? read.draft.hands : read).toEqual([
+      {
+        prompt: 'Survey the module layout of the repo',
+        loadBearing: true,
+        why: 'everything hangs off it',
+      },
+      { prompt: 'List the untested exported functions' },
+    ]);
+  });
+
+  it('no file is null — the stamp says nothing', () => {
+    expect(readPartyDraft(dir)).toBeNull();
+  });
+
+  it.each([
+    ['torn JSON', '{"hands": [', 'not valid JSON'],
+    ['no hands list', { notes: 'x' }, 'names no hands'],
+    ['one hand', { hands: [{ prompt: 'do the whole thing' }] }, '2 to'],
+    [
+      'too many hands',
+      { hands: [1, 2, 3, 4].map((n) => ({ prompt: `piece number ${n}` })) },
+      '2 to',
+    ],
+    ['a fragment prompt', { hands: [{ prompt: 'x' }, { prompt: 'survey the repo' }] }, 'no usable prompt'],
+    [
+      'a hand that sends',
+      { hands: [{ prompt: 'survey the repo layout' }, { prompt: 'telegram Brian the findings' }] },
+      'sends ride the gather',
+    ],
+  ])('%s is refused by name', (_, value, reason) => {
+    write(value as never);
+    const read = readPartyDraft(dir);
+    expect(read && 'error' in read ? read.error : read).toContain(reason);
+  });
+});
+
+describe('planBrief', () => {
+  it('quotes the task and carries the contract', () => {
+    const brief = planBrief({ asked: 'reorganise the test suite as a team of three', sends: false });
+    expect(brief).toContain('"reorganise the test suite as a team of three"');
+    expect(brief).toContain(PARTY_FILE);
+    expect(brief).toContain('loadBearing');
+    expect(brief).toContain('IN PARALLEL');
+    expect(brief).toContain('No prompt may ask to send');
+    expect(brief).toContain('approving it is what queues the hands');
+  });
+
+  it('tells the planner the request sends, when it does', () => {
+    expect(planBrief({ asked: 'x y z', sends: true })).toContain('The request itself sends');
+    expect(planBrief({ asked: 'x y z', sends: false })).not.toContain('The request itself sends');
+  });
+
+  it('the fixed plan sentence never claims a party itself', () => {
+    expect(partyAsk(PLAN_SENTENCE)).toBeNull();
   });
 });

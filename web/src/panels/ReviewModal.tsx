@@ -333,6 +333,38 @@ export function ReviewModal({
               jobId={job.id}
             />
           )}
+          {/* The split a plan job proposed (TEAMWORK T3, D-196): approving
+              is what queues these hands — the model proposed, this review
+              disposes, and nothing has run yet. */}
+          {job.partyDraftError && (
+            <p className="rv-error">
+              {job.partyDraftError} — approving queues nothing until the plan says properly what
+              to run.
+            </p>
+          )}
+          {job.partyDraft && (
+            <div className="rv-withheld">
+              <div className="rv-withheld-t">
+                The proposed party — approving queues these {job.partyDraft.hands.length} hands
+              </div>
+              <ul className="rv-check-list">
+                {job.partyDraft.hands.map((hand, i) => (
+                  <li key={i}>
+                    {hand.prompt}
+                    {hand.loadBearing ? ' — load-bearing: the party halts without it' : ''}
+                    {hand.why ? <span className="rv-withheld-n"> · {hand.why}</span> : null}
+                  </li>
+                ))}
+              </ul>
+              {job.partyDraft.notes && (
+                <p className="rv-withheld-note">{job.partyDraft.notes}</p>
+              )}
+              <p className="rv-withheld-foot">
+                Nothing has run yet. Approve queues the hands at once; a gather assembles their
+                work when the last one delivers. Discard queues nothing.
+              </p>
+            </div>
+          )}
           {/* The mentioned-but-never-carried guard (D-093): a real 80¢ run
               was approved in good faith and sent nothing — this says so
               before the button does it again. */}

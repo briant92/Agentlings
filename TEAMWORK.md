@@ -148,7 +148,7 @@ real seams, the cost with today's figures, the evidence gate, and the
 decisions it waits on. T1 and T2 are independent; T3 builds on T2; T4 is
 the summit and waits on a trial.
 
-### T1 — The check pass *(accountability first; smallest; the live felt need)*
+### T1 — The check pass *(accountability first; smallest; the live felt need)* — **built, D-194; the live seeded-claim gate waits on the next restart**
 
 **Unlocks:** "have it checked" on any job — a second agentling, in its own
 session and sandbox, reads the delivered work against the brief and the

@@ -1721,6 +1721,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
       steps, each an ordinary job with its own tier and quote, files
       forwarded as the next step's input/, a failed step halting the
       chain (D-105)
+- [x] **The check pass** — "have it checked" queues a second agentling on
+      the delivered work (TEAMWORK T1, D-194): fixed prompt, the checked
+      job's report renamed into its input/, the primary's role forced so
+      the same doors and class rate apply, a different member preferred
+      with a sole-holder fallback. CHECK.md's verdict rides the checked
+      job's card, anything short of `confirmed` holds auto-send, and a
+      refuted claim lands in the checked member's own memory. *Wiring
+      tested and mutation-proven; the live seeded-false-claim gate and
+      the mail-desk arming wait on the next restart.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

@@ -438,6 +438,10 @@ tried, measured and rejected is in `DECISIONS.md`:
   search and one-message read on the find/read split, behind one fresh
   `gmail.readonly` consent walked last; and the second standing desk,
   the daily mail brief on its own sentence → D-191
+- M5.24 the check pass (TEAMWORK T1): "have it checked" queues a second
+  agentling on the delivered work — its CHECK.md verdict rides the
+  checked job's card, holds auto-send until `confirmed`, and writes
+  refuted claims into the checked member's memory → D-194
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

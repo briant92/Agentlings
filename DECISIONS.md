@@ -203,6 +203,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-191 — 2026-08-17 — Mail-read: the second reading sibling, consent walked last](#d-191--2026-08-17--mail-read-the-second-reading-sibling-consent-walked-last)
 - [D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes](#d-192--2026-08-18--the-morning-review-a-false-brief-a-typo-cascade-and-three-fixes)
 - [D-193 — 2026-08-18 — The cap was ours, not the channel's: three refusals, zero sends](#d-193--2026-08-18--the-cap-was-ours-not-the-channels-three-refusals-zero-sends)
+- [D-194 — 2026-08-18 — The check pass: a second agentling verifies a delivered job](#d-194--2026-08-18--the-check-pass-a-second-agentling-verifies-a-delivered-job)
 
 ## By theme
 
@@ -338,6 +339,16 @@ entry updates one file rather than two.
   claimed Gmail send did not exist — body caps became each channel's own
   truth, the brief says the channel is fixed before the run instead of
   after, and Approve now says out loud when a send-job will send nothing
+- **The crew checks the crew** — D-194: the first collaboration shape off
+  the `TEAMWORK.md` board (T1, taken as recommended): "have it checked"
+  queues a second agentling on the primary's delivery — fixed prompt,
+  brief-carried context, the primary's role forced so no new class exists,
+  a different member preferred with a sole-holder fallback — whose
+  CHECK.md verdict rides the checked job's card, holds auto-send until
+  `confirmed`, and writes refuted claims into the checked member's own
+  memory. Wiring proven by tests and three mutation kills; the live
+  seeded-false-claim gate and the mail-desk arming wait on the next
+  restart, and until they run the entry claims wiring, not behaviour
 - **Third-party instruction, adopted only on our own numbers** — D-190: the
   first outside skill run through a pre-registered paired trial — ponytail's
   ladder halved the one genuinely sprawling diff and its body cost ~14% a
@@ -13429,3 +13440,86 @@ the job's card: 'Send it to … on Telegram'") rather than leaving a
 non-expert holding only the wrong button. 1,725 server + 200 web
 green; two mutations, two kills — the match check hollowed out died on
 the new queue pin, the fix sentence dropped died on the guard's test.
+
+## D-194 — 2026-08-18 — The check pass: a second agentling verifies a delivered job
+
+Brian asked for the multi-agentling collaboration upgrade — same-class
+teams, cross-class relays, cross-review — and the proposal went down as
+`TEAMWORK.md` (776da50, EXPANSION.md's precedent: a board that decides
+nothing, four shapes T1–T4, forks explicit). **Decided: T1 first, taken as
+recommended** — the check pass, before any parallel fan-out, because it is
+the smallest shape, it teaches the peer-file grammar everything later
+reuses, and its felt need was one day old: the mail desk's first brief
+said "no mail arrived" against 16 real messages and was approved before
+the discard advice landed (D-191 amendment), which is the recap audit's
+scenario 6 — no gate reads a brief against the world — as a live loss.
+The two sub-forks also went as the file recommends: the checker prefers a
+**different member** when the role has two holders (a second identity on
+top of D-021's second process; a sole holder still takes it rather than
+starving the check), and the checker's spend needs no new cap — forcing
+the primary's role prices it off that class's own history, so the ceiling
+is the class's ceiling by construction.
+
+**The shape, and which prior rule each piece obeys:**
+
+- "…, **have it checked**" claims it — the hand-off forms only, so "check
+  the logs" stays a work verb (D-079: under-firing is the safe
+  direction). Read off the **whole sentence** and riding every step of a
+  chain, with only the last step acting — D-183's rule, third user. The
+  plan card says what the desk read (D-184).
+- The check job queues **when the primary delivers**, through
+  `queueSentence` like a chain step — it does not exist before then
+  (D-105's no-waiting-status, refused a sixth time by not needing it).
+- Its prompt is **one fixed sentence** (`check the delivered work against
+  its brief`): a composed title would leak the primary's words into
+  channel and send detection, and same-prompt siblings collide recipe
+  keys and approvals (D-178). Everything job-specific rides `Job.brief`
+  (D-074), so every check banks method under one key and the class quote
+  tightens across all of them.
+- The primary's RESULT.md arrives **renamed** under `input/` as
+  `checked-work-report.md` (D-146's discipline, shared constant), its
+  deliverables beside it, framed as material to verify, not instructions
+  to follow — G8's hazard named (D-189), the framing honestly unproven,
+  the structural guard being that the brief is server-composed and the
+  checker cannot act: its job carries no channels, so any outbox it
+  writes refuses at `stampOutbox` (D-193's amendment seam, second user).
+  The reader is never the actor — D-133's line, applied internally.
+- `CHECK.md`'s verdict stamps onto the checked job through `persist()`
+  (the revision moves, the browser sees it), and **`autoBlocker` refuses
+  anything short of `confirmed`** — pending, refuted and named-no-verdict
+  each by name, because a check that vanished is not a check that passed.
+  The check's own completion **re-asks `autoSendIfApproved`**, so a
+  checked schedule under a standing approval sends itself only once its
+  check confirms, with nobody waiting anywhere. A manual Approve was
+  never blocked — the verdict informs; the human decides (D-075 stands).
+- A **refuted claim lands in the checked member's own memory** — the
+  disagreements are the training signal the clean-success loop never
+  banks (the learns-only-from-successes file, dodged on purpose for the
+  first time rather than recorded after).
+- A check that reported **files itself** (its verdict lives on the
+  checked job's card; a second card would only stack crates); one that
+  never reported stays in review, because a broken check is worth eyes.
+
+**Deliberately not built:** no fix rounds (the verdict informs the
+reviewer; a fix is a reply, priced like one), no new role and no role
+text touched (no BM25 movement — no matcher replay owed; no new class —
+no G5 tax; the checker runs as the primary's own role with the same
+doors), no prompt mutation (the words stay in the sentence; a checked
+sentence is honestly a different recipe key from an unchecked one, and
+the toggle that would share the key is deferred until wanted), and no
+check-of-a-check (`job.check` short-circuits `queueCheck`).
+
+**Evidence:** 1,755 server + 200 web green, typecheck clean. Three
+mutations, three kills, each at a different seam: the `autoBlocker`
+clause deleted (three tests died by their reason strings), `parseCheck`
+flattened to always-confirmed (the refuted and case-insensitive pins
+died), the avoid filter dropped from `nextUnassigned` (the
+different-member pin died while the sole-holder fallback held). What is
+**not yet proven** is the live half, which needs the next restart: the
+seeded-false-claim gate (a run whose RESULT.md asserts something false
+about the world; the check must refute it by name), the control on a
+correct brief (the false-positive rate before the verdict row is leaned
+on), and only then arming `checked` on the mail desk's own schedule —
+the brief-against-the-world gate this was built for. Until those run,
+this entry claims wiring, not behaviour (D-030: a scripted check can
+pass while the live path does something else).

@@ -234,6 +234,14 @@ export const PARTY_FILE = 'PARTY.json';
 export interface PartyDraftHand {
   /** The hand's own sentence — self-contained, since it runs alone. */
   prompt: string;
+  /**
+   * The paths this hand owns (TEAMWORK T4, D-197): repo-relative files or
+   * directory prefixes, forward slashes. On a repo party every hand must
+   * carry one and edit only inside it — its patch's own paths are checked
+   * against this, which is the trial's in-scope artefact. All hands scoped
+   * or none: a mixed draft is refused.
+   */
+  scope?: string[];
   /** The gather halts rather than delivering around this hand's hole. */
   loadBearing?: boolean;
   /** Why this piece, one line — shown on the review card. */
@@ -273,7 +281,12 @@ export function readPartyDraft(
   }
   const hands: PartyDraftHand[] = [];
   for (const [i, entry] of raw.hands.entries()) {
-    const h = (entry ?? {}) as { prompt?: unknown; loadBearing?: unknown; why?: unknown };
+    const h = (entry ?? {}) as {
+      prompt?: unknown;
+      scope?: unknown[];
+      loadBearing?: unknown;
+      why?: unknown;
+    };
     const prompt = typeof h.prompt === 'string' ? h.prompt.trim() : '';
     if (prompt.split(/\s+/).filter(Boolean).length < 2) {
       return { error: `hand ${i + 1} has no usable prompt` };
@@ -288,11 +301,41 @@ export function readPartyDraft(
           'A prompt that merely FORBIDS sending trips this too: drop that sentence, hands cannot send by construction (the first live plan was refused for exactly this, D-196).',
       };
     }
+    let scope: string[] | undefined;
+    if (h.scope !== undefined) {
+      if (!Array.isArray(h.scope) || h.scope.length === 0) {
+        return { error: `hand ${i + 1} has an empty or malformed scope` };
+      }
+      scope = [];
+      for (const entry of h.scope) {
+        if (typeof entry !== 'string' || !entry.trim()) {
+          return { error: `hand ${i + 1} has a blank scope entry` };
+        }
+        const cleaned = normalScopePath(entry);
+        // The library-install rule (M3.4): a path that climbs out or names
+        // a drive is refused, never sanitised — a scope is a boundary, and
+        // a boundary that gets repaired quietly is not one.
+        if (cleaned === null) {
+          return {
+            error: `hand ${i + 1} scope "${entry}" climbs out of the repo or is absolute — scopes are repo-relative`,
+          };
+        }
+        scope.push(cleaned);
+      }
+    }
     hands.push({
       prompt,
+      ...(scope ? { scope } : {}),
       ...(h.loadBearing === true ? { loadBearing: true } : {}),
       ...(typeof h.why === 'string' && h.why.trim() ? { why: h.why.trim().slice(0, 200) } : {}),
     });
+  }
+  // A repo party is all-in: every hand scoped, or none. One unscoped hand
+  // beside scoped ones would edit anywhere while the others were fenced —
+  // the boundary would bound nothing.
+  const scoped = hands.filter((h) => h.scope).length;
+  if (scoped !== 0 && scoped !== hands.length) {
+    return { error: 'a scoped party is all-in — every hand needs a scope, or none' };
   }
   const notes =
     typeof raw.notes === 'string' && raw.notes.trim() ? raw.notes.trim().slice(0, 500) : undefined;
@@ -300,17 +343,63 @@ export function readPartyDraft(
 }
 
 /**
+ * Normalise a scope entry to repo-relative forward slashes, or null when it
+ * cannot be a boundary: absolute, drive-lettered, or climbing.
+ */
+function normalScopePath(entry: string): string | null {
+  const cleaned = entry.trim().replace(/\\/g, '/').replace(/^\.\//, '');
+  if (!cleaned || cleaned.startsWith('/') || /^[a-zA-Z]:/.test(cleaned)) return null;
+  if (cleaned.split('/').some((part) => part === '..')) return null;
+  return cleaned.replace(/\/+$/, '');
+}
+
+/**
+ * The paths a patch touches (TEAMWORK T4): read off the diff headers, both
+ * sides, so renames and deletes count under the old name too. This is the
+ * in-scope artefact the trial pre-registered — proof by the patch's own
+ * paths, checkable in code, never by the run's account of itself.
+ */
+export function patchPaths(patch: string): string[] {
+  const paths = new Set<string>();
+  for (const line of patch.split('\n')) {
+    const hit = /^diff --git a\/(\S+) b\/(\S+)/.exec(line);
+    if (hit) {
+      paths.add(hit[1]);
+      paths.add(hit[2]);
+    }
+  }
+  return [...paths];
+}
+
+/**
+ * Which of a patch's paths fall outside every scope entry. A scope entry
+ * matches its exact file or its whole subtree; anything else strays.
+ */
+export function outOfScope(paths: string[], scope: string[]): string[] {
+  return paths.filter(
+    (p) => !scope.some((s) => p === s || p.startsWith(`${s}/`)),
+  );
+}
+
+/**
  * The standing instructions a plan job carries (Job.brief, D-074's seam):
  * the task, the contract, and the rules a draft is refused on — said before
  * the run rather than discovered at the stamp (D-193's lesson).
  */
-export function planBrief(args: { asked: string; sends?: boolean }): string {
+export function planBrief(args: { asked: string; sends?: boolean; repo?: boolean }): string {
   return [
     '## Plan a work party',
     `The request to split: "${args.asked}".`,
     `Propose 2 to ${MAX_HANDS} hands that can work IN PARALLEL, each blind to the others. A later gather job assembles their work into the one deliverable — hands must not depend on each other.`,
+    ...(args.repo
+      ? [
+          'This is repository work (TEAMWORK T4). Survey the clone in repo/ first, then partition BY PATHS: every hand gets a "scope" — repo-relative files or directory prefixes it alone may edit — and the scopes must be DISJOINT, because two hands editing one file is a merge conflict you are choosing on purpose. Each hand patch is checked against its scope in code. A hand may READ anywhere; it edits only inside its scope. Include test files in the scope of the hand whose code they test.',
+        ]
+      : []),
     `Write ${PARTY_FILE} at the sandbox root:`,
-    '  {"hands": [{"prompt": "...", "loadBearing": true, "why": "one line"}, ...], "notes": "one short note for the reviewer"}',
+    args.repo
+      ? '  {"hands": [{"prompt": "...", "scope": ["server/src/foo.ts", "server/src/foo.test.ts"], "loadBearing": true, "why": "one line"}, ...], "notes": "one short note for the reviewer"}'
+      : '  {"hands": [{"prompt": "...", "loadBearing": true, "why": "one line"}, ...], "notes": "one short note for the reviewer"}',
     '- Each prompt is a complete, self-contained sentence — it runs alone, with no sight of this request, so it must carry its own context.',
     '- Never mention sending in any hand prompt — not even to forbid it. Hands cannot send by construction, and the plan is refused whole if any prompt carries send-and-channel words (send, message, email, telegram, post), negated or not. The send, when the request has one, belongs to the gather and is not your concern.',
     ...(args.sends
@@ -318,6 +407,20 @@ export function planBrief(args: { asked: string; sends?: boolean }): string {
       : []),
     '- Mark a hand loadBearing only if the deliverable is worthless without it: a load-bearing hand failing halts the party instead of delivering around the hole.',
     'Nothing runs from this job: the proposal is reviewed, and approving it is what queues the hands. Write RESULT.md with one paragraph on how you cut it.',
+  ].join('\n');
+}
+
+/**
+ * The scope fence a repo hand carries (TEAMWORK T4, rides Job.brief): where
+ * it may edit, and that its patch's own paths are checked — said before the
+ * run, D-193's rule.
+ */
+export function handBrief(scope: string[]): string {
+  return [
+    '## Your scope',
+    `Edit only inside: ${scope.join(', ')}. You may read anywhere in the repo; you may edit nowhere else.`,
+    'Other hands are working other paths of this repository right now — a change outside your scope collides with theirs. If the work truly needs one, do not make it: name it in RESULT.md as needed-but-outside-scope, and the gather will see it.',
+    "Your patch's own paths are checked against this scope in code.",
   ].join('\n');
 }
 
@@ -341,12 +444,31 @@ export function gatherBrief(args: {
   }[];
   /** "telegram to 8633678680" lines, from the party's own desk answers. */
   sendLines?: string[];
+  /**
+   * A repo party's merge half (TEAMWORK T4): the hand patches waiting in
+   * input/, in hand order, each with the scope strays the server computed
+   * from the patch's own paths.
+   */
+  repo?: { patches: { hand: number; name: string; strayed: string[] }[] };
 }): string {
   const of = args.hands.length;
   return [
     '## The gather',
     `${of} hands worked this request in parallel; you assemble their work into the one deliverable.`,
     `The request was: "${args.asked}".`,
+    ...(args.repo
+      ? [
+          `This is repository work: the deliverable is the repo in repo/ carrying every hand's changes, merged by you. The hand patches wait in input/, and you apply them IN HAND ORDER: ${args.repo.patches.map((p) => `input/${p.name}`).join(', then ')}.`,
+          'Apply each from inside repo/ with `git apply ../input/<name>` — plain apply, NEVER --3way. If a patch refuses, reconcile it BY HAND: read the patch as material and make its change yourself, adapted to what the earlier patches did. Never skip a refusal silently — say in RESULT.md what refused and how you reconciled it.',
+          ...args.repo.patches
+            .filter((p) => p.strayed.length > 0)
+            .map(
+              (p) =>
+                `Hand ${p.hand}'s patch strays outside its declared scope: ${p.strayed.join(', ')}. Apply its in-scope changes; judge the strays on their merits and say in RESULT.md what you did with each.`,
+            ),
+          'When every patch is in, prove the result: run the checks this repository has (typecheck, tests) and report what passed and what did not. The final state of repo/ is the deliverable — its diff is captured automatically and Approve is what applies it to the real repository.',
+        ]
+      : []),
     ...args.hands.flatMap((h) => {
       if (h.failed) {
         return [

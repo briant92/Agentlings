@@ -352,6 +352,9 @@ export function ReviewModal({
                   <li key={i}>
                     {hand.prompt}
                     {hand.loadBearing ? ' — load-bearing: the party halts without it' : ''}
+                    {hand.scope?.length ? (
+                      <span className="rv-withheld-n"> · owns {hand.scope.join(', ')}</span>
+                    ) : null}
                     {hand.why ? <span className="rv-withheld-n"> · {hand.why}</span> : null}
                   </li>
                 ))}

@@ -815,6 +815,14 @@ export interface Job {
     plan?: boolean;
     /** Hands the gather halts without, by number (from the reviewed plan). */
     loadBearing?: number[];
+    /**
+     * A repository party (TEAMWORK T4, D-197): hands clone and patch
+     * disjoint scopes; the gather merges the patches on a fresh clone and
+     * its single DIFF.patch is what Approve applies.
+     */
+    repo?: boolean;
+    /** The paths THIS hand may edit, from the reviewed plan (repo parties). */
+    scope?: string[];
     /** The original request, quoted into the gather's brief. */
     asked?: string;
     /** A trailing send clause the hands were cut from; the gather's to do. */
@@ -967,7 +975,7 @@ export interface Job {
    * promoting this job is what queues the hands.
    */
   partyDraft?: {
-    hands: { prompt: string; loadBearing?: boolean; why?: string }[];
+    hands: { prompt: string; scope?: string[]; loadBearing?: boolean; why?: string }[];
     notes?: string;
   };
   /** PARTY.json existed and was not a valid plan — the reason, never a silent drop. */

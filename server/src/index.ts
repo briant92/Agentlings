@@ -60,9 +60,12 @@ import {
   PLAN_SENTENCE,
   type PartyPlan,
   gatherBrief,
+  handBrief,
   handFileName,
   handReportName,
   newPartyId,
+  outOfScope,
+  patchPaths,
   planBrief,
   planParty,
 } from './party';
@@ -1779,6 +1782,10 @@ function queueParty(
     loadBearing?: number[];
     /** Carry the plan job's party id forward, so the trace is one thread. */
     partyId?: string;
+    /** A repository party (T4): hands clone and patch their own scopes. */
+    repo?: boolean;
+    /** Per-hand scopes from the reviewed plan, aligned with plan.hands. */
+    scopes?: (string[] | undefined)[];
   },
 ): Job[] {
   const id = opts.partyId ?? newPartyId();
@@ -1805,19 +1812,24 @@ function queueParty(
     ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
     ...(wantsCheck(text) ? { checked: true } : {}),
     ...(opts.loadBearing?.length ? { loadBearing: opts.loadBearing } : {}),
+    ...(opts.repo ? { repo: true } : {}),
   };
-  return plan.hands.map((piece, i) =>
-    queueSentence(rt, piece, {
+  return plan.hands.map((piece, i) => {
+    const scope = opts.scopes?.[i];
+    return queueSentence(rt, piece, {
       noSplit: true,
-      noRepo: true,
+      // A repo party's hands clone as any repo job does (T4); everything
+      // else stays the sandbox-only shape T2 built.
+      ...(opts.repo ? {} : { noRepo: true }),
       tools: opts.tools,
       channelsOverride: [],
       ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
       ...(withholding ? { withholding: true } : {}),
-      party: { ...spec, hand: i + 1 },
+      ...(scope ? { brief: handBrief(scope) } : {}),
+      party: { ...spec, hand: i + 1, ...(scope ? { scope } : {}) },
       note: `hand ${i + 1} of ${of} — a party on "${plan.asked.words}"`,
-    }),
-  );
+    });
+  });
 }
 
 /**
@@ -1847,9 +1859,13 @@ function queuePartyPlan(
     ),
     opts.channel,
   ).carried;
+  // On a repo level the planner gets its own clone to survey (TEAMWORK
+  // T4): partitioning by paths needs sight of the paths. Elsewhere the
+  // plan stays sandbox-only as T3 built it.
+  const repo = Boolean(rt.meta.repoPath);
   return queueSentence(rt, PLAN_SENTENCE, {
     noSplit: true,
-    noRepo: true,
+    ...(repo ? {} : { noRepo: true }),
     ...(registry.get('architect') ? { role: 'architect' } : {}),
     ...(opts.tools?.length ? { tools: opts.tools } : {}),
     ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
@@ -1865,7 +1881,7 @@ function queuePartyPlan(
       ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
       ...(wantsCheck(text) ? { checked: true } : {}),
     },
-    brief: planBrief({ asked: text, sends: carried.length > 0 }),
+    brief: planBrief({ asked: text, sends: carried.length > 0, repo }),
     note: 'planning a party — the split is reviewed before any hand runs',
   });
 }
@@ -1965,6 +1981,35 @@ function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
     }
     handBriefs.push({ hand: n, piece: hand.prompt, hadReport, files, leftBehind: behind });
   }
+  // A repo party's hands deliver patches (TEAMWORK T4): forward each one
+  // renamed beside the reports, with the scope strays the patch's own paths
+  // prove — computed here, in code, because that check is the trial's
+  // pre-registered artefact and a run's account of itself is not.
+  const patches: { hand: number; name: string; strayed: string[] }[] = [];
+  if (p.repo) {
+    for (const hand of ordered) {
+      if (hand.status !== 'done' && hand.status !== 'partial') continue;
+      const n = hand.party?.hand ?? 0;
+      const file = patchFile(rt.queue.sandboxDir(hand.id));
+      if (!existsSync(file)) continue;
+      const data = readFileSync(file);
+      if (data.length > MAX_ATTACHMENT_BYTES) continue;
+      const name = `hand-${n}.patch`;
+      attachments.push({ name, data });
+      const strayed = hand.party?.scope?.length
+        ? outOfScope(patchPaths(data.toString('utf8')), hand.party.scope)
+        : [];
+      if (strayed.length > 0) {
+        rt.eventLog.emit({
+          type: 'progress',
+          jobId: hand.id,
+          title: hand.title,
+          detail: `hand ${n}'s patch strays outside its scope: ${strayed.join(', ')} — named in the gather's brief`,
+        });
+      }
+      patches.push({ hand: n, name, strayed });
+    }
+  }
   const asked = p.asked ?? job.prompt;
   // The gather runs as the role the whole request matches — the same answer
   // the desk would have shown for the sentence run solo.
@@ -1978,19 +2023,22 @@ function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
   try {
     queueSentence(rt, GATHER_SENTENCE, {
       noSplit: true,
-      noRepo: true,
+      // A repo party's gather merges on a fresh clone of its own (T4);
+      // every other gather stays sandbox-only.
+      ...(p.repo ? {} : { noRepo: true }),
       ...(matched.role && registry.get(matched.role) ? { role: matched.role } : {}),
       ...(job.tools?.length ? { tools: job.tools } : {}),
       attachments,
       channelsOverride: p.channels ?? [],
       ...(job.withholding ? { withholding: true } : {}),
       ...(p.checked ? { checked: true } : {}),
-      party: { id: p.id, hand: 0, of: p.of, gather: true, asked },
+      party: { id: p.id, hand: 0, of: p.of, gather: true, asked, ...(p.repo ? { repo: true } : {}) },
       brief: gatherBrief({
         asked,
         ...(p.sendTail ? { sendTail: p.sendTail } : {}),
         hands: handBriefs,
         ...(sendLines.length ? { sendLines } : {}),
+        ...(p.repo ? { repo: { patches } } : {}),
       }),
       note: `the gather — assembling ${delivered.length} of ${p.of} hands`,
     });
@@ -2788,6 +2836,11 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
           .filter((e) => e.isFile())
           .map((e) => ({ name: e.name, data: readFileSync(path.join(inputDir, e.name)) }))
       : [];
+    // A fully scoped plan on a repo level is a repo party (TEAMWORK T4):
+    // hands clone and patch their own paths, the gather merges. The draft
+    // validator already holds the all-or-none line, so a half-scoped plan
+    // cannot reach here.
+    const repoParty = Boolean(rt.meta.repoPath) && draft.hands.every((h) => h.scope?.length);
     queueParty(
       rt,
       spec.asked ?? pending.prompt,
@@ -2801,6 +2854,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         ...(spec.answers ? { answers: spec.answers } : {}),
         ...(loadBearing.length ? { loadBearing } : {}),
         ...(carried.length ? { attachments: carried } : {}),
+        ...(repoParty ? { repo: true, scopes: draft.hands.map((h) => h.scope) } : {}),
         partyId: spec.id,
       },
     );

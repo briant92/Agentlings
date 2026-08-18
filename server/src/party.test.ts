@@ -9,9 +9,12 @@ import {
   PARTY_FILE,
   PLAN_SENTENCE,
   gatherBrief,
+  handBrief,
   handFileName,
   handReportName,
+  outOfScope,
   partyAsk,
+  patchPaths,
   planBrief,
   planParty,
   readPartyDraft,
@@ -258,5 +261,123 @@ describe('planBrief', () => {
 
   it('the fixed plan sentence never claims a party itself', () => {
     expect(partyAsk(PLAN_SENTENCE)).toBeNull();
+  });
+});
+
+describe('patchPaths and outOfScope — the trial in-scope artefact (T4)', () => {
+  const patch = [
+    'diff --git a/server/src/foo.ts b/server/src/foo.ts',
+    'index 111..222 100644',
+    '--- a/server/src/foo.ts',
+    '+++ b/server/src/foo.ts',
+    '@@ -1 +1 @@',
+    '-old',
+    '+new',
+    'diff --git a/server/src/old-name.ts b/server/src/new-name.ts',
+    'diff --git a/web/src/App.tsx b/web/src/App.tsx',
+  ].join('\n');
+
+  it('reads every touched path off the diff headers, both sides of a rename', () => {
+    expect(patchPaths(patch).sort()).toEqual([
+      'server/src/foo.ts',
+      'server/src/new-name.ts',
+      'server/src/old-name.ts',
+      'web/src/App.tsx',
+    ]);
+  });
+
+  it('scope matches its exact file and its subtree, nothing else', () => {
+    const paths = patchPaths(patch);
+    expect(outOfScope(paths, ['server/src']).sort()).toEqual(['web/src/App.tsx']);
+    expect(outOfScope(paths, ['server/src/foo.ts'])).toContain('web/src/App.tsx');
+    expect(outOfScope(paths, ['server/src/foo.ts'])).toContain('server/src/old-name.ts');
+    expect(outOfScope(paths, ['server', 'web'])).toEqual([]);
+    // A prefix is a path boundary, not a string one: server-src is not server.
+    expect(outOfScope(['server-src/x.ts'], ['server'])).toEqual(['server-src/x.ts']);
+  });
+});
+
+describe('readPartyDraft — scopes (T4)', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'party-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+  const write = (value: unknown) => writeFileSync(path.join(dir, PARTY_FILE), JSON.stringify(value));
+
+  it('reads scoped hands whole, normalising slashes and trailing separators', () => {
+    write({
+      hands: [
+        { prompt: 'refactor the queue module', scope: ['server\\src\\queue.ts', './server/src/queue.test.ts'] },
+        { prompt: 'refactor the sim module', scope: ['server/src/sim.ts/'] },
+      ],
+    });
+    const read = readPartyDraft(dir);
+    expect(read && 'draft' in read ? read.draft.hands.map((h) => h.scope) : read).toEqual([
+      ['server/src/queue.ts', 'server/src/queue.test.ts'],
+      ['server/src/sim.ts'],
+    ]);
+  });
+
+  it.each([
+    [
+      'an absolute scope',
+      [{ prompt: 'refactor the queue', scope: ['C:/Users/x'] }, { prompt: 'refactor the sim', scope: ['server'] }],
+      'absolute',
+    ],
+    [
+      'a climbing scope',
+      [{ prompt: 'refactor the queue', scope: ['../outside'] }, { prompt: 'refactor the sim', scope: ['server'] }],
+      'climbs out',
+    ],
+    [
+      'a half-scoped party',
+      [{ prompt: 'refactor the queue', scope: ['server/src/queue.ts'] }, { prompt: 'refactor the sim' }],
+      'all-in',
+    ],
+  ])('%s is refused by name', (_, hands, reason) => {
+    write({ hands });
+    const read = readPartyDraft(dir);
+    expect(read && 'error' in read ? read.error : read).toContain(reason);
+  });
+});
+
+describe('the repo briefs (T4)', () => {
+  it('planBrief tells a repo planner to partition by disjoint paths', () => {
+    const brief = planBrief({ asked: 'refactor the modules as a team of three', repo: true });
+    expect(brief).toContain('partition BY PATHS');
+    expect(brief).toContain('DISJOINT');
+    expect(brief).toContain('"scope"');
+  });
+
+  it('handBrief fences the edits and names the check', () => {
+    const brief = handBrief(['server/src/queue.ts', 'server/src/queue.test.ts']);
+    expect(brief).toContain('Edit only inside: server/src/queue.ts, server/src/queue.test.ts');
+    expect(brief).toContain('read anywhere');
+    expect(brief).toContain('needed-but-outside-scope');
+    expect(brief).toContain('checked against this scope in code');
+  });
+
+  it('gatherBrief carries the apply order, the never---3way rule, and the strays', () => {
+    const brief = gatherBrief({
+      asked: 'refactor the modules as a team of two',
+      hands: [
+        { hand: 1, piece: 'refactor the queue', hadReport: true, files: [], leftBehind: [] },
+        { hand: 2, piece: 'refactor the sim', hadReport: true, files: [], leftBehind: [] },
+      ],
+      repo: {
+        patches: [
+          { hand: 1, name: 'hand-1.patch', strayed: [] },
+          { hand: 2, name: 'hand-2.patch', strayed: ['server/src/queue.ts'] },
+        ],
+      },
+    });
+    expect(brief).toContain('input/hand-1.patch, then input/hand-2.patch');
+    expect(brief).toContain('NEVER --3way');
+    expect(brief).toContain("Hand 2's patch strays outside its declared scope: server/src/queue.ts");
+    expect(brief).toContain('run the checks');
+    expect(brief).toContain('Approve is what applies it');
   });
 });

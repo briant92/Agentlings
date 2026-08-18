@@ -13703,3 +13703,59 @@ board: cancel does not cascade (a cancelled hand is a failed hand and
 the gather proceeds with its piece named — no party-wide kill switch
 exists to misfire), and multi-channel party sends ride `settledChannels`
 rather than parking.
+
+**Amendment (2026-08-18, night) — the live gate ran both arms, and the
+honest verdict is depth, not speed.** The question was real (the boutique
+hotel research that died in D-192's typo cascade), split three ways, run
+as a party and then solo on the same sentence (`single: true`), same $2
+quotes, same level, same crew.
+
+**The machinery is behaviour now.** All three hands ran at once from the
+first tick — the world's first three-agentlings-on-one-request — on three
+distinct prompts under three members; the moment the last hand delivered,
+all three self-filed and the gather queued in the same tick; the gather
+read all eight input files and delivered one 26.8KB report. One review
+card, as designed. No wall deaths on either arm.
+
+**The gathered brief survived its spot-check, and then some.** Every
+figure attributed to the hand that found it; disagreements preserved
+rather than resolved (hand 1's "~$95B, range $70–120B" beside hand 2's
+"do not quote a single number"); and §2 is the thing a solo run is
+unlikely to produce: hands 1 and 3 independently reported the same −10.1%
+US independent-supply contraction while hand 2, blind to that figure,
+independently documented the acquisition wave that *causes* it — two
+derivations locking together, neither hand looking for the other. All
+three hands hit the same definitional wall independently ("boutique" is
+not one market; the answer moves 7× on the definition), which the gather
+correctly called the most robust finding.
+
+**The numbers, party vs solo:**
+
+| | party (3 hands + gather) | solo |
+|---|---|---|
+| wall clock | 9.4 min (561s) | 6.0 min (361s) |
+| spent | $4.60 | $2.96 |
+| charged | $4.60 (every leg inside its own quote) | $2.00 (quote cap; $0.96 absorbed) |
+| turns | 86 (29+22+24+11) | 6 |
+| wall deaths | 0 | 0 |
+| deliverable | 26.8KB, per-hand attribution, independent triangulation, disagreements stated | RESULT.md + three strand notes, one perspective |
+
+**The speed claim did not hold on this pair, and the reason matters:**
+the solo run drew 40 funded turns, used 6 heavy ones (49c/turn — sixteen
+times the 3c class rate the funding model assumes; research turns are
+fat), and finished healthy in 6 minutes. A party beats a solo run on wall
+clock only against *sequential* hands (the same three runs one after
+another ≈ 15.8 min) or when the solo run dies at its wall — which is what
+the original boutique-hotel attempts did, three times, and today's did
+not. What the party bought instead was **depth**: 86 turns of genuinely
+independent research, cross-verification the gather could point at, and
+2.3× the charged cost. So the T2 pitch as measured: a party is the shape
+for work whose value scales with independent coverage — not a faster way
+to run one errand, and the desk's per-hand pricing means the buyer sees
+exactly that trade before Start. Both deliverables sit in
+training-ground's review for Brian's own side-by-side.
+
+Also recorded: the solo arm overran its quote 48% spent-vs-charged
+(D-067's residual shape — the class rate underprices research turns),
+while the party's four legs each stayed inside their own quotes — smaller
+scopes quote truer, which was constraint 15's prediction in TEAMWORK.md.

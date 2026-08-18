@@ -297,7 +297,7 @@ ones that must NOT claim ("post it to the team on Slack").
    (schedules repeat verbatim and multiply cost silently; a schedule that
    wants a party says so in its own sentence later).
 
-### T3 — The planned party *(bounded goal decomposition, through review)* — **built, D-196; the live gate (a real listless task, the split judged before any hand runs) waits on the next restart**
+### T3 — The planned party *(bounded goal decomposition, through review)* — **built and live-proven, D-196 + two amendments: the first press caught a contract trap (a defensively-forbidden send refused as a send — the brief now bans mentioning sends at all), and the whole-gate then ran clean: the split judged at review before any hand ran, Approve firing the hands with their load-bearing marks, and the reviewed plan's own consistency checks producing the briefing's doubly-sourced central claim**
 
 **Unlocks:** "take this hard job, split it between three workers sensibly"
 — the case Brian actually named, where nobody wrote the list. A plan job

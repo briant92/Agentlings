@@ -13857,3 +13857,36 @@ queues-nothing line — the refused plan awaits Brian's discard), and the
 whole-gate — a valid draft judged by Brian before any hand runs, then
 approved into a live party — waits on the next restart carrying the
 fixed brief, one planner press from done.
+
+**Second amendment (2026-08-18, night) — the whole-gate ran, and the
+reviewed plan's own checks produced the briefing's central claim.** The
+retry on the fixed brief validated first press: three hands cut by data
+domain, no send words anywhere, the whys honest (external/outlook marked
+not load-bearing "if this hand comes back thin"), 42c and 3 turns. Brian
+judged the split at the review card — the gate's centerpiece, a human
+disposing of a model's proposal before anything ran — and his Approve
+fired the resolve branch's first live run: three hands queued carrying
+the reviewed load-bearing marks, all three running concurrently within
+eight seconds, the gather queued in the same tick the last hand settled.
+
+**The planner's consistency checks became the deliverable's spine.** The
+plan told the gather to reconcile copper and the export figures across
+hands; the gather found hand 1's national-accounts export print (−2.1%
+y/y) and hand 3's balance-of-payments volume figure (−2.0%) — two
+different BCCh releases — agreeing within a tenth, and named the
+mechanism neither hand could see alone: export prices +21.7% over
+falling volumes, a record external surplus sitting on a contracting
+domestic economy. It corroborated Q2 GDP by two independent paths,
+the policy rate by two, and checked the central bank's 28 July guidance
+("se habría desacelerado más que lo previsto", quoted by hand 2) against
+the 18 August activity print hand 1 fetched — vindicated. And it led
+with the structural guardrail: no Q3 activity data exists yet at all, so
+everything knowable about "this quarter" is prices, FX and trade, with
+activity as Q2 inference. Disagreements stated, not resolved.
+
+**Costs:** plan 42c + hands $1.08/$1.55/$1.52 (18/35/32 turns, every one
+inside its own quote) + gather 93c — ~$5.50 for the planned party whole,
+plus the refused first plan's 48c as the trap's tuition. The load-bearing
+halt path remains live-unexercised (both marked hands delivered), standing
+on its unit tests. T3 is live-proven end to end: the model proposes, the
+person disposes, and the hands run only after.

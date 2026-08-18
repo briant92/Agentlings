@@ -1760,8 +1760,14 @@ list per channel (D-077; SPEC M5.11 has the slices):
       proposal; **approving is what queues the hands** as an ordinary
       party carrying the plan's stored spec, and a load-bearing hand
       failing halts before the gather. M6's goal-decomposition trust
-      question, answered by the promote grammar. *Wiring tested and
-      mutation-proven; the live gate waits on the next restart.*
+      question, answered by the promote grammar. *Live-proven 2026-08-18
+      (D-196 amendments): the first press exposed a contract trap — the
+      planner defensively forbade sending and the detector read it as a
+      send; the brief now bans mentioning sends at all. The retry
+      validated first press, the split was judged at review before any
+      hand ran, and the reviewed plan's own consistency checks produced
+      the briefing's doubly-sourced central claim. The load-bearing halt
+      path stands on its unit tests.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

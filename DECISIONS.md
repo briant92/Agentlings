@@ -13404,3 +13404,28 @@ calendar stay on the conservative fallback until their own shapes are
 measured; and a job's channel stays frozen at the desk (D-079) — the fix
 for wanting a different channel is a new sentence, which is what worked
 the night this happened.
+
+**Amendment (2026-08-18, same day) — the channel line was a claim, and
+now it is a rule.** Brian asked for a recap of the failsafes, and
+auditing this entry's own brief line against the code found it false:
+"naming any other channel is refused after the run has ended" — nothing
+refused it. No seam compared an outbox's channel to the channels the
+desk settled, so a run pivoting a telegram job to gmail would have
+sailed to Approve and sent through a channel whose recipients, legend
+and standing-approval signature the desk never asked for. The trio's
+leg 3 only looked channel-refused because the length cap got it first.
+A brief that promises a check nobody performs is the mirror of D-181's
+trap — a check nobody is told about — and both are lies at a seam.
+
+Enforced at `stampOutbox` (`da0cfaf`), the one seam every outbox enters
+a job through: an outbox channel outside `Job.channels` refuses with
+the fix in the reason ("queued for telegram, and a different channel
+needs its own sentence"). Fewer channels than queued still passes —
+a left-out send is D-180's territory — and a job queued with no
+channels keeps its old behaviour, deliberately: that boundary belongs
+to D-093, not this rule. The no-send guard also gained D-093's own
+recovery phrasing: it now ends with the next move ("To send, reply on
+the job's card: 'Send it to … on Telegram'") rather than leaving a
+non-expert holding only the wrong button. 1,725 server + 200 web
+green; two mutations, two kills — the match check hollowed out died on
+the new queue pin, the fix sentence dropped died on the guard's test.

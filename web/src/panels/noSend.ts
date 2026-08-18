@@ -1,3 +1,5 @@
+import { CHANNEL_LABELS } from './ChannelLogo';
+
 /**
  * The guard the mention-guards were missing (D-193): a job that carried a
  * real send channel and reaches review with no outbox to send.
@@ -21,7 +23,11 @@ export function noSendLine(job: {
 }): string | null {
   if (!job.channels?.length) return null; // D-093's guard owns the channel-less case
   if (job.outbox?.length) return null; // a real outbox renders its own cards
+  // The next move, in D-093's own phrasing — a guard that names the problem
+  // without the recovery leaves a non-expert with only the wrong button.
+  const label = CHANNEL_LABELS[job.channels[0]] ?? job.channels[0];
+  const fix = ` To send, reply on the job's card: "Send it to … on ${label}".`;
   return job.outboxError
-    ? `This job was meant to send and cannot — approving keeps the files and sends nothing. The outbox was refused: ${job.outboxError}`
-    : 'This job carried a send channel but the run wrote no outbox — approving keeps the files and sends nothing.';
+    ? `This job was meant to send and cannot — approving keeps the files and sends nothing. The outbox was refused: ${job.outboxError}${fix}`
+    : `This job carried a send channel but the run wrote no outbox — approving keeps the files and sends nothing.${fix}`;
 }

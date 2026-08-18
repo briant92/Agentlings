@@ -527,8 +527,29 @@ export class JobQueue {
     if (job.compile) return;
     const read = readOutbox(this.sandboxDir(job.id));
     if (!read) return;
-    if (read.error) job.outboxError = `OUTBOX.json: ${read.error}`;
-    else job.outbox = read.outboxes;
+    if (read.error) {
+      job.outboxError = `OUTBOX.json: ${read.error}`;
+      return;
+    }
+    // The brief's channel line, enforced (D-193 amendment): the brief had
+    // promised "naming any other channel is refused" while nothing refused
+    // it — a run pivoting a telegram job to gmail would have sailed to
+    // Approve with none of the desk's contracts (recipients, legend,
+    // standing-approval signature) ever asked for that channel. Fewer
+    // channels than queued is fine (D-180: a missing recipient leaves that
+    // channel out, said in RESULT.md); a channel the desk never settled is
+    // not. A job that queued with no channels keeps its old behaviour —
+    // that boundary is D-093's territory, not this rule's.
+    const wrong = job.channels?.length
+      ? read.outboxes!.find((o) => !job.channels!.includes(o.channel))
+      : undefined;
+    if (wrong) {
+      job.outboxError =
+        `OUTBOX.json: channel "${wrong.channel}" is not this job's — it was queued for ` +
+        `${job.channels!.join(' and ')}, and a different channel needs its own sentence`;
+      return;
+    }
+    job.outbox = read.outboxes;
   }
 
   /**

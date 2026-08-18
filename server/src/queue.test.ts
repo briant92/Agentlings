@@ -196,6 +196,44 @@ describe('JobQueue', () => {
     expect(existsSync(path.join(dir, 'PACK.json'))).toBe(true);
   });
 
+  /**
+   * The brief's channel line, enforced (D-193 amendment): the brief promised
+   * a pivoted channel would be refused while nothing refused it. The run that
+   * pivoted a telegram job to gmail composed for a channel the desk never
+   * asked recipients for — refused at the stamp, with the fix in the reason.
+   */
+  it('refuses an outbox on a channel the desk never settled', () => {
+    const job = queue.add({ title: 'Send', prompt: 'telegram Brian', channels: ['telegram'] });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify({ channel: 'gmail', messages: [{ to: 'a@b.c', body: 'hola' }] }),
+    );
+    queue.complete(job.id, 'pivoted');
+    const done = queue.get(job.id)!;
+    expect(done.outbox).toBeUndefined();
+    expect(done.outboxError).toContain('"gmail" is not this job\'s');
+    expect(done.outboxError).toContain('queued for telegram');
+  });
+
+  it('still takes fewer channels than were queued — a left-out send is D-180 territory', () => {
+    const job = queue.add({
+      title: 'Both',
+      prompt: 'telegram Pepo and email Ana',
+      channels: ['telegram', 'gmail'],
+    });
+    queue.assign(job.id, 'a1');
+    const dir = queue.start(job.id);
+    writeFileSync(
+      path.join(dir, OUTBOX_FILE),
+      JSON.stringify({ channel: 'telegram', messages: [{ to: '12345', body: 'hola' }] }),
+    );
+    queue.complete(job.id, 'one of two');
+    expect(queue.get(job.id)!.outbox?.[0]?.channel).toBe('telegram');
+    expect(queue.get(job.id)!.outboxError).toBeUndefined();
+  });
+
   it('stamps a valid OUTBOX.json onto the job when it finishes', () => {
     const job = queue.add({ title: 'Remind', prompt: 'remind them' });
     queue.assign(job.id, 'a1');

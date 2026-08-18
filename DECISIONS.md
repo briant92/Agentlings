@@ -13951,3 +13951,62 @@ picked at trial time against this repository, promoted **never** — trial
 work is measured and discarded. The trial runs pair by pair after the
 next restart, with Brian judging each plan at review exactly as T3
 demands; until it reports, this entry claims wiring, not behaviour.
+
+**Amendment (2026-08-18, night) — trial pair one: the machinery flawless,
+the economics a decisive miss, and three instrument findings.**
+
+The task: "Strengthen the server's test coverage where it is thinnest —
+as a team of three", both arms in hq against this repository. The party's
+plan deserves its own line: the architect **measured** test-to-source
+ratios in its clone rather than guessing, fenced three disjoint file
+lists with their test files, referenced the house temp-dir pattern by
+name, told the matcher hand not to tune weights to make tests pass, and
+disclosed its one exclusion (index.ts, thinnest by mass, unsplittable
+between blind hands). Brian judged and approved it.
+
+**Pair one's numbers:**
+
+| | solo | party (plan + 3 hands + gather) |
+|---|---|---|
+| wall-clock | 385s | 747s — **+94%, bar wanted −30%** |
+| spend | $1.70 | $5.44 — **3.2×, bar caps 1.8×** |
+| wall-deaths | 0 | 0 (the gather's 41-of-40 is the SDK over-report; outOfTurns false) |
+| scope strays | — | **zero across all three hands**, recomputed from the patches |
+| merge | — | all three patches applied clean in hand order, no refusal |
+| checks | green | typecheck all workspaces + 1,929 tests green |
+| output | 3 files, +409 | 4 files, +865; the touched files' tests 60 → 141 |
+
+The mechanics passed everything the bar asks per-pair: clean merge,
+checks green, fences held. The economics missed both aggregate clauses
+decisively — twice the clock and three times the price for about twice
+the test output. Depth, not speed, a third time. The trial continues to
+pairs two and three as pre-registered, with the honest note that the
+aggregate wall-clock clause is now arithmetically remote unless a later
+solo arm dies at a wall the party dodges — which is the population the
+bar's second clause was written for.
+
+**Three instrument findings, each worth more than the numbers:**
+
+1. **The trial flushed a desk-wide latent bug.** The party's approve
+   500'd: `INTENT['constructor']` on the matcher's object-literal concept
+   map is the inherited Function — truthy — and iterating it threw, so
+   any sentence naming a constructor (or toString, valueOf) has 500'd
+   the desk since the maps were born. Own-key lookups now; pinned by
+   test; fixed at `8f584aa`; replay run clean, scoring provably
+   unchanged for every real key. Only a real planner writing real
+   TypeScript prompts could have found it.
+2. **"Promotes never" needs a card, not a clause.** The solo arm was
+   promoted by an ordinary review click — its card carried nothing
+   saying it was trial-discard, so the protocol lived in the record
+   while the reviewer saw finished work. Its patch applied to the real
+   repository. The tests are green and kept (ripping out real coverage
+   to honour a procedural line buys nothing), and the gather's rival
+   patch on card c0cf3b9d must be **discarded** — it rewrites the same
+   files. The next pair's cards should say what they are.
+3. **`git add -A` swept a foreign patch into my commit.** The solo's
+   409 lines landed in the working tree between my fix and my commit,
+   and `8f584aa`'s message claims a 9-line matcher fix while carrying
+   431 lines — roughly 409 of them the solo arm's ocr/pickFolder/match
+   tests, plus my fix and pin. The commit is local and stands; this
+   sentence is the correction of record, and the lesson is D-163's in
+   miniature: stage by name in a tree other actors write to.

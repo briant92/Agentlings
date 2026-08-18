@@ -201,6 +201,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-189 — 2026-08-15 — G8 measured: a cloned repository can tell a session what to do](#d-189--2026-08-15--g8-measured-a-cloned-repository-can-tell-a-session-what-to-do)
 - [D-190 — 2026-08-17 — Ponytail measured: the ladder compresses sprawl, the body tax eats the saving](#d-190--2026-08-17--ponytail-measured-the-ladder-compresses-sprawl-the-body-tax-eats-the-saving)
 - [D-191 — 2026-08-17 — Mail-read: the second reading sibling, consent walked last](#d-191--2026-08-17--mail-read-the-second-reading-sibling-consent-walked-last)
+- [D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes](#d-192--2026-08-18--the-morning-review-a-false-brief-a-typo-cascade-and-three-fixes)
 
 ## By theme
 
@@ -321,6 +322,16 @@ entry updates one file rather than two.
   apply". The path rule held throughout; it is only the belief question that is
   open. Sits downstream of D-168, which measured that the allowlist bounds the
   offer rather than the reach
+- **The horde reviewed on its own record** — D-192: the first whole-week
+  operational review, run against the live ledger, the job store, the feed
+  and the running desks. What it found: 42% of the week's spend died at
+  turn walls, a two-typo research sentence fell below the matcher's line to
+  the generalist's ten-minute wall and timed out three times, session
+  deaths meter as $0 so the ledger undercounts, and the mail desk's first
+  brief was false with no trace to diagnose it by. Three fixes built the
+  same morning — the door-call trail, continue-leg labels on the feed, the
+  no-match nudge on the desk card — and the wall, quote and withholding
+  findings left recorded, not decided
 - **Third-party instruction, adopted only on our own numbers** — D-190: the
   first outside skill run through a pre-registered paired trial — ponytail's
   ladder halved the one genuinely sprawling diff and its body cost ~14% a
@@ -13238,3 +13249,87 @@ heard a phantom second channel. Never hand-queue it; the first firing is
 Tue 18 Aug. The running server routes the sentence to the clerk at 0.55
 on its pre-edit registry, so tomorrow works without a restart; the next
 restart picks up the pinned vocabulary (0.77, `mail` matched).
+
+**Amendment (2026-08-18) — the desk's first firing produced a false
+brief.** `b3bde121` fired on time (08:10:00, job `71bba19f`, Tam, 17.7c)
+and the brief said "No new messages arrived today" — while the same door
+with the run's own stated query answered **sixteen messages** minutes
+later. The run claimed the search ran; nothing recorded what the tool
+really answered, so the cause is unknowable after the fact (the trail
+that would have said is D-192's first fix). Two things held: the desk was
+**reviewed**, so the false brief could not reach the phone as truth
+without an Approve — the reviewed-until-earned design caught it on its
+first opportunity — and the running server still predated the clerk's
+mail vocabulary, including the "never invent a message" line, which the
+next restart loads. Brian was told to discard, not approve.
+
+## D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes
+
+Brian asked for a review of recent activity — bottlenecks, UX, things to
+improve — and the review ran against the live system: 92 ledger rows over
+seven days, the whole hq job store, the server log, the feed and cards
+read in the running app, and both desks' morning firings watched live.
+What it found, in evidence order:
+
+- **The wall is where the money dies.** $27.56 of the week's $66.24 —
+  42% — went into 17 runs cut at the turn wall; `error_max_turns` is 22 of
+  the week's 30 job errors; the designer class hit the wall on 9 of 9
+  runs. Left recorded, not tuned — grants are D-025/D-188 territory and a
+  raise has lost that argument before.
+- **A two-typo research sentence cascaded into the week's worst evening.**
+  "Research thr boutiquen hotel industry… Produce a PDF sumarry" scores
+  0.30 no-match (the typo tokens dilute the normalisation — the matched
+  terms are identical either way), fell to the worker generalist and its
+  ten-minute wall, and timed out three times; with the typos fixed the
+  same sentence scores researcher 0.50, whose 25-minute wall exists for
+  exactly this shape. Four manual continues, ~2h wall-clock for ~30min of
+  compute.
+- **A session death meters as $0.** The three timeout legs lost their
+  meter with the process and the ledger recorded no cost — the week's
+  spend figure undercounts, and the productivity panel's "13 unmeasured"
+  is the honest tip of it. Recorded, not fixed.
+- **The desk's first mail brief was false and undiagnosable** (D-191's
+  amendment) — no transcript, no trace of what the door answered.
+- Smaller: quotes run at a median 2.2× real cost (26 of 90 session rows
+  under a third of quote — the app's own AGAINST QUOTE panel shows 18–47%);
+  the withholding detector misheard Spanish-English "Redact a plan"
+  (redactar = to draft) and attached a contract to a job with nothing to
+  remove, inert only because nothing sent; the select screen's badges do
+  not mean "needs your review"; failed feed lines carry no reason.
+
+**Three fixes were picked and built the same morning** (`e3cab2b`), the
+no-match one settled as a nudge rather than fuzzy matching — the probe
+showed typo damage is score dilution, not lost matches, so correction
+would not fix the motivating case, while re-scoring the matcher risks
+reshuffling all 163 replayed prompts for one sentence:
+
+1. **The door trail.** `doorlog.ts` — one clipped JSON line per
+   `/internal/*` call (door, tool, args, ok, first line of the answer)
+   appended to `.agentlings/doors.log`, wired through all seven doors. A
+   log must never take a door down: append failures swallow. The next
+   false brief is a one-grep diagnosis.
+2. **Continue legs say what they are.** The queued event for a carry-on
+   now carries `more turns — leg N of the same request` via
+   `Queue.continuationDetail` — the same detail line chain steps and
+   schedule firings already ride — so a three-leg evening stops rendering
+   as a dozen unrelated lines under one identical title.
+3. **The no-match fallback is loud.** `planLine.whoSuffix` on the desk
+   card: when the matcher declines, the card says no trade recognised the
+   words, names the generalist taking it, and says that naming the work
+   plainly routes a specialist. Extracted from the JSX because a component
+   condition is structurally unreachable to the web suite (D-177).
+
+Evidence: 1,721 server + 196 web green (ten new), typecheck clean; three
+mutations, three kills, each by its own test — the ok flag flipped, the
+leg arithmetic dropped, the nudge branch silenced. Two instrument notes
+from the review itself: a Monitor built mid-review reported the desk had
+not fired when it had — its grep could not cross a nested brace, and a
+negative from a fresh instrument is a claim about the instrument first —
+and a here-string commit message with embedded double quotes mangles
+git's arguments under PS 5.1 (the message's own quotes became pathspecs).
+
+Not decided here, deliberately: turn grants and the quote engine stay as
+they are (both have measured history that a one-review tune would
+disrespect), and the withholding detector's verb-only trigger is recorded
+as a finding for the next withholding session rather than patched in
+passing.

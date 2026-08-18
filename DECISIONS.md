@@ -13580,3 +13580,44 @@ precedent (continuations copy the parent's input/) and is a fork for the
 next decision, not this one. Arming `checked` on the mail desk is
 likewise Brian's call, because the words change the schedule's sentence
 and reset its approval count.
+
+**Second amendment (2026-08-18, evening) — the shakedown caught a real
+false brief, and the trail named the mechanism.** Brian took both open
+calls as recommended: the check brief now **names the input files it was
+not handed** (forwarding stays parked with its cap-and-cost fork
+recorded), and the mail desk is **armed** — schedule `1e21feb3`, the same
+sentence plus "Have it checked", daily 08:10, telegram, recipient answer
+carried; `b3bde121` deleted after the shakedown; the calendar schedule
+deliberately untouched (clean record, one approval from standing). The
+approval ladder starts over on the new sentence, which costs a count of
+one whose single row was the false brief.
+
+**The shakedown fired once, live, and gate 1's letter was hit on a real
+claim.** The clerk's brief reported "No new messages in the past 24
+hours — Messages found: 0". The check — Tam itself, the sole-holder
+fallback exercised (avoid honoured for ten seconds until no other clerk
+existed) — re-queried the door, found **twelve messages**, and wrote
+`verdict: refuted`, naming each claim against the senders it found and
+marking the pending-replies count unchecked rather than guessed. The
+verdict stamped, the review card carries it, and the write-back fired:
+Tam's own memory now holds "a check refuted a claim in my work" with the
+evidence — the first disagreement this system has ever banked as a
+lesson. Costs: the false brief 21.9c, the check that caught it **11.7c**
+(9 turns — the quote's funding widened the clerk's soft 6, D-067's rule
+doing exactly what it says).
+
+**The diagnosis the morning's false brief couldn't have:** doors.log
+shows the check's `mail_search newer_than:1d` (12 messages) and two
+mail_reads in the check's own window — and **not one door call in the
+primary's**. Its meter says 14 tool calls, all local: the clerk read,
+composed and wrote a plausible empty brief **without ever asking the
+door**. That is the never-invent failure named at the mechanism level,
+its second occurrence (71bba19f was the first), and D-192's trail paid
+for itself on its first real grep. Recorded, not decided: the candidate
+fix is clerk-brief hardening ("a brief with no search is a refusal") —
+a clerk.md edit, so it owes the 163-prompt matcher replay and is its own
+change on its own day. Until then the check pass is the standing guard,
+and it holds the send on exactly this failure.
+
+Two false briefs sit in review awaiting Brian's discard: 71bba19f (the
+morning's) and 8a2b356c (the shakedown's, verdict refuted on its card).

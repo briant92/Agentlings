@@ -1727,9 +1727,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
       the same doors and class rate apply, a different member preferred
       with a sole-holder fallback. CHECK.md's verdict rides the checked
       job's card, anything short of `confirmed` holds auto-send, and a
-      refuted claim lands in the checked member's own memory. *Wiring
-      tested and mutation-proven; the live seeded-false-claim gate and
-      the mail-desk arming wait on the next restart.*
+      refuted claim lands in the checked member's own memory. *Live-proven
+      2026-08-18 (D-194 amendment): the loop ran twice — queue-on-delivery,
+      different-member pickup, verdict stamped, check self-filed — with the
+      checker recomputing independently and marking invisible material
+      Unchecked by name. Zero false refutations on faithful work (n=2).
+      The refuted branch is mutation-proven and fail-closed (anything short
+      of confirmed holds auto-send); its live firing waits for a real false
+      claim. Recorded limit: the checker does not see the checked job's
+      input/.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

@@ -207,6 +207,7 @@ import { callRender } from './render';
 import { callBls } from './bls';
 import { callCalendar } from './calendar';
 import { callMail } from './mail';
+import { logDoor } from './doorlog';
 import { callSearch } from './search';
 import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
@@ -1824,7 +1825,12 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
   // Same stamp as a reply (D-139): a run already being carried on must not
   // offer to be carried on again — a second press would be a second charge.
   rt.queue.markContinued(previous.id, job.id);
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({
+    type: 'queued',
+    jobId: job.id,
+    title: job.title,
+    detail: rt.queue.continuationDetail(previous.id),
+  });
   return c.json(job, 201);
 });
 
@@ -3020,7 +3026,9 @@ app.post('/internal/fetch', async (c) => {
   if (!url) return c.json({ error: 'url is required' }, 400);
   const web = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web');
   if (!web) return c.json({ error: 'web access is not configured' }, 404);
-  return c.json(await fetchPage(url, { allow: web.allow, maxChars: web.maxChars }));
+  const result = await fetchPage(url, { allow: web.allow, maxChars: web.maxChars });
+  logDoor(SANDBOX_ROOT, 'web', 'fetch_page', { url }, result);
+  return c.json(result);
 });
 
 /**
@@ -3039,12 +3047,12 @@ app.post('/internal/github', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(
-    await callGithub(body.tool, body.args ?? {}, {
-      http,
-      token: process.env.GITHUB_TOKEN,
-    }),
-  );
+  const result = await callGithub(body.tool, body.args ?? {}, {
+    http,
+    token: process.env.GITHUB_TOKEN,
+  });
+  logDoor(SANDBOX_ROOT, 'github', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 /**
@@ -3060,9 +3068,12 @@ app.post('/internal/search', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(
-    await callSearch(body.tool, body.args ?? {}, { http, token: process.env.BRAVE_API_KEY }),
-  );
+  const result = await callSearch(body.tool, body.args ?? {}, {
+    http,
+    token: process.env.BRAVE_API_KEY,
+  });
+  logDoor(SANDBOX_ROOT, 'search', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 /**
@@ -3078,9 +3089,12 @@ app.post('/internal/bls', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(
-    await callBls(body.tool, body.args ?? {}, { http, token: process.env.BLS_REGISTRATION_KEY }),
-  );
+  const result = await callBls(body.tool, body.args ?? {}, {
+    http,
+    token: process.env.BLS_REGISTRATION_KEY,
+  });
+  logDoor(SANDBOX_ROOT, 'bls', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 /**
@@ -3098,7 +3112,9 @@ app.post('/internal/calendar', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(await callCalendar(body.tool, body.args ?? {}, { http, env: process.env }));
+  const result = await callCalendar(body.tool, body.args ?? {}, { http, env: process.env });
+  logDoor(SANDBOX_ROOT, 'calendar', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 /**
@@ -3115,7 +3131,9 @@ app.post('/internal/mail', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(await callMail(body.tool, body.args ?? {}, { http, env: process.env }));
+  const result = await callMail(body.tool, body.args ?? {}, { http, env: process.env });
+  logDoor(SANDBOX_ROOT, 'mail', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 app.post('/internal/render', async (c) => {
@@ -3126,7 +3144,9 @@ app.post('/internal/render', async (c) => {
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
   }
-  return c.json(await callRender(body.tool, body.args ?? {}));
+  const result = await callRender(body.tool, body.args ?? {});
+  logDoor(SANDBOX_ROOT, 'render', body.tool, body.args ?? {}, result);
+  return c.json(result);
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));

@@ -71,6 +71,19 @@ describe('JobQueue', () => {
     expect(queue.ancestry('missing')).toEqual([]);
   });
 
+  /**
+   * The feed says how a job came to exist for chain steps and schedule
+   * firings; a carry-on said nothing, so a three-leg evening read as a dozen
+   * unrelated lines under one identical title (D-192). The leg counts the
+   * chain so far plus the run being queued.
+   */
+  it('labels a carry-on with its leg in the chain', () => {
+    const first = queue.add({ title: 'a', prompt: 'research the hotel industry' });
+    expect(queue.continuationDetail(first.id)).toBe('more turns — leg 2 of the same request');
+    const second = queue.add({ title: 'a', prompt: 'research the hotel industry', continues: first.id });
+    expect(queue.continuationDetail(second.id)).toBe('more turns — leg 3 of the same request');
+  });
+
   it('answers a continuation chain with the sentence it began with', () => {
     const root = queue.add({ title: 'Send', prompt: 'send a telegram to brian' });
     const reply = queue.add({

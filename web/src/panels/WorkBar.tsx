@@ -21,6 +21,7 @@ import {
 } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
+import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 
 const DEBOUNCE_MS = 250;
@@ -603,9 +604,7 @@ export function WorkBar({
           {plan.agentling ? (
             <>
               <span className="work-who">{plan.agentling.name}</span> will take this
-              {plan.noOneHasRole && plan.role
-                ? ` — nobody here is a ${plan.role}, so it goes to your ${plan.agentling.role}`
-                : ''}
+              {whoSuffix(plan)}
               <span className="dim"> · saved as “{plan.title}”</span>
               <span className={plan.quote.ceilingUsd === 0 ? ' quote-free' : ' quote-cost'}>
                 {' · '}

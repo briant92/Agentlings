@@ -280,6 +280,16 @@ export class JobQueue {
     return chain;
   }
 
+  /**
+   * The queued-event line for a carry-on of `previousId` — said where chain
+   * steps and schedule firings already say how they came to exist. Without it
+   * a continued run renders as a brand-new job with an identical title, and a
+   * three-leg evening reads as twelve unrelated lines (D-192).
+   */
+  continuationDetail(previousId: string): string {
+    return `more turns — leg ${this.ancestry(previousId).length + 1} of the same request`;
+  }
+
   add(spec: NewJobSpec): Job {
     const job: Job = {
       id: randomUUID().slice(0, 8),

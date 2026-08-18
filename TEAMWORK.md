@@ -297,7 +297,7 @@ ones that must NOT claim ("post it to the team on Slack").
    (schedules repeat verbatim and multiply cost silently; a schedule that
    wants a party says so in its own sentence later).
 
-### T3 — The planned party *(bounded goal decomposition, through review)*
+### T3 — The planned party *(bounded goal decomposition, through review)* — **built, D-196; the live gate (a real listless task, the split judged before any hand runs) waits on the next restart**
 
 **Unlocks:** "take this hard job, split it between three workers sensibly"
 — the case Brian actually named, where nobody wrote the list. A plan job

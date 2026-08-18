@@ -446,6 +446,10 @@ tried, measured and rejected is in `DECISIONS.md`:
   sentence's own list runs the hands at once as channel-less sibling
   jobs; the last to settle queues the gather, which assembles their
   renamed reports into the one deliverable and carries the send → D-195
+- M5.26 the planned party (TEAMWORK T3): a party asked for with no list
+  gets a priced planner offer — a plan job proposes PARTY.json, the
+  review renders it, and approving is what queues the hands; a
+  load-bearing hand failing halts the party before the gather → D-196
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

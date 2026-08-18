@@ -1746,8 +1746,22 @@ list per channel (D-077; SPEC M5.11 has the slices):
       carries the request's send and check, and never auto-sends (its
       fixed prompt would pool standing approvals across parties). Bare
       "team" never claims; anything the grammar cannot honour parks at the
-      desk by name with run-solo one click away. *Wiring tested and
-      mutation-proven; the live party run waits on the next restart.*
+      desk by name with run-solo one click away. *Live-proven 2026-08-18
+      (D-195 amendment): three hands concurrent from the first tick,
+      same-tick gather, one review card, real triangulation in the
+      gathered brief — and the honest verdict is depth, not speed: a
+      healthy solo run was faster and cheaper, and the party bought 86
+      turns of independent coverage at 2.3× charged.*
+- [x] **The planned party** — a party asked for with no list gets a priced
+      planner offer (TEAMWORK T3, D-196): one architect-class plan job
+      proposes PARTY.json (2–3 self-contained hand sentences, load-bearing
+      marks, a why each), validated at the stamp seam and refused loud —
+      including any hand that reads as a send. The review card renders the
+      proposal; **approving is what queues the hands** as an ordinary
+      party carrying the plan's stored spec, and a load-bearing hand
+      failing halts before the gather. M6's goal-decomposition trust
+      question, answered by the promote grammar. *Wiring tested and
+      mutation-proven; the live gate waits on the next restart.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

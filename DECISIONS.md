@@ -205,6 +205,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-193 — 2026-08-18 — The cap was ours, not the channel's: three refusals, zero sends](#d-193--2026-08-18--the-cap-was-ours-not-the-channels-three-refusals-zero-sends)
 - [D-194 — 2026-08-18 — The check pass: a second agentling verifies a delivered job](#d-194--2026-08-18--the-check-pass-a-second-agentling-verifies-a-delivered-job)
 - [D-195 — 2026-08-18 — Work parties: hands in parallel, the gather when the last settles](#d-195--2026-08-18--work-parties-hands-in-parallel-the-gather-when-the-last-settles)
+- [D-196 — 2026-08-18 — The planned party: the model proposes, approving queues the hands](#d-196--2026-08-18--the-planned-party-the-model-proposes-approving-queues-the-hands)
 
 ## By theme
 
@@ -346,8 +347,13 @@ entry updates one file rather than two.
   sibling jobs, and the last to settle queues the gather with every hand's
   work renamed into its input/; the gather sends, never auto, because its
   fixed prompt would pool standing approvals across parties. Built the same
-  day T1's gates ran; the live party and the pre-registered solo-vs-party
-  comparison wait on the next restart
+  day T1's gates ran; the live gate then ran both arms and the honest
+  verdict is depth, not speed (amendment). And D-196, the third shape: a
+  party asked for with no list gets a priced planner offer — one
+  architect-class plan job proposes PARTY.json, the review card renders it,
+  and **approving is what queues the hands** — M6's goal-decomposition
+  trust question answered by the promote grammar, with load-bearing hands
+  halting the gather rather than delivering around a hole
 - **The crew checks the crew** — D-194: the first collaboration shape off
   the `TEAMWORK.md` board (T1, taken as recommended): "have it checked"
   queues a second agentling on the primary's delivery — fixed prompt,
@@ -13759,3 +13765,58 @@ Also recorded: the solo arm overran its quote 48% spent-vs-charged
 (D-067's residual shape — the class rate underprices research turns),
 while the party's four legs each stayed inside their own quotes — smaller
 scopes quote truer, which was constraint 15's prediction in TEAMWORK.md.
+
+## D-196 — 2026-08-18 — The planned party: the model proposes, approving queues the hands
+
+Brian green-lit TEAMWORK T3 hours after T2's live gate. This is the case
+he named on day one — "take this hard job and split it between three
+workers sensibly" — where nobody wrote the list, and it is M6's parked
+goal-decomposition trust question answered the way the organizer answered
+it (D-132): **the invention is reviewed before it runs.** Both sub-forks
+went as the board recommends: the plan is a separate reviewed job
+(Approve is the fan-out), and cross-class hands come free rather than by
+a switch — the planner writes *sentences*, and each hand routes by its
+own words through the matcher, the same authority T2 hands already have.
+
+**The shape:** a party asked for with no usable list already parks at the
+desk by name (D-195); that line now carries a **priced planner offer**.
+Pressing it queues one plan job — architect class when the level holds
+one, on a fixed sentence (the gather's and the check's precedent: every
+plan banks method under one recipe key, and no task words leak into
+detection), the task riding the brief and the party spec, the request's
+attachments in its input/. Its deliverable is `PARTY.json`: 2 to 3
+self-contained hand sentences, optional `loadBearing` marks with a one-
+line `why` each, one reviewer note. The stamp seam reads it off **plan
+jobs only** (a PARTY.json on any other job means nothing) and refuses the
+malformed loud — torn JSON, a missing or out-of-bounds hands list, a
+fragment, and **any hand that reads as a send**, because hands never send
+(T2's rule, enforced at the contract as well as the queue). The review
+card renders the proposal with its whys and the foot that matters:
+*nothing has run yet; Approve queues the hands, Discard queues nothing.*
+
+**At Approve**, the resolve route queues the hands as an ordinary T2
+party carrying everything the plan job stored: the settled channels, the
+desk answers, the check flag, the load-bearing marks, the plan's own
+party id (one thread to trace), and the plan job's input files to every
+hand. A **load-bearing hand failing halts the party before the gather**
+— delivering around a hole the reviewer marked essential would paper
+over exactly what they asked to be told about — with the delivered
+hands left in review, their work real. The gather guard also learned to
+skip plan jobs, since a settled plan with no hands would otherwise read
+as a one-hand party and gather over nothing.
+
+**Evidence:** 1,796 server + 200 web green, typecheck clean. Three
+mutations, three kills: the draft's bounds check dropped (two tests
+died), the sends-ride-the-gather refusal dropped (one), the plan-only
+stamp guard dropped (one). The queue tests also caught their own
+ordering bug in development — a sandbox does not exist until start()
+creates it.
+
+**Not yet, named:** the live gate waits on the next restart — a genuinely
+hard real task with no visible list, the planner's split judged by Brian
+*before* any hand runs (that judgement is the feature working), then
+Approve and the party watched end to end. Recorded, not built: the
+planner offer appears only on a blocked party (a party the grammar can
+split never plans — the deterministic split is cheaper and the user's own
+words); a "plan it anyway" path for splittable sentences waits for a
+felt need.

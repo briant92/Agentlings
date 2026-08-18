@@ -236,6 +236,12 @@ export function ReviewModal({
         <div className="m-head">
           <span className={`badge ${job.status}`}>{job.status}</span>
           {/* Which step of its sequence this was (D-105). */}
+          {/* Which hand of its party this was, or its gather (TEAMWORK T2). */}
+          {job.party && (
+            <span className="badge">
+              {job.party.gather ? 'the gather' : `hand ${job.party.hand} of ${job.party.of}`}
+            </span>
+          )}
           {job.step && (
             <span className="badge">
               step {job.step.n} of {job.step.of}

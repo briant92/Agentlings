@@ -636,6 +636,30 @@ describe('JobQueue', () => {
     });
   });
 
+  // A hand's party spec must survive the queue and the disk (TEAMWORK T2):
+  // the gather is built by whichever hand settles last, so every hand
+  // carries what the gather needs.
+  it('stores a party spec and it survives a restart', () => {
+    const job = queue.add({
+      title: 'Hand',
+      prompt: 'Research the pricing',
+      party: {
+        id: 'p1',
+        hand: 1,
+        of: 3,
+        asked: 'Research the pricing, the competitors and the market size as a team of three',
+        channels: ['telegram'],
+        answers: { 'send-to:telegram': '123' },
+        checked: true,
+      },
+    });
+    expect(job.party?.hand).toBe(1);
+    const reopened = new JobQueue(root).get(job.id);
+    expect(reopened?.party?.channels).toEqual(['telegram']);
+    expect(reopened?.party?.checked).toBe(true);
+    expect(reopened?.party?.asked).toContain('team of three');
+  });
+
   // The verdict a check pass lands on the job it checked (TEAMWORK T1).
   describe('recordCheckVerdict', () => {
     it('stamps the verdict, moves the revision, and survives a restart', () => {

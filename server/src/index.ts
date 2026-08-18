@@ -55,6 +55,15 @@ import {
 } from './schedules';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
+import {
+  GATHER_SENTENCE,
+  type PartyPlan,
+  gatherBrief,
+  handFileName,
+  handReportName,
+  newPartyId,
+  planParty,
+} from './party';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
@@ -401,6 +410,9 @@ function makeLevel(dir: string): LevelRuntime {
         // delivered job the desk asked to have checked queues one.
         if (job.check) settleCheck(chainRuntime, job);
         else queueCheck(chainRuntime, job);
+        // And the party's gather (TEAMWORK T2): the last settled hand
+        // queues it, exactly as a delivered step queues the next.
+        queueGatherIfLastHand(chainRuntime, job);
       }
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
@@ -1058,6 +1070,49 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
         };
       })
     : null;
+  // The party the sentence licenses (TEAMWORK T2), previewed like the split
+  // is: every hand priced on its own piece, the gather priced on its fixed
+  // sentence, the words quoted back (D-184) — and a licence that cannot be
+  // honoured says why instead of being ignored. The chain split wins first.
+  const partyPlanned = body.single === true || split ? null : planParty(text);
+  const partyPlans =
+    partyPlanned && 'hands' in partyPlanned
+      ? {
+          words: partyPlanned.asked.words,
+          ...(partyPlanned.sendTail ? { sendTail: partyPlanned.sendTail } : {}),
+          hands: partyPlanned.hands.map((sentence) => {
+            const handDraft = planWork(
+              matcher(),
+              registry.list(),
+              rt.sim.agentlings,
+              undefined,
+              sentence,
+            );
+            return {
+              sentence,
+              title: handDraft.title,
+              quote: quoteFor_(
+                QUOTE_CTX,
+                rt.dir,
+                sentence,
+                granted(body.tools),
+                runnerRole(handDraft),
+                undefined,
+              ),
+            };
+          }),
+          gather: {
+            quote: quoteFor_(
+              QUOTE_CTX,
+              rt.dir,
+              GATHER_SENTENCE,
+              granted(body.tools),
+              runnerRole(planWork(matcher(), registry.list(), rt.sim.agentlings, undefined, text)),
+              undefined,
+            ),
+          },
+        }
+      : null;
   // A near-miss the user confirmed (D-093): the client re-plans naming the
   // channel, so the send questions come from the server like any other —
   // honoured only for channels that exist, like every pick.
@@ -1123,6 +1178,8 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     ...draft,
     quote,
     ...(stepPlans ? { steps: stepPlans } : {}),
+    ...(partyPlans ? { party: partyPlans } : {}),
+    ...(partyPlanned && 'blocked' in partyPlanned ? { partyBlocked: partyPlanned.blocked } : {}),
     // A detected send asks its facts even when the ask fell to a fork — the
     // asked name stands in for the channel so the hint has something to say,
     // and a confirmed near-miss (D-093) counts like a detection.
@@ -1209,6 +1266,39 @@ function decodeAttachments(
 }
 
 /**
+ * Every channel a sentence settles (D-179), the settled one first.
+ *
+ * The others come from the same ask the card was built from, and only ones
+ * that exist and are not the settled one — a `planned` or `never` channel
+ * fell out of the ask already, and adding it here would put a contract in
+ * the brief for a client that cannot send. A caller's explicit pick keeps
+ * its meaning: it settles which channel leads, it does not cancel the rest
+ * of the sentence. A settled channel is not required for the rest to ride:
+ * "send it on WhatsApp and email Ana" settles nothing (WhatsApp is refused)
+ * while Gmail is perfectly sendable.
+ *
+ * One function because two callers need it — queueSentence for every
+ * ordinary job, queueParty for the channels the gather will carry — and two
+ * derivations of one list is D-030's mistake.
+ */
+function settledChannels(
+  detected: ReturnType<typeof detectChannelAsk>,
+  requested?: string,
+): { channel?: string; carried: string[] } {
+  const fromAsk = requested ? null : detected;
+  const channel =
+    requested && CHANNELS[requested]
+      ? requested
+      : fromAsk?.channel && CHANNELS[fromAsk.channel]
+        ? fromAsk.channel
+        : undefined;
+  const alsoWired = (detected?.also ?? [])
+    .map((option) => option.channel)
+    .filter((name) => CHANNELS[name] && name !== channel);
+  return { channel, carried: [...(channel ? [channel] : []), ...alsoWired] };
+}
+
+/**
  * One sentence becomes one queued job — the body every way in shares.
  *
  * The /work route and the schedule sweep both call this (D-103), for
@@ -1260,6 +1350,14 @@ function queueSentence(
     checked?: boolean;
     /** This job is a check pass: the job it checks, and whose work to avoid. */
     check?: { of: string; avoid?: string };
+    /** This job is a hand of a work party, or its gather (TEAMWORK T2). */
+    party?: Job['party'];
+    /**
+     * The channels this job carries, decided by the caller instead of by
+     * detection — the party seam: [] for hands, the party's settled list
+     * for the gather.
+     */
+    channelsOverride?: string[];
   } = {},
 ): Job {
   // The split happens inside the glue (D-105), so every way in composes:
@@ -1313,30 +1411,13 @@ function queueSentence(
     process.env,
   );
   const channelAsk = requestedChannel ? null : detected;
-  const channel =
-    requestedChannel && CHANNELS[requestedChannel]
-      ? requestedChannel
-      : channelAsk?.channel && CHANNELS[channelAsk.channel]
-        ? channelAsk.channel
-        : undefined;
-  /**
-   * Every channel this job will carry (D-179), the settled one first.
-   *
-   * The others come from the same ask the card was built from, and only ones
-   * that exist and are not the settled one — a `planned` or `never` channel
-   * fell out of the ask already, and adding it here would put a contract in
-   * the brief for a client that cannot send. A caller's explicit pick keeps
-   * its meaning: it settles which channel leads, it does not cancel the rest
-   * of the sentence.
-   */
-  const alsoWired = (detected?.also ?? [])
-    .map((option) => option.channel)
-    .filter((name) => CHANNELS[name] && name !== channel);
-  // A settled channel is not required for the rest to ride: "send it on
-  // WhatsApp and email Ana" settles nothing (WhatsApp is refused) while Gmail
-  // is perfectly sendable, and dropping it because the *first* channel was
-  // impossible would lose the half the app can actually do.
-  const carried = [...(channel ? [channel] : []), ...alsoWired];
+  const { channel, carried: settled } = settledChannels(detected, requestedChannel);
+  // A party job's channels are decided by the party, never re-detected
+  // (TEAMWORK T2): hands carry [] because a hand never sends, and the
+  // gather carries what Start settled for the whole request.
+  const carried = opts.channelsOverride
+    ? opts.channelsOverride.filter((name) => CHANNELS[name])
+    : settled;
   const channels = carried.length > 0 ? carried : undefined;
   // Read from the same sentence and the same answers the card was quoted on,
   // through the one function both ways in share — a desk that promised free
@@ -1402,6 +1483,7 @@ function queueSentence(
       ...(withholding ? { withholding: true } : {}),
       ...(checked ? { checked: true } : {}),
       ...(opts.check ? { check: opts.check } : {}),
+      ...(opts.party ? { party: opts.party } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.
@@ -1657,6 +1739,186 @@ function settleCheck(rt: LevelRuntime, checkJob: Job): void {
 }
 
 /**
+ * Queue a work party (TEAMWORK T2, D-195): every hand at once, each an
+ * ordinary job on its own piece of the sentence's list. Hands carry no
+ * channels — a hand never sends, and stampOutbox refuses any outbox it
+ * writes (D-193's seam) — and no repository: T2 is the non-repo shape, and
+ * repo parties are T4's trial to earn. Attachments ride to every hand,
+ * because "summarise the attached report's A, B and C" needs the report in
+ * each hand's own input/. Everything the gather will need travels on every
+ * hand, since the gather is built by whichever hand settles last.
+ */
+function queueParty(
+  rt: LevelRuntime,
+  text: string,
+  plan: PartyPlan,
+  opts: {
+    tools?: string[];
+    channel?: string;
+    answers?: Record<string, string>;
+    attachments?: { name: string; data: Buffer }[];
+  },
+): Job[] {
+  const id = newPartyId();
+  const detected = detectChannelAsk(
+    text,
+    readConnections(CONNECTIONS_FILE),
+    readSettings(SANDBOX_ROOT),
+    process.env,
+  );
+  const { carried } = settledChannels(detected, opts.channel);
+  const withholding = wantsWithholding(text);
+  const of = plan.hands.length;
+  const spec: NonNullable<Job['party']> = {
+    id,
+    hand: 0,
+    of,
+    asked: text,
+    ...(plan.sendTail ? { sendTail: plan.sendTail } : {}),
+    ...(carried.length ? { channels: carried } : {}),
+    ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
+    ...(wantsCheck(text) ? { checked: true } : {}),
+  };
+  return plan.hands.map((piece, i) =>
+    queueSentence(rt, piece, {
+      noSplit: true,
+      noRepo: true,
+      tools: opts.tools,
+      channelsOverride: [],
+      ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
+      ...(withholding ? { withholding: true } : {}),
+      party: { ...spec, hand: i + 1 },
+      note: `hand ${i + 1} of ${of} — a party on "${plan.asked.words}"`,
+    }),
+  );
+}
+
+/** Deliverables forwarded per hand, beside its report; the rest is named. */
+const HAND_FILES = 2;
+
+/**
+ * The last settled hand queues the gather (TEAMWORK T2) — through the same
+ * glue as everything, and not before: the gather does not exist while any
+ * hand still runs, so nothing waits anywhere (D-105's rule, kept again by
+ * not needing it). Delivered hands are folded in — report and files renamed
+ * into the gather's input/ (D-146's discipline, N-wide) and the hand
+ * self-files, because its work lives on in the gather and a second card
+ * would only stack crates (the check pass's precedent). A failed hand stays
+ * visible, absorbed (D-012), and its piece is named uncovered in the
+ * gather's brief; every hand failing fails the party out loud.
+ */
+function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
+  const p = job.party;
+  if (!p || p.gather) return;
+  const siblings = rt.queue.list().filter((j) => j.party?.id === p.id && !j.party?.gather);
+  if (siblings.some((j) => j.status === 'queued' || j.status === 'running')) return;
+  if (rt.queue.list().some((j) => j.party?.id === p.id && j.party?.gather)) return;
+  const delivered = siblings.filter((j) => j.status === 'done' || j.status === 'partial');
+  if (delivered.length === 0) {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `the party failed — none of its ${p.of} hands delivered`,
+    });
+    return;
+  }
+  const attachments: { name: string; data: Buffer }[] = [];
+  const handBriefs: Parameters<typeof gatherBrief>[0]['hands'] = [];
+  const ordered = [...siblings].sort((a, b) => (a.party?.hand ?? 0) - (b.party?.hand ?? 0));
+  for (const hand of ordered) {
+    const n = hand.party?.hand ?? 0;
+    if (hand.status !== 'done' && hand.status !== 'partial') {
+      handBriefs.push({
+        hand: n,
+        piece: hand.prompt,
+        hadReport: false,
+        files: [],
+        leftBehind: [],
+        failed: true,
+      });
+      continue;
+    }
+    const dir = rt.queue.sandboxDir(hand.id);
+    const { take, leftBehind } = pickForwards(outputNames(dir));
+    const behind = [...leftBehind, ...take.slice(HAND_FILES)];
+    let hadReport = false;
+    const report = path.join(dir, 'RESULT.md');
+    if (existsSync(report)) {
+      const data = readFileSync(report);
+      if (data.length <= MAX_ATTACHMENT_BYTES) {
+        attachments.push({ name: handReportName(n), data });
+        hadReport = true;
+      }
+    }
+    const files: string[] = [];
+    for (const name of take.slice(0, HAND_FILES)) {
+      const data = readFileSync(path.join(dir, name));
+      if (data.length > MAX_ATTACHMENT_BYTES) {
+        behind.push(name);
+        continue;
+      }
+      attachments.push({ name: handFileName(n, name), data });
+      files.push(handFileName(n, name));
+    }
+    handBriefs.push({ hand: n, piece: hand.prompt, hadReport, files, leftBehind: behind });
+  }
+  const asked = p.asked ?? job.prompt;
+  // The gather runs as the role the whole request matches — the same answer
+  // the desk would have shown for the sentence run solo.
+  const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, undefined, asked);
+  const sendLines = Object.entries(p.answers ?? {})
+    .filter(([key]) => key.startsWith('send-to:'))
+    .map(
+      ([key, to]) =>
+        `Send the result on ${key.slice('send-to:'.length)} to ${to} — write OUTBOX.json as briefed.`,
+    );
+  try {
+    queueSentence(rt, GATHER_SENTENCE, {
+      noSplit: true,
+      noRepo: true,
+      ...(matched.role && registry.get(matched.role) ? { role: matched.role } : {}),
+      ...(job.tools?.length ? { tools: job.tools } : {}),
+      attachments,
+      channelsOverride: p.channels ?? [],
+      ...(job.withholding ? { withholding: true } : {}),
+      ...(p.checked ? { checked: true } : {}),
+      party: { id: p.id, hand: 0, of: p.of, gather: true, asked },
+      brief: gatherBrief({
+        asked,
+        ...(p.sendTail ? { sendTail: p.sendTail } : {}),
+        hands: handBriefs,
+        ...(sendLines.length ? { sendLines } : {}),
+      }),
+      note: `the gather — assembling ${delivered.length} of ${p.of} hands`,
+    });
+  } catch (err) {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `the gather could not queue — ${err instanceof Error ? err.message : String(err)}`,
+    });
+    return;
+  }
+  // Fold the delivered hands in only once the gather actually exists.
+  for (const hand of delivered) {
+    try {
+      rt.queue.resolve(hand.id, 'promote');
+      rt.eventLog.emit({
+        type: 'resolved',
+        jobId: hand.id,
+        title: hand.title,
+        detail: 'hand folded into the gather',
+        by: 'app',
+      });
+    } catch {
+      // Already resolved or unresolvable — leave it for eyes.
+    }
+  }
+}
+
+/**
  * Author a world: a description in, a job out (M4).
  *
  * Its own route rather than a sentence pattern at the desk, for now. The
@@ -1763,6 +2025,23 @@ app.post('/api/levels/:lid/work', async (c) => {
     writeMeta(rt.dir, rt.meta);
   }
 
+  // A party queues here and only here (TEAMWORK T2): the desk previewed it,
+  // Start carries it, and the schedule sweep deliberately does not — a
+  // schedule that wants a party will say so in its own sentence once
+  // parties have earned that (the T2 decision as taken). The chain split
+  // wins first: a "then" sentence is a chain today, party words inert.
+  if (body.single !== true && splitSteps(text) === null) {
+    const party = planParty(text);
+    if (party && 'hands' in party) {
+      const hands = queueParty(rt, text, party, {
+        tools: body.tools,
+        channel: typeof body.channel === 'string' ? body.channel : undefined,
+        answers: body.answers,
+        attachments,
+      });
+      return c.json(hands[0], 201);
+    }
+  }
   // Everything from the plan to the queued event is the shared glue above —
   // one body for every way a sentence becomes a job, so the ways in cannot
   // drift. The schedule sweep is the other caller (D-103).

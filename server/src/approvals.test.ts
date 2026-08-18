@@ -211,6 +211,24 @@ describe('standing approvals', () => {
         ).toBeNull();
       });
     });
+
+    // A gather's prompt is one fixed sentence shared by every party
+    // (TEAMWORK T2), so a standing approval earned on one party would cover
+    // every later one reaching the same recipients — it never auto-sends.
+    it('a gather is always reviewed', () => {
+      expect(
+        autoBlocker(
+          { ...clean, party: { id: 'p1', hand: 0, of: 3, gather: true } },
+          PAPER,
+        ),
+      ).toBe('a gather is always reviewed');
+    });
+
+    it('a hand is not blocked for being one (it has no outbox anyway)', () => {
+      expect(
+        autoBlocker({ ...clean, party: { id: 'p1', hand: 1, of: 3 } }, PAPER),
+      ).toBeNull();
+    });
   });
 
   it('a torn file loses nothing but itself', () => {

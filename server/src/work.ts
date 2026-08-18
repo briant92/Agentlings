@@ -182,6 +182,8 @@ export function queuedJobSpec(args: {
   checked?: boolean;
   /** This job is a check pass: the job it checks, and whose work to avoid. */
   check?: { of: string; avoid?: string };
+  /** This job is a hand of a work party, or its gather (TEAMWORK T2). */
+  party?: Job['party'];
   /** The card's answers, for the steps that have not been queued yet. */
   answers?: Record<string, string>;
 }): {
@@ -206,6 +208,7 @@ export function queuedJobSpec(args: {
   withholding?: boolean;
   checked?: boolean;
   check?: { of: string; avoid?: string };
+  party?: Job['party'];
 } {
   return {
     title: args.title,
@@ -237,6 +240,7 @@ export function queuedJobSpec(args: {
     ...(args.withholding ? { withholding: true } : {}),
     ...(args.checked ? { checked: true } : {}),
     ...(args.check ? { check: args.check } : {}),
+    ...(args.party ? { party: args.party } : {}),
     ...(args.steps?.length && args.answers && Object.keys(args.answers).length
       ? { answers: args.answers }
       : {}),

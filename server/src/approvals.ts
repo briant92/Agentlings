@@ -239,10 +239,17 @@ export function autoBlocker(
     | 'withheldError'
     | 'checked'
     | 'checkVerdict'
+    | 'party'
   >,
   files: string[],
 ): string | null {
   if (job.compile) return 'a compile is never auto-sent';
+  // A gather is always reviewed (TEAMWORK T2): its prompt is one fixed
+  // sentence shared by every party, so a standing approval earned on one
+  // party's sends would silently cover every later party reaching the same
+  // recipients — D-120's key problem in a new coat. Until approvals key on
+  // the party's own request, the human stays in the loop.
+  if (job.party?.gather) return 'a gather is always reviewed';
   // A job the desk asked to have checked auto-sends only on a confirmed
   // verdict (TEAMWORK T1, D-194). Pending holds it because the check is the
   // point of asking; refuted holds it because a claim is wrong; a check that

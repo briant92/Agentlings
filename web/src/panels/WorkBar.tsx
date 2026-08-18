@@ -648,6 +648,43 @@ export function WorkBar({
         </p>
       )}
 
+      {/* The party (TEAMWORK T2): the hands Start will queue, each priced on
+          its own piece, the words the licence was read from quoted back
+          (D-184) — and "run solo" one click away, because a fan-out the user
+          did not mean must be one click from off. */}
+      {plan?.party && !single && !askingRepo && (
+        <p className="work-gaps work-steps">
+          <span className="dim">
+            read “{plan.party.words}” as a party of {plan.party.hands.length}:
+          </span>
+          {plan.party.hands.map((hand, i) => (
+            <span key={hand.sentence} className="work-step">
+              {i + 1}. {hand.title}
+              <span className={hand.quote.ceilingUsd === 0 ? ' quote-free' : ' quote-cost'}>
+                {' '}
+                {hand.quote.wording}
+              </span>
+            </span>
+          ))}
+          <span className="work-step">
+            then the gather
+            <span className={plan.party.gather.quote.ceilingUsd === 0 ? ' quote-free' : ' quote-cost'}>
+              {' '}
+              {plan.party.gather.quote.wording}
+            </span>
+            {plan.party.sendTail ? <span className="dim"> · it also does: “{plan.party.sendTail}”</span> : null}
+          </span>
+          <button className="work-link" onClick={() => setSingle(true)}>
+            run solo
+          </button>
+        </p>
+      )}
+      {plan?.partyBlocked && !single && !askingRepo && (
+        <p className="work-gaps work-steps">
+          <span className="dim">a party was asked, and cannot run: {plan.partyBlocked}</span>
+        </p>
+      )}
+
       {/* Repeats (D-103): the same sentence queued again on a cadence. The
           schedule is created beside the job at Start, so the first run is
           now and the next is on the calendar. */}

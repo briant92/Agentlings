@@ -66,6 +66,8 @@ export interface NewJobSpec {
   checked?: boolean;
   /** This job is a check pass: the job it checks, and whose work to avoid. */
   check?: { of: string; avoid?: string };
+  /** This job is a hand of a work party, or its gather (TEAMWORK T2, D-195). */
+  party?: Job['party'];
   /** The card's answers, carried so the rest of the chain can hear them. */
   answers?: Record<string, string>;
   /**
@@ -326,6 +328,7 @@ export class JobQueue {
       ...(spec.withholding ? { withholding: true } : {}),
       ...(spec.checked ? { checked: true } : {}),
       ...(spec.check ? { check: spec.check } : {}),
+      ...(spec.party ? { party: spec.party } : {}),
       ...(spec.channelMention ? { channelMention: spec.channelMention } : {}),
       ...(spec.alsoAsked?.length ? { alsoAsked: spec.alsoAsked } : {}),
       status: 'queued',

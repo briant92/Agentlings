@@ -787,6 +787,38 @@ export interface Job {
   /** The check's verdict, stamped when the check job reaches an outcome. */
   checkVerdict?: CheckVerdict;
   /**
+   * Work parties (TEAMWORK T2, D-195): this job is one hand of a party, or
+   * its gather — the chain's shape turned sideways. Hands are ordinary
+   * sibling jobs with distinct prompts (the sentence's own list items,
+   * licensed by "a team of N" in the user's words) that run at once and
+   * carry no channels; the gather is queued by the completion hook when the
+   * last hand settles, receives every hand's report and files renamed into
+   * its input/, and produces the one deliverable — and the outbox, when the
+   * request sends. The request-specific context the gather needs rides here
+   * on every hand, because the gather does not exist until the last hand
+   * delivers and must be buildable from whichever hand settles last.
+   */
+  party?: {
+    /** The party's shared id; hands and gather all carry it. */
+    id: string;
+    /** Which hand this is, 1-based; 0 on the gather. */
+    hand: number;
+    /** How many hands the party has. */
+    of: number;
+    /** This job is the gather. */
+    gather?: boolean;
+    /** The original request, quoted into the gather's brief. */
+    asked?: string;
+    /** A trailing send clause the hands were cut from; the gather's to do. */
+    sendTail?: string;
+    /** Channels the request settled — for the gather; hands never send. */
+    channels?: string[];
+    /** The desk's answers (the send recipient), for the gather's brief. */
+    answers?: Record<string, string>;
+    /** The request asked for a check pass — the gather gets it, hands never. */
+    checked?: boolean;
+  };
+  /**
    * The channels this job sends on, when intake detected any (D-079). The
    * session is told the outbox contract for each and nothing else changes —
    * composing happens in the run, sending stays at approval (D-075).
@@ -1422,6 +1454,21 @@ export interface WorkPlan {
    * quote its own sentence earns today.
    */
   steps?: { sentence: string; title: string; quote: Quote }[];
+  /**
+   * The party Start will queue (TEAMWORK T2, D-195), shown priced before
+   * anything runs: every hand on its own piece, the gather on its fixed
+   * sentence, and the words the licence was read from (D-184's quote-back).
+   */
+  party?: {
+    words: string;
+    sendTail?: string;
+    hands: { sentence: string; title: string; quote: Quote }[];
+    gather: { quote: Quote };
+  };
+  /** A party was asked for and cannot run — the reason, said at the desk. */
+  partyBlocked?: string;
+  /** The sentence asked for a check pass (TEAMWORK T1, D-194). */
+  checked?: boolean;
   /** True when nobody in this level's crew holds the matched role. */
   noOneHasRole: boolean;
   confidence: number;

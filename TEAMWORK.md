@@ -219,7 +219,7 @@ trusting the verdict row.
 2. Whether the checker may spend more than the primary — recommend no:
    its quote is capped at the primary's class ceiling.
 
-### T2 — Work parties *(parallel fan-out on the user's own list; the speed goal)* — **built, D-195; the live party and the pre-registered solo-vs-party comparison wait on the next restart**
+### T2 — Work parties *(parallel fan-out on the user's own list; the speed goal)* — **built and live-proven, D-195 + amendment: the gate ran both arms. The machinery held whole (concurrent hands, same-tick gather, one card, attribution survived its spot-check with genuine triangulation); the honest verdict is depth, not speed — a healthy solo run was faster and cheaper, and the party bought 86 turns of independent coverage at 2.3× charged. Parties are for work whose value scales with independent coverage, priced per hand at the desk**
 
 **Unlocks:** "research A, B and C — as a team of three" runs three hands at
 once, each on its own item, then a gather job assembles one deliverable

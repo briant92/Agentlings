@@ -442,6 +442,10 @@ tried, measured and rejected is in `DECISIONS.md`:
   agentling on the delivered work — its CHECK.md verdict rides the
   checked job's card, holds auto-send until `confirmed`, and writes
   refuted claims into the checked member's memory → D-194
+- M5.25 work parties (TEAMWORK T2): "as a team of three" plus the
+  sentence's own list runs the hands at once as channel-less sibling
+  jobs; the last to settle queues the gather, which assembles their
+  renamed reports into the one deliverable and carries the send → D-195
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

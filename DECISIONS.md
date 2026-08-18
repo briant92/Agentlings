@@ -204,6 +204,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-192 — 2026-08-18 — The morning review: a false brief, a typo cascade, and three fixes](#d-192--2026-08-18--the-morning-review-a-false-brief-a-typo-cascade-and-three-fixes)
 - [D-193 — 2026-08-18 — The cap was ours, not the channel's: three refusals, zero sends](#d-193--2026-08-18--the-cap-was-ours-not-the-channels-three-refusals-zero-sends)
 - [D-194 — 2026-08-18 — The check pass: a second agentling verifies a delivered job](#d-194--2026-08-18--the-check-pass-a-second-agentling-verifies-a-delivered-job)
+- [D-195 — 2026-08-18 — Work parties: hands in parallel, the gather when the last settles](#d-195--2026-08-18--work-parties-hands-in-parallel-the-gather-when-the-last-settles)
 
 ## By theme
 
@@ -339,6 +340,14 @@ entry updates one file rather than two.
   claimed Gmail send did not exist — body caps became each channel's own
   truth, the brief says the channel is fixed before the run instead of
   after, and Approve now says out loud when a send-job will send nothing
+- **The crew works as one — teamwork** — D-195: the second TEAMWORK shape,
+  work parties — a number beside worker-words licenses the fan-out, the
+  sentence's own list is the split, hands run at once as channel-less
+  sibling jobs, and the last to settle queues the gather with every hand's
+  work renamed into its input/; the gather sends, never auto, because its
+  fixed prompt would pool standing approvals across parties. Built the same
+  day T1's gates ran; the live party and the pre-registered solo-vs-party
+  comparison wait on the next restart
 - **The crew checks the crew** — D-194: the first collaboration shape off
   the `TEAMWORK.md` board (T1, taken as recommended): "have it checked"
   queues a second agentling on the primary's delivery — fixed prompt,
@@ -13621,3 +13630,76 @@ and it holds the send on exactly this failure.
 
 Two false briefs sit in review awaiting Brian's discard: 71bba19f (the
 morning's) and 8a2b356c (the shakedown's, verdict refuted on its card).
+
+## D-195 — 2026-08-18 — Work parties: hands in parallel, the gather when the last settles
+
+Brian green-lit TEAMWORK T2 the same day T1's gates ran. Built whole:
+several agentlings on one request at once, the chain's machinery turned
+sideways, and nothing waiting anywhere.
+
+**The licence and the split — the user's words, never the app's
+judgement.** A party is licensed by a number beside worker-words ("as a
+team of three", "two researchers"); bare "team" never claims, because it
+already lives inside send sentences ("post the release notes to the team
+on Slack" is channel.ts's own example). The split is the sentence's own
+list, cut after the licensing phrase is removed and the trailing send
+clause is set aside for the gather (the last qualifying "and", not the
+first — the first-join version cut list items into the send, and the test
+caught it before it shipped). One-word verb distribution, onto
+article-led pieces only: "Research the pricing, the competitors and the
+market size" hands out "Research the competitors", while "summarise the
+reviews" keeps its own verb — the first draft prefixed everything and
+bent that piece into "research summarise the reviews", the second bug the
+tests caught in development. Anything the grammar cannot honour parks at
+the desk by name: over the cap (3 hands today), no usable list, a piece
+that reads as a send ("a hand never sends — put the send at the end so it
+rides the gather"), a fragment. The desk shows every hand priced on its
+own piece, the gather priced on its fixed sentence, the licence words
+quoted back (D-184), and "run solo" one click away.
+
+**The shape, each piece on a prior rule:** hands are ordinary sibling
+jobs with distinct prompts (D-179's taxonomy — same-prompt siblings
+collide recipe keys and approvals), carrying no channels
+(`channelsOverride: []`; the settle logic moved whole into
+`settledChannels` so queueSentence and queueParty cannot derive two
+different lists — D-030) and no repository (T4's trial owns repo
+parties). Attachments ride to every hand, because "summarise the attached
+report's A, B and C" needs the report in each hand's input/. The party
+spec — the original ask, the settled channels, the desk answers, the
+send tail, the check flag — rides on *every* hand, because the gather is
+queued by whichever hand settles last and must be buildable from it. The
+gather: one fixed sentence (the check pass's precedent, D-194 — every
+gather banks method under one recipe key), hand reports and files
+renamed into its input/ as hand-N-* (D-146's discipline, N-wide), failed
+hands named uncovered in its brief rather than papered over, withholding
+and the check riding (the check to the gather only — checking every hand
+would triple the cost of checking the deliverable). Delivered hands
+self-file once the gather exists (their work lives on in it; the check
+pass's crate rule), a failed hand stays visible and absorbed (D-012),
+and every hand failing fails the party out loud. **A gather never
+auto-sends:** its fixed prompt would pool `approvalKey` across every
+party — D-120's dead-key problem in a new coat — so `autoBlocker`
+refuses it by name until approvals key on the party's own request.
+Scheduled parties deliberately do not exist: the sweep calls
+queueSentence directly and the grammar lives only on the /work route —
+the T2 decision as taken.
+
+**Evidence:** 1,782 server + 200 web green, typecheck clean. Three
+mutations, three kills — the ask-cap dropped, the distribution rule
+flipped (its kill is the exact bug the first draft had), the gather
+blocker deleted. The ask-cap mutation **survived its first run**: the
+over-cap test sentence had four pieces too, so the list cap parked it
+with a message sharing words with the ask-cap's — the pin was sharpened
+to a three-piece, ask-of-four sentence that only the ask-cap can park
+(D-158: a survived mutation is a finding about what the test binds).
+
+**Not yet, each named:** the live party run waits on the next restart
+(the running serve predates the build); T2's pre-registered evidence
+gate — one real 3-item question run solo and as a party, wall-clock,
+spend, wall-deaths and citation spot-check compared — runs after that;
+`bench:intake` still owes party and checked corpus cases (the runner
+needs both expectation fields). Recorded deviations from the TEAMWORK
+board: cancel does not cascade (a cancelled hand is a failed hand and
+the gather proceeds with its piece named — no party-wide kill switch
+exists to misfire), and multi-channel party sends ride `settledChannels`
+rather than parking.

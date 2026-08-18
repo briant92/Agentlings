@@ -219,7 +219,7 @@ trusting the verdict row.
 2. Whether the checker may spend more than the primary — recommend no:
    its quote is capped at the primary's class ceiling.
 
-### T2 — Work parties *(parallel fan-out on the user's own list; the speed goal)*
+### T2 — Work parties *(parallel fan-out on the user's own list; the speed goal)* — **built, D-195; the live party and the pre-registered solo-vs-party comparison wait on the next restart**
 
 **Unlocks:** "research A, B and C — as a team of three" runs three hands at
 once, each on its own item, then a gather job assembles one deliverable

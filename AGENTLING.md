@@ -1732,10 +1732,22 @@ list per channel (D-077; SPEC M5.11 has the slices):
       different-member pickup, verdict stamped, check self-filed — with the
       checker recomputing independently and marking invisible material
       Unchecked by name. Zero false refutations on faithful work (n=2).
-      The refuted branch is mutation-proven and fail-closed (anything short
-      of confirmed holds auto-send); its live firing waits for a real false
-      claim. Recorded limit: the checker does not see the checked job's
-      input/.*
+      The refuted branch then fired the same evening on a REAL false brief
+      (second amendment): the clerk invented an empty inbox with zero door
+      calls, the check re-queried and refuted by name for 11.7c, and the
+      mail desk now runs its checked sentence daily. Recorded limit: the
+      checker does not see the checked job's input/ (named in its brief).*
+- [x] **Work parties** — "as a team of three" plus the sentence's own list
+      runs the hands at once (TEAMWORK T2, D-195): each hand an ordinary
+      sibling job on its own piece, no channels (a hand never sends), no
+      repository (repo parties are T4's trial). The last hand to settle
+      queues the gather, which receives every hand's report and files
+      renamed into its input/, names failed hands' pieces uncovered,
+      carries the request's send and check, and never auto-sends (its
+      fixed prompt would pool standing approvals across parties). Bare
+      "team" never claims; anything the grammar cannot honour parks at the
+      desk by name with run-solo one click away. *Wiring tested and
+      mutation-proven; the live party run waits on the next restart.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

@@ -6,6 +6,7 @@ import { cutNotice } from './cut';
 import { fileUrl } from './files';
 import { FileViewer } from './FileViewer';
 import { moveRows, movesLeft, movesSummary } from './moves';
+import { noSendLine } from './noSend';
 import { allLooks, renderScenePreview } from '../world/looks';
 
 /**
@@ -277,7 +278,16 @@ export function ReviewModal({
           {cutLine && <p className="rv-cut">{cutLine}</p>}
           {!cutLine && job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
-          {job.outboxError && <p className="error">{job.outboxError}</p>}
+          {/* The third mention-guard (D-193): the channel was carried, the run
+              composed, and the contract refused the file — so the send the
+              summary may well be claiming does not exist. Same voice as the
+              D-093 and D-178 guards below; the bare error line stays for
+              channel-less jobs whose runs invented an outbox. */}
+          {noSendLine(job) ? (
+            <p className="rv-mention-guard">{noSendLine(job)}</p>
+          ) : (
+            job.outboxError && <p className="error">{job.outboxError}</p>
+          )}
           {job.packDraftError && <p className="error">{job.packDraftError}</p>}
           {job.packDraft && (
             <PackCard

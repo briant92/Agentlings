@@ -232,10 +232,29 @@ describe('channelBrief', () => {
     expect(brief).toContain('OUTBOX.json');
     expect(brief).toContain('"channel":"telegram"');
     expect(brief).toContain('Up to 20 messages');
-    expect(brief).toContain('under 2000 characters');
+    // The channel's own limit (D-193), never the flat 2000 that refused a
+    // message telegram itself would have carried.
+    expect(brief).toContain('under 4096 characters');
     expect(brief).toContain('reviews every message and approves');
     // The chat-id rule, and the refusal to invent one.
     expect(brief).toContain('do not invent');
+  });
+
+  /**
+   * The channel-pivot dead end, said before the run (D-193): a run once
+   * pivoted a refused telegram send to gmail, and the frozen channel (D-079)
+   * refused that too, after the session had ended. Each brief names its own
+   * cap and says the channel cannot be switched.
+   */
+  it('quotes each channel its own body cap and says the channel is fixed', () => {
+    const telegram = channelBrief('telegram')!;
+    expect(telegram).toContain('The channel is fixed');
+    expect(telegram).toContain('rides as an attached file');
+    const gmail = channelBrief('gmail')!;
+    expect(gmail).toContain('under 50000 characters');
+    const slack = channelBrief('slack')!;
+    expect(slack).toContain('under 40000 characters');
+    expect(slack).toContain('said in RESULT.md instead');
   });
 
   it('tells a gmail job about addresses, subjects and whose voice it writes in', () => {

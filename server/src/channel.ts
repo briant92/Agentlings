@@ -1,5 +1,5 @@
 import {
-  MAX_OUTBOX_BODY_CHARS,
+  outboxBodyCap,
   MAX_OUTBOX_FILE_BYTES,
   MAX_OUTBOX_FILES,
   MAX_OUTBOX_MESSAGES,
@@ -705,7 +705,12 @@ export function channelBrief(
     `This job sends messages via ${LABELS[channel] ?? channel}. No tool sends anything — composing is your job; sending is not.`,
     'Write OUTBOX.json in the working directory, exactly this shape:',
     shape,
-    `- Up to ${MAX_OUTBOX_MESSAGES} messages, one per recipient, each body under ${MAX_OUTBOX_BODY_CHARS} characters.`,
+    `- Up to ${MAX_OUTBOX_MESSAGES} messages, one per recipient, each body under ${outboxBodyCap(channel)} characters — ${LABELS[channel] ?? channel}'s own limit.`,
+    // The channel-pivot dead end, said before the run (D-193): three runs
+    // once composed the same send — telegram, telegram, then gmail after the
+    // user supplied an address — and every one was refused after the session
+    // had ended, because the job's channel froze at the desk (D-079).
+    `- The channel is fixed: OUTBOX.json must say "${channel}" — naming any other channel is refused after the run has ended, work lost. ${FILE_CHANNELS.has(channel) ? 'Content the limit cannot hold rides as an attached file instead.' : 'Content the limit cannot hold is said in RESULT.md instead.'}`,
     ...(channel === 'telegram'
       ? [
           '- "to" is the numeric Telegram chat id. If the user named people but gave no chat ids, do not invent any — leave those messages out and say in RESULT.md which ids are missing.',
@@ -771,7 +776,7 @@ export function channelBrief(
           '```',
           ownWords,
           '```',
-          `- If it will not fit the ${MAX_OUTBOX_BODY_CHARS}-character limit, keep their wording and split it across messages to the same person only if the channel allows; otherwise say in RESULT.md what had to give, and why. Never quietly improve it.`,
+          `- If it will not fit the ${outboxBodyCap(channel)}-character limit, keep their wording and split it across messages to the same person only if the channel allows; otherwise say in RESULT.md what had to give, and why. Never quietly improve it.`,
         ]
       : []),
     // The reuse block (D-094): "send the same again" means this text, not a

@@ -159,9 +159,35 @@ describe('readOutbox', () => {
     expect(readOutbox(dir)?.error).toContain('appears twice');
   });
 
-  it('refuses a body over the cap', () => {
-    write(JSON.stringify({ channel: 'telegram', messages: [{ to: '1', body: 'x'.repeat(2001) }] }));
-    expect(readOutbox(dir)?.error).toContain('over 2000');
+  /**
+   * The caps are the channels' own, not one invented number (D-193): a flat
+   * 2000 refused a 3,325-character Telegram message three runs in a row —
+   * and Telegram's sendMessage limit is 4096, so the channel itself would
+   * have carried it. The exact refused length is the first case here.
+   */
+  it('carries the 3,325-character message the flat cap refused — telegram takes 4096', () => {
+    write(JSON.stringify({ channel: 'telegram', messages: [{ to: '1', body: 'x'.repeat(3325) }] }));
+    expect(readOutbox(dir)?.error).toBeUndefined();
+    write(JSON.stringify({ channel: 'telegram', messages: [{ to: '1', body: 'x'.repeat(4097) }] }));
+    expect(readOutbox(dir)?.error).toContain("telegram's limit is 4096");
+  });
+
+  it('caps each channel by its own truth, and an undeclared one by the fallback', () => {
+    write(
+      JSON.stringify({ channel: 'gmail', messages: [{ to: 'a@b.c', body: 'x'.repeat(45000) }] }),
+    );
+    expect(readOutbox(dir)?.error).toBeUndefined();
+    write(
+      JSON.stringify({ channel: 'gmail', messages: [{ to: 'a@b.c', body: 'x'.repeat(50001) }] }),
+    );
+    expect(readOutbox(dir)?.error).toContain("gmail's limit is 50000");
+    write(
+      JSON.stringify({
+        channel: 'whatsapp-business',
+        messages: [{ to: '1', body: 'x'.repeat(2001) }],
+      }),
+    );
+    expect(readOutbox(dir)?.error).toContain("whatsapp-business's limit is 2000");
   });
 });
 
@@ -218,8 +244,11 @@ describe('composeOutbox', () => {
     expect(composeOutbox('telegram', '   ', 'A DARLE').error).toMatch(/"to"/);
     expect(composeOutbox('telegram', '6783316106', '   ').error).toMatch(/"body"/);
     // The one refusal a real desk can produce: the words are free text, and
-    // nothing upstream caps their length.
-    expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(/over/);
+    // nothing upstream caps their length — held to the channel's own limit
+    // (D-193), same as a session's file.
+    expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(
+      /telegram's limit is 4096/,
+    );
   });
 });
 

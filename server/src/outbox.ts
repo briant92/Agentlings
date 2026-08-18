@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import {
-  MAX_OUTBOX_BODY_CHARS,
   MAX_OUTBOX_FILE_BYTES,
   MAX_OUTBOX_FILES,
   MAX_OUTBOX_FILES_TOTAL_BYTES,
@@ -10,6 +9,7 @@ import {
   MAX_OUTBOX_PARAMS,
   MAX_OUTBOX_SUBJECT_CHARS,
   MAX_OUTBOX_TO_CHARS,
+  outboxBodyCap,
   type Outbox,
   type OutboxEvent,
   type OutboxMessage,
@@ -168,7 +168,13 @@ function checkEvent(raw: unknown, n: number): { event?: OutboxEvent; error?: str
   };
 }
 
-function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error?: string } {
+function checkMessage(
+  raw: unknown,
+  n: number,
+  /** The message's own channel's cap (D-193) — never one number for all. */
+  bodyCap: number,
+  channelName: string,
+): { message?: OutboxMessage; error?: string } {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
@@ -190,8 +196,10 @@ function checkMessage(raw: unknown, n: number): { message?: OutboxMessage; error
   if (typeof body !== 'string' || body.trim() === '') {
     return { error: `message ${n}: "body" must be a non-empty string` };
   }
-  if (body.length > MAX_OUTBOX_BODY_CHARS) {
-    return { error: `message ${n}: "body" is over ${MAX_OUTBOX_BODY_CHARS} characters` };
+  if (body.length > bodyCap) {
+    return {
+      error: `message ${n}: "body" is ${body.length} characters — ${channelName}'s limit is ${bodyCap}`,
+    };
   }
   if (name !== undefined && typeof name !== 'string') {
     return { error: `message ${n}: "name" must be a string when present` };
@@ -407,8 +415,9 @@ function checkOneOutbox(parsed: unknown, dir?: string): OutboxRead {
   }
   const out: OutboxMessage[] = [];
   const seen = new Set<string>();
+  const cap = outboxBodyCap(channel.trim().toLowerCase());
   for (const [i, raw] of messages.entries()) {
-    const { message, error } = checkMessage(raw, i + 1);
+    const { message, error } = checkMessage(raw, i + 1, cap, channel.trim().toLowerCase());
     if (error) return { error };
     // A duplicate recipient is refused rather than deduplicated: sends are
     // idempotent *by recipient*, so two messages to one address could only

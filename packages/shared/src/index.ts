@@ -468,7 +468,24 @@ export interface OutboxSent {
 
 export const MAX_OUTBOX_MESSAGES = 20;
 export const MAX_OUTBOX_TO_CHARS = 200;
+/**
+ * Body caps by channel, modelling each channel's own truth rather than one
+ * invented number (D-193). One flat 2000 refused a 3,325-character Telegram
+ * message three runs in a row — a message Telegram itself carries, since its
+ * sendMessage hard limit is 4096. Telegram's number is protocol; Slack
+ * refuses past 40k; Gmail has no protocol cap, so its figure is sanity, not
+ * protocol. A channel declaring nothing keeps the conservative fallback.
+ */
+export const OUTBOX_BODY_CHARS: Record<string, number> = {
+  telegram: 4096,
+  gmail: 50_000,
+  slack: 40_000,
+};
 export const MAX_OUTBOX_BODY_CHARS = 2000;
+/** The one place the per-channel cap is answered, for parse and brief alike. */
+export function outboxBodyCap(channel?: string): number {
+  return (channel && OUTBOX_BODY_CHARS[channel]) || MAX_OUTBOX_BODY_CHARS;
+}
 
 /**
  * The calendar channel's event block (D-104): what a message describes when

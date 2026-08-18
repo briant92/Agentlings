@@ -228,10 +228,32 @@ export function autoSendable(approval: SendApproval | undefined, outboxes: Outbo
  * produced files is work somebody has to look at, whatever its outbox says.
  */
 export function autoBlocker(
-  job: Pick<Job, 'status' | 'outbox' | 'outboxError' | 'changes' | 'compile' | 'withheld' | 'withheldError'>,
+  job: Pick<
+    Job,
+    | 'status'
+    | 'outbox'
+    | 'outboxError'
+    | 'changes'
+    | 'compile'
+    | 'withheld'
+    | 'withheldError'
+    | 'checked'
+    | 'checkVerdict'
+  >,
   files: string[],
 ): string | null {
   if (job.compile) return 'a compile is never auto-sent';
+  // A job the desk asked to have checked auto-sends only on a confirmed
+  // verdict (TEAMWORK T1, D-194). Pending holds it because the check is the
+  // point of asking; refuted holds it because a claim is wrong; a check that
+  // named no verdict or never reported holds it too, because a check that
+  // vanished is not a check that passed. The check's own completion re-asks
+  // this gate, so a confirming verdict releases the send with nobody waiting.
+  if (job.checked) {
+    if (!job.checkVerdict) return 'its check has not reported yet';
+    if (job.checkVerdict.verdict === 'refuted') return 'its check refuted a claim';
+    if (job.checkVerdict.verdict !== 'confirmed') return 'its check reported no verdict';
+  }
   // A run that withheld something is a run that made a judgement about what a
   // person may see (D-181). A standing grant covered *recipients*, never that
   // — and the one thing worse than a redaction nobody checked is a redaction

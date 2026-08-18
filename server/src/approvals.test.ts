@@ -177,6 +177,40 @@ describe('standing approvals', () => {
     ])('%s stays in review', (_, job, files) => {
       expect(autoBlocker(job, files)).not.toBeNull();
     });
+
+    // The check pass (TEAMWORK T1, D-194): a checked job auto-sends only on
+    // a confirmed verdict. Pending, refuted and no-verdict each hold it by
+    // name, and confirmed releases exactly the job a clean finish would.
+    describe('a checked job', () => {
+      const verdict = (v: 'confirmed' | 'refuted' | 'unchecked') => ({
+        verdict: v,
+        jobId: 'chk1',
+      });
+
+      it('waits while its check has not reported', () => {
+        expect(autoBlocker({ ...clean, checked: true }, PAPER)).toBe(
+          'its check has not reported yet',
+        );
+      });
+
+      it('stays in review when the check refuted a claim', () => {
+        expect(
+          autoBlocker({ ...clean, checked: true, checkVerdict: verdict('refuted') }, PAPER),
+        ).toBe('its check refuted a claim');
+      });
+
+      it('stays in review when the check named no verdict', () => {
+        expect(
+          autoBlocker({ ...clean, checked: true, checkVerdict: verdict('unchecked') }, PAPER),
+        ).toBe('its check reported no verdict');
+      });
+
+      it('goes through on a confirmed verdict', () => {
+        expect(
+          autoBlocker({ ...clean, checked: true, checkVerdict: verdict('confirmed') }, PAPER),
+        ).toBeNull();
+      });
+    });
   });
 
   it('a torn file loses nothing but itself', () => {

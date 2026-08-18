@@ -8,7 +8,15 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
-import type { Job, JobAttachment, JobMeter, MoveOp, Outbox, OutboxSent } from '@agentlings/shared';
+import type {
+  CheckVerdict,
+  Job,
+  JobAttachment,
+  JobMeter,
+  MoveOp,
+  Outbox,
+  OutboxSent,
+} from '@agentlings/shared';
 import { MAX_STATIONS, opKey } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
@@ -54,6 +62,10 @@ export interface NewJobSpec {
   step?: { n: number; of: number };
   /** The chain asked for something to be kept out (D-183). */
   withholding?: boolean;
+  /** The sentence asked for the work to be checked (TEAMWORK T1, D-194). */
+  checked?: boolean;
+  /** This job is a check pass: the job it checks, and whose work to avoid. */
+  check?: { of: string; avoid?: string };
   /** The card's answers, carried so the rest of the chain can hear them. */
   answers?: Record<string, string>;
   /**
@@ -312,6 +324,8 @@ export class JobQueue {
       ...(spec.step ? { step: spec.step } : {}),
       ...(spec.answers && Object.keys(spec.answers).length ? { answers: spec.answers } : {}),
       ...(spec.withholding ? { withholding: true } : {}),
+      ...(spec.checked ? { checked: true } : {}),
+      ...(spec.check ? { check: spec.check } : {}),
       ...(spec.channelMention ? { channelMention: spec.channelMention } : {}),
       ...(spec.alsoAsked?.length ? { alsoAsked: spec.alsoAsked } : {}),
       status: 'queued',
@@ -363,10 +377,24 @@ export class JobQueue {
    * Oldest queued job this agentling should take: one matched to their role
    * first, then unrouted work, then work routed to a role nobody holds — so a
    * job whose specialist was never hired still gets done rather than starving.
+   *
+   * A check pass prefers a different member than the one whose work it checks
+   * (TEAMWORK T1): `check.avoid` names them and they skip it — unless they are
+   * the only awake holder of their role (`soleOfRole`), because a check that
+   * starves is worse than a self-check in a fresh session (D-021: the second
+   * process is what matters; a second identity is better when available).
    */
-  nextUnassigned(role?: string, rolesPresent?: Set<string>): Job | undefined {
+  nextUnassigned(
+    role?: string,
+    rolesPresent?: Set<string>,
+    me?: { id: string; soleOfRole: boolean },
+  ): Job | undefined {
     const waiting = this.list().filter(
-      (j) => j.status === 'queued' && j.slot >= 0 && !j.assignedTo,
+      (j) =>
+        j.status === 'queued' &&
+        j.slot >= 0 &&
+        !j.assignedTo &&
+        !(me && j.check?.avoid === me.id && !me.soleOfRole),
     );
     return (
       waiting.find((j) => j.preferredRole && j.preferredRole === role) ??
@@ -633,6 +661,18 @@ export class JobQueue {
   }
 
   /** Merges one Approve's send results; `sentTo` accumulates so retries skip them. */
+  /**
+   * Stamp a check pass's verdict onto the job it checked (TEAMWORK T1).
+   * Through persist() like every mutation, so the revision moves and the
+   * browser sees the card change.
+   */
+  recordCheckVerdict(jobId: string, verdict: CheckVerdict): Job {
+    const job = this.mustGet(jobId);
+    job.checkVerdict = verdict;
+    this.persist();
+    return job;
+  }
+
   recordOutboxSends(
     jobId: string,
     channel: string,

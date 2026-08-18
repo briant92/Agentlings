@@ -688,6 +688,30 @@ export interface Pending {
   items: string[];
 }
 
+/**
+ * What a check pass found (TEAMWORK T1, D-194): a second agentling's verdict
+ * on a delivered job, stamped onto the job it checked. The checker informs;
+ * it never authorises — Approve stays the only send, and this row is what
+ * the reviewer reads before deciding.
+ */
+export interface CheckVerdict {
+  /**
+   * `confirmed` — every load-bearing claim held. `refuted` — at least one
+   * claim is wrong. `unchecked` — the check ran and named no verdict, or
+   * never reported; treated exactly like `refuted` by the auto-send gate,
+   * because a check that vanished is not a check that passed.
+   */
+  verdict: 'confirmed' | 'refuted' | 'unchecked';
+  /** The check job, so the review can open its sandbox. */
+  jobId: string;
+  /** Who checked, for the card. */
+  by?: string;
+  /** The checker's own claim-by-claim lines, clipped for the card. */
+  findings?: string[];
+  /** Why there is no usable verdict, when there is none. */
+  note?: string;
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -741,6 +765,27 @@ export interface Job {
    * handed an instruction the user was never shown.
    */
   answers?: Record<string, string>;
+  /**
+   * The sentence asked for the work to be checked (TEAMWORK T1, D-194).
+   *
+   * Read off the whole sentence before any split loses it, like
+   * `withholding` above, and riding every step for the same reason — the
+   * deliverable lands at the end of a chain, so the flag must too. Only the
+   * last step queues the check: a second agentling, in its own session and
+   * sandbox, reads the delivered work against the brief and the world and
+   * files CHECK.md. Its verdict lands here as `checkVerdict`; while it is
+   * pending or refuting, the job never auto-sends.
+   */
+  checked?: boolean;
+  /**
+   * This job IS a check pass: the job it checks, and who worked that job —
+   * so pickup can prefer a different member (a second identity is better
+   * than a second session alone, and a sole holder still takes it rather
+   * than starving the check).
+   */
+  check?: { of: string; avoid?: string };
+  /** The check's verdict, stamped when the check job reaches an outcome. */
+  checkVerdict?: CheckVerdict;
   /**
    * The channels this job sends on, when intake detected any (D-079). The
    * session is told the outbox contract for each and nothing else changes —

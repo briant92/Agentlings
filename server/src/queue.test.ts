@@ -601,6 +601,58 @@ describe('JobQueue', () => {
       queue.add({ title: 'Docs', prompt: 'x', preferredRole: 'scribe' });
       expect(queue.nextUnassigned('mason', present)).toBeUndefined();
     });
+
+    // The check pass prefers a second pair of eyes (TEAMWORK T1, D-194): the
+    // member whose work is under check skips it — unless they are the only
+    // awake holder of their role, because a starved check is worse than a
+    // self-check in a fresh session.
+    describe('a check pass and who may take it', () => {
+      it('the checked member passes it by while a colleague holds the role', () => {
+        queue.add({
+          title: 'Check',
+          prompt: 'check the delivered work against its brief',
+          preferredRole: 'scribe',
+          check: { of: 'job1', avoid: 'a1' },
+        });
+        expect(
+          queue.nextUnassigned('scribe', present, { id: 'a1', soleOfRole: false }),
+        ).toBeUndefined();
+        expect(
+          queue.nextUnassigned('scribe', present, { id: 'a2', soleOfRole: false })?.title,
+        ).toBe('Check');
+      });
+
+      it('a sole holder takes it rather than starving it', () => {
+        queue.add({
+          title: 'Check',
+          prompt: 'check the delivered work against its brief',
+          preferredRole: 'scribe',
+          check: { of: 'job1', avoid: 'a1' },
+        });
+        expect(
+          queue.nextUnassigned('scribe', present, { id: 'a1', soleOfRole: true })?.title,
+        ).toBe('Check');
+      });
+    });
+  });
+
+  // The verdict a check pass lands on the job it checked (TEAMWORK T1).
+  describe('recordCheckVerdict', () => {
+    it('stamps the verdict, moves the revision, and survives a restart', () => {
+      const job = queue.add({ title: 'Brief', prompt: 'x', checked: true });
+      const before = queue.revision();
+      queue.recordCheckVerdict(job.id, {
+        verdict: 'refuted',
+        jobId: 'chk1',
+        by: 'Tam',
+        findings: ['the inbox holds 16 messages'],
+      });
+      expect(queue.revision()).toBeGreaterThan(before);
+      expect(queue.get(job.id)?.checkVerdict?.verdict).toBe('refuted');
+      // The browser and the next boot both read what persist() wrote.
+      expect(new JobQueue(root).get(job.id)?.checkVerdict?.by).toBe('Tam');
+      expect(new JobQueue(root).get(job.id)?.checked).toBe(true);
+    });
   });
 
   // Losing the queue on restart cost a verification run once: a server

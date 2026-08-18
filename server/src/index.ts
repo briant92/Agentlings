@@ -9,6 +9,7 @@ import type {
   Agentling,
   AgentlingProfile,
   Cadence,
+  CheckVerdict,
   CrewMember,
   Job,
   LevelInfo,
@@ -53,6 +54,7 @@ import {
   validCadence,
 } from './schedules';
 import { pickForwards, splitSteps, stepBrief } from './steps';
+import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
@@ -392,7 +394,14 @@ function makeLevel(dir: string): LevelRuntime {
       // A delivered step queues the next through the same glue; a failed
       // one halts the chain with the reason in the feed (D-105).
       const chainRuntime = levels.get(meta.id);
-      if (chainRuntime) queueNextStep(chainRuntime, job);
+      if (chainRuntime) {
+        queueNextStep(chainRuntime, job);
+        // The check pass rides the same completion seam (TEAMWORK T1): a
+        // finished check settles its verdict on the job it checked; a
+        // delivered job the desk asked to have checked queues one.
+        if (job.check) settleCheck(chainRuntime, job);
+        else queueCheck(chainRuntime, job);
+      }
       // Persist the career as it happens, so a restart no longer wipes it.
       const runtime = levels.get(meta.id);
       if (runtime) {
@@ -1150,6 +1159,10 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     // only the native picker yields the absolute path, so the desk shows a
     // "choose the folder" step rather than claiming one from the words.
     ...(wantsOrganize(text) ? { organize: true } : {}),
+    // The sentence asked for a check pass (TEAMWORK T1) — said on the card
+    // like the cadence is (D-184): what the desk read, before Start acts on
+    // it, with the second session's cost visible in the plan.
+    ...(wantsCheck(text) ? { checked: true } : {}),
     // The near-miss itself, when no ask fired: a channel word with no send
     // verb beside it (D-093), for the desk to question rather than claim.
     ...(() => {
@@ -1243,6 +1256,10 @@ function queueSentence(
     noRepo?: boolean;
     /** The chain asked for something to be kept out (D-183). */
     withholding?: boolean;
+    /** The chain asked for the work to be checked (TEAMWORK T1, D-194). */
+    checked?: boolean;
+    /** This job is a check pass: the job it checks, and whose work to avoid. */
+    check?: { of: string; avoid?: string };
   } = {},
 ): Job {
   // The split happens inside the glue (D-105), so every way in composes:
@@ -1267,6 +1284,11 @@ function queueSentence(
       if (wantsWithholding(fullText)) withholding = true;
     }
   }
+  // Read off the whole sentence for D-183's reason: the deliverable lands at
+  // the end of a chain, so "…, have it checked" must ride every step and act
+  // on the last, whatever step the words fell into. A chain-queued step
+  // arrives with the flag already decided in opts.
+  const checked = opts.checked === true || wantsCheck(fullText);
   const jobRepoPath = opts.noRepo ? '' : rt.meta.repoPath;
   const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, jobRepoPath, text);
   // An organize job routes to the generalist worker, which carries the
@@ -1378,6 +1400,8 @@ function queueSentence(
       // that asks it too — the recompute below decides which ones those are.
       ...(opts.answers ? { answers: opts.answers } : {}),
       ...(withholding ? { withholding: true } : {}),
+      ...(checked ? { checked: true } : {}),
+      ...(opts.check ? { check: opts.check } : {}),
       // A channel word the job is NOT carrying (D-093): stamped so the
       // review can say approving sends nothing, with the reply as the way
       // out — the same table the ask reads, one notion.
@@ -1457,8 +1481,10 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
       // step re-derives its own questions from its own sentence, so it hears
       // only the answers it would itself have asked for.
       ...(job.answers ? { answers: job.answers } : {}),
-      // The chain's withholding rides to every later step (D-183).
+      // The chain's withholding rides to every later step (D-183), and the
+      // check flag rides for the same reason — only the last step acts on it.
       ...(job.withholding ? { withholding: true } : {}),
+      ...(job.checked ? { checked: true } : {}),
       brief: stepBrief({
         previousPrompt: job.prompt,
         n,
@@ -1477,6 +1503,151 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
       detail: `step ${n} of ${of} could not queue — ${err instanceof Error ? err.message : String(err)}`,
     });
   }
+}
+
+/**
+ * A delivered job the desk asked to have checked queues its check pass
+ * (TEAMWORK T1, D-194) — through the same glue as every way in, exactly as a
+ * chain queues its next step: the check job does not exist until here, so
+ * there is no waiting status anywhere. Only the last step of a chain checks
+ * (the flag rides the chain like withholding; the deliverable lands at the
+ * end), and a check job never checks itself.
+ */
+function queueCheck(rt: LevelRuntime, job: Job): void {
+  if (!job.checked || job.check) return;
+  if (job.steps?.length) return;
+  if (job.status !== 'done' && job.status !== 'partial') {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: 'check not queued — nothing was delivered',
+    });
+    return;
+  }
+  const dir = rt.queue.sandboxDir(job.id);
+  const { take, leftBehind } = pickForwards(outputNames(dir));
+  const attachments: { name: string; data: Buffer }[] = [];
+  const oversize: string[] = [];
+  // The checked job's report travels renamed (D-146's discipline): it must
+  // never look like the checker's own work, and the brief points at the
+  // exact name through the shared constant.
+  const report = path.join(dir, 'RESULT.md');
+  if (existsSync(report)) {
+    const data = readFileSync(report);
+    if (data.length <= MAX_ATTACHMENT_BYTES) {
+      attachments.push({ name: CHECKED_WORK_REPORT, data });
+    }
+  }
+  for (const name of take) {
+    const data = readFileSync(path.join(dir, name));
+    if (data.length > MAX_ATTACHMENT_BYTES) {
+      oversize.push(name);
+      continue;
+    }
+    attachments.push({ name, data });
+  }
+  // The checker runs as the role that RAN the work — same doors, same class
+  // rate, no new price class — resolved the way a continuation resolves it:
+  // who actually held the job, then the roster, then the matched role.
+  const role =
+    rt.sim.agentlings.find((a) => a.id === job.assignedTo)?.role ??
+    rt.roster.find((s) => s.id === job.assignedTo)?.role ??
+    job.preferredRole;
+  try {
+    queueSentence(rt, CHECK_SENTENCE, {
+      noSplit: true,
+      ...(role && registry.get(role) ? { role } : {}),
+      ...(job.tools?.length ? { tools: job.tools } : {}),
+      attachments,
+      check: { of: job.id, ...(job.assignedTo ? { avoid: job.assignedTo } : {}) },
+      ...(job.withholding ? { withholding: true } : {}),
+      brief: checkBrief({
+        checkedPrompt: job.prompt,
+        checkedBrief: job.brief,
+        hadReport: attachments.some((a) => a.name === CHECKED_WORK_REPORT),
+        forwarded: attachments.filter((a) => a.name !== CHECKED_WORK_REPORT).map((a) => a.name),
+        leftBehind: [...leftBehind, ...oversize],
+      }),
+      note: `check pass — verifying "${job.title}"`,
+    });
+  } catch (err) {
+    rt.eventLog.emit({
+      type: 'progress',
+      jobId: job.id,
+      title: job.title,
+      detail: `check could not queue — ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
+}
+
+/**
+ * A finished check pass lands its verdict on the job it checked (TEAMWORK
+ * T1). The verdict informs — the reviewer reads it, the auto-send gate
+ * refuses on anything short of `confirmed` — and never authorises; Approve
+ * stays the one send. A refuted claim is written into the checked member's
+ * own memory, because the disagreements are the training signal the
+ * clean-success loop never banks.
+ */
+function settleCheck(rt: LevelRuntime, checkJob: Job): void {
+  const of = checkJob.check?.of;
+  if (!of) return;
+  const primary = rt.queue.get(of);
+  if (!primary) return;
+  const parsed = parseCheck(rt.queue.sandboxDir(checkJob.id));
+  const by =
+    rt.roster.find((s) => s.id === checkJob.assignedTo)?.name ??
+    rt.sim.agentlings.find((a) => a.id === checkJob.assignedTo)?.name;
+  const verdict: CheckVerdict = {
+    ...(parsed ?? { verdict: 'unchecked' as const, note: 'the check never reported' }),
+    jobId: checkJob.id,
+    ...(by ? { by } : {}),
+  };
+  rt.queue.recordCheckVerdict(primary.id, verdict);
+  rt.eventLog.emit({
+    type: 'progress',
+    jobId: primary.id,
+    title: primary.title,
+    detail:
+      verdict.verdict === 'confirmed'
+        ? `check confirmed${by ? ` by ${by}` : ''} — the claims held`
+        : verdict.verdict === 'refuted'
+          ? `check refuted a claim${by ? ` (${by})` : ''}${verdict.findings?.[0] ? ` — ${verdict.findings[0]}` : ''}`
+          : `check reported no verdict — ${verdict.note ?? 'unreadable'}`,
+  });
+  if (verdict.verdict === 'refuted' && primary.assignedTo) {
+    const author = rt.roster.find((s) => s.id === primary.assignedTo)?.name;
+    if (author) {
+      const date = new Date().toISOString().slice(0, 10);
+      const first = verdict.findings?.[0] ? ` — ${verdict.findings[0]}` : '';
+      rt.memory.append(
+        author,
+        `${date} · a check refuted a claim in my work${first} (job: ${primary.title})`,
+      );
+    }
+  }
+  // A check that reported files itself — its verdict lives on the checked
+  // job's card, and a second card waiting for a verdict of its own would
+  // only stack crates. One that never reported stays for eyes: a broken
+  // check is worth looking at.
+  if (parsed) {
+    try {
+      rt.queue.resolve(checkJob.id, 'promote');
+      rt.eventLog.emit({
+        type: 'resolved',
+        jobId: checkJob.id,
+        title: checkJob.title,
+        detail: 'check filed — the verdict is on the checked job',
+        by: 'app',
+      });
+    } catch {
+      // Not resolvable (already resolved, or an unexpected status) — leave it.
+    }
+  }
+  // The auto path asks again now the verdict is in. Everything is decided by
+  // the same gate a clean finish uses (D-082): a refuted or missing verdict
+  // is refused there by name, and a manual Approve was never blocked at all.
+  void autoSendIfApproved(rt.dir, rt.queue, rt.eventLog, rt.meta.id, primary);
 }
 
 /**

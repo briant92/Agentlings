@@ -143,7 +143,13 @@ export class Sim {
 
   private tryPickUp(a: Agentling): void {
     const rolesPresent = new Set(this.agentlings.map((other) => other.role));
-    const job = this.queue.nextUnassigned(a.role, rolesPresent);
+    // Whether anyone else awake holds this role — a check pass prefers a
+    // different member than the one it checks, and this is what lets a sole
+    // holder take it anyway rather than starving it (TEAMWORK T1).
+    const soleOfRole = !this.agentlings.some(
+      (other) => other.id !== a.id && other.role === a.role,
+    );
+    const job = this.queue.nextUnassigned(a.role, rolesPresent, { id: a.id, soleOfRole });
     if (!job) return;
     this.queue.assign(job.id, a.id);
     a.jobId = job.id;

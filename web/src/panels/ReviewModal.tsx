@@ -278,6 +278,35 @@ export function ReviewModal({
           {cutLine && <p className="rv-cut">{cutLine}</p>}
           {!cutLine && job.error && <p className="error">{job.error}</p>}
           {job.summary && <p className="rv-summary">{job.summary}</p>}
+          {/* The check pass verdict (TEAMWORK T1, D-194): a second agentling
+              read this work against the brief and the world. Above the
+              messages on purpose, like the withheld panel — the reviewer
+              should know a claim was refuted before reading the claims. It
+              informs; Approve still decides. */}
+          {job.checkVerdict && (
+            <div className={`rv-check rv-check-${job.checkVerdict.verdict}`}>
+              <div className="rv-check-t">
+                {job.checkVerdict.verdict === 'confirmed'
+                  ? `Checked${job.checkVerdict.by ? ` by ${job.checkVerdict.by}` : ''} — the claims held`
+                  : job.checkVerdict.verdict === 'refuted'
+                    ? `Checked${job.checkVerdict.by ? ` by ${job.checkVerdict.by}` : ''} — a claim was refuted`
+                    : `The check reported no verdict${job.checkVerdict.note ? ` — ${job.checkVerdict.note}` : ''}`}
+              </div>
+              {!!job.checkVerdict.findings?.length && (
+                <ul className="rv-check-list">
+                  {job.checkVerdict.findings.map((finding, i) => (
+                    <li key={i}>{finding}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {job.checked && !job.checkVerdict && (job.status === 'done' || job.status === 'partial') && (
+            <p className="rv-check-pending">
+              A check pass is running — its verdict lands here, and nothing auto-sends before it
+              reports.
+            </p>
+          )}
           {/* The third mention-guard (D-193): the channel was carried, the run
               composed, and the contract refused the file — so the send the
               summary may well be claiming does not exist. Same voice as the

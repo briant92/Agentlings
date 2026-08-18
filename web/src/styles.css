@@ -4390,6 +4390,48 @@ button.danger:hover {
   color: #8a8172;
 }
 
+/* The check pass verdict (TEAMWORK T1, D-194). Above the messages like the
+   withheld panel: a second opinion is context for reading the work, not a
+   footnote after. Green holds, red refutes, amber for a check that named no
+   verdict — which the auto-send gate treats exactly like a refusal. */
+.rv-check {
+  border: 1px solid #c9ccba;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fbf8ef;
+}
+.rv-check-confirmed {
+  border-color: #a9c4a0;
+  background: #f2f8ee;
+}
+.rv-check-refuted {
+  border-color: #d8a8a0;
+  background: #fbf1ee;
+}
+.rv-check-unchecked {
+  border-color: #d9c48e;
+  background: #fbf6e8;
+}
+.rv-check-t {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2f2b33;
+}
+.rv-check-list {
+  margin: 6px 0 0;
+  padding: 0 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  color: #4a4455;
+}
+.rv-check-pending {
+  margin: 0;
+  font-size: 11.5px;
+  color: #8a8172;
+}
+
 /* What the sentence itself was read as, quoted back (D-184). Amber like the
    near-miss line: it is a reading the user should check, not a fact. */
 .work-cadence-read {

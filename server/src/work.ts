@@ -178,6 +178,10 @@ export function queuedJobSpec(args: {
   step?: { n: number; of: number };
   /** The chain asked for something to be kept out (D-183). */
   withholding?: boolean;
+  /** The sentence asked for the work to be checked (TEAMWORK T1, D-194). */
+  checked?: boolean;
+  /** This job is a check pass: the job it checks, and whose work to avoid. */
+  check?: { of: string; avoid?: string };
   /** The card's answers, for the steps that have not been queued yet. */
   answers?: Record<string, string>;
 }): {
@@ -200,6 +204,8 @@ export function queuedJobSpec(args: {
   step?: { n: number; of: number };
   answers?: Record<string, string>;
   withholding?: boolean;
+  checked?: boolean;
+  check?: { of: string; avoid?: string };
 } {
   return {
     title: args.title,
@@ -229,6 +235,8 @@ export function queuedJobSpec(args: {
     // running there is nobody left to hand them to, and the answers this job
     // itself uses are already in its clarifications.
     ...(args.withholding ? { withholding: true } : {}),
+    ...(args.checked ? { checked: true } : {}),
+    ...(args.check ? { check: args.check } : {}),
     ...(args.steps?.length && args.answers && Object.keys(args.answers).length
       ? { answers: args.answers }
       : {}),

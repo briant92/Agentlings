@@ -14055,3 +14055,68 @@ perfect (six hands, zero strays), the wall-death clause 1–0 to the
 party, the wall-clock and spend clauses failed or incomputable. Pair
 three remains. Cards owed a discard: pair one's gather c0cf3b9d, pair
 two's solo f2a6fd44 and gather c4168dac.
+
+**Third trial amendment (2026-08-19) — pair three, the tally, and the
+verdict: the bar is missed, the machinery stays, the triggers are named.**
+
+Pair three's task was the mixed bundle (bench extension, party-brief
+tests, a teamwork doc). It took three solo attempts to get a baseline:
+the first two — both architect-matched — **planned instead of
+implementing**, the second saying so in its own words ("per this job
+class's precedent"). That is the trial's deepest finding: three plan
+jobs in one day became the architect's newest lessons, and the class's
+banked precedent steered work jobs into plans — the
+learns-only-from-successes trap as live behavioural drift, the trial
+contaminating its own instrument. A concrete-verb rewording routed to
+mason and delivered all three pieces (7.5 min, $2.66 spent, 36 of 40
+turns, no wall death). The two censored solos ($1.90) are recorded as
+tuition. Recorded, not decided: class lesson hygiene.
+
+The party arm ran on the reworded sentence with an asterisk earned
+minutes earlier: the same review pass that approved the plan also
+**promoted solo v3 and both earlier gathers** — the sentence marker
+"discard at review, never promote" did not survive a pile-clearing pass
+(pair one's finding two, repeated *with* the marker; only a structural
+no-promote on trial cards would hold, recorded not built) — so the
+hands cloned a tree already carrying the solo's applied work. And
+mid-party, hand two was discarded from review after finishing: the
+machinery took it as designed — not load-bearing, so the gather
+proceeded and named the piece missing rather than papering over it. An
+unplanned resilience proof, at the price of $1.76 of finished work
+dropped from the fold. **The hands ran concurrent this time** — three
+members, three roles, the diversity pair two lacked — and the fences
+held again: strays zero, merge clean, suite green.
+
+Pair three's asterisked numbers: party 10.4 min and $7.40 (plan $0.70,
+hands $5.89, gather $0.81) against the solo's 7.5 min and $2.66 —
++39% wall, 2.8× spend, no wall-deaths either arm.
+
+**The tally, against the bar as pre-registered:**
+
+| clause | result |
+|---|---|
+| wall-clock cut ≥ 30% (aggregate) | **FAIL** — +94%, incommensurable, +39%* |
+| spend ≤ 1.8× solo (aggregate) | **FAIL** — 3.2×, incomputable, 2.8×* |
+| fewer wall-deaths | **PASS** — party 0, solo 1 (pair two, dodged by scoping) |
+| merged patch clean, every pair | **PASS** — 3 of 3, plain apply, no reconciliation |
+| checks green, every pair | **PASS** — typecheck + full suite, 3 of 3 |
+| scope fences | 9 hands, **zero strays**, recomputed from the patches |
+
+**Verdict: the bar is missed, and the entry takes the numbers as it
+promised.** Repo parties are **not adopted**: the machinery stays in the
+codebase — tested, mutation-proven, and now trial-exercised — but T4 is
+recorded as measured-and-declined, the ponytail's shape at the summit
+(D-190). What the trial actually established: the fences and the merge
+are solid everywhere; the one real benefit is wall-death dodging, and it
+comes from the *scoping*, not the parallelism; the economics run 2.8–3.2×
+at roughly +40–90% wall against a healthy solo, with the plan-and-gather
+overhead ($1.5–2.8 fixed) unamortised at this task size.
+
+**Reopen triggers, named:** (a) G6's fork lands — role-diverse pickup or
+relaxed party assignment — making hand concurrency reliable rather than
+an accident of crew composition, since serialization is what cost the
+wall-clock clause its one real shot; (b) a recurring repo task class
+that wall-dies solo in the wild (pair two's shape as a felt need, not a
+fixture); (c) an economy change that amortises the fixed overhead. Any
+of the three earns a fresh trial; until then T1–T3 stand adopted and
+T4 stands ready but dark.

@@ -14010,3 +14010,48 @@ bar's second clause was written for.
    tests, plus my fix and pin. The commit is local and stands; this
    sentence is the correction of record, and the lesson is D-163's in
    miniature: stage by name in a tree other actors write to.
+
+**Second trial amendment (2026-08-19) — pair two: the wall-death clause
+proved live, the concurrency premise starved by role-matching, and the
+instrument cannot price a dead solo.**
+
+The task named three subsystem docs; the sentence carried the trial
+marker on its face (pair one's finding 2, applied). **The solo arm died
+at the 10-minute wall** — `partial`, two of three docs delivered
+(945 lines; the executors doc, the biggest, never landed) — while
+**every fenced hand finished comfortably inside its own window** (5.2,
+6.0 and 6.5 minutes; 18/24/24 turns of 40) and the gather merged all
+three docs clean, no reconciliation, typecheck and the full suite green,
+2,080 doc lines, zero source files touched, zero scope strays recomputed
+from the patches. The same total work that killed one session fit three
+scoped ones: **the wall-dodging is the scoping, and pair two is the
+bar's second clause happening live — solo one wall-death, party none.**
+
+**The concurrency premise failed for a reason worth more than the
+clause it cost.** All three hand prompts matched *architect*, hq wakes
+exactly one architect, and the pickup ladder — each rule individually
+right — composed into a strictly sequential party: hands 2 and 3 sat
+queued while their role's one holder worked, because every other member
+correctly leaves another role's work alone while someone can take it.
+That is AGENTLING.md's own open G6 row ("a job waits for its specialist
+while others idle") measured inside the trial: a party's speed premise
+silently dies whenever the plan's hands all match one role with one
+awake holder. Had the hands run concurrent, the party's ~9.6 minutes
+would have beaten the solo's 10.6-to-death — the serialization is what
+cost the wall-clock clause its first real shot. Recorded, not decided:
+hands riding unrouted, party pickup relaxing role preference, or the
+planner diversifying roles all reshape G6 and wait for that decision.
+
+**And the spend ratio is incomputable exactly where the party wins:**
+the killed solo's ledger row reads cost 0, costUnknown — D-192's
+undercount, now a trial bias, because a wall-dead solo cannot be priced
+against the party that dodged the wall. Party spend recorded absolute:
+$7.75 (plan $1.07, hands $5.47 serialized, gather $1.21). Wall-clock
+recorded incommensurable (21.5 minutes complete against 10.6 minutes
+censored-incomplete).
+
+After two pairs: merges clean and checks green everywhere, fences
+perfect (six hands, zero strays), the wall-death clause 1–0 to the
+party, the wall-clock and spend clauses failed or incomputable. Pair
+three remains. Cards owed a discard: pair one's gather c0cf3b9d, pair
+two's solo f2a6fd44 and gather c4168dac.

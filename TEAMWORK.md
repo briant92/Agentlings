@@ -334,7 +334,7 @@ T2's gate.
 2. Whether the planner may propose cross-class hands (architect + scribe +
    worker) v1, or same-class only until one cross-class party has landed.
 
-### T4 — Repo parties *(the summit; waits on a trial)* — **built, D-197; wiring until the pre-registered trial below reports, run pair by pair after the next restart, promotes never**
+### T4 — Repo parties *(the summit; waits on a trial)* — **trial complete, D-197 third amendment: the bar is missed and the entry takes the numbers. Fences 9-for-9, merges 3-for-3, wall-deaths 1–0 to the party — but 2.8–3.2× spend at +39–94% wall against healthy solos. Not adopted; the machinery stays dark with three reopen triggers named (reliable concurrency via G6's fork, a wall-dying repo task class in the wild, amortised overhead)**
 
 **Unlocks:** 2–3 masons/workers on one repository at once — the flagship
 "challenging coding task" case — with disjoint scopes and one merged

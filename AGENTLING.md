@@ -1774,11 +1774,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       patch's own paths and named, never silent), the gather merges the
       hand patches on a fresh clone — plain git apply in hand order,
       never --3way, refusals reconciled by hand — and its single
-      DIFF.patch is what Approve applies; promote unchanged. *Wiring
-      tested and mutation-proven; ADOPTION GATED on the pre-registered
-      trial (wall-clock −30% and fewer wall-deaths at ≤1.8× solo spend
-      over 3 pairs, merges clean, checks passing) — until it reports,
-      this row is machinery, not a capability.*
+      DIFF.patch is what Approve applies; promote unchanged. *Trial complete
+      2026-08-19 (D-197 third amendment): the pre-registered bar was
+      missed — fences 9-for-9 and merges 3-for-3 with wall-deaths 1–0 to
+      the party, but 2.8–3.2× spend at +39–94% wall against healthy
+      solos — so this row stays machinery, not a capability, with the
+      reopen triggers named in the entry.*
 - [ ] **Hazards mapped to real failure modes** — rate-limit fire pits, error chasms
 - [ ] **Blocker agentlings** — a paused queue you can see
 

@@ -315,6 +315,20 @@ the wall (server change, Phase 2 shape). Brian picks; (a) is one line and
 a replay, (b) is the systemic fix the ledger/review truth gap already
 argued for.
 
+**Cure (a) APPLIED (2026-08-21, Brian's go):** the card's "improve it with
+what remains" — which provably spends every turn — replaced with an
+explicit self-stop ("once the delivery is complete, read back and written
+up, stop; a run that ends on its own files finished work"). Replay
+re-measured: 15 moves vs the install's 13, judged — one accepted casualty
+*healed* (jungle-floor pack back to researcher), one near-tie improved to
+designer (which actually holds the pack skill), two stored old-variant
+blueprint texts now match at ~0.49–0.50 instead of no-match (harmless —
+nobody re-queues those strings); live targets strengthened (blueprints
+0.63–0.69, verify-tail 0.74, 3D steady 0.59). Registry restarted, levels
+idle. **The cure is a hypothesis until measured: the next real spatial job
+is its test — it passes if the run files `done` under its own steam and
+bills.** Cure (b) stays parked for the Phase 2 batch.
+
 ### Phase 2 — mechanism fixes (small server builds, independent of each other)
 
 - [ ] **Loud roster gap** (D-186 pattern). → Desired: queueing a job whose

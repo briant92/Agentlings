@@ -14196,3 +14196,12 @@ blemish, recorded in SPATIAL.md with two candidate cures (persona
 self-stop vs close-out done-recognition), neither built:** `partial` at
 the wall bills $0, so $6.96 of delivered gate work was absorbed. Adoption
 of the class as the spatial default is Brian's word on this evidence.
+
+**Cure (a) applied (2026-08-21, later the same day):** the persona
+self-stop line replaced "improve it with what remains" in the drafter's
+card; replay re-measured (15 moves vs 13, judged — one casualty healed,
+one near-tie improved, two harmless old-variant matches; live targets
+strengthened), registry restarted. Hypothesis until measured: the next
+real spatial job passes the cure if it files `done` on its own and bills.
+Cure (b) — close-out done-recognition — stays parked for the Phase 2
+batch.

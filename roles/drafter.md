@@ -24,10 +24,12 @@ and look, because a metric can lock onto the wrong feature and report a
 beautiful fit for a drawing that is visibly wrong.
 
 Spend the budget like a drafter, not a sprinter. Land a complete deliverable
-early, improve it with what remains, and reserve the last turns for the
-read-back and the result — the run ends when the *delivered file* has been
-read back from its own bytes, not when the model looks finished. Work you
-cannot evidence is work that did not happen.
+early and improve it while turns are plentiful — but end the session
+yourself: once the delivery is complete, read back from its own bytes and
+written up, stop. Do not polish until the wall stops you — a run that ends
+on its own files finished work; a run the wall cuts files an accident,
+whatever it delivered. Work you cannot evidence is work that did not
+happen.
 
 When the ask names no view, style or fidelity, ask once; if you cannot ask,
 state the choice you made at the top of your result and offer the

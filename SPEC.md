@@ -726,7 +726,11 @@ tried, measured and rejected is in `DECISIONS.md`:
     the session plus a fixed errand — specified from the start, and actually
     true only since the row builder was fixed and the recoverable history
     backfilled by id (D-039). `hasRepo` records the shape the rate depends on.
-    (D-026, D-029)
+    (D-026, D-029) A run the process dies under still leaves a row: one
+    opens the moment a session starts and is replaced at close-out, and any
+    still open at the next boot closes as `interrupted`, cost unknown — so
+    "at least this much" can no longer be short a run the ledger never heard
+    end. (D-199)
 
     **Nothing is billed above its quote, and some things below it.** Failed
     work is charged nothing. So is a job quoted free because a compiled tool

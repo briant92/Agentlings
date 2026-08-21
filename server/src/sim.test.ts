@@ -178,4 +178,23 @@ describe('Sim', () => {
     sim.step();
     expect(sim.agentlings.find((a) => a.id === 'a3')!.x).not.toBe(before);
   });
+
+  it('announces a start before the executor is asked anything, the job already running', () => {
+    const order: string[] = [];
+    const watching: Executor = {
+      run: () => {
+        order.push('run');
+        return new Promise<ExecutorResult>(() => {});
+      },
+    };
+    const s = new Sim(CREW, queue, watching, undefined, undefined, (a, job) => {
+      order.push(`start:${a.role}:${job.status}`);
+    });
+    const job = queue.add({ title: 'T', prompt: 'p' });
+    for (let i = 0; i < 200 && queue.get(job.id)!.status === 'queued'; i++) s.step();
+    // What the ledger opens its row on (D-199): the job is persisted as
+    // running first, so a process dying from here on is the job store's
+    // INTERRUPTED case and the ledger's open row at once.
+    expect(order).toEqual(['start:worker:running', 'run']);
+  });
 });

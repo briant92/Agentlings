@@ -159,8 +159,11 @@ import {
 } from './library';
 import {
   append as appendLedger,
+  closeOpenRows,
   costPerTurn,
+  finalize as finalizeLedger,
   ledgerRow,
+  openRow,
   readLedger,
   repriceChain,
   totals,
@@ -401,7 +404,8 @@ function makeLevel(dir: string): LevelRuntime {
 
       // Every job goes in the ledger, including the ones we absorb — the
       // difference between cost and price is only visible if both are kept.
-      appendLedger(SANDBOX_ROOT, ledgerRow(job, meta.id, agentling.role, outcome, Date.now()));
+      // This closes the row the start opened (D-199).
+      finalizeLedger(SANDBOX_ROOT, ledgerRow(job, meta.id, agentling.role, outcome, Date.now()));
       // The one path that sends without review, gated hard (D-082). Fire and
       // forget: a send must never block the finish bookkeeping around it.
       void autoSendIfApproved(dir, queue, eventLog, meta.id, job);
@@ -427,6 +431,10 @@ function makeLevel(dir: string): LevelRuntime {
         saveRoster(runtime);
       }
     },
+    // The row opens the moment the run does, so a process that dies under it
+    // leaves an interrupted row at the next start rather than nothing (D-199).
+    (agentling, job) =>
+      appendLedger(SANDBOX_ROOT, openRow(job, meta.id, agentling.role, Date.now())),
   );
   const rt: LevelRuntime = { meta, dir, queue, sim, eventLog, memory, roster };
   levels.set(meta.id, rt);
@@ -529,6 +537,17 @@ if (levels.size === 0 && listLevelDirs(SANDBOX_ROOT).length === 0) {
     theme: 'cave',
   });
   makeLevel(levelDir(SANDBOX_ROOT, meta.id));
+}
+
+// Every ledger row still open now belongs to a run the last process died
+// under — this one has no session running yet — so it is closed as
+// interrupted, cost unknown: the ledger's half of what restore() just did to
+// the job store (D-199).
+const died = closeOpenRows(SANDBOX_ROOT);
+if (died > 0) {
+  console.log(
+    `[agentlings] ${died} run(s) died with the last process — ledger rows closed as interrupted, cost unknown`,
+  );
 }
 
 // Recover the diffs of runs the last process was killed in the middle of.

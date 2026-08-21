@@ -14,6 +14,11 @@ export type OnOutcome = (
   detail: string,
   lesson?: string,
 ) => void;
+/**
+ * A run has begun: the job is `running` and persisted, its sandbox exists,
+ * and nothing else is known yet. What the ledger opens its row on (D-199).
+ */
+export type OnStart = (agentling: Agentling, job: Job) => void;
 
 const WALK_SPEED = 6; // world units per tick
 const PATROL_MIN = 48; // just clear of the left rock wall
@@ -46,6 +51,7 @@ export class Sim {
     private executor: Executor,
     private emit: EmitEvent = () => {},
     private onOutcome: OnOutcome = () => {},
+    private onStart: OnStart = () => {},
   ) {
     const span = PATROL_MAX - PATROL_MIN;
     this.agentlings = crew.map((seed, i) => {
@@ -229,6 +235,9 @@ export class Sim {
     a.state = 'working';
     const sandboxDir = this.queue.start(jobId);
     this.emit({ type: 'started', jobId, title: job.title, agentling: a.name });
+    // Before the executor is asked anything: a process that dies under the
+    // run from here on leaves the row this opens, not nothing (D-199).
+    this.onStart(a, job);
     this.executor
       .run(
         job,

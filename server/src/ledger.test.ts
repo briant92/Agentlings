@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -6,9 +6,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { quoteFor, formatUsd, DEFAULT_CEILING_USD } from './estimate';
 import {
   append,
+  closeOpenRows,
   costPerTurn,
+  finalize,
   history,
+  interruptedRow,
+  ledgerFile,
   ledgerRow,
+  openRow,
   priceFor,
   rateFor,
   readLedger,
@@ -591,5 +596,98 @@ describe('repriceChain', () => {
     const before = readLedger(root);
     expect(repriceChain(root, ['missing'])).toEqual({ rows: 0, chargedUsd: 0 });
     expect(readLedger(root)).toEqual(before);
+  });
+});
+
+// The vanish mode (D-199): the only write used to be the completion
+// callback, so a process that died under a session left no row at all —
+// thirteen times on the real install. A row now opens when the run does.
+describe('the row a run opens with', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-open-'));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  const job = { id: 'j1', quotedUsd: 2, repoPath: 'C:/r', assignedTo: 'a9' };
+  /** The file as written, open rows included — what readers must not see. */
+  const onDisk = (): LedgerEntry[] =>
+    readFileSync(ledgerFile(root), 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as LedgerEntry);
+
+  it('knows nothing yet: failed, cost zero and unknown, priced nothing, open', () => {
+    expect(openRow(job, 'hq', 'designer', 5)).toEqual({
+      at: 5,
+      jobId: 'j1',
+      levelId: 'hq',
+      jobClass: 'designer',
+      agentlingId: 'a9',
+      tier: 'session',
+      outcome: 'failed',
+      costUsd: 0,
+      priceUsd: 0,
+      quotedUsd: 2,
+      hasRepo: true,
+      costUnknown: true,
+      open: true,
+    });
+  });
+
+  it('is hidden from every reader while open — a run in flight is not yet a cost', () => {
+    append(root, entry({ jobId: 'done-before' }));
+    append(root, openRow(job, 'hq', 'designer', 5));
+    expect(onDisk()).toHaveLength(2);
+    expect(readLedger(root).map((r) => r.jobId)).toEqual(['done-before']);
+    expect(totals(readLedger(root)).unmeasured).toBe(0);
+  });
+
+  it('is replaced by the real row at close-out: one row a job, in finish order', () => {
+    append(root, entry({ jobId: 'earlier' }));
+    append(root, openRow(job, 'hq', 'designer', 5));
+    finalize(root, entry({ jobId: 'j1', at: 9, costUsd: 1.2, priceUsd: 1.2 }));
+    expect(onDisk().map((r) => [r.jobId, r.open ?? false])).toEqual([
+      ['earlier', false],
+      ['j1', false],
+    ]);
+    expect(readLedger(root).find((r) => r.jobId === 'j1')).toMatchObject({
+      at: 9,
+      costUsd: 1.2,
+      outcome: 'done',
+    });
+  });
+
+  it('close-out with no open row simply appends — nothing was in flight when this landed', () => {
+    append(root, entry({ jobId: 'earlier' }));
+    finalize(root, entry({ jobId: 'j1' }));
+    expect(onDisk().map((r) => r.jobId)).toEqual(['earlier', 'j1']);
+  });
+
+  it('closes every row still open at startup as interrupted, and only those', () => {
+    append(root, entry({ jobId: 'fine' }));
+    append(root, openRow(job, 'hq', 'designer', 5));
+    append(root, openRow({ id: 'j2' }, 'hq', 'worker', 6));
+    expect(closeOpenRows(root)).toBe(2);
+    const rows = readLedger(root);
+    expect(rows.map((r) => r.jobId)).toEqual(['fine', 'j1', 'j2']);
+    expect(rows[0]).toEqual(entry({ jobId: 'fine' }));
+    // The same row the backfill builds from the job record.
+    expect(rows[1]).toEqual(interruptedRow(job, 'hq', 'designer', 5));
+    expect(rows[1].open).toBeUndefined();
+    // Counted where the killed runs always were: unmeasured, "at least".
+    expect(totals(rows).unmeasured).toBe(2);
+    // Idempotent, and silent when there is nothing to close.
+    expect(closeOpenRows(root)).toBe(0);
+  });
+
+  it('survives a chain repricing — a rewrite must not drop what readers cannot see', () => {
+    append(root, entry({ jobId: 'a', outcome: 'failed', priceUsd: 0, costUsd: 1.39, quotedUsd: 2 }));
+    append(root, openRow(job, 'hq', 'designer', 5));
+    expect(repriceChain(root, ['a']).rows).toBe(1);
+    expect(onDisk().map((r) => r.jobId)).toEqual(['a', 'j1']);
+    expect(onDisk()[1].open).toBe(true);
   });
 });

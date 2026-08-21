@@ -100,6 +100,30 @@ export interface LedgerEntry {
    */
   costUnknown?: boolean;
   /**
+   * The session has started and nothing has closed it out yet.
+   *
+   * Written the moment a run begins, before anything about it is known, and
+   * replaced by the real row when the run finishes — so a process that dies
+   * under a session leaves this instead of nothing. Thirteen runs vanished
+   * that way (42e320d0 and 31d0c24b the two that were noticed): the only
+   * write was the completion callback, which a killed server never reaches,
+   * so the job store marked them INTERRUPTED at the next start and the
+   * ledger never heard (D-199). An open row is this file's own business —
+   * `readLedger` hides it, because a run that has not finished is not yet a
+   * cost — and `closeOpenRows` turns every one still open at startup into an
+   * `interrupted` row: a fresh process has no session running, which is the
+   * same fact the job store's restore relies on.
+   */
+  open?: boolean;
+  /**
+   * The run died with the process running it and no close-out ever reached
+   * the ledger: cost unknowable (`costUnknown`), turns and tools unrecorded,
+   * `at` the time it started — the only time it has. Closed from an open row
+   * at the next startup, or backfilled by identification from the job
+   * store's INTERRUPTED mark (D-199).
+   */
+  interrupted?: boolean;
+  /**
    * A compiled tool claimed this job, could not deliver, and a session did it
    * instead. The user was quoted nothing on the strength of that tool, so the
    * run is absorbed.
@@ -275,6 +299,35 @@ export function ledgerRow(
   };
 }
 
+/**
+ * The row a session opens with: `ledgerRow` with nothing yet known — cost
+ * zero and unknown, failed until proven otherwise, priced nothing. Built by
+ * the same function as the final row so the two cannot drift on the fields
+ * they share (the D-039 lesson), and replaced by that row in `finalize`.
+ */
+export function openRow(
+  job: Parameters<typeof ledgerRow>[0],
+  levelId: string,
+  role: string,
+  at: number,
+): LedgerEntry {
+  return { ...ledgerRow(job, levelId, role, 'failed', at), costUnknown: true, open: true };
+}
+
+/**
+ * What an open row becomes when the process dies under it — the same row,
+ * closed. `closeOpenRows` derives it from the row on disk; the backfill
+ * builds it from the job record.
+ */
+export function interruptedRow(
+  job: Parameters<typeof ledgerRow>[0],
+  levelId: string,
+  role: string,
+  at: number,
+): LedgerEntry {
+  return { ...ledgerRow(job, levelId, role, 'failed', at), costUnknown: true, interrupted: true };
+}
+
 export function ledgerFile(sandboxRoot: string): string {
   return path.join(sandboxRoot, 'ledger.jsonl');
 }
@@ -284,7 +337,8 @@ export function append(sandboxRoot: string, entry: LedgerEntry): void {
   appendFileSync(ledgerFile(sandboxRoot), `${JSON.stringify(entry)}\n`);
 }
 
-export function readLedger(sandboxRoot: string): LedgerEntry[] {
+/** Every row on disk, open ones included. For the rewriters below only. */
+function readRows(sandboxRoot: string): LedgerEntry[] {
   const file = ledgerFile(sandboxRoot);
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8')
@@ -297,6 +351,64 @@ export function readLedger(sandboxRoot: string): LedgerEntry[] {
         return []; // a torn last line must not lose the rest of the history
       }
     });
+}
+
+/**
+ * The finished runs. An open row is a session still running in this
+ * process — or one that died under a process not yet restarted — and either
+ * way not yet a cost: a reader that counted it would report a run in flight
+ * as "stopped mid-run, cost unknown" for as long as it ran.
+ */
+export function readLedger(sandboxRoot: string): LedgerEntry[] {
+  return readRows(sandboxRoot).filter((entry) => !entry.open);
+}
+
+/**
+ * Whole-file rewrite through a sibling and a rename, because a torn ledger
+ * is worse than any bug a rewrite fixes.
+ */
+function rewrite(sandboxRoot: string, rows: readonly LedgerEntry[]): void {
+  const file = ledgerFile(sandboxRoot);
+  const sibling = `${file}.rewriting`;
+  writeFileSync(sibling, rows.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
+  renameSync(sibling, file);
+}
+
+/**
+ * Closes a run out: its open row goes and the real row is appended, so the
+ * file reads exactly as it would have with no open row at all — one row a
+ * job, in the order runs finished. A run that never opened one (nothing was
+ * in flight when this landed) is simply appended.
+ */
+export function finalize(sandboxRoot: string, entry: LedgerEntry): void {
+  const rows = readRows(sandboxRoot);
+  const kept = rows.filter((row) => !(row.open && row.jobId === entry.jobId));
+  if (kept.length === rows.length) {
+    append(sandboxRoot, entry);
+    return;
+  }
+  rewrite(sandboxRoot, [...kept, entry]);
+}
+
+/**
+ * Every row still open when a process starts is a death — a fresh process
+ * has no session running, the same fact `JobQueue.restore` marks running
+ * jobs INTERRUPTED on — so each becomes an `interrupted` row, cost unknown,
+ * `at` left as the start it recorded. Returns how many it closed; nothing is
+ * written when there were none.
+ *
+ * The cap the run was granted is not recovered here: it lives in the
+ * sandbox's `.session.json`, and a row with no cost prices no turns.
+ */
+export function closeOpenRows(sandboxRoot: string): number {
+  const rows = readRows(sandboxRoot);
+  const open = rows.filter((row) => row.open).length;
+  if (open === 0) return 0;
+  rewrite(
+    sandboxRoot,
+    rows.map(({ open: wasOpen, ...rest }) => (wasOpen ? { ...rest, interrupted: true } : rest)),
+  );
+  return open;
 }
 
 /**
@@ -330,7 +442,7 @@ export function repriceChain(
 ): { rows: number; chargedUsd: number } {
   if (jobIds.length === 0) return { rows: 0, chargedUsd: 0 };
   const ids = new Set(jobIds);
-  const entries = readLedger(sandboxRoot);
+  const entries = readRows(sandboxRoot);
   let rows = 0;
   let chargedUsd = 0;
   const next = entries.map((entry) => {
@@ -342,12 +454,7 @@ export function repriceChain(
     chargedUsd += priceUsd;
     return { ...entry, priceUsd, chainPriced: true };
   });
-  if (rows > 0) {
-    const file = ledgerFile(sandboxRoot);
-    const sibling = `${file}.repricing`;
-    writeFileSync(sibling, next.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
-    renameSync(sibling, file);
-  }
+  if (rows > 0) rewrite(sandboxRoot, next);
   return { rows, chargedUsd };
 }
 

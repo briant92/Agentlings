@@ -12,8 +12,9 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — five mechanism fixes,
-each with a live case waiting — then the Phase 3 tail (SPEC line,
+bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — four mechanism fixes
+left (the stub ledger row landed 2026-08-21, D-199), each with a live case
+waiting — then the Phase 3 tail (SPEC line,
 AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
 standing: any real drawing queued for the drafter doubles as cure (a)'s
 test.
@@ -336,11 +337,19 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
 - [ ] **Loud roster gap** (D-186 pattern). → Desired: queueing a job whose
   preferred role nobody holds prints a named line at the desk before the
   run; silent fallback gone.
-- [ ] **Stub ledger row at session start, finalized at close-out.** →
-  Desired: a hard-killed run still leaves a died/costUnknown row; the
-  vanish mode is impossible (two live cases: 42e320d0, 31d0c24b); proven
-  by a test that kills a session. Backfill of existing unmeasured rows
-  only by identification (D-030).
+- [x] **Stub ledger row at session start, finalized at close-out** — built
+  2026-08-21 (D-199). The Sim's start hook opens a `costUnknown` row the
+  moment a run starts, the completion callback replaces it, and every row
+  still open at boot closes as `interrupted` — the ledger's half of the job
+  store's INTERRUPTED mark. Proven by `ledger.died.test.ts`, which SIGKILLs
+  a fixture process under a running job and reads the row back through a
+  fresh start. Backfilled 13 rows by identification
+  (`scripts/backfill-ledger-interrupted.ts`): every job the store marked
+  INTERRUPTED with no row — 42e320d0 and 31d0c24b among them — role from
+  the run's own `.session.json` persona cross-checked against the roster
+  (13/13 agree where both exist), `at` = the run's start. Wiring check
+  still due live: the first job after the restart should leave exactly one
+  row and no open one.
 - [ ] **Discard write-back** (mail-check disagreement precedent; folds into
   the T4 lesson-hygiene decision). → Desired: discarding a delivered job
   banks the rejection + Brian's last reply as the maker's lesson; verified
@@ -418,5 +427,6 @@ recipe.
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
 2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
    (D-198). Open within it: the live gate above.
-3. Phase 2 fixes: which of the three to build.
+3. Phase 2 fixes: the stub ledger row is built (D-199); which of the
+   remaining four next.
 4. Photoreal fork: scope Blender, or decided-not-built.

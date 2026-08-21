@@ -73,6 +73,9 @@ function read() {
         return [];
       }
     })
+    // A run still in flight, or one that died under a server not yet
+    // restarted — not yet a cost either way, as readLedger reads it (D-199).
+    .filter((row) => !row.open)
     .sort((a, b) => a.at - b.at);
 }
 

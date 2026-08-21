@@ -208,6 +208,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-196 — 2026-08-18 — The planned party: the model proposes, approving queues the hands](#d-196--2026-08-18--the-planned-party-the-model-proposes-approving-queues-the-hands)
 - [D-197 — 2026-08-18 — Repo parties: scoped hands, one merged patch, the trial to earn them](#d-197--2026-08-18--repo-parties-scoped-hands-one-merged-patch-the-trial-to-earn-them)
 - [D-198 — 2026-08-21 — Spatial documents: the drafter, priced to finish](#d-198--2026-08-21--spatial-documents-the-drafter-priced-to-finish)
+- [D-199 — 2026-08-21 — The ledger opens a row when a run starts, so a dead process cannot lose one](#d-199--2026-08-21--the-ledger-opens-a-row-when-a-run-starts-so-a-dead-process-cannot-lose-one)
 
 ## By theme
 
@@ -457,7 +458,10 @@ entry updates one file rather than two.
   and the delivery's substance in the same breath, More turns/time untouched
   beneath it
 - **The project's own notes** — D-002, D-038
-- **Cost, continued** — D-039
+- **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
+  row the moment a run starts, so a process dying under a session leaves an
+  `interrupted` row rather than nothing — the vanish mode that had eaten 13
+  runs, all backfilled by identification
 - **Outside access, continued** — D-040; and D-158, the reading desks —
   calendar-read first because it sits inside the consent already granted,
   read tools as sendsOnly-preserving sibling connections, a clerk trade on
@@ -14205,3 +14209,90 @@ strengthened), registry restarted. Hypothesis until measured: the next
 real spatial job passes the cure if it files `done` on its own and bills.
 Cure (b) — close-out done-recognition — stays parked for the Phase 2
 batch.
+
+## D-199 — 2026-08-21 — The ledger opens a row when a run starts, so a dead process cannot lose one
+
+**The vanish mode.** Two runs in the spatial trial — 42e320d0, then
+31d0c24b three days later — died with the server and left **no ledger row
+at all**: not a $0 row, not a `costUnknown` row, nothing. The cause was
+structural rather than a bug in any branch. The ledger's only writer was
+the Sim's completion callback, and a process killed under a session never
+reaches it. The job store had healed this for itself since the queue was
+persisted — `JobQueue.restore` marks every job found `running` at boot as
+failed with `INTERRUPTED` — and the ledger never heard. Identified across
+the whole install before anything was built: **13 jobs** carry INTERRUPTED
+and have no row; 7 further rowless jobs were cancelled while still queued
+and are correctly rowless, because they never started. Every one of the 13
+was a session that really ran — each sandbox still holds the
+`.session.json` it was launched with.
+
+**Built.** Three pieces, each small. (1) The Sim gains an `onStart` hook,
+fired after `queue.start` persists the job as running and before the
+executor is asked anything; index.ts uses it to append an **open row** —
+`ledgerRow` with nothing known: outcome failed, cost 0 and `costUnknown`,
+price 0, `open: true` — built by the same function as the final row so the
+shared fields cannot drift (D-039's lesson). (2) The completion callback
+now calls `finalize`, which drops the job's open row and appends the real
+one, so the file still reads one row a job in finish order, exactly as it
+did. (3) At boot, `closeOpenRows` turns every row still open into an
+`interrupted` row — a fresh process has no session running, the same fact
+`restore` relies on. `readLedger` returns closed rows only: a run in
+flight is not yet a cost, and without that every Backoffice total would
+have read "1 stopped mid-run, cost unknown" for the whole of every run.
+The rewriters (`finalize`, `closeOpenRows`, `repriceChain`) read the raw
+file; `repriceChain` had to switch to it, or its rewrite would have
+silently dropped an open row — a test was written for exactly that and
+caught it in the design.
+
+**Considered and not taken.** Append-only with two rows per job and
+reader-side dedupe: keeps the file pure but breaks the one-row-a-job
+invariant six backfill scripts and every reader assume, and D-150 had
+already established rewrite-through-sibling for this file. Inferring death
+on read instead of at boot: a reader cannot tell a running job's open row
+from a dead one's, and the boot is the one moment the answer is certain.
+A new `outcome: 'died'`: killed rows were always `failed` + `costUnknown`
+(cancel and timeout file the same), and a third outcome would ripple
+through pricing and the web for no new information — `interrupted: true`
+says what happened, and `at` keeps the start, the only time a dead run has.
+
+**Proven.** `ledger.died.test.ts` spawns a fixture with `node --import
+tsx` — one process, so the kill reaches the process holding the job rather
+than tsx's CLI wrapper — waits for the open row, SIGKILLs it, and reads
+back: one open row on disk, invisible to `readLedger`; a fresh `JobQueue`
+marks the job INTERRUPTED; `closeOpenRows` returns 1 and the closed row
+equals `interruptedRow(job, …)` field for field; a second call closes
+nothing. Unit tests cover the row shape, reader hiding, replace-at-close-
+out, append-when-nothing-was-open, idempotent closing, and `repriceChain`
+preserving an open row. Full server suite with the change in place: 75
+files, 1,856 tests, one failure — D-198's starter inventory test still
+expecting nine roles and seventeen skills after the drafter and
+`plan-geometry` were added; amended alongside, unrelated to this.
+
+**Backfilled by identification (D-030's rule), 13 rows.**
+`scripts/backfill-ledger-interrupted.ts`: a job the store marked
+INTERRUPTED, with a `startedAt`, whose id no row carries. The role is read
+from the run's own `.session.json` persona line ("You are a worker
+agentling…") — the configuration it was actually launched with — and
+cross-checked against the assignee's roster entry: 12 of 12 agree where
+both exist, and the thirteenth (c5ee4c2a, hq, 2026-07-31, assignee `a3`
+no longer on the roster) is placed by the session line alone. `at` =
+`startedAt`; `turnsAllowed` deliberately not recovered (it sits in each
+`.session.json`, 8 to 40, and a row with no cost prices no turns). Ledger
+406 → 419 rows, `unmeasured` 25 → 38, read back correctly by the running
+server before its restart (extra fields are ignored by the old code). The
+two live cases now read as designed: 42e320d0 scribe/Tam interrupted,
+31d0c24b designer/Rue interrupted.
+
+**Edges, recorded.** A second server started on the same sandbox while one
+runs would close the first's open rows falsely — the same hazard
+`restore` already has for the job store, and the same rule: one server per
+sandbox. The window between `queue.start` persisting `running` and the
+open row's append is two synchronous calls in one tick; a death inside it
+is the old vanish, now microseconds wide. An open row under a server that
+died and was not restarted stays open, and hidden, until the next boot;
+`ledger-report.ts` skips open rows for the same reason `readLedger` does.
+Cure (b) from SPATIAL.md (close-out done-recognition) is untouched: an
+interrupted row is a death, not a wall cut. **Still due: the live wiring
+check** — the first job after the restart should leave exactly one row
+and no open one; the unit tests prove the functions, the live job proves
+the two lines in index.ts that call them.

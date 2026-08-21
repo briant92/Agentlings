@@ -343,9 +343,12 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   mason is hired here — whoever is free takes this as their own role", or,
   when the only holders are resting, "your drafter Rue is resting — wake
   them, or …". The fallback itself stays (a job that waits for a specialist
-  is AGENTLING.md's listed gap, its own decision). Live check due after the
-  next restart: a mason sentence on hq, watched on the feed, cancelled
-  before pickup.
+  is AGENTLING.md's listed gap, its own decision). Live-checked after the
+  restart (2026-08-21, hq job 095899cb, "fix the bugs in my code" → mason,
+  no mason on hq): the queued feed line arrived over the websocket with
+  "no mason is hired here — whoever is free takes this as their own role",
+  and the cancel landed 42 ms later while the job was still walking — no
+  session, no ledger row.
 - [x] **Stub ledger row at session start, finalized at close-out** — built
   2026-08-21 (D-199). The Sim's start hook opens a `costUnknown` row the
   moment a run starts, the completion callback replaces it, and every row

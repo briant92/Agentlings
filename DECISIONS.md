@@ -14337,6 +14337,10 @@ own decision; this item asked for the fallback to stop being silent, not
 to stop.
 
 **Proven.** Unit tests on the sentence: held, unnamed, unheld, resting
-single and plural. The six call sites are index.ts glue, which the first
-restart after this carries; the live check is a mason sentence on hq
-(no mason there), watched on the feed and cancelled before pickup.
+single and plural. The six call sites are index.ts glue, checked live
+after the restart the same day: "fix the bugs in my code" queued on hq
+(matched mason; hq has none) put *"no mason is hired here — whoever is
+free takes this as their own role"* on the queued feed line, read over the
+websocket at t+475 ms, and the cancel landed at t+517 ms with the job
+still walking — the `failed · cancelled` event names Pip as the assignee
+in transit, no session started, no ledger row written. Discarded after.

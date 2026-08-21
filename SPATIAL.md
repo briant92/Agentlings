@@ -173,6 +173,42 @@ placement — the scripts and placement are all in the sandbox) or accepting
 `stage.png` as the artifact. Brian's choice; the trial's verdict above is
 unchanged either way.
 
+### Coda closed (2026-08-21 morning) — the artifact exists and is proven
+
+Brian queued the rebuild-only reply; it took three more runs (3d4a0ff8,
+2ee3b18b partial; **1680dfa1 promoted**), every one cut at 18/17 — the
+chain finishes **eight designer runs, eight turn-wall cuts**, zero failures
+of clock or geometry.
+
+- Runs 6–7 repeated the run-5 shape in miniature: the rebuild itself ran
+  (07:44, old bytes saved as `.bak`) but the **read-back died on a missing
+  `img/` dir** — "a corrected file with no evidence is indistinguishable
+  from no rebuild" (run 8's own words). The review-side file-claim check
+  recorded above now has its argument made flesh twice.
+- Run 8 delivered the proof: a hash table (new `1e12a834…`, 2 862 113 B
+  vs old `f2532f3a…`, 3 046 875 B) — **independently recomputed and
+  confirmed** — seam close-ups rendered *from the delivered bytes* (818|819
+  one dark band with the centreline down its middle; 816|818 a single thin
+  line), an old-vs-new page pair, and one honest reconciliation (map fit
+  0,80 px today vs the stale 0,48 in `resid.json`; the page is right).
+- The delivered page itself now carries the whole §2 artifact set: the
+  corrected composition with seam callouts, the residual table (13,7 cm
+  max / 2,8 rms · 10,6 / 3,2), scale 68,5 px/m, fan 7,66°, the
+  location-map inset with the three placed outlines, per-unit m², and the
+  method stated in the client's own language.
+- Money: runs 5–8 were **charged at cost** ($1.65 + $1.60 + $1.45 + $1.49
+  = $6.19, each inside its $2 quote) — More-turns/reply presses commit the
+  priced continuation (D-114) — unlike the absorbed $0 of runs 1–4. Ledger
+  outcomes for all four still read `failed` (close-out stamped
+  `outOfTurns` before review promoted) — a ledger/review truth gap, noted
+  not fixed. Whole line: ≈ $14 real, ≈ $6.92 charged incl. the split's
+  researcher step.
+
+**The §2 deliverable now exists, is promoted, and is hash-proven. The bar
+verdict above — missed, on the turn ceiling — stands unchanged, as
+pre-registered. Phase 1 remains Brian's call, with this page as exhibit A
+for what the method produces when runs are allowed to finish.**
+
 ## 3. The plan
 
 ### Phase 0 — prove it (no code, no restart)

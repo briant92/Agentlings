@@ -14176,3 +14176,23 @@ the two original sentences queued verbatim, delivering inside quote with
 zero wall deaths — the trial's eight-cut chain is the baseline to beat. The
 both-instruments rule stands: a queue sentence is checked with
 `suggestSetup` **and** `splitSteps` before it ships.
+
+**Gate, run and read (2026-08-21, same day):** both original sentences
+verbatim through normal intake, no role pinned. Routed drafter unaided
+twice (0.68; the 3D sentence's thin 0.59 margin held live). Both quotes
+escaped the $2 clamp by the two designed routes — $3.61 from recipe
+history under the raised cap, $4.01 from the D-022 floor pricing 35 turns
+off the class's first own ledger row. Both runs delivered inside quote and
+well inside the clock, and both were cut at `turnsAllowed + 1` — **after**
+complete, truthful deliveries (artifact and RESULT timestamps predate each
+cut; the surplus turns went to bonus verification and an extra eye-level
+view). The failure mode the zero-wall-deaths clause was written against —
+death before delivery — occurred 0 of 2 times; the blueprint task that
+took eight runs and ≈$14 real delivered in one run at $3.53 with residuals
+twice as tight (max 6,4 / 5,0 cm), and the 3D run modelled a fresh v10
+sheet by decoding 46 named CAD layers and declared its view/style choices
+with alternatives, the ask-once fallback working as written. **Standing
+blemish, recorded in SPATIAL.md with two candidate cures (persona
+self-stop vs close-out done-recognition), neither built:** `partial` at
+the wall bills $0, so $6.96 of delivered gate work was absorbed. Adoption
+of the class as the spatial default is Brian's word on this evidence.

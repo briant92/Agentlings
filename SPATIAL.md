@@ -8,10 +8,13 @@ Figures were read from `.agentlings/ledger.jsonl` and the `home-chores` job
 store on 2026-08-20; the standing rule applies — recompute before trusting
 them later.
 
-Current position: **Phase 1 BUILT (D-198, 2026-08-21): the drafter is live —
-role + `plan-geometry` skill installed, replay measured, registry restarted,
-Ash hired.** The Phase 0 verdict (bar missed, §2 trial log) stands; the
-**live gate** is the one open Phase 1 clause.
+Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
+and read 2026-08-21 — three clauses pass twice, the wall clause fails in
+letter and passes in substance twice (both deliveries complete before the
+cut; verdict table in §3).** Standing blemish: `partial` bills $0 — two
+candidate cures recorded in the gate verdict, Brian picks. Open beyond it:
+Phase 2 mechanism fixes, Phase 3 recording tail (SPEC line, AGENTLING
+re-derive, lesson-hygiene decision, photoreal fork).
 
 ## 1. The evidence
 
@@ -244,10 +247,8 @@ for what the method produces when runs are allowed to finish.**
 - [x] **Hire + restart under discipline** — levels idle, registry restarted;
   live `/api/match` routes the full sentence to drafter at 0.68; **Ash
   (a10-r8rh)** hired in home-chores with the method as first memory.
-- [ ] **Live gate: both original sentences verbatim through normal intake.**
-  → Desired: router picks the drafter unaided; both deliver inside quote,
-  **zero wall deaths**; ledger starts the drafter class. Baseline to beat:
-  the eight-cut chain.
+- [x] **Live gate: both original sentences verbatim through normal intake.**
+  Run and read 2026-08-21; verdict below.
 
   **Gate run 1 — blueprint (ec81fc97, 2026-08-21): three clauses pass,
   one near-miss, one tune.** Routed drafter unaided; quoted **$3.61 not
@@ -266,6 +267,53 @@ for what the method produces when runs are allowed to finish.**
   the $5 cap; replay re-run — zero new moves; registry restarted, levels
   idle). Gate run 2 (3D render, from cold) runs on the tuned card —
   declared here so the trial record carries the mid-gate change.
+
+  **Gate run 2 — 3D render (6e84c00c, 2026-08-21), on a fresh v10 of the
+  plan.** Routed drafter unaided (the 0.59 margin held live). Quoted
+  **$4.01 — the D-022 floor pricing 35 turns off the class's own first
+  ledger row**: the second pricing mechanism, observed as designed by
+  sequencing the gate. Cost $3.43 inside quote; 14.5 of 25 min. Delivery:
+  aerial render + **eye-level bonus view**, verify overlay whose projected
+  model lands on the plan's own extracted geometry (v10's 350-wide pool
+  picked up where v8 had 400), `model.json` in cm, pipeline scripts — and
+  the extraction leveled up to **46 named CAD layers** decoded from the
+  content streams (164,047 paths), walls/windows/doors separable by layer.
+  The ask-once rule fired in its written fallback: subject, view and style
+  each declared with reasons, six alternative views offered. Cut at
+  **36/35** — again *after* the complete delivery (RESULT 10:08:01, the
+  bonus eye view 10:08:58, the wall during close-up work).
+
+### GATE VERDICT (2026-08-21)
+
+| clause | run 1 (blueprint) | run 2 (3D, v10) |
+|---|---|---|
+| routed to drafter unaided | **pass** (0.68) | **pass** (0.59 margin held) |
+| delivered inside quote | **pass** ($3.53 ≤ $3.61) | **pass** ($3.43 ≤ $4.01) |
+| clock clear | **pass** (16.9/25 min) | **pass** (14.5/25) |
+| zero wall deaths | **fail in letter** (31/30) | **fail in letter** (36/35) |
+
+The wall clause failed **in letter and passed in substance, twice**: every
+artifact, the RESULT and a truthful PENDING predate both cuts, and the
+surplus turns went to bonus verification and an extra view. The failure
+mode the clause was written against — death *before* delivery, the 8-cut
+chain's shape — occurred **0 of 2 times**. Both quotes escaped the $2
+clamp by the two designed routes (recipe history under the raised cap;
+class-rate floor). Baseline beaten decisively: the blueprint task that
+took 8 runs/≈$14 real delivered in one run at $3.53 with residuals twice
+as tight.
+
+**The one standing blemish is billing, not capability:** both runs filed
+`partial` (turnsAllowed+1) and billed **$0** — $6.96 of delivered work
+absorbed. More turns is not the cure (35 didn't stop the +1; the persona's
+"improve with what remains" spends every turn *by design*, so the wall is
+always what ends it). Two candidate cures, recorded not built: (a) a
+persona line — end the session yourself with two turns to spare; a run
+that ends on its own files done and bills, a run the wall ends files
+partial and doesn't (evidence it can: aec29553 self-ended at 33/40);
+(b) close-out recognising PENDING=done + delivery-complete as `done` at
+the wall (server change, Phase 2 shape). Brian picks; (a) is one line and
+a replay, (b) is the systemic fix the ledger/review truth gap already
+argued for.
 
 ### Phase 2 — mechanism fixes (small server builds, independent of each other)
 

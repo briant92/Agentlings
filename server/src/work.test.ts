@@ -9,6 +9,7 @@ import {
   queuedJobSpec,
   redoJobSpec,
   replyBrief,
+  rosterGapNote,
   runnerRole,
   titleFrom,
 } from './work';
@@ -524,5 +525,40 @@ describe('steps ride the specs (D-105)', () => {
     const spec = redoJobSpec(previous, [], 0.5, 'mason');
     expect(spec.steps).toEqual(['write it up properly']);
     expect(spec.step).toEqual({ n: 1, of: 2 });
+  });
+});
+
+// The feed's half of the roster gap (D-200): the desk card has said it since
+// D-192, but a schedule, an inbound message, a chain step or a reply queues
+// with no card, and the record said nothing.
+describe('rosterGapNote', () => {
+  const awake = crew(['Pip', 'worker', 'idle'], ['Moss', 'designer', 'idle']);
+  const roster = [
+    { name: 'Pip', role: 'worker' },
+    { name: 'Moss', role: 'designer' },
+    { name: 'Rue', role: 'drafter', resting: true },
+  ];
+
+  it('says nothing when someone awake holds the role, or no role was named', () => {
+    expect(rosterGapNote(awake, roster, 'designer')).toBeUndefined();
+    expect(rosterGapNote(awake, roster, undefined)).toBeUndefined();
+  });
+
+  // The 3D-render case (7fb7a9c5): designer matched, no designer hired, a
+  // worker took it at the worker's wall and the feed said nothing.
+  it('names the role nobody holds and what happens instead', () => {
+    expect(rosterGapNote(awake, roster, 'mason')).toBe(
+      'no mason is hired here — whoever is free takes this as their own role',
+    );
+  });
+
+  it('names a resting holder, because then the remedy is waking them, not hiring', () => {
+    expect(rosterGapNote(awake, roster, 'drafter')).toBe(
+      'your drafter Rue is resting — wake them, or whoever is free takes this as their own role',
+    );
+    const two = [...roster, { name: 'Kai', role: 'drafter', resting: true }];
+    expect(rosterGapNote(awake, two, 'drafter')).toBe(
+      'your drafters Rue and Kai are resting — wake them, or whoever is free takes this as their own role',
+    );
   });
 });

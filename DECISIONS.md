@@ -209,6 +209,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-197 — 2026-08-18 — Repo parties: scoped hands, one merged patch, the trial to earn them](#d-197--2026-08-18--repo-parties-scoped-hands-one-merged-patch-the-trial-to-earn-them)
 - [D-198 — 2026-08-21 — Spatial documents: the drafter, priced to finish](#d-198--2026-08-21--spatial-documents-the-drafter-priced-to-finish)
 - [D-199 — 2026-08-21 — The ledger opens a row when a run starts, so a dead process cannot lose one](#d-199--2026-08-21--the-ledger-opens-a-row-when-a-run-starts-so-a-dead-process-cannot-lose-one)
+- [D-200 — 2026-08-21 — The roster gap, said on the record and on every way in](#d-200--2026-08-21--the-roster-gap-said-on-the-record-and-on-every-way-in)
 
 ## By theme
 
@@ -329,7 +330,9 @@ entry updates one file rather than two.
   apply". The path rule held throughout; it is only the belief question that is
   open. Sits downstream of D-168, which measured that the allowlist bounds the
   offer rather than the reach
-- **The horde reviewed on its own record** — D-192: the first whole-week
+- **The horde reviewed on its own record** — D-192 (and D-200, where its
+  loud-fallback card line reached the feed and every queue path that has no
+  card): the first whole-week
   operational review, run against the live ledger, the job store, the feed
   and the running desks. What it found: 42% of the week's spend died at
   turn walls, a two-typo research sentence fell below the matcher's line to
@@ -14299,3 +14302,41 @@ t+5.20 s (`open: true`, `costUnknown`, the only open row in the file) and
 the final routed row in its place 24 ms later — one row for the job, zero
 open rows anywhere. The unit tests prove the functions; that job proved
 the two lines in index.ts that call them.
+
+## D-200 — 2026-08-21 — The roster gap, said on the record and on every way in
+
+**What was silent, measured against what was not.** SPATIAL.md's second
+cause read "`queue.ts` lets anyone take a job whose preferred role is hired
+nowhere, and nothing says so." Half right. The desk card has said it since
+D-192 — `whoSuffix`: *"nobody here is a designer, so it goes to your
+worker"* — so a job typed at the desk was never silent. What was silent was
+the **record**: the `queued` feed line carried no detail, so once the card
+cleared nothing said why a worker had run a designer's job; and with it
+**every way in that has no card** — a firing schedule, an inbound message,
+a chain step, a check, a party hand, a reply, a continuation, a compile.
+Six `queued` emits in index.ts: one carrying a schedule's note, one a
+continuation's, four bare.
+
+**Built.** `rosterGapNote(awake, roster, preferredRole)` in work.ts —
+undefined when someone awake holds the role or no role was named;
+otherwise *"no mason is hired here — whoever is free takes this as their
+own role"*; and when the only holders are resting, *"your drafter Rue is
+resting — wake them, or whoever is free takes this as their own role"*,
+because "nobody is hired" would be false there and the remedy is a
+different one. index.ts composes it into every `queued` event through one
+`queuedDetail(rt, job, ...notes)` — the caller's own note first, the gap
+after, joined with ` · ` — and the terminal already prints a queued line's
+detail (D-103), so the web is unchanged. The card's D-192 sentence is left
+exactly as it was.
+
+**Not built, by the checklist's own words.** The fallback still happens:
+the job is taken by whoever is free, as their role, with their prompt,
+tools and wall. A job that *waits* for a specialist, or times out to
+anyone free, is AGENTLING.md's listed gap and a behaviour change with its
+own decision; this item asked for the fallback to stop being silent, not
+to stop.
+
+**Proven.** Unit tests on the sentence: held, unnamed, unheld, resting
+single and plural. The six call sites are index.ts glue, which the first
+restart after this carries; the live check is a mason sentence on hq
+(no mason there), watched on the feed and cancelled before pickup.

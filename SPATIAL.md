@@ -12,9 +12,9 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — four mechanism fixes
-left (the stub ledger row landed 2026-08-21, D-199), each with a live case
-waiting — then the Phase 3 tail (SPEC line,
+bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — three mechanism fixes
+left (the stub ledger row and the loud roster gap landed 2026-08-21, D-199
+and D-200), each with a live case waiting — then the Phase 3 tail (SPEC line,
 AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
 standing: any real drawing queued for the drafter doubles as cure (a)'s
 test.
@@ -334,9 +334,18 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
 
 ### Phase 2 — mechanism fixes (small server builds, independent of each other)
 
-- [ ] **Loud roster gap** (D-186 pattern). → Desired: queueing a job whose
-  preferred role nobody holds prints a named line at the desk before the
-  run; silent fallback gone.
+- [x] **Loud roster gap** (D-186 pattern) — built 2026-08-21 (D-200), and
+  the finding corrected: the desk card had said it since D-192 ("nobody
+  here is a designer, so it goes to your worker"); what was silent was the
+  **record** and every way in with no card — schedules, inbound messages,
+  chain steps, checks, party hands, replies, continuations, compiles. Now
+  `rosterGapNote` rides the `queued` feed line at all six queue sites: "no
+  mason is hired here — whoever is free takes this as their own role", or,
+  when the only holders are resting, "your drafter Rue is resting — wake
+  them, or …". The fallback itself stays (a job that waits for a specialist
+  is AGENTLING.md's listed gap, its own decision). Live check due after the
+  next restart: a mason sentence on hq, watched on the feed, cancelled
+  before pickup.
 - [x] **Stub ledger row at session start, finalized at close-out** — built
   2026-08-21 (D-199). The Sim's start hook opens a `costUnknown` row the
   moment a run starts, the completion callback replaces it, and every row
@@ -428,6 +437,6 @@ recipe.
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
 2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
    (D-198). Open within it: the live gate above.
-3. Phase 2 fixes: the stub ledger row is built (D-199); which of the
-   remaining four next.
+3. Phase 2 fixes: the stub ledger row (D-199) and the loud roster gap
+   (D-200) are built; which of the remaining three next.
 4. Photoreal fork: scope Blender, or decided-not-built.

@@ -135,6 +135,36 @@ export function runnerRole(plan: WorkPlan): string | null {
 }
 
 /**
+ * What the feed says when a job is queued for a role nobody awake holds —
+ * the quiet fallback in `JobQueue.nextUnassigned` (whoever is free takes it,
+ * as their own role) said at the moment it is decided (D-200).
+ *
+ * The desk card has said this since D-192, but only the desk. A schedule
+ * firing, an inbound message, a chain step, a reply or a continuation queues
+ * with no card, and the feed line was bare — so the 3D-render job that
+ * matched designer in a level with no designer (7fb7a9c5) ran as a worker at
+ * the worker's ten-minute wall with nothing on record saying why.
+ *
+ * Derived from the roster rather than written per case, and careful about
+ * one fact: a holder who is resting is named, because then the remedy is
+ * waking them, and "nobody is hired" would be false.
+ */
+export function rosterGapNote(
+  awake: readonly { role: string }[],
+  roster: readonly { name: string; role: string; resting?: boolean }[],
+  preferredRole: string | undefined,
+): string | undefined {
+  if (!preferredRole || awake.some((a) => a.role === preferredRole)) return undefined;
+  const resting = roster.filter((s) => s.role === preferredRole && s.resting === true);
+  if (resting.length > 0) {
+    const names = resting.map((s) => s.name).join(' and ');
+    const plural = resting.length > 1;
+    return `your ${preferredRole}${plural ? 's' : ''} ${names} ${plural ? 'are' : 'is'} resting — wake them, or whoever is free takes this as their own role`;
+  }
+  return `no ${preferredRole} is hired here — whoever is free takes this as their own role`;
+}
+
+/**
  * How a queued job is specced, wherever it was queued from.
  *
  * The two routes in differ only in what they are handed — `/work` derives the

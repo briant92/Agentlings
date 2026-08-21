@@ -239,6 +239,7 @@ import {
   queuedJobSpec,
   redoJobSpec,
   replyBrief,
+  rosterGapNote,
   runnerRole,
 } from './work';
 
@@ -557,6 +558,25 @@ for (const rt of levels.values()) {
   void rt.queue.harvestInterrupted().then((n) => {
     if (n > 0) console.log(`[agentlings] recovered changes from ${n} interrupted job(s)`);
   });
+}
+
+/**
+ * The queued line's detail: the caller's own note (a firing schedule, a
+ * continuation) and, when the job is for a role nobody awake holds, the
+ * roster-gap sentence (D-200). Every way in composes it, so a schedule, an
+ * inbound message, a chain step, a reply or a compile says what the desk
+ * card has said since D-192 — the record was the one place the fallback
+ * was still silent.
+ */
+function queuedDetail(
+  rt: LevelRuntime,
+  job: Job,
+  ...notes: (string | undefined)[]
+): { detail?: string } {
+  const parts = [...notes, rosterGapNote(rt.sim.agentlings, rt.roster, job.preferredRole)].filter(
+    (note): note is string => Boolean(note),
+  );
+  return parts.length > 0 ? { detail: parts.join(' · ') } : {};
 }
 
 function levelInfo(rt: LevelRuntime): LevelInfo {
@@ -1038,7 +1058,7 @@ app.post('/api/levels/:lid/jobs', async (c) => {
       quote: quoteFor_(QUOTE_CTX, rt.dir, prompt, tools, runnerRole(plan), repoPath),
     }),
   );
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title, ...queuedDetail(rt, job) });
   return c.json(job, 201);
 });
 
@@ -1547,7 +1567,7 @@ function queueSentence(
     type: 'queued',
     jobId: job.id,
     title: job.title,
-    ...(opts.note ? { detail: opts.note } : {}),
+    ...queuedDetail(rt, job, opts.note),
   });
   return job;
 }
@@ -2331,7 +2351,7 @@ app.post('/api/levels/:lid/jobs/:id/redo', (c) => {
       runnerRole(plan) ?? undefined,
     ),
   );
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title, ...queuedDetail(rt, job) });
   return c.json(job, 201);
 });
 
@@ -2416,7 +2436,7 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
   // The parent is answered (D-139): its card stops offering the reply box
   // it has already been given an answer through.
   rt.queue.markContinued(previous.id, job.id);
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title, ...queuedDetail(rt, job) });
   return c.json(job, 201);
 });
 
@@ -2468,7 +2488,7 @@ app.post('/api/levels/:lid/jobs/:id/continue', (c) => {
     type: 'queued',
     jobId: job.id,
     title: job.title,
-    detail: rt.queue.continuationDetail(previous.id),
+    ...queuedDetail(rt, job, rt.queue.continuationDetail(previous.id)),
   });
   return c.json(job, 201);
 });
@@ -3671,7 +3691,7 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     // Nothing is installed until this job is reviewed and promoted.
     pendingJobId: job.id,
   });
-  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title });
+  rt.eventLog.emit({ type: 'queued', jobId: job.id, title: job.title, ...queuedDetail(rt, job) });
   return c.json(
     {
       tool: name,

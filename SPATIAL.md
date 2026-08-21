@@ -78,16 +78,53 @@ Miss → record what failed in `DECISIONS.md` and stop; no role gets written
 for an unproven method. (D-190 discipline: treatment artefact decided up
 front.)
 
+### Trial log (2026-08-21, in flight)
+
+Brian hired **Rue (designer)** and queued the shipped sentence ~00:33Z.
+What the night produced, in order:
+
+- The sentence **split at "then"** (see §4): the verify/deliver tail became
+  its own step, matched **researcher** ($0.73 real) — Bea refused it
+  honestly ("not delivered — the reason is upstream"), promoted.
+- The draw step ran as designer and hit the **turn wall three times**
+  (44ef78e6, ae032255, 46ba288f — `outOfTurns`, 17/16 turns each): the $2
+  quote prices 16 turns, under designer's own maxTurns 20. Time was never
+  the binder — run 2 used 15.3 min of the 25-minute box. **The designer's
+  known turn-wall pattern, now with the quote as the wall.**
+- Run 2's sandbox is the real progress: `oficinas-816-818-819.pdf` (A3,
+  whole sheets multiply-blended, nothing erased), rotations from the
+  location map (819's wedge carries the building's 14.01° turn), scale
+  CHECKED not guessed (<0.8% — no resize), **two defects found by its own
+  seam overlays** (818/819 party wall doubled — inner faces mated instead
+  of the shared wall; 816/818 pillar ~19 cm off), per-pair residuals in
+  `layout.json`. The method §2 bets on is visibly working.
+- Run 3 (31d0c24b) died ~1 min in — **the server process died mid-run**
+  (cause unknown; not a reboot, no crash logged) and the 01:33Z restart
+  marked it failed. It has **no ledger row** — the 42e320d0 vanish-mode
+  reproduced; Phase 2's stub-row fix now has two live cases.
+- Resumed via the **reply route** (`continue` refuses a null meter) as
+  **843245a0**, carrying the sandbox + the step-2 deliverables the split
+  gave away (overlay + residual in cm). Running.
+
+**Bar accounting, honest:** "≤2 runs" is already blown — but by the
+16-turn quote and one externally killed (censored) run, not yet by the
+method. The gate now reads on 843245a0: if it delivers the mated plan +
+overlay + residual, the **mechanics** verdict is pass and the **economics**
+verdict is "fails under today's quote shape, cure named" (drafter budget /
+quote floor for spatial classes). If it stalls again, both fail. Judge on
+the artifacts, per §2.
+
 ## 3. The plan
 
 ### Phase 0 — prove it (no code, no restart)
 
-- [ ] **Hire a designer in `home-chores`.** → Desired: the roster holds the
-  role, so designer-preferred jobs get 25 min + see-your-work; the
-  queue.ts fallback can no longer hand them to a 10-minute worker.
-- [ ] **Queue the §4 sentence with the original offer PDF attached.** →
-  Desired: the §2 bar, met.
-- [ ] **Decision gate.** → Desired: explicit go/no-go recorded.
+- [x] **Hire a designer in `home-chores`.** Done 2026-08-21 — Rue
+  (a9-zbkr); the 25-minute box held live (run 2 ran 15.3 min).
+- [x] **Queue the §4 sentence with the original offer PDF attached.** Done
+  2026-08-21 — with the "then"-split incident and three turn-wall cuts;
+  see the §2 trial log. Resumed as 843245a0.
+- [ ] **Decision gate.** → Desired: explicit go/no-go recorded. Reads on
+  843245a0's delivery, per the trial log's bar accounting.
 
 ### Phase 1 — codify (files + one restart; only after the gate)
 
@@ -133,7 +170,7 @@ front.)
   Blender proposal (machine-level install, its own decision) or an explicit
   decided-not-built line. Until then the honest ceiling is low-poly / SVG.
 
-## 4. The proof-job sentence (matcher-scored 2026-08-20)
+## 4. The proof-job sentence (matcher-scored 2026-08-20, split-checked 2026-08-21)
 
 Scored through the production matcher (`suggestSetup` over the installed
 catalog) with controls reproducing reality — old blueprint sentence → scribe
@@ -141,6 +178,16 @@ catalog) with controls reproducing reality — old blueprint sentence → scribe
 A first draft using review/produce/quote register also hit scribe 0.52 and
 was rejected; the sentence below scores **designer 0.54**. Re-score if any
 role or skill text changes first (any edit reshuffles BM25).
+
+**Split-checked after the fact.** The version first shipped contained
+"placed model, **then** look at the drawing" — and `splitSteps` cuts a
+sentence at "then" (D-105), which ran live on 2026-08-21: the tail became
+its own step on the researcher, who refused it honestly ("not delivered —
+upstream"). The sentence below replaces the comma-then with a full stop;
+`splitSteps` returns **no split** on it (and 2 steps on the shipped
+version, the control). The lesson is general: **a queue sentence is checked
+against BOTH instruments — `suggestSetup` for who gets it, `splitSteps` for
+whether it stays one job.**
 
 > Draw the three office blueprints from the attached offer document —
 > oficinas 816, 818 and 819 — as one continuous office layout, and render
@@ -151,7 +198,7 @@ role or skill text changes first (any edit reshuffles BM25).
 > party walls, scaling only by matching measured wall lengths. The pillars
 > and the outward-facing mirror line are shared references and must land on
 > top of each other. Do not crop or erase any part of the original
-> blueprints. Compose once from the placed model, then look at the drawing
+> blueprints. Compose once from the placed model. Look at the drawing
 > yourself and judge the alignment by eye before you call it done. Deliver
 > the PDF, an overlay image of the three placed outlines over the location
 > map, and the alignment residual in numbers — the max gap in cm between

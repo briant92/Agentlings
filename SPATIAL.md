@@ -392,9 +392,12 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   run" / "written this run". Proven on the real sandboxes: run 5's PDF
   reads unchanged while its `stage.png` reads written, next to a RESULT
   claiming a re-render; run 8's PDF also reads unchanged, which is true and
-  its report says so. Browser check of the chip pending a restart
-  (`e7fbc720`'s card, free). The other half — making a rebuild carry its
-  own evidence, run 8's own lesson — is drafter-side and unbuilt.
+  its report says so. **Checked in the browser on run 5's own promoted card
+  after the restart:** 62 rows, 42 rail marks, the PDF reading "unchanged
+  since the previous run", `stage.png` "written this run", and RESULT.md's
+  "…re-rendered…" visible in the same pane. The other half — making a
+  rebuild carry its own evidence, run 8's own lesson — is drafter-side and
+  unbuilt.
   ~~→ Desired: a file a RESULT claims
   rebuilt is checked against the parent sandbox by hash/mtime at review;
   a stale claim is named in the brief.~~ Argued twice live: run 5's stale

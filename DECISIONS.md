@@ -14508,10 +14508,20 @@ run 8's report says so. The same fact on both cards, with the prose doing
 the distinguishing. That is the design, not a shortcoming of it. Suites:
 75 files / 1,869 server, 18 / 203 web.
 
-**Still open.** The browser check of the chip itself waits on a restart —
-the label logic is tested, the JSX wiring is not, and `e7fbc720` is a
-promoted job whose card can be opened for free. And the *other* half of
-the original argument is untouched: nothing makes a rebuild carry its own
-evidence. Run 8's sentence is the better fix and belongs to the drafter's
-own instructions rather than to review, which makes it a persona change
-owing a matcher replay — recorded here, not built.
+**Checked in the browser, on the real card, for nothing.** After the
+restart, `e7fbc720`'s own promoted delivery was opened in the app: 62 file
+rows, **42 carrying the rail mark**, and the three that matter read
+exactly as designed — `oficinas-816-818-819.pdf` → *"unchanged since the
+previous run"* (`fv-prov carried`, rail `· carried`), `stage.png` →
+*"written this run"*, and `RESULT.md` → *"written this run"* with its own
+text *"…re-rendered, the location-map overlay is…"* visible in the pane.
+So both halves of the sentence now sit on one card: the claim, and the
+fact that the file it is about was never touched. Every request on the
+route returned 200; the only console error is a pre-existing missing
+favicon.
+
+**Still open.** The *other* half of the original argument is untouched:
+nothing makes a rebuild carry its own evidence. Run 8's sentence is the
+better fix and belongs to the drafter's own instructions rather than to
+review, which makes it a persona change owing a matcher replay — recorded
+here, not built.

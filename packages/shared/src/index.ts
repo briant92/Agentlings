@@ -1426,6 +1426,25 @@ export interface LevelProductivity {
 export interface DeliveryFile {
   name: string;
   bytes: number;
+  /**
+   * This run inherited the file and did not touch it: byte-identical to the
+   * file of the same name in the run it continues (D-202).
+   *
+   * A neutral fact, deliberately not a verdict. A continuation starts with
+   * its parent's whole sandbox copied in, so every file it did not rewrite is
+   * still sitting there looking exactly like a deliverable — and a promoted
+   * run once carried a PDF byte-identical to a render two legs older while
+   * its RESULT said "the composition is re-rendered". What the reviewer
+   * needed was not an accusation but the other half of the sentence, next to
+   * the file itself.
+   *
+   * Present only on a continuation, and gated on presence rather than truth
+   * (the ledger's rule, D-029): `false` is an answer — this run wrote it, or
+   * the parent never had it, which read the same way to a reviewer — while
+   * an absent field means the job continues nothing and there is no previous
+   * run to have carried anything from.
+   */
+  carried?: boolean;
 }
 
 /** One finished piece of work, as the inbox lists it. */

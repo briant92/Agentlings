@@ -3,6 +3,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { DeliveryFile } from '@agentlings/shared';
 import {
   attachedFiles,
   contentTypeFor,
@@ -100,6 +101,70 @@ describe('describeOutputs', () => {
     writeFileSync(path.join(dir, '.hidden'), 'x');
     writeFileSync(path.join(dir, 'RESULT.md'), 'y');
     expect(describeOutputs(dir).map((f) => f.name)).toEqual(['RESULT.md']);
+  });
+
+  /**
+   * The provenance half (D-202). A continuation begins with its parent's
+   * whole sandbox copied in, so "there is a PDF in the sandbox" says nothing
+   * about whether this run made it — and a promoted delivery once carried
+   * one byte-identical to a render two legs older under a report claiming it
+   * had been re-rendered.
+   */
+  describe('against the leg it continues', () => {
+    let previous: string;
+    beforeEach(() => {
+      previous = mkdtempSync(path.join(tmpdir(), 'agentlings-previous-'));
+    });
+    afterEach(() =>
+      rm(previous, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(
+        () => {},
+      ),
+    );
+    const find = (files: DeliveryFile[], name: string) => files.find((f) => f.name === name);
+
+    it('marks the inherited file carried and the rewritten one not', () => {
+      writeFileSync(path.join(previous, 'plan.pdf'), PDF);
+      writeFileSync(path.join(previous, 'notes.md'), 'first\n');
+      writeFileSync(path.join(dir, 'plan.pdf'), PDF); // copied forward, untouched
+      writeFileSync(path.join(dir, 'notes.md'), 'second\n'); // rewritten this run
+      const files = describeOutputs(dir, previous);
+      expect(find(files, 'plan.pdf')?.carried).toBe(true);
+      expect(find(files, 'notes.md')?.carried).toBe(false);
+    });
+
+    /**
+     * The case that makes hashing necessary. A rewrite that lands on the same
+     * length is exactly the shape a re-render produces — same page, same
+     * generator, different bytes — and the timestamps cannot help: the carry
+     * copies with `cpSync`, which does not preserve them, so every inherited
+     * file's mtime is the moment the sandbox was built.
+     */
+    it('compares the bytes, not the size', () => {
+      const before = Buffer.from([1, 2, 3, 4]);
+      const after = Buffer.from([1, 2, 3, 5]);
+      writeFileSync(path.join(previous, 'render.png'), before);
+      writeFileSync(path.join(dir, 'render.png'), after);
+      expect(find(describeOutputs(dir, previous), 'render.png')?.carried).toBe(false);
+    });
+
+    it('calls a file the previous leg never had this run’s own', () => {
+      writeFileSync(path.join(dir, 'fresh.md'), 'new\n');
+      expect(find(describeOutputs(dir, previous), 'fresh.md')?.carried).toBe(false);
+    });
+
+    // A name the parent used for a directory is not a file we inherited.
+    it('is not fooled by a directory of the same name', () => {
+      mkdirSync(path.join(previous, 'out'));
+      writeFileSync(path.join(dir, 'out'), 'x');
+      expect(find(describeOutputs(dir, previous), 'out')?.carried).toBe(false);
+    });
+
+    // The whole field is absent on a job that continues nothing, so the card
+    // says nothing rather than claiming everything was written fresh.
+    it('says nothing at all when there is no previous leg', () => {
+      writeFileSync(path.join(dir, 'plan.pdf'), PDF);
+      expect(describeOutputs(dir)).toEqual([{ name: 'plan.pdf', bytes: PDF.length }]);
+    });
   });
 });
 

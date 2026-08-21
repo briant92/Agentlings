@@ -12,10 +12,10 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — two mechanism fixes
-left (the stub ledger row, the loud roster gap and the discard write-back
-landed 2026-08-21: D-199, D-200, D-201), each with a live case waiting —
-then the Phase 3 tail (SPEC line,
+bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — one mechanism fix
+left, close-out done-recognition (the stub ledger row, the loud roster gap,
+the discard write-back and the file-claim check landed 2026-08-21: D-199 to
+D-202) — then the Phase 3 tail (SPEC line,
 AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
 standing: any real drawing queued for the drafter doubles as cure (a)'s
 test.
@@ -379,9 +379,25 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   ("Pip banked what was turned down"); a cancelled job discarded banked
   nothing. Test lines removed afterwards. The quoted variant needs a paid
   reply session — unit-tested, unexercised live.
-- [ ] **Review-side file-claim check.** → Desired: a file a RESULT claims
+- [x] **Review-side file-claim check** — built 2026-08-21 as a **neutral
+  fact, not the specified accusation** (D-202). The D-186 scan, run before
+  any code, killed the fix as written: a "stale claim" detector fires on
+  **40 files across 19 continuations and exactly one is the fault**, and
+  run 5's claim never names the PDF near the verb, so the adjacency rule
+  that saved D-186 misses the one case while every honest citation keeps
+  firing. What ships instead: `DeliveryFile.carried` (size, then sha256,
+  against the parent sandbox — mtime is worthless because `carryForward`
+  uses `cpSync` without `preserveTimestamps`), the rail marking carried
+  files, and the open file's bar reading "unchanged since the previous
+  run" / "written this run". Proven on the real sandboxes: run 5's PDF
+  reads unchanged while its `stage.png` reads written, next to a RESULT
+  claiming a re-render; run 8's PDF also reads unchanged, which is true and
+  its report says so. Browser check of the chip pending a restart
+  (`e7fbc720`'s card, free). The other half — making a rebuild carry its
+  own evidence, run 8's own lesson — is drafter-side and unbuilt.
+  ~~→ Desired: a file a RESULT claims
   rebuilt is checked against the parent sandbox by hash/mtime at review;
-  a stale claim is named in the brief. Argued twice live: run 5's stale
+  a stale claim is named in the brief.~~ Argued twice live: run 5's stale
   PDF promoted on a false "re-rendered", runs 6–7's rebuild-without-
   evidence (§2 coda).
 - [ ] **Close-out done-recognition — cure (b).** → Desired: a run cut at
@@ -452,7 +468,6 @@ recipe.
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
 2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
    (D-198). Open within it: the live gate above.
-3. Phase 2 fixes: the stub ledger row (D-199), the loud roster gap (D-200)
-   and the discard write-back (D-201) are built; which of the remaining
-   two next.
+3. Phase 2 fixes: D-199 to D-202 are built; close-out done-recognition
+   (cure b) is the one left, and it supersedes cure (a) if that fails.
 4. Photoreal fork: scope Blender, or decided-not-built.

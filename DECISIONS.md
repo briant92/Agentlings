@@ -211,6 +211,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-199 — 2026-08-21 — The ledger opens a row when a run starts, so a dead process cannot lose one](#d-199--2026-08-21--the-ledger-opens-a-row-when-a-run-starts-so-a-dead-process-cannot-lose-one)
 - [D-200 — 2026-08-21 — The roster gap, said on the record and on every way in](#d-200--2026-08-21--the-roster-gap-said-on-the-record-and-on-every-way-in)
 - [D-201 — 2026-08-21 — A discard banks what was refused, not only what was delivered](#d-201--2026-08-21--a-discard-banks-what-was-refused-not-only-what-was-delivered)
+- [D-202 — 2026-08-21 — The file-claim check that could not be built, and the fact that replaced it](#d-202--2026-08-21--the-file-claim-check-that-could-not-be-built-and-the-fact-that-replaced-it)
 
 ## By theme
 
@@ -755,7 +756,12 @@ entry updates one file rather than two.
   that name a file as the work's *input* rather than the send's object, found
   by scanning the whole corpus for what it fires on that nobody labelled,
   because a benchmark that checks only the labelled cases scores a detector
-  firing on everything exactly as well as a correct one
+  firing on everything exactly as well as a correct one; and D-202, where that
+  same scan was run *before* anything was built and killed the feature as
+  specified — a review-side detector for a false rebuild claim would have
+  accused 40 files across 19 continuations to catch the one real case, so the
+  card states a fact about the bytes (carried, or written this run) and leaves
+  the reading to the reviewer
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
   IGPL was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
@@ -14429,3 +14435,83 @@ throwaway job, and leaving them would put test noise in the corpus a real
 session is shown. What was *not* exercised live is the quoted variant,
 which needs a paid reply session; it is unit-tested, and the next real
 discard of a replied-to job will show it.
+
+## D-202 — 2026-08-21 — The file-claim check that could not be built, and the fact that replaced it
+
+**The item, as SPATIAL.md had specified it:** *"a file a RESULT claims
+rebuilt is checked against the parent sandbox by hash/mtime at review; a
+stale claim is named in the brief."* Argued twice live — run 5 (e7fbc720)
+promoted with a headline PDF byte-identical to a render two legs older
+under the words "the composition is re-rendered", and runs 6–7 rebuilding
+with a read-back that died, which run 8 called out in its own report: *"a
+corrected file with no evidence is indistinguishable from no rebuild."*
+
+**The scan that killed it, run before any code.** D-186's lesson is that a
+detector is judged by what it fires on that nobody labelled, so the
+candidate — a deliverable-typed file named in RESULT.md and byte-identical
+to the parent's copy — was run across every continuation in the install.
+It fires **40 times across 19 continuations. Exactly one is the fault.**
+The other 39 are honest, and honest in several different ways: run 8
+delivering an inherited `stage.png` while saying plainly "no geometry was
+recomputed"; `41fbbf49` delivering the aerial render its parent made, as
+the point of the leg; `843245a0` saying outright "still the previous run's
+render, not yet updated"; the hotel-KPI chain citing input PDFs "from
+previous run"; `6ccb65c4` whose whole job was *sending* a file a previous
+leg wrote. Worse, the one true case **defeats the sharpening that saved
+D-186**: run 5's claim never names the PDF near the verb, so
+filename-adjacency misses it while every honest citation keeps firing.
+
+So a hash can establish a **fact** — these bytes are the parent's — and
+cannot establish a **claim being false**, because the same bytes are
+correct in 39 places out of 40. Naming a stale claim in the brief would
+put an accusation on 39 honest cards to catch one, which is the thing
+D-186 forbids: *a missed warning costs what it always cost; a wrong
+warning is a lie on the card.* Brian was given the measurement and four
+ways forward, and chose the neutral fact.
+
+**Built.** `DeliveryFile.carried` — set on a continuation only, by
+comparing each file against the same name in the parent sandbox: size
+first (settles nearly everything for a stat), sha256 only where a cheap
+check cannot tell them apart. The review card's file rail marks the
+carried ones, and the open file's bar reads **"unchanged since the
+previous run"** or **"written this run"** — beside the file, because that
+is where a reviewer is deciding about it, and the claim to weigh it
+against is in RESULT.md rather than on the row. The label lives in
+`files.ts`, not in the JSX, because a condition inside a component is
+unreachable to the web suite (D-177, D-178).
+
+**Three things the building taught.**
+
+- **mtime is worthless here, and the spec asked for it.** `carryForward`
+  copies with `cpSync`, which does not preserve timestamps, so every
+  inherited file's mtime is the moment the new sandbox was built. Content
+  is the only truth. The item said "hash/mtime"; only half of it exists.
+- **Presence, not truth — caught by a test, not by review.** The first
+  implementation omitted the field when false, and the web helper needed
+  `false` to say "written this run" — so a file the run *did* write would
+  have shown no chip at all, silently dropping half of what was chosen.
+  Four failing tests found it. The rule was already written down in
+  `ledger.ts` for `asked` and `recallable` (D-029): an absent field means
+  nobody was asked, `false` is an answer.
+- **Only the card pays for it.** The inbox lists every delivery at once,
+  so hashing there would read the whole history on every poll;
+  `describeOutputs` takes the parent directory only on the single-job
+  route, and `deliveries.ts` is untouched.
+
+**Proven on the real cases, from the sandboxes on disk.** Run 5:
+`oficinas-816-818-819.pdf` → *unchanged since the previous run*, while
+`stage.png` → *written this run* (20 files written, 42 carried) — so the
+tag is precise rather than a blanket "nothing happened", and it sits next
+to prose claiming a re-render. Run 8: the PDF also reads *unchanged* —
+and that is **true and honest**, because run 7 had already rebuilt it and
+run 8's report says so. The same fact on both cards, with the prose doing
+the distinguishing. That is the design, not a shortcoming of it. Suites:
+75 files / 1,869 server, 18 / 203 web.
+
+**Still open.** The browser check of the chip itself waits on a restart —
+the label logic is tested, the JSX wiring is not, and `e7fbc720` is a
+promoted job whose card can be opened for free. And the *other* half of
+the original argument is untouched: nothing makes a rebuild carry its own
+evidence. Run 8's sentence is the better fix and belongs to the drafter's
+own instructions rather than to review, which makes it a persona change
+owing a matcher replay — recorded here, not built.

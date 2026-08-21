@@ -2576,7 +2576,17 @@ app.get('/api/levels/:lid/jobs/:id/output', (c) => {
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const job = rt.queue.get(c.req.param('id'));
   if (!job) return c.json({ error: 'unknown job' }, 404);
-  return c.json({ files: describeOutputs(rt.queue.sandboxDir(job.id)) });
+  // A continuation is compared against the leg it continues, so the card can
+  // say which of these files this run actually wrote (D-202). Only here: the
+  // inbox lists every delivery at once and hashing all of them to draw a row
+  // of labels would read the whole history on every poll — the review card is
+  // where a file is being decided about.
+  return c.json({
+    files: describeOutputs(
+      rt.queue.sandboxDir(job.id),
+      job.continues ? rt.queue.sandboxDir(job.continues) : undefined,
+    ),
+  });
 });
 
 /**

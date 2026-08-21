@@ -3308,6 +3308,29 @@ button.danger:hover {
   color: var(--db-lime-light);
   border-color: var(--db-green);
 }
+/* What this run did to the open file (D-202). A neutral fact and styled as
+   one: the carried state is grey rather than red, because inheriting a file
+   untouched is ordinary — it is only worth anything next to a report that
+   says otherwise, and that reading is the reviewer's to make. */
+.fv-prov {
+  font-size: 10px;
+  color: #8a91a3;
+  border: 1px solid #333a49;
+  border-radius: 3px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.fv-prov.carried {
+  color: #c9ccd6;
+  border-color: #4a5266;
+  background: #1b202b;
+}
+.fv-carried {
+  color: #8a91a3;
+  font-style: normal;
+  font-weight: 400;
+  margin-left: 4px;
+}
 .fv-save {
   font-size: 11px;
   color: var(--db-lime-light);

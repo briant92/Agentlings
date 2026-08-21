@@ -20,6 +20,32 @@ export function orderFiles<T extends { name: string }>(files: readonly T[]): T[]
   return [...files].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 }
 
+/**
+ * What this run did to the file in front of you, or null when there is
+ * nothing to say (D-202).
+ *
+ * Only a continuation has an answer at all — `carried` is set nowhere else —
+ * and the wording is deliberately a fact rather than a judgement. The case it
+ * exists for is a promoted delivery whose headline PDF was byte-identical to
+ * a render two legs older while RESULT.md said "the composition is
+ * re-rendered": the reviewer had every word of the claim and no way to check
+ * it. Measured across the whole install before it was built, a detector that
+ * tried to call such a claim false would have fired on 40 files across 19
+ * continuations to catch that one — so this says only what is true of the
+ * bytes and leaves the reading to the person doing the reviewing.
+ *
+ * Extracted from the component because a condition inside JSX is
+ * structurally unreachable to the web suite (D-177, D-178).
+ */
+export function provenance(file: {
+  carried?: boolean;
+}): { label: string; carried: boolean } | null {
+  if (file.carried === undefined) return null;
+  return file.carried
+    ? { label: 'unchanged since the previous run', carried: true }
+    : { label: 'written this run', carried: false };
+}
+
 export function fileUrl(levelId: string, jobId: string, name: string): string {
   return lvl(levelId, `/jobs/${jobId}/output/${encodeURIComponent(name)}`);
 }

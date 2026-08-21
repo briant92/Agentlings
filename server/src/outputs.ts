@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { DeliveryFile } from '@agentlings/shared';
@@ -209,12 +210,56 @@ export function attachedFiles(
  * is in this file" in a place that has not been asked yet. Contents come from
  * `previewFile`, one file at a time, when something is actually being read.
  */
-export function describeOutputs(dir: string): DeliveryFile[] {
+export function describeOutputs(dir: string, previousDir?: string): DeliveryFile[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
-    .map((entry) => ({
-      name: entry.name,
-      bytes: statSync(path.join(dir, entry.name)).size,
-    }));
+    .map((entry) => {
+      const file = path.join(dir, entry.name);
+      const bytes = statSync(file).size;
+      return {
+        name: entry.name,
+        bytes,
+        // Presence, not truth (the ledger's rule, D-029): `false` is an
+        // answer — this run wrote it — and an absent field means nobody was
+        // asked, because the job continues nothing. Emitting only the true
+        // half would make "written this run" and "not a continuation" look
+        // identical on the card, which is half the fact missing.
+        ...(previousDir
+          ? { carried: unchangedSince(previousDir, file, entry.name, bytes) }
+          : {}),
+      };
+    });
+}
+
+/**
+ * Whether this file is byte-for-byte the one the previous leg had (D-202).
+ *
+ * Content, never timestamps: `carryForward` copies with `cpSync` and does not
+ * preserve them, so every inherited file's mtime is the moment the new
+ * sandbox was built and says nothing about whether the run rewrote it. Size
+ * first because it settles almost every case for the cost of a stat, and the
+ * hash only runs for the files a cheap check could not tell apart.
+ *
+ * Unreadable either side means no claim: a file we could not compare is not
+ * a file we can call untouched.
+ */
+function unchangedSince(
+  previousDir: string,
+  file: string,
+  name: string,
+  bytes: number,
+): boolean {
+  const before = path.join(previousDir, name);
+  try {
+    if (!existsSync(before) || !statSync(before).isFile()) return false;
+    if (statSync(before).size !== bytes) return false;
+    return sha256(before) === sha256(file);
+  } catch {
+    return false;
+  }
+}
+
+function sha256(file: string): string {
+  return createHash('sha256').update(readFileSync(file)).digest('hex');
 }

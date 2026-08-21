@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { DeliveryFile, FilePreview } from '@agentlings/shared';
 import { api, lvl } from '../api';
-import { fidelity, fileUrl, glyph, orderFiles, PAPERWORK, size, splitMermaid } from './files';
+import {
+  fidelity,
+  fileUrl,
+  glyph,
+  orderFiles,
+  PAPERWORK,
+  provenance,
+  size,
+  splitMermaid,
+} from './files';
 import { Mermaid } from './Mermaid';
 
 /**
@@ -163,6 +172,10 @@ export function FileViewer({
   if (ordered.length === 0) return <p className="dim">Nothing was left in the sandbox.</p>;
 
   const mark = preview && fidelity(preview);
+  // Said beside the open file rather than only in the rail, because this is
+  // the moment a reviewer is deciding about this one file — and the claim it
+  // has to be weighed against is in RESULT.md, not on the row (D-202).
+  const madeBy = provenance(ordered.find((f) => f.name === chosen) ?? {});
   return (
     <div className="fv">
       <div className="fv-rail">
@@ -177,7 +190,15 @@ export function FileViewer({
             <span className="fv-glyph">{glyph(file.name)}</span>
             <span className="fv-meta">
               {file.name}
-              <i>{size(file.bytes)}</i>
+              <i>
+                {size(file.bytes)}
+                {/* A continuation inherits its parent's whole sandbox, so the
+                    rail says which of these the run actually wrote (D-202).
+                    Marked on the carried ones only: on a leg that rewrote two
+                    files out of sixty, tagging the other fifty-eight is the
+                    answer, and tagging all sixty is noise. */}
+                {file.carried && <b className="fv-carried">· carried</b>}
+              </i>
             </span>
           </button>
         ))}
@@ -186,6 +207,9 @@ export function FileViewer({
         <div className="fv-bar">
           <span className="fv-open">{chosen}</span>
           {mark && <span className={`fv-fid${mark.exact ? ' exact' : ''}`}>{mark.label}</span>}
+          {madeBy && (
+            <span className={`fv-prov${madeBy.carried ? ' carried' : ''}`}>{madeBy.label}</span>
+          )}
           {chosen !== null && (
             <a className="fv-save" href={fileUrl(levelId, jobId, chosen)} download={chosen}>
               save

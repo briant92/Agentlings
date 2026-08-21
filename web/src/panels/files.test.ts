@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fidelity, glyph, orderFiles, size, splitMermaid } from './files';
+import { fidelity, glyph, orderFiles, provenance, size, splitMermaid } from './files';
 
 describe('orderFiles', () => {
   it('puts what was asked for above what the crew wrote about it', () => {
@@ -20,6 +20,34 @@ describe('orderFiles', () => {
     const files = [{ name: 'b.md' }, { name: 'a.xlsx' }];
     orderFiles(files);
     expect(files.map((f) => f.name)).toEqual(['b.md', 'a.xlsx']);
+  });
+});
+
+// The stale-PDF case (D-202): a promoted run carried a file byte-identical to
+// a render two legs older while its report said "the composition is
+// re-rendered". This says what the bytes did and nothing about the claim.
+describe('provenance', () => {
+  it('says nothing at all when the job continues nothing', () => {
+    expect(provenance({})).toBeNull();
+  });
+
+  it('names the two states a continuation can be in', () => {
+    expect(provenance({ carried: true })).toEqual({
+      label: 'unchanged since the previous run',
+      carried: true,
+    });
+    expect(provenance({ carried: false })).toEqual({
+      label: 'written this run',
+      carried: false,
+    });
+  });
+
+  // It must never read as an accusation: the honest cases outnumber the one
+  // it was built for by forty to one, and every one of them is a delivery
+  // that legitimately carries an inherited file.
+  it('states a fact about the bytes, never a verdict on the report', () => {
+    const label = provenance({ carried: true })!.label;
+    expect(label).not.toMatch(/stale|false|claim|wrong|should/i);
   });
 });
 

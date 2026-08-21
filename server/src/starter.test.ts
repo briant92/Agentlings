@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships nine generalist jobs and seventeen abilities', () => {
+  it('ships ten generalist jobs and eighteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -50,6 +50,10 @@ describe('shipped starter set', () => {
       // own price class from day one, uncompilable work by construction.
       'clerk',
       'designer',
+      // drafter is the spatial-documents role (D-198): blueprints, floor
+      // plans and renders, priced to finish — its own class from day one so
+      // the quote funds the turns the work takes, with plan-geometry mounted.
+      'drafter',
       'mason',
       // researcher is P3: deep multi-source research on the default model
       // with a longer wall (timeoutMinutes 25) — scout stays the cheap
@@ -87,6 +91,9 @@ describe('shipped starter set', () => {
       'organizing-folders',
       'pdf-report',
       'plain-language',
+      // plan-geometry rides the drafter (D-198): geometry first, pixels last
+      // — extract, place in one frame, compose once, judge by eye.
+      'plan-geometry',
       // plate-design is D-143: the designer authors a pre-rendered 3D
       // backdrop with three.js through render_plate, reads the PNG back,
       // and delivers it in a PACK.json world whose plates Approve copies.

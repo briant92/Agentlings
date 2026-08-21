@@ -37,7 +37,7 @@ here yet.
 | **What it can touch** | Files, a shell, a git clone of your repo, web pages as text, a read-only browser, document libraries |
 | **What it can never touch** | Your real repository before you approve; any credential value; anything on the far end of a network it was not granted |
 | **What it is asked not to touch** | Anything outside its sandbox — an instruction and a working directory, not an OS jail. See §10 |
-| **What one job costs** | Free on five of seven tiers, 20c on a leash, 50c for a full session — measured, not quoted from memory (§8) |
+| **What one job costs** | Free on five of seven tiers, 19c on a leash, 87c for a full session — measured, not quoted from memory (§8) |
 | **What binds it** | Turns, not dollars — 10 by default, 40 hard ceiling, 5 on a recipe leash. It is told how many it has, and asked to deliver before they run out (D-063) |
 | **What it remembers** | Its own lessons, its level's knowledge, and the method for any job it has done before |
 | **What it can become** | A script. Work done often enough compiles into a tool that runs with no model at all |
@@ -86,13 +86,14 @@ the SDK session, not advised in a prompt.
 
 | Role | For | Tools | Skills | Model | Turns |
 |---|---|---|---|---|---|
-| `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work | default | 10 |
+| `worker` | Generalist — takes any job, masters none | read, write, edit, bash | concise-reports, check-your-work, organizing-folders | default | 10 |
 | `mason` | Builds — implements, refactors, fixes | read, write, edit, bash, grep | small-diffs, check-your-work | default | 15 |
 | `scout` | Reconnaissance — looks into how existing code and sources work, writes little | read, write, grep, web_fetch | concise-reports, cite-sources | Haiku 4.5 | 12 |
 | `researcher` | Deep research — cited, triangulated briefs from many sources | read, write, grep, web_fetch | deep-research, cite-sources, concise-reports | default | 30 · 25-min wall · $4 ceiling |
 | `scribe` | Documentation — turns work into words, and into .docx and report PDFs | read, write, grep, bash | concise-reports, plain-language, document-design, pdf-report | default | 10 |
 | `analyst` | Numbers — computes over records in a kept script, draws the result as an SVG chart | read, write, grep, bash | concise-reports, tables-and-numbers, cite-sources, data-analysis | Haiku 4.5 | 6 |
-| `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, deck-design, pdf-report | default | 20 |
+| `designer` | Visual design — worlds, layouts, colours; renders and judges its own work | read, write, edit, bash | see-your-work, concise-reports, authoring-a-level-pack, plate-design, deck-design, pdf-report | default | 20 · 25-min wall |
+| `drafter` | Technical drawings — blueprints, floor plans, CAD plots, site maps; extracts the geometry, builds the dimensioned model, then composites, corrects or renders from it (D-198) | read, write, edit, bash | plan-geometry, see-your-work, check-your-work, concise-reports | default | 35 · 25-min wall · $5 ceiling |
 | `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
 | `clerk` | Standing desks — reads the connected calendar and mail and briefs the day: events, conflicts, invites and mail awaiting a reply (D-158, D-191) | read, write | concise-reports | Haiku 4.5 | 6 |
 
@@ -111,7 +112,7 @@ into your own project. Provenance is recorded, so a later sync can report
 ## 3. Abilities — Live
 
 A skill is a `SKILL.md` folder mounted into `sandbox/.claude/skills` for the
-session. Seventeen are installed: sixteen written against this app's
+session. Eighteen are installed: seventeen written against this app's
 contract — sandbox only, `RESULT.md` out — which third-party skills know
 nothing about, and one third-party fork adapted to it (`ponytail`, D-190 —
 measured in a paired trial, currently mounted on no role):
@@ -119,8 +120,8 @@ measured in a paired trial, currently mounted on no role):
 `architecture-blueprints` · `authoring-a-level-pack` · `check-your-work` ·
 `cite-sources` · `concise-reports` · `data-analysis` · `deck-design` ·
 `deep-research` · `document-design` · `organizing-folders` · `pdf-report` ·
-`plain-language` · `plate-design` · `ponytail` · `see-your-work` ·
-`small-diffs` · `tables-and-numbers`
+`plain-language` · `plan-geometry` · `plate-design` · `ponytail` ·
+`see-your-work` · `small-diffs` · `tables-and-numbers`
 
 Two of them mark a line the others do not cross: `see-your-work` was
 hand-written for the designer (D-112), and `authoring-a-level-pack` was
@@ -156,6 +157,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through the system Edge, offline — every external URL aborted (D-128) |
 | Author a backdrop plate stack | The run writes self-contained HTML pages — three.js served from the server's pinned copy at `http://three.local/three.module.js`, the offline rule's one stated exception — sets `document.title = "ready"`, and `render_plate` writes PNGs at the sandbox root, quantized to the 128-colour backdrop budget. Five modes (D-148): `plate` 2000×900 opaque, `plate-overscan` 2120×900 (drifts with the pointer), `cutout`/`cutout-overscan` (transparent-background upper plates and occlusion strips, alpha snapped binary, receipt reports coverage), `tile` ≤512×512 for `plateloop` regions — each crossed with `finish: quantized\|smooth` (D-151: smooth keeps the render exactly as drawn, for `backdrop.finish: "smooth"` packs and for `backdrop.depthMap` grayscale maps, which displace the back plate under the pointer on quantized packs). The budget is the layer's: one palette across every raster (`pack:quantize` cuts it jointly); a smooth pack has no budget at all. Named in `backdrop.plates`/`backdrop.occlusion`/`backdrop.depthMap`, the files ride the PACK.json draft through review, and Approve installs them all (D-143, D-148, D-151) |
+| Work from a technical drawing | The `drafter` trade and its `plan-geometry` skill (D-198): pull the vector paths out of a CAD-plotted PDF with pdf.js — job `41fbbf49` took 153,926 paths off a plot with no text layer at all, by its own RESULT.md — derive the scale from the drawing's own stated areas and dimension chains rather than assuming it, place every sheet in one coordinate frame, and composite or render from the placed model. The deliverable carries its own proof: closures, residuals in centimetres, and hashes of what was delivered. Pixels are for reading labels off an enlargement and for looking at the result, never for assembling it |
 | Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§9) |
 | Report | `RESULT.md`: outcome first, evidence second |
 
@@ -442,12 +444,26 @@ every turn. A rate pooled across both shapes predicted neither: the budget
 worked out to 17 turns against a role cap of 8, so the cap always won and the
 ceiling could never bind on anything (D-018).
 
+**And the sign has since flipped, which is an argument for the split rather
+than against it.** Re-read 2026-08-21 over 422 rows, a session turn costs
+**2.8c with a repo and 3.4c without** — the opposite order from July. Nothing
+about clones got cheaper; the population changed. The dear work is now the
+no-repo kind (spatial drawing, level packs, research at $1–$3.53 a run) while
+repo work is mostly small scoped edits, so pooling the two would today
+under-fund exactly the runs that overrun. That is the same failure as D-018 in
+mirror image, and the reason the rate is keyed on the shape at all: the
+constant was never "repos are dear", it was "these are two populations". Read
+any figure here as a snapshot of a moving workload, and re-run the report
+rather than quoting it.
+
 **The rate prices a turn *granted*, never a turn the SDK reports.** A cap of 4
 came back as 6 when the run was cut off, and lower when it finished early. The
 gap can be much wider: a scout capped at 12 reported **21**. Across the ledger
-`turns > turnsAllowed` fires on 43 of 88 paid runs and seven of those *finished*,
-so the reported count is not a cut-off marker and reasoning built on it has
-already been wrong once (D-022, D-052).
+`turns > turnsAllowed` fires on **110 of the 335 paid runs carrying both counts,
+and 19 of those finished `done`** (re-read 2026-08-21; it was 43 of 88 with
+seven finishing in mid-August, so the proportion has held at roughly a third
+while the sample quadrupled). The reported count is therefore not a cut-off
+marker, and reasoning built on it has already been wrong once (D-022, D-052).
 
 **Since D-052 a row also records what the run spent itself on** — `toolCalls`
 and `lastTool`, counted off the tool stream. Recorded and read by nobody, but
@@ -488,10 +504,24 @@ happened; the same trap once made a denied `WebFetch` look like a leak (D-053).
   and the quote for the identical next job did not move a cent (D-017).
 - **Two ceilings, not one.** 50c is what ignorance quotes; $2 exists only so
   one freak run cannot set every later quote for its class. They were the same
-  number until that caused a breach (D-016).
+  number until that caused a breach (D-016). A role whose work genuinely costs
+  more raises the $2 for its own class alone with `maxCostUsd:` in its
+  frontmatter, clamped at $10 — the researcher asks $4 and the drafter $5, and
+  that one frontmatter line, with no server change at all, is what let the
+  spatial class be quoted enough to finish (D-130, D-198).
 - **What the ledger records is what actually happened.** The job class is the
   role that *ran* the work, not the role the matcher named — a job routed to a
   role nobody holds is picked up by whoever is free and runs as their role.
+  That substitution is **said out loud** rather than left to be inferred from
+  the ledger afterwards (D-200): the queued line on the feed carries "no mason
+  is hired here — whoever is free takes this as their own role", or names the
+  holder to wake when the only ones are resting. It rides every way in, not
+  just the desk card, because a schedule, a reply or a chain step queues work
+  with no card for anyone to read.
+- **A run that dies still leaves a row.** The ledger opens one when the session
+  starts and replaces it at close-out, so a process killed mid-run leaves an
+  `interrupted` row with its cost marked unknowable instead of leaving nothing
+  at all (D-199). Thirteen runs had vanished that way before it existed.
 
 **Not built:** any actual billing. There is no invoice, no payment, no user to
 charge. The spine is built for pass-through because a ledger cannot be
@@ -517,13 +547,17 @@ without the agent is an answer nobody checked.
 | `search` | A bare "find me pages about X" — a search instruction and a subject, with nothing asked *about* the results | free | One API call |
 | `tool` | A compiled tool matches the job's words **and** its shape | free | Two Node scripts |
 | `compose` | A send whose recipient **and** message the desk already holds — the words go as written, so there is nothing to decide | free | Plain code |
-| `oneshot` | A recipe matches strongly (≥ 0.65) **and has landed before** — the method, on a 5-turn leash | 20c | A short session |
-| `agent` | Everything else. A weak match (≥ 0.3), or a strong one nobody has landed yet, still lends its method | 80c | A full session |
+| `oneshot` | A recipe matches strongly (≥ 0.65) **and has landed before** — the method, on a 5-turn leash | 19c | A short session |
+| `agent` | Everything else. A weak match (≥ 0.3), or a strong one nobody has landed yet, still lends its method | 87c | A full session |
 
-Those two figures are measured over 258 jobs, not estimated — §8 has the
-workings and the command that regenerates them. The second one has moved: it
-read 50c until 2026-08-12, and level-pack authoring at $1–$3.41 a run pushed it
-to 80c. The leash has not moved a tenth of a cent.
+Those two figures are measured over 422 jobs, not estimated — §8 has the
+workings and the command that regenerates them. The second one keeps moving:
+it read 50c until 2026-08-12, level-pack authoring at $1–$3.41 a run pushed it
+to 80c, and the spatial work of 2026-08-21 — sessions up to $3.53, the dearest
+single run on record — carried it to 87c. **The leash has barely moved in a
+month: 19.2c against the 20c it read in mid-August**, which is the point of the
+tier rather than a coincidence. A short session cannot run away, so the price
+of the expensive tier is what drifts as the work gets more ambitious.
 
 Guards that keep the free tiers honest:
 
@@ -551,18 +585,22 @@ npm run ledger:report
 ```
 
 Run it rather than trusting what is printed below. The numbers here were taken
-on **2026-08-12, over 258 jobs spanning 2026-07-30 to 2026-08-12** — and the
+on **2026-08-21, over 422 jobs spanning 2026-07-30 to 2026-08-21** — and the
 reason the command exists is that `SPEC.md` carried "~13c / ~50c" for the two
 paid tiers long after the real figures had moved — they were 19.2c and 39.2c
 when that was first noticed on 2026-08-02, and the table still said "~13c /
 ~50c" two days later, because noticing a stale number and fixing it are
 different acts. A cost written into prose is a cost nobody recomputes.
 
-**This section proved that about itself.** It sat at the 2026-08-06 figures for
-six days while the ledger went from 161 jobs to 258 and spend from $53.08 to
-$145.91 — the session mean drifting 50.4c → 79.5c, more than half as much again
-— and nobody recomputed it, in the file whose own rule is to recompute. The
-regeneration is one command; noticing is the part that fails.
+**This section proved that about itself, twice.** It sat at the 2026-08-06
+figures for six days while the ledger went from 161 jobs to 258 and spend from
+$53.08 to $145.91 — the session mean drifting 50.4c → 79.5c, more than half as
+much again — and nobody recomputed it, in the file whose own rule is to
+recompute. Then it did it again: from 2026-08-12 to 2026-08-21 the ledger went
+258 → 422 jobs and spend $145.91 → $271.69, and this section still said 258
+until the re-derive that followed the drafter landing. Worse than the drift,
+§0 disagreed with §7 about the same number for nine days — 50c against 80c, one
+scroll apart. The regeneration is one command; noticing is the part that fails.
 
 ### The three classes
 
@@ -583,10 +621,10 @@ regeneration is one command; noticing is the part that fails.
 
 | Process | Measured | Notes |
 |---|---|---|
-| `oneshot` — a recipe on a 5-turn leash | **19.8c** mean, 47.3c max, n=35 | 4.5c per turn with a repo, 4.9c without |
-| `agent` — a full session | **79.5c** mean, $3.41 max, n=193 | 4.7c per turn with a repo, 2.9c without |
-| The close-out write-up | **4.7c** mean | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died. $7.45 over 158 rows |
-| A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. $4.57 over 4 rows, absorbed as tuition (D-096); one produced the tool now in service |
+| `oneshot` — a recipe on a 5-turn leash | **19.2c** mean, 47.3c max, n=37 paid of 38 | 4.2c per turn with a repo, 4.9c without |
+| `agent` — a full session | **87.0c** mean, $3.53 max, n=304 paid of 350 | 2.8c per turn with a repo, 3.4c without |
+| The close-out write-up | **5.0c** mean | Cheap model, 2 turns, never handed the patch. Runs after every job that left anything behind, including the ones that died. $15.02 over 298 rows |
+| A compile (promoting a recipe to a tool) | ~$1 | Its own turn cap, quoted like any session. $8.37 over 7 rows, absorbed as tuition (D-096); one produced the tool now in service |
 | The optional refine tier on intake | fractions of a cent | One Haiku turn, no tools. Every failure path falls back to the local answer |
 
 **Free to run, but it puts tokens in a paid session.** The trap worth naming:
@@ -610,29 +648,38 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 258 jobs that came to: **spent $145.91, chargeable $81.57, absorbed
-$60.05.** Forty-one per cent of all money spent was never charged for.
+Over those 422 jobs that came to: **spent $271.69, chargeable $197.19, absorbed
+$64.47.** Twenty-four per cent of all money spent was never charged for — down
+from 41% in mid-August, and the fall is the interesting part: absorption grew by
+only $4.42 while spend nearly doubled, because the runs added since were mostly
+runs that landed.
 
 **And since D-157 the report says what that absorption actually is**, which
 corrects an assumption this section used to make. It is not mostly failed work:
 
 | | | |
 |---|---|---|
-| 65 rows | $54.33 | **90% — cut at the turn wall** |
-| 4 rows | $4.57 | compiles, tuition by design (D-096) |
-| 2 rows | 83.4c | tool fall-backs — a promise of free that failed |
+| 66 rows | $54.71 | **85% — cut at the turn wall** |
+| 7 rows | $8.37 | compiles, tuition by design (D-096) |
+| 3 rows | $1.07 | tool fall-backs — a promise of free that failed |
 | 3 rows | 31.3c | failed inside its budget |
-| 19 rows | $4.29 | over-quote overruns clipped back to the quote |
+| 36 rows | $10.04 | over-quote overruns clipped back to the quote (6 of them chain legs repriced at promote) |
 
-**Absorption is a wall phenomenon.** Nine tenths of it is runs that were doing
+**Absorption is a wall phenomenon.** Five sixths of it is runs that were doing
 the work and ran out of turns, not runs that failed — which is why `partial`
 exists, and why a recipe must have landed once before it may shorten anything
 (D-064). The buckets reconcile against `totals()` or the report exits 1, so
 these are checked rather than asserted.
 
-Eleven rows are marked `costUnknown`: a killed session never reaches the message
-the SDK reports cost on, so its spend is real and unmeasurable. Read the totals
-as *at least*.
+Thirty-eight rows are marked `costUnknown`: a killed session never reaches the
+message the SDK reports cost on, so its spend is real and unmeasurable. Read the
+totals as *at least*. It read 11 on 2026-08-12 and the climb has two different
+causes, worth keeping apart: **11 → 25** is nine days of real deaths
+accumulating, and **25 → 38** is bookkeeping — D-199 gave the ledger a row
+opened at the *start* of every run, so a process dying under a session now
+leaves an `interrupted` row instead of nothing, and the thirteen historical runs
+that had vanished that way were backfilled by identification. Those thirteen
+always spent money; until 2026-08-21 they were not counted even as unknown.
 
 ### Does it get cheaper? Two step-downs, not a curve
 
@@ -732,14 +779,14 @@ ladder in one line: **78.2c session → 46.6c leashed → free, twice.**
 So the number that tracks the intent is **what share of work has descended the
 ladder, and what the descent avoided** — not any average.
 
-**Avoided so far: about $44.18, against $145.91 actually spent.** 34 one-shot
-runs saved ~$20.32 and 30 free runs saved ~$23.86, pricing each at what a session
+**Avoided so far: about $54.70, against $271.69 actually spent.** 37 one-shot
+runs saved ~$25.10 and 34 free runs saved ~$29.59, pricing each at what a session
 would have cost. It is a counterfactual and the report says so: the assumption
 is that each would otherwise have run as an ordinary session, which is what the
 router's fall-through would have made it.
 
-**The honest caveat, which applies to this whole section.** 258 jobs over
-fourteen days is a small and mostly synthetic sample — most were queued to
+**The honest caveat, which applies to this whole section.** 422 jobs over
+twenty-three days is a small and mostly synthetic sample — most were queued to
 exercise a mechanism rather than to get work done. It is less synthetic than it
 was: the training programme has since put five distinct real jobs through one
 level, and one of them walked the whole ladder to a compiled tool that now
@@ -749,16 +796,18 @@ test bench that has started to see real traffic, not yet a workload.
 
 ### The write-up is priced apart from the session — Live
 
-A close-out costs **mean 4.7c, $7.45 over 158 rows** — about 6% of a session
-now, against the 9% it was when the session mean was 50.4c. Not the rounding
+A close-out costs **mean 5.0c, $15.02 over 298 rows** — about 6% of a session
+now, against the 9% it was when the session mean was 50.4c. The share has held
+while the session mean went 50.4c → 87.0c, which is what a fixed errand on a
+cheap model looks like: its own cost barely moved. Not the rounding
 error it was assumed to be either way. It is part of what you spend and is
 deliberately excluded from every per-turn rate, because the write-up is a fixed
 errand on a cheap model rather than something a turn budget buys more or less
 of. Charging it to the session's turns makes each turn look dearer and grants
 fewer of them. Note which way the share moved and why: the write-up got
-*dearer* in absolute terms (3.3c → 4.7c) while shrinking as a share, because
-sessions grew faster than it did. A percentage of a moving denominator is not a
-measurement of the numerator.
+*dearer* in absolute terms (3.3c → 4.7c → 5.0c) while shrinking as a share,
+because sessions grew faster than it did. A percentage of a moving denominator
+is not a measurement of the numerator.
 
 That separation was specified from the start and did not exist until
 2026-08-01: the field was set on the meter, declared in `JobMeter`, shown on
@@ -799,7 +848,9 @@ invisible for 79 jobs.
 
 ## 9. How an agentling learns
 
-Four things accumulate, at three different scopes.
+Four things accumulate, at three different scopes — and they are fed by what
+the run did *and* by what you made of it, because a method that was refused is
+worth as much to the next session as one that landed (D-201).
 
 ```mermaid
 flowchart TD
@@ -807,6 +858,8 @@ flowchart TD
   C --> L["LESSON.md → memory/&lt;name&gt;.md<br/>scope: one agentling"]
   C --> A["APPROACH.md → recipes.json<br/>scope: the level"]
   R --> K["summary → KNOWLEDGE.md<br/>scope: the level"]
+  R --> D{"you review it"}
+  D -->|"discarded"| X["what was refused → both<br/>memory/&lt;name&gt;.md and KNOWLEDGE.md"]
   A --> M{"used again?"}
   M -->|"credited, 3 clean deliveries"| T["tool-candidates.jsonl"]
   T --> P["you ask for a compile"]
@@ -828,6 +881,23 @@ write-up competed with the work for turns, so it was cut first, and 13 of 13
 recipe runs died before writing either file. Anything that learns only from
 clean successes goes blind exactly where a short leash puts most of its runs
 (D-020).
+
+### A discard banks too — Live (D-201)
+
+The close-out learns from what the run did. **Turning a delivery down is the
+other half**, and it used to write nothing: a promoted method banked its lesson
+and a refused one banked silence, so a level whose blueprint method had been
+rejected went on recommending it. Discarding a *delivered* job (`done` or
+`partial` — never a failed one, where nothing was rejected) now writes two lines
+from one place: the maker's own memory gets "my delivery was discarded, not what
+was wanted", and `KNOWLEDGE.md` gets the same fact in the level's voice. Where
+you replied before discarding, the reply is quoted into both, trimmed — taken
+from the reply the route stored, never parsed back out of the prompt.
+
+What it deliberately does **not** do is retire the lesson the promoted run
+banked. Adding what happened is not the same as editing what was said, and
+whether a superseded lesson should be retired or annotated is the open
+lesson-hygiene question (§15).
 
 ### Recipes — Live
 
@@ -1799,6 +1869,16 @@ real work.*
       (D-041)
 - [ ] **The quote knowing about attachments** — a large document eats context
       the budget was priced without. *Blocked on: enough rows to measure it.*
+- [ ] **Lesson hygiene — what happens to a lesson the work has overtaken.** A
+      discard now banks what was refused (§9, D-201) and deliberately leaves
+      the promoted run's lesson standing beside it, so a level can hold the
+      method that was rejected and the fact of its rejection at once. Whether
+      a superseded lesson should be retired, annotated or left alone is
+      undecided, and the first concrete case is on the board: the collage
+      lessons banked by a promoted blueprint run whose method was later
+      discarded. *Blocked on: a decision, not on wiring. Retiring is one-way
+      and the corpus is small, which is the argument for annotating instead.*
+      (D-201, TEAMWORK T4)
 - [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the
       ledger carries turns and cost, so the comparison comes free from real
       traffic. *Blocked on: real traffic. A paired measurement now would land at

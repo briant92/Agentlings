@@ -343,9 +343,10 @@ sprite to open its profile; assignments persist in
 
 - **Roles** are Claude Code subagent files in `roles/*.md` — frontmatter
   (`name`, `description`, `tools`, `skills`, optional `model`, optional
-  `maxTurns`, optional `timeoutMinutes` — D-129) plus the system prompt as
-  body. Built-ins: worker, mason, scout, scribe, analyst, designer,
-  architect, researcher, clerk. The catalog is global; the crews are per level.
+  `maxTurns`, optional `timeoutMinutes`, optional `maxCostUsd` — D-129,
+  D-130) plus the system prompt as body. Built-ins: worker, mason, scout,
+  scribe, analyst, designer, architect, researcher, clerk, drafter. The
+  catalog is global; the crews are per level.
 - **Skills** are `SKILL.md` folders in `skills/` — built-in:
   check-your-work, cite-sources, concise-reports, plain-language,
   small-diffs, tables-and-numbers. Both roles and skills install from
@@ -455,6 +456,30 @@ tried, measured and rejected is in `DECISIONS.md`:
   fences, and the gather merges the patches on a fresh clone into the
   one DIFF.patch Approve applies — adoption gated on the pre-registered
   trial → D-197
+- M5.28 spatial documents (SPATIAL): the **drafter** trade and its
+  `plan-geometry` skill turn a technical drawing into a deliverable built
+  from the drawing's own geometry — vector paths pulled out of a CAD plot,
+  scale derived from stated areas and dimension chains rather than assumed,
+  every sheet placed in one coordinate frame, and only then composited,
+  corrected or 3D-rendered. The deliverable carries its proof: closures,
+  residuals in centimetres, hashes of the delivered bytes. Priced to
+  finish — `maxTurns: 35`, a 25-minute wall and `maxCostUsd: 5`, which
+  lifts the $2 runaway clamp for this class alone (D-130) so the quote can
+  fund the turns the work actually takes. The eight-run chain that argued
+  for it (≈$14 real, by SPATIAL.md's trial log) was answered in one $3.53
+  run — the dearest single session on the ledger — with residuals twice as
+  tight → D-198
+- M5.29 four review-and-record fixes the spatial trial argued for: a
+  ledger row **opened when a run starts** so a process dying under a
+  session leaves an `interrupted` row rather than nothing (D-199); the
+  **roster gap said out loud** on every way a job is queued, not only on
+  the desk card (D-200); a **discard banking what was refused** into the
+  maker's memory and the level's knowledge, so a rejected method stops
+  being recommended (D-201); and each file on a continuation's review card
+  marked **carried or written this run**, hashed against the parent
+  sandbox — a fact about the bytes rather than a verdict on the report,
+  because the detector the trial asked for would have accused 40 honest
+  files to catch one (D-202)
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

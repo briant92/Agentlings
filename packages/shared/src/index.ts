@@ -905,6 +905,17 @@ export interface Job {
    * done.
    */
   clarifications?: string[];
+  /**
+   * What the user typed into the reply box that queued this job — the last
+   * thing they said about this work (D-201).
+   *
+   * It is already inside `prompt` as "The user replied: …", and stored again
+   * here because a discard has to quote it and reading it back out of the
+   * prompt would be a second notion of where a reply lives, drifting from the
+   * one place that writes it (D-030). Absent on a job queued any other way,
+   * and on every job written before this existed.
+   */
+  reply?: string;
   /** Files the user attached, waiting in `input/` inside the sandbox. */
   attachments?: JobAttachment[];
   /**

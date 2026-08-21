@@ -12,9 +12,10 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — three mechanism fixes
-left (the stub ledger row and the loud roster gap landed 2026-08-21, D-199
-and D-200), each with a live case waiting — then the Phase 3 tail (SPEC line,
+bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — two mechanism fixes
+left (the stub ledger row, the loud roster gap and the discard write-back
+landed 2026-08-21: D-199, D-200, D-201), each with a live case waiting —
+then the Phase 3 tail (SPEC line,
 AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
 standing: any real drawing queued for the drafter doubles as cure (a)'s
 test.
@@ -363,10 +364,18 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   live after the restart (2026-08-21, hq job 06485686, free routed "say
   hi"): the open row was observed on disk at t+5.20 s and replaced by the
   final row 24 ms later — one row, zero open rows anywhere.
-- [ ] **Discard write-back** (mail-check disagreement precedent; folds into
-  the T4 lesson-hygiene decision). → Desired: discarding a delivered job
-  banks the rejection + Brian's last reply as the maker's lesson; verified
-  by discarding a throwaway job.
+- [x] **Discard write-back** — built 2026-08-21 (D-201). Discarding a
+  **delivered** job (`done`/`partial`, never a `failed` one — nothing was
+  rejected there) banks two lines built by one `discardNotes`: the maker's
+  memory gets "my delivery was discarded, not what was wanted — what was
+  asked: …", and KNOWLEDGE.md gets the same in `knowledgeNote`'s shape, so
+  the corpus no longer argues only for the method that was refused. The
+  reply is quoted from a new `Job.reply` — stored by the reply route rather
+  than parsed back out of the prompt (D-030) — and trimmed to 120 chars.
+  The old lesson is left standing: retiring it is the lesson-hygiene
+  question, still undecided. The feed's discard line names the banking.
+  Live check due after the next restart: a throwaway job, replied to, then
+  discarded.
 - [ ] **Review-side file-claim check.** → Desired: a file a RESULT claims
   rebuilt is checked against the parent sandbox by hash/mtime at review;
   a stale claim is named in the brief. Argued twice live: run 5's stale
@@ -440,6 +449,7 @@ recipe.
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
 2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
    (D-198). Open within it: the live gate above.
-3. Phase 2 fixes: the stub ledger row (D-199) and the loud roster gap
-   (D-200) are built; which of the remaining three next.
+3. Phase 2 fixes: the stub ledger row (D-199), the loud roster gap (D-200)
+   and the discard write-back (D-201) are built; which of the remaining
+   two next.
 4. Photoreal fork: scope Blender, or decided-not-built.

@@ -7,6 +7,7 @@ import { DB } from '@agentlings/shared';
 import {
   appendKnowledge,
   createLevelFiles,
+  discardNotes,
   knowledgeNote,
   levelDir,
   listLevelDirs,
@@ -16,6 +17,7 @@ import {
   readMeta,
   readRoster,
 } from './levels';
+import { untagged } from './memory';
 
 const PALETTE = new Set<number>(Object.values(DB));
 
@@ -172,5 +174,62 @@ describe('a note is only worth keeping if it carries a lesson', () => {
     expect(
       knowledgeNote('2026-08-12', { name: 'Moss', role: 'designer' }, 'Author a pack', 'failed', 'Use finish: smooth'),
     ).toBe('2026-08-12 · Moss (designer) failed "Author a pack" — Use finish: smooth');
+  });
+});
+
+/**
+ * The rejection half of the record (D-201). Promoted v1 banked its collage
+ * method; discarded v3 banked nothing, so the corpus argued for the method
+ * that had just been refused.
+ */
+describe('discardNotes', () => {
+  const tam = { name: 'Tam', role: 'scribe' };
+
+  it('quotes what was last asked for, in both files', () => {
+    const notes = discardNotes({
+      date: '2026-08-21',
+      maker: tam,
+      title: 'Review this office space quote',
+      reply: 'Improve the blueprint alignment',
+    });
+    expect(notes.lesson).toBe(
+      '2026-08-21 · my delivery was discarded, not what was wanted — what was asked: "Improve the blueprint alignment" (job: Review this office space quote)',
+    );
+    // The level's line keeps knowledgeNote's shape, because `undated()` dedups
+    // on it and relevantLines() scores on it.
+    expect(notes.note).toBe(
+      '2026-08-21 · Tam (scribe) had "Review this office space quote" discarded — what was asked: "Improve the blueprint alignment"',
+    );
+  });
+
+  it('says the plain thing when there was no reply to quote', () => {
+    const notes = discardNotes({ date: '2026-08-21', maker: tam, title: 'A one-shot' });
+    expect(notes.lesson).toBe(
+      '2026-08-21 · my delivery was discarded, not what was wanted (job: A one-shot)',
+    );
+    expect(notes.note).toBe('2026-08-21 · Tam (scribe) had "A one-shot" discarded');
+  });
+
+  // A lesson is read alongside four others and eight level notes; a reply
+  // pasted whole would crowd out the rest.
+  it('trims a long reply and collapses its whitespace', () => {
+    const notes = discardNotes({
+      date: '2026-08-21',
+      maker: tam,
+      title: 'T',
+      reply: `  the offices\n   are not   in the correct position ${'and again '.repeat(20)}`,
+    });
+    expect(notes.lesson).toContain('the offices are not in the correct position');
+    expect(notes.lesson).toContain('…"');
+    expect(notes.lesson.length).toBeLessThan(220);
+  });
+
+  // The stamp is what lets a second discard of the same job replace the first
+  // rather than pile up (D-089, D-073).
+  it('carries the job stamp the memory store dedups on', () => {
+    const notes = discardNotes({ date: '2026-08-21', maker: tam, title: 'A one-shot' });
+    expect(untagged(notes.lesson)).toBe(
+      '2026-08-21 · my delivery was discarded, not what was wanted',
+    );
   });
 });

@@ -210,6 +210,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-198 — 2026-08-21 — Spatial documents: the drafter, priced to finish](#d-198--2026-08-21--spatial-documents-the-drafter-priced-to-finish)
 - [D-199 — 2026-08-21 — The ledger opens a row when a run starts, so a dead process cannot lose one](#d-199--2026-08-21--the-ledger-opens-a-row-when-a-run-starts-so-a-dead-process-cannot-lose-one)
 - [D-200 — 2026-08-21 — The roster gap, said on the record and on every way in](#d-200--2026-08-21--the-roster-gap-said-on-the-record-and-on-every-way-in)
+- [D-201 — 2026-08-21 — A discard banks what was refused, not only what was delivered](#d-201--2026-08-21--a-discard-banks-what-was-refused-not-only-what-was-delivered)
 
 ## By theme
 
@@ -575,7 +576,10 @@ entry updates one file rather than two.
   the leash itself and let a run the leash cut raise the need it disproved
 - **What a recurring job does to the notes** — the same lesson re-banked every
   run until every slot a session reads held one fact; dedup at the append
-  seams, and the close-out shown what is already on file: D-073
+  seams, and the close-out shown what is already on file: D-073; and D-201,
+  the same corpus seen from the other side — a *discarded* delivery banked
+  nothing at all, so the notes held the method that was refused and no word
+  of the refusal, until the review seam learnt to write one
 - **Mid-flight runs** — the carry-on brief out of the prompt, the router's
   shortcut guard, and what a continuation may credit — closing for
   continuations the recipe-key gap D-072 closed for hinted sessions: D-074;
@@ -14344,3 +14348,60 @@ free takes this as their own role"* on the queued feed line, read over the
 websocket at t+475 ms, and the cancel landed at t+517 ms with the job
 still walking — the `failed · cancelled` event names Pip as the assignee
 in transit, no session started, no ledger row written. Discarded after.
+
+## D-201 — 2026-08-21 — A discard banks what was refused, not only what was delivered
+
+**The asymmetry, on the record.** The blueprint chain banked its lessons
+one way only. Promoted v1 wrote its collage method into `tam.md` and
+`KNOWLEDGE.md`; v3 was **discarded** — *"offices are not in the correct
+position"* — and wrote nothing anywhere. So the corpus a later blueprint
+run is handed argues for the method that was just refused, and holds no
+word of the refusal. This is the clean-success blindness PROJECT.md keeps
+naming, arriving at the one seam where the *user's* own verdict lands: a
+run learns from its close-out, a claim now learns from a check that
+refutes it (D-194), and a delivery learned nothing from being turned down.
+
+**Built.** `discardNotes()` in levels.ts, pure and beside `knowledgeNote`,
+returns the two lines together so they cannot drift the way "it delivered"
+once did (D-030): the maker's — *"my delivery was discarded, not what was
+wanted — what was asked: …"*, carrying the `(job: …)` stamp the memory
+store dedups on (D-089) — and the level's, in `knowledgeNote`'s exact
+shape, because `undated()` dedups on it and `relevantLines()` scores on
+it. The resolve route calls it once, before the stamp, and the feed's
+discard line says who banked what.
+
+**Three lines drawn deliberately.**
+
+- **Only a delivery.** `done` and `partial` are work handed over and turned
+  down. Discarding a `failed` job — a cut run, a cancelled one — rejects
+  nothing, and banking "my delivery was discarded" there would teach a
+  fiction. `partial` counts: it delivered a diff worth reviewing (D-138).
+- **Only a known maker.** Identified by `assignedTo` in this level's
+  roster; a job whose author has left banks nothing rather than crediting
+  the lesson to whoever holds that role now — D-030's rule, the same one
+  the ledger backfills obey.
+- **The old lesson stands.** Retiring or annotating what the promoted run
+  banked is the lesson-hygiene question (TEAMWORK T4, SPATIAL Phase 3's
+  "decide Tam's collage lessons"), and nobody has decided it. Adding what
+  happened is not the same as editing what was said, and a session shown
+  both is strictly better informed than one shown only the first.
+
+**The reply is stored, not re-read.** The rejection is worth little
+without what was asked for, and the last thing the user said about a piece
+of work is the reply that queued it. That text already sits inside
+`prompt` as "The user replied: …", written in one place by the reply
+route — so it is now also stored as `Job.reply` and read from there.
+Parsing it back out of the prompt would be a second notion of where a
+reply lives, drifting from the one that writes it (D-030 again), and the
+field is threaded through `queuedJobSpec` because a field that function
+does not name is a field that does not exist (D-097's receipt). Absent on
+every job written before this, which reads as "no reply to quote" — the
+plain sentence, not a guess. Quoted at 120 characters: a lesson is read
+beside four others and eight level notes, and a pasted paragraph would
+crowd out the rest.
+
+**Proven.** Unit tests on both lines: the quoted case, the plain case, a
+long reply trimmed and whitespace-collapsed, and the stamp `untagged()`
+strips. Gate green — 75 files, 1,863 tests server, 200 web. The route
+glue is checked live after the next restart: a throwaway job, replied to,
+then discarded, reading back `tam.md` and `KNOWLEDGE.md`.

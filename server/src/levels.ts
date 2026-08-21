@@ -165,6 +165,48 @@ export function knowledgeNote(
   return `${date} · ${agentling.name} (${agentling.role}) ${verb} "${title}" — ${lesson}`;
 }
 
+/** As much of a quoted reply as a lesson line can carry without becoming one. */
+const REPLY_KEPT = 120;
+
+/**
+ * What a discarded delivery leaves behind (D-201).
+ *
+ * A discard is the user saying the work was wrong, and it used to write
+ * nothing anywhere: the maker's memory and the level's brain both recorded
+ * the *delivery* and never its rejection. Measured on the blueprint chain —
+ * promoted v1 banked its collage method as a lesson, v3 was discarded
+ * ("offices are not in the correct position") and banked nothing, so the
+ * corpus a later run is handed argues for the method that was just refused.
+ * The clean-success blindness PROJECT.md keeps naming, at the review seam.
+ *
+ * Two lines, built together so they cannot drift apart the way "it
+ * delivered" once did (D-030): one for the maker, in the shape their file
+ * already holds, and one for the level, in `knowledgeNote`'s shape. The
+ * reply is quoted because "wrong" without "what was asked" teaches nothing —
+ * trimmed to a lesson's length, since the whole ask is in the job.
+ *
+ * The old lesson is deliberately left standing. Retiring or annotating it is
+ * the lesson-hygiene question (TEAMWORK T4, SPATIAL Phase 3) and nobody has
+ * decided it; adding what happened is not the same as editing what was said.
+ */
+export function discardNotes(args: {
+  date: string;
+  maker: { name: string; role: string };
+  title: string;
+  /** What the user last said about this work, when a reply queued it. */
+  reply?: string;
+}): { lesson: string; note: string } {
+  const asked = args.reply?.trim().replace(/\s+/g, ' ');
+  const quoted = asked
+    ? ` — what was asked: "${asked.length > REPLY_KEPT ? `${asked.slice(0, REPLY_KEPT).trimEnd()}…` : asked}"`
+    : '';
+  const said = `my delivery was discarded, not what was wanted${quoted}`;
+  return {
+    lesson: `${args.date} · ${said} (job: ${args.title})`,
+    note: `${args.date} · ${args.maker.name} (${args.maker.role}) had "${args.title}" discarded${quoted}`,
+  };
+}
+
 /** The level's shared brain: every finished job that learnt something appends a line. */
 export function appendKnowledge(dir: string, line: string): void {
   const file = path.join(dir, 'KNOWLEDGE.md');

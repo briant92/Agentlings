@@ -123,6 +123,7 @@ import { applyPatch, beginPatch, endPatch, patchFile, patchInFlight } from './gi
 import {
   appendKnowledge,
   createLevelFiles,
+  discardNotes,
   knowledgeNote,
   levelDir,
   listLevelDirs,
@@ -2397,6 +2398,9 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
       repoPath: previous.repoPath,
       tools,
       plan: { ...plan, role: previous.preferredRole ?? plan.role },
+      // Kept as its own field as well as inside the prompt: discarding this
+      // job has to say what was asked for and not delivered (D-201).
+      reply,
       ...(hasHandover ? { brief: replyBrief() } : {}),
       quote: quoteFor_(
         QUOTE_CTX,
@@ -2965,6 +2969,33 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     }
   }
 
+  /**
+   * A delivery the user refused is banked before the stamp (D-201) — the
+   * check-refutation write-back's twin (D-194), for the verdict that comes
+   * from the person rather than from a second agentling.
+   *
+   * Only a delivery: `done` and `partial` are work handed over and turned
+   * down, while discarding a `failed` job is clearing away a run that never
+   * delivered — nothing was rejected, and saying so would teach a fiction.
+   * The maker is identified by `assignedTo` in this level's roster; a job
+   * whose author is gone banks nothing rather than crediting a lesson to
+   * whoever holds that role now (D-030's rule, as in the ledger backfill).
+   */
+  const rejected =
+    body.action === 'discard' && (pending.status === 'done' || pending.status === 'partial')
+      ? rt.roster.find((s) => s.id === pending.assignedTo)
+      : undefined;
+  if (rejected) {
+    const notes = discardNotes({
+      date: new Date().toISOString().slice(0, 10),
+      maker: rejected,
+      title: pending.title,
+      reply: pending.reply,
+    });
+    rt.memory.append(rejected.name, notes.lesson);
+    appendKnowledge(rt.dir, notes.note);
+  }
+
   try {
     const job = rt.queue.resolve(pending.id, body.action);
     // A reviewed, fully sent outbox is one more unchanged approval — the
@@ -3015,7 +3046,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
             (chainPriced.rows > 0
               ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`
               : '')
-          : 'discarded — nothing applied, the work stays in the sandbox',
+          : 'discarded — nothing applied, the work stays in the sandbox' +
+            (rejected ? ` · ${rejected.name} banked what was turned down` : ''),
       by: 'you',
     });
     return c.json({ ...job, ...(approval ? { sendApproval: approval } : {}) });

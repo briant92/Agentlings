@@ -188,6 +188,8 @@ export function queuedJobSpec(args: {
   quote: Quote;
   clarifications?: string[];
   attachments?: { name: string; data: Buffer }[];
+  /** The words the user replied with, when a reply queued this job (D-201). */
+  reply?: string;
   /** The job this one answers, whose sandbox it carries forward. */
   continues?: string;
   /** Standing instructions for the session, kept out of the prompt (D-074). */
@@ -225,6 +227,7 @@ export function queuedJobSpec(args: {
   quotedUsd?: number;
   clarifications?: string[];
   attachments?: { name: string; data: Buffer }[];
+  reply?: string;
   continues?: string;
   brief?: string;
   channels?: string[];
@@ -248,6 +251,10 @@ export function queuedJobSpec(args: {
     ...(args.clarifications?.length ? { clarifications: args.clarifications } : {}),
     ...(args.attachments?.length ? { attachments: args.attachments } : {}),
     ...(args.plan.role ? { preferredRole: args.plan.role } : {}),
+    // The words the reply box was given, kept whole so a discard can quote
+    // what was last asked for (D-201) — this function not naming a field is
+    // exactly how one comes to be dropped.
+    ...(args.reply ? { reply: args.reply } : {}),
     ...(args.continues ? { continues: args.continues } : {}),
     ...(args.brief ? { brief: args.brief } : {}),
     ...(args.channels?.length ? { channels: args.channels } : {}),

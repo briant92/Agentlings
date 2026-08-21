@@ -10,11 +10,13 @@ them later.
 
 Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
-letter and passes in substance twice (both deliveries complete before the
-cut; verdict table in §3).** Standing blemish: `partial` bills $0 — two
-candidate cures recorded in the gate verdict, Brian picks. Open beyond it:
-Phase 2 mechanism fixes, Phase 3 recording tail (SPEC line, AGENTLING
-re-derive, lesson-hygiene decision, photoreal fork).
+letter and passes in substance twice; billing cure (a) applied same day,
+a hypothesis until the next real spatial job files `done` on its own and
+bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — five mechanism fixes,
+each with a live case waiting — then the Phase 3 tail (SPEC line,
+AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
+standing: any real drawing queued for the drafter doubles as cure (a)'s
+test.
 
 ## 1. The evidence
 
@@ -336,17 +338,33 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   run; silent fallback gone.
 - [ ] **Stub ledger row at session start, finalized at close-out.** →
   Desired: a hard-killed run still leaves a died/costUnknown row; the
-  42e320d0 vanish is impossible; proven by a test that kills a session.
-  Backfill of existing unmeasured rows only by identification (D-030).
+  vanish mode is impossible (two live cases: 42e320d0, 31d0c24b); proven
+  by a test that kills a session. Backfill of existing unmeasured rows
+  only by identification (D-030).
 - [ ] **Discard write-back** (mail-check disagreement precedent; folds into
   the T4 lesson-hygiene decision). → Desired: discarding a delivered job
   banks the rejection + Brian's last reply as the maker's lesson; verified
   by discarding a throwaway job.
+- [ ] **Review-side file-claim check.** → Desired: a file a RESULT claims
+  rebuilt is checked against the parent sandbox by hash/mtime at review;
+  a stale claim is named in the brief. Argued twice live: run 5's stale
+  PDF promoted on a false "re-rendered", runs 6–7's rebuild-without-
+  evidence (§2 coda).
+- [ ] **Close-out done-recognition — cure (b).** → Desired: a run cut at
+  the wall with PENDING=done and a complete, truthful delivery files
+  `done` and bills at cost ≤ quote; also closes the ledger/review truth
+  gap (promoted runs reading `failed`). Supersedes cure (a)'s persona
+  line if that hypothesis fails its test.
 
 ### Phase 3 — close out
 
-- [ ] **Record:** DECISIONS.md entry, SPEC.md line, AGENTLING.md re-read
-  from source. → Desired: settled evidence, citable by ID.
+- [x] **DECISIONS.md entry** — D-198 recorded 2026-08-21 with both index
+  lines, plus the gate and cure amendments.
+- [ ] **SPEC.md line** for the spatial-documents capability. → Desired:
+  the product description carries what the shop can now do.
+- [ ] **AGENTLING.md re-derived from source** — drafter + spatial line
+  tagged Live, numbers re-read from the code, never copied from prose. →
+  Desired: the capability surface is true again.
 - [ ] **Decide Tam's collage lessons** (banked from promoted v1, method since
   discarded; they can surface in future briefings). → Desired: explicit
   keep / retire / annotate — the first concrete case for the lesson-hygiene

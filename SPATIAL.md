@@ -347,9 +347,10 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   (`scripts/backfill-ledger-interrupted.ts`): every job the store marked
   INTERRUPTED with no row — 42e320d0 and 31d0c24b among them — role from
   the run's own `.session.json` persona cross-checked against the roster
-  (13/13 agree where both exist), `at` = the run's start. Wiring check
-  still due live: the first job after the restart should leave exactly one
-  row and no open one.
+  (13/13 agree where both exist), `at` = the run's start. Wiring checked
+  live after the restart (2026-08-21, hq job 06485686, free routed "say
+  hi"): the open row was observed on disk at t+5.20 s and replaced by the
+  final row 24 ms later — one row, zero open rows anywhere.
 - [ ] **Discard write-back** (mail-check disagreement precedent; folds into
   the T4 lesson-hygiene decision). → Desired: discarding a delivered job
   banks the rejection + Brian's last reply as the maker's lesson; verified

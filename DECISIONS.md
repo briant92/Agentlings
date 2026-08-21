@@ -14292,7 +14292,10 @@ is the old vanish, now microseconds wide. An open row under a server that
 died and was not restarted stays open, and hidden, until the next boot;
 `ledger-report.ts` skips open rows for the same reason `readLedger` does.
 Cure (b) from SPATIAL.md (close-out done-recognition) is untouched: an
-interrupted row is a death, not a wall cut. **Still due: the live wiring
-check** — the first job after the restart should leave exactly one row
-and no open one; the unit tests prove the functions, the live job proves
+interrupted row is a death, not a wall cut. **Wiring checked live** after
+the restart the same day: a free routed "say hi" on hq (06485686), watched
+by a poller started before it was queued, showed the open row on disk at
+t+5.20 s (`open: true`, `costUnknown`, the only open row in the file) and
+the final routed row in its place 24 ms later — one row for the job, zero
+open rows anywhere. The unit tests prove the functions; that job proved
 the two lines in index.ts that call them.

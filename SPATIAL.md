@@ -143,6 +143,36 @@ and never by the geometry.
   LESSON.md holds wall-frame rectification from a failed run — while
   discard-banking remains the gap.
 
+### Coda — the More-turns press (2026-08-21, after the verdict)
+
+Brian pressed More turns once; run 5 (e7fbc720, $1.65, 8.8 min) delivered
+and was **approved in review** — and was cut at the turn wall a **fifth**
+time (18/17).
+
+**Real and delivered:** full-length wall residuals (816/818 max 13,7 cm,
+rms 2,8 — the 13,7 is the two sheets *drawing* the same wall differently,
+not placement slack; 818/819 max 10,6, rms 3,2), the location-map overlay
+(`img/overlay-ubicacion.png`, max cell error 0,5 map px at one similarity),
+the corrected full-res composition (`stage.png`, rendered 22:05:10), and
+one more self-catch worth keeping: its first re-fit scored a beautiful
+3,3 cm rms and was **overruled by looking** — the rendered strip showed the
+plans interpenetrating; the band detector had swallowed floor hatch.
+
+**Not delivered: the PDF.** `oficinas-816-818-819.pdf` in the promoted
+delivery is **byte-identical (sha256) to run 2's pre-fix render**.
+RESULT.md's "the composition is re-rendered" was written at 22:04:32, the
+corrected render landed at 22:05:10, and the PDF rebuild never ran — the
+wall hit during close-out. PENDING.md says "done". So a promoted delivery
+carries a false claim about its headline file, caught by hash, not by
+review. Recorded, not proposed: a review-side check that a file a RESULT
+claims rebuilt actually changed since the parent sandbox (hash/mtime) —
+the file-shaped sibling of the mail gate's live search.
+
+Completion is one tiny run (rebuild the PDF from the existing corrected
+placement — the scripts and placement are all in the sandbox) or accepting
+`stage.png` as the artifact. Brian's choice; the trial's verdict above is
+unchanged either way.
+
 ## 3. The plan
 
 ### Phase 0 — prove it (no code, no restart)

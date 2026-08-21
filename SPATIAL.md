@@ -247,8 +247,25 @@ for what the method produces when runs are allowed to finish.**
 - [ ] **Live gate: both original sentences verbatim through normal intake.**
   → Desired: router picks the drafter unaided; both deliver inside quote,
   **zero wall deaths**; ledger starts the drafter class. Baseline to beat:
-  the eight-cut chain. (Expect run 1 of each to quote cold-low — no class
-  rows yet, absorbed per D-012 — and quotes to self-correct from row one.)
+  the eight-cut chain.
+
+  **Gate run 1 — blueprint (ec81fc97, 2026-08-21): three clauses pass,
+  one near-miss, one tune.** Routed drafter unaided; quoted **$3.61 not
+  $2.00** — same job, same recipe history, the only change the drafter's
+  `maxCostUsd` (the clamp cure observed live, run one, via recipe-history
+  pricing rather than the class-rate floor); cost $3.53 inside quote;
+  16.9 of 25 min. **Cut at 31/30** — but the wall caught it doing extra
+  verification *after* a complete delivery: PDF, overlay, placement.json
+  and RESULT all predate the cut, PENDING says done and is telling the
+  truth. The work itself beats the whole 8-run chain in one pass:
+  residuals **max 6.4 / rms 3.7 cm and 5.0 / 2.9** (vs 10.6–13.7 before),
+  wall faces mated in correspondence from the start (no doubled wall to
+  fix), adjacency proven by key-map centroid spacing, three-way scale
+  agreement 1.8%. Blemish: `partial` bills $0 — delivered work absorbed.
+  **Tune, measured and applied: `maxTurns` 30 → 35** (quote ≈ $4.0, under
+  the $5 cap; replay re-run — zero new moves; registry restarted, levels
+  idle). Gate run 2 (3D render, from cold) runs on the tuned card —
+  declared here so the trial record carries the mid-gate change.
 
 ### Phase 2 — mechanism fixes (small server builds, independent of each other)
 

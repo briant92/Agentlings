@@ -3,7 +3,7 @@ name: drafter
 description: Technical drawings — blueprints, floor plans, CAD plots and site maps; extracts the geometry, builds the dimensioned model, then composites, corrects or 3D-renders from it, delivering measured residuals as proof of alignment
 tools: [read, write, edit, bash]
 skills: [plan-geometry, see-your-work, check-your-work, concise-reports]
-maxTurns: 30
+maxTurns: 35
 timeoutMinutes: 25
 maxCostUsd: 5
 ---

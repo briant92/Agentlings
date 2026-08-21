@@ -374,8 +374,11 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   than parsed back out of the prompt (D-030) — and trimmed to 120 chars.
   The old lesson is left standing: retiring it is the lesson-hygiene
   question, still undecided. The feed's discard line names the banking.
-  Live check due after the next restart: a throwaway job, replied to, then
-  discarded.
+  Live-checked both branches for $0 (2026-08-21): a free routed job
+  delivered then discarded banked both lines and said so on the feed
+  ("Pip banked what was turned down"); a cancelled job discarded banked
+  nothing. Test lines removed afterwards. The quoted variant needs a paid
+  reply session — unit-tested, unexercised live.
 - [ ] **Review-side file-claim check.** → Desired: a file a RESULT claims
   rebuilt is checked against the parent sandbox by hash/mtime at review;
   a stale claim is named in the brief. Argued twice live: run 5's stale

@@ -14386,6 +14386,16 @@ discard line says who banked what.
   happened is not the same as editing what was said, and a session shown
   both is strictly better informed than one shown only the first.
 
+**Why this writes to KNOWLEDGE.md when D-167 stopped bare lines writing.**
+That rule turned away the job-log line — *delivered "X"* — because the
+ledger and the maker's own memory already held it and it could only take a
+slot from a lesson somebody needed. A discard is the opposite kind of
+line: nothing else in the app records that the user refused a delivery,
+and the corpus is precisely where the refusal has to land, since that is
+what the next session is shown. So it is banked unconditionally, with no
+lesson required. The thin end of it — a discard with no reply to quote —
+still says the one thing that is not on file anywhere else.
+
 **The reply is stored, not re-read.** The rejection is worth little
 without what was asked for, and the last thing the user said about a piece
 of work is the reply that queued it. That text already sits inside
@@ -14402,6 +14412,20 @@ crowd out the rest.
 
 **Proven.** Unit tests on both lines: the quoted case, the plain case, a
 long reply trimmed and whitespace-collapsed, and the stamp `untagged()`
-strips. Gate green — 75 files, 1,863 tests server, 200 web. The route
-glue is checked live after the next restart: a throwaway job, replied to,
-then discarded, reading back `tam.md` and `KNOWLEDGE.md`.
+strips — plus one on `queuedJobSpec` carrying `reply`, which is the very
+function with the recorded habit of dropping a field it does not name
+(D-039, D-097).
+
+**Checked live after the restart, both branches, for nothing.** A free
+routed "say hi" on hq delivered and was discarded: the feed read
+*"discarded — nothing applied, the work stays in the sandbox · Pip banked
+what was turned down"*, `pip.md` gained the lesson and `KNOWLEDGE.md` the
+note, and no other memory file moved. Then the guard: a second job
+cancelled before pickup (status `failed`) and discarded — both files
+byte-identical afterwards, nothing banked, exactly as the delivery line
+requires. The three lines the check wrote were removed afterwards and the
+files restored to their pre-check bytes: they are true records of a
+throwaway job, and leaving them would put test noise in the corpus a real
+session is shown. What was *not* exercised live is the quoted variant,
+which needs a paid reply session; it is unit-tested, and the next real
+discard of a replied-to job will show it.

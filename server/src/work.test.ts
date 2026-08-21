@@ -256,6 +256,30 @@ describe('queuedJobSpec', () => {
     expect(spec.quotedUsd).toBe(0.42);
   });
 
+  // The same bug in the same function, for the field a discard has to quote
+  // (D-201): a reply is stored on the job so the rejection can say what was
+  // asked for, and a field this function does not name is a field that does
+  // not exist — spreading it into the call slips past excess-property
+  // checking, which is exactly how `send` was lost (D-097).
+  it('carries the reply a discard will quote, and nothing when there was none', () => {
+    const spec = queuedJobSpec({
+      title: 'Review the plan',
+      prompt: 'review the plan\n\nThe user replied: fix the alignment',
+      plan: planFor('review the plan'),
+      quote: quote(0.42),
+      reply: 'fix the alignment',
+    });
+    expect(spec.reply).toBe('fix the alignment');
+    expect(
+      queuedJobSpec({
+        title: 'Review the plan',
+        prompt: 'review the plan',
+        plan: planFor('review the plan'),
+        quote: quote(0.42),
+      }).reply,
+    ).toBeUndefined();
+  });
+
   // Not the same as carrying none by accident: quoteFor returns a zero ceiling
   // only for the tiers that never spend, and every paying tier is bounded
   // below at a cent.

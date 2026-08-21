@@ -12,13 +12,13 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **A NEW SESSION PICKS UP AT §3, PHASE 2** — one mechanism fix
-left, close-out done-recognition (the stub ledger row, the loud roster gap,
-the discard write-back and the file-claim check landed 2026-08-21: D-199 to
-D-202) — then the Phase 3 tail (SPEC line,
-AGENTLING re-derive, lesson-hygiene decision, photoreal fork). Also
-standing: any real drawing queued for the drafter doubles as cure (a)'s
-test.
+bills.** **THREE ITEMS LEFT IN THE WHOLE PLAN**, all of them decisions
+rather than wiring: close-out done-recognition (cure b — Phase 2's last),
+Tam's collage lessons, and the photoreal fork. D-199 to D-202 landed
+2026-08-21 and the Phase 3 writing pass followed them — the SPEC line and
+the AGENTLING re-derive are done. Also standing: any real drawing queued
+for the drafter doubles as cure (a)'s test, and cure (b) is better decided
+after that reads.
 
 ## 1. The evidence
 
@@ -413,11 +413,27 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
 
 - [x] **DECISIONS.md entry** — D-198 recorded 2026-08-21 with both index
   lines, plus the gate and cure amendments.
-- [ ] **SPEC.md line** for the spatial-documents capability. → Desired:
-  the product description carries what the shop can now do.
-- [ ] **AGENTLING.md re-derived from source** — drafter + spatial line
-  tagged Live, numbers re-read from the code, never copied from prose. →
-  Desired: the capability surface is true again.
+- [x] **SPEC.md line** for the spatial-documents capability — done
+  2026-08-21: M5.28 carries the drafter and `plan-geometry` (geometry
+  first, the proof the deliverable ships with, and the frontmatter that
+  funds it), M5.29 the four review-and-record fixes D-199 to D-202, and
+  the roles list and frontmatter keys in "Agentling identity" now name
+  `drafter` and `maxCostUsd`.
+- [x] **AGENTLING.md re-derived from source** — done 2026-08-21, and it
+  had drifted further than the drafter: the trades table and the skills
+  list are now checked equal to `roles/` and `skills/` on disk (they were
+  missing `drafter`, `plan-geometry`, and two skills the roles had gained
+  since), and every cost figure was regenerated with `npm run
+  ledger:report` rather than copied — 258 → **422 jobs**, session mean
+  79.5c → **87.0c**, absorbed 41% → **24%**, close-out 4.7c → **5.0c**,
+  `costUnknown` 11 → **38** (11→25 real deaths, 25→38 D-199's backfill).
+  §0 had disagreed with §7 about the session price for nine days. D-199
+  to D-201 are recorded in the sections they change, and lesson hygiene
+  was added to the §15 roadmap so §9's reference to it is true.
+  **One finding worth its own line: the repo per-turn premium has
+  inverted** — 2.8c with a repo against 3.4c without, the opposite of
+  July's 7.4c vs 1.8c. The population changed, not the clones; it is an
+  argument for keying the rate on shape, not against it.
 - [ ] **Decide Tam's collage lessons** (banked from promoted v1, method since
   discarded; they can surface in future briefings). → Desired: explicit
   keep / retire / annotate — the first concrete case for the lesson-hygiene

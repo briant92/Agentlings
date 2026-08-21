@@ -895,9 +895,20 @@ you replied before discarding, the reply is quoted into both, trimmed — taken
 from the reply the route stored, never parsed back out of the prompt.
 
 What it deliberately does **not** do is retire the lesson the promoted run
-banked. Adding what happened is not the same as editing what was said, and
-whether a superseded lesson should be retired or annotated is the open
-lesson-hygiene question (§15).
+banked. Adding what happened is not the same as editing what was said.
+
+**Where that leaves a lesson the work has overtaken — decided by hand, per
+case (D-203).** A lesson merely superseded in method but still true is left
+alone; a lesson that is *wrong* is edited where it stands, keeping whatever in
+it was right and naming why the rest failed. Filing the correction beside it
+does not work, and that was measured rather than argued: scored through the
+same `relevantLines` a session's notes come from, a discard note reaches rank
+8 on one phrasing of a job and misses the eight entirely on another, while the
+lesson it corrects ranks 1st on both — because the note carries only the job's
+title and the lesson carries the method vocabulary the query matches. Nothing
+is retired while the corpus is this small, and none of this is a mechanism:
+the app has no notion of a lesson being wrong, and a button that rewrites crew
+memory is a much larger trust question than one that appends to it (§15).
 
 ### Recipes — Live
 
@@ -1869,16 +1880,19 @@ real work.*
       (D-041)
 - [ ] **The quote knowing about attachments** — a large document eats context
       the budget was priced without. *Blocked on: enough rows to measure it.*
-- [ ] **Lesson hygiene — what happens to a lesson the work has overtaken.** A
-      discard now banks what was refused (§9, D-201) and deliberately leaves
-      the promoted run's lesson standing beside it, so a level can hold the
-      method that was rejected and the fact of its rejection at once. Whether
-      a superseded lesson should be retired, annotated or left alone is
-      undecided, and the first concrete case is on the board: the collage
-      lessons banked by a promoted blueprint run whose method was later
-      discarded. *Blocked on: a decision, not on wiring. Retiring is one-way
-      and the corpus is small, which is the argument for annotating instead.*
-      (D-201, TEAMWORK T4)
+- [ ] **Lesson hygiene as a mechanism — deliberately not built.** The policy
+      is settled and the first case is done by hand (D-203): a wrong lesson is
+      annotated where it stands, a merely superseded one is left alone, and
+      nothing is retired while the corpus is this small. What is *not* built
+      is any way for the app to do that itself, and the reason is not effort:
+      it has no notion of a lesson being wrong, the judgement in the first
+      case needed both lessons read against a chain of eight runs, and a
+      button that rewrites crew memory is a far larger trust question than one
+      that appends to it. The rule left for the next case is the small
+      testable part — score the correction against the corpus before choosing
+      where to put it, because a correction filed beside a lesson is outranked
+      by it. *Blocked on: a second case worth generalising from.* (D-201,
+      D-203, TEAMWORK T4)
 - [ ] **Does clarifying save turns?** — `Job.clarifications` is recorded and the
       ledger carries turns and cost, so the comparison comes free from real
       traffic. *Blocked on: real traffic. A paired measurement now would land at

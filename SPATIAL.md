@@ -12,13 +12,12 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **THREE ITEMS LEFT IN THE WHOLE PLAN**, all of them decisions
-rather than wiring: close-out done-recognition (cure b — Phase 2's last),
-Tam's collage lessons, and the photoreal fork. D-199 to D-202 landed
-2026-08-21 and the Phase 3 writing pass followed them — the SPEC line and
-the AGENTLING re-derive are done. Also standing: any real drawing queued
-for the drafter doubles as cure (a)'s test, and cure (b) is better decided
-after that reads.
+bills.** **TWO ITEMS LEFT IN THE WHOLE PLAN**: close-out done-recognition
+(cure b — Phase 2's last) and the photoreal fork. D-199 to D-203 landed
+2026-08-21, along with the Phase 3 writing pass — the SPEC line, the
+AGENTLING re-derive and Tam's lessons are all settled. Also standing: any
+real drawing queued for the drafter doubles as cure (a)'s test, and cure (b)
+is better decided after that reads.
 
 ## 1. The evidence
 
@@ -434,10 +433,22 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   inverted** — 2.8c with a repo against 3.4c without, the opposite of
   July's 7.4c vs 1.8c. The population changed, not the clones; it is an
   argument for keying the rate on shape, not against it.
-- [ ] **Decide Tam's collage lessons** (banked from promoted v1, method since
-  discarded; they can surface in future briefings). → Desired: explicit
-  keep / retire / annotate — the first concrete case for the lesson-hygiene
-  question.
+- [x] **Decide Tam's collage lessons** — decided 2026-08-21 (D-203):
+  **annotate the wrong one where it stands, keep the other untouched.**
+  Reading them broke the premise — only one is a collage lesson; the other
+  ("independent verification code that separately re-renders the output")
+  was *vindicated* by run 8 and by D-202, so retiring "Tam's collage
+  lessons" as a pair would have thrown away the best line in the level.
+  The exposure was measured through `relevantLines`, not assumed: 0 of 8
+  on the pre-registered proof sentence, but ranks 1 and 4 on the original
+  wording and on a plain re-ask. **And the obvious fix failed on
+  measurement** — the D-201 discard note, filed beside the lesson, reaches
+  rank 8 on one phrasing and misses entirely on another, because a
+  correction carries only the title while the lesson carries the title
+  plus the method vocabulary. So it was annotated in place in both stores;
+  the corrected line now ranks 1st on all four phrasings, at the cost of
+  one slot (Rue's multiply-blend note). `.agentlings/` is gitignored, so
+  D-203 quotes the before/after as the only durable record.
 - [ ] **Optional fork: photoreal ceiling.** → Desired: a scoped headless-
   Blender proposal (machine-level install, its own decision) or an explicit
   decided-not-built line. Until then the honest ceiling is low-poly / SVG.

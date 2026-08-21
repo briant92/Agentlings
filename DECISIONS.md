@@ -212,6 +212,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-200 — 2026-08-21 — The roster gap, said on the record and on every way in](#d-200--2026-08-21--the-roster-gap-said-on-the-record-and-on-every-way-in)
 - [D-201 — 2026-08-21 — A discard banks what was refused, not only what was delivered](#d-201--2026-08-21--a-discard-banks-what-was-refused-not-only-what-was-delivered)
 - [D-202 — 2026-08-21 — The file-claim check that could not be built, and the fact that replaced it](#d-202--2026-08-21--the-file-claim-check-that-could-not-be-built-and-the-fact-that-replaced-it)
+- [D-203 — 2026-08-21 — Lesson hygiene: annotate where it stands, because a correction filed beside it never arrives](#d-203--2026-08-21--lesson-hygiene-annotate-where-it-stands-because-a-correction-filed-beside-it-never-arrives)
 
 ## By theme
 
@@ -580,7 +581,10 @@ entry updates one file rather than two.
   seams, and the close-out shown what is already on file: D-073; and D-201,
   the same corpus seen from the other side — a *discarded* delivery banked
   nothing at all, so the notes held the method that was refused and no word
-  of the refusal, until the review seam learnt to write one
+  of the refusal, until the review seam learnt to write one; and D-203, the
+  first lesson actually settled under that rule, where the measurement said
+  what D-201 could not: an added correction is outranked by the line it
+  corrects, so a lesson that is *wrong* has to be edited where it stands
 - **Mid-flight runs** — the carry-on brief out of the prompt, the router's
   shortcut guard, and what a continuation may credit — closing for
   continuations the recipe-key gap D-072 closed for hinted sessions: D-074;
@@ -14525,3 +14529,98 @@ nothing makes a rebuild carry its own evidence. Run 8's sentence is the
 better fix and belongs to the drafter's own instructions rather than to
 review, which makes it a persona change owing a matcher replay — recorded
 here, not built.
+
+## D-203 — 2026-08-21 — Lesson hygiene: annotate where it stands, because a correction filed beside it never arrives
+
+The first concrete case of the question D-201 deliberately left open — what
+happens to a lesson the work has overtaken. On the board since the spatial
+trial: **Tam's collage lessons**, banked by a blueprint run that was promoted
+and whose method was later discarded ("offices are not in the correct
+position"), with the worry that the next blueprint job would be handed the
+method that had just been refused.
+
+**The premise was half wrong, which only reading them showed.** Tam has two:
+
+1. *"Office blueprint assembly: extract coordinates from plans, verify equal
+   spacing confirms adjacency, validate intermediate crops before geometric
+   composite."*
+2. *"Geometric assembly from technical documents needs independent
+   verification code that separately re-renders the output."*
+
+The second is **not a collage lesson at all** — and it was *vindicated*, not
+superseded. It is exactly what run 8 did (reading the delivered bytes back
+rather than trusting the model), and D-202's whole finding is that a rebuild
+with no independent read-back is indistinguishable from no rebuild. It is
+arguably the best line in the level. The first is a mixture: "extract
+coordinates" is right and is what the drafter does; **"equal spacing confirms
+adjacency" is precisely the heuristic that produced the rejected placement**,
+because this building curves and each unit needs its own rotation; and
+"intermediate crops" is the refused method's vocabulary. So "retire Tam's
+collage lessons" would have thrown away the best lesson to get at half of the
+worst one.
+
+**The exposure, measured rather than assumed.** Scored through `relevantLines`
+— the same function that picks the eight notes a session is shown — against
+the real corpus: on the **pre-registered proof sentence Tam's lines score 0 of
+8**, outranked by Rue's and Ash's newer geometry lessons, so the trial's stated
+worry had already decayed. But on the **original wording and on a plainly
+phrased re-ask** ("put the blueprints of the offices together and produce a
+PDF" — how the job was first asked) both lines come back at **ranks 1 and 4**.
+The risk was real and conditional on phrasing, which no amount of reasoning
+about it would have established.
+
+**The finding that decided it, and that D-201 could not have known.** The
+obvious move — add the discard note D-201 now writes, edit nothing, exactly
+D-201's own principle that *adding what happened is not the same as editing
+what was said* — was simulated against the corpus before being taken. It
+**fails**: the note reaches rank 8 on the original prompt and **does not appear
+at all** on the plain re-ask, while both lessons do. The reason is structural
+rather than incidental: a corrective note carries only the job's title, while
+the lesson carries the title *plus* the method vocabulary the query is matching
+on. **A correction filed beside a lesson is outranked by the lesson.** That is
+the same shape as this project's oldest recurring bug — a fix that is complete
+in every place except the one it has to reach.
+
+**Decided.** Lesson 2 stands untouched. Lesson 1 is **annotated in place** in
+both stores it lives in (`memory/tam.md` and the level's `KNOWLEDGE.md`), not
+retired: retirement is one-way (D-188), the corpus is 30 lines, and half the
+lesson is correct. The wording keeps the true clause and says so, names *why*
+the false clause is false — the transferable fact, not merely that it was
+rejected — and deliberately keeps the original vocabulary so the corrected line
+still matches the queries it has to correct:
+
+> **before** — Office blueprint assembly: extract coordinates from plans,
+> verify equal spacing confirms adjacency, validate intermediate crops before
+> geometric composite.
+>
+> **after** — Office blueprint assembly: extract coordinates from plans and
+> place every sheet in one coordinate frame — that part holds. Superseded at
+> review: "equal spacing confirms adjacency" fails where the building curves
+> (each unit needs its own rotation), and the crop-and-composite this describes
+> was the method discarded on 2026-08-19.
+
+The before/after is quoted here because **`.agentlings/` is gitignored**: the
+crew's memory is not version-controlled, so this entry is the only durable
+record of an edit made to it, and the only way to reverse it.
+
+**What the edit did to reach, measured after.** The annotated line now ranks
+**1st on all four phrasings tested**, including the proof sentence where the
+uncorrected version had scored nothing. Annotating is therefore *not* neutral
+on ranking — it added terms ("coordinate frame", "curves", "rotation") that
+match spatial queries, so the correction now reaches every phrasing the wrong
+idea could have. The cost is one slot of the eight: Rue's multiply-blend
+composition note dropped out on the proof sentence. Worth it here, because the
+line that took the slot now opens with the geometry-first instruction and the
+curve warning that eight runs paid for — but it is a real cost and the next
+annotation should be checked the same way rather than assumed free.
+
+**What this settles, and what it does not.** Settled: a lesson that is *wrong*
+is edited where it stands, keeping whatever in it was right and saying which
+half was which; a lesson merely *superseded in method* but still true is left
+alone; and nothing is retired while the corpus is this small. Not settled:
+whether this should ever be a mechanism rather than a hand edit. It should not
+be yet — the app has no notion of a lesson being wrong, the judgement here
+needed reading both lessons against a chain of eight runs, and a button that
+rewrites crew memory is a far larger trust question than a button that appends
+to it. The rule this leaves for the next case is smaller and testable: **score
+the correction against the corpus before choosing where to put it.**

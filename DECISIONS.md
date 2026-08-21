@@ -207,6 +207,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-195 — 2026-08-18 — Work parties: hands in parallel, the gather when the last settles](#d-195--2026-08-18--work-parties-hands-in-parallel-the-gather-when-the-last-settles)
 - [D-196 — 2026-08-18 — The planned party: the model proposes, approving queues the hands](#d-196--2026-08-18--the-planned-party-the-model-proposes-approving-queues-the-hands)
 - [D-197 — 2026-08-18 — Repo parties: scoped hands, one merged patch, the trial to earn them](#d-197--2026-08-18--repo-parties-scoped-hands-one-merged-patch-the-trial-to-earn-them)
+- [D-198 — 2026-08-21 — Spatial documents: the drafter, priced to finish](#d-198--2026-08-21--spatial-documents-the-drafter-priced-to-finish)
 
 ## By theme
 
@@ -769,6 +770,11 @@ entry updates one file rather than two.
   private tailnet reaches the machine from Brian's phone, the app is unchanged
   and still local, and the boundary protecting an unauthenticated API moved
   from the loopback interface to tailnet membership (`serve`, never `funnel`)
+- **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
+  turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
+  quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
+  doing the rest — plus the `plan-geometry` skill; the live gate is the open
+  clause.
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -14120,3 +14126,53 @@ that wall-dies solo in the wild (pair two's shape as a felt need, not a
 fixture); (c) an economy change that amortises the fixed overhead. Any
 of the three earns a fresh trial; until then T1–T3 stand adopted and
 T4 stands ready but dark.
+
+## D-198 — 2026-08-21 — Spatial documents: the drafter, priced to finish
+
+**Decision.** The spatial-documents line (blueprints, floor plans, CAD
+plots, 3D renders) gets its own role: **`drafter`** — model-first method,
+`maxTurns: 30`, `timeoutMinutes: 25`, `maxCostUsd: 5` — carrying a new
+**`plan-geometry`** skill distilled from the runs that proved the method.
+Chosen over extending `designer`, whose taste-first persona and 20-turn
+budget are a different trade; designer's card is untouched.
+
+**The evidence is SPATIAL.md's Phase 0 trial** (2026-08-18→21; the file
+holds the full log). The blueprint-conjoin task converged only when worked
+geometry-first — scale self-corrected 2,3× against stated m², party walls
+mated by wall-frame rectification + cross-correlation, residuals full-length
+in centimetres — but delivery took **eight designer runs, and all eight were
+cut at the turn wall** at 16–17 granted turns. Neither the clock (peak 15,3
+of 25 minutes) nor the geometry ever failed; ≈$14 real / $6.92 charged,
+delivered only by manual More-turns presses.
+
+**The ceiling was the quote's, and the cure is frontmatter.** The $2 that
+recurred eight times is `MAX_CEILING_USD`, the global runaway clamp
+(estimate.ts); at the designer class's ledger rate it funds 16 turns, under
+the role's own 20. The release was already built: a role's `maxCostUsd`
+raises the clamp (bounded by `ROLE_CEILING_HARD_MAX_USD`, D-130), and the
+quote floor `leash × rate` (D-022) then prices the role's full turn budget
+once the class has rows. The designer had simply never set it. **No server
+code changed for this entry** — two files, `roles/drafter.md` and
+`skills/plan-geometry/SKILL.md`. A cold class's first run still quotes low
+(no rate rows → no floor) and self-corrects from its own first ledger row;
+the gap is absorbed, which is how D-012 prices such things.
+
+**The replay measured the reshuffle** (D-117's harness, 213 prompts):
+13 moved. Six intended — the blueprint sentence in its variants (drafter
+0,61–0,67), the 3D-render sentence (0,59), the once-orphaned verify tail
+(0,68). Five are IDF drift judged neutral or better (expenses→analyst,
+research prompts→researcher). Two accepted casualties: level-pack prompts
+with 3D words now reach drafter — a rare flow, noted for re-tune if art
+authoring returns. One collision was caught **before** install: "balance
+sheet" pulled toward a card that said "dimensioned sheets" — reworded, and
+the fact that surfaced is that **role bodies are indexed**, not
+descriptions alone.
+
+**Standing, and what remains open.** Ash (a10-r8rh) is hired as drafter in
+home-chores with the method as first memory; the restarted registry routes
+the full proof sentence to drafter at 0,68 live. Adoption of the class as
+the spatial default reads on the live gate still open in SPATIAL.md Phase 1:
+the two original sentences queued verbatim, delivering inside quote with
+zero wall deaths — the trial's eight-cut chain is the baseline to beat. The
+both-instruments rule stands: a queue sentence is checked with
+`suggestSetup` **and** `splitSteps` before it ships.

@@ -8,8 +8,10 @@ Figures were read from `.agentlings/ledger.jsonl` and the `home-chores` job
 store on 2026-08-20; the standing rule applies — recompute before trusting
 them later.
 
-Current position: **Phase 0 complete — the §2 bar was MISSED; verdict in the
-§2 trial log.** Nothing is built; Phase 1+ awaits Brian's call.
+Current position: **Phase 1 BUILT (D-198, 2026-08-21): the drafter is live —
+role + `plan-geometry` skill installed, replay measured, registry restarted,
+Ash hired.** The Phase 0 verdict (bar missed, §2 trial log) stands; the
+**live gate** is the one open Phase 1 clause.
 
 ## 1. The evidence
 
@@ -225,21 +227,28 @@ for what the method produces when runs are allowed to finish.**
 
 ### Phase 1 — codify (files + one restart; only after the gate)
 
-- [ ] **`plan-geometry` skill** distilled from 41fbbf49 + the proof job
-  (vectors → model → closure numbers → deterministic re-render → overlay
-  residual; includes the ask-once line for underspecified visual asks). →
-  Desired: a fresh session can reproduce the rigor from the SKILL.md alone.
-- [ ] **Role: new `drafter` vs extend `designer` (BRIAN DECIDES).** Budgets
-  maxTurns ~30 / timeoutMinutes 25; card carries blueprint / floor plan /
-  render / 3D / CAD / drawing. → Desired: a role whose budget shape fits
-  render-heavy work and whose vocabulary attracts spatial sentences.
-- [ ] **Matcher replay before install** (`npx tsx scripts/matcher-replay.ts`).
-  → Desired: only the intended sentences move; zero unrelated re-routes.
-- [ ] **Hire + restart under discipline** (`jobsRunning == 0`). → Desired:
-  registry carries the role; no live session killed.
+- [x] **`plan-geometry` skill** — written 2026-08-21 from the proven method
+  (vectors → model → closure → wall-frame mating → residuals → read the
+  delivered bytes back → ask-once), ten rules, `skills/plan-geometry/`.
+- [x] **Role: `drafter`** (Brian chose new-role over extending designer;
+  D-198). `maxTurns: 30`, `timeoutMinutes: 25`, **`maxCostUsd: 5`** — the
+  turn-ceiling cure turned out to be pure frontmatter: the recurring $2 is
+  `MAX_CEILING_USD`, raised per-role by `maxCostUsd` (D-130), and the D-022
+  floor (`leash × rate`) then funds the full 30 turns once the class has
+  ledger rows. No server code changed.
+- [x] **Matcher replay** — 213 prompts, 13 moved: 6 intended (blueprints
+  0.61–0.67, 3D 0.59, the orphaned verify tail 0.68), 5 IDF-neutral-or-
+  better, 2 accepted casualties (level-pack prompts with 3D words; re-tune
+  if art authoring returns). One collision caught pre-install: "balance
+  sheet" vs "dimensioned sheets" — reworded; **role bodies are indexed.**
+- [x] **Hire + restart under discipline** — levels idle, registry restarted;
+  live `/api/match` routes the full sentence to drafter at 0.68; **Ash
+  (a10-r8rh)** hired in home-chores with the method as first memory.
 - [ ] **Live gate: both original sentences verbatim through normal intake.**
-  → Desired: router picks the role unaided; both deliver inside quote, zero
-  wall deaths; ledger starts the new price class.
+  → Desired: router picks the drafter unaided; both deliver inside quote,
+  **zero wall deaths**; ledger starts the drafter class. Baseline to beat:
+  the eight-cut chain. (Expect run 1 of each to quote cold-low — no class
+  rows yet, absorbed per D-012 — and quotes to self-correct from row one.)
 
 ### Phase 2 — mechanism fixes (small server builds, independent of each other)
 
@@ -310,8 +319,7 @@ recipe.
 ## 5. Decisions this file waits on
 
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
-2. Whether Phase 1 proceeds on Phase 0's evidence (method verified
-   step-by-step, delivery killed by the turn ceiling) — and if so, the
-   role shape: new `drafter` vs extend `designer`.
+2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
+   (D-198). Open within it: the live gate above.
 3. Phase 2 fixes: which of the three to build.
 4. Photoreal fork: scope Blender, or decided-not-built.

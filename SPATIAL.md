@@ -8,8 +8,8 @@ Figures were read from `.agentlings/ledger.jsonl` and the `home-chores` job
 store on 2026-08-20; the standing rule applies — recompute before trusting
 them later.
 
-Current position: **Phase 0 — proof job drafted, not yet queued.** Nothing is
-built.
+Current position: **Phase 0 complete — the §2 bar was MISSED; verdict in the
+§2 trial log.** Nothing is built; Phase 1+ awaits Brian's call.
 
 ## 1. The evidence
 
@@ -114,6 +114,35 @@ verdict is "fails under today's quote shape, cure named" (drafter budget /
 quote floor for spatial classes). If it stalls again, both fail. Judge on
 the artifacts, per §2.
 
+### VERDICT (2026-08-21, per the pre-registered §2 bar): MISSED
+
+843245a0 was cut at the turn wall too — 18/17 turns, $2.04 real, $0
+charged, 10.2 of 25 minutes — the **fourth** cut, every one by the quote's
+turn ceiling (16–17 under designer's own maxTurns 20), never by the clock
+and never by the geometry.
+
+- **Economics: decisive fail.** Five designer runs + the split's researcher
+  step ≈ $7.1 real, $0.73 charged, zero §2 artifacts delivered.
+- **Mechanics: fail by the bar's own clause (no delivered artifacts),
+  recorded with the distinction that every completed step verified
+  correct:** rotations from the map's arc; run 2's scale error caught and
+  corrected 2.3× against the stated 29,97 m²; the 818/819 doubled wall
+  fixed by wall-frame rectification + NCC (du = +19 px = the wall's own
+  thickness, confirmed by eye in `img/seam_B.png`); the 816/818 seam
+  solved wall-windowed in the dying turns (`mateA.json`: NCC 0.413,
+  dt = 2, du = 8, n = 23 100); `compose2.mjs` — the final composer —
+  written and never run. The sandbox stands one script-run + overlay +
+  residual table from the full artifact set.
+- **Cures, any one:** (a) Phase 1's budget shape — the role's own turns
+  honored over the quote ceiling for spatial classes; (b) a quote floor
+  for this class; (c) one More-turns press on 843245a0 (~$2) collects the
+  artifact under today's rules — that spend is outside this trial's books.
+- **Instrument lessons banked:** check BOTH instruments before queueing
+  (`suggestSetup` AND `splitSteps`); the stub-ledger-row fix has two live
+  cases (42e320d0, 31d0c24b); and failure-banking works — run 4's
+  LESSON.md holds wall-frame rectification from a failed run — while
+  discard-banking remains the gap.
+
 ## 3. The plan
 
 ### Phase 0 — prove it (no code, no restart)
@@ -123,8 +152,10 @@ the artifacts, per §2.
 - [x] **Queue the §4 sentence with the original offer PDF attached.** Done
   2026-08-21 — with the "then"-split incident and three turn-wall cuts;
   see the §2 trial log. Resumed as 843245a0.
-- [ ] **Decision gate.** → Desired: explicit go/no-go recorded. Reads on
-  843245a0's delivery, per the trial log's bar accounting.
+- [x] **Decision gate.** VERDICT: **BAR MISSED** (2026-08-21) — economics
+  by the quote's turn ceiling, mechanics truncated-unproven with every
+  completed step verified; cures named in the trial log. Whether Phase 1
+  proceeds on this evidence is Brian's call, not this file's.
 
 ### Phase 1 — codify (files + one restart; only after the gate)
 
@@ -212,8 +243,9 @@ recipe.
 
 ## 5. Decisions this file waits on
 
-1. Phase 0 go: hire the designer, queue the sentence. (Everything else
-   waits on its gate.)
-2. Role shape: new `drafter` vs extend `designer`.
+1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
+2. Whether Phase 1 proceeds on Phase 0's evidence (method verified
+   step-by-step, delivery killed by the turn ceiling) — and if so, the
+   role shape: new `drafter` vs extend `designer`.
 3. Phase 2 fixes: which of the three to build.
 4. Photoreal fork: scope Blender, or decided-not-built.

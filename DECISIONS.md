@@ -217,6 +217,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-205 — 2026-08-21 — Cure (b): the billing half was already cured, and the ledger was calling accepted work a failure](#d-205--2026-08-21--cure-b-the-billing-half-was-already-cured-and-the-ledger-was-calling-accepted-work-a-failure)
 - [D-206 — 2026-08-21 — The pre-D-150 residue, charged — and the three rules that made it smaller](#d-206--2026-08-21--the-pre-d-150-residue-charged--and-the-three-rules-that-made-it-smaller)
 - [D-207 — 2026-08-22 — Cure (a) falsified on the best delivery the task has produced: the artefacts outran the report](#d-207--2026-08-22--cure-a-falsified-on-the-best-delivery-the-task-has-produced-the-artefacts-outran-the-report)
+- [D-208 — 2026-08-22 — The report off the session's turns — and the ask order that was the survival rate](#d-208--2026-08-22--the-report-off-the-sessions-turns--and-the-ask-order-that-was-the-survival-rate)
 
 ## By theme
 
@@ -14883,3 +14884,78 @@ turns as D-020 moved the close-out; teaching the close-out to write the report
 from the artefacts when the session was cut; or raising `TURN_CEILING`, which
 this evidence argues against. Recorded, not built — the measurement is the
 deliverable, and picking among them is Brian's.
+
+## D-208 — 2026-08-22 — The report off the session's turns — and the ask order that was the survival rate
+
+Brian picked the first of D-207's three candidates: move the report off the
+session's turns, as D-020 moved the close-out. Measuring the population first
+turned one defect into two, and the second is the sharper one.
+
+**Defect 1 — the report is lost far more often than one job suggested.**
+Across **266 runs that produced something**: 54 left **no `RESULT.md` at
+all**, and 26 left one still saying it was unfinished. That is **30%** of
+producing runs with no honest account of what they made. Restricted to runs
+cut at a wall it is **55 of 73 — 75%**. Thirteen of those were *promoted*:
+Brian accepted the work by reading the files, because the report could not be
+relied on.
+
+**Defect 2, found on the way — the close-out's ask order was its survival
+rate.** It is asked for three files in two turns. Across **281 close-outs**:
+
+| file | asked | landed |
+|---|---|---|
+| `LESSON.md` | first | **281 / 281 — 100%** |
+| `APPROACH.md` | second | **280 / 281 — 100%** |
+| `PENDING.md` | **last** | **157 / 281 — 56%** |
+
+**124 close-outs wrote a lesson and no PENDING** — and PENDING is the one
+file nothing else can produce, written precisely for the runs that died
+before reporting (D-114). Job `29ddccb7` is in that 124: it has a lesson and
+an approach and no account of where it got to. The gradient is monotone in
+the order asked, which is what makes it the order and not the content.
+
+**Built, three small things.**
+
+- **One reply.** The brief now says to write every file in a single reply —
+  *"Do not write one and wait."* This is the actual fix: at two turns the
+  pass can afford one round of writes and a sign-off, and writing a file per
+  turn spends the budget before the last file.
+- **A third turn**, as the belt rather than the braces. An unused turn costs
+  nothing — a cap is a ceiling, not a spend — so this is free insurance
+  against the same failure recurring under a longer brief.
+- **The report itself, when the run left none.** `closeOutBrief` gains a
+  fourth file, gated in code on `!RESULT.md && producedArtefacts(...)`.
+
+**What was deliberately *not* done, and why the narrow reading is the right
+one.** The session still writes its own report, and an existing `RESULT.md`
+is **never** rewritten. Two reasons, both concrete: this pass is forbidden
+from reading files, so overwriting means replacing an account it has not
+seen — job `29ddccb7`'s draft was detailed and correct as far as it went, and
+a thin inventory replacing it would lose more than it fixed; and 70% of
+producing runs already report well, better than a cheap two-turn errand
+could. So the close-out is a **safety net under the report, not a
+replacement for it** — which is what D-020 actually did for the write-up, and
+the session's instruction to report early and keep updating stands unchanged.
+Where a report exists but reads unfinished, `PENDING.md` is what reconciles
+it, and defect 2's fix is what makes PENDING turn up at all.
+
+**The hazard the gate is for.** `deliveredFiles` is computed *after* this
+pass, so a close-out-written `RESULT.md` on a run that produced nothing would
+make an empty run look delivered — D-041's fault re-entering by the other
+door. Gating on `producedArtefacts` means the report is only ever written for
+a run that was already going to count as delivered.
+
+**And the guard on invention.** The pass sees a list of file *names* and
+nothing inside them, so the instruction says to open with a line declaring
+the close-out wrote it, to name only the listed files, and never to describe
+what a file contains or state a number it was not given. That is the same
+rule PENDING already keeps, applied to the file most likely to be believed —
+and D-202's whole finding was a report claiming what the bytes did not
+support.
+
+**Untested live, and honestly so.** Suites pass — 75 files / 1,886 server —
+but every claim here about what the close-out *will* write is a claim about a
+model following a changed brief. The three numbers to re-read after the next
+handful of runs are: PENDING's landing rate against 56%, whether a
+close-out-written report appears for a run that produced files and no report,
+and whether any existing report was overwritten (it must be zero).

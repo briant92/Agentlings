@@ -35,6 +35,23 @@ close-out; have the close-out write the report from the artefacts when the
 session was cut; raise `TURN_CEILING`, which this evidence argues against)
 and leaves the choice to Brian.
 
+**Chosen and built the same day (D-208): the report off the session's turns.**
+Measuring first turned one defect into two. The report is lost on **30% of all
+runs that produced something** (54 of 266 with no `RESULT.md` at all, 26 more
+unfinished) and on **75% of the ones cut at a wall** — thirteen of them
+promoted anyway, on the files rather than the report. And the close-out's own
+**ask order turned out to be its survival rate**: asked for three files in two
+turns it landed `LESSON.md` 281/281, `APPROACH.md` 280/281, and `PENDING.md` —
+asked last — **157/281**, so 124 runs lost the one file nothing else can write.
+Built: every file asked for in **one reply**, a third close-out turn as free
+insurance, and a **fourth file — the report — only when the run left none**,
+gated on `producedArtefacts` so an empty run cannot be made to look delivered.
+An existing report is never rewritten: the pass may not read files, so it
+cannot know what it would replace, and 70% of runs already report better than
+it could. Live re-read owed after the next few runs: PENDING's rate against
+56%, a close-out report appearing where one was missing, and zero reports
+overwritten.
+
 ## 1. The evidence
 
 Two real tasks ran in `home-chores` on 2026-08-18/19. Ten runs, five dead at

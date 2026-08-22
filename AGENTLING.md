@@ -874,8 +874,8 @@ flowchart TD
 ### The close-out pass — Live
 
 **The write-up is not the session's job.** A separate pass runs afterwards on a
-cheap model with two turns, handed the run's own `RESULT.md` and the *names* of
-the files it changed — never the patch, because a patch is what makes a turn
+cheap model with three turns, handed the run's own `RESULT.md` and the *names*
+of the files it changed — never the patch, because a patch is what makes a turn
 expensive.
 
 It runs after **every job that left anything behind, including the ones that
@@ -884,6 +884,24 @@ write-up competed with the work for turns, so it was cut first, and 13 of 13
 recipe runs died before writing either file. Anything that learns only from
 clean successes goes blind exactly where a short leash puts most of its runs
 (D-020).
+
+**It writes the report too, when the run left none — and only then (D-208).**
+Measured over 266 runs that produced something, 54 left no `RESULT.md` at all
+and 26 left one still saying it was unfinished: 30% of producing runs, and 75%
+of the ones cut at a wall, with no honest account of what they made. So a
+fourth file joins the three below when the sandbox holds output and no report,
+opening with a line that says the close-out wrote it. An **existing** report is
+never rewritten — this pass may not read files, so overwriting means replacing
+an account it has not seen. It is a net under the report, not a replacement for
+it.
+
+**And the order it is asked in turned out to be the order it delivers in.**
+Across 281 close-outs at two turns, `LESSON.md` landed 281/281, `APPROACH.md`
+280/281, and `PENDING.md` — asked last — **157/281**. One hundred and
+twenty-four runs lost the single file nothing else can produce, written for
+exactly the runs that died before reporting. The brief now asks for every file
+**in one reply**, and the turn cap went to three as insurance; an unused turn
+costs nothing.
 
 ### A discard banks too — Live (D-201)
 
@@ -1414,7 +1432,7 @@ untouched until you press Approve.
 | `TURN_CEILING` | 40 | `executors/claude.ts` | Hard clamp; a typo cannot uncap the loop |
 | `RECIPE_TURNS` | 5 | `executors/claude.ts` | The leash on a strong recipe match |
 | `COMPILE_TURNS` | 10 | `executors/claude.ts` | A compile gets its own cap, not the role's |
-| `CLOSEOUT_TURNS` | 2 | `executors/claude.ts` | The write-up pass |
+| `CLOSEOUT_TURNS` | 3 | `executors/claude.ts` | The write-up pass. Was 2, and at 2 the file asked last landed 56% of the time against 100% for the first two — the brief now asks for every file in one reply, and this is the belt (D-208) |
 | `SESSION_TIMEOUT_MS` | 10 min | `executors/claude.ts` | Wall clock on one session — the default; a role raises it with `timeoutMinutes:` frontmatter (D-129) |
 | `TIMEOUT_CEILING_MINUTES` | 30 | `executors/claude.ts` | Clamp on `timeoutMinutes`; a typo cannot uncap the clock |
 | `ROLE_CEILING_HARD_MAX_USD` | $10 | `estimate.ts` | Clamp on a role's `maxCostUsd:`, which lifts the $2 runaway cap for its class alone (D-130); `AGENTLINGS_MAX_COST_USD` still wins |

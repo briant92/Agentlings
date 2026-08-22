@@ -721,6 +721,51 @@ describe('closeOutBrief', () => {
   });
 
   /**
+   * The ask order was the survival rate (D-208). Measured across 281
+   * close-outs at two turns: LESSON and APPROACH landed 100% of the time and
+   * PENDING — asked last — landed 56%, so 124 runs lost the one file a
+   * reviewer needs when the run was cut. One reply is the fix.
+   */
+  it('asks for every file in one reply, so the last one asked is not the one lost', () => {
+    const brief = closeOutBrief(job, 'What the run reported:\nDone.', []);
+    expect(brief.append).toMatch(/all three files in ONE reply/);
+    expect(brief.append).toMatch(/Do not write one and wait/);
+  });
+
+  /**
+   * The report the run never wrote (D-208). Off by default: an existing
+   * RESULT.md is never rewritten, because this pass may not read files and
+   * so cannot know what it would be replacing.
+   */
+  describe('when the run left no report', () => {
+    const brief = () =>
+      closeOutBrief(job, 'Files it produced:\n- plan.pdf\n- model.json', [], true);
+
+    it('is silent about RESULT.md unless asked', () => {
+      expect(closeOutBrief(job, 'x', []).append).not.toContain('RESULT.md');
+    });
+
+    it('asks for it as a fourth file, still in one reply', () => {
+      expect(brief().append).toContain('RESULT.md');
+      expect(brief().append).toMatch(/all four files in ONE reply/);
+      expect(brief().append).toContain('these four files');
+    });
+
+    /**
+     * The guard that keeps it an account rather than an invention: it has
+     * seen a list of names and nothing inside them, and the reader has to be
+     * able to tell the difference. The same rule the PENDING instruction
+     * already keeps — say only what the evidence supports.
+     */
+    it('marks it as the close-out’s and forbids describing what it cannot see', () => {
+      const append = brief().append;
+      expect(append).toMatch(/written by the close-out/);
+      expect(append).toMatch(/You have not seen inside any of these files/);
+      expect(append).toMatch(/never a number you were not given/);
+    });
+  });
+
+  /**
    * The guard against the failure mode this invites. A two-turn errand reading
    * a dead sandbox will be asked to describe work it never saw, and an invented
    * plan is worse than "it had barely started" — the same honesty the scout's

@@ -26,7 +26,7 @@ import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../c
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
-import { outputNames, PREVIOUS_RESULT } from '../outputs';
+import { outputNames, producedArtefacts, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { BLS_TOOLS } from '../bls';
@@ -116,8 +116,14 @@ const CLOSEOUT_MODEL = 'claude-haiku-4-5-20251001';
  * same reason a one-shot cannot work at a single turn: a turn ends before the
  * model sees any tool result. The prompt now tells it not to go looking, and
  * the second turn is there for when it does anyway.
+ *
+ * Three since D-208, and the reason is measured rather than cautious: at two,
+ * across 281 close-outs, LESSON and APPROACH landed every time and PENDING —
+ * asked last — landed 56% of the time. The brief now asks for every file in
+ * one reply, which is the actual fix; this is the belt, and an unused turn
+ * costs nothing because a cap is a ceiling and not a spend.
  */
-const CLOSEOUT_TURNS = 2;
+const CLOSEOUT_TURNS = 3;
 export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.url));
 
 /**
@@ -760,6 +766,20 @@ export function closeOutBrief(
   job: { prompt: string },
   evidence: string,
   known: string[],
+  /**
+   * The run produced files and left no report of its own (D-208). The
+   * close-out writes one, because the report is the last thing a session
+   * does and the wall takes it first: measured over 266 runs that produced
+   * something, 54 left no `RESULT.md` at all and 26 left one still saying it
+   * was unfinished — 75% of the runs cut at a wall.
+   *
+   * Only when there is none. An existing report is never rewritten: this
+   * pass is forbidden from reading files, so it cannot know what it would be
+   * overwriting, and a thin summary replacing a run's own detailed account
+   * would lose more than it fixed. Where a report exists but reads
+   * unfinished, `PENDING.md` is what reconciles it — that is already its job.
+   */
+  reportMissing = false,
 ): { prompt: string; append: string } {
   const onFile =
     known.length > 0
@@ -772,7 +792,13 @@ export function closeOutBrief(
       // Measured: without this it opened the file it had just been told
       // about and ran out of turns having written nothing.
       'Do not read, open or search any files. Everything you need is in this message.',
-      'Write exactly three files in the working directory, then stop:',
+      // Measured over 281 close-outs (D-208): asked for three files in two
+      // turns, it wrote the first two every time and the third only 56% of
+      // the time — the survival rate is the ask order. PENDING was last, and
+      // it is the one the reviewer needs most when a run was cut. Saying
+      // "one reply" is the fix; the extra turn below is the belt.
+      `Write ${reportMissing ? 'all four' : 'all three'} files in ONE reply — every Write call together, then stop. Do not write one and wait.`,
+      `Write exactly ${reportMissing ? 'these four files' : 'these three files'} in the working directory:`,
       '- LESSON.md: one line starting with "- ", holding one thing a future agentling should remember about this KIND of job.',
       ...(known.length > 0
         ? [
@@ -788,6 +814,16 @@ export function closeOutBrief(
       '  Then one "- " line per thing still to do, most important first, at most five.',
       '  Say only what the evidence above supports. If it got nowhere, say that plainly — "it had barely started" is a useful answer and a made-up plan is not.',
       '  If nothing is left and the work looks complete, write PENDING.md holding exactly the word "done".',
+      // The report the run never wrote. Built from the file list above and
+      // nothing else, and it says so — a reader must be able to tell an
+      // account of the work from an inventory of it.
+      ...(reportMissing
+        ? [
+            '- RESULT.md: the report this run never wrote. Open with one line in italics saying it was written by the close-out from the file list, not by the run itself.',
+            '  Then: what the job asked for, and which of the files above answer it — name them exactly as listed. Say what is plainly missing against the request.',
+            '  You have not seen inside any of these files. Describe what the run produced, never what the files contain, and never a number you were not given.',
+          ]
+        : []),
       'If the run failed, say what to do differently — a run that died still teaches something.',
     ].join('\n'),
   };
@@ -1191,7 +1227,14 @@ export class ClaudeAgentExecutor implements Executor {
     const evidence = closeOutEvidence(sandboxDir);
     if (!evidence) return undefined;
 
-    const brief = closeOutBrief(job, evidence, known);
+    // Gated on the run having made something other than paperwork, not merely
+    // on the report being absent: `deliveredFiles` is computed after this
+    // pass, so writing a RESULT.md for a run that produced nothing would make
+    // an empty run look delivered — the exact fault D-041 fixed on the other
+    // side. A run with real output was going to count as delivered anyway.
+    const reportMissing =
+      !existsSync(path.join(sandboxDir, 'RESULT.md')) && producedArtefacts(sandboxDir);
+    const brief = closeOutBrief(job, evidence, known, reportMissing);
     const configPath = path.join(sandboxDir, '.closeout.json');
     writeFileSync(
       configPath,

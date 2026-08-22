@@ -44,7 +44,9 @@ capability roadmap; this is the short list of what matters most, in order.
       trust question.
 - [ ] **G4 — A data control plane.** §11 is honest about what does not
       exist: no retention policy, no redaction, no audit of what a session
-      *fetched*, and the sandbox is an instruction rather than a jail.
+      *fetched* (since D-211 the sandbox trajectory keeps each call and a
+      160-character head of its answer — a trace, not the content), and the
+      sandbox is an instruction rather than a jail.
       Acceptable for one user on localhost by decision; each becomes a
       blocker at the first second user, as does billing (D-012's spine has
       no invoice on purpose).

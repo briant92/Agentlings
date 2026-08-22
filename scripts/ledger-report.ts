@@ -15,6 +15,7 @@ import { totals } from '../server/src/ledger';
 import { compileBlockers } from '../server/src/capability';
 import { readConnections } from '../server/src/connections';
 import { usableTools } from '../server/src/tools';
+import { TRAJECTORY_FILE } from '../server/src/trajectory';
 
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
@@ -287,6 +288,60 @@ if (sessionMean > 0) {
   console.log('\nAssumes each would otherwise have run as an ordinary session, which is');
   console.log('what the router would have done with it. Treat as an order of magnitude.');
 }
+
+/**
+ * LLM calls by trade — the success metric the 2026-08-21 brief set (D-211):
+ * a measurable fall in model calls on repeated document, research and
+ * drawing work once the library fills.
+ *
+ * A "model run" is a row on a paid tier: every session or leash is one call
+ * to the API that a routed answer or a compiled tool would have avoided.
+ * Counted per class because the admin trades — scribe and designer for
+ * documents, researcher and scout, architect and drafter for drawings,
+ * analyst for numbers — are where that fall is expected, and across the same
+ * halves the Trend section uses so the two columns compare across classes.
+ * A class with nothing in a half prints a dash rather than a zero: no traffic
+ * is not a rate. Read the sample sizes; a trade with five rows has no trend.
+ */
+console.log('\n## LLM calls by trade — model runs against free ones\n');
+console.log(
+  `${pad('trade', 12)}${num('runs', 6)}${num('model', 7)}${num('free', 6)}${num('free%', 7)}   first half → second half (free share)`,
+);
+const byClass = new Map<string, typeof rows>();
+for (const r of rows) {
+  const cls = r.jobClass ?? '(none)';
+  if (!byClass.has(cls)) byClass.set(cls, []);
+  byClass.get(cls)!.push(r);
+}
+const isFree = (r) => r.tier === 'routed' || r.tier === 'tool';
+const freeShare = (v) => (v.length ? `${Math.round((100 * v.filter(isFree).length) / v.length)}%` : '—');
+const cutAt = rows[half]?.at ?? Infinity;
+for (const [cls, v] of [...byClass.entries()].sort((a, b2) => b2[1].length - a[1].length)) {
+  const free = v.filter(isFree).length;
+  console.log(
+    `${pad(cls, 12)}${num(v.length, 6)}${num(v.length - free, 7)}${num(free, 6)}${num(freeShare(v), 7)}   ${freeShare(v.filter((r) => r.at < cutAt))} → ${freeShare(v.filter((r) => r.at >= cutAt))}`,
+  );
+}
+
+/**
+ * How many sandboxes carry a trajectory (D-211): the coverage of the
+ * instrument the promotion loop will read, visible from the day it starts
+ * rather than assumed — a file nobody counts is a file nobody notices has
+ * stopped being written. Older runs cannot be given one.
+ */
+let sandboxes = 0;
+let trails = 0;
+for (const level of existsSync(LEVELS) ? readdirSync(LEVELS) : []) {
+  const jobs = path.join(LEVELS, level, 'jobs');
+  if (!existsSync(jobs)) continue;
+  for (const id of readdirSync(jobs)) {
+    sandboxes++;
+    if (existsSync(path.join(jobs, id, TRAJECTORY_FILE))) trails++;
+  }
+}
+console.log(
+  `\ntrajectories on disk: ${trails} of ${sandboxes} sandboxes carry ${TRAJECTORY_FILE} (recording began with D-211)`,
+);
 
 /**
  * The absorbed headline, split by cause.

@@ -21,7 +21,9 @@ Written 2026-08-01 against `e5c80c9`, last re-read against `3839d4d`
 (2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,
 the calendar connection, sixteen skills, and the reading row ticked; §§5 and
 15 corrected again the same day where D-191 landed: the mail connection, nine
-credentialed connections, the email reading row ticked. §8's figures
+credentialed connections, the email reading row ticked; §§4, 6 and 11
+corrected 2026-08-22 where D-211 landed: the sandbox trajectory trail, and
+the document brief's scan line repaired. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 
@@ -164,7 +166,11 @@ demote to hints until they land again (D-036's surface doing its job).
 The document libraries are named in the system prompt with their exact call
 shapes, because a library nobody is told about is not a capability: watched
 live, an agentling asked for a PDF hand-assembled the bytes over several turns
-because it had no idea `pdf-lib` was there (D-031).
+because it had no idea `pdf-lib` was there (D-031). The scan line among them
+— the OCR readers for a PDF with no text layer — named a placeholder path
+that nothing substituted from D-061 to D-211, and the import failed two more
+ways under plain node; measured by running it from outside the repo, and
+repaired (D-211).
 
 The repository listing — up to 40 files — is handed over before the first turn,
 because every repo run used to open with `ls` before it could do anything, and
@@ -470,7 +476,10 @@ and `lastTool`, counted off the tool stream. Recorded and read by nobody, but
 it is the only number that survives a *killed* run: a cancelled session never
 reaches the result message the SDK reports cost and turns on, so its row shows
 `costUnknown` and no turns at all, while still saying it made 3 calls and was
-last reading.
+last reading. **Since D-211 the sandbox keeps the calls themselves**:
+`.trajectory.jsonl`, one line per call, result and remark, clipped, with how
+the child ended — the transcript sandboxes never had, and the first seam of
+the runner protocol a test pins rather than a live run.
 
 **`lastTool` is what the model asked for, not what it got.** A run whose last
 call was `browser_evaluate` was *refused* it — that tool is not granted. Read
@@ -1317,10 +1326,14 @@ What is **not built**, and should not be assumed:
 - **No retention policy.** Sandboxes, fetched pages, attachments, lessons and
   ledger rows persist under `.agentlings/` until you delete them. Nothing
   expires.
-- **No audit of what a session pulled.** `sends.jsonl` now records every
-  approved send, kept and refused alike (D-075) — but nothing records what a
-  run *fetched* over its connections, and the ledger still records only what
-  a job cost.
+- **An audit of what a session pulled — a trace, not the content (D-211).**
+  `sends.jsonl` records every approved send, kept and refused alike (D-075);
+  the door trail records every door call (D-192); and since D-211 each
+  sandbox keeps `.trajectory.jsonl` — every tool call with its clipped
+  arguments, a 160-character head of what came back, what the run said
+  between calls, and how it ended. What is still not recorded is the content:
+  a fetched page or a read file enters the session whole, and the trail keeps
+  the first line of it. The ledger still records only what a job cost.
 - **No per-level or per-job data boundary beyond the sandbox directory.**
   Levels do not share sandboxes, but nothing stops you pointing two levels at
   the same repository.

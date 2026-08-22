@@ -10,7 +10,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import type {
   Agentling,
   AudiencePerson,
@@ -29,6 +29,7 @@ import type { MemoryStore } from '../memory';
 import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
+import { endLine, logTrajectory, trajectoryLine, type Pass } from '../trajectory';
 import { BLS_TOOLS } from '../bls';
 import { CALENDAR_TOOLS } from '../calendar';
 import { MAIL_TOOLS } from '../mail';
@@ -109,6 +110,8 @@ export const COMPILE_TURNS = 10;
  * one turn: it is handed what the run left behind and asked to describe it.
  */
 const CLOSEOUT_MODEL = 'claude-haiku-4-5-20251001';
+/** The write-up's config, and how the trail tells its lines from the session's (D-211). */
+const CLOSEOUT_CONFIG = '.closeout.json';
 /**
  * Two, not one, and measured rather than assumed. At one turn the pass read
  * the file it had just been told about and died on max_turns having written
@@ -201,6 +204,23 @@ export function gateOutside(tools: string[], grantedNames: string[]): string[] {
  * particular reads like its old function form and is now a class, so an agent
  * that reaches for the obvious `pdfParse(buffer)` fails and retries.
  */
+/**
+ * The project root as a URL a plain-node `import()` accepts on any platform.
+ *
+ * The scan line below used to read `import("<repo>/server/src/documents")`,
+ * and nothing ever substituted `<repo>` — every session since D-061 was
+ * handed the placeholder itself. Two more faults hid behind that one: node's
+ * ESM needs the `.ts` extension a tsx process never did, and `documents.ts`
+ * imported `./ocr` bare, which plain node cannot resolve either. Measured
+ * 2026-08-21 from outside the repo: the import failed on the bare `./ocr`,
+ * and after the extension landed in `documents.ts` it returned all eight
+ * readers. A URL rather than a path because a backslash inside a string
+ * literal in a prompt is an escape, not a separator (D-211).
+ */
+const PROJECT_URL = pathToFileURL(
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..'),
+).href;
+
 const DOCUMENT_LIBRARIES = [
   '## Document libraries (already installed — never npm install)',
   'Import them directly; they resolve from the project root.',
@@ -217,7 +237,7 @@ const DOCUMENT_LIBRARIES = [
   // Named for the same reason the rest are: D-031 watched one hand-assemble a
   // PDF because nobody had mentioned pdf-lib, and it worked, which is what
   // made it expensive rather than obviously wrong.
-  '- scanned .pdf or a photo (getText came back empty): `const {ocrPdf,imageText}=await import("<repo>/server/src/documents")`; `(await ocrPdf(f, 20)).text`, or `imageText(png)`. Windows only — the words are a good reading, not the document\'s own, so say so when you quote them.',
+  `- scanned .pdf or a photo (getText came back empty): \`const {ocrPdf,imageText}=await import("${PROJECT_URL}/server/src/documents.ts")\`; \`(await ocrPdf(f, 20)).text\`, or \`imageText(png)\`. Windows only — the words are a good reading, not the document's own, so say so when you quote them.`,
   'Use these rather than assembling a file format by hand.',
 ].join('\n');
 
@@ -914,12 +934,17 @@ function firstLine(text: string): string {
 }
 
 interface RunnerMessage {
-  type: 'progress' | 'result' | 'error';
+  type: 'progress' | 'result' | 'error' | 'observation' | 'said';
   name?: string;
   input?: unknown;
   summary?: string;
   message?: string;
   meter?: unknown;
+  /** The trail's fields (D-211): which call a result answers, on which turn, and what came back. */
+  id?: string;
+  turn?: number;
+  ok?: boolean;
+  head?: string;
 }
 
 /**
@@ -948,6 +973,13 @@ export class ClaudeAgentExecutor implements Executor {
   private running = new Map<string, ChildProcess>();
   /** Jobs killed deliberately, so the death can be reported as intent. */
   private cancelled = new Set<string>();
+  /**
+   * The child script. A field rather than the module constant so a test can
+   * point it at a stand-in that speaks the same stdout protocol — the seam
+   * that pins what `runSession` does with the lines. `toolCalls`, `toolsUsed`
+   * and now the trail were all proven live and never by a test (D-211).
+   */
+  runner = RUNNER;
 
   async run(
     job: Job,
@@ -1309,7 +1341,7 @@ export class ClaudeAgentExecutor implements Executor {
       !existsSync(path.join(sandboxDir, 'RESULT.md')) &&
       producedNames(sandboxDir).names.length > 0;
     const brief = closeOutBrief(job, evidence, known, reportMissing);
-    const configPath = path.join(sandboxDir, '.closeout.json');
+    const configPath = path.join(sandboxDir, CLOSEOUT_CONFIG);
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -1357,12 +1389,19 @@ export class ClaudeAgentExecutor implements Executor {
     timeoutMs = SESSION_TIMEOUT_MS,
   ): Promise<{ summary: string; meter: JobMeter }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [RUNNER, configPath], {
+      const child = spawn(process.execPath, [this.runner, configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: launderedEnv(),
       });
       this.running.set(jobId, child);
+      // The trail lands beside the config that started the child — the
+      // sandbox — and the write-up's lines are tagged as its own pass, so a
+      // reader can tell the work from the account of it (D-211).
+      const sandboxDir = path.dirname(configPath);
+      const pass: Pass = path.basename(configPath) === CLOSEOUT_CONFIG ? 'closeout' : 'session';
+      let timedOut = false;
       const timer = setTimeout(() => {
+        timedOut = true;
         child.kill();
         // A SessionFailure carrying the streamed partials, not a bare Error:
         // a time-cut used to lose everything the stream had counted, filing a
@@ -1411,6 +1450,9 @@ export class ClaudeAgentExecutor implements Executor {
         } catch {
           return;
         }
+        // Every line the runner speaks, before the meter reads it: the calls
+        // below are counted; the results and the narration only this keeps.
+        logTrajectory(sandboxDir, trajectoryLine(msg, pass, Date.now()));
         if (msg.type === 'progress' && msg.name) {
           toolCalls++;
           lastTool = msg.name;
@@ -1449,7 +1491,21 @@ export class ClaudeAgentExecutor implements Executor {
           // to tell apart from a run that provably reached nothing (D-100).
           ...(toolsUsed.size > 0 ? { toolsUsed: [...toolsUsed].sort() } : {}),
         };
-        if (this.cancelled.delete(jobId)) {
+        const wasCancelled = this.cancelled.delete(jobId);
+        // How it ended, written on every exit alike — the same convergence
+        // argument as the meter above.
+        logTrajectory(
+          sandboxDir,
+          endLine(
+            pass,
+            timedOut ? 'timeout' : wasCancelled ? 'cancelled' : errorMsg ? 'error' : code !== 0 ? 'exit' : 'result',
+            meter,
+            toolCalls,
+            Date.now(),
+            errorMsg || (code !== 0 ? firstLine(stderr) : undefined),
+          ),
+        );
+        if (wasCancelled) {
           // Killed on purpose: say so, rather than reporting whatever the
           // dying process happened to leave on stderr. It spent money on the
           // way, and the SDK only reports cost on a result message that will

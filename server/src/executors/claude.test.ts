@@ -486,6 +486,19 @@ describe('buildAppend', () => {
     expect(text).toContain('PDFDocument.load');
   });
 
+  // The scan line read `import("<repo>/server/src/documents")` from D-061 to
+  // D-211 and nothing substituted the placeholder, so every session was told
+  // a path that does not exist — and plain node needs the extension a tsx
+  // process never did. Measured by running the import from outside the repo.
+  it('hands the OCR readers over by a path plain node can actually import', () => {
+    const text = buildAppend(undefined, [], [], false);
+    const line = text.split('\n').find((l) => l.includes('ocrPdf'));
+    expect(line).toBeDefined();
+    expect(line).not.toContain('<repo>');
+    expect(line).toContain('import("file:///');
+    expect(line).toContain('/server/src/documents.ts")');
+  });
+
   it('hands over the repo listing so the run need not go looking', () => {
     const text = buildAppend(undefined, [], [], true, [], undefined, ['a.js', 'src/b.js']);
     expect(text).toContain('repo/a.js');

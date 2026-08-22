@@ -110,6 +110,11 @@ the loop runs end to end without one.
   rather than reaching for it, so every way in is quoted the same way.
 - `ledger.ts` — what work cost and what it may be charged; the per-turn rate
   the turn budget is derived from. Each row also records who did it.
+- `trajectory.ts` — one line per call, result and remark a run makes, and
+  how its child ended, kept under the sandbox as `.trajectory.jsonl` (D-211).
+  Sandboxes kept no transcript before it; `doorlog.ts` (D-192) covers the
+  doors alone. Both clip hard and swallow a failed write — a trace, never a
+  copy of the work, and never a way to take a run down.
 - `web.ts` — pages as trimmed text, never a raw dump.
 - `search.ts` — finding a page, as against reading one. Builtin so the reply
   size is ours: titles, snippets and links, then `fetch_page` reads the chosen
@@ -255,6 +260,7 @@ the app's memory is not the repository's.
     memory/<name>.md        one agentling's lessons
     tools/<name>/           tool.json + run.mjs + verify.mjs
     jobs/<id>/              one job's sandbox: repo clone, RESULT.md, DIFF.patch
+      .trajectory.jsonl     what that run called, saw and said, clipped, and how it ended (D-211)
 ```
 
 ### REST API

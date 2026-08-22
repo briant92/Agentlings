@@ -220,6 +220,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-208 — 2026-08-22 — The report off the session's turns — and the ask order that was the survival rate](#d-208--2026-08-22--the-report-off-the-sessions-turns--and-the-ask-order-that-was-the-survival-rate)
 - [D-209 — 2026-08-22 — A run that tidies its work into a folder was invisible: the evidence looks one level down](#d-209--2026-08-22--a-run-that-tidies-its-work-into-a-folder-was-invisible-the-evidence-looks-one-level-down)
 - [D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof](#d-210--2026-08-22--the-reconcile-line-and-the-cap-that-was-throwing-away-the-proof)
+- [D-211 — 2026-08-22 — The three-tier brief read against the engine: one layer missing, one door broken, nothing adopted whole](#d-211--2026-08-22--the-three-tier-brief-read-against-the-engine-one-layer-missing-one-door-broken-nothing-adopted-whole)
 
 ## By theme
 
@@ -461,7 +462,15 @@ entry updates one file rather than two.
   in 422, all one underlying request and both survivors promoted — with the
   sharper finding that the visible gap was **unused three.js** rather than a
   missing renderer, and that the worst artefact in the set failed on camera
-  placement, which a better renderer would have drawn just as wrongly
+  placement, which a better renderer would have drawn just as wrongly; and
+  D-211, an outside brief's whole reference architecture — tier promotion,
+  trajectory-to-script crystallization, local PDF/OCR MCP servers, leveled
+  memory — read against this engine source by source: every piece mapped onto
+  the M5 spine already built, the one genuinely missing layer (a per-run
+  transcript) became `.trajectory.jsonl` under each sandbox with the first
+  test ever put on the runner protocol, the session's OCR instruction was
+  found broken three ways by running it and repaired, and the report grew
+  the brief's own success metric — model runs against free ones, by trade
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033; and D-114, where the feed stopped being where decisions are made —
   one REVIEW on the row, the whole choice in the panel, the close-out writing
@@ -15118,3 +15127,212 @@ were each judged on one job and the second was wrong.
 this seam's plumbing can be provably correct while the outcome is unchanged,
 so the reconcile line is not proven by the files reaching the prompt — only by
 a PENDING that stops contradicting the sandbox. Suites: 75 files / 1,893.
+
+## D-211 — 2026-08-22 — The three-tier brief read against the engine: one layer missing, one door broken, nothing adopted whole
+
+Brian handed over a four-page *Three-Tier Agent Aggregation Platform —
+Implementation Brief* (a PDF, written with no reference to this codebase)
+as a directive: open every URL it lists, evaluate each against the current
+application, state what was found and why it maps or does not, and implement
+the highest-leverage pieces without breaking anything — in its order: tier
+promotion logic, trajectory-to-script crystallization, a local PDF/OCR tool
+layer, trajectory instrumentation. Every one of its fifteen sources was
+opened and read. The short verdict: the brief describes this engine's M5
+spine in other words, with one layer genuinely missing and one door found
+broken by running it. What follows is the account.
+
+### The mapping — what the brief asks for, and what already answers it
+
+| The brief | Here | Settled by |
+|---|---|---|
+| Tier Global / Tier Context-Levels / Tier Agent Recipes | baseline / level / agentling — one copy of roles and skills rising for everyone, `KNOWLEDGE.md` + recipes + tools per level, lessons per agentling | D-013, D-050 |
+| Skill crystallization: a successful trajectory cleaned, parameterised, stored as code + description, indexed | the close-out writes `APPROACH.md` after every run, dead ones included, and it becomes a recipe; three landings make a compile candidate; a compile writes `run.mjs` + `verify.mjs` | D-020, D-021, D-024 |
+| Tier 1 text-only → Tier 2 text + script → Tier 3 ML pipeline | a recipe is the text method; a compiled tool is the script; the ML tier is a **door** to a capability the engine already has — Windows OCR, the render door, search — never something a run trains | D-061, D-128, D-054 |
+| The promotion rule: promote when repetitive and mechanical | `TOOL_CANDIDATE_RUNS = 3`, `compileBlockers` on what the method *reached*, review before install, two strikes retire | D-044, D-045, D-100, D-173 |
+| Retrieval by embedding, run the script first, escalate on novelty or failure | rarity-weighted stemmed overlap with two bars, tool before recipe before session in the router, a tool that cannot prove its output falling through to a paid run | D-019, D-023, D-043, D-051 |
+| PDF / OCR / research / diagrams as local MCP tools | builtin doors (the budget for a stdio server is not ours), the document libraries at the root with their call shapes in the brief, the OCR engine Windows already has | D-031, D-040, D-061 |
+| Leveled memory, a curriculum, progressive unlocking | levels as worlds, `TRAINING.md` as a priced curriculum, schedules as the training signal, and the decision that the app never invents steps | D-013, D-103, §14 |
+| Outbound actions behind approval gates with audit | the outbox replayed at Approve, standing approval earned in review, `MOVES.json`, `sends.jsonl`, the check pass | D-075, D-082, D-132, D-194 |
+
+The brief's premise — *so the platform does not start with an empty skill
+tree* — is false for this app: eighteen skills written against its contract
+(documents, research, diagrams, folders, data among them), 161 recipes across
+six levels, ten tool directories on disk and a `tool` tier that has served
+eight runs for nothing.
+
+### The sources, one by one
+
+**3.1 `H-Ali13381/tier-1-2-3-skill-system`** — exists: 7 stars, MIT, four
+commits; a root `SKILL.md` mirrored under `.agents/skills/`, an `AGENTS.md`,
+a companion "Recursive Agent Improvement". Three tiers, a seven-question
+checklist, *"the default answer is the lowest tier that works"*, and rules per
+tier (idempotent scripts, configuration by flags, no ML *"because it sounds
+impressive"*). It maps one-to-one onto the ladder above. The difference is
+where the rule lives: here it is **enforced in code** — the gate counts, the
+compile brief insists on the check harder than on the script — rather than
+read by a model each run. **Not installed as a skill.** Unmounted it reaches
+nobody (D-188); mounted it is a body tax on every turn of every job of that
+role (D-190 measured one at ~14%) and a BM25 reshuffle under every role
+(D-112, D-117), all to restate a policy the router already obeys. Its Tier-2
+rules are structural here rather than advisory: a tool runs in a fresh
+sandbox, so idempotence is the shape of the tier, and it is parameterised by
+its `input/` files rather than flags because the router matches on words and
+shape and nothing extracts arguments from a sentence.
+
+**3.2 `lsdefine/GenericAgent`** — 13.9k stars, Python, MIT, ~3k lines; nine
+tools; memory in five layers. Read from the code rather than the README:
+skills are `*_sop.md` files beside Python helpers under `memory/`,
+`global_mem.txt` is appended to the system prompt on every task, and the
+crystallization step is a model writing an SOP after a task. That is D-020's
+close-out writing `APPROACH.md`, built a month earlier for the reason the
+brief gives — and banked after every run *including the dead ones*, which the
+reference does not do. The layer map: L0 meta rules = the role file and the
+job rules; L1 insight index = `relevantLines`; L2 global facts =
+`KNOWLEDGE.md` and the store; L3 task skills = recipes, tools and skills;
+**L4 session archive = the sandbox — and L4 is where this engine was thinner
+than the reference.** The sandbox kept the deliverables and no transcript;
+`doorlog.ts` says so in its first paragraph. The brief's *"automatically
+crystallize every success"* was measured wrong here before the brief arrived:
+the first unseeded compile was bad (D-024), the first clean one compiled a
+cache (D-045), and three landings do not make a method compilable (D-044).
+Adopted: the layer. Not adopted: the automaticity.
+
+**3.3 `MineDojo/Voyager`** — 7.2k stars, MIT; Minecraft, GPT-4 by API, OpenAI
+embeddings in Chroma. Read from `skill.py` and `curriculum.py`: `skills.json`
+holds `{code, description}` per skill, `code/` and `description/` beside it,
+descriptions are written by the model after the fact, retrieval is top-5 by
+description similarity with no threshold, and composition is every skill's
+code concatenated into the prompt. The curriculum proposes the next task from
+progress and gates what the agent is shown by a warm-up schedule. Maps onto
+`recipes.json` and `tools/`, with three deliberate differences: retrieval is
+lexical and local rather than embedded (no key, no network — and the report's
+repeat section shows three wordings of the blueprint job as separate keys
+only because that section groups by exact key; `findRecipe` matches across
+wordings at 0.3 and 0.65); verification is `verify.mjs` in a second process
+rather than a critic model; composition is D-105's steps rather than code
+pasted into a prompt. The curriculum is `TRAINING.md`, priced before it ran.
+**No embedding index built**: the day a reworded repeat is shown to miss the
+hint bar, the replay harness measures the fix — an embedding model is a new
+dependency answering a question nobody has yet asked the instrument.
+
+**3.4 `Dqz00116/skill-lib`** — 22 stars, MIT, 18 skills in the SKILL.md
+convention. Read one in full: `git-workflow` ships `scripts/git_commit.py`,
+which commits and pushes interactively — the one thing a session here must
+never do, since promote *is* the commit. Nothing for PDF handling; research
+is covered by `deep-research` written against this contract. **Not added to
+`catalog/sources.json`**, which is curated on purpose. The loader already
+understands the convention (M3.4: whole-folder installs, previews first, URL
+installs through `/api/templates/install`), so any one of them is one URL
+away if ever wanted.
+
+**3.5 `RajeshKalidandi/mike` (1 star), `pguso/agents-from-scratch` (962),
+`nerdai/llm-agents-from-scratch` (182)** — Python, Ollama or llama.cpp, the
+third a book's companion with MCP, Skills and A2A chapters. `mike`'s
+progressive planner — rule-based, then template, then an LLM capped at four
+nodes — is `router.ts`'s shape and D-105's refusal to invent steps. No
+local-model pattern adopted, on the numbers: the only pass a local model
+could take here is the close-out, **5.0c mean, $15.19 over 301 rows**; the
+refine tier is fractions of a cent. Reopen if the write-up's share of spend
+passes a fifth.
+
+**4 — the datasets.** olmOCR-mix-0225: 258,641 pages, 56.1 GB, ODC-BY, labelled
+by GPT-4o. BigDocs-7.5M (ICLR 2025, arXiv 2412.04626). ExtractBench: 370
+documents, needs a provider key and costs $10–$1,677 a run. GitSkills
+(arXiv 2608.10906, MSR 2027): 3.8M `SKILL.md` files, 13.4 GB parquet,
+CC-BY-4.0 on the metadata only. PubLayNet, DocBank, FUNSD, CORD, SROIE, DocVQA
+all still at their original homes. **Nothing downloaded**, and not only
+because a download is an ask: no model is trained here (Tier 3 is a door),
+the OCR engine was evaluated on a real scan the day it was chosen (D-061) and
+its one recorded defect — the junk text layer, G6 — needs a detector and not
+a corpus, and *synthetic trajectories* would bank methods nobody asked for
+and then leash real work on them, which is D-064's trap and `TRAINING.md`'s
+standing rule against farming runs.
+
+**5 — the PDF/OCR servers.** MinerU: 78k stars, Python 3.10–3.12 on Windows,
+a 1.2B-parameter VLM or a PaddleOCR pipeline, 16 GB RAM, weights by the
+gigabyte, an MCP server included. `sandraschi/ocr-mcp`: 17 stars, alpha,
+PyTorch, fourteen engines. `nfsarch33/pdf-mcp-server`: 2 stars, AGPL
+pymupdf, macOS/Linux/WSL. `jztan/pdf-mcp`: Tesseract plus a 67 MB ONNX model.
+`juanqui/pdfkb-mcp`: a RAG over PDFs. **None registered.** A second runtime
+was declined (EXPANSION §4) and D-167 recorded why machinery heavier than its
+problem loses; the registry is `builtin | stdio`; the doors are builtin by
+decision (D-040); the engine in use was measured (D-061); and the store is
+never read live by decision (D-047), which is what a PDF RAG server would
+undo. What the layer needed was not another server — it was to be **run**.
+
+### What running it found: the OCR line was broken three ways
+
+The session brief's scan line — *"a scanned .pdf or a photo: import
+<repo>/server/src/documents"* — was handed to every session from D-061 on
+with `<repo>` never substituted: nothing in the code replaced it. Run from
+outside the repo under plain node, as a session would: the import also fails
+for want of the `.ts` extension a tsx process never needed, and
+`documents.ts` itself imports `./ocr` bare, which node's type-stripping
+cannot resolve. So a run asked to read a scan hit a module-not-found three
+times over and, per D-053, substituted. Fixed at all three: `documents.ts`
+imports `./ocr.ts` (`allowImportingTsExtensions`, alone in the codebase and
+commented as to why), and the brief line carries the real `file:///` URL with
+the extension, built from `import.meta.url`. Measured before and after from
+`/tmp`: failed on `./ocr`; then all eight readers, and `ocrAvailable()`
+answering `true`. Pinned in `claude.test.ts`; the 53 reader tests ran against
+the real engine.
+
+### What was built: the layer that was missing
+
+**`.trajectory.jsonl`, one per sandbox** (`server/src/trajectory.ts`, the door
+trail's idiom): a `call` line per tool use with its name, clipped arguments,
+id and turn; a `result` line per tool result with a 160-character head and
+whether the tool refused; a `said` line for what the run said between calls;
+an `end` line on every exit — result, error, timeout, cancelled, exit — with
+the meter and the call count. The runner now emits the tool-result and text
+events and counts turns itself, inside a try that can never fail the job it
+describes; the server writes the lines off the stdout it already reads, with
+the write-up's lines tagged as their own pass. A dotfile, so `outputNames`,
+`producedNames`, `carryForward` and the D-208 gate never see it — pinned.
+
+Building it put the **first test on the runner protocol**: the executor gains
+a `runner` seam, and a stand-in runner that speaks the stdout lines proves
+what `runSession` does with them. `toolCalls`, `toolsUsed` and `lastTool`
+(D-052, D-100) had been proven live and never by a test until now.
+
+**The report gains the brief's own success metric** — *LLM calls by trade*:
+model runs against free ones per class, across the same halves the Trend
+section uses, plus how many sandboxes carry a trajectory. Baseline on
+2026-08-22, 425 rows: worker 264 runs, 12% free (16% → 5%); scribe 50, 6%
+(10% → 0%); designer, scout, clerk, architect, mason, analyst, researcher,
+drafter **0% free**; trajectories 0 of 416. That is the number to move, and
+it is honest about the direction it has been moving — the second half took
+more novel work, not less.
+
+### What was deliberately not built, and the next-best alternative each
+
+- **The policy skill** — code enforces it; the compile brief is where its
+  Tier-2 rules already live, in stronger form.
+- **Automatic promotion** — measured wrong three times before (D-024, D-044,
+  D-045); promotion stays a priced, reviewed request.
+- **An embedding index** — lexical retrieval with a replay harness; measure a
+  missed repeat before adding a model.
+- **A local LLM** — nothing here costs enough to move to one; the close-out is
+  5c.
+- **Cross-level graduation** — D-050's counter has moved from zero to six
+  same-sentence cross-level repeats, but every one is the training sentence
+  queued on scratch levels (training-ground, random, bootcamp): not
+  independently earned in two projects. The gate stays shut.
+- **The junk-text-layer detector (G6)** — the one real PDF/OCR defect on
+  record, parked in `TRAINING.md` item 6 pending real traffic. It is the next
+  PDF/OCR step, not another server, and it is Brian's to reopen.
+- **Feeding a trajectory into the compile brief** — the instrument exists
+  now; D-188 found the lever for compiles was telling it how the last one
+  failed. Read the first real trajectories before deciding what a compile
+  should be shown.
+
+### Untested live
+
+The runner's two new events against a real SDK stream: the shapes were read
+from `sdk.d.ts` 0.3.220 (tool results ride back as `user` messages carrying
+`tool_result` blocks) and not from a run. The runner is spawned fresh per job,
+so the next job exercises it with no restart — the 08:00 desk firing is the
+first; the running server ignores the new event types until its restart, after
+which the file starts to land. A fault in the runner half cannot fail a job;
+it can only leave `result` lines missing, which the report's coverage line
+would show. Suites: 77 files / 1,903 server, 18 / 203 web; typecheck clean.

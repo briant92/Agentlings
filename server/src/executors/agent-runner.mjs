@@ -218,6 +218,9 @@ try {
 
   let summary = '';
   let meter;
+  // One per assistant message, so the trail can say which turn a call was
+  // made on — the SDK's own count arrives only on the result message (D-211).
+  let turn = 0;
 
   for await (const message of query({
     prompt: config.prompt,
@@ -234,11 +237,41 @@ try {
     },
   })) {
     if (message.type === 'assistant') {
+      turn++;
       const blocks = message.blocks ?? message.message?.content ?? [];
       for (const block of blocks) {
         if (block.type === 'tool_use' && block.name) {
-          emit({ type: 'progress', name: block.name, input: block.input });
+          emit({ type: 'progress', name: block.name, input: block.input, id: block.id, turn });
+        } else if (block.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
+          // What it said between calls — the plan in flight, for the trail.
+          emit({ type: 'said', turn, head: block.text.trim().slice(0, 200) });
         }
+      }
+    } else if (message.type === 'user') {
+      // Tool results come back as user messages. A clipped head of each goes
+      // to the trail, and nothing in here may throw: a diagnostic that can
+      // fail the job it describes is worse than none (D-211).
+      try {
+        const content = message.message?.content;
+        for (const block of Array.isArray(content) ? content : []) {
+          if (block?.type !== 'tool_result') continue;
+          const inner = block.content;
+          const text =
+            typeof inner === 'string'
+              ? inner
+              : Array.isArray(inner)
+                ? inner.map((b) => (typeof b?.text === 'string' ? b.text : '')).join(' ')
+                : '';
+          emit({
+            type: 'observation',
+            id: block.tool_use_id,
+            turn,
+            ok: block.is_error !== true,
+            head: text.slice(0, 200),
+          });
+        }
+      } catch {
+        // The trail is diagnostics only.
       }
     } else if (message.type === 'result') {
       // The SDK hands back what the session cost. Read defensively — this is

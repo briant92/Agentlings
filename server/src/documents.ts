@@ -1,7 +1,12 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { ocrImages, OCR_SCALE } from './ocr';
+// With its extension, alone in this codebase, because this file is imported by
+// plain node: the session brief hands a run `import(".../server/src/documents.ts")`
+// for scans (claude.ts, DOCUMENT_LIBRARIES), and node's type-stripping resolves
+// a relative import only with one. Measured 2026-08-21: the bare `./ocr` failed
+// every such import since D-061, while tsx never noticed (D-211).
+import { ocrImages, OCR_SCALE } from './ocr.ts';
 
 /**
  * Getting the data out of a document, in one place.

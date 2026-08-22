@@ -660,7 +660,9 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       reachable inside one run at all, or whether this task is honestly a
       two-leg job — geometry and placement in one run, render in a reply that
       starts from `placement.json`. Three runs say the first is unreliable.
-      Nobody has tried the second deliberately.
+      Nobody has tried the second deliberately — and costed against the code
+      on 2026-08-22 (§6.3) it cannot be tried as the runs now stand: a reply
+      leg would not receive `placement.json`.
 
 ### 2. The report seam — one fix unproven, one path never exercised
 
@@ -688,8 +690,54 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       the **work** being cut. (2) *close-out writes the report from the
       artefacts* is half-built, and untested. (3) *raise `TURN_CEILING`* the
       evidence argues against. **So no adopted answer exists to "a spatial run
-      cannot finish inside its turns."** The two-leg shape in §6.1 is the
-      candidate nobody has costed.
+      cannot finish inside its turns."** The two-leg shape in §6.1 was costed
+      on 2026-08-22 from the three sandboxes’ file timelines (no trajectory
+      existed yet) and the code it would run through. It is not the answer
+      either, as things stand:
+      - **The PDF is cheap, and last.** In `29ddccb7`, the run that
+        promoted, `x_html.mjs` → `x_pdf.mjs` took 49 seconds at minute 15.5
+        of 16, and `x_verify.mjs` was the last thing it did before the wall.
+        Both cut runs reached the same point — `95f42e60` had placement,
+        composite, overlay and `model.json` on disk at 21:57:01 of a
+        21:43–21:58 run; `106140b4` had placement and composite at 22:59:53
+        and the overlay at 23:01:47 of a 22:42–23:02 run — and spent the
+        tail on zoom-seam checks (`95f42e60`), joint checks and a view-size
+        copy of the composite (`106140b4`). The turns were not short of the
+        PDF; the PDF was queued behind the looking that the drafter brief
+        and `plan-geometry` items 7–8 demand.
+      - **The banked approach orders it that way.** The drafter recipe’s
+        `approach` is `106140b4`’s own `APPROACH.md` verbatim, handed to the
+        next run under *How this kind of job was done before — follow this
+        directly*: *save the placed model JSON and overlay image early —
+        before rendering — so PDF generation becomes a small retriable
+        task*. The designer recipe’s ends with *6. Render final composition
+        to PDF*. Every run re-banks its close-out, failed or not, so the
+        order that got two runs cut is the order the next run starts from.
+      - **The retry that approach assumes does not exist.** `carryForward`
+        (`executors/claude.ts`) copies `outputNames(previous)` — top-level
+        regular files only — plus `input/` by its own loop, and withholds
+        `PENDING.md`. Both cut runs put every deliverable under `work/`
+        (D-209’s finding, one seam further on), so a reply leg would start
+        from `PREVIOUS-RESULT.md` and the source PDF in `input/`, not from
+        `placement.json`. Only a `29ddccb7`-shaped run, which worked at the
+        top level, would carry.
+      - **And it could never be learned.** The `midFlight` rule in
+        `routed.ts` (D-074) keeps a continuation from authoring the recipe or
+        testifying that the job fits a budget, so a two-leg shape would be a
+        hand-typed reply on every run, forever, while the recipe kept
+        teaching the one-run order.
+      - **If tried anyway:** leg 1 is another ~$4 at 40/40, and a reply leg
+        is quoted by the same `turnsForBudget` — $5 over the three runs’
+        ~$0.10 a turn funds 50, clamped to `TURN_CEILING` = 40 — so a $5
+        quote for a few turns of work, billed at what it costs. Two cheaper
+        levers, one change each, neither taken: (a) teach `carryForward` the
+        one-level-down rule `producedNames` already has, or tell the run to
+        leave deliverables at the top level — a server change, so after the
+        08:00/08:10 briefs; (b) edit the banked approach so the PDF follows
+        the composite and the checks follow the PDF — live without a restart
+        (`readRecipes` reads the file per call), good for exactly one run
+        because the next close-out re-banks, and with the trail now live the
+        run would show where every turn went.
 
 ### 4. On disk only — not in any repository
 

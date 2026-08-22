@@ -214,6 +214,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-202 — 2026-08-21 — The file-claim check that could not be built, and the fact that replaced it](#d-202--2026-08-21--the-file-claim-check-that-could-not-be-built-and-the-fact-that-replaced-it)
 - [D-203 — 2026-08-21 — Lesson hygiene: annotate where it stands, because a correction filed beside it never arrives](#d-203--2026-08-21--lesson-hygiene-annotate-where-it-stands-because-a-correction-filed-beside-it-never-arrives)
 - [D-204 — 2026-08-21 — Photoreal declined: the demand is one request, and the gap is unused three.js](#d-204--2026-08-21--photoreal-declined-the-demand-is-one-request-and-the-gap-is-unused-threejs)
+- [D-205 — 2026-08-21 — Cure (b): the billing half was already cured, and the ledger was calling accepted work a failure](#d-205--2026-08-21--cure-b-the-billing-half-was-already-cured-and-the-ledger-was-calling-accepted-work-a-failure)
 
 ## By theme
 
@@ -14689,3 +14690,83 @@ the same edit. Blender is only on the table if that proves insufficient, and it
 would come back through PROJECT.md's architectural-choice rule as its own
 decision. Not built now, deliberately: nothing has asked for it, and building
 against a demand of zero is the speculation CLAUDE.md rule 2 exists to refuse.
+
+## D-205 — 2026-08-21 — Cure (b): the billing half was already cured, and the ledger was calling accepted work a failure
+
+SPATIAL's last item, and D-198's standing blemish: *"a run cut at the wall
+with PENDING=done and a complete, truthful delivery files `done` and bills at
+cost ≤ quote; also closes the ledger/review truth gap (promoted runs reading
+`failed`)."* Two halves. Measured before building, the first half turned out
+to be **already cured**, and building it as written would have been **wrong**.
+
+**The billing half is not a defect — it is a snapshot taken too early.**
+D-198 recorded "$6.96 of delivered gate work absorbed". Read today, the two
+gate runs bill in full: `ec81fc97` $3.53 and `6e84c00c` $3.43, `priceUsd`
+equal to `costUsd`, `chainPriced: true`. **D-150 already does this**: the
+moment a promote lands, every cut leg in the ancestry earns `min(cost, its
+own quote)`. The $0 state is real but temporary — it lasts from close-out
+until the Approve. D-198's blemish was written from the window in between.
+`repriceChain` landed 2026-08-11; the newest promoted-and-unpriced row in the
+whole ledger is also 2026-08-11. **Since the mechanism existed, it has not
+missed once.**
+
+**And billing at close-out, as specified, would charge for rejected work.**
+Scored across the history: 16 runs match "cut at the wall with PENDING = done",
+and paying them at close-out would move **+$13.38 — of which $13.32 is jobs
+that were later discarded.** Nine deliveries the user reviewed and turned
+down, billed because the run said of itself that it had finished. That breaks
+the promise underneath the whole ledger (D-012), and it breaks it on the worst
+possible evidence: **the run's own claim.** D-202 measured that exact claim
+being false — a promoted delivery whose RESULT said "the composition is
+re-rendered" over a byte-identical PDF. Review is what verifies a delivery, so
+the promote is the honest moment to charge, which is precisely where D-150
+already charges. Cure (b)'s billing half is therefore **declined, not
+deferred.**
+
+**What was real: the ledger contradicting itself.** 33 promoted jobs carried
+rows reading `outcome: failed`, and nine of those also carried a price — a
+single line saying *this work failed* and *you were charged $3.53 for it*.
+The cause is a sibling seam, the shape this project keeps paying for: D-041
+fixed the success path to read the verdict back from the queue instead of
+hardcoding `done`; the failure path was left hardcoding `'failed'` and nobody
+returned to it.
+
+**Built — `settleOutcome`.** At the promote seam, after the repricing, the
+named rows stop calling accepted work a failure. It is deliberately the
+narrowest possible change: **it never touches `priceUsd`.** `outcome` and
+`priceUsd` answer different questions and the ledger had been letting one
+stand in for the other — so a promoted run whose spend was unmeasurable now
+reads `done` *and* stays absorbed, which is the honest pair (D-030's rule,
+applied to the field that names the failure rather than the one that counts
+the money). **The ordering is a hazard and a test holds it**: `repriceChain`
+skips any row that is not `failed`, so settling first would silently cost the
+chain its price. The test writes the wrong order and asserts the price never
+lands.
+
+**Backfilled 42 rows, and nothing moved.** By identification on two markers
+that are each the record of a decision rather than an inference: the job store
+saying `promoted`, or the row carrying `chainPriced`, which only a promote
+writes. Chargeable before **$197.19**, after **$197.19**. Afterwards: zero
+promoted rows reading `failed`, zero rows that say `failed` while carrying a
+price.
+
+**A miss of my own, caught by checking rather than by reading.** The first
+backfill pass keyed only on `status === 'promoted'` and settled 33 rows —
+leaving the nine `chainPriced` legs still saying `failed` beside their prices,
+because a chain's legs are not themselves promoted, only its end is. The live
+seam had it right all along (it settles the whole cut ancestry), so the script
+and the code disagreed for one commit's width. Verifying the invariant —
+*no row says failed and carries a price* — is what surfaced it; re-reading the
+script would not have.
+
+**Open, and deliberately not taken here: $15.05.** Twenty rows promoted
+before 2026-08-11 spent real money and never earned a price, because D-150 did
+not exist yet. Charging them now is consistent with D-150's own reasoning and
+is a **decision about money**, not a correction of a falsehood — so the
+backfill reports it and refuses it. Brian's call.
+
+**What this leaves of cure (a).** SPATIAL had cure (b) superseding the
+drafter's self-stop persona line if that hypothesis failed. It does not: the
+half of cure (b) that would have replaced it was a phantom. **Cure (a) stands
+as the only lever on wall-cutting**, and it is still unmeasured — it reads on
+the next real spatial job that files `done` on its own and bills.

@@ -12,12 +12,13 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **ONE ITEM LEFT IN THE WHOLE PLAN: close-out done-recognition
-(cure b), Phase 2's last** — and it is better decided after cure (a) reads,
-which the next real drawing queued for the drafter will do. Everything else
-is settled: D-199 to D-204 landed 2026-08-21 along with the Phase 3 writing
-pass, so the mechanism fixes, the SPEC line, the AGENTLING re-derive, Tam's
-lessons and the photoreal fork are all closed.
+bills.** **THE PLAN IS CLOSED — every item in §3 is ticked** (D-199 to
+D-205, plus the Phase 3 writing pass, all 2026-08-21). Two things outlive it
+and are not checkboxes: **cure (a) is still unmeasured** — it reads on the
+next real drawing queued for the drafter, which also exercises D-201's
+reply-quoting and D-202's tags on fresh data — and **$15.05 of pre-D-150
+promoted work is unpriced**, a money decision D-205 records and does not
+take.
 
 ## 1. The evidence
 
@@ -402,11 +403,32 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   a stale claim is named in the brief.~~ Argued twice live: run 5's stale
   PDF promoted on a false "re-rendered", runs 6–7's rebuild-without-
   evidence (§2 coda).
-- [ ] **Close-out done-recognition — cure (b).** → Desired: a run cut at
-  the wall with PENDING=done and a complete, truthful delivery files
-  `done` and bills at cost ≤ quote; also closes the ledger/review truth
-  gap (promoted runs reading `failed`). Supersedes cure (a)'s persona
-  line if that hypothesis fails its test.
+- [x] **Close-out done-recognition — cure (b)** — settled 2026-08-21
+  (D-205), and **split in two by the measurement: the billing half was
+  already cured and building it as written would have been wrong; the
+  truth half was real and is built.**
+  - *Billing — declined, not deferred.* D-198's "$6.96 absorbed" was a
+    snapshot taken between close-out and Approve. D-150 already prices
+    every cut leg the moment a promote lands, and both gate runs bill in
+    full today ($3.53, $3.43, `chainPriced`). It has not missed once since
+    it landed: `repriceChain` shipped 2026-08-11 and the newest
+    promoted-and-unpriced row is also 2026-08-11. Worse, paying at
+    close-out would move +$13.38 of which **$13.32 is jobs later
+    discarded** — billing rejected work on the strength of the run's own
+    claim, the very claim D-202 caught being false.
+  - *Truth — built.* `settleOutcome` at the promote seam, strictly after
+    the repricing (a test holds that order: `repriceChain` skips any row
+    not reading `failed`). It never touches `priceUsd`, so an unmeasurable
+    promoted run reads `done` and stays absorbed. 42 historical rows
+    backfilled by identification (`promoted`, or `chainPriced` — the flag
+    only a promote writes); chargeable $197.19 → $197.19; zero rows now
+    say `failed` while carrying a price.
+  - *Open:* **$15.05** across 20 rows promoted before D-150 existed, which
+    never earned a price. A decision about money, not a correction — the
+    backfill reports it and refuses to take it.
+  - *Consequence:* cure (b) does **not** supersede cure (a) — the half
+    that would have replaced it was a phantom. **Cure (a) is the only
+    lever left on wall-cutting, and is still unmeasured.**
 
 ### Phase 3 — close out
 

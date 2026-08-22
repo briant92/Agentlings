@@ -458,6 +458,46 @@ export function repriceChain(
   return { rows, chargedUsd };
 }
 
+/**
+ * Marks named rows as work that landed, because you accepted it (D-205).
+ *
+ * `outcome` and `priceUsd` answer different questions and the ledger had been
+ * letting one stand in for the other. A run cut at the turn wall holding a
+ * complete delivery files `failed` — that is what the executor saw — and then
+ * the review promotes it, D-150 prices it, and the row is left saying **the
+ * work failed and you were charged $3.53 for it**. Thirty-three promoted jobs
+ * carried that contradiction, nine of them with a price on the row.
+ *
+ * So this settles the first question only, and never the second: nothing here
+ * touches `priceUsd`. A promoted run whose spend was unmeasurable stays
+ * absorbed *and* reads `done`, which is the honest pair — the work landed and
+ * nobody could price it. Absorbed is not failed (D-030's rule, applied to the
+ * field that names the failure rather than the one that counts the money).
+ *
+ * **Order matters at the call site**: `repriceChain` skips any row that is not
+ * `failed`, so this must run *after* it or the pricing it guards would be
+ * silently skipped. A test holds that ordering.
+ *
+ * Idempotent — a row already `done` is left exactly as it is, which is what
+ * makes a second Approve a no-op.
+ */
+export function settleOutcome(
+  sandboxRoot: string,
+  jobIds: readonly string[],
+): { rows: number } {
+  if (jobIds.length === 0) return { rows: 0 };
+  const ids = new Set(jobIds);
+  const entries = readRows(sandboxRoot);
+  let rows = 0;
+  const next = entries.map((entry) => {
+    if (!ids.has(entry.jobId) || entry.outcome !== 'failed') return entry;
+    rows += 1;
+    return { ...entry, outcome: 'done' as const };
+  });
+  if (rows > 0) rewrite(sandboxRoot, next);
+  return { rows };
+}
+
 export interface Totals {
   jobs: number;
   costUsd: number;

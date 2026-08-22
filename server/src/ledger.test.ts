@@ -18,6 +18,7 @@ import {
   rateFor,
   readLedger,
   repriceChain,
+  settleOutcome,
   totals,
   totalsBy,
   type LedgerEntry,
@@ -599,6 +600,80 @@ describe('repriceChain', () => {
   });
 });
 
+/**
+ * The ledger's two questions, told apart (D-205). A run cut at the wall files
+ * `failed` because that is what the executor saw; the review then promotes it
+ * and D-150 prices it, and the row was left saying the work failed *and* that
+ * you were charged for it — 33 promoted jobs carried that, nine with a price.
+ */
+describe('settleOutcome', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-settle-'));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  const cut = (jobId: string, over: Partial<LedgerEntry> = {}): LedgerEntry =>
+    entry({ jobId, outcome: 'failed', priceUsd: 0, costUsd: 1.39, quotedUsd: 2, ...over });
+
+  it('says the work landed, and moves no money doing it', () => {
+    append(root, cut('a', { priceUsd: 1.39, chainPriced: true }));
+    expect(settleOutcome(root, ['a'])).toEqual({ rows: 1 });
+    const row = readLedger(root)[0];
+    // The contradiction this exists to end: "failed", priced $1.39.
+    expect(row.outcome).toBe('done');
+    expect(row.priceUsd).toBe(1.39);
+  });
+
+  /**
+   * Absorbed is not failed — D-030's rule, applied to the field that names
+   * the failure rather than the one that counts the money. A promoted run
+   * whose spend was unmeasurable landed *and* cost nobody anything.
+   */
+  it('settles an unmeasurable run as done and leaves it absorbed', () => {
+    append(root, cut('a', { costUsd: 0, costUnknown: true }));
+    settleOutcome(root, ['a']);
+    expect(readLedger(root)[0]).toMatchObject({ outcome: 'done', priceUsd: 0, costUnknown: true });
+  });
+
+  it('touches nothing it was not handed, and nothing already done', () => {
+    append(root, cut('a'));
+    append(root, entry({ jobId: 'b', outcome: 'done', priceUsd: 0.5 }));
+    expect(settleOutcome(root, ['b'])).toEqual({ rows: 0 });
+    expect(settleOutcome(root, [])).toEqual({ rows: 0 });
+    expect(readLedger(root).find((r) => r.jobId === 'a')?.outcome).toBe('failed');
+  });
+
+  it('is idempotent — a second Approve settles nothing twice', () => {
+    append(root, cut('a'));
+    expect(settleOutcome(root, ['a'])).toEqual({ rows: 1 });
+    expect(settleOutcome(root, ['a'])).toEqual({ rows: 0 });
+  });
+
+  /**
+   * The ordering hazard, held by a test because it is invisible on reading:
+   * `repriceChain` skips any row that is not `failed`, so settling the
+   * outcome first would silently cost the chain its price. The promote seam
+   * prices, then settles.
+   */
+  it('must run after repriceChain, or the pricing it guards is skipped', () => {
+    append(root, cut('a'));
+    // The wrong order: settle first, and the price never lands.
+    settleOutcome(root, ['a']);
+    expect(repriceChain(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root)[0].priceUsd).toBe(0);
+
+    // The right order, on a fresh row: price, then settle.
+    append(root, cut('b'));
+    expect(repriceChain(root, ['b']).rows).toBe(1);
+    settleOutcome(root, ['b']);
+    const b = readLedger(root).find((r) => r.jobId === 'b')!;
+    expect(b).toMatchObject({ outcome: 'done', priceUsd: 1.39, chainPriced: true });
+  });
+});
+
 // The vanish mode (D-199): the only write used to be the completion
 // callback, so a process that died under a session left no row at all —
 // thirteen times on the real install. A row now opens when the run does.
@@ -681,6 +756,12 @@ describe('the row a run opens with', () => {
     expect(totals(rows).unmeasured).toBe(2);
     // Idempotent, and silent when there is nothing to close.
     expect(closeOpenRows(root)).toBe(0);
+  });
+
+  it('is left alone by settleOutcome, which only ever touches named rows', () => {
+    append(root, openRow(job, 'hq', 'designer', 5));
+    expect(settleOutcome(root, ['someone-else'])).toEqual({ rows: 0 });
+    expect(onDisk()[0].open).toBe(true);
   });
 
   it('survives a chain repricing — a rewrite must not drop what readers cannot see', () => {

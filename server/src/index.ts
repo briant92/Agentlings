@@ -167,6 +167,7 @@ import {
   openRow,
   readLedger,
   repriceChain,
+  settleOutcome,
   totals,
   totalsBy,
 } from './ledger';
@@ -3030,16 +3031,25 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // reading, and twice a chain of cut legs shipped a world for $0. Each
     // leg prices at min(cost, its own quote); real failures in the chain
     // stay absorbed — only the funded-leash cuts are the seam.
+    const cutLegs =
+      body.action === 'promote'
+        ? rt.queue
+            .ancestry(pending.id)
+            .filter((leg) => leg.meter?.outOfTurns || leg.meter?.timedOut)
+            .map((leg) => leg.id)
+        : [];
     const chainPriced =
       body.action === 'promote'
-        ? repriceChain(
-            SANDBOX_ROOT,
-            rt.queue
-              .ancestry(pending.id)
-              .filter((leg) => leg.meter?.outOfTurns || leg.meter?.timedOut)
-              .map((leg) => leg.id),
-          )
+        ? repriceChain(SANDBOX_ROOT, cutLegs)
         : { rows: 0, chargedUsd: 0 };
+    // And the row stops calling accepted work a failure (D-205). Strictly
+    // after the repricing above: `repriceChain` only touches rows that read
+    // `failed`, so settling the outcome first would skip the price. This
+    // moves no money — a promoted run whose spend was unmeasurable stays
+    // absorbed and still reads `done`, because absorbed is not failed.
+    if (body.action === 'promote') {
+      settleOutcome(SANDBOX_ROOT, [pending.id, ...cutLegs]);
+    }
     rt.eventLog.emit({
       type: 'resolved',
       jobId: job.id,

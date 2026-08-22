@@ -1061,4 +1061,15 @@ describe('delivered, the one notion of what a run left (UI.md, step 9)', () => {
     queue.complete(job.id, 'wrote the note');
     expect(queue.get(job.id)?.delivered).toEqual({ files: 1, pdf: 0, images: 0, dirs: [] });
   });
+
+  it('leaves a job unstamped, and the level opening, when its sandbox cannot be listed', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-delivered-unlistable-'));
+    const done = { id: 'old3', title: 't', prompt: 'p', status: 'promoted', slot: -1, createdAt: 1, finishedAt: 2 };
+    writeFs(jobsFileOf(root), JSON.stringify([done]));
+    // A stray file where the sandbox folder should be: it exists, and readdir throws.
+    mkdirFs(path.join(root, 'jobs'), { recursive: true });
+    writeFs(path.join(root, 'jobs', 'old3'), 'not a folder');
+    const queue = new JobQueue(root);
+    expect(queue.get('old3')?.delivered).toBeUndefined();
+  });
 });

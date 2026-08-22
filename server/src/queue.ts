@@ -209,7 +209,16 @@ export class JobQueue {
     for (const job of this.jobs.values()) {
       if (job.delivered || job.status === 'queued' || job.status === 'running') continue;
       const dir = this.sandboxDir(job.id);
-      if (existsSync(dir)) job.delivered = deliverySummary(dir);
+      if (!existsSync(dir)) continue;
+      // A sandbox that exists but cannot be listed — a stray file where the
+      // folder should be, an ACL — must not stop the level opening: the job
+      // stays unstamped, which the row reads as it always did (review of
+      // 2026-08-22).
+      try {
+        job.delivered = deliverySummary(dir);
+      } catch {
+        continue;
+      }
     }
     this.persist();
   }

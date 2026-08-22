@@ -65,6 +65,20 @@ false, with a real composed layout and the location-map overlay sitting in
 `work/`. Fixed by looking one level down (D-209); `outputNames` itself left
 alone, because it decides what counts as a delivery everywhere.
 
+**Third run (`106140b4`), and the honest result: the fix is live and did not
+work.** Cut at 41/40 for $4.68 over 20.4 min — the eleventh, still by turns
+and not the clock. D-208 is 2 for 2 (PENDING written, report untouched). But
+D-209's plumbing, verified out of the job's own `.closeout.json`, showed the
+close-out `work/placement.json`, `work/composite1.png` and `work/overlay1.png`
+**by name** — and it still wrote "hit the turn ceiling before placement and
+PDF rendering", with 1,350 bytes of real transforms and a 1.6 MB composite
+sitting in that folder. **The cause was misdiagnosed**: the close-out is
+given the run's confident prose first and a list of names second, and when
+they contradict it follows the prose. More evidence cannot fix that. The
+candidate is one line asking it to reconcile the two — deliberately not built,
+because two fixes have now been made to this seam on one job each and the
+second failed.
+
 ## 1. The evidence
 
 Two real tasks ran in `home-chores` on 2026-08-18/19. Ten runs, five dead at

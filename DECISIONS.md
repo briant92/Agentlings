@@ -15025,3 +15025,47 @@ checked against the real sandbox, where the evidence now lists 49 files
 including both artefacts the close-out had missed. But whether a close-out
 *shown* those files writes a truer PENDING is a claim about a model reading a
 longer list, and only the next run that works in a folder will settle it.
+
+### Read live the same day: the plumbing works, the purpose is not achieved
+
+Job `106140b4` — same sentence, fresh, `work/` again with 68 files, cut at
+41/40 turns for $4.68 over 20.4 minutes (the eleventh cut, and still by turns:
+`timedOut` false even at 20 of 25 minutes).
+
+**D-208 is 2 for 2.** `PENDING.md`, `LESSON.md` and `APPROACH.md` all written,
+and the run's own `RESULT.md` untouched.
+
+**D-209's plumbing is verified live and is not in doubt.** Read out of the
+job's own `.closeout.json`: the prompt is 7,304 characters, `maxTurns: 3`, the
+one-reply instruction present, and the produced list names
+`work/placement.json`, `work/composite1.png`, `work/overlay1.png` and
+`work/model.json` explicitly. The close-out was shown exactly the files it had
+been blind to.
+
+**And it wrote a false PENDING anyway:**
+
+> *"…proved pairing via mirror-symmetric wall tilts but hit the turn ceiling
+> before placement and PDF rendering."*
+
+`placement.json` is 1,350 bytes of real transforms — rotation, scale and
+translation for all three units. `composite1.png` is 1.6 MB. `overlay1.png` is
+279 KB. Placement happened, composition happened, the overlay happened; only
+the PDF is genuinely outstanding. The same falsehood in the same direction as
+the run before, from a close-out that had the contradicting evidence in front
+of it.
+
+**So the diagnosis in D-209 was wrong about the cause.** The problem was
+never only that the evidence was missing — it is that the close-out is never
+asked to *reconcile* the two things it is given. The run's `RESULT.md` comes
+first in the prompt, in confident prose, saying composition is in progress;
+the file list comes second, as names. Told a story and shown an inventory that
+contradicts it, it follows the story. Widening the inventory cannot fix that,
+and this run is the proof: a strictly better-informed close-out made the
+identical mistake.
+
+The candidate fix is one line in the brief rather than more evidence — tell it
+the report may be stale because it was written before the run's last turns,
+and that a file in the list answering something the report calls outstanding
+means that thing landed. **Not built here.** Two fixes have now been made to
+this seam on the strength of one job each, and the second one failed; the next
+one should be judged on more than the next single run.

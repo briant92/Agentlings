@@ -644,10 +644,14 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
 
 ### 1. The blueprint job — the task has not been made repeatable
 
-- [ ] **`95f42e60` is still awaiting your verdict** (partial, $3.79). Its
-      deliverables are in `work/`: a real composed layout and the
-      location-map overlay, **no PDF**. Its PENDING understates it — that is
-      the D-209/D-210 defect, not a defect in the work.
+- [x] **`95f42e60` was discarded** (partial, $3.79) after this section was
+      written. Its deliverables were a real composed layout and the
+      location-map overlay in `work/`, **no PDF**; its PENDING understated
+      them — the D-209/D-210 defect, not a defect in the work. D-201 banked
+      the refusal into `ash.md` and `KNOWLEDGE.md`, where it **replaced**
+      `106140b4`’s identical line rather than joining it (the D-073
+      same-note rule in `appendKnowledge` and `memory.append`), so the crew
+      memory now records one refusal of this task, not two.
 - [ ] **Three runs since the drafter landed, one full artefact set.**
       `29ddccb7` promoted **with** the PDF ($4.00); `95f42e60` no PDF ($3.79);
       `106140b4` discarded, no PDF ($4.68). **All three cut at 41/40** — the

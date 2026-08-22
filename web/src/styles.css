@@ -4461,3 +4461,353 @@ button.danger:hover {
   color: #e8b478;
   font-size: 11px;
 }
+
+/* Folded sections, expandable rows, pinned bars and paged lists — the
+   unclogging vocabulary (UI.md, step 1). A fold is a section header that
+   remembers; an erow is a one-line row that opens in place; the sticky bar
+   keeps a list's filters and totals in view while it scrolls. */
+.fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 2px 7px;
+  margin: 2px 0;
+  white-space: nowrap;
+  border: none;
+  border-bottom: 1px solid #1c2029;
+  border-radius: 0;
+  background: transparent;
+  color: #8a91a3;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+.fold:hover {
+  color: #b7bdcb;
+  background: transparent;
+}
+.fold .chev {
+  flex: none;
+  width: 10px;
+  color: #5f6675;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.fold.open .chev {
+  color: var(--db-lime);
+}
+.fold .cnt {
+  color: #5a6172;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.fold .sum {
+  display: block;
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #5a6172;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 10.5px;
+}
+.fold .sum .meter {
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.erow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: #d8dce6;
+  font-size: 12px;
+  cursor: pointer;
+}
+.erow:hover {
+  background: #151926;
+}
+.erow.open {
+  background: #151926;
+  border-radius: 4px 4px 0 0;
+}
+.erow .chev {
+  flex: none;
+  width: 10px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #5f6675;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.erow.open .chev {
+  color: var(--db-lime);
+}
+.erow .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.erow .nm .d {
+  color: #8a91a3;
+  font-size: 11px;
+}
+.erow .fact {
+  flex: none;
+  font-size: 10.5px;
+  color: #8a91a3;
+  white-space: nowrap;
+}
+.erow .fact b {
+  color: #d8dce6;
+  font-weight: 600;
+}
+.erow .fact.warn {
+  color: #e8b478;
+}
+.erow-body {
+  padding: 0 8px 10px 28px;
+  margin-bottom: 2px;
+  border-radius: 0 0 4px 4px;
+  background: #151926;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #b7bdcb;
+}
+.erow-body .chips {
+  margin-top: 6px;
+}
+.erow-body p {
+  margin: 0 0 4px;
+}
+.sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 6px 0;
+  margin: 0 0 4px;
+  border-bottom: 1px solid #1c2029;
+  background: #10131a;
+}
+.more-row {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  color: #626a7d;
+  text-align: left;
+  cursor: pointer;
+}
+.more-row:hover {
+  background: #151926;
+  color: #8a91a3;
+}
+
+/* The backoffice grouped by ask (UI.md, step 2): the pinned bar with its find
+   box and view toggle, the two-line ask rows, the leg rows beneath an opened
+   ask, the cut chip, and the approvals' meters. */
+.sticky-bar .back-bar {
+  margin-bottom: 6px;
+}
+.sticky-bar .t-filters {
+  margin-left: 0;
+}
+.back-find {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 8px;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+  background: #11151f;
+  color: #d8dce6;
+  font: inherit;
+  font-size: 12px;
+}
+.back-find:focus {
+  outline: none;
+  border-color: var(--db-sky);
+}
+.back-tally-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.back-tally-row .back-tally {
+  margin: 0;
+  min-width: 0;
+}
+.seg {
+  display: flex;
+  flex: none;
+  margin-left: auto;
+  overflow: hidden;
+  border: 1px solid #262b36;
+  border-radius: 4px;
+}
+.seg button {
+  padding: 1px 8px;
+  border: none;
+  border-radius: 0;
+  background: #10131a;
+  color: #8a91a3;
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.seg button.on {
+  background: #1d2637;
+  color: #cfd6e4;
+}
+.erow.ask {
+  align-items: flex-start;
+  padding: 8px 8px 7px;
+  border-top: 1px solid #1c2029;
+  border-radius: 0;
+}
+.erow.ask .chev {
+  margin-top: 2px;
+}
+.ask-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ask-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.erow.open .ask-title {
+  -webkit-line-clamp: 2;
+}
+.ask-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.ask-meta > span + span::before {
+  content: '· ';
+  color: #3a4152;
+}
+.who-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 3px;
+  border-radius: 1px;
+  vertical-align: middle;
+}
+.erow.ask + .erow-body {
+  padding: 0 0 6px 18px;
+  background: transparent;
+}
+.back-row.leg {
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.back-row.leg .back-when {
+  width: 50px;
+  white-space: normal;
+  line-height: 1.25;
+}
+.leg-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.leg-cost {
+  flex: none;
+  width: 44px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cut-chip {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid #56412a;
+  border-radius: 3px;
+  color: #ffb86c;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.meter {
+  display: inline-flex;
+  gap: 3px;
+}
+.meter i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #2c3242;
+  border-radius: 50%;
+  background: #1c2130;
+}
+.meter i.on {
+  border-color: var(--db-lime-light);
+  background: var(--db-lime);
+  box-shadow: 0 0 5px rgba(106, 190, 48, 0.8);
+}
+.bo-sa {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.bo-sa .meter {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+.bo-sa-key {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b9bfce;
+}
+.bo-sa-line {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #626a7d;
+  font-size: 11px;
+}
+.bo-sa-line b {
+  color: #d8dce6;
+  font-weight: 600;
+}

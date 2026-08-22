@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { CrewMember, Job } from '@agentlings/shared';
-import { entriesFor, outcomeOf, producedBy, tally } from './ledger';
+import {
+  badgeOf,
+  cutChip,
+  entriesFor,
+  groupsFor,
+  matches,
+  outcomeOf,
+  producedBy,
+  rootOf,
+  tally,
+} from './ledger';
 
 function job(over: Partial<Job> = {}): Job {
   return {
@@ -131,6 +141,133 @@ describe('entriesFor', () => {
     expect(free.costUsd).toBeNull();
     expect(paid.costUsd).toBe(0.13);
     expect(unmeasured.costUsd).toBeNull();
+  });
+});
+
+describe('badgeOf', () => {
+  it('says "to review" for a delivery awaiting a verdict, whatever its raw status', () => {
+    const [done] = entriesFor([job({ status: 'done' })], []);
+    const [partial] = entriesFor([job({ status: 'partial' })], []);
+    expect(badgeOf(done)).toBe('to review');
+    expect(badgeOf(partial)).toBe('to review');
+  });
+
+  it('names the door that closed a continued leg, and the outcome otherwise', () => {
+    const [carried] = entriesFor([job({ status: 'partial', continuedBy: 'x' })], []);
+    const [kept] = entriesFor([job({ status: 'promoted' })], []);
+    const [closed] = entriesFor([job({ status: 'discarded' })], []);
+    expect(badgeOf(carried)).toBe('carried on');
+    expect(badgeOf(kept)).toBe('kept');
+    expect(badgeOf(closed)).toBe('closed');
+  });
+});
+
+describe('cutChip (D-022, D-212)', () => {
+  it('reads the cut off outOfTurns, never off turns over the cap', () => {
+    expect(cutChip(job({ meter: { outOfTurns: true, turns: 41, turnsAllowed: 40 } }))).toBe('41/40');
+    // A finished run that made more round trips than its leash allowed is
+    // not a cut — two of them landed done on 2026-08-22.
+    expect(cutChip(job({ meter: { turns: 51, turnsAllowed: 40 } }))).toBeNull();
+    expect(cutChip(job())).toBeNull();
+  });
+
+  it('still says cut when the meter never reached a count', () => {
+    expect(cutChip(job({ meter: { outOfTurns: true } }))).toBe('cut');
+  });
+});
+
+describe('matches', () => {
+  const [entry] = entriesFor([job({ title: 'Draw the plans…', prompt: 'Draw the plans of office 816' })], []);
+
+  it('finds a run by its title or its sentence, whatever the case', () => {
+    expect(matches(entry, 'PLANS')).toBe(true);
+    expect(matches(entry, '816')).toBe(true);
+    expect(matches(entry, 'kitchen')).toBe(false);
+  });
+
+  it('matches everything when the box is empty', () => {
+    expect(matches(entry, '')).toBe(true);
+    expect(matches(entry, '   ')).toBe(true);
+  });
+});
+
+describe('groupsFor', () => {
+  const crew = [
+    member({ id: 'a1', name: 'Rue', color: 0x99e550 }),
+    member({ id: 'a2', name: 'Ash', color: 0x639bff }),
+  ];
+  const jobs = [
+    job({
+      id: 'root',
+      prompt: 'Draw the plans',
+      status: 'partial',
+      continuedBy: 'leg2',
+      assignedTo: 'a1',
+      finishedAt: 100,
+      meter: { costUsd: 1 },
+    }),
+    // A reply leg: its prompt carries the reply, its root is the ask.
+    job({
+      id: 'leg2',
+      prompt: 'Draw the plans\nThe user replied: carry on',
+      status: 'promoted',
+      continues: 'root',
+      assignedTo: 'a1',
+      finishedAt: 200,
+      meter: { costUsd: 2 },
+    }),
+    // The same sentence asked afresh, in another case, by someone else.
+    job({
+      id: 'fresh',
+      prompt: 'draw the plans',
+      status: 'discarded',
+      assignedTo: 'a2',
+      finishedAt: 300,
+      meter: { costUnknown: true },
+    }),
+    job({
+      id: 'other',
+      prompt: 'Write a note',
+      status: 'promoted',
+      assignedTo: 'a2',
+      finishedAt: 250,
+      meter: { costUsd: 0.5 },
+    }),
+  ];
+
+  it('puts every leg of one sentence under one ask, continuations by their root', () => {
+    const groups = groupsFor(entriesFor(jobs, crew), crew);
+    expect(groups.map((g) => g.legs.length)).toEqual([3, 1]);
+    expect(groups[0].legs.map((e) => e.job.id)).toEqual(['fresh', 'leg2', 'root']);
+    expect(groups[0].prompt).toBe('Draw the plans');
+  });
+
+  it('orders asks by their latest activity and badges each with its newest leg', () => {
+    const groups = groupsFor(entriesFor(jobs, crew), crew);
+    expect(groups.map((g) => g.lastAt)).toEqual([300, 250]);
+    expect(groups[0].latest.job.id).toBe('fresh');
+    expect(badgeOf(groups[0].latest)).toBe('closed');
+  });
+
+  it('counts who worked it, what it cost and what could not be measured', () => {
+    const [plans] = groupsFor(entriesFor(jobs, crew), crew);
+    expect(plans.who.map((w) => [w.name, w.legs, w.color])).toEqual([
+      ['Rue', 2, 0x99e550],
+      ['Ash', 1, 0x639bff],
+    ]);
+    expect(plans.costUsd).toBeCloseTo(3, 5);
+    expect(plans.unmeasured).toBe(1);
+  });
+
+  it('stops at the last known leg when the root has left the queue', () => {
+    const byId = new Map([['b', job({ id: 'b', continues: 'a' })]]);
+    expect(rootOf(job({ id: 'c', continues: 'b' }), byId).id).toBe('b');
+  });
+
+  it('survives a continues loop', () => {
+    const a = job({ id: 'a', continues: 'b' });
+    const b = job({ id: 'b', continues: 'a' });
+    expect(rootOf(a, new Map([['a', a], ['b', b]])).id).toBe('b');
   });
 });
 

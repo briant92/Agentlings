@@ -83,6 +83,129 @@ export function entriesFor(jobs: readonly Job[], crew: readonly CrewMember[]): E
 }
 
 /**
+ * The word on a row's badge: the door that closed it, or what the user still
+ * has to do about it. A delivery awaiting a verdict reads "to review" — the
+ * filter's own word — rather than its raw status, which said "done" about a
+ * job nobody had looked at yet (UI.md, step 2).
+ */
+export function badgeOf(entry: Entry): string {
+  return entry.carriedOn ? 'carried on' : entry.outcome;
+}
+
+/**
+ * "41/40" when the turn budget cut the run, else nothing.
+ *
+ * Read off `outOfTurns` and never inferred from turns over the cap: a run can
+ * report more turns than it was allowed and still have ended on its own —
+ * 44/40 and 51/40 both finished `done` on 2026-08-22 (D-022, D-212). A cut
+ * whose meter never reached a count still says so.
+ */
+export function cutChip(job: Job): string | null {
+  const meter = job.meter;
+  if (!meter?.outOfTurns) return null;
+  return typeof meter.turns === 'number' && typeof meter.turnsAllowed === 'number'
+    ? `${meter.turns}/${meter.turnsAllowed}`
+    : 'cut';
+}
+
+/** Whether a row answers the find box: the sentence, as typed or as titled. */
+export function matches(entry: Entry, text: string): boolean {
+  const needle = text.trim().toLowerCase();
+  if (!needle) return true;
+  return (
+    entry.job.title.toLowerCase().includes(needle) || entry.job.prompt.toLowerCase().includes(needle)
+  );
+}
+
+/**
+ * The job a leg descends from, following `continues` back to the first run.
+ * A parent no longer in the queue ends the walk at the last leg still known.
+ */
+export function rootOf(job: Job, byId: ReadonlyMap<string, Job>): Job {
+  let current = job;
+  const seen = new Set<string>([job.id]);
+  while (current.continues) {
+    const parent = byId.get(current.continues);
+    if (!parent || seen.has(parent.id)) break;
+    seen.add(parent.id);
+    current = parent;
+  }
+  return current;
+}
+
+/** One ask and every leg run for it (UI.md, step 2). */
+export interface Group {
+  /** The sentence, normalised — the same key the recipe shelf uses. */
+  key: string;
+  /** The first run's sentence, as typed. */
+  prompt: string;
+  /** Every finished leg, newest first. */
+  legs: Entry[];
+  /** Who worked it and how many legs each, most first. */
+  who: { id: string; name: string; color: number | null; legs: number }[];
+  costUsd: number;
+  unmeasured: number;
+  lastAt: number;
+  /** The newest leg — its outcome is the group's badge. */
+  latest: Entry;
+}
+
+/**
+ * The record grouped by ask: every leg of the same sentence under one row,
+ * continuations included, newest activity first.
+ *
+ * Keyed on the root run's sentence rather than on each leg's own prompt,
+ * because a reply leg's prompt carries the reply and a More-turns leg's
+ * carries nothing new — both are the same ask, and the record should say
+ * fourteen runs of one sentence rather than three asks that happen to look
+ * alike. The root is found by walking `continues`, which is the one link
+ * the queue keeps between a leg and what it continues.
+ */
+export function groupsFor(entries: readonly Entry[], crew: readonly CrewMember[]): Group[] {
+  const byId = new Map(entries.map((e) => [e.job.id, e.job]));
+  const colors = new Map(crew.map((m) => [m.id, m.color]));
+  const groups = new Map<string, Group>();
+  for (const entry of entries) {
+    const root = rootOf(entry.job, byId);
+    const key = root.prompt.trim().toLowerCase();
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        prompt: root.prompt,
+        legs: [],
+        who: [],
+        costUsd: 0,
+        unmeasured: 0,
+        lastAt: 0,
+        latest: entry,
+      };
+      groups.set(key, group);
+    }
+    group.legs.push(entry);
+    // Entries arrive newest first, so the last root seen is the oldest: the
+    // row shows the sentence as it was first asked, not as it was last typed.
+    group.prompt = root.prompt;
+    group.costUsd += entry.costUsd ?? 0;
+    if (entry.job.meter?.costUnknown) group.unmeasured += 1;
+    const at = entry.job.finishedAt ?? 0;
+    if (at > group.lastAt) {
+      group.lastAt = at;
+      group.latest = entry;
+    }
+    const id = entry.job.assignedTo ?? '';
+    const worker = group.who.find((w) => w.id === id);
+    if (worker) worker.legs += 1;
+    else group.who.push({ id, name: entry.who, color: colors.get(id) ?? null, legs: 1 });
+  }
+  for (const group of groups.values()) {
+    group.legs.sort((a, b) => (b.job.finishedAt ?? 0) - (a.job.finishedAt ?? 0));
+    group.who.sort((a, b) => b.legs - a.legs);
+  }
+  return [...groups.values()].sort((a, b) => b.lastAt - a.lastAt);
+}
+
+/**
  * Totals for the header.
  *
  * This is a subtotal of the rows on screen, not the level's lifetime spend —

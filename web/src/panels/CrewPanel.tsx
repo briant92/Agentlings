@@ -9,6 +9,19 @@ import type {
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { Backoffice } from './Backoffice';
+import { Section } from './Section';
+import { APPROVALS_TO_AUTO, approvalLine, approvalsSummary, litDots } from './standing';
+
+/** Three dots, one lit per unchanged approval — the state read without opening the section. */
+function Meter({ lit }: { lit: number }) {
+  return (
+    <span className="meter" aria-label={`${lit} of ${APPROVALS_TO_AUTO} approvals`}>
+      {Array.from({ length: APPROVALS_TO_AUTO }, (_, i) => (
+        <i key={i} className={i < lit ? 'on' : ''} />
+      ))}
+    </span>
+  );
+}
 
 const DAY = 24 * 60 * 60 * 1000;
 /** After this long without finishing anything, resting is worth suggesting. */
@@ -233,46 +246,66 @@ export function CrewPanel({
 
         <div className="m-body">
           {tab === 'backoffice' && approvals.length > 0 && (
-            <div className="bo-standing">
-              <div className="sect">standing approvals — jobs allowed to send without review</div>
-              {approvals.map((a) => (
-                <div key={a.key} className="bo-standing-row">
-                  {/* The key IS the job — its own sentence (D-082). Without it
-                      two grants to the same person render as identical rows,
-                      and a list of duplicates reads as a bug. */}
-                  <span className="bo-standing-key">“{a.key}”</span>
-                  {/* One line per channel the grant covers (D-179): a grant
-                      that reaches two channels reaches two allowlists, and
-                      collapsing them would hide who it can actually message. */}
-                  <span className="bo-standing-what">
-                    {a.channels
-                      .map(
-                        (c) =>
-                          `${c.channel} → ${c.recipients.join(', ')}${
-                            c.template ? ` · template ${c.template}` : ''
-                          }`,
-                      )
-                      .join(' · ')}
-                  </span>
-                  {a.auto ? (
-                    <>
-                      <span className="bo-standing-on">auto-send on</span>
-                      <button className="work-link" onClick={() => void setAutoSend(a.key, false)}>
-                        turn it off
-                      </button>
-                    </>
-                  ) : (
-                    <span className="dim">
-                      {a.approvals} of 3 unchanged approvals
-                      {a.eligible ? ' — the offer waits at the next review' : ''}
+            // Folded by default — the backoffice is opened for the runs — with
+            // every job's meter riding in the header, so the 1-of-3 state
+            // reads without opening it (UI.md, step 2).
+            <Section
+              panel="backoffice"
+              id="approvals"
+              label="standing approvals"
+              count={approvals.length}
+              summary={
+                <>
+                  {approvals.map((a) => (
+                    <Meter key={a.key} lit={litDots(a)} />
+                  ))}
+                  {approvalsSummary(approvals)}
+                </>
+              }
+            >
+              <div className="bo-standing">
+                {approvals.map((a) => (
+                  <div key={a.key} className="bo-sa">
+                    <Meter lit={litDots(a)} />
+                    {/* The key IS the job — its own sentence (D-082). Without it
+                        two grants to the same person render as identical rows,
+                        and a list of duplicates reads as a bug. */}
+                    <span className="bo-sa-key" title={a.key}>
+                      “{a.key}”
                     </span>
-                  )}
-                </div>
-              ))}
-              <p className="dim bo-standing-note">
-                Any new recipient, template or channel drops a job back to review on its own.
-              </p>
-            </div>
+                    {/* One line per channel the grant covers (D-179): a grant
+                        that reaches two channels reaches two allowlists, and
+                        collapsing them would hide who it can actually message. */}
+                    <span className="bo-sa-line">
+                      <b>
+                        {a.channels
+                          .map(
+                            (c) =>
+                              `${c.channel} → ${c.recipients.join(', ')}${
+                                c.template ? ` · template ${c.template}` : ''
+                              }`,
+                          )
+                          .join(' · ')}
+                      </b>
+                      {' · '}
+                      {approvalLine(a)}
+                      {a.auto && (
+                        <>
+                          {' · '}
+                          <button className="work-link" onClick={() => void setAutoSend(a.key, false)}>
+                            turn it off
+                          </button>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                ))}
+                <p className="dim bo-standing-note">
+                  Three unchanged approvals and the job sends itself. Any new recipient, template
+                  or channel drops it back to review on its own.
+                </p>
+              </div>
+            </Section>
           )}
           {tab === 'backoffice' && (
             <Backoffice

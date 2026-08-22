@@ -15826,6 +15826,15 @@ unit harness, since no test spawns the runner. It is proven the way the
 exposure was measured: the same probe after Brian's restart, expecting one
 name. Appended below when it lands.
 
+### Proven live — 2026-08-22 18:22, after the restart
+
+The same job on Training Ground, `a69f394c` ($0.39, four turns), run by
+`scripts/prove-after-restart.mjs probe` against the restarted server: **one
+name, `ANTHROPIC_API_KEY`** — the key the run authenticates with — where
+`e593733d` had seen seven an hour earlier on the old server. Both probe jobs
+were approved by Brian rather than cleared; each banked its own close-out the
+ordinary way, which is the run's learning and not the point of the job.
+
 ## D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten
 
 **Decision:** a connection's row in Settings can forget what it holds.
@@ -15885,6 +15894,20 @@ placeholder and the row reads *needs set-up*, then re-stores the value
 through the secret route — which validates it with Telegram's own `getMe`
 — and restores the switch; the value never surfaces. Appended below when it
 lands.
+
+### Proven live — 2026-08-22 18:25, after the restart
+
+`scripts/prove-after-restart.mjs disconnect`, run twice (Brian, then again to
+capture the lines), both times against the restarted server and Telegram's
+real API. Before: the row ready, on, with its identity. `DELETE` answered
+200 with `forgot: ['TELEGRAM_BOT_TOKEN']`, `alsoDisconnected: []`,
+`revoked: null` (not a Google connection, so nothing to revoke). The `.env`
+line was the placeholder `# TELEGRAM_BOT_TOKEN=` with no live line left and
+the line count unchanged; the row read not ready, off, no identity. The
+re-store through the drawer route answered 200 — Telegram's `getMe` had
+validated the value — the identity came back, the switch was restored, and
+`.env` was byte-identical to the file before the round trip. The value never
+left the script's memory.
 
 ## D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps
 

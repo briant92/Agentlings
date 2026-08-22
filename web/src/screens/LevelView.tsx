@@ -236,7 +236,12 @@ export function LevelView({
         />
       )}
       {reviewJob && (
+        // Keyed by job: the desk flow swaps the job on an open review, and an
+        // unkeyed modal kept the previous job’s files, folders and turns strip
+        // until the new fetches landed — or for good when a routed answer
+        // skipped the trajectory fetch (review of 2026-08-22).
         <ReviewModal
+          key={reviewJob.id}
           levelId={level.id}
           job={reviewJob}
           file={review?.file}

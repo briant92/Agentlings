@@ -65,7 +65,7 @@ true, not when its code compiles.
 
 ## Phase 1 — client only, ships on a reload
 
-- [ ] **1. The unclogging vocabulary** — `web/src/panels/Section.tsx` (label ·
+- [x] **1. The unclogging vocabulary** — landed 2026-08-22 (`06d412e`). — `web/src/panels/Section.tsx` (label ·
       count · summary · chevron; open state remembered under
       `agentlings:fold:<panel>:<section>` in localStorage, the merge-dismissed
       pattern; `defaultOpen` per caller), a one-line `Row` that expands with
@@ -74,7 +74,7 @@ true, not when its code compiles.
       canvas's `base.css`. Test: fold state survives a remount; paging shows
       ten then all. Evidence: the three helpers exist, tested, used by nothing
       yet.
-- [ ] **2. Backoffice** (`Backoffice.tsx`, `ledger.ts`, `CrewPanel.tsx`) —
+- [x] **2. Backoffice** — landed 2026-08-22 (`06d412e`); seen live as 49 runs in 22 asks. (`Backoffice.tsx`, `ledger.ts`, `CrewPanel.tsx`) —
       `groupsFor(entries)` keyed on `meter.recipeKey ?? prompt.trim().toLowerCase()`,
       newest activity first, with count, who (per member), spend, unmeasured
       count, last time and the latest leg's outcome as the badge; groups
@@ -87,7 +87,7 @@ true, not when its code compiles.
       `ledger.test.ts`: grouping, the chip rule (a 51/40 done run gets none),
       the label rule. Evidence: Home Chores opens to 19 asks, the blueprint
       group opens to its 14 legs, filters still sum as before.
-- [ ] **3. Review, client half** (`ReviewModal.tsx`, a pure `facts.ts`) — the
+- [x] **3. Review, client half** — landed 2026-08-22 (`81d387e`); PENDING.md joined the paperwork set in `88c51a4` so a cut run opens on RESULT.md. (`ReviewModal.tsx`, a pure `facts.ts`) — the
       facts strip from `job.meter` and `quotedUsd` (who · spend of quote ·
       "cut at turn 41 of 40" only when `outOfTurns`, else "44 turns" · minutes
       · tool calls and `toolsUsed` · finished at); the title wraps to two
@@ -97,7 +97,7 @@ true, not when its code compiles.
       pending items. Test: `factsLine()` on a cut run, a finished 51/40 run and
       a routed run. Evidence: 106140b4 renders as the canvas shows, minus the
       directory rows and the carry note (Phase 3).
-- [ ] **4. Profile and Abilities, client half** (`ProfileModal.tsx`) —
+- [x] **4. Profile and Abilities, client half** — landed 2026-08-22 (`88c51a4`). (`ProfileModal.tsx`) —
       "hired to" folded with its first words in the header; lessons full
       width with date and source beneath, three newest then "all lessons";
       record open; the fourth tile relabelled **"spent the whole quote"** on
@@ -106,7 +106,7 @@ true, not when its code compiles.
       · 2 need set-up", chips and the Settings link inside. Test: the picker
       filter; the lesson line parser already has one. Evidence: Ash's card
       matches the two boards except the cut tile and the discard tag.
-- [ ] **5. Library** (`RolesModal.tsx`, `LibraryBrowse.tsx`, `LevelView.tsx`,
+- [x] **5. Library** — landed 2026-08-22; seen live: 7 held on Home Chores, 3 held by nobody. (`RolesModal.tsx`, `LibraryBrowse.tsx`, `LevelView.tsx`,
       `App.tsx`) — `RolesModal` takes an optional `levelId`; when given it
       reads `GET /api/levels/:id/crew` (the route CrewPanel already uses) and
       shows "held by …" or "nobody · hire one" per role, the hire link closing
@@ -120,7 +120,7 @@ true, not when its code compiles.
       Home Chores names Ivy, Sol, Rue, Ash, Bea, Tam, and the four workers, and
       marks clerk, mason and scout unheld; from the title screen the column is
       absent.
-- [ ] **6. What this level can read** (`KnowledgeModal.tsx`) — intro to one
+- [x] **6. What this level can read** — landed 2026-08-22. (`KnowledgeModal.tsx`) — intro to one
       sentence; folders, add-a-folder and formats-as-chips open; the two
       explanations under a folded "how reading works" with their gist in the
       header. No server change. Evidence: the empty state matches the board.

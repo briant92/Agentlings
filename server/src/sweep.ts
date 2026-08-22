@@ -38,7 +38,7 @@ import { readStoredJobs } from './queue';
  * it. Sizes ride the thread pool instead; the world keeps ticking.
  */
 
-const SWEEPABLE = new Set<Job['status']>(['promoted', 'discarded', 'failed']);
+const SWEEPABLE = new Set<Job['status']>(['promoted', 'discarded', 'cleared', 'failed']);
 
 async function dirBytes(dir: string): Promise<number> {
   let entries;

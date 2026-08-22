@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { MoveOp } from '@agentlings/shared';
+import { awaitingVerdict, isDelivery, outcomeOf, type MoveOp } from '@agentlings/shared';
 import { SimulatedExecutor } from './executors/simulated';
 import { OUTBOX_FILE } from './outbox';
 import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
@@ -411,6 +411,20 @@ describe('JobQueue', () => {
 
     expect(queue.get(jobs[5].id)!.slot).toBe(0);
     expect(queue.resolve(jobs[0].id, 'discard').status).toBe('discarded');
+  });
+
+  // D-216: the third way out of a review. Closed in the record and still a
+  // delivery, but never a refusal — nothing for the discard notes to bank.
+  it('clears a delivery without a verdict: closed, still a delivery, nothing left to review', () => {
+    const job = queue.add({ title: 'Seen', prompt: 'x' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    queue.complete(job.id, 'done it');
+    const cleared = queue.resolve(job.id, 'clear');
+    expect(cleared.status).toBe('cleared');
+    expect(outcomeOf(cleared.status)).toBe('closed');
+    expect(isDelivery(cleared.status)).toBe(true);
+    expect(awaitingVerdict(cleared)).toBe(false);
   });
 
   it('reads the patch into change counts when the job completes', () => {

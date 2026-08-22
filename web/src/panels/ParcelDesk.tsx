@@ -26,7 +26,7 @@ export function ParcelDesk({
   // The house press-twice: first press arms and relabels, second acts (D-134).
   const [armed, setArmed] = useState(false);
   const disarm = useRef<number | undefined>(undefined);
-  const [discarding, setDiscarding] = useState<{ done: number; of: number } | null>(null);
+  const [clearing, setClearing] = useState<{ done: number; of: number } | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
 
   const sections = parcelSections(jobs);
@@ -61,8 +61,8 @@ export function ParcelDesk({
     });
   };
 
-  const discardSelected = async () => {
-    if (discarding) return;
+  const clearSelected = async () => {
+    if (clearing) return;
     if (!armed) {
       setArmed(true);
       clearTimeout(disarm.current);
@@ -72,17 +72,17 @@ export function ParcelDesk({
     clearTimeout(disarm.current);
     setArmed(false);
     setRefusal(null);
-    setDiscarding({ done: 0, of: live.length });
+    setClearing({ done: 0, of: live.length });
     try {
       for (const [i, id] of live.entries()) {
-        await api(lvl(levelId, `/jobs/${id}/resolve`), postJson({ action: 'discard' }));
-        setDiscarding({ done: i + 1, of: live.length });
+        await api(lvl(levelId, `/jobs/${id}/resolve`), postJson({ action: 'clear' }));
+        setClearing({ done: i + 1, of: live.length });
       }
       setSelected(new Set());
     } catch (err) {
       setRefusal(err instanceof Error ? err.message : String(err));
     } finally {
-      setDiscarding(null);
+      setClearing(null);
     }
   };
 
@@ -148,17 +148,17 @@ export function ParcelDesk({
           <div className="pd-foot">
             <button
               className={`pd-discard${armed ? ' armed' : ''}`}
-              disabled={live.length === 0 || discarding !== null}
-              onClick={() => void discardSelected()}
+              disabled={live.length === 0 || clearing !== null}
+              onClick={() => void clearSelected()}
             >
-              {discarding
-                ? `discarding ${discarding.done}/${discarding.of}…`
+              {clearing
+                ? `clearing ${clearing.done}/${clearing.of}…`
                 : armed
-                  ? `sure? discard ${live.length}`
-                  : `discard ${live.length} selected`}
+                  ? `sure? clear ${live.length}`
+                  : `clear ${live.length} selected`}
             </button>
             <span className="dim pd-note">
-              bulk is discard-only — approve acts, so it stays one at a time
+              bulk clears — seen and let go, nothing banked; approve and discard are verdicts and stay one at a time
             </span>
             <button className="pd-work" onClick={() => onOpenReview(order[0])}>
               ▶ work the pile

@@ -941,6 +941,10 @@ costs nothing.
 
 ### A discard banks too — Live (D-201)
 
+*Since D-216 a review has a third way out, **clear**, which banks nothing: it
+is for clearing the pile, not for judging the work — the bulk action on the
+parcel desk is a clear, and Approve and Discard stay one at a time.*
+
 The close-out learns from what the run did. **Turning a delivery down is the
 other half**, and it used to write nothing: a promoted method banked its lesson
 and a refused one banked silence, so a level whose blueprint method had been
@@ -1408,6 +1412,8 @@ flowchart TD
   X --> V{"you review"}
   V -->|"Approve"| P["git apply to the real repo → promoted"]
   V -->|"Discard"| DI["discarded"]
+  V -->|"Clear"| CL["cleared — nothing kept, nothing banked (D-216)"]
+  CL --> LN
   P --> LN["recipe credited · ledger row, with the cut flag (D-214) · tool candidate counted"]
   DI --> LN
 ```

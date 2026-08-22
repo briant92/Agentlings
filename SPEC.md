@@ -35,7 +35,8 @@ runs longer than a sentence belongs there, not here.
    runs in `.agentlings/levels/<level>/jobs/<id>/` (the job's sandbox).
 4. On success the agentling carries the result to the exit; on failure it
    walks home and the job is marked failed.
-5. You review the sandbox output in the panel and promote or discard it.
+5. You review the sandbox output in the panel and promote, discard or clear it —
+   clear being the verdict that says nothing (D-216).
 
 The world is presentation, not physics: the server sim owns all state and
 the client renders it. Nothing in the world may block or corrupt a job.
@@ -279,7 +280,7 @@ catalog, settings and spend are global because they are.
 | `POST /api/levels/:lid/jobs/:id/cancel` | Stop a run |
 | `POST /api/levels/:lid/jobs/:id/redo` | "Do it properly" — re-queue with the router's shortcut switched off |
 | `POST /api/levels/:lid/jobs/:id/reply` | Answer an agentling. A new job that carries the old sandbox forward, quoted and billed like the session it is |
-| `POST /api/levels/:lid/jobs/:id/resolve` | `{action: "promote" \| "discard"}` |
+| `POST /api/levels/:lid/jobs/:id/resolve` | `{action: "promote" \| "discard" \| "clear"}` |
 | `GET` · `POST /api/levels/:lid/schedules` | The recurrence timer (D-103): list the sentences this level queues again on a cadence, and create one — made beside Start, so the first run is now and the next is on the calendar |
 | `POST .../schedules/:sid/pause` · `DELETE .../schedules/:sid` | Pause (resume recomputes from now, never a backlog) and stop repeating |
 
@@ -580,7 +581,7 @@ tried, measured and rejected is in `DECISIONS.md`:
     per level and stored on the level (`''` records a decline), changeable
     from the intake. Results: `queue.complete` reads DIFF.patch into
     `job.changes`, the terminal card says what approving would change in
-    plain words with Approve / Discard / See the changes, and the review
+    plain words with Approve / Discard / Clear / See the changes, and the review
     modal leads with the report and file list, raw patch collapsed.
   - **M3.6 (built).** First-run tour: three coach marks over the real
     controls — hire, the work box, the terminal — rather than a slideshow,

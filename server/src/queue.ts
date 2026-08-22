@@ -18,6 +18,7 @@ import type {
   OutboxSent,
 } from '@agentlings/shared';
 import { MAX_STATIONS, opKey } from '@agentlings/shared';
+import type { Verdict } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
@@ -516,12 +517,12 @@ export class JobQueue {
     this.finish(job);
   }
 
-  resolve(jobId: string, action: 'promote' | 'discard'): Job {
+  resolve(jobId: string, action: Verdict): Job {
     const job = this.mustGet(jobId);
     if (job.status !== 'done' && job.status !== 'failed' && job.status !== 'partial') {
       throw new Error(`job ${jobId} is ${job.status}, not resolvable`);
     }
-    job.status = action === 'promote' ? 'promoted' : 'discarded';
+    job.status = action === 'promote' ? 'promoted' : action === 'discard' ? 'discarded' : 'cleared';
     this.persist();
     return job;
   }

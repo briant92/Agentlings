@@ -10,6 +10,7 @@ import type {
   SendApprovalInfo,
   TrajectoryLine,
 } from '@agentlings/shared';
+import type { Verdict } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { carryNote } from './carry';
@@ -171,7 +172,7 @@ export function ReviewModal({
     if (!offer) approveRef.current?.focus();
   }, [offer]);
 
-  const resolve = async (action: 'promote' | 'discard') => {
+  const resolve = async (action: Verdict) => {
     setRefusal(null);
     try {
       const reply = await api<Job & { sendApproval?: SendApprovalInfo }>(
@@ -760,6 +761,16 @@ export function ReviewModal({
               </button>
               <button className="btn-quiet" onClick={() => void resolve('discard')}>
                 Discard
+              </button>
+              {/* Seen, and let go: out of the pile without a verdict — nothing
+                  kept, nothing refused, nothing banked (D-216). For clearing an
+                  inbox, which was never a judgement of the work. */}
+              <button
+                className="btn-quiet"
+                title="closes the review without a verdict — nothing kept, nothing refused, nothing banked"
+                onClick={() => void resolve('clear')}
+              >
+                Clear
               </button>
               {/* A routed answer cost nothing and can be wrong (D-015); this
                   pays for the full session with the router off. Lost its door

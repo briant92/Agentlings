@@ -703,7 +703,7 @@ export function SettingsModal({
                   </button>
                   {copies && (
                     <span className="dim">
-                      only promoted or discarded jobs · {mb(copies.kept.bytes)} in{' '}
+                      only promoted, discarded or cleared jobs · {mb(copies.kept.bytes)} in{' '}
                       {copies.kept.clones} kept clones
                     </span>
                   )}

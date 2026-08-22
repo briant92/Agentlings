@@ -52,13 +52,19 @@ describe('working copies', () => {
   afterEach(() => rm(root, { recursive: true, force: true }));
 
   it('splits clones by whether their job is settled', async () => {
-    const dir = level(root, 'l1', [job('a', 'promoted'), job('b', 'done'), job('d', 'discarded')]);
+    const dir = level(root, 'l1', [
+      job('a', 'promoted'),
+      job('b', 'done'),
+      job('d', 'discarded'),
+      job('e', 'cleared'), // let go without a verdict: settled all the same (D-216)
+    ]);
     clone(dir, 'a');
     clone(dir, 'b');
     clone(dir, 'c'); // no job row: proves nothing about itself, so kept
     clone(dir, 'd');
+    clone(dir, 'e');
     const info = await workingCopies(root);
-    expect(info.sweepable).toEqual({ clones: 2, bytes: 128 });
+    expect(info.sweepable).toEqual({ clones: 3, bytes: 192 });
     expect(info.kept).toEqual({ clones: 2, bytes: 128 });
   });
 

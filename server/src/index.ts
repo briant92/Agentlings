@@ -2652,8 +2652,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
   const body = await c.req.json<{ action?: string; packSlug?: string }>();
-  if (body.action !== 'promote' && body.action !== 'discard') {
-    return c.json({ error: 'action must be "promote" or "discard"' }, 400);
+  if (body.action !== 'promote' && body.action !== 'discard' && body.action !== 'clear') {
+    return c.json({ error: 'action must be "promote", "discard" or "clear"' }, 400);
   }
   const pending = rt.queue.get(c.req.param('id'));
   if (!pending) return c.json({ error: 'unknown job' }, 404);
@@ -2701,7 +2701,9 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * at risk — `usableTools` needs both scripts — so this was invisible until
    * somebody tried again (D-045).
    */
-  if (body.action === 'discard') {
+  // A clear leaves the compile uninstalled exactly as a discard does, so the
+  // reserved name has to go either way (D-216).
+  if (body.action === 'discard' || body.action === 'clear') {
     const abandoned = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
     if (abandoned) rmSync(toolDir(rt.dir, abandoned.name), { recursive: true, force: true });
   }
@@ -2815,7 +2817,10 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * safe; stop here, before anything else real. resolve() at the tail would
    * throw anyway, but only after those side effects had happened (D-162).
    */
-  if (promotable && (pending.status === 'promoted' || pending.status === 'discarded')) {
+  if (
+    promotable &&
+    (pending.status === 'promoted' || pending.status === 'discarded' || pending.status === 'cleared')
+  ) {
     return c.json(
       {
         error: `while the outbox was sending, this job was ${pending.status} by another request — nothing further was applied`,
@@ -3085,8 +3090,10 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
             (chainPriced.rows > 0
               ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`
               : '')
-          : 'discarded — nothing applied, the work stays in the sandbox' +
-            (rejected ? ` · ${rejected.name} banked what was turned down` : ''),
+          : body.action === 'clear'
+            ? 'cleared — seen and let go: nothing applied, nothing banked, the work stays in the sandbox'
+            : 'discarded — nothing applied, the work stays in the sandbox' +
+              (rejected ? ` · ${rejected.name} banked what was turned down` : ''),
       by: 'you',
     });
     return c.json({ ...job, ...(approval ? { sendApproval: approval } : {}) });

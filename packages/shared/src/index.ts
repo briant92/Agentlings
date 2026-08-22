@@ -129,7 +129,16 @@ export type JobStatus =
   | 'partial'
   | 'failed'
   | 'promoted'
-  | 'discarded';
+  | 'discarded'
+  /**
+   * Seen and let go without a verdict: out of the review pile and closed in
+   * the record, nothing kept, nothing refused, nothing banked (D-216) — the
+   * way to clear an inbox that was never a judgement of the work.
+   */
+  | 'cleared';
+
+/** What a review can say about a delivery: keep it, refuse it, or let it go. */
+export type Verdict = 'promote' | 'discard' | 'clear';
 
 /**
  * What one session actually cost. Recorded per job from the first run, so
@@ -1059,6 +1068,7 @@ const OUTCOMES: Record<string, Outcome> = {
   partial: 'to review',
   promoted: 'kept',
   discarded: 'closed',
+  cleared: 'closed',
   failed: 'closed',
 };
 
@@ -1083,7 +1093,9 @@ export function awaitingVerdict(job: { status: JobStatus; continuedBy?: string }
 
 /** Whether a run left something for the user, whatever its ledger outcome. */
 export function isDelivery(status: JobStatus): boolean {
-  return status === 'done' || status === 'partial' || status === 'promoted';
+  return (
+    status === 'done' || status === 'partial' || status === 'promoted' || status === 'cleared'
+  );
 }
 
 export type AgentlingState = 'idle' | 'walking' | 'working' | 'delivering';

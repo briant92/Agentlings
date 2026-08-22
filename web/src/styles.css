@@ -1049,6 +1049,10 @@ button.ghost {
   background: #262b36;
   color: #8a91a3;
 }
+.badge.cleared {
+  background: #262b36;
+  color: #8a91a3;
+}
 
 .dim {
   color: #626a7d;

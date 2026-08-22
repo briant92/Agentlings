@@ -227,6 +227,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification](#d-214--2026-08-22--the-ledger-row-carries-the-cut-itself-backfilled-by-identification)
 - [D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there](#d-215--2026-08-22--what-a-run-left-is-one-notion-counted-where-the-run-ends-stamped-on-the-job-read-everywhere-from-there)
 - [D-217 — 2026-08-22 — The session child carried every connection secret: laundered at both spawn sites by the catalog's own list](#d-217--2026-08-22--the-session-child-carried-every-connection-secret-laundered-at-both-spawn-sites-by-the-catalogs-own-list)
+- [D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten](#d-218--2026-08-22--disconnect-the-drawers-inverse-with-googles-token-revoked-before-the-line-is-forgotten)
 
 ## By theme
 
@@ -667,7 +668,9 @@ entry updates one file rather than two.
   credential shapes and the never-a-password rule: D-076; the researched
   batch, its tiers and its refusals, WhatsApp personal among them: D-077;
   and the token drawer that keeps `.env` the only store and validates every
-  paste with one real call before storing it: D-078; the intake ask-card that
+  paste with one real call before storing it: D-078 — and its inverse, the
+  row's Disconnect, which revokes a Google token at Google before turning
+  the `.env` line back into its placeholder: D-218; the intake ask-card that
   notices a send, forks honestly, and finally tells the session the outbox
   contract — with the parked-job status refused a second time: D-079; and
   the first Connect button — Google by loopback OAuth against the user's own
@@ -15819,3 +15822,63 @@ The wiring — that the spawn sites really pass the catalog's list — has no
 unit harness, since no test spawns the runner. It is proven the way the
 exposure was measured: the same probe after Brian's restart, expecting one
 name. Appended below when it lands.
+
+## D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten
+
+**Decision:** a connection's row in Settings can forget what it holds.
+`DELETE /api/settings/connections/:name/secrets` revokes a Google refresh
+token at Google first — best-effort, the outcome said in a sentence, the
+value never in a reply — then turns every `.env` line the connection
+declares back into its commented placeholder (`# NAME=`, in place, the rest
+of the file byte-identical), forgets the live value, switches the connection
+off and clears its identity. It does all of that for every connection that
+shares a secret with the one pressed, because the Google trio are one
+sign-in, and the row's armed label names them before the press: *sure?
+disconnect — also calendar, mail*. The house press-twice, as the parcel desk
+has it (D-134).
+
+### What forced it
+
+The outside plan reviewed on 2026-08-22 listed a revoke flow among things to
+build, and it was the one item on its list the code genuinely lacked: D-078
+built the way in — paste, one real call, `.env` — and nothing built the way
+out. `env.ts` could replace a line and never remove one; a stored Google
+consent could only be overwritten by connecting again, and revoking it meant
+the Google console. Brian chose to build it, with the revoke, on the
+recommendation that forgetting a refresh token locally while the grant lives
+on at Google is a copy going stale, not a disconnect.
+
+### What was done
+
+`forgetEnvLine` is `upsertEnvLine`'s inverse as far as a hand-edited file
+allows: the live line becomes the placeholder the drawer's re-paste will land
+on, a line already commented or absent is untouched, CRLF stays CRLF, and a
+longer name is not mistaken for the one being forgotten. `forgetSecret`
+writes the file and deletes the live value. `revokeToken` posts the token in
+the form body — never the URL, D-187's rule — and reads Google's
+`400 invalid_token` as done-with-a-note, since a token Google no longer
+knows is the state wanted; only an unreachable Google or a refusal of another
+kind reports a revoke that did not happen, and the secrets are forgotten
+regardless. `clearIdentity` takes the identity line with the secret.
+`ConnectionInfo` gains `credentialed` and `sharesSecretsWith`, both filled
+by `describe` from one `sharingSecrets` helper the route reuses, so the
+label and the route cannot disagree about who else goes. The web's
+`disconnectLabel` and `disconnectWording` are pure and pinned.
+
+### What proved it
+
+`4f9bd4d`: typecheck clean in all three workspaces; server 77 files / 1,942
+tests (+12), web 26 / 278 (+2). Mutations after committing, each restored
+and re-run green: `forgetEnvLine` returning its input untouched fails four
+tests; `revokeToken` counting `invalid_token` as a failure fails one;
+`sharingSecrets` naming nobody fails one.
+
+### Untested live
+
+The route does not exist on the running server until Brian's restart. The
+live proof planned for then: a script that reads the Telegram line from
+`.env` without printing it, calls Disconnect, checks the line is its
+placeholder and the row reads *needs set-up*, then re-stores the value
+through the secret route — which validates it with Telegram's own `getMe`
+— and restores the switch; the value never surfaces. Appended below when it
+lands.

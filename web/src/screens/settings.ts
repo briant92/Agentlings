@@ -47,6 +47,12 @@ function when(at: number, now: number): string {
  * The row's fact: how often the door was knocked on and when last, or that
  * nobody has since the trail began — which is a fact about the door, not a
  * blank. Null before any door was ever called: there is no trail to read.
+ *
+ * `trailed` is whether this connection's calls pass the door trail at all: a
+ * builtin door is served by the server, which logs it (D-192); a stdio
+ * connection like the browser runs as its own MCP process and never comes
+ * this way, so the trail's silence says nothing about it and no claim is
+ * made (review of 2026-08-22).
  */
 export type UsageFact = { used: number; last: string } | { unusedSince: string };
 
@@ -54,9 +60,10 @@ export function usageFact(
   usage: DoorUsage | undefined,
   began: number | null,
   now: number,
+  trailed: boolean,
 ): UsageFact | null {
   if (usage) return { used: usage.calls, last: when(usage.lastAt, now) };
-  if (began === null) return null;
+  if (began === null || !trailed) return null;
   return { unusedSince: day(began) };
 }
 
@@ -69,7 +76,9 @@ export function usageDetail(
   usage: DoorUsage | undefined,
   began: number | null,
   now: number,
+  trailed: boolean,
 ): string | null {
+  if (!usage && !trailed) return 'not on the door trail — it runs as its own process, so no call is counted here';
   if (began === null) return null;
   const since = `since the trail began on ${day(began)}`;
   if (!usage) return `no call ${since}`;

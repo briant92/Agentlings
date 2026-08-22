@@ -77,19 +77,32 @@ describe('usageFact', () => {
   const began = at(8, 18, 9, 0);
 
   it('counts the calls and names the last one, today by the word', () => {
-    expect(usageFact(door(), began, NOW)).toEqual({ used: 38, last: 'today 08:13' });
-    expect(usageFact(door({ lastAt: at(8, 18, 17, 3) }), began, NOW)).toEqual({
+    expect(usageFact(door(), began, NOW, true)).toEqual({ used: 38, last: 'today 08:13' });
+    expect(usageFact(door({ lastAt: at(8, 18, 17, 3) }), began, NOW, true)).toEqual({
       used: 38,
       last: 'Aug 18 17:03',
     });
   });
 
   it('says a door nobody knocked on has not been used since the trail began', () => {
-    expect(usageFact(undefined, began, NOW)).toEqual({ unusedSince: 'Aug 18' });
+    expect(usageFact(undefined, began, NOW, true)).toEqual({ unusedSince: 'Aug 18' });
   });
 
   it('says nothing before any door was ever called', () => {
-    expect(usageFact(undefined, null, NOW)).toBeNull();
+    expect(usageFact(undefined, null, NOW, true)).toBeNull();
+  });
+});
+
+describe('usageFact for a door the trail never sees', () => {
+  const began = at(8, 18, 9, 0);
+  it('makes no claim about a stdio connection the trail cannot record', () => {
+    expect(usageFact(undefined, began, NOW, false)).toBeNull();
+    expect(usageDetail(undefined, began, NOW, false)).toBe(
+      'not on the door trail — it runs as its own process, so no call is counted here',
+    );
+  });
+  it('still reports a row the trail does hold, whatever the transport says', () => {
+    expect(usageFact(door(), began, NOW, false)).toEqual({ used: 38, last: 'today 08:13' });
   });
 });
 
@@ -97,18 +110,18 @@ describe('usageDetail', () => {
   const began = at(8, 18, 9, 0);
 
   it('reads since when, calls per tool most first, refusals and the last call', () => {
-    expect(usageDetail(door(), began, NOW)).toBe(
+    expect(usageDetail(door(), began, NOW, true)).toBe(
       'since the trail began on Aug 18 · mail_search 27 · mail_read 11 · 9 refused · last call today 08:13',
     );
   });
 
   it('says none refused rather than 0', () => {
-    expect(usageDetail(door({ errors: 0 }), began, NOW)).toContain('· none refused ·');
+    expect(usageDetail(door({ errors: 0 }), began, NOW, true)).toContain('· none refused ·');
   });
 
   it('says no call for a door the trail never saw', () => {
-    expect(usageDetail(undefined, began, NOW)).toBe('no call since the trail began on Aug 18');
-    expect(usageDetail(undefined, null, NOW)).toBeNull();
+    expect(usageDetail(undefined, began, NOW, true)).toBe('no call since the trail began on Aug 18');
+    expect(usageDetail(undefined, null, NOW, true)).toBeNull();
   });
 });
 

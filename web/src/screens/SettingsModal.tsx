@@ -81,8 +81,10 @@ function ConnectionRow({
   onToggle: (enabled: boolean) => void;
   children?: ReactNode;
 }) {
-  const used = connection.kind === 'read' ? usageFact(usage, began, now) : null;
-  const detail = connection.kind === 'read' ? usageDetail(usage, began, now) : null;
+  // Only a builtin door passes the trail; the browser runs as its own process.
+  const used = connection.kind === 'read' ? usageFact(usage, began, now, connection.builtin) : null;
+  const detail =
+    connection.kind === 'read' ? usageDetail(usage, began, now, connection.builtin) : null;
   const needs = needsLine(connection);
   return (
     <ExpandRow

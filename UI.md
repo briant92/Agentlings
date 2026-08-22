@@ -180,9 +180,20 @@ true, not when its code compiles.
       seventeen older rows plus `39a1ff24` 44/40 and `8aef2a7c` 51/40). Of the
       100 marked, 91 show turns over the cap; with the 46 unstored rows that
       is where D-212's ninety-eight lie.
-- [ ] **14. Restart** — Brian's terminal, outside 07:55–08:20, `jobsRunning`
-      0; then `curl` each new route and re-open the three panels. Evidence:
-      the boot backfill logged its count once; the schedules are intact.
+- [x] **14. Restart** — done by Brian 2026-08-22 (server `7100`). Evidence,
+      read off the live routes: `/api/doors/usage` answers search 96, web 69
+      (15 refusals), mail 38 (27 search · 11 read, 9 refusals), render 23,
+      calendar 3; `39a1ff24/trajectory` is `trail: true`, 98 lines, 43
+      session calls, and `106140b4/trajectory` is `trail: false`;
+      `106140b4/output` lists `input/` (1 file) and `work/` (68 files,
+      51.9 MB) beside its 4 paperwork files, and its `continue/quote`
+      carries `input/` and RESULT.md as the report with `work/` and the
+      paperwork left behind; Ash's profile reads 7 runs · 5 cut · 2 finished
+      on their own · 4 kept, with the D-201 note under `discards` and out of
+      `memory`; `/api/connections` kinds split 8 reads / 4 sends; the boot
+      backfill stamped 49 of 49 Home Chores jobs — `29ddccb7` reads 75 files,
+      1 PDF, 14 images, the run the backoffice called "nothing on disk".
+      **Phase 3 can now be verified live.**
 
 ## Phase 3 — the client parts that needed the batch
 

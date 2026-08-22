@@ -75,9 +75,15 @@ PDF rendering", with 1,350 bytes of real transforms and a 1.6 MB composite
 sitting in that folder. **The cause was misdiagnosed**: the close-out is
 given the run's confident prose first and a list of names second, and when
 they contradict it follows the prose. More evidence cannot fix that. The
-candidate is one line asking it to reconcile the two — deliberately not built,
-because two fixes have now been made to this seam on one job each and the
-second failed.
+candidate is one line asking it to reconcile the two — built on Brian's call
+the same day (D-210), with the guard that a filename proves a file exists and
+never that it is right. Rendering that new brief against the real sandbox
+**caught a defect in D-209's own code before it shipped**: the 60-name cap
+discards from the end, and `work/placement.json` — the file proving placement
+had happened — had fallen off behind two dozen `.mjs` helpers. Outputs now
+sort before scripts, so the cap drops tooling. Still unproven live, and the
+bar is higher after D-209: not the files reaching the prompt, but a PENDING
+that stops contradicting the sandbox.
 
 ## 1. The evidence
 

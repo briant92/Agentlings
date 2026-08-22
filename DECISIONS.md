@@ -219,6 +219,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-207 — 2026-08-22 — Cure (a) falsified on the best delivery the task has produced: the artefacts outran the report](#d-207--2026-08-22--cure-a-falsified-on-the-best-delivery-the-task-has-produced-the-artefacts-outran-the-report)
 - [D-208 — 2026-08-22 — The report off the session's turns — and the ask order that was the survival rate](#d-208--2026-08-22--the-report-off-the-sessions-turns--and-the-ask-order-that-was-the-survival-rate)
 - [D-209 — 2026-08-22 — A run that tidies its work into a folder was invisible: the evidence looks one level down](#d-209--2026-08-22--a-run-that-tidies-its-work-into-a-folder-was-invisible-the-evidence-looks-one-level-down)
+- [D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof](#d-210--2026-08-22--the-reconcile-line-and-the-cap-that-was-throwing-away-the-proof)
 
 ## By theme
 
@@ -15069,3 +15070,51 @@ and that a file in the list answering something the report calls outstanding
 means that thing landed. **Not built here.** Two fixes have now been made to
 this seam on the strength of one job each, and the second one failed; the next
 one should be judged on more than the next single run.
+
+## D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof
+
+D-209 ended by naming a candidate and declining to build it. Brian called it:
+build the reconcile line. Two things came out of doing so, and the second was
+not the one asked for.
+
+**The line, and its guard.** The close-out's PENDING instructions gain two
+sentences: that the report *"was written before the run's last turns and may
+be stale"*, and that a listed file answering something the report calls
+outstanding means **it landed** — say so, and leave it out of what is still to
+do. Then the guard that instruction invites, because without it the fix
+becomes the fault it was built against: **"A filename proves the file exists,
+never that it is correct or complete — say that it landed, never that it is
+right."** The pass has seen a list of names and nothing inside them, and D-202
+is the record of what a confident claim about unread bytes costs. Trading a
+report that understates for one that overstates would be no trade at all.
+
+**And rendering the new brief against the real sandbox caught a defect in
+D-209's own code, before it shipped.** Asked what the close-out *would* now be
+told for job `106140b4`, the evidence no longer contained
+`work/placement.json` — the single file that proved placement had happened.
+The 60-name cap discards from the end of the list, and the end was decided by
+directory order; the close-out's own three files, written after the run, had
+pushed the tail off. Two dozen `.mjs` helpers survived and the result did not.
+
+So `producedNames` now orders **outputs before the scripts that made them**,
+and the cap therefore drops tooling rather than deliverables. The scripts stay
+in the list — APPROACH is asked for the *method*, and a run's helper scripts
+are what the method looks like. Verified against the real sandbox:
+`placement.json`, `composite1.png`, `overlay1.png` and `model.json` all
+survive, and the 11 names dropped are all scripts.
+
+That defect had been live since D-209 and no test would have found it: every
+test used a handful of files, and it only appears above sixty. What found it
+was rendering the artefact against real data and *reading* it — the same
+discipline that has now caught three separate faults on this seam, and the
+only one of the three that caught a fault of my own before it reached a run.
+
+**Deliberately still not done:** the evidence order itself. The report comes
+first in the prompt and the file list second, and reordering them is a second
+lever on the same behaviour. One change at a time here, because the last two
+were each judged on one job and the second was wrong.
+
+**Untested live**, and this time the standard is higher: D-209 taught that
+this seam's plumbing can be provably correct while the outcome is unchanged,
+so the reconcile line is not proven by the files reaching the prompt — only by
+a PENDING that stops contradicting the sandbox. Suites: 75 files / 1,893.

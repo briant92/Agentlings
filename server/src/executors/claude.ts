@@ -742,8 +742,21 @@ export function producedNames(sandboxDir: string): { names: string[]; more: numb
       names.push(`${entry.name}/${inner}`);
     }
   }
-  return { names: names.slice(0, EVIDENCE_FILES), more: Math.max(0, names.length - EVIDENCE_FILES) };
+  // Outputs before the scripts that made them, because the cap discards from
+  // the end and the end is otherwise decided by directory order. Caught on
+  // job 106140b4: `work/placement.json` — the file that proved placement had
+  // happened — fell off a 60-name list behind two dozen `.mjs` helpers, so
+  // the close-out was shown the tooling and not the result (D-210). The
+  // scripts stay in the list: APPROACH is asked for the *method*.
+  const ordered = [...names.filter((n) => !isScript(n)), ...names.filter(isScript)];
+  return {
+    names: ordered.slice(0, EVIDENCE_FILES),
+    more: Math.max(0, ordered.length - EVIDENCE_FILES),
+  };
 }
+
+const SCRIPT = /\.(mjs|cjs|js|ts|py|sh|bat|ps1)$/i;
+const isScript = (name: string): boolean => SCRIPT.test(name);
 
 /**
  * First "- " line of LESSON.md, if the agent wrote one.
@@ -859,6 +872,16 @@ export function closeOutBrief(
       '- PENDING.md: what is left. First line: where the run actually got to, one sentence, in the past tense.',
       '  Then one "- " line per thing still to do, most important first, at most five.',
       '  Say only what the evidence above supports. If it got nowhere, say that plainly — "it had barely started" is a useful answer and a made-up plan is not.',
+      // The reconcile line (D-210). Shown a run's confident prose and a file
+      // list that contradicts it, the close-out followed the prose — twice,
+      // and the second time with the contradicting filenames in its own
+      // prompt. It was never asked to compare the two, so it did not.
+      '  The report was written before the run\'s last turns and may be stale. Check it against the files: if one of them answers something the report calls outstanding, unfinished or "in progress", then it landed — say so, and leave it out of what is still to do.',
+      // The opposite error, which this instruction would otherwise invite.
+      // A name is evidence the file exists and nothing more; the close-out
+      // has not seen inside any of them, and D-202 is the record of what a
+      // confident claim about unread bytes costs.
+      '  A filename proves the file exists, never that it is correct or complete — say that it landed, never that it is right.',
       '  If nothing is left and the work looks complete, write PENDING.md holding exactly the word "done".',
       // The report the run never wrote. Built from the file list above and
       // nothing else, and it says so — a reader must be able to tell an

@@ -733,6 +733,31 @@ describe('closeOutBrief', () => {
   });
 
   /**
+   * The reconcile line (D-210). Twice the close-out was shown a run's
+   * confident prose and a file list that contradicted it, and twice it
+   * followed the prose — the second time with `work/placement.json` and
+   * `work/composite1.png` named in its own prompt while it wrote that the
+   * run had stopped "before placement". It was never asked to compare them.
+   */
+  it('tells the close-out the report may be stale, and to check it against the files', () => {
+    const append = closeOutBrief(job, 'What the run reported:\nIn progress.', []).append;
+    expect(append).toMatch(/written before the run's last turns and may be stale/);
+    expect(append).toMatch(/then it landed/);
+    expect(append).toMatch(/leave it out of what is still to do/);
+  });
+
+  /**
+   * The opposite error, which that instruction invites. The pass has seen a
+   * list of names and nothing inside them — D-202 is the record of what a
+   * confident claim about unread bytes costs.
+   */
+  it('does not let a filename become a claim that the file is right', () => {
+    const append = closeOutBrief(job, 'x', []).append;
+    expect(append).toMatch(/never that it is correct or complete/);
+    expect(append).toMatch(/never that it is right/);
+  });
+
+  /**
    * The report the run never wrote (D-208). Off by default: an existing
    * RESULT.md is never rewritten, because this pass may not read files and
    * so cannot know what it would be replacing.
@@ -917,6 +942,24 @@ describe('closeOutEvidence', () => {
       const evidence = closeOutEvidence(dir)!;
       expect(evidence).toContain('…and 30 more');
       expect(evidence.split('\n- ').length).toBeLessThan(70);
+    });
+
+    /**
+     * What the cap discards matters as much as that it caps (D-210). On job
+     * `106140b4` the file proving placement had happened — `placement.json` —
+     * fell off the end behind two dozen `.mjs` helpers, so the close-out was
+     * shown the tooling and not the result. Outputs go first; the scripts
+     * stay listed, because APPROACH is asked for the method.
+     */
+    it('drops the scripts before the outputs when it has to drop something', () => {
+      mkdirSync(path.join(dir, 'work'));
+      for (let i = 0; i < 70; i++) writeFileSync(path.join(dir, 'work', `step${i}.mjs`), 'x');
+      writeFileSync(path.join(dir, 'work', 'zz-placement.json'), '{}');
+      writeFileSync(path.join(dir, 'work', 'zz-composite.png'), 'x');
+      const evidence = closeOutEvidence(dir)!;
+      expect(evidence).toContain('work/zz-placement.json');
+      expect(evidence).toContain('work/zz-composite.png');
+      expect(evidence).toContain('more');
     });
   });
 

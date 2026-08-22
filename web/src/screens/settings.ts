@@ -121,3 +121,27 @@ export function authWording(source: AuthStatus['source']): string {
       return 'no credentials found';
   }
 }
+
+/**
+ * The Disconnect link's label (D-218): plain until armed, then the question
+ * with who else goes — the Google trio share one sign-in, so forgetting it on
+ * one row forgets it on all three, and the label says so before the press.
+ */
+export function disconnectLabel(
+  connection: Pick<ConnectionInfo, 'sharesSecretsWith'>,
+  armed: boolean,
+  busy: boolean,
+): string {
+  if (busy) return 'disconnecting…';
+  if (!armed) return 'disconnect';
+  const others = connection.sharesSecretsWith;
+  return others.length === 0 ? 'sure? disconnect' : `sure? disconnect — also ${others.join(', ')}`;
+}
+
+/** What disconnecting does, in one clause beside the link. */
+export function disconnectWording(connection: Pick<ConnectionInfo, 'name' | 'sharesSecretsWith'>): string {
+  const google = connection.name === 'google' || connection.sharesSecretsWith.includes('google');
+  return google
+    ? 'revokes the sign-in at Google and forgets its three lines in .env; the switch goes off'
+    : 'forgets the token in .env — the line stays, commented, for the next paste; the switch goes off';
+}

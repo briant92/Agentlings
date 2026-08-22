@@ -80,8 +80,10 @@ import {
   missingSecrets,
   readConnections,
   secretNames,
+  sharingSecrets,
 } from './connections';
 import {
+  clearIdentity,
   enabledNames,
   grantedTools,
   readSettings,
@@ -107,7 +109,7 @@ import {
   reopenLevelFiles,
 } from './close';
 import { sweepWorkingCopies, workingCopies } from './sweep';
-import { secretValueProblem, storeSecret } from './env';
+import { forgetSecret, secretValueProblem, storeSecret } from './env';
 import {
   accessTokenFromRefresh,
   exchangeCode,
@@ -115,6 +117,7 @@ import {
   GOOGLE_SECRETS,
   googleContacts,
   googleOtherContacts,
+  revokeToken,
   startCredentials,
 } from './google';
 import { quoteFor } from './estimate';
@@ -830,6 +833,47 @@ app.post('/api/settings/connections/:name/secret', async (c) => {
     writeSettings(SANDBOX_ROOT, setIdentity(readSettings(SANDBOX_ROOT), name, verdict.identity));
   }
   return c.json({ connections: connectionList(), identity: verdict.identity ?? null });
+});
+
+/**
+ * Forgets a connection's secrets (D-218) — the drawer's inverse, the one way
+ * out D-078 left unbuilt. Google's refresh token is revoked at Google first,
+ * best-effort: forgetting it here while the grant lived on would be a copy
+ * going stale, not a disconnect. Then every line the connection declares
+ * becomes its commented placeholder in `.env`, the live env forgets it, the
+ * switch goes off and the identity goes with it — for this connection and for
+ * every one sharing a secret with it, since the Google trio are one sign-in.
+ * Values never appear in a reply or a reason; the reply carries names.
+ */
+app.delete('/api/settings/connections/:name/secrets', async (c) => {
+  const name = c.req.param('name');
+  const connections = readConnections(CONNECTIONS_FILE);
+  const connection = connections.find((conn) => conn.name === name);
+  if (!connection) return c.json({ error: 'no such connection' }, 404);
+  const names = Object.keys(connection.secrets ?? {});
+  if (names.length === 0) return c.json({ error: `"${name}" holds no secret to forget` }, 400);
+  const held = names.filter((key) => (process.env[key] ?? '') !== '');
+  if (held.length === 0) return c.json({ error: `nothing is stored for "${name}"` }, 400);
+  let revoked: boolean | null = null;
+  let note: string | undefined;
+  const refresh = process.env[GOOGLE_SECRETS.refreshToken];
+  if (names.includes(GOOGLE_SECRETS.refreshToken) && refresh) {
+    const verdict = await revokeToken({ token: refresh });
+    revoked = verdict.revoked;
+    note = verdict.revoked ? verdict.note : verdict.reason;
+  }
+  for (const key of held) forgetSecret(ENV_FILE, key, process.env);
+  const affected = [name, ...sharingSecrets(connection, connections)];
+  let settings = readSettings(SANDBOX_ROOT);
+  for (const each of affected) settings = clearIdentity(setConnection(settings, each, false), each);
+  writeSettings(SANDBOX_ROOT, settings);
+  return c.json({
+    connections: connectionList(),
+    forgot: held,
+    alsoDisconnected: affected.slice(1),
+    revoked,
+    ...(note ? { note } : {}),
+  });
 });
 
 /**

@@ -10,6 +10,7 @@ import {
   googleContacts,
   googleOtherContacts,
   idTokenEmail,
+  revokeToken,
   startCredentials,
 } from './google';
 
@@ -285,5 +286,35 @@ describe('googleOtherContacts (D-123)', () => {
     const got = await googleOtherContacts({ accessToken: 'tok', fetchFn: fn });
     expect('error' in got && got.error).toContain('Connect Google again');
     expect('error' in got && got.error).toContain('people you have emailed');
+  });
+});
+
+describe('revokeToken (D-218)', () => {
+  it('posts the token in the form body, never the URL, and reports a revoke', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true }));
+    expect(await revokeToken({ token: 'refresh-1', fetchFn: fn })).toEqual({ revoked: true });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe('https://oauth2.googleapis.com/revoke');
+    expect(calls[0].form.get('token')).toBe('refresh-1');
+  });
+
+  it('counts a token Google no longer knows as revoked, with the note', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 400, body: { error: 'invalid_token' } }));
+    const verdict = await revokeToken({ token: 'stale', fetchFn: fn });
+    expect(verdict.revoked).toBe(true);
+    expect(verdict).toHaveProperty('note');
+  });
+
+  it('reports a refusal or an unreachable Google without ever carrying the value', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 500, body: { error: 'server_error' } }));
+    const refused = await revokeToken({ token: 'refresh-2', fetchFn: fn });
+    expect(refused).toEqual({ revoked: false, reason: 'Google refused to revoke it — server_error' });
+    const down = (async () => {
+      throw new Error('ECONNREFUSED');
+    }) as unknown as typeof fetch;
+    const unreachable = await revokeToken({ token: 'refresh-3', fetchFn: down });
+    expect(unreachable.revoked).toBe(false);
+    expect(JSON.stringify(unreachable)).not.toContain('refresh-3');
+    expect(JSON.stringify(refused)).not.toContain('refresh-2');
   });
 });

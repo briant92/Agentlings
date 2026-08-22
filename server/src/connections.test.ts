@@ -7,6 +7,7 @@ import {
   resolveForJob,
   toMcpServers,
   type Connection,
+  sharingSecrets,
 } from './connections';
 
 const WEB: Connection = {
@@ -195,5 +196,32 @@ describe('kind (UI.md, step 7)', () => {
         .map((c) => c.name)
         .sort(),
     ).toEqual(['google', 'slack', 'telegram', 'whatsapp-business']);
+  });
+});
+
+describe('credentialed and shared secrets (D-218)', () => {
+  const GOOGLE: Connection = {
+    name: 'google',
+    label: 'Google',
+    transport: 'builtin',
+    secrets: { G_ID: 'client', G_REFRESH: 'refresh' },
+  };
+  const MAIL: Connection = {
+    name: 'mail',
+    label: 'Mail',
+    transport: 'builtin',
+    secrets: { G_ID: 'client', G_REFRESH: 'refresh' },
+  };
+
+  it('says which connections hold a secret at all', () => {
+    const listed = describeConnections([WEB, TRACKER], { TRACKER_TOKEN: 'x' });
+    expect(listed.map((c) => c.credentialed)).toEqual([false, true]);
+  });
+
+  it('names the connections that share a secret, from one helper the route reuses', () => {
+    expect(sharingSecrets(GOOGLE, [WEB, GOOGLE, MAIL, TRACKER])).toEqual(['mail']);
+    expect(sharingSecrets(TRACKER, [WEB, GOOGLE, MAIL, TRACKER])).toEqual([]);
+    const listed = describeConnections([GOOGLE, MAIL], { G_ID: 'a', G_REFRESH: 'b' });
+    expect(listed.map((c) => c.sharesSecretsWith)).toEqual([['mail'], ['google']]);
   });
 });

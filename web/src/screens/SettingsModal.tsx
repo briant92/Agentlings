@@ -23,6 +23,8 @@ import {
   usageDetail,
   usageFact,
   type Tab,
+  disconnectLabel,
+  disconnectWording,
 } from './settings';
 
 /** Disk sizes in the unit the numbers were measured in. */
@@ -174,6 +176,14 @@ export function SettingsModal({
   /** The connected row's re-approve (D-123): sent, or why it could not be. */
   const [reconnectSent, setReconnectSent] = useState(false);
   const [reconnectError, setReconnectError] = useState<string | null>(null);
+  /** Disconnect (D-218): which row is armed, which is mid-call, and what the last one said. */
+  const [disconnectArmed, setDisconnectArmed] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [disconnectNote, setDisconnectNote] = useState<{
+    name: string;
+    text: string;
+    error: boolean;
+  } | null>(null);
 
   /** The tiers beyond the wired connections — planned, and never-with-why. */
   const [shelf, setShelf] = useState<ChannelShelf | null>(null);
@@ -297,6 +307,42 @@ export function SettingsModal({
       setDrawerError(err instanceof Error ? err.message : String(err));
     } finally {
       setChecking(false);
+    }
+  };
+
+  /**
+   * Forget a connection's secrets (D-218): the house press-twice — the first
+   * press arms and names who else goes with it, the second acts. Google's
+   * token is revoked at Google first; a revoke that did not happen is said on
+   * the row, and the secrets are forgotten regardless.
+   */
+  const disconnect = async (connection: ConnectionInfo) => {
+    if (disconnecting) return;
+    if (disconnectArmed !== connection.name) {
+      setDisconnectArmed(connection.name);
+      return;
+    }
+    setDisconnectArmed(null);
+    setDisconnecting(connection.name);
+    setDisconnectNote(null);
+    try {
+      const reply = await api<{
+        connections: SettingsInfo['connections'];
+        revoked: boolean | null;
+        note?: string;
+      }>(`/api/settings/connections/${connection.name}/secrets`, { method: 'DELETE' });
+      setSettings((prev) => (prev ? { ...prev, connections: reply.connections } : prev));
+      if (reply.note) {
+        setDisconnectNote({ name: connection.name, text: reply.note, error: reply.revoked === false });
+      }
+    } catch (err) {
+      setDisconnectNote({
+        name: connection.name,
+        text: err instanceof Error ? err.message : String(err),
+        error: true,
+      });
+    } finally {
+      setDisconnecting(null);
     }
   };
 
@@ -463,6 +509,25 @@ export function SettingsModal({
           )}
           {reconnectError && <span className="error"> {reconnectError}</span>}
         </p>
+      )}
+      {connection.ready && connection.credentialed && (
+        <p>
+          <button
+            className="work-link"
+            disabled={disconnecting === connection.name}
+            onClick={() => void disconnect(connection)}
+          >
+            {disconnectLabel(
+              connection,
+              disconnectArmed === connection.name,
+              disconnecting === connection.name,
+            )}
+          </button>{' '}
+          — {disconnectWording(connection)}
+        </p>
+      )}
+      {disconnectNote?.name === connection.name && (
+        <p className={disconnectNote.error ? 'error' : 'dim'}>{disconnectNote.text}</p>
       )}
       {!connection.ready && drawer === connection.name && secretDrawer(connection)}
       {connection.ready && connection.defaultOn && !connection.enabled && (

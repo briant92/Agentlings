@@ -279,6 +279,17 @@ export interface ConnectionInfo {
    * one fact that already said it (D-097), rather than declared twice.
    */
   kind: 'read' | 'send';
+  /**
+   * Whether the connection holds any secret at all, so a row can offer to
+   * forget it (D-218). `web` and `render` are ready and hold nothing.
+   */
+  credentialed: boolean;
+  /**
+   * The other connections declaring a secret this one declares — the Google
+   * trio share one sign-in — so a Disconnect can say who else it takes down
+   * before it is pressed, never after.
+   */
+  sharesSecretsWith: string[];
 }
 
 /**

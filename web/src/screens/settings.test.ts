@@ -3,6 +3,8 @@ import type { ConnectionInfo, DoorUsage } from '@agentlings/shared';
 import {
   authWording,
   byKind,
+  disconnectLabel,
+  disconnectWording,
   needsLine,
   tabOf,
   trailBegan,
@@ -39,6 +41,8 @@ function connection(over: Partial<ConnectionInfo> = {}): ConnectionInfo {
     defaultOn: true,
     enabled: true,
     kind: 'read',
+    credentialed: false,
+    sharesSecretsWith: [],
     ...over,
   };
 }
@@ -152,5 +156,28 @@ describe('authWording', () => {
   it('says where the credentials come from', () => {
     expect(authWording('api-key')).toBe('signed in with an API key from .env');
     expect(authWording('none')).toBe('no credentials found');
+  });
+});
+
+describe('disconnect (D-218)', () => {
+  it('arms into the question, naming who else shares the secret', () => {
+    expect(disconnectLabel({ sharesSecretsWith: [] }, false, false)).toBe('disconnect');
+    expect(disconnectLabel({ sharesSecretsWith: [] }, true, false)).toBe('sure? disconnect');
+    expect(disconnectLabel({ sharesSecretsWith: ['calendar', 'mail'] }, true, false)).toBe(
+      'sure? disconnect — also calendar, mail',
+    );
+    expect(disconnectLabel({ sharesSecretsWith: ['calendar'] }, true, true)).toBe('disconnecting…');
+  });
+
+  it('says what it does: a revoke for the Google sign-in, a commented line for a token', () => {
+    expect(disconnectWording({ name: 'google', sharesSecretsWith: ['calendar', 'mail'] })).toMatch(
+      /revokes the sign-in at Google/,
+    );
+    expect(disconnectWording({ name: 'mail', sharesSecretsWith: ['google', 'calendar'] })).toMatch(
+      /revokes the sign-in at Google/,
+    );
+    expect(disconnectWording({ name: 'telegram', sharesSecretsWith: [] })).toMatch(
+      /line stays, commented/,
+    );
   });
 });

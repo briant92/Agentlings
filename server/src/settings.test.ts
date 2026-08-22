@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Connection } from './connections';
 import {
+  clearIdentity,
   connectionEnabled,
   enabledNames,
   grantedTools,
@@ -169,5 +170,17 @@ describe('the store on disk', () => {
     stored = setConnection(stored, 'tracker', true);
     writeSettings(root, stored);
     expect(readSettings(root).connections).toEqual({ web: false, tracker: true });
+  });
+});
+
+describe('clearIdentity (D-218)', () => {
+  it('forgets one connection\'s identity and nothing else', () => {
+    const settings = setIdentity(setIdentity({}, 'google', 'b@x.com'), 'telegram', '@bot');
+    expect(clearIdentity(settings, 'google')).toEqual({ identities: { telegram: '@bot' } });
+  });
+
+  it('returns the settings untouched when there was no identity to forget', () => {
+    const settings = setIdentity({}, 'telegram', '@bot');
+    expect(clearIdentity(settings, 'google')).toBe(settings);
   });
 });

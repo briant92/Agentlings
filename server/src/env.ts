@@ -60,3 +60,32 @@ export function storeSecret(
   writeFileSync(file, upsertEnvLine(current, name, value));
   env[name] = value;
 }
+
+/**
+ * The inverse of `upsertEnvLine`, as far as a hand-edited file allows (D-218):
+ * the live `NAME=value` line becomes the commented placeholder `# NAME=` in
+ * the same place, so the file keeps its shape and the next paste lands where
+ * the value was. A line already commented, or absent, is left exactly as it
+ * is — there is nothing to forget, and nothing else in the file is touched.
+ */
+export function forgetEnvLine(content: string, name: string): string {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const live = new RegExp(`^\\s*${name}\\s*=`);
+  const lines = content.split(/\r?\n/);
+  const trailing = lines.length > 1 && lines[lines.length - 1] === '';
+  if (trailing) lines.pop();
+  const at = lines.findIndex((l) => live.test(l));
+  if (at < 0) return content;
+  lines[at] = `# ${name}=`;
+  return lines.join(eol) + eol;
+}
+
+/** Forgets the secret in the env file and the live env view, in that order. */
+export function forgetSecret(
+  file: string,
+  name: string,
+  env: Record<string, string | undefined>,
+): void {
+  if (existsSync(file)) writeFileSync(file, forgetEnvLine(readFileSync(file, 'utf8'), name));
+  delete env[name];
+}

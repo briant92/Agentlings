@@ -169,8 +169,23 @@ export function describe(
       // that already says it: a sends-only connection grants a run nothing
       // and exists for approval to send through (D-097).
       kind: c.sendsOnly ? 'send' : 'read',
+      credentialed: Object.keys(c.secrets ?? {}).length > 0,
+      sharesSecretsWith: sharingSecrets(c, connections),
     };
   });
+}
+
+/**
+ * The other connections that declare any secret this one declares (D-218).
+ * Forgetting a shared secret disconnects them all, so both the row's label
+ * and the route's answer name them — from one place, so they cannot differ.
+ */
+export function sharingSecrets(connection: Connection, connections: Connection[]): string[] {
+  const mine = Object.keys(connection.secrets ?? {});
+  return connections
+    .filter((c) => c.name !== connection.name)
+    .filter((c) => Object.keys(c.secrets ?? {}).some((key) => mine.includes(key)))
+    .map((c) => c.name);
 }
 
 /** The connections a job asked for, dropping any that are unknown or unready. */

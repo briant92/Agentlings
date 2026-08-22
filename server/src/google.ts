@@ -58,6 +58,7 @@ export function startCredentials(
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const CALL_TIMEOUT_MS = 15_000;
 
 /** A begun flow that has not come back yet. Ten minutes is plenty to consent. */
@@ -340,4 +341,46 @@ export async function googleOtherContacts(args: {
     fieldsParam: 'readMask',
     listField: 'otherContacts',
   });
+}
+
+/**
+ * Tells Google the refresh token is no longer wanted (D-218), so forgetting
+ * it here is the end of the grant rather than a copy going stale. The token
+ * rides in the form body, never the URL (D-187's rule), and never in a
+ * reason. Google answers 400 `invalid_token` for one it no longer knows —
+ * already revoked, or expired in testing mode — which is the state wanted,
+ * so that counts as done with a note; only not reaching Google, or a refusal
+ * of another kind, is reported as a revoke that did not happen.
+ */
+export async function revokeToken(args: {
+  token: string;
+  fetchFn?: typeof fetch;
+}): Promise<{ revoked: true; note?: string } | { revoked: false; reason: string }> {
+  let res: Response;
+  try {
+    res = await (args.fetchFn ?? fetch)(REVOKE_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: args.token }).toString(),
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { revoked: false, reason: `could not reach Google to revoke it: ${detail}` };
+  }
+  if (res.ok) return { revoked: true };
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (res.status === 400 && body.error === 'invalid_token') {
+    return {
+      revoked: true,
+      note: 'Google no longer knew this token — it had already expired or been revoked',
+    };
+  }
+  const description =
+    typeof body.error_description === 'string'
+      ? body.error_description
+      : typeof body.error === 'string'
+        ? body.error
+        : `HTTP ${res.status}`;
+  return { revoked: false, reason: `Google refused to revoke it — ${description}` };
 }

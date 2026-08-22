@@ -57,6 +57,14 @@ export function setIdentity(
   return { ...settings, identities: { ...settings.identities, [name]: identity } };
 }
 
+/** Forgets who a connection was — the identity line goes with the secret (D-218). */
+export function clearIdentity(settings: StoredSettings, name: string): StoredSettings {
+  if (!settings.identities?.[name]) return settings;
+  const identities = { ...settings.identities };
+  delete identities[name];
+  return { ...settings, identities };
+}
+
 /**
  * Whether a connection is live: the user's answer if they gave one, otherwise
  * the catalog's default — and never when a secret it declares is missing,

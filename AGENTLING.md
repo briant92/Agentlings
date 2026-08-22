@@ -397,7 +397,12 @@ optional `secrets: {ENV_NAME: "why it is needed"}`.
   in the registry and reach only the connection they were declared for. A
   value crosses the API exactly once — inbound, when the Settings drawer
   stores it after validating it with one real call (D-078) — and is never
-  returned, never listed, and never echoed in an error.
+  returned, never listed, and never echoed in an error. It can be forgotten
+  from its row (D-218): Disconnect turns the `.env` line back into its
+  commented placeholder, forgets the live value, switches the connection
+  off — and, for the Google sign-in, revokes the refresh token at Google
+  first, so the grant ends rather than a copy going stale. The three Google
+  rows share one sign-in, and the link says so before it is pressed.
 - **`${VAR}` in an argument** is filled from the environment, and the whole
   argument is *dropped* when the variable is unset — which is what makes an
   optional sign-in optional.
@@ -1326,7 +1331,9 @@ What is true today:
   environment is laundered of every name the catalog declares, at both
   spawn sites (D-217) — the compiled-tool runner had stripped the same list
   since D-100, the session spawn never had, and a probe run before the fix
-  saw seven secret-named variables.
+  saw seven secret-named variables. And it can be forgotten: a row's
+  Disconnect revokes a Google token at Google and turns the `.env` line
+  back into its placeholder (D-218).
 - **Sign-in without a password.** The browser's storage-state file is one you
   make yourself; the app passes a path and never reads a credential. The file
   is a bearer token for every site in it, so it is gitignored.

@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { secretValueProblem, storeSecret, upsertEnvLine } from './env';
+import { forgetEnvLine, forgetSecret, secretValueProblem, storeSecret, upsertEnvLine } from './env';
 
 describe('upsertEnvLine', () => {
   it('replaces the commented line .env.example ships, in place', () => {
@@ -81,5 +81,44 @@ describe('storeSecret', () => {
     const env: Record<string, string | undefined> = {};
     storeSecret(file, 'BRAVE_API_KEY', 'BSA-key', env);
     expect(readFileSync(file, 'utf8')).toBe('# mine\nANTHROPIC_API_KEY=sk-real\nBRAVE_API_KEY=BSA-key\n');
+  });
+});
+
+describe('forgetEnvLine (D-218)', () => {
+  it('turns the live line back into the commented placeholder, in place', () => {
+    const content = '# The Telegram connection.\nTELEGRAM_BOT_TOKEN=tok\n\nOTHER=1\n';
+    expect(forgetEnvLine(content, 'TELEGRAM_BOT_TOKEN')).toBe(
+      '# The Telegram connection.\n# TELEGRAM_BOT_TOKEN=\n\nOTHER=1\n',
+    );
+  });
+
+  it('leaves a line already commented, or a name absent, byte-identical', () => {
+    const commented = 'A=1\n# TELEGRAM_BOT_TOKEN=\nB=2\n';
+    expect(forgetEnvLine(commented, 'TELEGRAM_BOT_TOKEN')).toBe(commented);
+    const absent = 'A=1\nB=2';
+    expect(forgetEnvLine(absent, 'TELEGRAM_BOT_TOKEN')).toBe(absent);
+  });
+
+  it('keeps CRLF files CRLF', () => {
+    expect(forgetEnvLine('A=1\r\nB=x\r\n', 'B')).toBe('A=1\r\n# B=\r\n');
+  });
+
+  it('does not mistake a longer name for the one being forgotten', () => {
+    const content = 'GITHUB_TOKEN_BACKUP=x\nGITHUB_TOKEN=y\n';
+    expect(forgetEnvLine(content, 'GITHUB_TOKEN')).toBe('GITHUB_TOKEN_BACKUP=x\n# GITHUB_TOKEN=\n');
+  });
+});
+
+describe('forgetSecret (D-218)', () => {
+  it('rewrites the file and forgets the live value, and copes with no file at all', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-forget-'));
+    const file = path.join(dir, '.env');
+    writeFileSync(file, 'A=1\nTELEGRAM_BOT_TOKEN=tok\n');
+    const env: Record<string, string | undefined> = { TELEGRAM_BOT_TOKEN: 'tok', A: '1' };
+    forgetSecret(file, 'TELEGRAM_BOT_TOKEN', env);
+    expect(readFileSync(file, 'utf8')).toBe('A=1\n# TELEGRAM_BOT_TOKEN=\n');
+    expect(env).toEqual({ A: '1' });
+    expect(() => forgetSecret(path.join(dir, 'missing.env'), 'A', env)).not.toThrow();
+    expect(env).toEqual({});
   });
 });

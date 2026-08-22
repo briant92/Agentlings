@@ -15713,3 +15713,24 @@ cheap job; the proof is appended below when it lands.
 The server half waits for Brian's restart; the web half — the Clear button in
 the review, the bulk clear on the parcel desk — is served by HMR already, but
 the route refuses `clear` until the restart.
+
+### Proven live — 2026-08-22 16:39, after the restart
+
+Two cheap one-turn jobs on Training Ground. The first, `3681d0c2` ($0.33), was
+**approved by someone at 16:35:20** before it could be cleared — a minute after
+it finished, not by this session — which is the reflex this entry is about and
+left it `promoted`. The second, `923fa45f` ($0.26), was cleared through the
+review's new button on a freshly loaded bundle (the old tab had no button: a
+stale bundle, not a missing one). Footer read *Approve · Discard · Clear · Send
+· Close*; the modal closed; the feed wrote *16:39:00 ★ cleared — seen and let
+go: nothing applied, nothing banked, the work stays in the sandbox*.
+
+Checked afterwards against the baselines taken after the run and before the
+click: `pip.md` 83 lines → 83 and no discard note; `KNOWLEDGE.md` 81 → 81;
+`send-approvals.json` hash unchanged; the ledger row still `done`, priced at
+its cost; the job `cleared` with its delivery stamp (`files: 1`); nothing on
+the level awaiting a verdict; the deliveries route says `closed` / `cleared`;
+Pip's profile 0 discards; the backoffice row badged *CLOSED* with class
+`badge cleared`, listed under the closed filter. The first job's own close-out
+had banked its lesson the ordinary way (Pip 81 → 82, knowledge 80 → 81) —
+the run's learning, not the verdict's, and the difference this entry draws.

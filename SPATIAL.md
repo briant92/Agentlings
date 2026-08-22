@@ -13,6 +13,11 @@ Current position: **the plan is closed and cure (a) is FALSIFIED** (D-207,
 (D-199 to D-205, plus the Phase 3 writing pass); the pre-D-150 residue is
 charged (D-206, $10.19 of the $15.05 named).
 
+> **A NEW SESSION PICKS UP AT §6**, which is the only open list in this file.
+> §3 is closed; §6 is what outlived it — the close-out/report seam and a task
+> that has produced its full artefact set once in three runs. Nine open items,
+> and each is unproven or undecided rather than merely unwritten.
+
 **The cure (a) test, run on the §4 sentence as job `29ddccb7`: the drafter
 did NOT stop itself.** Cut at 41/40 turns — the ninth consecutive wall cut,
 and the turn grant was **40, the hard `TURN_CEILING`**, five above the
@@ -619,3 +624,72 @@ recipe.
    itself.
 4. ~~Photoreal fork~~ — declined 2026-08-21 (D-204): decided-not-built on
    measured demand, with the ceiling and staged reopen triggers recorded.
+
+---
+
+## 6. Open — pick up here (2026-08-22)
+
+The §3 plan is closed. What is left grew out of it and outlived it: the
+**close-out / report seam**, and the task itself. Everything below is either
+unproven or undecided; nothing below is merely unwritten.
+
+### Proven live, do not re-litigate
+
+D-199 (open ledger row, seen mid-run on paid work) · D-200 (roster gap on the
+feed) · D-201 (**a discard banks the refusal — fired on real paid work when
+`106140b4` was turned down: `ash.md` and `KNOWLEDGE.md` both gained the line,
+plain form, no reply to quote**) · D-202 (carried/written tags, browser-checked
+on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
+· D-208 (**2 for 2**: PENDING written and the run's report untouched, twice).
+
+### 1. The blueprint job — the task has not been made repeatable
+
+- [ ] **`95f42e60` is still awaiting your verdict** (partial, $3.79). Its
+      deliverables are in `work/`: a real composed layout and the
+      location-map overlay, **no PDF**. Its PENDING understates it — that is
+      the D-209/D-210 defect, not a defect in the work.
+- [ ] **Three runs since the drafter landed, one full artefact set.**
+      `29ddccb7` promoted **with** the PDF ($4.00); `95f42e60` no PDF ($3.79);
+      `106140b4` discarded, no PDF ($4.68). **All three cut at 41/40** — the
+      grant is `TURN_CEILING` itself, so there is no headroom left to give.
+- [ ] **The open question is not "more turns".** It is whether the PDF step is
+      reachable inside one run at all, or whether this task is honestly a
+      two-leg job — geometry and placement in one run, render in a reply that
+      starts from `placement.json`. Three runs say the first is unreliable.
+      Nobody has tried the second deliberately.
+
+### 2. The report seam — one fix unproven, one path never exercised
+
+- [ ] **D-210's reconcile line is unproven live.** Built 2026-08-22, server
+      restarted, never yet run. **The bar is deliberately higher than
+      "plumbing works"**: D-209 was provably correct in the prompt and changed
+      nothing about the outcome. Proof is a PENDING that stops contradicting
+      the sandbox — and on **more than one run**, because the last two fixes
+      here were each judged on one job and the second was wrong.
+- [ ] **D-208's fourth file has never fired.** No run since has left *zero*
+      reports, so "the close-out writes the report when the run left none" is
+      still untested live. It needs a run that produces files and no
+      `RESULT.md` — 54 of the historical 266 did exactly that, so it will
+      happen; it just has not yet.
+- [ ] **The evidence order, deliberately not taken.** The run's prose comes
+      first in the close-out prompt and the file list second, and when they
+      contradict it follows the prose (D-209's measured finding). Reordering
+      is the second lever on that same behaviour. Left alone on purpose: one
+      change at a time on this seam.
+
+### 3. Cure (a) is falsified and nothing replaces it
+
+- [ ] D-207 named three candidates. (1) *report off the session's turns* was
+      built as D-208 — it makes the **account** survive, and does nothing for
+      the **work** being cut. (2) *close-out writes the report from the
+      artefacts* is half-built, and untested. (3) *raise `TURN_CEILING`* the
+      evidence argues against. **So no adopted answer exists to "a spatial run
+      cannot finish inside its turns."** The two-leg shape in §6.1 is the
+      candidate nobody has costed.
+
+### 4. On disk only — not in any repository
+
+- [ ] Five `.agentlings/ledger.jsonl.*.bak` files are the only way to reverse
+      D-199's backfill, D-205's settle and D-206's charge. Gitignored.
+- [ ] D-203's crew-memory edit (Tam's annotated lesson) lives only on disk;
+      **D-203 quotes the before/after as its sole durable record.**

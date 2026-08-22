@@ -858,7 +858,7 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
 
 ### 6. A review can only be cleared by a verdict, and every verdict teaches — found 2026-08-22
 
-- [ ] The fourth run was discarded to clear the Review item from the
+- [x] The fourth run was discarded to clear the Review item from the
       terminal, not to judge it (§6.1). The app cannot tell the two apart: a
       discard banks a refusal into the maker’s memory and the level’s
       knowledge (D-201), a promote counts an approval and credits the
@@ -867,7 +867,11 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       rule made it overwrite the one refusal that may have been real
       (`106140b4`). The lesson-hygiene question (D-203, TEAMWORK T4) has a
       second instance.
-- [ ] Undecided, Brian’s call: (a) a third resolve action, *clear* — closed
+- [x] **Decided the same evening (D-216, `f2e2e8f`): (a) built — *clear*, a
+      verdict that says nothing, the parcel desk’s bulk action now a clear —
+      and the line removed from both files with backups beside them; the
+      route half is live after the next restart.** The options were: (a) a
+      third resolve action, *clear* — closed
       without teaching: no D-201 note, no approval, no kept or discard in
       the record — a status or a flag that has to reach `outcomeOf`, the
       productivity counts, the profile and the D-215 stamp; (b) a discard

@@ -222,6 +222,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof](#d-210--2026-08-22--the-reconcile-line-and-the-cap-that-was-throwing-away-the-proof)
 - [D-211 — 2026-08-22 — The three-tier brief read against the engine: one layer missing, one door broken, nothing adopted whole](#d-211--2026-08-22--the-three-tier-brief-read-against-the-engine-one-layer-missing-one-door-broken-nothing-adopted-whole)
 - [D-212 — 2026-08-22 — The leash does not always bind: a finished run can make more round trips than its turns allow](#d-212--2026-08-22--the-leash-does-not-always-bind-a-finished-run-can-make-more-round-trips-than-its-turns-allow)
+- [D-216 — 2026-08-22 — Clear: a review can be let go without a verdict, and it teaches nothing](#d-216--2026-08-22--clear-a-review-can-be-let-go-without-a-verdict-and-it-teaches-nothing)
 - [D-213 — 2026-08-22 — Six panels unclogged: folds that remember, rows that expand, and what each board proved](#d-213--2026-08-22--six-panels-unclogged-folds-that-remember-rows-that-expand-and-what-each-board-proved)
 - [D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification](#d-214--2026-08-22--the-ledger-row-carries-the-cut-itself-backfilled-by-identification)
 - [D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there](#d-215--2026-08-22--what-a-run-left-is-one-notion-counted-where-the-run-ends-stamped-on-the-job-read-everywhere-from-there)
@@ -504,6 +505,12 @@ entry updates one file rather than two.
   cut at `maxTurns + 1` on the dot; recorded with the reading rule (+1 is a
   cut, +2 or more is a run that finished past its leash) and the one-line
   instrument that would find the cause, nothing changed in pricing.
+- **Review verdicts, continued** — D-216: a third way out of a review, *clear*,
+  which closes the job as a delivery nobody refused and teaches nothing —
+  forced by a discard made only to clear the terminal, which D-201 had banked
+  as a refusal into the maker’s memory and the level’s knowledge; the bulk
+  action on the parcel desk is now a clear, and the false line was removed
+  with backups kept.
 - **Outside access, continued** — D-040; and D-158, the reading desks —
   calendar-read first because it sits inside the consent already granted,
   read tools as sendsOnly-preserving sibling connections, a clerk trade on
@@ -15654,3 +15661,55 @@ header reads "4 delivered · 4 paperwork · input/ 1 · work/ 36" off the same
 listing the rail shows, and the rail's "work/ 68 files · 49.5 MB · not carried
 forward" off the same `carryManifest` the copy is made from — SPATIAL §6.3's
 gap, now visible on the button before it is pressed.
+
+## D-216 — 2026-08-22 — Clear: a review can be let go without a verdict, and it teaches nothing
+
+**Decision:** a third resolve action, `clear`. The job leaves the pile and
+closes in the record (status `cleared`, outcome *closed*), still counts as a
+delivery, and nothing else happens: no send, patch, pack or moves — that is
+promote's work — no approval counted, no recipe credit or settle, and no D-201
+note, the one thing a discard does that a clear must never do. The only act it
+shares with a discard is un-reserving a pending compile's name, because the
+output is not installed either way (D-045). The parcel desk's bulk action is a
+clear; Approve and Discard stay one at a time.
+
+### What forced it
+
+The 2026-08-22 trial runs (SPATIAL §6.1): the reordered run `39a1ff24` was
+discarded and the unedited `8aef2a7c` promoted, and the record read the
+cheaper run as "not wanted". Asked the same evening, Brian: the discard was to
+clear the Review item from the terminal, not a comment on the deliverable. The
+app could not tell the two apart. D-201 wrote *my delivery was discarded, not
+what was wanted* into `ash.md` and the level's `KNOWLEDGE.md` — a refusal
+earned by housekeeping, which the next drafter run would have been handed as a
+lesson — and under D-073's replace rule it overwrote `106140b4`'s identical
+line, the one discard that may have been a judgement. A review had exactly two
+ways out and both taught; a pile swept with the bulk discard taught a refusal
+per job.
+
+### What was done about the line
+
+Removed from both files (`ash.md` 9 → 8 lines, `KNOWLEDGE.md` 34 → 33), with
+backups beside each (`*.pre-clear.bak`) and in the session scratchpad; the
+lines read `2026-08-22 · my delivery was discarded, not what was wanted (job:
+Draw the three office blueprints from the attached…)` and `2026-08-22 · Ash
+(drafter) had "Draw the three office blueprints from the attached…" discarded`.
+Brian's call, on the recommendation that a refusal with no reason attached is
+noise whichever discard it came from.
+
+### What proved it
+
+`f2e2e8f`: typecheck clean in all three workspaces; server 77 files / 1,927
+tests, web 26 / 276. The queue test — status `cleared`, outcome *closed*,
+`isDelivery` true, `awaitingVerdict` false — fails without the queue change,
+and the sweep test — a cleared clone swept, three of five — fails without the
+sweep change; both reverted and re-run after committing. The route's own
+behaviour — no note banked, no approval counted, the feed line *cleared — seen
+and let go* — has no test harness and is proven live after the restart, on a
+cheap job; the proof is appended below when it lands.
+
+### Untested live
+
+The server half waits for Brian's restart; the web half — the Clear button in
+the review, the bulk clear on the parcel desk — is served by HMR already, but
+the route refuses `clear` until the restart.

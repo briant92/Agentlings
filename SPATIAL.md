@@ -679,12 +679,18 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       against trip 46 at $4.91 — not whether the run was cut. **Your
       verdicts, 2026-08-22 afternoon: the fourth run discarded, this one
       promoted.** So the run lever (b) made cheaper — the PDF six trips
-      earlier — is the one that was not wanted, and the run kept is the
+      earlier — is the one discarded, and the run kept is the
       unedited one at trip 46 and $4.91, from the order the close-out
       re-banked on its own. Why is recorded nowhere; only the two verdicts
       are (the job carries its status, the ledger row its outcome). By the
       D-215 stamp the fourth run left a PDF, two images and
       `placement.json`; the fifth a PDF, one image and one more file.
+      **Asked the same evening: the discard was housekeeping — clearing the
+      Review item from the terminal — not a comment on the deliverable, so
+      neither verdict judged either run’s work.** What the app made of it
+      anyway: D-201 banked *my delivery was discarded, not what was wanted*
+      into `ash.md` and `KNOWLEDGE.md`, replacing `106140b4`’s identical
+      line (§6.6).
 - [ ] **The open question is not "more turns".** It is whether the PDF step is
       reachable inside one run at all, or whether this task is honestly a
       two-leg job — geometry and placement in one run, render in a reply that
@@ -692,8 +698,8 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       Nobody has tried the second deliberately — and costed against the code
       on 2026-08-22 (§6.3) it cannot be tried as the runs now stand: a reply
       leg would not receive `placement.json`. The two verdicts above do not
-      settle it either way: they judged the deliveries, and the one kept came
-      at trip 46.
+      settle it either way: the discard was housekeeping (§6.1), so neither
+      judged a delivery, and the one kept came at trip 46.
 
 ### 2. The report seam — one fix unproven, one path never exercised
 
@@ -849,3 +855,23 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       nothing. The session-shell probe needs every `CLAUDE*` variable unset
       before `.env` is sourced, or the host session’s OAuth shadows the API
       key (401).
+
+### 6. A review can only be cleared by a verdict, and every verdict teaches — found 2026-08-22
+
+- [ ] The fourth run was discarded to clear the Review item from the
+      terminal, not to judge it (§6.1). The app cannot tell the two apart: a
+      discard banks a refusal into the maker’s memory and the level’s
+      knowledge (D-201), a promote counts an approval and credits the
+      record, and there is no third way out of a review. So a housekeeping
+      click taught Ash that a delivery was not wanted, and the D-073 replace
+      rule made it overwrite the one refusal that may have been real
+      (`106140b4`). The lesson-hygiene question (D-203, TEAMWORK T4) has a
+      second instance.
+- [ ] Undecided, Brian’s call: (a) a third resolve action, *clear* — closed
+      without teaching: no D-201 note, no approval, no kept or discard in
+      the record — a status or a flag that has to reach `outcomeOf`, the
+      productivity counts, the profile and the D-215 stamp; (b) a discard
+      banks a refusal only when a reply gives the reason, silence teaching
+      nothing; (c) leave it, and read discard counts as housekeeping mixed
+      with judgement. And the line itself in `ash.md` and `KNOWLEDGE.md`:
+      remove, keep for `106140b4`’s sake, or annotate.

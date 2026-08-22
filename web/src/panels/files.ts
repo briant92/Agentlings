@@ -3,8 +3,20 @@ import { lvl } from '../api';
 
 /** The rules the file viewer and the inbox both go by, kept out of the JSX. */
 
-/** The crew's paperwork, as against the thing that was asked for. */
-export const PAPERWORK = new Set(['RESULT.md', 'LESSON.md', 'APPROACH.md', 'DIFF.patch']);
+/**
+ * The crew's paperwork, as against the thing that was asked for. PENDING.md
+ * (D-114) and the inherited PREVIOUS-RESULT.md (D-146) joined the set late:
+ * left out, a cut run with nothing delivered opened its review on PENDING.md
+ * as if the account of what was left were the deliverable.
+ */
+export const PAPERWORK = new Set([
+  'RESULT.md',
+  'LESSON.md',
+  'APPROACH.md',
+  'DIFF.patch',
+  'PENDING.md',
+  'PREVIOUS-RESULT.md',
+]);
 
 /**
  * Deliverables first, paperwork after, and `RESULT.md` at the head of the

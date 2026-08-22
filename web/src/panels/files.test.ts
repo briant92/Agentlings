@@ -122,3 +122,21 @@ describe('splitMermaid', () => {
     expect(splitMermaid(md)).toEqual([{ kind: 'text', text: md }]);
   });
 });
+
+describe('paperwork, late joiners', () => {
+  it('opens a cut run on its report, never on the account of what is left', () => {
+    const names = orderFiles([
+      { name: 'PENDING.md' },
+      { name: 'APPROACH.md' },
+      { name: 'RESULT.md' },
+      { name: 'PREVIOUS-RESULT.md' },
+    ]).map((f) => f.name);
+    expect(names[0]).toBe('RESULT.md');
+    expect(names).not.toContain(undefined);
+  });
+
+  it('still puts a deliverable ahead of every piece of paperwork', () => {
+    const names = orderFiles([{ name: 'PENDING.md' }, { name: 'plan.pdf' }]).map((f) => f.name);
+    expect(names).toEqual(['plan.pdf', 'PENDING.md']);
+  });
+});

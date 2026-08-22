@@ -216,7 +216,7 @@ true, not when its code compiles.
       honest "no trail" line for runs before Aug 22). Tests: the strip's
       legend from a fixture trail equals its blocks; the carry note wording.
       Evidence: 39a1ff24 shows its 43 blocks, 106140b4 its note and no strip.
-- [ ] **18. Profile, server-fed half** — the cut tile from `record.cut`,
+- [x] **18. Profile, server-fed half** — landed 2026-08-22; seen live on Ash: memory · 3 lessons · 1 discard note with the note dimmed and tagged between the lessons by date, the record line 7 runs · 2 finished on their own · 5 cut short · 4 kept, the cut tile 5 of 7 (labelled cut short, since `record.cut` counts the clock as well as the turn budget, D-138), and the bottom line 88% of quoted actually spent · $27.99 lifetime · 0 of 7 spent the whole quote. The cut tile from `record.cut`,
       "spent the whole quote" on the bottom line, the record line
       `runs · finished on its own · cut · kept`, the D-201 note tagged
       "discard note" from `discards`. Evidence: Ash's card matches the board.

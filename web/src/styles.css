@@ -5158,3 +5158,35 @@ button.danger:hover {
   color: #c9cdd8;
   font-weight: 600;
 }
+
+/* The profile's record line, the cut tile and the discard note's tag
+   (UI.md, step 18). */
+.p-recline {
+  margin: 6px 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #c9cdd8;
+}
+.p-recline b {
+  color: #d8dce6;
+  font-weight: 600;
+}
+.p-r-cell.cut {
+  border-color: #56412a;
+}
+.p-r-big.warn {
+  color: #ffb86c;
+}
+.lesson-tag {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid rgba(210, 125, 44, 0.6);
+  border-radius: 999px;
+  background: rgba(210, 125, 44, 0.1);
+  color: #e8b478;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

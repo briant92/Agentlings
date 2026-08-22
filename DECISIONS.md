@@ -226,6 +226,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-213 — 2026-08-22 — Six panels unclogged: folds that remember, rows that expand, and what each board proved](#d-213--2026-08-22--six-panels-unclogged-folds-that-remember-rows-that-expand-and-what-each-board-proved)
 - [D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification](#d-214--2026-08-22--the-ledger-row-carries-the-cut-itself-backfilled-by-identification)
 - [D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there](#d-215--2026-08-22--what-a-run-left-is-one-notion-counted-where-the-run-ends-stamped-on-the-job-read-everywhere-from-there)
+- [D-217 — 2026-08-22 — The session child carried every connection secret: laundered at both spawn sites by the catalog's own list](#d-217--2026-08-22--the-session-child-carried-every-connection-secret-laundered-at-both-spawn-sites-by-the-catalogs-own-list)
 
 ## By theme
 
@@ -242,7 +243,12 @@ entry updates one file rather than two.
   measured that reach; and D-172, where the fourth door stayed shut for the
   third time — D-133's errand condition still unmet after 258 jobs whose
   recurring web work is entirely reading — while a run asked for one of the
-  four tools declined that same morning, the first demand signal either way
+  four tools declined that same morning, the first demand signal either way;
+  and D-217, where the session child's environment was found to carry every
+  connection secret `.env` holds — the compiled-tool runner had stripped the
+  catalog's list since `routed.ts` learned to, the session spawn and the
+  matcher's refine never had — measured at seven secret-named variables
+  visible to a run, and closed at both sites by the same list
 - **Visuals and terrain** — palette, art-as-data, art source, scenes-as-data:
   D-008–D-010, D-014; and D-083 — idle life joining the format as ambient
   idioms, the draw reporting its own stalactite tips, and the cave comment
@@ -15734,3 +15740,82 @@ Pip's profile 0 discards; the backoffice row badged *CLOSED* with class
 `badge cleared`, listed under the closed filter. The first job's own close-out
 had banked its lesson the ordinary way (Pip 81 → 82, knowledge 80 → 81) —
 the run's learning, not the verdict's, and the difference this entry draws.
+
+## D-217 — 2026-08-22 — The session child carried every connection secret: laundered at both spawn sites by the catalog's own list
+
+**Decision:** `launderedEnv()` takes the names the connection catalog declares
+under `secrets` and drops them from the environment a runner child is spawned
+with — at both places a runner is spawned, the job session in `claude.ts` and
+the matcher's one-turn refine in `refine.ts`. `ANTHROPIC_API_KEY` and
+`CLAUDE_CODE_OAUTH_TOKEN` stay, because they are what the run authenticates
+with; a declared rate such as `WHATSAPP_USD_PER_MESSAGE` stays, because it is
+not a secret and the catalog does not call it one. The list is the catalog's
+own, read at spawn, so a connection added with its `secrets` block is covered
+the day it ships and one added without is not — which is why the test also
+asserts the shipped catalog names every secret `.env.example` documents.
+
+### What forced it
+
+An outside plan for outbound work (reviewed 2026-08-22, nothing of it
+adopted but this) proposed an encrypted vault for tokens at rest. Reading it
+against the code found the live exposure the vault would not have touched:
+`launderedEnv()` filtered only `CLAUDE*`, `ANTHROPIC_BASE_URL` and
+`ANTHROPIC_AUTH_TOKEN` — D-007's fix for a server started inside a Claude
+Code terminal — and passed everything else in `process.env`, `.env` included,
+to a child whose roles hold `Bash` six times out of nine. D-075's sentence
+"the token never enters a session" was true of the tool surface and false of
+the environment, the same distinction D-168 drew between what a run is
+*offered* and what its shell can *reach*.
+
+Measured before touching anything: probe job `e593733d` on Training Ground
+($0.43, five turns) ran `node -e` over its own `process.env` and wrote the
+names — never the values — whose name contains TOKEN, KEY or SECRET. **Seven:**
+`ANTHROPIC_API_KEY`, `BLS_REGISTRATION_KEY`, `BRAVE_API_KEY`, `GITHUB_TOKEN`,
+`GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN`,
+`TELEGRAM_BOT_TOKEN`. One of them the run needs. The rest are the doors'
+credentials, which the doors were built to keep out of a session: a builtin
+door adds its key server-side (D-187 chose a door over a URL for exactly this),
+and a stdio server has its `${VAR}` filled into its args before the config is
+written — nothing in the child reads them.
+
+The rule already existed and had been applied once. `routed.ts` deletes
+`secretNames(this.connections())` from the compiled-tool child, with a
+comment saying why — "a script holding `GITHUB_TOKEN` can reach the code host
+without the door, and then the door is not the boundary it says it is" — and
+`secretNames` was written for it. The session spawn, older and spawning the
+same kind of child, never got the line. This is the sibling-seam shape of
+D-119/D-120: a fix that lands at one seam and misses the others the rule
+touches. Two were missed, not one; the refine spawn has no tools and could not
+have used a secret, and is laundered anyway because a process should not hold
+what it cannot use.
+
+### What was done
+
+`launderedEnv(secrets = [], env = process.env)` — the second parameter so the
+rule can be pinned by a test without touching the process; the default keeps
+the old behaviour for any caller passing nothing. `claude.ts` passes
+`secretNames(this.connections())` at the spawn, the provider the executor
+already holds for `resolveForJob`; `refineMatch` gains an optional fourth
+argument and `/api/match/refine` hands it `secretNames(readConnections(…))`.
+Three tests: the host-session laundering unchanged and the auth kept; the
+given secrets dropped and nothing else; the shipped catalog naming all ten
+documented secrets and the whole list laundering to nothing but the API key.
+AGENTLING §10 gains the boundary row, §11's secrets bullet the child-env
+clause, and §11's one-line summary stops claiming "the absence of any
+credential the app holds itself" — false since D-078, when the app began
+holding tokens in `.env`. SPEC M1 says the same in one sentence.
+
+### What proved it
+
+`08ee504`: server typecheck clean; server 77 files / 1,930 tests (1,927 +
+3). Mutation after committing: with `!dropped.has(key)` replaced by `true`,
+exactly the two tests that pin the drop fail (2 failed, 105 passed) and the
+host-session test still passes, as it should — the old rule is untouched;
+file restored, 107/107.
+
+### Untested live
+
+The wiring — that the spawn sites really pass the catalog's list — has no
+unit harness, since no test spawns the runner. It is proven the way the
+exposure was measured: the same probe after Brian's restart, expecting one
+name. Appended below when it lands.

@@ -824,10 +824,17 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       works in the plain case and narration does not evade it. What marks
       the runs it skips is not known. Candidate, untested: auto-compaction
       on long image-heavy contexts (each trial run read ~3M cached tokens)
-      resetting the counter. The cheapest instrument is one runner line
-      emitting the SDK’s `system` messages (`compact_boundary`) into the
-      trail and one server line writing them — a restart — after which the
-      next long run answers it.
+      resetting the counter. The cheapest instrument — one runner line
+      emitting the SDK’s `compact_boundary` message, one server line writing
+      it — was **built 2026-08-22 afternoon**: the runner emits `compact`
+      with the turn it fell on, the trigger and the token counts either side;
+      the trail keeps it as kind `compact`, the review route returns it, and
+      the ledger report counts them (`compactions seen`). The runner half is
+      live on the next spawned job; the server half waits for a restart, and
+      until then the line is emitted and dropped. After the restart the next
+      long run answers it: a `compact` line before the `end` line, the
+      runner’s turn at that moment against the SDK’s `num_turns` at the end —
+      if the two diverge only past a boundary, the mechanism is found.
 - [x] **The reading rule is retired (D-214).** It said a cut reports
       `turnsAllowed + 1` and that +2 or more on a finished run means it ran
       past the leash. Two things replaced it on 2026-08-22: the ledger row

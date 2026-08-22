@@ -331,16 +331,31 @@ for (const [cls, v] of [...byClass.entries()].sort((a, b2) => b2[1].length - a[1
  */
 let sandboxes = 0;
 let trails = 0;
+// D-212's instrument: how often the SDK compacted a context, and in how many
+// runs — the one candidate for a leash that does not bind, counted here so
+// the answer is visible without opening a trail.
+let compactions = 0;
+let compactedRuns = 0;
 for (const level of existsSync(LEVELS) ? readdirSync(LEVELS) : []) {
   const jobs = path.join(LEVELS, level, 'jobs');
   if (!existsSync(jobs)) continue;
   for (const id of readdirSync(jobs)) {
     sandboxes++;
-    if (existsSync(path.join(jobs, id, TRAJECTORY_FILE))) trails++;
+    const trail = path.join(jobs, id, TRAJECTORY_FILE);
+    if (!existsSync(trail)) continue;
+    trails++;
+    const seen = readFileSync(trail, 'utf8')
+      .split(/\r?\n/)
+      .filter((line) => line.includes('"kind":"compact"')).length;
+    if (seen > 0) {
+      compactions += seen;
+      compactedRuns++;
+    }
   }
 }
 console.log(
-  `\ntrajectories on disk: ${trails} of ${sandboxes} sandboxes carry ${TRAJECTORY_FILE} (recording began with D-211)`,
+  `\ntrajectories on disk: ${trails} of ${sandboxes} sandboxes carry ${TRAJECTORY_FILE} (recording began with D-211)` +
+    `\ncompactions seen: ${compactions} in ${compactedRuns} of those runs (D-212's instrument; 0 until the server restarts with it)`,
 );
 
 /**

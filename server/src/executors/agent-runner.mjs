@@ -2,7 +2,7 @@
 // SDK's heavy import and the session itself can never wedge the server.
 // Plain JS on purpose: spawned with plain `node`, never through tsx.
 // Usage: node agent-runner.mjs <config.json>
-// Emits JSONL on stdout: {type: 'progress'|'result'|'error', ...}
+// Emits JSONL on stdout: {type: 'progress'|'observation'|'said'|'compact'|'result'|'error', ...}
 import { readFileSync, writeFileSync } from 'node:fs';
 
 function emit(obj) {
@@ -273,6 +273,20 @@ try {
       } catch {
         // The trail is diagnostics only.
       }
+    } else if (message.type === 'system' && message.subtype === 'compact_boundary') {
+      // D-212's instrument: the SDK compacted the context mid-run. Say so
+      // with the turn it fell on and what the SDK reports about it, so the
+      // trail can show whether the turn cap's own counter moved with it —
+      // the one candidate mechanism for a leash that does not bind. Read
+      // defensively: a diagnostic must never fail the job it describes.
+      const meta = message.compact_metadata ?? {};
+      emit({
+        type: 'compact',
+        turn,
+        trigger: typeof meta.trigger === 'string' ? meta.trigger : undefined,
+        preTokens: typeof meta.pre_tokens === 'number' ? meta.pre_tokens : undefined,
+        postTokens: typeof meta.post_tokens === 'number' ? meta.post_tokens : undefined,
+      });
     } else if (message.type === 'result') {
       // The SDK hands back what the session cost. Read defensively — this is
       // metering, and a shape change must never fail a job that succeeded.

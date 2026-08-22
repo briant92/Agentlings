@@ -17,9 +17,11 @@ import type { TrajectoryLine } from '@agentlings/shared';
  *
  * Same bargain as the door trail: heads and args are clipped hard, because
  * this is a trace and not a copy of the work, and an append that fails is
- * swallowed — a log must never take a run down. Recorded and, for now, read
- * by nobody but a person diagnosing a run; the report counts which sandboxes
- * carry one so the coverage is visible from the day it starts.
+ * swallowed — a log must never take a run down. Read back by the review as
+ * the turns strip (D-213) and by anyone diagnosing a run; the report counts
+ * which sandboxes carry one so the coverage is visible from the day it
+ * starts. Since D-212's instrument it also keeps the SDK's compaction
+ * boundaries, the one candidate mechanism for a leash that does not bind.
  */
 
 export const TRAJECTORY_FILE = '.trajectory.jsonl';
@@ -45,6 +47,10 @@ export interface RunnerEvent {
   turn?: number;
   ok?: boolean;
   head?: string;
+  /** compact: why the SDK compacted the context, and the token counts either side. */
+  trigger?: string;
+  preTokens?: number;
+  postTokens?: number;
 }
 
 export type Outcome = 'result' | 'error' | 'timeout' | 'cancelled' | 'exit';
@@ -76,6 +82,20 @@ export function trajectoryLine(event: RunnerEvent, pass: Pass, at: number): stri
   }
   if (event.type === 'said') {
     return JSON.stringify({ at, pass, turn, kind: 'said', head: clip(String(event.head ?? ''), HEAD_CHARS) });
+  }
+  if (event.type === 'compact') {
+    // D-212's instrument: the SDK compacted the context. The turn is the
+    // runner's own count, so the end line's `turns` — the SDK's — can be
+    // read against it; what the SDK did not report is absent, never zero.
+    return JSON.stringify({
+      at,
+      pass,
+      turn,
+      kind: 'compact',
+      trigger: event.trigger,
+      preTokens: event.preTokens,
+      postTokens: event.postTokens,
+    });
   }
   return null;
 }
@@ -122,15 +142,15 @@ export function logTrajectory(sandboxDir: string, line: string | null): void {
   }
 }
 
-const KINDS = new Set(['call', 'result', 'said', 'end']);
+const KINDS = new Set(['call', 'result', 'said', 'end', 'compact']);
 
 /**
  * The trail, read back for the review's turns strip (UI.md, step 11): every
  * line of a kind this module writes, with its pass, in the order it landed.
  * Null when the sandbox has no trail — every run before 2026-08-22 — which
  * the review says rather than drawing an empty strip. A line of a kind this
- * does not know is skipped, not an error: D-212 names a `compact_boundary`
- * instrument that may land here, and so is a torn line.
+ * does not know is skipped, not an error — the rule that let D-212's
+ * `compact` line land without touching this reader — and so is a torn line.
  */
 export function readTrajectory(sandboxDir: string): TrajectoryLine[] | null {
   const file = path.join(sandboxDir, TRAJECTORY_FILE);

@@ -500,7 +500,13 @@ count, the longest run of one tool and whether a failed call was retried —
 counts of calls, never turns — and a run from before the trail says so rather
 than drawing an empty strip. Seen live: 39a1ff24 at 43 blocks, Bash 28 ·
 Read 11 · Edit 2 · ToolSearch 1 · Write 1, call 39 failed and retried on the
-next; 106140b4 with the no-trail line.
+next; 106140b4 with the no-trail line. **And since 2026-08-22 afternoon the
+trail keeps the SDK's compaction boundaries** as `compact` lines — the
+trigger and the token counts either side, with the runner's own turn count at
+that moment — D-212's instrument for the leash that does not bind; the ledger
+report counts them (`compactions seen`). The runner half is live on the next
+spawned job; the server half waits for a restart, until which the line is
+emitted and dropped.
 
 **`lastTool` is what the model asked for, not what it got.** A run whose last
 call was `browser_evaluate` was *refused* it — that tool is not granted. Read
@@ -1352,8 +1358,9 @@ What is **not built**, and should not be assumed:
   the door trail records every door call (D-192); and since D-211 each
   sandbox keeps `.trajectory.jsonl` — every tool call with its clipped
   arguments, a 160-character head of what came back, what the run said
-  between calls, and how it ended — and since D-213 the review shows it back
-  as the turns strip. What is still not recorded is the content: a fetched
+  between calls, how it ended and — since D-212's instrument — when the SDK
+  compacted the context; since D-213 the review shows it back as the turns
+  strip. What is still not recorded is the content: a fetched
   page or a read file enters the session whole, and the trail keeps the first
   line of it. The ledger row records what a job cost and, since D-214, whether
   a limit stopped it; the job itself carries a count of what the run left —

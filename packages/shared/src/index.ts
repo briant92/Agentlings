@@ -1521,7 +1521,7 @@ export interface CarryManifest {
 export interface TrajectoryLine {
   at: number;
   pass: 'session' | 'closeout';
-  kind: 'call' | 'result' | 'said' | 'end';
+  kind: 'call' | 'result' | 'said' | 'end' | 'compact';
   turn?: number;
   id?: string;
   /** call: the tool's name and its clipped arguments. */
@@ -1536,6 +1536,13 @@ export interface TrajectoryLine {
   costUsd?: number;
   turns?: number;
   durationMs?: number;
+  /**
+   * compact (D-212's instrument): the SDK compacted the context on this turn
+   * — why, and the token counts either side as the SDK reported them.
+   */
+  trigger?: string;
+  preTokens?: number;
+  postTokens?: number;
 }
 
 /** One finished piece of work, as the inbox lists it. */

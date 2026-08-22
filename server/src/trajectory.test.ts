@@ -63,6 +63,32 @@ describe('the trajectory trail', () => {
     });
   });
 
+  it("writes the SDK's compaction boundary as its own line, with the turn it fell on (D-212)", () => {
+    const line = JSON.parse(
+      trajectoryLine(
+        { type: 'compact', turn: 31, trigger: 'auto', preTokens: 150000, postTokens: 20000 },
+        'session',
+        AT,
+      )!,
+    );
+    expect(line).toEqual({
+      at: AT,
+      pass: 'session',
+      turn: 31,
+      kind: 'compact',
+      trigger: 'auto',
+      preTokens: 150000,
+      postTokens: 20000,
+    });
+    // What the SDK did not report is simply absent — never a guessed zero.
+    expect(JSON.parse(trajectoryLine({ type: 'compact', turn: 3 }, 'session', AT)!)).toEqual({
+      at: AT,
+      pass: 'session',
+      turn: 3,
+      kind: 'compact',
+    });
+  });
+
   it('keeps nothing for the lines the meter already owns', () => {
     expect(trajectoryLine({ type: 'result', name: 'x' }, 'session', AT)).toBeNull();
     expect(trajectoryLine({ type: 'error' }, 'session', AT)).toBeNull();
@@ -144,14 +170,20 @@ describe('readTrajectory (UI.md, step 11)', () => {
       dir,
       trajectoryLine({ type: 'observation', id: 't1', ok: true, head: 'ok', turn: 2 }, 'session', AT + 1),
     );
-    // D-212 names a compact_boundary instrument that may land in the trail.
-    logTrajectory(dir, JSON.stringify({ at: AT + 2, pass: 'session', kind: 'compact_boundary' }));
+    // D-212's instrument, landed: the compaction boundary reads back as its own kind.
+    logTrajectory(
+      dir,
+      trajectoryLine({ type: 'compact', turn: 2, trigger: 'auto', preTokens: 90000 }, 'session', AT + 2),
+    );
+    // A kind this reader does not know is skipped, not an error.
+    logTrajectory(dir, JSON.stringify({ at: AT + 2, pass: 'session', kind: 'some_future_kind' }));
     writeFileSync(path.join(dir, TRAJECTORY_FILE), '{"torn":\n', { flag: 'a' });
     logTrajectory(dir, endLine('closeout', 'result', { costUsd: 0.05, turns: 4 }, 3, AT + 3));
     const lines = readTrajectory(dir);
-    expect(lines?.map((l) => l.kind)).toEqual(['call', 'result', 'end']);
+    expect(lines?.map((l) => l.kind)).toEqual(['call', 'result', 'compact', 'end']);
     expect(lines?.[0]).toMatchObject({ name: 'Read', pass: 'session', turn: 2 });
-    expect(lines?.[2]).toMatchObject({ pass: 'closeout', outcome: 'result', toolCalls: 3 });
+    expect(lines?.[2]).toMatchObject({ kind: 'compact', turn: 2, trigger: 'auto', preTokens: 90000 });
+    expect(lines?.[3]).toMatchObject({ pass: 'closeout', outcome: 'result', toolCalls: 3 });
   });
 
   it('is null, not empty, where a run left no trail', () => {

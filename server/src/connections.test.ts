@@ -168,3 +168,32 @@ describe('toMcpServers', () => {
     expect(toMcpServers([WEB], {})).toEqual({});
   });
 });
+
+import { fileURLToPath } from 'node:url';
+import { readConnections } from './connections';
+
+describe('kind (UI.md, step 7)', () => {
+  it('reads the sender flag the catalog already declares, so Settings can split reads from sends', () => {
+    const [web, telegram] = describeConnections(
+      [
+        { name: 'web', label: 'Read web pages', transport: 'builtin' },
+        { name: 'telegram', label: 'Send Telegram messages', transport: 'builtin', sendsOnly: true },
+      ],
+      {},
+    );
+    expect(web.kind).toBe('read');
+    expect(telegram.kind).toBe('send');
+  });
+
+  it('pins the catalog: exactly the four senders are sends-only', () => {
+    const file = fileURLToPath(new URL('../../catalog/connections.json', import.meta.url));
+    const connections = readConnections(file);
+    expect(connections.length).toBeGreaterThan(0);
+    expect(
+      connections
+        .filter((c) => c.sendsOnly)
+        .map((c) => c.name)
+        .sort(),
+    ).toEqual(['google', 'slack', 'telegram', 'whatsapp-business']);
+  });
+});

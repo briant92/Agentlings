@@ -364,3 +364,33 @@ describe('attachedFiles', () => {
     expect(attachedFiles(dir, [])).toEqual([]);
   });
 });
+
+import { deliverySummary } from './outputs';
+
+describe('deliverySummary (UI.md, step 9)', () => {
+  it('counts what the run left, the paperwork aside, and weighs the folders beside it', () => {
+    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md', 'PENDING.md', 'DIFF.patch', 'PREVIOUS-RESULT.md']) {
+      writeFileSync(path.join(dir, name), 'paperwork');
+    }
+    writeFileSync(path.join(dir, 'plan.pdf'), 'pdf');
+    writeFileSync(path.join(dir, 'a.png'), 'png');
+    writeFileSync(path.join(dir, 'b.JPG'), 'jpg');
+    writeFileSync(path.join(dir, 'placement.json'), '{}');
+    writeFileSync(path.join(dir, '.session.json'), '{}');
+    mkdirSync(path.join(dir, 'work', 'deep'), { recursive: true });
+    writeFileSync(path.join(dir, 'work', 'one.mjs'), '12345');
+    writeFileSync(path.join(dir, 'work', 'deep', 'two.mjs'), '123');
+    mkdirSync(path.join(dir, 'repo'));
+    writeFileSync(path.join(dir, 'repo', 'ignored.ts'), 'never the run’s own');
+    expect(deliverySummary(dir)).toEqual({
+      files: 4,
+      pdf: 1,
+      images: 2,
+      dirs: [{ name: 'work', files: 2, bytes: 8 }],
+    });
+  });
+
+  it('says nothing of a sandbox that is gone', () => {
+    expect(deliverySummary(path.join(dir, 'missing'))).toEqual({ files: 0, pdf: 0, images: 0, dirs: [] });
+  });
+});

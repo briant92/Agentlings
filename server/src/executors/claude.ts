@@ -27,6 +27,7 @@ import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
 import { outputNames, PREVIOUS_RESULT } from '../outputs';
+import type { CarryManifest } from '@agentlings/shared';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { endLine, logTrajectory, trajectoryLine, type Pass } from '../trajectory';
@@ -468,13 +469,12 @@ export async function carryForward(
 ): Promise<void> {
   const previous = path.join(path.dirname(sandboxDir), previousId);
   if (!existsSync(previous)) return;
-  const patch = patchFile(previous);
-  if (hasRepo && existsSync(patch)) {
+  const manifest = carryManifest(previous);
+  if (hasRepo && manifest.patch) {
     onProgress?.('carrying forward the earlier changes');
-    await applyPatch(repoDir(sandboxDir), patch);
+    await applyPatch(repoDir(sandboxDir), patchFile(previous));
   }
-  for (const name of outputNames(previous)) {
-    if (PAPERWORK_FORWARD.has(name)) continue;
+  for (const name of manifest.files) {
     cpSync(path.join(previous, name), path.join(sandboxDir, name));
   }
   // The parent's given files ride too (D-146's second seam): outputNames
@@ -482,25 +482,64 @@ export async function carryForward(
   // attached CSV waits — never followed, and a continuation of "work from
   // the attached picture" started without the picture. The new job's own
   // attachments are already on disk by now and win any name they share.
-  const previousInput = path.join(previous, 'input');
-  if (existsSync(previousInput)) {
+  if (manifest.input.length > 0) {
     const inputDir = path.join(sandboxDir, 'input');
     mkdirSync(inputDir, { recursive: true });
-    for (const entry of readdirSync(previousInput, { withFileTypes: true })) {
-      if (!entry.isFile()) continue;
-      const to = path.join(inputDir, entry.name);
-      if (!existsSync(to)) cpSync(path.join(previousInput, entry.name), to);
+    for (const name of manifest.input) {
+      const to = path.join(inputDir, name);
+      if (!existsSync(to)) cpSync(path.join(previous, 'input', name), to);
     }
   }
-  // The newest report in the chain rides under the inherited name: a leg
-  // that was cut before reporting passes on the one it was handed.
-  for (const name of ['RESULT.md', PREVIOUS_RESULT]) {
-    const report = path.join(previous, name);
-    if (existsSync(report)) {
-      cpSync(report, path.join(sandboxDir, PREVIOUS_RESULT));
-      break;
-    }
+  if (manifest.report) {
+    cpSync(path.join(previous, manifest.report), path.join(sandboxDir, PREVIOUS_RESULT));
   }
+}
+
+/**
+ * What a new leg receives from the run it continues, and what stays behind
+ * (UI.md, step 10) — the one list `carryForward` copies from and the review's
+ * More-turns note reads, so the note can never describe a copy the code does
+ * not make (D-030's rule, at the seam SPATIAL §6.3 costed).
+ *
+ * Read off the previous sandbox: its top-level deliverables, its given files
+ * under input/, which report rides as PREVIOUS-RESULT.md — the newest in the
+ * chain, so a leg cut before reporting passes on the one it was handed — and
+ * whether a patch waits for a leg with a clone. The paperwork and every other
+ * folder stay, `work/` among them, which is where a cut run's evidence sits.
+ */
+export function carryManifest(previousDir: string): CarryManifest {
+  if (!existsSync(previousDir)) {
+    return { files: [], input: [], report: null, patch: false, left: { paperwork: [], dirs: [] } };
+  }
+  const names = outputNames(previousDir);
+  const inputDir = path.join(previousDir, 'input');
+  const input = existsSync(inputDir)
+    ? readdirSync(inputDir, { withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => entry.name)
+        .sort()
+    : [];
+  return {
+    files: names.filter((name) => !PAPERWORK_FORWARD.has(name)),
+    input,
+    report:
+      ['RESULT.md', PREVIOUS_RESULT].find((name) => existsSync(path.join(previousDir, name))) ??
+      null,
+    patch: existsSync(patchFile(previousDir)),
+    left: {
+      paperwork: names.filter((name) => PAPERWORK_FORWARD.has(name) && name !== 'DIFF.patch'),
+      dirs: readdirSync(previousDir, { withFileTypes: true })
+        .filter(
+          (entry) =>
+            entry.isDirectory() &&
+            !entry.name.startsWith('.') &&
+            entry.name !== 'input' &&
+            entry.name !== 'repo',
+        )
+        .map((entry) => entry.name)
+        .sort(),
+    },
+  };
 }
 
 // PENDING.md is paperwork too: forwarded, a parent's account satisfies the

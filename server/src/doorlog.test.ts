@@ -64,3 +64,31 @@ describe('the door trail', () => {
     ).not.toThrow();
   });
 });
+
+import { writeFileSync } from 'node:fs';
+import { readDoorUsage } from './doorlog';
+
+describe('readDoorUsage (UI.md, step 8)', () => {
+  it('sums each door: calls, refusals, first and last, calls per tool', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-doors-'));
+    logDoor(root, 'mail', 'mail_search', { query: 'a' }, { text: '16 messages' }, AT);
+    logDoor(root, 'web', 'fetch_page', { url: 'x' }, { error: 'refused' }, AT + 2);
+    logDoor(root, 'mail', 'mail_read', { id: '1' }, { text: 'hello' }, AT + 5);
+    writeFileSync(path.join(root, 'doors.log'), '{"torn":\n', { flag: 'a' });
+    const use = readDoorUsage(root);
+    expect(use.map((d) => d.door)).toEqual(['mail', 'web']);
+    expect(use[0]).toEqual({
+      door: 'mail',
+      calls: 2,
+      errors: 0,
+      firstAt: AT,
+      lastAt: AT + 5,
+      tools: { mail_search: 1, mail_read: 1 },
+    });
+    expect(use[1].errors).toBe(1);
+  });
+
+  it('reads nothing where no trail exists', () => {
+    expect(readDoorUsage(mkdtempSync(path.join(tmpdir(), 'agentlings-nodoors-')))).toEqual([]);
+  });
+});

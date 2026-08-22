@@ -1,5 +1,6 @@
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { TrajectoryLine } from '@agentlings/shared';
 
 /**
  * One line per thing a run did — what it called, what came back, what it
@@ -119,4 +120,35 @@ export function logTrajectory(sandboxDir: string, line: string | null): void {
   } catch {
     // Diagnostics only: a full disk or a locked file is not a run problem.
   }
+}
+
+const KINDS = new Set(['call', 'result', 'said', 'end']);
+
+/**
+ * The trail, read back for the review's turns strip (UI.md, step 11): every
+ * line of a kind this module writes, with its pass, in the order it landed.
+ * Null when the sandbox has no trail — every run before 2026-08-22 — which
+ * the review says rather than drawing an empty strip. A line of a kind this
+ * does not know is skipped, not an error: D-212 names a `compact_boundary`
+ * instrument that may land here, and so is a torn line.
+ */
+export function readTrajectory(sandboxDir: string): TrajectoryLine[] | null {
+  const file = path.join(sandboxDir, TRAJECTORY_FILE);
+  if (!existsSync(file)) return null;
+  const lines: TrajectoryLine[] = [];
+  for (const raw of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    if (!raw.trim()) continue;
+    let line: Partial<TrajectoryLine>;
+    try {
+      line = JSON.parse(raw) as Partial<TrajectoryLine>;
+    } catch {
+      continue;
+    }
+    if (typeof line.at !== 'number' || typeof line.kind !== 'string' || !KINDS.has(line.kind)) {
+      continue;
+    }
+    if (line.pass !== 'session' && line.pass !== 'closeout') continue;
+    lines.push(line as TrajectoryLine);
+  }
+  return lines;
 }

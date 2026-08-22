@@ -165,6 +165,10 @@ export function describe(
       ...(identities[c.name] ? { identity: identities[c.name] } : {}),
       defaultOn: c.defaultOn === true,
       enabled: enabled.has(c.name),
+      // The boundary Settings draws (UI.md, step 7), read off the one flag
+      // that already says it: a sends-only connection grants a run nothing
+      // and exists for approval to send through (D-097).
+      kind: c.sendsOnly ? 'send' : 'read',
     };
   });
 }

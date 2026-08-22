@@ -845,3 +845,62 @@ describe('the row a run opens with', () => {
     expect(onDisk()[1].open).toBe(true);
   });
 });
+
+import { markCut } from './ledger';
+
+describe('the cut flags (UI.md, step 12; D-212)', () => {
+  it('writes outOfTurns and timedOut only when true, never reading them off the turns', () => {
+    const cut = ledgerRow(
+      { id: 'j1', meter: { outOfTurns: true, turns: 41, turnsAllowed: 40 } },
+      'hq',
+      'worker',
+      'failed',
+      1,
+    );
+    const finished = ledgerRow({ id: 'j2', meter: { turns: 51, turnsAllowed: 40 } }, 'hq', 'worker', 'done', 1);
+    const clocked = ledgerRow({ id: 'j3', meter: { timedOut: true } }, 'hq', 'worker', 'failed', 1);
+    expect(cut.outOfTurns).toBe(true);
+    expect(cut.timedOut).toBeUndefined();
+    expect(finished.outOfTurns).toBeUndefined();
+    expect(clocked.timedOut).toBe(true);
+    expect(clocked.outOfTurns).toBeUndefined();
+  });
+});
+
+describe('markCut (UI.md, step 13)', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-cut-'));
+  });
+  afterEach(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}));
+
+  it('marks only the rows named, only where they do not already say, and leaves open rows alone', () => {
+    append(root, entry({ jobId: 'a' }));
+    append(root, entry({ jobId: 'b', outOfTurns: true }));
+    append(root, entry({ jobId: 'c' }));
+    append(root, { ...entry({ jobId: 'd' }), open: true });
+    const changed = markCut(
+      root,
+      new Map([
+        ['a', { outOfTurns: true }],
+        ['b', { outOfTurns: true }],
+        ['d', { outOfTurns: true }],
+        ['zz', { timedOut: true }],
+      ]),
+    );
+    expect(changed).toBe(1);
+    const rows = readLedger(root);
+    expect(rows.find((r) => r.jobId === 'a')?.outOfTurns).toBe(true);
+    expect(rows.find((r) => r.jobId === 'c')?.outOfTurns).toBeUndefined();
+    // Four rows in, four rows out: the open one rode through untouched.
+    const lines = readFileSync(ledgerFile(root), 'utf8').split('\n').filter(Boolean);
+    expect(lines).toHaveLength(4);
+    expect(JSON.parse(lines[3]!)).toMatchObject({ jobId: 'd', open: true });
+    expect(JSON.parse(lines[3]!).outOfTurns).toBeUndefined();
+  });
+
+  it('changes nothing, and says so, when every row already speaks', () => {
+    append(root, entry({ jobId: 'a', outOfTurns: true }));
+    expect(markCut(root, new Map([['a', { outOfTurns: true }]]))).toBe(0);
+  });
+});

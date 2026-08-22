@@ -171,3 +171,72 @@ describe('carryForward', () => {
     expect(readFileSync(path.join(second, 'input', 'data.csv'), 'utf8')).toBe('new rows');
   });
 });
+
+import { carryManifest } from './claude';
+
+describe('carryManifest (UI.md, step 10)', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-manifest-'));
+  });
+  afterEach(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}));
+
+  function sandbox(id: string): string {
+    const dir = path.join(root, id);
+    mkdirSync(dir, { recursive: true });
+    return dir;
+  }
+
+  it('lists what a leg receives and what stays, off the previous sandbox', () => {
+    const previous = sandbox('a');
+    for (const name of ['RESULT.md', 'LESSON.md', 'APPROACH.md', 'PENDING.md']) {
+      writeFileSync(path.join(previous, name), name);
+    }
+    writeFileSync(path.join(previous, 'placement.json'), '{}');
+    writeFileSync(path.join(previous, 'plan.pdf'), 'pdf');
+    mkdirSync(path.join(previous, 'input'));
+    writeFileSync(path.join(previous, 'input', 'offer.pdf'), 'x');
+    mkdirSync(path.join(previous, 'work'));
+    writeFileSync(path.join(previous, 'work', 'fit.mjs'), 'x');
+    mkdirSync(path.join(previous, '.hidden'));
+    const manifest = carryManifest(previous);
+    expect([...manifest.files].sort()).toEqual(['placement.json', 'plan.pdf']);
+    expect(manifest.input).toEqual(['offer.pdf']);
+    expect(manifest.report).toBe('RESULT.md');
+    expect(manifest.patch).toBe(false);
+    expect([...manifest.left.paperwork].sort()).toEqual(['APPROACH.md', 'LESSON.md', 'PENDING.md', 'RESULT.md']);
+    expect(manifest.left.dirs).toEqual(['work']);
+  });
+
+  it('passes the hand-me-down on when the leg never reported, and is empty for a missing run', () => {
+    const previous = sandbox('b');
+    writeFileSync(path.join(previous, 'PREVIOUS-RESULT.md'), 'older');
+    expect(carryManifest(previous).report).toBe('PREVIOUS-RESULT.md');
+    expect(carryManifest(path.join(root, 'missing'))).toEqual({
+      files: [],
+      input: [],
+      report: null,
+      patch: false,
+      left: { paperwork: [], dirs: [] },
+    });
+  });
+
+  it('is exactly what carryForward copies', async () => {
+    const previous = sandbox('c');
+    writeFileSync(path.join(previous, 'RESULT.md'), 'r');
+    writeFileSync(path.join(previous, 'PENDING.md'), 'p');
+    writeFileSync(path.join(previous, 'out.txt'), 'o');
+    mkdirSync(path.join(previous, 'work'));
+    writeFileSync(path.join(previous, 'work', 'x.mjs'), 'x');
+    mkdirSync(path.join(previous, 'input'));
+    writeFileSync(path.join(previous, 'input', 'in.csv'), 'i');
+    const next = sandbox('d');
+    await carryForward('c', next, false);
+    const manifest = carryManifest(previous);
+    for (const name of manifest.files) expect(existsSync(path.join(next, name))).toBe(true);
+    for (const name of manifest.input) expect(existsSync(path.join(next, 'input', name))).toBe(true);
+    expect(readFileSync(path.join(next, 'PREVIOUS-RESULT.md'), 'utf8')).toBe('r');
+    for (const name of manifest.left.paperwork) expect(existsSync(path.join(next, name))).toBe(false);
+    for (const name of manifest.left.dirs) expect(existsSync(path.join(next, name))).toBe(false);
+  });
+});

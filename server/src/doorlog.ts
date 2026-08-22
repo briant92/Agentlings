@@ -1,5 +1,6 @@
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { DoorUsage } from '@agentlings/shared';
 
 /**
  * One line per door call — what a run actually asked and what came back.
@@ -61,4 +62,43 @@ export function logDoor(
   } catch {
     // Diagnostics only: a full disk or a locked file is not a door problem.
   }
+}
+
+/**
+ * Every door's use, read off the trail (UI.md, step 8): calls, refusals,
+ * first and last call, and calls per tool — what Settings shows beside each
+ * switch, so a door nobody has knocked on since the trail began says so
+ * instead of looking like every other one. The whole file is read on each
+ * ask; it is a few hundred lines. A torn line is skipped, never an error.
+ */
+export function readDoorUsage(root: string): DoorUsage[] {
+  const file = path.join(root, FILE);
+  if (!existsSync(file)) return [];
+  const byDoor = new Map<string, DoorUsage>();
+  for (const raw of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    if (!raw.trim()) continue;
+    let line: { at?: unknown; door?: unknown; tool?: unknown; ok?: unknown };
+    try {
+      line = JSON.parse(raw) as typeof line;
+    } catch {
+      continue;
+    }
+    if (typeof line.door !== 'string' || typeof line.at !== 'number') continue;
+    const use = byDoor.get(line.door) ?? {
+      door: line.door,
+      calls: 0,
+      errors: 0,
+      firstAt: line.at,
+      lastAt: line.at,
+      tools: {},
+    };
+    use.calls += 1;
+    if (line.ok === false) use.errors += 1;
+    use.firstAt = Math.min(use.firstAt, line.at);
+    use.lastAt = Math.max(use.lastAt, line.at);
+    const tool = typeof line.tool === 'string' ? line.tool : '?';
+    use.tools[tool] = (use.tools[tool] ?? 0) + 1;
+    byDoor.set(line.door, use);
+  }
+  return [...byDoor.values()].sort((a, b) => b.calls - a.calls || a.door.localeCompare(b.door));
 }

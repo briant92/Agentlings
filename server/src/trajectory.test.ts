@@ -129,3 +129,32 @@ describe('the trajectory trail', () => {
     expect(existsSync(path.join(missing, TRAJECTORY_FILE))).toBe(false);
   });
 });
+
+import { writeFileSync } from 'node:fs';
+import { readTrajectory } from './trajectory';
+
+describe('readTrajectory (UI.md, step 11)', () => {
+  it('reads the lines back in order, skipping kinds it does not know and torn lines', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-trail-'));
+    logTrajectory(
+      dir,
+      trajectoryLine({ type: 'progress', name: 'Read', input: {}, id: 't1', turn: 2 }, 'session', AT),
+    );
+    logTrajectory(
+      dir,
+      trajectoryLine({ type: 'observation', id: 't1', ok: true, head: 'ok', turn: 2 }, 'session', AT + 1),
+    );
+    // D-212 names a compact_boundary instrument that may land in the trail.
+    logTrajectory(dir, JSON.stringify({ at: AT + 2, pass: 'session', kind: 'compact_boundary' }));
+    writeFileSync(path.join(dir, TRAJECTORY_FILE), '{"torn":\n', { flag: 'a' });
+    logTrajectory(dir, endLine('closeout', 'result', { costUsd: 0.05, turns: 4 }, 3, AT + 3));
+    const lines = readTrajectory(dir);
+    expect(lines?.map((l) => l.kind)).toEqual(['call', 'result', 'end']);
+    expect(lines?.[0]).toMatchObject({ name: 'Read', pass: 'session', turn: 2 });
+    expect(lines?.[2]).toMatchObject({ pass: 'closeout', outcome: 'result', toolCalls: 3 });
+  });
+
+  it('is null, not empty, where a run left no trail', () => {
+    expect(readTrajectory(mkdtempSync(path.join(tmpdir(), 'agentlings-notrail-')))).toBeNull();
+  });
+});

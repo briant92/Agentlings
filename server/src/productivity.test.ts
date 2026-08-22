@@ -346,3 +346,40 @@ describe('productivityOf', () => {
     expect(productivityOf(rows, [], [], () => []).unmeasured).toBe(1);
   });
 });
+
+import { isDiscardNote } from './productivity';
+
+describe('the cut count (UI.md, step 12; D-212)', () => {
+  it('counts cuts off the flags and never off turns over the cap', () => {
+    const rows = [
+      entry({ agentlingId: 'a1', outcome: 'failed', outOfTurns: true, turns: 41, turnsAllowed: 40 }),
+      // Cut, then kept: settled done, still a cut.
+      entry({ agentlingId: 'a1', outcome: 'done', outOfTurns: true, turns: 41, turnsAllowed: 40 }),
+      // Finished on its own at 51/40 — the leash did not bind (D-212).
+      entry({ agentlingId: 'a1', outcome: 'done', turns: 51, turnsAllowed: 40 }),
+      entry({ agentlingId: 'a1', outcome: 'failed', timedOut: true }),
+      entry({ agentlingId: 'a2', outcome: 'failed', outOfTurns: true }),
+    ];
+    const got = recordOf('a1', rows);
+    expect(got.runs).toBe(4);
+    expect(got.cut).toBe(3);
+    expect(got.finished).toBe(1);
+    expect(got.done).toBe(2);
+  });
+});
+
+describe('isDiscardNote (D-201)', () => {
+  it('knows the note a discard banks, dated or not, with or without the quoted ask', () => {
+    expect(
+      isDiscardNote('2026-08-22 · my delivery was discarded, not what was wanted (job: Draw the plans)'),
+    ).toBe(true);
+    expect(
+      isDiscardNote('my delivery was discarded, not what was wanted — what was asked: "carry on" (job: x)'),
+    ).toBe(true);
+    expect(isDiscardNote('2026-08-22 · my delivery was late, and that was the lesson')).toBe(false);
+  });
+
+  it('is journal rather than memory, so the lessons count stops counting it', () => {
+    expect(isJournal('2026-08-22 · my delivery was discarded, not what was wanted (job: x)')).toBe(true);
+  });
+});

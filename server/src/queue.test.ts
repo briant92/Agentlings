@@ -1024,3 +1024,41 @@ describe('JobQueue', () => {
     });
   });
 });
+
+import { mkdirSync as mkdirFs, writeFileSync as writeFs } from 'node:fs';
+import { jobsFile as jobsFileOf } from './queue';
+
+describe('delivered, the one notion of what a run left (UI.md, step 9)', () => {
+  it('is stamped at the next start for a finished job that lacks it, from the sandbox it left', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-delivered-'));
+    const kept = { id: 'old1', title: 't', prompt: 'p', status: 'promoted', slot: -1, createdAt: 1, finishedAt: 2 };
+    const gone = { id: 'old2', title: 't', prompt: 'p', status: 'discarded', slot: -1, createdAt: 1, finishedAt: 2 };
+    const waiting = { id: 'q1', title: 't', prompt: 'p', status: 'queued', slot: -1, createdAt: 1 };
+    writeFs(jobsFileOf(root), JSON.stringify([kept, gone, waiting]));
+    mkdirFs(path.join(root, 'jobs', 'old1', 'work'), { recursive: true });
+    writeFs(path.join(root, 'jobs', 'old1', 'plan.pdf'), 'pdf');
+    writeFs(path.join(root, 'jobs', 'old1', 'RESULT.md'), 'r');
+    writeFs(path.join(root, 'jobs', 'old1', 'work', 'x.mjs'), 'xx');
+    const queue = new JobQueue(root);
+    expect(queue.get('old1')?.delivered).toEqual({
+      files: 1,
+      pdf: 1,
+      images: 0,
+      dirs: [{ name: 'work', files: 1, bytes: 2 }],
+    });
+    expect(queue.get('old2')?.delivered).toBeUndefined(); // no sandbox left to read
+    expect(queue.get('q1')?.delivered).toBeUndefined();
+    // Persisted, so the next start reads it rather than counting again.
+    expect(new JobQueue(root).get('old1')?.delivered?.pdf).toBe(1);
+  });
+
+  it('is stamped when a run ends, whichever way it ends', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-delivered-end-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Write a note', prompt: 'write a note' });
+    mkdirFs(path.join(root, 'jobs', job.id), { recursive: true });
+    writeFs(path.join(root, 'jobs', job.id, 'note.md'), 'hello');
+    queue.complete(job.id, 'wrote the note');
+    expect(queue.get(job.id)?.delivered).toEqual({ files: 1, pdf: 0, images: 0, dirs: [] });
+  });
+});

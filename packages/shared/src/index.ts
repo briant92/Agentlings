@@ -264,6 +264,12 @@ export interface ConnectionInfo {
   defaultOn: boolean;
   /** Whether jobs can reach it right now — the default unless Settings says otherwise. */
   enabled: boolean;
+  /**
+   * What a run may read, or what approval may send (UI.md, step 7) — the
+   * boundary Settings draws. Read off the catalog's own `sendsOnly` flag, the
+   * one fact that already said it (D-097), rather than declared twice.
+   */
+  kind: 'read' | 'send';
 }
 
 /**
@@ -1016,6 +1022,13 @@ export interface Job {
    * were. Without it, granting more turns is a coin flip.
    */
   pending?: Pending;
+  /**
+   * What the run left for the user, counted at the sandbox's top level when
+   * it ended (UI.md, step 9) — the one notion the backoffice row reads. Jobs
+   * finished before the field existed are stamped once at the next start,
+   * from the sandbox they left; absent means that sandbox is gone.
+   */
+  delivered?: DeliverySummary;
   /** What the session cost — recorded whether it succeeded or failed. */
   meter?: JobMeter;
   status: JobStatus;
@@ -1300,6 +1313,15 @@ export interface AgentlingRecord {
   /** Priced runs that spent essentially their whole quote. */
   atCeiling: number;
   pricedRuns: number;
+  /**
+   * Runs a limit stopped — the turn budget or the clock — read off the row's
+   * own flags and never off turns over the cap, which a finished run can
+   * carry (D-022, D-212). A floor for rows older than the flags whose job is
+   * no longer stored to backfill from (UI.md, step 12).
+   */
+  cut: number;
+  /** Runs that ended done on their own: landed, and not cut. */
+  finished: number;
   /** Spend ÷ quoted over priced runs; null when nothing carried a quote. */
   ratio: number | null;
   signal: BudgetSignal;
@@ -1310,6 +1332,10 @@ export interface AgentlingProfile {
   role: RoleInfo | null;
   /** Learnt lessons only, oldest first — the journal lines stay out (D-089). */
   memory: string[];
+  /** The notes a discard banked (D-201), oldest first — not lessons, shown under their own tag. */
+  discards: string[];
+  /** Jobs of theirs you kept — the queue's verdicts beside the ledger's outcomes. */
+  kept: number;
   record: AgentlingRecord;
 }
 
@@ -1445,6 +1471,71 @@ export interface DeliveryFile {
    * run to have carried anything from.
    */
   carried?: boolean;
+}
+
+/**
+ * What a run left for the user, counted at the sandbox's top level (UI.md,
+ * step 9): the files that are not the crew's paperwork, PDFs and images told
+ * apart because a row wants to say so, and the folders beside them with their
+ * weight — `work/` is where a cut run's evidence sits and nothing listed it.
+ * The clone is never a folder of the run's own.
+ */
+export interface DeliverySummary {
+  files: number;
+  pdf: number;
+  images: number;
+  dirs: { name: string; files: number; bytes: number }[];
+}
+
+/** One door's use, read off the door trail (D-192) for Settings (UI.md, step 8). */
+export interface DoorUsage {
+  door: string;
+  calls: number;
+  errors: number;
+  firstAt: number;
+  lastAt: number;
+  /** Calls per tool on this door. */
+  tools: Record<string, number>;
+}
+
+/**
+ * What a continuation leg receives from the run it continues, and what stays
+ * behind (UI.md, step 10) — the one list `carryForward` copies from and the
+ * review's More-turns note reads, so the note can never describe a copy the
+ * code does not make.
+ */
+export interface CarryManifest {
+  /** Top-level files copied across: the previous leg's deliverables. */
+  files: string[];
+  /** The previous leg's given files, under input/. */
+  input: string[];
+  /** The report that rides as PREVIOUS-RESULT.md, by its name in the previous leg; null when it wrote none. */
+  report: string | null;
+  /** A repository patch to apply, when the leg has a clone. */
+  patch: boolean;
+  /** What stays: the paperwork, and every folder but input/. */
+  left: { paperwork: string[]; dirs: string[] };
+}
+
+/** One line of a sandbox's trail (D-211), as the review's turns strip reads it. */
+export interface TrajectoryLine {
+  at: number;
+  pass: 'session' | 'closeout';
+  kind: 'call' | 'result' | 'said' | 'end';
+  turn?: number;
+  id?: string;
+  /** call: the tool's name and its clipped arguments. */
+  name?: string;
+  args?: string;
+  /** result: whether it went well; result and said: the clipped head. */
+  ok?: boolean;
+  head?: string;
+  /** end: how the child ended and what the meter knew by then. */
+  outcome?: string;
+  toolCalls?: number;
+  costUsd?: number;
+  turns?: number;
+  durationMs?: number;
 }
 
 /** One finished piece of work, as the inbox lists it. */

@@ -113,7 +113,7 @@ import {
 } from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
+import { carryManifest, ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -182,10 +182,11 @@ import {
   outputNames,
   PREVIOUS_RESULT,
   safeOutputPath,
+  deliverySummary,
 } from './outputs';
 import { pickFolder } from './pickFolder';
 import { previewFile } from './preview';
-import { isJournal, productivityOf, recordOf } from './productivity';
+import { isDiscardNote, isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
 import { refineMatch } from './refine';
 import {
@@ -228,7 +229,8 @@ import { callRender } from './render';
 import { callBls } from './bls';
 import { callCalendar } from './calendar';
 import { callMail } from './mail';
-import { logDoor } from './doorlog';
+import { logDoor, readDoorUsage } from './doorlog';
+import { readTrajectory } from './trajectory';
 import { callSearch } from './search';
 import { appendMovesJournal, executeMoves, reverseMoves } from './moves';
 import { folderInventory, wantsOrganize } from './organize';
@@ -2514,7 +2516,12 @@ app.get('/api/levels/:lid/jobs/:id/continue/quote', (c) => {
   if (!previous.meter?.outOfTurns && !previous.meter?.timedOut) {
     return c.json({ error: 'that run was not cut short by turns or the clock' }, 400);
   }
-  return c.json({ quote: continuationSpec(rt, previous).quote });
+  return c.json({
+    quote: continuationSpec(rt, previous).quote,
+    // What the next leg actually receives, from the same list the copy is
+    // made from (UI.md, step 10) — so the review's note and the code agree.
+    carries: carryManifest(rt.queue.sandboxDir(previous.id)),
+  });
 });
 
 /** Everything a carry-on is built from, shared by the quote and the queueing. */
@@ -2582,12 +2589,24 @@ app.get('/api/levels/:lid/jobs/:id/output', (c) => {
   // inbox lists every delivery at once and hashing all of them to draw a row
   // of labels would read the whole history on every poll — the review card is
   // where a file is being decided about.
+  const dir = rt.queue.sandboxDir(job.id);
   return c.json({
-    files: describeOutputs(
-      rt.queue.sandboxDir(job.id),
-      job.continues ? rt.queue.sandboxDir(job.continues) : undefined,
-    ),
+    files: describeOutputs(dir, job.continues ? rt.queue.sandboxDir(job.continues) : undefined),
+    // The folders beside the files — work/, input/ — with their weight,
+    // which no listing showed (UI.md, step 9).
+    dirs: deliverySummary(dir).dirs,
   });
+});
+
+/** The sandbox's own trail (D-211), for the review's turns strip (UI.md, step 11). */
+app.get('/api/levels/:lid/jobs/:id/trajectory', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const job = rt.queue.get(c.req.param('id'));
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  const lines = readTrajectory(rt.queue.sandboxDir(job.id));
+  // A run before the trail existed says so, rather than showing an empty strip.
+  return c.json(lines === null ? { trail: false, lines: [] } : { trail: true, lines });
 });
 
 /**
@@ -3152,6 +3171,13 @@ app.get('/api/levels/:lid/agentlings/:aid', (c) => {
     // Learnt lessons only — the journal lines (delivered/failed/hired-to)
     // are the career counter's story, not the memory's (D-089).
     memory: rt.memory.lessons(agentling.name).filter((line) => !isJournal(line)),
+    // The notes a discard banked (D-201) under their own tag, and the jobs
+    // you kept — the queue's verdicts beside the ledger's outcomes (UI.md,
+    // step 12).
+    discards: rt.memory.lessons(agentling.name).filter(isDiscardNote),
+    kept: rt.queue
+      .list()
+      .filter((j) => j.assignedTo === agentling.id && j.status === 'promoted').length,
     record: recordOf(
       agentling.id,
       readLedger(SANDBOX_ROOT).filter((e) => e.levelId === rt.meta.id),
@@ -3773,6 +3799,9 @@ app.get('/api/spend', (c) => {
 });
 
 app.get('/api/connections', (c) => c.json(connectionList()));
+
+/** Every door's use off the trail (D-192), for the switches in Settings (UI.md, step 8). */
+app.get('/api/doors/usage', (c) => c.json({ doors: readDoorUsage(SANDBOX_ROOT) }));
 
 /**
  * Web fetches for a running session. The server owns extraction, trimming and

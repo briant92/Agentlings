@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
-import type { DeliveryFile } from '@agentlings/shared';
+import type { DeliveryFile, DeliverySummary } from '@agentlings/shared';
 
 /**
  * What a job left behind in its sandbox.
@@ -262,4 +262,76 @@ function unchangedSince(
 
 function sha256(file: string): string {
   return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
+/**
+ * The files a row should never call a delivery: the paperwork above, the
+ * close-out's account of what is left, and the diff the repo path reports
+ * on its own terms.
+ */
+const NOT_DELIVERED = new Set([...PAPERWORK, 'PENDING.md', 'DIFF.patch']);
+const IMAGES = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+/** Folders that are never the run's own: the clone, and anything installed. */
+const NOT_A_RUNS_FOLDER = new Set(['repo', 'node_modules']);
+/** Past this many files a folder is counted as "at least" — a tree that size is not worth walking. */
+const DIR_FILE_CAP = 5000;
+
+/**
+ * What a run left for the user, counted once at the seam every ending passes
+ * through and stamped on the job (UI.md, step 9) — the one notion the
+ * backoffice row reads, in place of a client-side guess that read repo diffs
+ * and summaries and called a run that wrote a PDF "nothing on disk".
+ *
+ * Top-level files minus the paperwork, PDFs and images told apart because
+ * that is what a row wants to say; the folders beside them with their
+ * weight, because `work/` is where a cut run's evidence sits and no listing
+ * showed it. Dotfiles stay invisible here as everywhere.
+ */
+export function deliverySummary(dir: string): DeliverySummary {
+  const summary: DeliverySummary = { files: 0, pdf: 0, images: 0, dirs: [] };
+  if (!existsSync(dir)) return summary;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue;
+    if (entry.isFile()) {
+      if (NOT_DELIVERED.has(entry.name)) continue;
+      summary.files += 1;
+      const ext = path.extname(entry.name).toLowerCase();
+      if (ext === '.pdf') summary.pdf += 1;
+      else if (IMAGES.has(ext)) summary.images += 1;
+    } else if (entry.isDirectory() && !NOT_A_RUNS_FOLDER.has(entry.name)) {
+      summary.dirs.push({ name: entry.name, ...folderWeight(path.join(dir, entry.name)) });
+    }
+  }
+  summary.dirs.sort((a, b) => a.name.localeCompare(b.name));
+  return summary;
+}
+
+function folderWeight(root: string): { files: number; bytes: number } {
+  let files = 0;
+  let bytes = 0;
+  const stack = [root];
+  while (stack.length > 0 && files < DIR_FILE_CAP) {
+    const current = stack.pop()!;
+    let entries;
+    try {
+      entries = readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue; // a folder that vanished or refuses weighs nothing
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        stack.push(path.join(current, entry.name));
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      files += 1;
+      try {
+        bytes += statSync(path.join(current, entry.name)).size;
+      } catch {
+        // A file that vanished between the listing and the stat.
+      }
+      if (files >= DIR_FILE_CAP) break;
+    }
+  }
+  return { files, bytes };
 }

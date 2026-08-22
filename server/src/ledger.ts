@@ -153,6 +153,15 @@ export interface LedgerEntry {
   /** The turn limit the session was given — the unit a budget is priced in. */
   turnsAllowed?: number;
   /**
+   * The turn budget stopped this run (D-022), or the clock did (D-138).
+   * Written only when true, like `costUnknown`, and never inferred from
+   * `turns` over `turnsAllowed` — a finished run can carry that (D-212).
+   * Rows older than the field are backfilled from the job's own meter by
+   * identification (UI.md, step 13); a row whose job is gone stays silent.
+   */
+  outOfTurns?: boolean;
+  timedOut?: boolean;
+  /**
    * Whether the run had a repository to work in. Not bookkeeping: measured
    * 2026-07-31, it is the largest single thing driving what a turn costs — a
    * repo run burnt 7.4c/turn against 1.8c for the same role without one,
@@ -279,6 +288,11 @@ export function ledgerRow(
     ...(job.quotedUsd ? { quotedUsd: job.quotedUsd } : {}),
     ...(job.meter?.turns !== undefined ? { turns: job.meter.turns } : {}),
     ...(job.meter?.turnsAllowed !== undefined ? { turnsAllowed: job.meter.turnsAllowed } : {}),
+    // The cut, as the meter saw it — the one reading a cut count may use
+    // (D-212). Truth-gated: absent means not cut, or a row from before the
+    // field, which the backfill settles by identification.
+    ...(job.meter?.outOfTurns ? { outOfTurns: true } : {}),
+    ...(job.meter?.timedOut ? { timedOut: true } : {}),
     hasRepo: Boolean(job.repoPath),
     ...(job.meter?.costUnknown ? { costUnknown: true } : {}),
     ...(job.meter?.model ? { model: job.meter.model } : {}),
@@ -409,6 +423,33 @@ export function closeOpenRows(sandboxRoot: string): number {
     rows.map(({ open: wasOpen, ...rest }) => (wasOpen ? { ...rest, interrupted: true } : rest)),
   );
   return open;
+}
+
+/**
+ * Marks rows written before the cut flags existed (UI.md, step 13): by
+ * identification only — the caller hands in what each job's own meter says,
+ * keyed by job id — and only where the row does not already say. Open rows
+ * ride through untouched. Returns how many rows changed; the file is left
+ * alone when none did.
+ */
+export function markCut(
+  sandboxRoot: string,
+  cuts: ReadonlyMap<string, { outOfTurns?: boolean; timedOut?: boolean }>,
+): number {
+  const rows = readRows(sandboxRoot);
+  let changed = 0;
+  const next = rows.map((row) => {
+    const cut = cuts.get(row.jobId);
+    if (!cut || row.open) return row;
+    const add: Partial<LedgerEntry> = {};
+    if (cut.outOfTurns && row.outOfTurns === undefined) add.outOfTurns = true;
+    if (cut.timedOut && row.timedOut === undefined) add.timedOut = true;
+    if (Object.keys(add).length === 0) return row;
+    changed += 1;
+    return { ...row, ...add };
+  });
+  if (changed > 0) rewrite(sandboxRoot, next);
+  return changed;
 }
 
 /**

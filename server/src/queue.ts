@@ -25,7 +25,7 @@ import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
 import { PARTY_FILE, readPartyDraft } from './party';
 import { PACK_FILE, readPackDraft } from './packcontract';
-import { deliveredFiles, safeAttachmentName } from './outputs';
+import { deliveredFiles, deliverySummary, safeAttachmentName } from './outputs';
 import { deliveredTool } from './tools';
 
 export interface NewJobSpec {
@@ -201,6 +201,15 @@ export class JobQueue {
       if (!job.continues) continue;
       const parent = this.jobs.get(job.continues);
       if (parent && !parent.continuedBy) parent.continuedBy = job.id;
+    }
+    // Runs finished before `delivered` existed are stamped once here, from
+    // the sandbox they left — read, never guessed from the summary (D-026),
+    // and only for jobs still lacking it (UI.md, step 9). A job whose
+    // sandbox is gone stays unstamped, which the row reads as it always did.
+    for (const job of this.jobs.values()) {
+      if (job.delivered || job.status === 'queued' || job.status === 'running') continue;
+      const dir = this.sandboxDir(job.id);
+      if (existsSync(dir)) job.delivered = deliverySummary(dir);
     }
     this.persist();
   }
@@ -540,6 +549,7 @@ export class JobQueue {
     this.stampPartyDraft(job);
     this.stampMoves(job);
     this.stampPending(job);
+    this.stampDelivered(job);
     job.finishedAt = Date.now();
     job.slot = -1;
     // Hand the freed slot to the oldest job still waiting without one.
@@ -635,6 +645,17 @@ export class JobQueue {
     if (!existsSync(file)) return;
     const pending = parsePending(readFileSync(file, 'utf8'));
     if (pending) job.pending = pending;
+  }
+
+  /**
+   * What the run left, counted at this seam because every ending passes
+   * through it and the sandbox is final by now — the close-out has written
+   * whatever it writes (UI.md, step 9). The one notion the backoffice row
+   * reads, so "nothing on disk" can no longer be said of a run that wrote a
+   * PDF the row never looked for.
+   */
+  private stampDelivered(job: Job): void {
+    job.delivered = deliverySummary(this.sandboxDir(job.id));
   }
 
   private stampPackDraft(job: Job): void {

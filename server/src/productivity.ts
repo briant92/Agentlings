@@ -69,9 +69,22 @@ const JOURNAL = [
   /^hired to: /,
 ];
 
+/**
+ * The note a discard banks (D-201): the worker's own record that a delivery
+ * was not what was wanted, with what was asked for where a reply said.
+ * Neither a lesson nor the journal above — kept out of the lessons count and
+ * shown on the card under its own tag (UI.md, step 12). It rendered as a
+ * lesson until the shape was known here.
+ */
+const DISCARD_NOTE = /^my delivery was discarded, not what was wanted/;
+
 export function isJournal(line: string): boolean {
   const text = line.replace(/^\d{4}-\d{2}-\d{2} · /, '');
-  return JOURNAL.some((shape) => shape.test(text));
+  return JOURNAL.some((shape) => shape.test(text)) || DISCARD_NOTE.test(text);
+}
+
+export function isDiscardNote(line: string): boolean {
+  return DISCARD_NOTE.test(line.replace(/^\d{4}-\d{2}-\d{2} · /, ''));
 }
 
 /**
@@ -145,6 +158,11 @@ export function recordOf(
   const quotedUsd = priced.reduce((sum, e) => sum + (e.quotedUsd ?? 0), 0);
   const ratio = quotedUsd > 0 ? priced.reduce((sum, e) => sum + e.costUsd, 0) / quotedUsd : null;
   const { repeated, cheaper } = cheaperClasses(mine);
+  // Read off the row's own flags, never off turns over the cap: a finished
+  // run can carry 51/40 (D-212), and the profile once said "0 of 5 hit the
+  // turn ceiling" about a worker cut five times, because the tile under that
+  // label counted quote spent (UI.md, step 12).
+  const wasCut = (e: LedgerEntry): boolean => Boolean(e.outOfTurns || e.timedOut);
   return {
     runs: mine.length,
     done,
@@ -154,6 +172,8 @@ export function recordOf(
     cheaper,
     atCeiling: priced.filter((e) => e.costUsd >= (e.quotedUsd ?? 0) * CEILING).length,
     pricedRuns: priced.length,
+    cut: mine.filter(wasCut).length,
+    finished: mine.filter((e) => e.outcome === 'done' && !wasCut(e)).length,
     ratio,
     signal: signalFor(ratio),
   };

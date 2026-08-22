@@ -146,3 +146,20 @@ export function fidelity(preview: FilePreview): { label: string; exact: boolean 
       return null;
   }
 }
+
+/**
+ * The files fold's header (UI.md, step 17): what was delivered, the paperwork
+ * beside it, and the folders with their counts — read off the listing the
+ * rail shows, so the header and the rail cannot disagree.
+ */
+export function railSummary(
+  files: readonly { name: string }[],
+  dirs: readonly { name: string; files: number }[],
+): string {
+  const delivered = files.filter((f) => !PAPERWORK.has(f.name)).length;
+  const paper = files.length - delivered;
+  const parts = [delivered === 0 ? 'nothing delivered' : `${delivered} delivered`];
+  if (paper > 0) parts.push(`${paper} paperwork`);
+  for (const dir of dirs) parts.push(`${dir.name}/ ${dir.files}`);
+  return parts.join(' · ');
+}

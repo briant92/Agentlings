@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DeliveryFile, FilePreview } from '@agentlings/shared';
+import type { CarryManifest, DeliveryFile, DeliverySummary, FilePreview } from '@agentlings/shared';
 import { api, lvl } from '../api';
 import {
   fidelity,
@@ -139,12 +139,18 @@ export function FileViewer({
   levelId,
   jobId,
   files,
+  /** The folders beside the files — work/, input/ — with their weight (UI.md, step 17). */
+  dirs = [],
+  /** What a follow-up leg would receive, when the run can be carried on: says which folders it would see. */
+  carries = null,
   /** Which file to open on, when something already knows — an inbox chip. */
   initial,
 }: {
   levelId: string;
   jobId: string;
   files: DeliveryFile[];
+  dirs?: DeliverySummary['dirs'];
+  carries?: CarryManifest | null;
   initial?: string;
 }) {
   const ordered = orderFiles(files);
@@ -169,7 +175,9 @@ export function FileViewer({
     };
   }, [levelId, jobId, chosen]);
 
-  if (ordered.length === 0) return <p className="dim">Nothing was left in the sandbox.</p>;
+  if (ordered.length === 0 && dirs.length === 0) {
+    return <p className="dim">Nothing was left in the sandbox.</p>;
+  }
 
   const mark = preview && fidelity(preview);
   // Said beside the open file rather than only in the rail, because this is
@@ -179,6 +187,25 @@ export function FileViewer({
   return (
     <div className="fv">
       <div className="fv-rail">
+        {/* The folders beside the files (UI.md, step 17): work/ is where a
+            cut run's evidence sits, and the manifest says whether a
+            follow-up leg would see it. Rows, not buttons — nothing here
+            lists what is inside them. */}
+        {dirs.map((dir) => (
+          <div key={dir.name} className="fv-row dir">
+            <span className="fv-glyph">▸</span>
+            <span className="fv-meta">
+              {dir.name}/
+              <i>
+                {dir.files} {dir.files === 1 ? 'file' : 'files'} · {size(dir.bytes)}
+                {carries &&
+                  (carries.left.dirs.includes(dir.name)
+                    ? ' · not carried forward'
+                    : ' · carried forward')}
+              </i>
+            </span>
+          </div>
+        ))}
         {ordered.map((file) => (
           <button
             key={file.name}
@@ -217,7 +244,10 @@ export function FileViewer({
           )}
         </div>
         <div className="fv-body">
-          {preview === null && <p className="dim">Reading…</p>}
+          {chosen === null && (
+            <p className="dim">No file at the top level — what it did sits in the folders.</p>
+          )}
+          {chosen !== null && preview === null && <p className="dim">Reading…</p>}
           {preview && chosen !== null && (
             <Pane
               preview={preview}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fidelity, glyph, orderFiles, provenance, size, splitMermaid } from './files';
+import { fidelity, glyph, orderFiles, provenance, railSummary, size, splitMermaid } from './files';
 
 describe('orderFiles', () => {
   it('puts what was asked for above what the crew wrote about it', () => {
@@ -138,5 +138,24 @@ describe('paperwork, late joiners', () => {
   it('still puts a deliverable ahead of every piece of paperwork', () => {
     const names = orderFiles([{ name: 'PENDING.md' }, { name: 'plan.pdf' }]).map((f) => f.name);
     expect(names).toEqual(['plan.pdf', 'PENDING.md']);
+  });
+});
+
+describe('railSummary (UI.md, step 17)', () => {
+  it('counts what was delivered, the paperwork and the folders, in that order', () => {
+    const files = [{ name: 'plan.pdf' }, { name: 'RESULT.md' }, { name: 'PENDING.md' }];
+    const dirs = [
+      { name: 'input', files: 1 },
+      { name: 'work', files: 68 },
+    ];
+    expect(railSummary(files, dirs)).toBe('1 delivered · 2 paperwork · input/ 1 · work/ 68');
+  });
+
+  it('says nothing delivered when only paperwork is left, as a cut run leaves it', () => {
+    const paper = ['RESULT.md', 'PENDING.md', 'APPROACH.md', 'LESSON.md'].map((name) => ({ name }));
+    expect(railSummary(paper, [{ name: 'work', files: 68 }])).toBe(
+      'nothing delivered · 4 paperwork · work/ 68',
+    );
+    expect(railSummary([], [])).toBe('nothing delivered');
   });
 });

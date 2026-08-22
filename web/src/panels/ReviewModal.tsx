@@ -1,19 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   Agentling,
+  CarryManifest,
   DeliveryFile,
+  DeliverySummary,
   Job,
   PackDraft,
   Quote,
   SendApprovalInfo,
+  TrajectoryLine,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
+import { carryNote } from './carry';
 import { cutNotice } from './cut';
 import { factsOf, replyFromPending } from './facts';
-import { fileUrl } from './files';
+import { fileUrl, railSummary } from './files';
 import { FileViewer } from './FileViewer';
 import { Section } from './Section';
+import { callsOf } from './strip';
+import { TurnsStrip } from './TurnsStrip';
 import { moveRows, movesLeft, movesSummary } from './moves';
 import { noSendLine } from './noSend';
 import { allLooks, renderScenePreview } from '../world/looks';
@@ -60,6 +66,10 @@ export function ReviewModal({
 }) {
   const decided = onDecided ?? onClose;
   const [files, setFiles] = useState<DeliveryFile[] | null>(null);
+  /** The folders beside the files — work/, input/ — with their weight (UI.md, step 17). */
+  const [dirs, setDirs] = useState<DeliverySummary['dirs']>([]);
+  /** The sandbox's trail (D-211), or the word that there is none; null until the route answers. */
+  const [trail, setTrail] = useState<{ trail: boolean; lines: TrajectoryLine[] } | null>(null);
   // An Approve the server refused (a channel switched off, a recipient the
   // channel rejected) — shown here, with the job left reviewable (D-075).
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -74,6 +84,8 @@ export function ReviewModal({
   const [packSlug, setPackSlug] = useState(job.packDraft?.slug ?? '');
   /** What carrying on would cost, fetched from the route that will charge it. */
   const [carryQuote, setCarryQuote] = useState<Quote | null>(null);
+  /** What the next leg receives, from the list the copy is made from (UI.md, step 10). */
+  const [carries, setCarries] = useState<CarryManifest | null>(null);
   const [clarify, setClarify] = useState('');
   const [busy, setBusy] = useState(false);
   const approveRef = useRef<HTMLButtonElement>(null);
@@ -100,9 +112,22 @@ export function ReviewModal({
 
   useEffect(() => {
     let alive = true;
-    void api<{ files: DeliveryFile[] }>(lvl(levelId, `/jobs/${job.id}/output`)).then((data) => {
-      if (alive) setFiles(data.files);
+    void api<{ files: DeliveryFile[]; dirs?: DeliverySummary['dirs'] }>(
+      lvl(levelId, `/jobs/${job.id}/output`),
+    ).then((data) => {
+      if (!alive) return;
+      setFiles(data.files);
+      setDirs(data.dirs ?? []);
     });
+    // The sandbox's own trail (D-211), or the word that there is none. A
+    // routed answer had no session to trace, so it is not asked.
+    if (!job.meter?.routed) {
+      void api<{ trail: boolean; lines: TrajectoryLine[] }>(
+        lvl(levelId, `/jobs/${job.id}/trajectory`),
+      )
+        .then((data) => alive && setTrail(data))
+        .catch(() => undefined);
+    }
     return () => {
       alive = false;
     };
@@ -124,8 +149,14 @@ export function ReviewModal({
   useEffect(() => {
     if (!canCarryOn) return;
     let alive = true;
-    void api<{ quote: Quote }>(lvl(levelId, `/jobs/${job.id}/continue/quote`))
-      .then((data) => alive && setCarryQuote(data.quote))
+    void api<{ quote: Quote; carries?: CarryManifest }>(
+      lvl(levelId, `/jobs/${job.id}/continue/quote`),
+    )
+      .then((data) => {
+        if (!alive) return;
+        setCarryQuote(data.quote);
+        setCarries(data.carries ?? null);
+      })
       // A quote that will not load must not hide the button: carrying on is
       // still the right move, it just stops claiming a price it does not have.
       .catch(() => undefined);
@@ -594,6 +625,26 @@ export function ReviewModal({
           {/* Where it got to and what it did not, so granting turns is a
               judgement rather than a coin flip (D-114). Absent means the
               close-out never ran — said plainly, never as "nothing left". */}
+          {/* Where the turns went (UI.md, step 17): the trail's session pass
+              as one block per call. A run from before the trail says so
+              rather than showing an empty strip. */}
+          {trail && !trail.trail && (
+            <p className="rv-trail-empty">
+              where the turns went — no trail for this run: trails began on Aug 22, 2026, so only
+              runs from then on show their strip here.
+            </p>
+          )}
+          {trail?.trail && (
+            <Section
+              panel="review"
+              id="turns"
+              label="where the turns went"
+              count={`${callsOf(trail.lines).length} calls`}
+              defaultOpen
+            >
+              <TurnsStrip lines={trail.lines} />
+            </Section>
+          )}
           {job.pending && (
             // A section that folds once read (UI.md, step 3): the account stays
             // a tap away, and the files below it come up the screen.
@@ -627,11 +678,20 @@ export function ReviewModal({
             panel="review"
             id="files"
             label="files"
-            count={files === null ? '…' : files.length}
+            count={files === null ? '…' : railSummary(files, dirs)}
             defaultOpen
           >
             {files === null && <p className="dim">Loading…</p>}
-            {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
+            {files && (
+              <FileViewer
+                levelId={levelId}
+                jobId={job.id}
+                files={files}
+                dirs={dirs}
+                carries={carries}
+                initial={file}
+              />
+            )}
           </Section>
           {refusal && <p className="error">{refusal}</p>}
           {offer && !offer.auto && (
@@ -724,6 +784,10 @@ export function ReviewModal({
                     filed failed and priced at zero, so only a landing costs. */}
                 <span className="rv-free">charged only if it finishes</span>
               </div>
+              {/* What the next leg receives, from the manifest the copy is
+                  made from (UI.md, step 17) — work/ stays behind, and the
+                  note says so before the button is pressed. */}
+              {carries && <p className="rv-carry-note">{carryNote(carries, dirs)}</p>}
               {/* The reply, started from the run's own account of what is
                   left (UI.md, step 3) — the two-leg shape SPATIAL §6 keeps
                   arriving at, one tap from the list that names the legs. */}

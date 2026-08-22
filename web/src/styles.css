@@ -5093,3 +5093,68 @@ button.danger:hover {
 .door-planned {
   margin-top: 14px;
 }
+
+/* Where the turns went (UI.md, step 17): one block per call, the legend
+   beneath, the folders as quiet rows in the file rail, the honest line for
+   a run from before the trail. */
+.turns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 6px 0 4px;
+}
+.turns button {
+  width: 14px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.turns button.fail {
+  box-shadow: 0 0 0 1px #ac3232 inset;
+  border-color: #ff8fa3;
+}
+.turns button.picked {
+  outline: 2px solid #d8dce6;
+  outline-offset: 1px;
+}
+.turns-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 10.5px;
+  color: #8a91a3;
+}
+.turns-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+.turns-cap {
+  margin-left: auto;
+}
+.turns-pick,
+.turns-note {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+}
+.rv-trail-empty {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #626a7d;
+}
+.fv-row.dir {
+  color: #8a91a3;
+  cursor: default;
+}
+.fv-row.dir:hover {
+  background: none;
+}
+.rv-carry-note b {
+  color: #c9cdd8;
+  font-weight: 600;
+}

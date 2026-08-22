@@ -209,7 +209,7 @@ true, not when its code compiles.
       `producedBy()`'s repo-diff-or-summary reading; the old wording stays for
       jobs that still lack the stamp. Test: the phrase builder. Evidence: no
       kept run with a PDF reads "nothing on disk".
-- [ ] **17. Review, server-fed half** — `work/` and `input/` rows in the rail
+- [x] **17. Review, server-fed half** — landed 2026-08-22; seen live: 39a1ff24 shows where the turns went · 43 calls as 43 blocks, Bash 28 · Read 11 · Edit 2 · ToolSearch 1 · Write 1, longest run 6 Bash, call 39 failed and retried on the next, rail rows input/ 1 file · 149 KB and work/ 36 files · 3.9 MB, files header 4 delivered · 4 paperwork; 106140b4 shows the no-trail line, nothing delivered · 4 paperwork · input/ 1 · work/ 68, work/ 68 files · 49.5 MB · not carried forward, and the More-turns note from the manifest. `work/` and `input/` rows in the rail
       from `dirs`; the More-turns note from `carries`; the turns strip
       (`TurnsStrip.tsx`: one block per call coloured by tool, failed calls
       ringed, hover names the call, longest run and failed-call captions, the

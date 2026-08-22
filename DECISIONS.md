@@ -15557,18 +15557,18 @@ profile reading the ledger never saw.
 ### What the backfill found
 
 Dry first, then `--write` on 2026-08-22 with a `.bak` taken: 430 rows; 100
-marked from their jobs' own meters — 91 `outOfTurns`, 9 `timedOut`, none
-both; 19 stored rows over the cap deliberately not marked because their jobs
+marked from their jobs' own meters — 91 `outOfTurns`, 9 `timedOut`, none both;
+19 stored rows over the cap deliberately not marked because their jobs
 finished on their own — D-212's population exactly, and by the afternoon it
-included 39a1ff24 at 44/40, 8aef2a7c at 51/40 and c0cf3b9d at 41/40 — the gather of a repo party on 2026-08-18 that
-finished `done` with no error and no flag, on a meter that has carried the
-flag since 2026-08-04 — so D-212's reading rule that +1 is always a cut no
-longer holds on its own, and the flag is the only reading; 46 silent rows name a job no longer
-stored, so the profile's cut count is a floor for them rather than an
-estimate. Re-run dry that afternoon: 0 to mark, the same 19 and the same 46.
-Off the raw file: 343 rows carry both counts, 115 are over the cap, 91 of
-those are flagged and 24 are not — the 19 stored ones and 5 whose job is
-gone.
+included 39a1ff24 at 44/40, 8aef2a7c at 51/40 and c0cf3b9d at 41/40 — the
+gather of a repo party on 2026-08-18 that finished `done` with no error and no
+flag, on a meter that has carried the flag since 2026-08-04 — so D-212's
+reading rule that +1 is always a cut no longer holds on its own, and the flag
+is the only reading; 46 silent rows name a job no longer stored, so the
+profile's cut count is a floor for them rather than an estimate. Re-run dry
+that afternoon: 0 to mark, the same 19 and the same 46. Off the raw file: 343
+rows carry both counts, 115 are over the cap, 91 of those are flagged and 24
+are not — the 19 stored ones and 5 whose job is gone.
 
 ### What reads it, and how the fixtures say it
 

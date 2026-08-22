@@ -15534,6 +15534,47 @@ stamps exist on disk only. A role or skill text edit reshuffles BM25 routing
 read, not written. The strip reads the session pass only and counts calls,
 not turns — a turn is one assistant message and may carry several calls.
 
+### Reviewed the same afternoon — nine findings, seven fixed (9f633c9 … 0dd8725)
+
+A read-only review of the day's twenty-one commits (`2b9341a..f604c7b`) by a
+second session before anything was built on them: the gate green on `f604c7b`
+(typecheck ×3, server 77 files / 1,924 tests run alone, web 26 / 273), nothing
+uncommitted, the 15:08 server on the same tree and durable, the ledger backfill
+changed only its two flags with the backup holding the identical 430 rows. Two
+reviewers read the diff end-to-end; every finding below was verified in the
+code before it was acted on.
+
+Fixed, one commit each, each with a test that fails without its fix —
+mutation-tested after committing, the hard-won order: (1) the review modal is
+keyed by job — in the desk flow the job swapped on an open modal and the
+previous job's files, folders and turns strip stayed until the new fetches
+landed, or for good when a routed answer skipped the trajectory fetch; (2)
+`groupsFor` walks the whole record for a leg's root instead of the filtered
+rows, which had split one ask into several under a filter that dropped the
+root; (3) Settings claims "not used since" only for doors the trail can see —
+the browser runs as its own MCP process and had been read as unused since Aug
+18; (4) the boot stamp of what a run left is wrapped per job, so an unlistable
+sandbox cannot stop a level opening; (5) the door usage map has a null
+prototype, so a tool named `constructor` counts; (6) the cut backfill refuses
+to rewrite the ledger while a server answers on :4600; (7) `scripts/` are
+typechecked with the server they import from — which found 24 errors in
+`ledger-report.ts` the gate had never seen, annotated with the report's output
+byte-identical before and after.
+
+Seen live after HMR: the reads board says *not used since Aug 18* for the code
+host and BLS and nothing of the kind for the browser, whose open row reads *not
+on the door trail — it runs as its own process*; the record under kept shows 25
+runs in 18 asks with no stitched sentence; two reviews opened back to back each
+carried their own trail (50 calls, then 43). The desk flow's in-place swap
+itself was not exercised — nothing awaited review.
+
+Left as found, recorded in the session's memory for the next UI batch: the
+client's `PAPERWORK` and `APPROVALS_TO_AUTO` duplicating server constants (the
+D-030 drift hazard; `packages/shared` is their home), `usePaged` never
+resetting when its list changes, and two pre-existing seams outside the diff (a
+stored dismissed list parsed without a shape check; the review's output fetch
+with no catch).
+
 ## D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification
 
 **Decision:** `LedgerEntry` gains `outOfTurns` and `timedOut`, written off

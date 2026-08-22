@@ -16,9 +16,9 @@ bills.** **THE PLAN IS CLOSED — every item in §3 is ticked** (D-199 to
 D-205, plus the Phase 3 writing pass, all 2026-08-21). Two things outlive it
 and are not checkboxes: **cure (a) is still unmeasured** — it reads on the
 next real drawing queued for the drafter, which also exercises D-201's
-reply-quoting and D-202's tags on fresh data — and **$15.05 of pre-D-150
-promoted work is unpriced**, a money decision D-205 records and does not
-take.
+reply-quoting and D-202's tags on fresh data — and the pre-D-150 residue,
+**charged 2026-08-21 at $10.19 of the $15.05 named** (D-206), which is
+closed.
 
 ## 1. The evidence
 
@@ -423,9 +423,13 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
     backfilled by identification (`promoted`, or `chainPriced` — the flag
     only a promote writes); chargeable $197.19 → $197.19; zero rows now
     say `failed` while carrying a price.
-  - *Open:* **$15.05** across 20 rows promoted before D-150 existed, which
-    never earned a price. A decision about money, not a correction — the
-    backfill reports it and refuses to take it.
+  - *Settled the same day (D-206):* Brian said charge it. The named $15.05
+    became **$10.19 over 16 rows**, because three standing promises apply —
+    never above the quote (29c of overrun stays absorbed), a tool fall-back
+    was promised free (24c), and four cut compiles are tuition ($4.57).
+    Chargeable $197.19 → **$207.37**, absorbed 24% → **20%**, spend
+    untouched. The carve-outs are enforced in `priceAccepted`, not in the
+    script that calls it.
   - *Consequence:* cure (b) does **not** supersede cure (a) — the half
     that would have replaced it was a phantom. **Cure (a) is the only
     lever left on wall-cutting, and is still unmeasured.**

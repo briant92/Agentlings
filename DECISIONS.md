@@ -215,6 +215,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-203 — 2026-08-21 — Lesson hygiene: annotate where it stands, because a correction filed beside it never arrives](#d-203--2026-08-21--lesson-hygiene-annotate-where-it-stands-because-a-correction-filed-beside-it-never-arrives)
 - [D-204 — 2026-08-21 — Photoreal declined: the demand is one request, and the gap is unused three.js](#d-204--2026-08-21--photoreal-declined-the-demand-is-one-request-and-the-gap-is-unused-threejs)
 - [D-205 — 2026-08-21 — Cure (b): the billing half was already cured, and the ledger was calling accepted work a failure](#d-205--2026-08-21--cure-b-the-billing-half-was-already-cured-and-the-ledger-was-calling-accepted-work-a-failure)
+- [D-206 — 2026-08-21 — The pre-D-150 residue, charged — and the three rules that made it smaller](#d-206--2026-08-21--the-pre-d-150-residue-charged--and-the-three-rules-that-made-it-smaller)
 
 ## By theme
 
@@ -14770,3 +14771,50 @@ drafter's self-stop persona line if that hypothesis failed. It does not: the
 half of cure (b) that would have replaced it was a phantom. **Cure (a) stands
 as the only lever on wall-cutting**, and it is still unmeasured — it reads on
 the next real spatial job that files `done` on its own and bills.
+
+## D-206 — 2026-08-21 — The pre-D-150 residue, charged — and the three rules that made it smaller
+
+D-205 found 20-odd rows that promoted before `repriceChain` existed and so
+never earned a price, reported the figure, and refused to take the decision.
+Brian took it the same day: **charge it.**
+
+**The named figure was $15.05. The charge is $10.19, and the gap is not a
+haggle — it is three promises the ledger already makes.** Applying them is
+what "charge it" means in a system that has already decided how it charges:
+
+- **Never above the quote** (D-012). Each row prices at `min(cost, its own
+  quote)`, which is `priceFor` — the same function the live path uses, called
+  rather than re-implemented (D-030). One row cost 59c against a 30c quote;
+  29c of overrun across the set stays absorbed, permanently.
+- **A promise of free that fails stays free** (D-012). One row is a
+  `toolFellBack`: quoted nothing because a compiled tool claimed the job,
+  then done by a session when the tool could not prove its work. A session
+  having done the work does not make it billable. 24c, left alone.
+- **A compile that was absorbed stays absorbed** (D-096). Four cut compiles,
+  $4.57, tuition by design. Un-absorbing those is its own decision and was
+  not part of this one.
+
+So 16 rows, **$10.19**, and the ledger moves: chargeable **$197.19 →
+$207.37**, absorbed **$64.47 → $53.99**, 24% of spend → **20%**. Spend is
+untouched at $271.69, as it must be — this was never about what was spent.
+
+**Where the rules live, and why not in the script.** The carve-outs are
+enforced in `priceAccepted` in `ledger.ts`, not in the one-off that calls it:
+a promise kept in a backfill script is a promise the next backfill script
+forgets. Seven tests hold them — including that a second run charges nothing
+twice, which is `chainPriced` doing the same job it does for `repriceChain`.
+
+**A rule I stated too broadly, and the check that caught it.** The first
+version of this said "a compile is tuition, never billed". The verification
+pass then found five compile rows already carrying a price and flagged them
+against my own assertion — and the assertion was what was wrong. **A compile
+that lands prices like any session**; D-096's tuition is the compile that did
+*not* land. The code was right (it skips only unpriced ones); the sentence
+next to it was false, and a false sentence beside correct code is how the
+next person builds the wrong thing. Fixed in the doc comment, the test name
+and `AGENTLING.md`'s absorbed table.
+
+**This is one-off by construction and cannot recur.** Since `repriceChain`
+landed on 2026-08-11 no promote has left an accepted row unpriced, and D-205's
+`settleOutcome` now runs behind it. After this there are **zero** promoted
+rows with real cost and no price, outside the two deliberate carve-outs.

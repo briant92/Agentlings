@@ -459,6 +459,55 @@ export function repriceChain(
 }
 
 /**
+ * Prices rows that were accepted before the promote knew how to pay for them
+ * (D-206) — the pre-D-150 residue, and a one-off by construction: since
+ * `repriceChain` landed, no promote has left an accepted row unpriced.
+ *
+ * The carve-outs live here rather than in the script that calls it, because
+ * they are the ledger's standing promises and a promise enforced in a
+ * one-off script is a promise the next script forgets:
+ *
+ * - **Never above the quote** — `priceFor` caps at the row's own
+ *   `quotedUsd`, so an overrun stays absorbed (D-012).
+ * - **A promise of free that fails stays free** — a `toolFellBack` row was
+ *   quoted nothing on the strength of a compiled tool, so a session having
+ *   done the work anyway never makes it billable (D-012).
+ * - **A compile that was absorbed stays absorbed** — not "a compile is never
+ *   billed", which is false: a compile that lands prices like any session,
+ *   and five on this ledger carry a price. What D-096 calls tuition is the
+ *   compile that *did not* land, and un-absorbing those is its own decision
+ *   rather than a consequence of this one.
+ * - **An unknown cost cannot be priced** — inventing a number is worse than
+ *   absorbing it, the same rule `repriceChain` keeps.
+ *
+ * `chainPriced` is the marker and the guard, exactly as in `repriceChain`:
+ * a row that carries it is never priced twice.
+ */
+export function priceAccepted(
+  sandboxRoot: string,
+  jobIds: readonly string[],
+): { rows: number; chargedUsd: number } {
+  if (jobIds.length === 0) return { rows: 0, chargedUsd: 0 };
+  const ids = new Set(jobIds);
+  const entries = readRows(sandboxRoot);
+  let rows = 0;
+  let chargedUsd = 0;
+  const next = entries.map((entry) => {
+    if (!ids.has(entry.jobId)) return entry;
+    if (entry.chainPriced || entry.priceUsd !== 0) return entry;
+    if (entry.costUnknown || entry.costUsd <= 0) return entry;
+    if (entry.toolFellBack || entry.compile) return entry;
+    const priceUsd = priceFor('done', entry.costUsd, entry.quotedUsd);
+    if (priceUsd <= 0) return entry;
+    rows += 1;
+    chargedUsd += priceUsd;
+    return { ...entry, priceUsd, chainPriced: true };
+  });
+  if (rows > 0) rewrite(sandboxRoot, next);
+  return { rows, chargedUsd };
+}
+
+/**
  * Marks named rows as work that landed, because you accepted it (D-205).
  *
  * `outcome` and `priceUsd` answer different questions and the ledger had been

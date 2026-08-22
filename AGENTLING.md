@@ -648,24 +648,27 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 422 jobs that came to: **spent $271.69, chargeable $197.19, absorbed
-$64.47.** Twenty-four per cent of all money spent was never charged for — down
-from 41% in mid-August, and the fall is the interesting part: absorption grew by
-only $4.42 while spend nearly doubled, because the runs added since were mostly
-runs that landed.
+Over those 422 jobs that came to: **spent $271.69, chargeable $207.37, absorbed
+$53.99.** Twenty per cent of all money spent was never charged for — down from
+41% in mid-August, and the fall has two causes worth keeping apart. Most of it
+is that the runs added since were runs that landed: absorption barely moved
+while spend nearly doubled. The last $10.19 of it is a decision rather than a
+trend — work promoted before D-150 taught the promote to pay for a cut leg,
+charged retrospectively on 2026-08-21 (D-206) at each row's own quote, with the
+overruns, the tool fall-back and the absorbed compiles held back.
 
 **And since D-157 the report says what that absorption actually is**, which
 corrects an assumption this section used to make. It is not mostly failed work:
 
 | | | |
 |---|---|---|
-| 66 rows | $54.71 | **85% — cut at the turn wall** |
-| 7 rows | $8.37 | compiles, tuition by design (D-096) |
+| 50 rows | $44.23 | **82% — cut at the turn wall** |
+| 7 rows | $8.37 | compiles, tuition by design (D-096) — the ones that did *not* land; a compile that lands prices like any session, and five here do |
 | 3 rows | $1.07 | tool fall-backs — a promise of free that failed |
 | 3 rows | 31.3c | failed inside its budget |
-| 36 rows | $10.04 | over-quote overruns clipped back to the quote (6 of them chain legs repriced at promote) |
+| 37 rows | $10.33 | over-quote overruns clipped back to the quote (7 of them chain legs repriced at promote) |
 
-**Absorption is a wall phenomenon.** Five sixths of it is runs that were doing
+**Absorption is a wall phenomenon.** Four fifths of it is runs that were doing
 the work and ran out of turns, not runs that failed — which is why `partial`
 exists, and why a recipe must have landed once before it may shorten anything
 (D-064). The buckets reconcile against `totals()` or the report exits 1, so

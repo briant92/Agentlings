@@ -1,7 +1,14 @@
 import { copyFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import type { Job } from '@agentlings/shared';
-import { ledgerFile, readLedger, settleOutcome, type LedgerEntry } from '../server/src/ledger';
+import {
+  ledgerFile,
+  priceAccepted,
+  priceFor,
+  readLedger,
+  settleOutcome,
+  type LedgerEntry,
+} from '../server/src/ledger';
 import { listLevelDirs, readMeta } from '../server/src/levels';
 import { readStoredJobs } from '../server/src/queue';
 
@@ -26,22 +33,39 @@ import { readStoredJobs } from '../server/src/queue';
  *   Leaving these out was this script's own first miss — nine rows that said
  *   `failed` while carrying a price the ledger had already charged.
  *
- * **This moves no money.** `priceUsd` is not touched, here or in the live
- * seam. Rows that are unpriced stay unpriced — including the ones below that
- * promoted before D-150 and so never earned their price. Those are reported
- * as a separate figure precisely because charging for them is a decision
- * about money rather than a correction of a falsehood, and it is not this
- * script's to take.
+ * **`--write` moves no money.** `priceUsd` is untouched by the settling, here
+ * and in the live seam.
  *
- * Dry by default. Pass --write to apply, which takes a .bak first.
+ * **`--price` does move money, and only because Brian said so** on
+ * 2026-08-21 (D-206). It prices the rows that promoted before D-150 taught
+ * the promote to pay for a cut leg, at `priceFor` — the same function the
+ * live path uses, so there is one notion of what a row costs and not two
+ * (D-030). Three carve-outs are the ledger's own standing rules rather than
+ * this script's judgement, and they are why the figure is smaller than the
+ * cost it came from:
+ *
+ * - **never above the quote** (D-012) — `priceFor` caps each row at its own
+ *   `quotedUsd`, so an overrun stays absorbed;
+ * - **a promise of free that fails stays free** (D-012) — a `toolFellBack`
+ *   row was quoted nothing on the strength of a compiled tool, so it is
+ *   never billed even though a session did the work;
+ * - **a compile that was absorbed stays absorbed** (D-096) — tuition is the
+ *   compile that did not land; one that lands prices like any session.
+ *
+ * `chainPriced` is set as the marker, exactly as `repriceChain` sets it: it
+ * is what makes a second run price nothing twice.
+ *
+ * Dry by default. Either flag takes a .bak first.
  *
  *   npx tsx scripts/backfill-ledger-settled.ts
  *   npx tsx scripts/backfill-ledger-settled.ts --write
+ *   npx tsx scripts/backfill-ledger-settled.ts --price
  */
 
 const ROOT = path.join(process.cwd(), '.agentlings');
 const LEDGER = ledgerFile(ROOT);
 const write = process.argv.includes('--write');
+const doPrice = process.argv.includes('--price');
 
 if (!existsSync(LEDGER)) {
   console.error(`no ledger at ${LEDGER}`);
@@ -83,8 +107,38 @@ if (unpaid.length > 0) {
   if (unpaid.length > 6) console.log(`  …and ${unpaid.length - 6} more`);
 }
 
+/**
+ * Accepted, cost real money, never earned a price. `priceAccepted` applies
+ * the carve-outs itself; this only has to find the candidates.
+ */
+const unpricedAccepted = rows.filter(
+  (r) => jobs.get(r.jobId)?.job.status === 'promoted' && r.priceUsd === 0 && r.costUsd > 0 && !r.chainPriced,
+);
+if (unpricedAccepted.length > 0) {
+  const billable = unpricedAccepted.filter((r) => !r.toolFellBack && !r.compile && !r.costUnknown);
+  const would = billable.reduce((s, r) => s + priceFor('done', r.costUsd, r.quotedUsd), 0);
+  const spent = unpricedAccepted.reduce((s, r) => s + r.costUsd, 0);
+  console.log(`\naccepted but never priced         ${unpricedAccepted.length} rows, ${usd(spent)} spent`);
+  console.log(`  chargeable under the standing rules            ${usd(would)} over ${billable.length} rows`);
+  console.log(`  held back: overruns above quote, tool fall-backs (D-012), compiles (D-096)`);
+}
+
+if (doPrice) {
+  copyFileSync(LEDGER, `${LEDGER}.pre-priced.bak`);
+  const before = readLedger(ROOT).reduce((s: number, r: LedgerEntry) => s + r.priceUsd, 0);
+  const { rows: n, chargedUsd } = priceAccepted(
+    ROOT,
+    unpricedAccepted.map((r) => r.jobId),
+  );
+  const after = readLedger(ROOT).reduce((s: number, r: LedgerEntry) => s + r.priceUsd, 0);
+  console.log(`\npriced ${n} row(s), ${usd(chargedUsd)}. chargeable ${usd(before)} → ${usd(after)}.`);
+  console.log(`previous ledger kept at ${LEDGER}.pre-priced.bak`);
+  process.exit(0);
+}
+
 if (!write) {
-  console.log('\ndry run — nothing written. Pass --write to settle the outcomes (no money moves).');
+  console.log('\ndry run — nothing written. Pass --write to settle the outcomes (no money moves),');
+  console.log('or --price to charge the accepted-but-unpriced rows (D-206; moves money).');
   process.exit(0);
 }
 

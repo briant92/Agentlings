@@ -14,6 +14,7 @@ import {
   ledgerFile,
   ledgerRow,
   openRow,
+  priceAccepted,
   priceFor,
   rateFor,
   readLedger,
@@ -597,6 +598,78 @@ describe('repriceChain', () => {
     const before = readLedger(root);
     expect(repriceChain(root, ['missing'])).toEqual({ rows: 0, chargedUsd: 0 });
     expect(readLedger(root)).toEqual(before);
+  });
+});
+
+/**
+ * The pre-D-150 residue (D-206): rows accepted before the promote knew how
+ * to pay for them. The carve-outs are tested here rather than trusted to the
+ * script, because a promise enforced in a one-off script is a promise the
+ * next script forgets.
+ */
+describe('priceAccepted', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'agentlings-priced-'));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  const accepted = (jobId: string, over: Partial<LedgerEntry> = {}): LedgerEntry =>
+    entry({ jobId, outcome: 'done', priceUsd: 0, costUsd: 1.39, quotedUsd: 2, ...over });
+
+  it('prices an accepted row that never earned one', () => {
+    append(root, accepted('a'));
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 1, chargedUsd: 1.39 });
+    expect(readLedger(root)[0]).toMatchObject({ priceUsd: 1.39, chainPriced: true });
+  });
+
+  // D-012, the promise the quote makes: the overrun above it stays absorbed.
+  it('never charges above the row’s own quote', () => {
+    append(root, accepted('a', { costUsd: 3.5, quotedUsd: 2 }));
+    expect(priceAccepted(root, ['a']).chargedUsd).toBe(2);
+  });
+
+  // D-012 again: quoted nothing on the strength of a tool that could not
+  // finish, so a session having done the work does not make it billable.
+  it('leaves a tool fall-back free, because free is what was promised', () => {
+    append(root, accepted('a', { toolFellBack: true }));
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root)[0].priceUsd).toBe(0);
+  });
+
+  /**
+   * D-096's tuition is the compile that did *not* land — a compile that
+   * lands prices like any session and five on the real ledger do. This only
+   * declines to newly charge one that was already absorbed.
+   */
+  it('leaves an absorbed compile absorbed', () => {
+    append(root, accepted('a', { compile: true }));
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    // …and says nothing about a compile that already earned its price.
+    append(root, accepted('b', { compile: true, priceUsd: 1.07 }));
+    expect(readLedger(root).find((r) => r.jobId === 'b')?.priceUsd).toBe(1.07);
+  });
+
+  it('will not invent a price for a cost nobody could measure', () => {
+    append(root, accepted('a', { costUsd: 0, costUnknown: true }));
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+  });
+
+  it('never charges the same row twice', () => {
+    append(root, accepted('a'));
+    priceAccepted(root, ['a']);
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root)[0].priceUsd).toBe(1.39);
+  });
+
+  it('touches nothing already priced, and nothing it was not handed', () => {
+    append(root, accepted('a', { priceUsd: 0.9 }));
+    append(root, accepted('b'));
+    expect(priceAccepted(root, ['a'])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(priceAccepted(root, [])).toEqual({ rows: 0, chargedUsd: 0 });
+    expect(readLedger(root).find((r) => r.jobId === 'b')?.priceUsd).toBe(0);
   });
 });
 

@@ -84,24 +84,63 @@ describe('carried-on legs (D-139 in the record)', () => {
 });
 
 describe('producedBy', () => {
+  const stamp = (files: number, pdf: number, images: number, dirs: { name: string; files: number; bytes: number }[] = []) => ({
+    files,
+    pdf,
+    images,
+    dirs,
+  });
+
   it('counts a diff', () => {
     const changes = { files: 3, added: 40, removed: 2, names: [] };
     expect(producedBy(job({ changes }))).toBe('3 files · +40 −2');
     expect(producedBy(job({ changes: { ...changes, files: 1 } }))).toBe('1 file · +40 −2');
   });
 
-  it('calls a report a report rather than nothing', () => {
+  it('reads what a run left off the stamp, PDFs and images named (UI.md, step 16)', () => {
+    expect(producedBy(job({ delivered: stamp(75, 1, 14) }))).toBe('PDF, 14 images + 60 files');
+    expect(producedBy(job({ delivered: stamp(2, 2, 0) }))).toBe('2 PDFs');
+    expect(producedBy(job({ delivered: stamp(1, 0, 1) }))).toBe('1 image');
+    expect(producedBy(job({ delivered: stamp(3, 0, 0) }))).toBe('3 files');
+    expect(producedBy(job({ delivered: stamp(1, 0, 0) }))).toBe('1 file');
+  });
+
+  it('never calls a kept run with a PDF nothing on disk', () => {
+    // 29ddccb7 on Home Chores: promoted, no summary, a PDF and 14 images —
+    // the old reading of diffs and summaries said "nothing on disk".
+    const kept = job({
+      status: 'promoted',
+      delivered: stamp(75, 1, 14, [{ name: 'input', files: 1, bytes: 152989 }]),
+    });
+    expect(producedBy(kept)).toBe('PDF, 14 images + 60 files');
+  });
+
+  it('says a stamped run left nothing, with the folder its evidence sits in', () => {
+    const given = { name: 'input', files: 1, bytes: 152989 };
+    const work = { name: 'work', files: 68, bytes: 51903668 };
+    expect(producedBy(job({ delivered: stamp(0, 0, 0, [given, work]) }))).toBe('nothing delivered · work/ 68');
+    // The given files are not something the run left.
+    expect(producedBy(job({ delivered: stamp(0, 0, 0, [given]) }))).toBe('nothing delivered');
+  });
+
+  it('still calls a report a report when the stamp counts no files', () => {
+    expect(producedBy(job({ summary: 'A favicon is…', delivered: stamp(0, 0, 0) }))).toBe('a written answer');
+  });
+
+  it('says the patch first when a repo job also left a file', () => {
+    const changes = { files: 3, added: 40, removed: 2, names: [] };
+    expect(producedBy(job({ changes, delivered: stamp(1, 1, 0) }))).toBe('3 files · +40 −2 · PDF');
+  });
+
+  it('keeps the old reading for a job from before the stamp', () => {
     expect(producedBy(job({ summary: 'A favicon is…' }))).toBe('a written answer');
+    expect(producedBy(job({ changes: { files: 0, added: 0, removed: 0, names: [] } }))).toBe(
+      'nothing on disk',
+    );
   });
 
   it('gives the reason a failure left nothing', () => {
     expect(producedBy(job({ status: 'failed', error: 'cancelled' }))).toBe('cancelled');
-  });
-
-  it('says so plainly when there is genuinely nothing', () => {
-    expect(producedBy(job({ changes: { files: 0, added: 0, removed: 0, names: [] } }))).toBe(
-      'nothing on disk',
-    );
   });
 });
 

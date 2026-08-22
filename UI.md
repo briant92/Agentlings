@@ -205,7 +205,7 @@ true, not when its code compiles.
       their rows; planned chips and the never-list fold under sends; display,
       executor (with `auth.source`), catalog and maintenance under app.
       Evidence: both Settings boards, with today's counts.
-- [ ] **16. Backoffice "what it left"** from `job.delivered`, replacing
+- [x] **16. Backoffice "what it left"** — landed 2026-08-22; seen live on Home Chores, every run: 49 rows, no kept row reads nothing, 29ddccb7 reads PDF, 14 images + 60 files · $4.00, the two cut discards read nothing delivered · work/ 68 and work/ 46. From `job.delivered`, replacing
       `producedBy()`'s repo-diff-or-summary reading; the old wording stays for
       jobs that still lack the stamp. Test: the phrase builder. Evidence: no
       kept run with a PDF reads "nothing on disk".

@@ -1,4 +1,10 @@
-import { type CrewMember, type Job, type Outcome, outcomeOf } from '@agentlings/shared';
+import {
+  type CrewMember,
+  type DeliverySummary,
+  type Job,
+  type Outcome,
+  outcomeOf,
+} from '@agentlings/shared';
 
 /**
  * The work record behind the crew door.
@@ -40,19 +46,49 @@ function costOf(job: Job): number | null {
   return typeof cost === 'number' && cost > 0 ? cost : null;
 }
 
+/** The folder a run's given files land in, which it did not leave. */
+const GIVEN = 'input';
+
 /**
- * What the user actually gets from this job. A job with no diff is not empty —
- * most of them are answers or reports — so it falls back to the summary rather
- * than claiming nothing happened.
+ * What the user actually gets from this job, in one line — read off the
+ * stamp the server made when the run ended (UI.md, steps 9 and 16), never
+ * re-derived here. A repo job's product is its patch and is said first; the
+ * files left at the sandbox's top level come next, PDFs and images named
+ * because that is what a reviewer is looking for. A stamped run that left
+ * nothing says so, with the folder its evidence sits in when there is one —
+ * `work/ 68` is the whole story of a cut run — while a run that wrote only
+ * its report is still a written answer, not nothing. A job from before the
+ * stamp keeps the old reading.
  */
 export function producedBy(job: Job): string {
+  const parts: string[] = [];
   const changes = job.changes;
   if (changes && changes.files > 0) {
     const files = changes.files === 1 ? '1 file' : `${changes.files} files`;
-    return `${files} · +${changes.added} −${changes.removed}`;
+    parts.push(`${files} · +${changes.added} −${changes.removed}`);
   }
+  const left = job.delivered;
+  if (left && left.files > 0) parts.push(deliveredPhrase(left));
+  if (parts.length > 0) return parts.join(' · ');
   if (job.status === 'failed') return job.error ?? 'nothing — it did not finish';
+  if (left) {
+    const folders = left.dirs
+      .filter((d) => d.name !== GIVEN && d.files > 0)
+      .map((d) => `${d.name}/ ${d.files}`);
+    return [job.summary ? 'a written answer' : 'nothing delivered', ...folders].join(' · ');
+  }
   return job.summary ? 'a written answer' : 'nothing on disk';
+}
+
+/** "PDF, 14 images + 60 files": the named kinds first, the rest counted. */
+function deliveredPhrase(left: DeliverySummary): string {
+  const named: string[] = [];
+  if (left.pdf > 0) named.push(left.pdf === 1 ? 'PDF' : `${left.pdf} PDFs`);
+  if (left.images > 0) named.push(left.images === 1 ? '1 image' : `${left.images} images`);
+  const rest = left.files - left.pdf - left.images;
+  const files = `${rest} ${rest === 1 ? 'file' : 'files'}`;
+  if (named.length === 0) return files;
+  return rest > 0 ? `${named.join(', ')} + ${files}` : named.join(', ');
 }
 
 /**

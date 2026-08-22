@@ -228,6 +228,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there](#d-215--2026-08-22--what-a-run-left-is-one-notion-counted-where-the-run-ends-stamped-on-the-job-read-everywhere-from-there)
 - [D-217 — 2026-08-22 — The session child carried every connection secret: laundered at both spawn sites by the catalog's own list](#d-217--2026-08-22--the-session-child-carried-every-connection-secret-laundered-at-both-spawn-sites-by-the-catalogs-own-list)
 - [D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten](#d-218--2026-08-22--disconnect-the-drawers-inverse-with-googles-token-revoked-before-the-line-is-forgotten)
+- [D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps](#d-219--2026-08-22--payments-on-the-shelf-of-never-a-kind-of-act-refused-by-decision-beside-the-apps)
 
 ## By theme
 
@@ -666,7 +667,9 @@ entry updates one file rather than two.
 - **Acting, and the apps worth acting on** — the outbox replayed at approval,
   which closes §15's "one decision, not seven tasks": D-075; the two
   credential shapes and the never-a-password rule: D-076; the researched
-  batch, its tiers and its refusals, WhatsApp personal among them: D-077;
+  batch, its tiers and its refusals, WhatsApp personal among them: D-077,
+  and the one refusal that is an act rather than an app — initiating a
+  payment or transfer, on the same shelf by decision: D-219;
   and the token drawer that keeps `.env` the only store and validates every
   paste with one real call before storing it: D-078 — and its inverse, the
   row's Disconnect, which revokes a Google token at Google before turning
@@ -15882,3 +15885,41 @@ placeholder and the row reads *needs set-up*, then re-stores the value
 through the secret route — which validates it with Telegram's own `getMe`
 — and restores the switch; the value never surfaces. Appended below when it
 lands.
+
+## D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps
+
+**Decision:** initiating a payment or a transfer is never done by this app,
+and the refusal is on the shelf Settings already shows (D-088's "shelf of
+never, each row with its reason"), as the row *Payments and transfers —
+Initiating a payment or transfer is never done here: a wrong message is
+embarrassing, a wrong wire is gone, and no review can reverse it*. A shelf
+row only: no sentence word maps to it, so intake is untouched and the
+matcher's 213 prompts were not replayed. Reading a statement stays ordinary
+work — the reconciliation line this same review opened (SPATIAL's successor,
+in the memory notes) is about reading money, never moving it.
+
+### What forced it
+
+The outside plan reviewed on 2026-08-22 named "payments" among the connector
+types it proposed and never specified one; Brian's own personal-finances
+prompt on hq lists "sending wires" among the chores. D-077 put six *apps* on
+the shelf with a reason each so nobody would wait for them; nothing said the
+same about this *act*, and a refusal that lives only in a decision entry is
+one the app itself cannot show. Brian took the recommendation to say it out
+loud rather than leave it undecided or park it as planned.
+
+Why never rather than later: the recipient allowlist is what makes a send
+reviewable — a human approved every name once (D-075, D-082) — and the
+worst a wrong send does is embarrass. A wire to a wrong payee is gone, and
+the app's whole safety model is that Approve is the last reversible moment.
+No Chilean bank exposes a personal payment API to an individual in any
+case, so the row also closes a door nobody could open; reopening it is a
+decision entry with a concrete need behind it, like every other never-row.
+
+### What proved it
+
+`0662ed6`: server typecheck clean; `channel.test.ts` 71 tests, the new one
+pinning the row's label and reason and that *wire 500 dollars to Ana* claims
+no channel. Mutation after committing: the row's key misspelt fails exactly
+that test (1 failed, 70 passed); restored, 71/71. AGENTLING §14 gains *Not a
+payer*; SPEC M5.11 the clause.

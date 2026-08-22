@@ -213,6 +213,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-201 — 2026-08-21 — A discard banks what was refused, not only what was delivered](#d-201--2026-08-21--a-discard-banks-what-was-refused-not-only-what-was-delivered)
 - [D-202 — 2026-08-21 — The file-claim check that could not be built, and the fact that replaced it](#d-202--2026-08-21--the-file-claim-check-that-could-not-be-built-and-the-fact-that-replaced-it)
 - [D-203 — 2026-08-21 — Lesson hygiene: annotate where it stands, because a correction filed beside it never arrives](#d-203--2026-08-21--lesson-hygiene-annotate-where-it-stands-because-a-correction-filed-beside-it-never-arrives)
+- [D-204 — 2026-08-21 — Photoreal declined: the demand is one request, and the gap is unused three.js](#d-204--2026-08-21--photoreal-declined-the-demand-is-one-request-and-the-gap-is-unused-threejs)
 
 ## By theme
 
@@ -449,7 +450,12 @@ entry updates one file rather than two.
   displaced note, because a bare line has fewer terms and loses on its own; and
   D-171, where a code knowledge graph was deferred rather than measured — the
   two repo-understanding jobs it would help had already compiled to tools and
-  run at $0, so it would have been competing with free
+  run at $0, so it would have been competing with free; and D-204, where a
+  headless-Blender install was declined on the same grounds — four render jobs
+  in 422, all one underlying request and both survivors promoted — with the
+  sharper finding that the visible gap was **unused three.js** rather than a
+  missing renderer, and that the worst artefact in the set failed on camera
+  placement, which a better renderer would have drawn just as wrongly
 - **Socket payload, UI/UX, documents, answering a run** — D-028, D-030–D-031,
   D-033; and D-114, where the feed stopped being where decisions are made —
   one REVIEW on the row, the whole choice in the panel, the close-out writing
@@ -14624,3 +14630,62 @@ needed reading both lessons against a chain of eight runs, and a button that
 rewrites crew memory is a far larger trust question than a button that appends
 to it. The rule this leaves for the next case is smaller and testable: **score
 the correction against the corpus before choosing where to put it.**
+
+## D-204 — 2026-08-21 — Photoreal declined: the demand is one request, and the gap is unused three.js
+
+SPATIAL.md's last open fork: scope a headless-Blender install for photoreal
+renders, or write the decided-not-built line. **Declined**, and the honest
+ceiling recorded instead.
+
+**The demand, counted.** Four render jobs in the whole 422-job history, and
+they are not four requests — they are one, the Villa Toscana *ampliación*,
+asked and re-asked. Two died at $0; the two that survived (`41fbbf49` $1.92,
+`6e84c00c` $3.43) were **both promoted**. So the existing ceiling has satisfied
+the only demand there is, twice. That is D-168's test applied unchanged — the
+read-only browser was left unwidened at 254 jobs and one browser call — and
+D-171's, where a capability was declined for competing with something already
+free.
+
+**Two things looking at the actual artefacts changed.** The aerial from the
+dearest run is a competent architectural massing model: correct geometry,
+glazed elevation under a deep roof, pool, decking, furniture, pergola posts.
+What it is not is photoreal — flat ambient light, no materials, no shadows to
+speak of. But the run's own RESULT.md declares that as a **choice**: *"Style —
+clean massing/white-model with materials: no textures"*, and it offers, in
+writing, "a dusk render with interior lighting" among the alternatives it could
+produce instead. The renderer behind it is three.js in headless Edge, which has
+shadow maps, PBR materials and image-based lighting, and almost none of that is
+being used. **The visible gap is unused three.js, not a missing renderer** —
+so buying a second renderer would be paying to skip work the first one can
+already do.
+
+The second thing is sharper. The worst artefact in the set is the same run's
+eye-level view: a green hill, the building off the right edge, the camera
+effectively buried in terrain. **Blender would have rendered that mistake
+beautifully.** The defect is camera placement and reading your own output back,
+not fidelity — and it is the one real quality gap the trial produced.
+
+**What was declined, specifically.** A ~1 GB machine-level install that is not
+present on this machine; a new tool door for the headless CLI; an entire new
+authoring surface (`bpy` Python) a session would have to get right with the
+same read-it-back loop it already owes; multi-minute renders against a 25-minute
+wall; and Windows pathing, on a project whose one hosting decision was to stay
+local (D-169, D-174). None of that is hard. All of it is unpaid-for by demand.
+
+**The honest ceiling, recorded so nobody has to re-derive it.** Today the shop
+produces **white-model architectural massing from a measured geometric model** —
+reliable in plan and in aerial three-quarter views, with declared style choices
+and stated alternatives. Eye-level and interior views are **unreliable**: one of
+two attempted missed its subject. There are no textures, no photometric
+lighting, and no photoreal output at all.
+
+**Reopen triggers, staged rather than binary.** Reopen when a photoreal ask is
+actually *refused at review* — the massing render judged insufficient for what
+it was for — or when three distinct requests need it, so the demand is
+recurring rather than a repeat. And when that happens the first move is **not**
+Blender: it is lighting and materials inside the existing three.js door, which
+costs no install, opens no door, and would lift `plate-design`'s backdrops in
+the same edit. Blender is only on the table if that proves insufficient, and it
+would come back through PROJECT.md's architectural-choice rule as its own
+decision. Not built now, deliberately: nothing has asked for it, and building
+against a demand of zero is the speculation CLAUDE.md rule 2 exists to refuse.

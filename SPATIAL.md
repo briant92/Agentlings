@@ -12,12 +12,12 @@ Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
 and read 2026-08-21 — three clauses pass twice, the wall clause fails in
 letter and passes in substance twice; billing cure (a) applied same day,
 a hypothesis until the next real spatial job files `done` on its own and
-bills.** **TWO ITEMS LEFT IN THE WHOLE PLAN**: close-out done-recognition
-(cure b — Phase 2's last) and the photoreal fork. D-199 to D-203 landed
-2026-08-21, along with the Phase 3 writing pass — the SPEC line, the
-AGENTLING re-derive and Tam's lessons are all settled. Also standing: any
-real drawing queued for the drafter doubles as cure (a)'s test, and cure (b)
-is better decided after that reads.
+bills.** **ONE ITEM LEFT IN THE WHOLE PLAN: close-out done-recognition
+(cure b), Phase 2's last** — and it is better decided after cure (a) reads,
+which the next real drawing queued for the drafter will do. Everything else
+is settled: D-199 to D-204 landed 2026-08-21 along with the Phase 3 writing
+pass, so the mechanism fixes, the SPEC line, the AGENTLING re-derive, Tam's
+lessons and the photoreal fork are all closed.
 
 ## 1. The evidence
 
@@ -449,9 +449,25 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
   the corrected line now ranks 1st on all four phrasings, at the cost of
   one slot (Rue's multiply-blend note). `.agentlings/` is gitignored, so
   D-203 quotes the before/after as the only durable record.
-- [ ] **Optional fork: photoreal ceiling.** → Desired: a scoped headless-
+- [x] **Optional fork: photoreal ceiling** — **declined 2026-08-21 (D-204),
+  decided-not-built.** Demand counted: four render jobs in 422, all one
+  underlying request (the Villa Toscana *ampliación*), two dead at $0 and
+  **both survivors promoted** — the existing ceiling has satisfied the only
+  demand there is, twice (D-168's test, unchanged). Looking at the artefacts
+  moved the argument: the dearest run's aerial is competent massing, and its
+  own RESULT declares the white-model look a **choice**, offering "a dusk
+  render with interior lighting" as an alternative it could have produced —
+  so **the visible gap is unused three.js, not a missing renderer**. And the
+  worst artefact in the set (the eye-level view that missed its subject) is a
+  camera-placement failure Blender would have rendered beautifully. Honest
+  ceiling recorded: white-model massing from a measured model, reliable in
+  plan and aerial, **unreliable at eye level**, no textures or photometric
+  lighting. Reopen when a photoreal ask is refused at review, or on three
+  distinct requests — and then the first move is lighting/materials inside
+  the existing three.js door, not Blender.
+  ~~→ Desired: a scoped headless-
   Blender proposal (machine-level install, its own decision) or an explicit
-  decided-not-built line. Until then the honest ceiling is low-poly / SVG.
+  decided-not-built line. Until then the honest ceiling is low-poly / SVG.~~
 
 ## 4. The proof-job sentence (matcher-scored 2026-08-20, split-checked 2026-08-21)
 
@@ -500,4 +516,5 @@ recipe.
    (D-198). Open within it: the live gate above.
 3. Phase 2 fixes: D-199 to D-202 are built; close-out done-recognition
    (cure b) is the one left, and it supersedes cure (a) if that fails.
-4. Photoreal fork: scope Blender, or decided-not-built.
+4. ~~Photoreal fork~~ — declined 2026-08-21 (D-204): decided-not-built on
+   measured demand, with the ceiling and staged reopen triggers recorded.

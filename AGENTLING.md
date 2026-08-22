@@ -157,7 +157,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through the system Edge, offline — every external URL aborted (D-128) |
 | Author a backdrop plate stack | The run writes self-contained HTML pages — three.js served from the server's pinned copy at `http://three.local/three.module.js`, the offline rule's one stated exception — sets `document.title = "ready"`, and `render_plate` writes PNGs at the sandbox root, quantized to the 128-colour backdrop budget. Five modes (D-148): `plate` 2000×900 opaque, `plate-overscan` 2120×900 (drifts with the pointer), `cutout`/`cutout-overscan` (transparent-background upper plates and occlusion strips, alpha snapped binary, receipt reports coverage), `tile` ≤512×512 for `plateloop` regions — each crossed with `finish: quantized\|smooth` (D-151: smooth keeps the render exactly as drawn, for `backdrop.finish: "smooth"` packs and for `backdrop.depthMap` grayscale maps, which displace the back plate under the pointer on quantized packs). The budget is the layer's: one palette across every raster (`pack:quantize` cuts it jointly); a smooth pack has no budget at all. Named in `backdrop.plates`/`backdrop.occlusion`/`backdrop.depthMap`, the files ride the PACK.json draft through review, and Approve installs them all (D-143, D-148, D-151) |
-| Work from a technical drawing | The `drafter` trade and its `plan-geometry` skill (D-198): pull the vector paths out of a CAD-plotted PDF with pdf.js — job `41fbbf49` took 153,926 paths off a plot with no text layer at all, by its own RESULT.md — derive the scale from the drawing's own stated areas and dimension chains rather than assuming it, place every sheet in one coordinate frame, and composite or render from the placed model. The deliverable carries its own proof: closures, residuals in centimetres, and hashes of what was delivered. Pixels are for reading labels off an enlargement and for looking at the result, never for assembling it |
+| Work from a technical drawing | The `drafter` trade and its `plan-geometry` skill (D-198): pull the vector paths out of a CAD-plotted PDF with pdf.js — job `41fbbf49` took 153,926 paths off a plot with no text layer at all, by its own RESULT.md — derive the scale from the drawing's own stated areas and dimension chains rather than assuming it, place every sheet in one coordinate frame, and composite or render from the placed model. The deliverable carries its own proof: closures, residuals in centimetres, and hashes of what was delivered. Pixels are for reading labels off an enlargement and for looking at the result, never for assembling it. **The ceiling is white-model massing** — reliable in plan and in aerial three-quarter views, unreliable at eye level (one of two attempted missed its subject), with no textures and no photometric lighting. Photoreal is decided-not-built (D-204): the demand is one request, and the visible gap is unused three.js rather than a missing renderer |
 | Write and run scripts | Plain Node, no shell, no dependencies — this is also how a tool gets compiled (§9) |
 | Report | `RESULT.md`: outcome first, evidence second |
 
@@ -1798,6 +1798,18 @@ list per channel (D-077; SPEC M5.11 has the slices):
       invents. *Deliberately apart from the built kind: D-105 splits only
       where the user wrote "then", and inventing steps is a different
       trust question.*
+- [ ] **Photoreal rendering — declined, not deferred (D-204).** The drafter
+      renders white-model massing from a measured model; a headless-Blender
+      install was refused on counted demand (four render jobs in 422, one
+      underlying request, both survivors promoted) and on the finding that
+      the gap is unused three.js — shadow maps, PBR and image-based lighting
+      are all available through the existing render door and unused, and the
+      one genuinely bad artefact failed on camera placement, which any
+      renderer would have drawn just as wrongly. *Blocked on: demand. Reopen
+      when a photoreal ask is refused at review or three distinct requests
+      need it — and then lighting and materials inside the existing door
+      come first; Blender only if that proves insufficient, as its own
+      architectural decision.*
 - [x] **Job pipelines** — output of one feeds the next: explicit "then"
       steps, each an ordinary job with its own tier and quote, files
       forwarded as the next step's input/, a failed step halting the

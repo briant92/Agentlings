@@ -4973,3 +4973,93 @@ button.danger:hover {
 .p-record + .fold {
   margin-top: 8px;
 }
+
+/* The Library (UI.md, step 5): jobs as one-line rows that open to their
+   chips and leash, abilities with the jobs that list them, and browse-all as
+   a rail of categories with the results beside it. */
+.role-leash {
+  margin-left: auto;
+  font-size: 10px;
+  color: #5a6172;
+  white-space: nowrap;
+}
+.abil-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 0;
+  font-size: 11px;
+}
+.abil-row .desc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8a91a3;
+}
+.abil-row .n {
+  flex: none;
+  font-size: 10px;
+  color: #5a6172;
+}
+.abil-row .n.zero {
+  color: var(--db-orange);
+}
+.fold + .lib-search,
+.fold + .abil-row,
+.fold + .install-hint {
+  margin-top: 8px;
+}
+.br-split {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+}
+.br-rail {
+  max-height: 330px;
+  padding: 6px 0;
+  overflow-y: auto;
+  border-right: 1px solid #262b36;
+}
+.br-rail .br-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 10px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+.br-rail .br-cat.on {
+  border-left-color: var(--db-lime);
+  background: #1d2637;
+}
+.br-rail .br-cat i {
+  margin-left: auto;
+}
+.br-hits {
+  min-width: 0;
+  padding: 0 10px 8px;
+}
+.br-hits .br-head {
+  margin: 0 -10px 4px;
+}
+.erow-body .role-foot {
+  margin-top: 6px;
+}
+
+/* What this level can read (UI.md, step 6): formats as chips. */
+.k-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.fold + .lib-status,
+.fold + .k-source {
+  margin-top: 6px;
+}

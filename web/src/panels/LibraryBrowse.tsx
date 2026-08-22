@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { LibraryBrowse as Browse, LibraryHit } from '@agentlings/shared';
 import { api } from '../api';
 import { LibraryResults } from './LibraryResults';
+import { MoreRow, usePaged } from './Section';
 
 /**
  * The catalogue, for someone who has not decided what they want yet.
@@ -16,9 +17,6 @@ import { LibraryResults } from './LibraryResults';
  * rows are the same `LibraryResults` search renders, so a template is still
  * read before it is written and still pinned to the commit it was read at.
  */
-
-/** How many category chips to show before the rest go behind a click. */
-const CHIP_LIMIT = 18;
 
 type Kind = 'all' | 'role' | 'skill';
 
@@ -47,8 +45,9 @@ export function LibraryBrowse({
   const [source, setSource] = useState('all');
   const [category, setCategory] = useState<string | null>(null);
   const [hits, setHits] = useState<LibraryHit[] | null>(null);
-  const [all, setAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** A category's entries, ten at a time (UI.md, step 5). */
+  const page = usePaged(hits ?? []);
 
   // The last shape is kept while the next one loads. Clearing it would empty
   // the source dropdown that is driving the request, and blank the chips on
@@ -86,7 +85,6 @@ export function LibraryBrowse({
   }, [category, kind, source]);
 
   const categories = shape?.categories ?? [];
-  const shown = all ? categories : categories.slice(0, CHIP_LIMIT);
   const chosen = categories.find((c) => c.name === category);
   const total = shape ? shape.jobs + shape.abilities : 0;
 
@@ -131,43 +129,44 @@ export function LibraryBrowse({
       )}
 
       {categories.length > 0 && (
-        <div className="br-cats">
-          {shown.map((c) => (
-            <button
-              key={c.name}
-              className={`br-cat${c.name === category ? ' on' : ''}`}
-              onClick={() => setCategory(c.name === category ? null : c.name)}
-            >
-              {c.name} <i>{c.jobs + c.abilities}</i>
-            </button>
-          ))}
-          {categories.length > CHIP_LIMIT && (
-            <button className="br-cat more" onClick={() => setAll(!all)}>
-              {all ? 'fewer ▴' : `all ${categories.length} categories ▾`}
-            </button>
-          )}
+        // A rail of categories with the results beside it (UI.md, step 5),
+        // in place of a chip box clipped at 120px: the rail scrolls through
+        // all hundred, and the results page ten at a time.
+        <div className="br-split">
+          <div className="br-rail">
+            {categories.map((c) => (
+              <button
+                key={c.name}
+                className={`br-cat${c.name === category ? ' on' : ''}`}
+                onClick={() => setCategory(c.name === category ? null : c.name)}
+              >
+                {c.name} <i>{c.jobs + c.abilities}</i>
+              </button>
+            ))}
+          </div>
+          <div className="br-hits">
+            {!chosen && <p className="dim br-empty">Pick a category to see what it holds.</p>}
+            {chosen && (
+              <>
+                <div className="br-head">
+                  <span className="br-who">{chosen.name}</span>
+                  <span className="dim">
+                    {chosen.jobs > 0 && `${chosen.jobs} ${chosen.jobs === 1 ? 'job' : 'jobs'}`}
+                    {chosen.jobs > 0 && chosen.abilities > 0 && ' · '}
+                    {chosen.abilities > 0 &&
+                      `${chosen.abilities} ${chosen.abilities === 1 ? 'ability' : 'abilities'}`}
+                  </span>
+                  <button className="work-link br-clear" onClick={() => setCategory(null)}>
+                    clear
+                  </button>
+                </div>
+                {hits === null && <p className="dim br-empty">loading…</p>}
+                {hits && <LibraryResults hits={page.rows} onInstalled={onInstalled} />}
+                <MoreRow hidden={page.hidden} what="entries" onShow={page.showAll} />
+              </>
+            )}
+          </div>
         </div>
-      )}
-
-      {chosen && (
-        <>
-          <div className="br-head">
-            <span className="br-who">{chosen.name}</span>
-            <span className="dim">
-              {chosen.jobs > 0 && `${chosen.jobs} ${chosen.jobs === 1 ? 'job' : 'jobs'}`}
-              {chosen.jobs > 0 && chosen.abilities > 0 && ' · '}
-              {chosen.abilities > 0 &&
-                `${chosen.abilities} ${chosen.abilities === 1 ? 'ability' : 'abilities'}`}
-            </span>
-            <button className="work-link br-clear" onClick={() => setCategory(null)}>
-              clear
-            </button>
-          </div>
-          <div className="br-list">
-            {hits === null && <p className="dim br-empty">loading…</p>}
-            {hits && <LibraryResults hits={hits} onInstalled={onInstalled} />}
-          </div>
-        </>
       )}
     </div>
   );

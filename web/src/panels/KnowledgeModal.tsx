@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KnowledgeStatus } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { Section } from './Section';
+
+/** What the store reads, as the chips say it. */
+const FORMATS = ['.md', '.txt', '.docx', '.pdf', '.xlsx', '.pptx', '.png', '.jpg'];
 
 /**
  * The knowledge store: folders of the user's own material this level can
@@ -155,158 +159,187 @@ export function KnowledgeModal({
         </div>
         <div className="m-body">
           <p className="k-intro">
-            Point this level at folders of your own material — notes, documents,
-            spreadsheets, decks, and paperwork you only have on paper. The crew
-            reads a copy taken when you press add — never your files directly — so
-            you can see exactly what it has before it uses any of it.
+            Point this level at folders of your own material. The crew reads a copy taken
+            when you press add — never your files directly — so you can see exactly what it
+            has before it uses any of it.
           </p>
 
-          <div className="sect">folders this level reads</div>
-          {status?.sources.length === 0 && (
+          {/* The light touch decided on 2026-08-22 (UI.md, step 6): the
+              folders, the add controls and the formats stay open; the two
+              explanations fold with their gist in the header. */}
+          <Section
+            panel="knowledge"
+            id="folders"
+            label="folders this level reads"
+            count={status ? (status.sources.length === 0 ? 'none yet' : status.sources.length) : '…'}
+            defaultOpen
+          >
+            {status?.sources.length === 0 && (
+              <p className="lib-status">
+                None yet. Everything is answered from what the crew has done itself.
+              </p>
+            )}
+            {status?.sources.map((path) => {
+              // A folder that is not there reads as a working one otherwise, and
+              // it is the row rather than the transient error that persists.
+              const gone = status.missing.includes(path);
+              return (
+                <div key={path} className={gone ? 'k-source gone' : 'k-source'}>
+                  <span className="k-path" title={path}>
+                    {path}
+                  </span>
+                  {gone && <span className="k-gone">not found</span>}
+                  <button
+                    className="work-link danger"
+                    disabled={busy}
+                    onClick={() => void remove(path)}
+                  >
+                    remove
+                  </button>
+                </div>
+              );
+            })}
+            {status?.indexed && (
+              <>
+                <p className="lib-status">
+                  {status.entries} passage{status.entries === 1 ? '' : 's'} from {status.files}{' '}
+                  file{status.files === 1 ? '' : 's'} · read {ago(status.syncedAt)}
+                  {status.scanned > 0 &&
+                    ` · ${status.scanned} file${status.scanned === 1 ? '' : 's'} read from a scan`}
+                  {' · '}
+                  <button className="work-link" disabled={busy} onClick={() => void resync()}>
+                    {busy ? 'reading…' : 'read them again'}
+                  </button>
+                </p>
+                {/* Its own line rather than folded into the warning below: a
+                    contract read as far as page 20 is a different loss from one
+                    that yielded nothing, and it went unreported until the panel
+                    copy was read back against the code. */}
+                {status.scanCut > 0 && (
+                  <p className="lib-warn">
+                    {status.scanCut} scan{status.scanCut === 1 ? '' : 's'}{' '}
+                    {status.scanCut === 1 ? 'was' : 'were'} longer than 20 pages and{' '}
+                    {status.scanCut === 1 ? 'was' : 'were'} read that far only. Split the long
+                    ones if what follows matters.
+                  </p>
+                )}
+                {/* The budget ran out, or there is no engine. Either way these
+                    files are in the folder and contributing nothing, which looks
+                    from here exactly like a folder that was never read. */}
+                {status.unscanned > 0 && (
+                  <p className="lib-warn">
+                    {status.unscanned} scanned file{status.unscanned === 1 ? '' : 's'} held no
+                    text that could be read
+                    {status.ocr
+                      ? ' — a sync reads about 200 scanned pages, so point at a narrower folder for the rest.'
+                      : ', because this machine has no OCR engine.'}
+                  </p>
+                )}
+                {/* Invisible everywhere else, and it changes what the level can do. */}
+                {status.stale && (
+                  <p className="lib-warn">
+                    This copy is over a week old, so the crew has stopped using it — jobs
+                    are being answered without it until you read the folders again.
+                  </p>
+                )}
+                {status.skipped > 0 && (
+                  <p className="lib-warn">
+                    {status.skipped} file{status.skipped === 1 ? '' : 's'} past the 250-per-folder
+                    limit {status.skipped === 1 ? 'was' : 'were'} left out. Point at a narrower
+                    folder to be sure of what is included.
+                  </p>
+                )}
+                {status.truncated > 0 && (
+                  <p className="lib-warn">
+                    {status.truncated} file{status.truncated === 1 ? '' : 's'}{' '}
+                    {status.truncated === 1 ? 'was' : 'were'} long enough that only the first
+                    part was read. Split the long ones if the rest matters.
+                  </p>
+                )}
+              </>
+            )}
+          </Section>
+
+          <Section panel="knowledge" id="add" label="add a folder" defaultOpen>
             <p className="lib-status">
-              None yet. Everything is answered from what the crew has done itself.
+              <button
+                className="work-link"
+                disabled={busy || picking}
+                onClick={() => void browse(status?.sources ?? [])}
+              >
+                {picking ? 'waiting for the folder window…' : 'choose a folder…'}
+              </button>
+              {' · or type a path below'}
             </p>
-          )}
-          {status?.sources.map((path) => {
-            // A folder that is not there reads as a working one otherwise, and
-            // it is the row rather than the transient error that persists.
-            const gone = status.missing.includes(path);
-            return (
-              <div key={path} className={gone ? 'k-source gone' : 'k-source'}>
-                <span className="k-path" title={path}>
-                  {path}
+            <input
+              className="lib-search"
+              placeholder="C:\Users\you\Documents"
+              value={draft}
+              disabled={busy}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void add();
+              }}
+            />
+          </Section>
+
+          <Section
+            panel="knowledge"
+            id="formats"
+            label="what gets read"
+            count={`${FORMATS.length} formats`}
+            defaultOpen
+          >
+            <div className="k-formats">
+              {FORMATS.map((ext) => (
+                <span key={ext} className="chip">
+                  {ext}
                 </span>
-                {gone && <span className="k-gone">not found</span>}
-                <button
-                  className="work-link danger"
-                  disabled={busy}
-                  onClick={() => void remove(path)}
-                >
-                  remove
-                </button>
-              </div>
-            );
-          })}
-
-          <div className="sect">add a folder</div>
-          <p className="lib-status">
-            <button
-              className="work-link"
-              disabled={busy || picking}
-              onClick={() => void browse(status?.sources ?? [])}
-            >
-              {picking ? 'waiting for the folder window…' : 'choose a folder…'}
-            </button>
-            {' · or type a path below'}
-          </p>
-          <input
-            className="lib-search"
-            placeholder="C:\Users\you\Documents"
-            value={draft}
-            disabled={busy}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void add();
-            }}
-          />
-          {/* A spreadsheet is read as sentences rather than as a grid, which is
-              why a column name is the way to find a number in it. Scans are
-              named separately below because whether they can be read at all
-              depends on the machine. */}
-          <p className="lib-status">
-            Notes and text, Word documents, PDFs, spreadsheets, decks, scans and
-            photographs are all read (.md, .txt, .docx, .pdf, .xlsx, .pptx, .png,
-            .jpg). A spreadsheet is read a row at a time with each value under its
-            column name, and a deck a slide at a time.
-          </p>
-          {status &&
-            (status.ocr ? (
-              <p className="lib-status">
-                Scanned paper and photographs of it are read by the OCR engine built
-                into Windows. Those words are a good reading rather than the
-                document's own, so anything taken from one is marked “read from a
-                scan” wherever the crew quotes it.
-              </p>
-            ) : (
+              ))}
+            </div>
+            {/* A spreadsheet is read as sentences rather than as a grid, which is
+                why a column name is the way to find a number in it. */}
+            <p className="lib-status">
+              Spreadsheets a row at a time under their column names · decks a slide at a time
+              · scans and photographs through the OCR built into Windows, marked “read from a
+              scan” wherever the crew quotes them.
+            </p>
+            {status && !status.ocr && (
               <p className="lib-warn">
-                This machine has no OCR engine, so a scan or a photograph holds
-                pictures of words and none this level can read. Adding an English
-                or Spanish language pack in Windows settings turns it on.
+                This machine has no OCR engine, so a scan or a photograph holds pictures of
+                words and none this level can read. Adding an English or Spanish language
+                pack in Windows settings turns it on.
               </p>
-            ))}
+            )}
+          </Section>
 
-          {status?.indexed && (
-            <>
-              <div className="sect">what it has</div>
-              <p className="lib-status">
-                {status.entries} passage{status.entries === 1 ? '' : 's'} from {status.files} file
-                {status.files === 1 ? '' : 's'} · read {ago(status.syncedAt)}
-                {' · '}
-                <button className="work-link" disabled={busy} onClick={() => void resync()}>
-                  {busy ? 'reading…' : 'read them again'}
-                </button>
-              </p>
-              {/* "Passage" is the app's own word, and it now means three
-                  different shapes depending on the file it came from. */}
-              <p className="lib-status">
-                A passage is a section of writing, a slide, a run of spreadsheet rows, or
-                a page of scanned paper.
-                {status.scanned > 0 &&
-                  ` ${status.scanned} file${status.scanned === 1 ? ' was' : 's were'} read from a scan.`}
-              </p>
-              {/* Its own line rather than folded into the warning below: a
-                  contract read as far as page 20 is a different loss from one
-                  that yielded nothing, and it went unreported until the panel
-                  copy was read back against the code. */}
-              {status.scanCut > 0 && (
-                <p className="lib-warn">
-                  {status.scanCut} scan{status.scanCut === 1 ? '' : 's'}{' '}
-                  {status.scanCut === 1 ? 'was' : 'were'} longer than 20 pages and{' '}
-                  {status.scanCut === 1 ? 'was' : 'were'} read that far only. Split the long
-                  ones if what follows matters.
-                </p>
-              )}
-              {/* The budget ran out, or there is no engine. Either way these
-                  files are in the folder and contributing nothing, which looks
-                  from here exactly like a folder that was never read. */}
-              {status.unscanned > 0 && (
-                <p className="lib-warn">
-                  {status.unscanned} scanned file{status.unscanned === 1 ? '' : 's'} held no
-                  text that could be read
-                  {status.ocr
-                    ? ' — a sync reads about 200 scanned pages, so point at a narrower folder for the rest.'
-                    : ', because this machine has no OCR engine.'}
-                </p>
-              )}
-              {/* Invisible everywhere else, and it changes what the level can do. */}
-              {status.stale && (
-                <p className="lib-warn">
-                  This copy is over a week old, so the crew has stopped using it — jobs
-                  are being answered without it until you read the folders again.
-                </p>
-              )}
-              {status.skipped > 0 && (
-                <p className="lib-warn">
-                  {status.skipped} file{status.skipped === 1 ? '' : 's'} past the 250-per-folder
-                  limit {status.skipped === 1 ? 'was' : 'were'} left out. Point at a narrower
-                  folder to be sure of what is included.
-                </p>
-              )}
-              {/* The figure used to be "about 60 pages", which is true of
-                  writing and false of the two formats added since: the cap is
-                  200 passages, and a passage holds one slide but around six
-                  spreadsheet rows. Measured, not estimated. */}
-              {status.truncated > 0 && (
-                <p className="lib-warn">
-                  {status.truncated} file{status.truncated === 1 ? '' : 's'}{' '}
-                  {status.truncated === 1 ? 'was' : 'were'} long enough that only the first
-                  part was read. A file is read to about 60 pages of writing, 200 slides,
-                  or 1,300 spreadsheet rows — and a scan to 20 pages. Split the long ones
-                  if the rest matters.
-                </p>
-              )}
-            </>
-          )}
+          <Section
+            panel="knowledge"
+            id="how"
+            label="how reading works"
+            summary="a copy, not your files · read once · per-file limits · stale after a week"
+          >
+            <p className="lib-status">
+              The crew reads a copy taken when you press add, never your files directly, and
+              reads it once — nothing watches the folder. Read the folders again after you
+              change them.
+            </p>
+            {/* "Passage" is the app's own word, and it means three different
+                shapes depending on the file it came from. The figures were
+                measured, not estimated: the cap is 200 passages, and a passage
+                holds one slide but around six spreadsheet rows. */}
+            <p className="lib-status">
+              A passage is a section of writing, a slide, a run of spreadsheet rows, or a page
+              of scanned paper. A file is read to about 60 pages of writing, 200 slides, or
+              1,300 spreadsheet rows — a scan to 20 pages, and a folder to 250 files. Split the
+              long ones if the rest matters.
+            </p>
+            <p className="lib-status">
+              Words read from a scan are a good reading rather than the document&apos;s own, so
+              anything taken from one is marked “read from a scan”. A copy older than a week
+              stops being used until you read the folders again.
+            </p>
+          </Section>
 
           {note && <p className="lib-status">{note}</p>}
           {error && <p className="lib-warn">{error}</p>}

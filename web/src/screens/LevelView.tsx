@@ -266,7 +266,13 @@ export function LevelView({
         <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
       )}
       {rolesOpen && (
-        <RolesModal initialQuery={libraryQuery} onClose={() => setRolesOpen(false)} />
+        <RolesModal
+          initialQuery={libraryQuery}
+          levelId={level.id}
+          levelName={level.name}
+          onHire={() => void hire()}
+          onClose={() => setRolesOpen(false)}
+        />
       )}
       {knowledgeOpen && (
         <KnowledgeModal

@@ -127,14 +127,16 @@ true, not when its code compiles.
 
 ## Phase 2 — server batch, one restart
 
-- [ ] **7. Connection kind** — `kind: 'read' | 'send'` on every entry in
-      `catalog/connections.json` and on `ConnectionInfo`, passed through in
-      `connections.ts`. Test: every catalogued connection has a kind.
-- [ ] **8. Door usage** — `GET /api/doors/usage` aggregating
+- [x] **7. Connection kind** — landed 2026-08-22 (`8447b3a`), one change
+      from the plan: the catalog already said it. `sendsOnly` (D-097) is the
+      fact, so `ConnectionInfo.kind` is read off it in `describe()` rather
+      than declared a second time; the test pins the catalog — exactly the
+      four senders are sends-only.
+- [x] **8. Door usage** — landed 2026-08-22 (`8447b3a`); reads live after the restart. `GET /api/doors/usage` aggregating
       `.agentlings/doors.log` per door: calls, per-tool counts, errors, first
       and last `at`. Test against a fixture log. Evidence: the route answers
       mail 38 (27 search, 11 read) and search 96 for today's log.
-- [ ] **9. What a run left** — `deliverySummary(dir)` in `outputs.ts` (top-level
+- [x] **9. What a run left** — landed 2026-08-22 (`8447b3a`); the boot backfill runs at the restart. `deliverySummary(dir)` in `outputs.ts` (top-level
       files minus paperwork: count, PDFs, images, other; plus `work/` and
       `input/` counts and bytes, never `repo/` or dotfiles), stamped on the job
       as `delivered` where `changes` and `pending` are stamped at finish, and
@@ -143,7 +145,7 @@ true, not when its code compiles.
       `files`. Tests: the summary on a fixture sandbox; the boot backfill
       stamps once. Evidence: 29ddccb7 reads "PDF, 14 images + 62 files" and
       106140b4 "nothing delivered · work/ 68".
-- [ ] **10. Carry manifest** — `carryManifest(previousDir)` beside
+- [x] **10. Carry manifest** — landed 2026-08-22 (`8447b3a`). `carryManifest(previousDir)` beside
       `carryForward` in `executors/claude.ts`, the single list of what a new
       leg receives (top-level non-paperwork files, `input/`, the report as
       `PREVIOUS-RESULT.md`) and what stays; `carryForward` copies from it and
@@ -151,12 +153,12 @@ true, not when its code compiles.
       fixture sandbox; `carryForward` copies exactly the manifest. Evidence:
       the quote for 106140b4 lists `input/` and the report, and names `work/`
       as left behind.
-- [ ] **11. Trajectory route** — `GET /api/levels/:lid/jobs/:id/trajectory`
+- [x] **11. Trajectory route** — landed 2026-08-22 (`8447b3a`). `GET /api/levels/:lid/jobs/:id/trajectory`
       returning the session pass's `call`, `result`, `said` and `end` lines
       from `.trajectory.jsonl`, unknown kinds skipped, `{trail: false}` when
       the file is absent. Test against a fixture trail with a foreign line
       kind. Evidence: 39a1ff24 answers 43 calls; 106140b4 answers no trail.
-- [ ] **12. The ledger's cut field** — `outOfTurns?: boolean` on `LedgerEntry`,
+- [x] **12. The ledger's cut field** — landed 2026-08-22 (`8447b3a`), with `timedOut` beside it since the clock is the other limit (D-138) and `cut` counts both. `outOfTurns?: boolean` on `LedgerEntry`,
       written by the row builder from `job.meter.outOfTurns` (presence-gated
       like `turnsAllowed`); `recordOf` gains `cut` and `finished` (done and not
       cut) with `AgentlingRecord` to match; `isJournal()` learns the D-201
@@ -166,13 +168,18 @@ true, not when its code compiles.
       assignee). Tests: the row carries the flag; `recordOf` on cut, finished
       and 51/40-done fixtures; `isJournal` on the D-201 line. Evidence: Ash's
       record answers 6 runs · 5 cut · 1 finished.
-- [ ] **13. Backfill the cut field** — `scripts/backfill-ledger-cut.ts` in the
-      family of `backfill-ledger-interrupted.ts`: by identification only — a
-      row whose `jobId` has a stored job with `meter.outOfTurns === true`;
-      dry by default, `--write` takes `ledger.jsonl.pre-cut.bak` first; report
-      rows matched, rows already carrying the field, jobs no longer stored.
-      Evidence: the dry run's count agrees with the ninety-eight +1 rows D-212
-      counted, or the difference is explained.
+- [x] **13. Backfill the cut field** — landed and **run** 2026-08-22
+      (`8447b3a`): `scripts/backfill-ledger-cut.ts`, by identification only,
+      dry by default, `--write` took `ledger.jsonl.pre-cut.bak` first (on
+      disk only — `.agentlings/` is gitignored). Evidence: 430 rows, none
+      speaking before; 100 marked (91 `outOfTurns`, 9 `timedOut`) across hq
+      67, home-chores 18, training-ground 14, bootcamp 1; 46 silent rows name
+      jobs no longer stored and stay silent (the cut count is a floor for
+      them); **19 stored rows over the cap were left unmarked because their
+      jobs finished on their own — D-212's population to the row** (its
+      seventeen older rows plus `39a1ff24` 44/40 and `8aef2a7c` 51/40). Of the
+      100 marked, 91 show turns over the cap; with the 46 unstored rows that
+      is where D-212's ninety-eight lie.
 - [ ] **14. Restart** — Brian's terminal, outside 07:55–08:20, `jobsRunning`
       0; then `curl` each new route and re-open the three panels. Evidence:
       the boot backfill logged its count once; the schedules are intact.

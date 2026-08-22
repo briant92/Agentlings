@@ -1,18 +1,149 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import type {
   AudiencePerson,
   ChannelShelf,
+  ConnectionInfo,
+  DoorUsage,
   SettingsInfo,
   SweepResult,
   WorkingCopiesInfo,
 } from '@agentlings/shared';
 import { api } from '../api';
 import { ChannelLogo } from '../panels/ChannelLogo';
+import { ExpandRow, Section } from '../panels/Section';
 import { resetTour, tourSeen } from '../panels/Tour';
 import { crtEnabled, setCrt } from '../ui/crt';
+import {
+  authWording,
+  byKind,
+  needsLine,
+  tabOf,
+  trailBegan,
+  trailNote,
+  usageDetail,
+  usageFact,
+  type Tab,
+} from './settings';
 
 /** Disk sizes in the unit the numbers were measured in. */
 const mb = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`;
+
+/** Which board was last open — a hint the browser keeps, like a fold. */
+const TAB_KEY = 'agentlings:settings:tab';
+function readTab(): Tab {
+  try {
+    return tabOf(localStorage.getItem(TAB_KEY));
+  } catch {
+    return 'reads';
+  }
+}
+function saveTab(tab: Tab): void {
+  try {
+    localStorage.setItem(TAB_KEY, tab);
+  } catch {
+    // A lost hint, not a lost setting.
+  }
+}
+
+const stop = (e: MouseEvent) => e.stopPropagation();
+
+/**
+ * One connection as a row (UI.md, step 15): mark · name · what the trail
+ * says · the switch — or, when a secret is missing, what it still needs and
+ * the pill. The body holds the description, the trail's detail and whatever
+ * the modal hands in: the secret drawer, the people a bot knows, a
+ * re-approval, the note for a door switched off.
+ *
+ * The switch and the links stop their clicks at themselves, so flipping a
+ * door never also opens the row. Opening the drawer remounts the row open —
+ * how a link in the head opens the body without the row owning a second
+ * open state.
+ */
+function ConnectionRow({
+  connection,
+  usage,
+  began,
+  now,
+  fact,
+  drawerOpen,
+  onAddHere,
+  onToggle,
+  children,
+}: {
+  connection: ConnectionInfo;
+  usage?: DoorUsage;
+  began: number | null;
+  now: number;
+  /** A fact beside the name that is not the trail's — who a bot knows. */
+  fact?: ReactNode;
+  drawerOpen: boolean;
+  onAddHere: () => void;
+  onToggle: (enabled: boolean) => void;
+  children?: ReactNode;
+}) {
+  const used = connection.kind === 'read' ? usageFact(usage, began, now) : null;
+  const detail = connection.kind === 'read' ? usageDetail(usage, began, now) : null;
+  const needs = needsLine(connection);
+  return (
+    <ExpandRow
+      key={drawerOpen ? 'drawer' : 'row'}
+      open={drawerOpen}
+      className={connection.ready ? 'door' : 'door need'}
+      head={
+        <>
+          <ChannelLogo channel={connection.name} />
+          <span className="nm">
+            {connection.label}
+            {connection.identity && <span className="d"> · {connection.identity}</span>}
+          </span>
+          {!connection.ready ? (
+            <>
+              <span className="fact warn">
+                {needs.text} ·{' '}
+                <button
+                  type="button"
+                  className="work-link"
+                  onClick={(e) => {
+                    stop(e);
+                    onAddHere();
+                  }}
+                >
+                  {needs.link}
+                </button>
+              </span>
+              <span className="pill need">needs set-up</span>
+            </>
+          ) : (
+            <>
+              {used && 'used' in used && (
+                <span className="fact">
+                  used <b>{used.used}×</b> · last {used.last}
+                </span>
+              )}
+              {used && 'unusedSince' in used && (
+                <span className="fact warn">not used since {used.unusedSince}</span>
+              )}
+              {fact}
+              <label className={`tgl${connection.enabled ? ' on' : ''}`} onClick={stop}>
+                <input
+                  type="checkbox"
+                  checked={connection.enabled}
+                  aria-label={connection.label}
+                  onChange={(e) => onToggle(e.target.checked)}
+                />
+                <i />
+              </label>
+            </>
+          )}
+        </>
+      }
+    >
+      <p>{connection.description}</p>
+      {detail && <p className="dim">{detail}</p>}
+      {children}
+    </ExpandRow>
+  );
+}
 
 export function SettingsModal({
   onClose,
@@ -22,6 +153,13 @@ export function SettingsModal({
   onOpenRoles: () => void;
 }) {
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
+  const [tab, setTab] = useState<Tab>(readTab);
+  const pick = (next: Tab) => {
+    setTab(next);
+    saveTab(next);
+  };
+  /** Every door's use off the trail (UI.md, step 8): null until it lands, empty before any call. */
+  const [doors, setDoors] = useState<DoorUsage[] | null>(null);
   const [crt, setCrtState] = useState(crtEnabled());
   const [tourDone, setTourDone] = useState(tourSeen());
   /** Which connection's token drawer is open, and its in-progress state. */
@@ -31,7 +169,7 @@ export function SettingsModal({
   const [drawerError, setDrawerError] = useState<string | null>(null);
   /** A Google sign-in tab is open; the server flips ready when it comes back. */
   const [googlePending, setGooglePending] = useState(false);
-  /** The connected card's re-approve (D-123): sent, or why it could not be. */
+  /** The connected row's re-approve (D-123): sent, or why it could not be. */
   const [reconnectSent, setReconnectSent] = useState(false);
   const [reconnectError, setReconnectError] = useState<string | null>(null);
 
@@ -85,6 +223,9 @@ export function SettingsModal({
     void api<ChannelShelf>('/api/channels')
       .then(setShelf)
       .catch(() => setShelf(null));
+    void api<{ doors: DoorUsage[] }>('/api/doors/usage')
+      .then((reply) => setDoors(reply.doors))
+      .catch(() => setDoors([]));
     loadCopies();
   }, []);
 
@@ -160,7 +301,7 @@ export function SettingsModal({
   /**
    * Re-walk the consent with the client already stored (D-123). Scopes never
    * grow on an existing token, so when a new ability lands — reading the
-   * people you have emailed — the connected card must offer the fresh
+   * people you have emailed — the connected row must offer the fresh
    * approval itself; a connected state with no way to re-consent was a dead
    * end of exactly D-111's kind. The empty body tells the server "same
    * client"; the approval happens on Google's page, and the callback storing
@@ -210,6 +351,197 @@ export function SettingsModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const { reads, sends } = byKind(settings?.connections ?? []);
+  const usage = new Map((doors ?? []).map((d) => [d.door, d]));
+  const began = trailBegan(doors ?? []);
+  const now = Date.now();
+
+  /** The secret drawer for a connection that is not ready — the same drawer the cards had. */
+  const secretDrawer = (connection: ConnectionInfo) => (
+    <div className="secret-drawer">
+      {connection.setup && (
+        <ol className="secret-steps">
+          {connection.setup.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      )}
+      {connection.name === 'google' ? (
+        <>
+          {(['clientId', 'clientSecret'] as const).map((field) => (
+            <div key={field} className="secret-row">
+              <input
+                type="password"
+                placeholder={field === 'clientId' ? 'client id' : 'client secret'}
+                value={values[field] ?? ''}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={googlePending}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field]: e.target.value }))}
+              />
+            </div>
+          ))}
+          <div className="secret-row">
+            <button
+              disabled={
+                checking ||
+                googlePending ||
+                !(values.clientId ?? '').trim() ||
+                !(values.clientSecret ?? '').trim()
+              }
+              onClick={() => void connectGoogle()}
+            >
+              {googlePending ? 'Waiting for Google…' : 'Connect Google'}
+            </button>
+            {googlePending && (
+              <button className="ghost" onClick={() => setGooglePending(false)}>
+                Cancel
+              </button>
+            )}
+          </div>
+          {googlePending && (
+            <p className="dim secret-note">
+              Approve in the tab that just opened — your password goes to Google, never here.
+              This row flips the moment the sign-in comes back.
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          {connection.missingSecrets.map((secret) => (
+            <div key={secret} className="secret-row">
+              <input
+                type="password"
+                placeholder={secret}
+                value={values[secret] ?? ''}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setValues((prev) => ({ ...prev, [secret]: e.target.value }))}
+              />
+            </div>
+          ))}
+          <div className="secret-row">
+            <button
+              disabled={checking || connection.missingSecrets.some((s) => !(values[s] ?? '').trim())}
+              onClick={() => void submitSecrets(connection.name, connection.missingSecrets)}
+            >
+              {checking ? 'Checking…' : 'Check'}
+            </button>
+          </div>
+        </>
+      )}
+      {drawerError && <p className="error">{drawerError}</p>}
+      <p className="dim secret-note">
+        {connection.name === 'google'
+          ? 'Nothing is saved until Google confirms the sign-in. Connecting does not switch anything on.'
+          : 'Checked with one real call before it is saved. Saved to .env; it never appears on screen again. Connecting does not switch anything on.'}{' '}
+        Or set it in .env ·{' '}
+        <button className="work-link" onClick={() => openDrawer(null)}>
+          close
+        </button>
+      </p>
+    </div>
+  );
+
+  /** What a row's body carries beyond its description: a re-approval, the drawer, the off note, the people a bot knows. */
+  const body = (connection: ConnectionInfo) => (
+    <>
+      {connection.name === 'google' && connection.ready && (
+        <p>
+          {reconnectSent ? (
+            <>approve in the Google tab that opened — it says Connected when the new permission lands.</>
+          ) : (
+            <>
+              <button className="work-link" onClick={() => void reconnectGoogle()}>
+                re-approve access
+              </button>{' '}
+              — Google asks again in a new tab. Needed once when a new ability arrives, like reading
+              the people you have emailed.
+            </>
+          )}
+          {reconnectError && <span className="error"> {reconnectError}</span>}
+        </p>
+      )}
+      {!connection.ready && drawer === connection.name && secretDrawer(connection)}
+      {connection.ready && connection.defaultOn && !connection.enabled && (
+        <p className="dim">
+          Off — the crew works from what you give them. Jobs that would have fetched a page now
+          cost a session instead.
+        </p>
+      )}
+      {/* Who the bot knows (D-092): the opt-in audience, persisted — the To
+          picker's list, visible where connections live. */}
+      {connection.name === 'telegram' && connection.ready && audience !== null && (
+        <div>
+          <button className="work-link" onClick={() => setAudienceOpen((v) => !v)}>
+            {audienceOpen ? 'hide the people' : 'show the people'}
+          </button>
+          {' · '}
+          <button className="work-link" onClick={() => loadAudience()}>
+            check for new people
+          </button>
+          {audienceOpen && (
+            <div className="aud">
+              {audience.length === 0 && (
+                <p className="dim aud-empty">
+                  Nobody yet — anyone the crew should message taps Start on the bot once.
+                </p>
+              )}
+              {audience.map((person) => (
+                <div key={person.id} className="aud-row">
+                  <span className="aud-av" aria-hidden="true">
+                    {person.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="aud-nm">{person.name}</span>
+                  <span className="aud-id">{person.id}</span>
+                  <span className="aud-src dim">
+                    {person.viaStart ? 'tapped start' : ''}
+                    {person.viaStart && person.sends > 0 ? ' · ' : ''}
+                    {person.sends > 0 ? `sent ${person.sends}` : ''}
+                  </span>
+                  <button
+                    type="button"
+                    className="aud-x"
+                    aria-label={`Forget ${person.name}`}
+                    title="Forget them — they reappear if they say hello again"
+                    onClick={() => void unknow(person.id)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const row = (connection: ConnectionInfo) => (
+    <ConnectionRow
+      key={connection.name}
+      connection={connection}
+      usage={usage.get(connection.name)}
+      began={began}
+      now={now}
+      fact={
+        connection.name === 'telegram' && connection.ready && audience !== null ? (
+          <span className="fact">
+            knows{' '}
+            <b>
+              {audience.length} {audience.length === 1 ? 'person' : 'people'}
+            </b>
+          </span>
+        ) : undefined
+      }
+      drawerOpen={drawer === connection.name}
+      onAddHere={() => openDrawer(connection.name)}
+      onToggle={(enabled) => void toggle(connection.name, enabled)}
+    >
+      {body(connection)}
+    </ConnectionRow>
+  );
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal settings" onClick={(e) => e.stopPropagation()}>
@@ -217,337 +549,175 @@ export function SettingsModal({
           <span className="m-title">Settings</span>
           <button onClick={onClose}>✕</button>
         </div>
+        {/* Three boards (UI.md, step 15): what a run may read, what approval
+            may send, and the app itself. The last one opened is remembered. */}
+        <div className="p-tabs">
+          <button className={tab === 'reads' ? 'p-tab on' : 'p-tab'} onClick={() => pick('reads')}>
+            reads{settings ? ` · ${reads.length}` : ''}
+          </button>
+          <button className={tab === 'sends' ? 'p-tab on' : 'p-tab'} onClick={() => pick('sends')}>
+            sends{settings ? ` · ${sends.length}` : ''}
+          </button>
+          <button className={tab === 'app' ? 'p-tab on' : 'p-tab'} onClick={() => pick('app')}>
+            app
+          </button>
+        </div>
         <div className="m-body">
-          <div className="sect">display</div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={crt}
-              onChange={(e) => {
-                setCrt(e.target.checked);
-                setCrtState(e.target.checked);
-              }}
-            />
-            <span>CRT filter — scanlines and vignette over the whole screen.</span>
-          </label>
-          <p className="lib-status">
-            {tourDone ? 'You have seen the tour.' : 'The tour runs the next time you open a level.'}
-            {tourDone && (
-              <>
-                {' · '}
-                <button
-                  className="work-link"
-                  onClick={() => {
-                    resetTour();
-                    setTourDone(false);
-                  }}
-                >
-                  show it again
-                </button>
-              </>
-            )}
-          </p>
-          <div className="sect">executor</div>
-          {settings === null && <p className="dim">Loading…</p>}
-          {settings?.executor === 'claude-agent-sdk' && !settings.auth.problem && (
-            <p className="stat-done">claude-agent-sdk — jobs run real Claude sessions.</p>
-          )}
-          {/* Said here rather than discovered one failed agentling at a time. */}
-          {settings?.executor === 'claude-agent-sdk' && settings.auth.problem && (
-            <p className="stat-failed">{settings.auth.problem}</p>
-          )}
-          {settings?.executor === 'simulated' && (
+          {tab === 'reads' && (
             <>
-              <p className="dim">simulated — jobs are pretend work.</p>
-              <p className="dim">
-                To go live: copy .env.example → .env, set ANTHROPIC_API_KEY or a
-                CLAUDE_CODE_OAUTH_TOKEN, and restart the dev server.
+              <p className="door-intro">
+                What a run may read. The crew reaches outside by default — this is where you take
+                that back, once, rather than deciding it again for every job.
+              </p>
+              {settings === null && <p className="dim">Loading…</p>}
+              {reads.map(row)}
+              <p className="lib-status door-foot">
+                Switching a door off is level-wide: every job that would have used it costs a
+                session instead. {trailNote(doors)}
               </p>
             </>
           )}
-          {/* The crew reaches outside by default — this is where you take that
-              back, once, rather than deciding it again for every job. */}
-          <div className="sect">outside world</div>
-          {/* The garage, dressed as mock screen 3 (D-088): a card per
-              connection — mark, name, identity, an honest pill — with the
-              same switch and the same drawer the checkboxes had. */}
-          <div className="conn-grid">
-          {settings?.connections.map((connection) => (
-            <div
-              key={connection.name}
-              className={drawer === connection.name ? 'conn-cell open' : 'conn-cell'}
-            >
-              <div className="conn" title={connection.description}>
-                <ChannelLogo channel={connection.name} />
-                <div className="conn-meta">
-                  <div className="conn-nm">{connection.label}</div>
-                  <div className="conn-id">{connection.identity ?? connection.description}</div>
+          {tab === 'sends' && (
+            <>
+              <p className="door-intro">
+                What approval may send. Sends happen at review, never inside a run — the crew gets
+                no tools from any of these.
+              </p>
+              {settings === null && <p className="dim">Loading…</p>}
+              {sends.map(row)}
+              {/* The tiers beyond the rows (D-077, served by the shelf route):
+                  planned as quiet chips, and the refusals folded with the
+                  reason on each row — so nobody waits for a channel this menu
+                  will not grow. */}
+              {shelf && shelf.planned.length > 0 && (
+                <div className="minis door-planned">
+                  <span className="minis-label">planned</span>
+                  {shelf.planned.map((r) => (
+                    <span key={r.channel} className="mini" title={r.detail}>
+                      <ChannelLogo channel={r.channel} />
+                      {r.label}
+                    </span>
+                  ))}
                 </div>
-                <span
-                  className={
-                    !connection.ready ? 'pill need' : connection.enabled ? 'pill on' : 'pill off'
-                  }
+              )}
+              {shelf && shelf.never.length > 0 && (
+                <Section
+                  panel="settings"
+                  id="never"
+                  label="never on this menu"
+                  count={`${shelf.never.length} channels`}
+                  summary="each with its reason — so nobody waits for them"
                 >
-                  {!connection.ready ? 'needs set-up' : connection.enabled ? 'on' : 'off'}
-                </span>
-                <label
-                  className={`tgl${connection.enabled ? ' on' : ''}${connection.ready ? '' : ' blocked'}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={connection.enabled}
-                    disabled={!connection.ready}
-                    onChange={(e) => void toggle(connection.name, e.target.checked)}
-                  />
-                  <i />
-                </label>
-              </div>
-              {!connection.ready && (
-                <p className="dim conn-note">
-                  Needs {connection.missingSecrets.join(', ')} —{' '}
-                  <button
-                    className="work-link"
-                    onClick={() => openDrawer(drawer === connection.name ? null : connection.name)}
-                  >
-                    {drawer === connection.name ? 'close' : 'add it here'}
-                  </button>{' '}
-                  or set it in .env.
+                  <div className="shelf">
+                    {shelf.never.map((r) => (
+                      <p key={r.channel} className="shelf-row">
+                        <b>{r.label}</b> — {r.detail}
+                      </p>
+                    ))}
+                  </div>
+                </Section>
+              )}
+            </>
+          )}
+          {tab === 'app' && (
+            <>
+              <div className="sect">display</div>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={crt}
+                  onChange={(e) => {
+                    setCrt(e.target.checked);
+                    setCrtState(e.target.checked);
+                  }}
+                />
+                <span>CRT filter — scanlines and vignette over the whole screen.</span>
+              </label>
+              <p className="lib-status">
+                {tourDone ? 'You have seen the tour.' : 'The tour runs the next time you open a level.'}
+                {tourDone && (
+                  <>
+                    {' · '}
+                    <button
+                      className="work-link"
+                      onClick={() => {
+                        resetTour();
+                        setTourDone(false);
+                      }}
+                    >
+                      show it again
+                    </button>
+                  </>
+                )}
+              </p>
+              <div className="sect">executor</div>
+              {settings === null && <p className="dim">Loading…</p>}
+              {settings?.executor === 'claude-agent-sdk' && !settings.auth.problem && (
+                <p className="stat-done">
+                  claude-agent-sdk — jobs run real Claude sessions · {authWording(settings.auth.source)}.
                 </p>
               )}
-              {connection.name === 'google' && connection.ready && (
-                <p className="dim conn-note">
-                  {reconnectSent ? (
-                    <>approve in the Google tab that opened — it says Connected when the new permission lands.</>
-                  ) : (
-                    <>
-                      <button className="work-link" onClick={() => void reconnectGoogle()}>
-                        re-approve access
-                      </button>{' '}
-                      — Google asks again in a new tab. Needed once when a new ability arrives,
-                      like reading the people you have emailed.
-                    </>
-                  )}
-                  {reconnectError && <span className="error"> {reconnectError}</span>}
-                </p>
+              {/* Said here rather than discovered one failed agentling at a time. */}
+              {settings?.executor === 'claude-agent-sdk' && settings.auth.problem && (
+                <p className="stat-failed">{settings.auth.problem}</p>
               )}
-              {!connection.ready && drawer === connection.name && (
-                <div className="secret-drawer">
-                  {connection.setup && (
-                    <ol className="secret-steps">
-                      {connection.setup.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
-                  )}
-                  {connection.name === 'google' ? (
-                    <>
-                      {(['clientId', 'clientSecret'] as const).map((field) => (
-                        <div key={field} className="secret-row">
-                          <input
-                            type="password"
-                            placeholder={field === 'clientId' ? 'client id' : 'client secret'}
-                            value={values[field] ?? ''}
-                            autoComplete="off"
-                            spellCheck={false}
-                            disabled={googlePending}
-                            onChange={(e) =>
-                              setValues((prev) => ({ ...prev, [field]: e.target.value }))
-                            }
-                          />
-                        </div>
-                      ))}
-                      <div className="secret-row">
-                        <button
-                          disabled={
-                            checking ||
-                            googlePending ||
-                            !(values.clientId ?? '').trim() ||
-                            !(values.clientSecret ?? '').trim()
-                          }
-                          onClick={() => void connectGoogle()}
-                        >
-                          {googlePending ? 'Waiting for Google…' : 'Connect Google'}
-                        </button>
-                        {googlePending && (
-                          <button className="ghost" onClick={() => setGooglePending(false)}>
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                      {googlePending && (
-                        <p className="dim secret-note">
-                          Approve in the tab that just opened — your password goes to Google,
-                          never here. This card flips the moment the sign-in comes back.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {connection.missingSecrets.map((secret) => (
-                        <div key={secret} className="secret-row">
-                          <input
-                            type="password"
-                            placeholder={secret}
-                            value={values[secret] ?? ''}
-                            autoComplete="off"
-                            spellCheck={false}
-                            onChange={(e) =>
-                              setValues((prev) => ({ ...prev, [secret]: e.target.value }))
-                            }
-                          />
-                        </div>
-                      ))}
-                      <div className="secret-row">
-                        <button
-                          disabled={
-                            checking ||
-                            connection.missingSecrets.some((s) => !(values[s] ?? '').trim())
-                          }
-                          onClick={() =>
-                            void submitSecrets(connection.name, connection.missingSecrets)
-                          }
-                        >
-                          {checking ? 'Checking…' : 'Check'}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                  {drawerError && <p className="error">{drawerError}</p>}
-                  <p className="dim secret-note">
-                    {connection.name === 'google'
-                      ? 'Nothing is saved until Google confirms the sign-in. Connecting does not switch anything on.'
-                      : 'Checked with one real call before it is saved. Saved to .env; it never appears on screen again. Connecting does not switch anything on.'}
+              {settings?.executor === 'simulated' && (
+                <>
+                  <p className="dim">simulated — jobs are pretend work.</p>
+                  <p className="dim">
+                    To go live: copy .env.example → .env, set ANTHROPIC_API_KEY or a
+                    CLAUDE_CODE_OAUTH_TOKEN, and restart the dev server.
                   </p>
-                </div>
+                </>
               )}
-              {connection.ready && connection.defaultOn && !connection.enabled && (
-                <p className="dim conn-note">
-                  Off — the crew works from what you give them. Jobs that would have
-                  fetched a page now cost a session instead.
-                </p>
-              )}
-              {/* Who the bot knows (D-092): the opt-in audience, persisted —
-                  the To picker's list, visible where connections live. */}
-              {connection.name === 'telegram' && connection.ready && audience !== null && (
-                <div className="conn-note">
-                  <span className="dim">
-                    knows {audience.length} {audience.length === 1 ? 'person' : 'people'}
-                  </span>
-                  {' · '}
-                  <button className="work-link" onClick={() => setAudienceOpen((v) => !v)}>
-                    {audienceOpen ? 'hide' : 'show'}
+              <div className="sect">catalog</div>
+              <p className="dim">Roles and skills are a global library shared by every level.</p>
+              <button onClick={onOpenRoles}>Open roles &amp; skills</button>
+              <div className="sect">maintenance</div>
+              <div className="maint-card">
+                <div className="maint-title">Working copies</div>
+                {copies === null && <p className="dim">Measuring…</p>}
+                {copies && copies.sweepable.clones > 0 && (
+                  <p className="dim">
+                    Finished jobs keep the repo they cloned to work in. Right now{' '}
+                    <b>
+                      {mb(copies.sweepable.bytes)} across {copies.sweepable.clones} finished jobs
+                    </b>{' '}
+                    can go — transcripts, outputs and lessons stay, and a redo clones fresh anyway.
+                  </p>
+                )}
+                {copies && copies.sweepable.clones === 0 && (
+                  <p className="dim">
+                    Finished jobs keep the repo they cloned to work in. Nothing is sweepable right
+                    now — clones under work still in review are kept.
+                  </p>
+                )}
+                <div className="maint-foot">
+                  <button
+                    disabled={sweeping || !copies || copies.sweepable.clones === 0}
+                    onClick={() => void sweep()}
+                  >
+                    {sweeping ? 'sweeping…' : 'Sweep working copies'}
                   </button>
-                  {' · '}
-                  <button className="work-link" onClick={() => loadAudience()}>
-                    check for new people
-                  </button>
-                  {audienceOpen && (
-                    <div className="aud">
-                      {audience.length === 0 && (
-                        <p className="dim aud-empty">
-                          Nobody yet — anyone the crew should message taps Start on the bot once.
-                        </p>
-                      )}
-                      {audience.map((person) => (
-                        <div key={person.id} className="aud-row">
-                          <span className="aud-av" aria-hidden="true">
-                            {person.name.charAt(0).toUpperCase()}
-                          </span>
-                          <span className="aud-nm">{person.name}</span>
-                          <span className="aud-id">{person.id}</span>
-                          <span className="aud-src dim">
-                            {person.viaStart ? 'tapped start' : ''}
-                            {person.viaStart && person.sends > 0 ? ' · ' : ''}
-                            {person.sends > 0 ? `sent ${person.sends}` : ''}
-                          </span>
-                          <button
-                            type="button"
-                            className="aud-x"
-                            aria-label={`Forget ${person.name}`}
-                            title="Forget them — they reappear if they say hello again"
-                            onClick={() => void unknow(person.id)}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  {copies && (
+                    <span className="dim">
+                      only promoted or discarded jobs · {mb(copies.kept.bytes)} in{' '}
+                      {copies.kept.clones} kept clones
+                    </span>
                   )}
                 </div>
-              )}
-            </div>
-          ))}
-          </div>
-          {/* The tiers beyond the cards (D-077, served by the shelf route):
-              planned as quiet chips, and the refusals with the reason on the
-              row — so nobody waits for a channel this menu will not grow. */}
-          {shelf && shelf.planned.length > 0 && (
-            <div className="minis">
-              <span className="minis-label">planned</span>
-              {shelf.planned.map((row) => (
-                <span key={row.channel} className="mini" title={row.detail}>
-                  <ChannelLogo channel={row.channel} />
-                  {row.label}
-                </span>
-              ))}
-            </div>
+                {swept && (
+                  <p className="stat-done">
+                    Freed {mb(swept.bytes)} across {swept.clones} clone{swept.clones === 1 ? '' : 's'}.
+                    {swept.skipped > 0
+                      ? ` ${swept.skipped} skipped — something is holding them; try again later.`
+                      : ''}
+                  </p>
+                )}
+                {sweepError && <p className="error">{sweepError}</p>}
+              </div>
+            </>
           )}
-          {shelf && shelf.never.length > 0 && (
-            <div className="shelf">
-              <span className="minis-label">never on this menu — so nobody waits for them</span>
-              {shelf.never.map((row) => (
-                <p key={row.channel} className="shelf-row">
-                  <b>{row.label}</b> — {row.detail}
-                </p>
-              ))}
-            </div>
-          )}
-          <div className="sect">catalog</div>
-          <p className="dim">Roles and skills are a global library shared by every level.</p>
-          <button onClick={onOpenRoles}>Open roles &amp; skills</button>
-          <div className="sect">maintenance</div>
-          <div className="maint-card">
-            <div className="maint-title">Working copies</div>
-            {copies === null && <p className="dim">Measuring…</p>}
-            {copies && copies.sweepable.clones > 0 && (
-              <p className="dim">
-                Finished jobs keep the repo they cloned to work in. Right now{' '}
-                <b>
-                  {mb(copies.sweepable.bytes)} across {copies.sweepable.clones} finished jobs
-                </b>{' '}
-                can go — transcripts, outputs and lessons stay, and a redo clones fresh anyway.
-              </p>
-            )}
-            {copies && copies.sweepable.clones === 0 && (
-              <p className="dim">
-                Finished jobs keep the repo they cloned to work in. Nothing is sweepable right now —
-                clones under work still in review are kept.
-              </p>
-            )}
-            <div className="maint-foot">
-              <button
-                disabled={sweeping || !copies || copies.sweepable.clones === 0}
-                onClick={() => void sweep()}
-              >
-                {sweeping ? 'sweeping…' : 'Sweep working copies'}
-              </button>
-              {copies && (
-                <span className="dim">
-                  only promoted or discarded jobs · {mb(copies.kept.bytes)} in{' '}
-                  {copies.kept.clones} kept clones
-                </span>
-              )}
-            </div>
-            {swept && (
-              <p className="stat-done">
-                Freed {mb(swept.bytes)} across {swept.clones} clone{swept.clones === 1 ? '' : 's'}.
-                {swept.skipped > 0
-                  ? ` ${swept.skipped} skipped — something is holding them; try again later.`
-                  : ''}
-              </p>
-            )}
-            {sweepError && <p className="error">{sweepError}</p>}
-          </div>
         </div>
         <div className="m-foot">
           <button onClick={onClose}>Close</button>

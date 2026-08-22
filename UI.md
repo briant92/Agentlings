@@ -197,7 +197,7 @@ true, not when its code compiles.
 
 ## Phase 3 — the client parts that needed the batch
 
-- [ ] **15. Settings** (`SettingsModal.tsx`) — tabs reads · sends · app
+- [x] **15. Settings** — landed 2026-08-22; seen live: reads · 8 with web 69×, search 96×, mail 38× last today 08:13 and three doors unused since Aug 18, the mail row opening to mail_search 27 · mail_read 11 · 9 refused; sends · 4 with Telegram knowing 2 people and two needs-set-up rows whose add-it-here link opens the drawer, planned SMS · Discord, never folded at 6; app signed in with an API key from .env. (`SettingsModal.tsx`, a pure `settings.ts`) — tabs reads · sends · app
       (remembered), rows grouped by `kind` with mark · name · usage · switch;
       a "needs set-up" row carries the pill and the add-it-here link instead
       of a switch; the row body holds the description, per-tool counts and

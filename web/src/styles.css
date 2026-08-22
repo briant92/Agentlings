@@ -5063,3 +5063,33 @@ button.danger:hover {
 .fold + .k-source {
   margin-top: 6px;
 }
+
+/* Settings as three boards of rows (UI.md, step 15): the mark sized for a
+   row, the switch or the pill at the right edge, the intro above the rows
+   and the note beneath them. */
+.erow .ask-logo {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.erow.need {
+  opacity: 0.85;
+}
+.erow .fact .work-link {
+  font-size: 10.5px;
+}
+.erow-body .secret-drawer {
+  margin-top: 6px;
+}
+.door-intro {
+  margin: 8px 0 4px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #8a91a3;
+}
+.door-foot {
+  margin-top: 12px;
+}
+.door-planned {
+  margin-top: 14px;
+}

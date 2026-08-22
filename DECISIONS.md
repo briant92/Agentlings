@@ -218,6 +218,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-206 — 2026-08-21 — The pre-D-150 residue, charged — and the three rules that made it smaller](#d-206--2026-08-21--the-pre-d-150-residue-charged--and-the-three-rules-that-made-it-smaller)
 - [D-207 — 2026-08-22 — Cure (a) falsified on the best delivery the task has produced: the artefacts outran the report](#d-207--2026-08-22--cure-a-falsified-on-the-best-delivery-the-task-has-produced-the-artefacts-outran-the-report)
 - [D-208 — 2026-08-22 — The report off the session's turns — and the ask order that was the survival rate](#d-208--2026-08-22--the-report-off-the-sessions-turns--and-the-ask-order-that-was-the-survival-rate)
+- [D-209 — 2026-08-22 — A run that tidies its work into a folder was invisible: the evidence looks one level down](#d-209--2026-08-22--a-run-that-tidies-its-work-into-a-folder-was-invisible-the-evidence-looks-one-level-down)
 
 ## By theme
 
@@ -14959,3 +14960,68 @@ model following a changed brief. The three numbers to re-read after the next
 handful of runs are: PENDING's landing rate against 56%, whether a
 close-out-written report appears for a run that produced files and no report,
 and whether any existing report was overwritten (it must be zero).
+
+## D-209 — 2026-08-22 — A run that tidies its work into a folder was invisible: the evidence looks one level down
+
+**D-208's first live read, and it passed.** Job `95f42e60` — the same
+pre-registered sentence, queued fresh, cut at 41/40 turns for $3.79 — came
+back with all four files: `LESSON.md` (the sentinel `known`, declining a
+repeat), `APPROACH.md`, **`PENDING.md`** (the file that had been landing 56%
+of the time), and a `RESULT.md` the *run* wrote, **untouched** by the
+close-out. Three of three checks: PENDING landed, the report was left alone,
+nothing was overwritten.
+
+**And the same run exposed the next defect.** It built everything inside a
+`work/` subdirectory — 46 files — leaving only the four paperwork files at the
+sandbox root. `closeOutEvidence` lists produced files with `outputNames`,
+which reads **top-level files only**. So the close-out was shown the paperwork
+and nothing else, and wrote a PENDING saying the run was
+
+> *"…cut before composition and rendering."*
+
+That is **false**. `work/composite.png` is a real composed layout — three
+offices in one continuous curved frame, party walls mated, nothing cropped —
+and `work/overlay-location-map.png` is there beside it. Only the PDF was
+genuinely missing. The report and the bytes disagreed for the third time in
+three days, and each time from a different cause: D-202 a claim the bytes did
+not support, D-207 bytes the report did not claim because the wall took the
+write-up, and now bytes the report *could not* claim because the evidence
+never looked where they were. This one fails in the worst direction —
+telling a reviewer **less** was done than was.
+
+**Built.** `producedNames` lists the top level plus the files in each
+immediate subdirectory, labelled `work/composite.png`. One level, not a walk:
+a clone or a `node_modules` two deep would cost more to describe than the run
+cost to make, and the folder a run organises its own work into is the case
+this is for. `input/` and `repo/` are excluded by name — what the user gave
+and what the clone holds are not what the run made, and the clone's changes
+are already the diff's business. Capped at 60 names with an "…and N more"
+tail, because a raster job can leave hundreds and this pass has three turns
+and a cheap model. Separators are forced to `/`: the label lands in a prompt,
+where a backslash reads as an escape.
+
+**D-208's gate moved with it.** The report is now offered when
+`producedNames` finds anything rather than when `producedArtefacts` does —
+otherwise a run whose whole output sat in `work/` would have been told it had
+made nothing and gone unreported for the second time in the same run.
+
+**What was deliberately left alone, and the side effect that follows.**
+`outputNames` itself is unchanged. It feeds `deliveredFiles`,
+`producedArtefacts`, the review file list and the step-forwarding of
+attachments; widening it would change what counts as a delivery everywhere at
+once, on the strength of one job. The narrow fix gets the truth into PENDING
+and the report without touching the delivery contract.
+
+The honest consequence: a run whose entire output is in a subfolder now
+produces evidence where it produced none, so the close-out runs where it
+previously did not — and the three files it writes are top-level, which makes
+`deliveredFiles` true and files the run `partial` rather than `failed`. That
+is a behaviour change arriving by side door, and it is recorded rather than
+hidden. It is also the right answer: a run that made 46 files of real work is
+worth reviewing, and `partial` bills nothing until it is promoted.
+
+**Untested live.** The suites pass — 75 files / 1,890 — and the fix was
+checked against the real sandbox, where the evidence now lists 49 files
+including both artefacts the close-out had missed. But whether a close-out
+*shown* those files writes a truer PENDING is a claim about a model reading a
+longer list, and only the next run that works in a folder will settle it.

@@ -26,7 +26,7 @@ import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../c
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
-import { outputNames, producedArtefacts, PREVIOUS_RESULT } from '../outputs';
+import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
 import { BLS_TOOLS } from '../bls';
@@ -689,14 +689,60 @@ export function closeOutEvidence(sandboxDir: string): string | null {
   // neither. Measured on job 2ff16bf2 — a valid PDF written from scratch, no
   // lesson, no recipe, nothing banked. Names only, never contents: the brief
   // is to describe the method, and a file's contents are the answer.
-  const produced = outputNames(sandboxDir).filter(
-    (name) => name !== 'RESULT.md' && name !== 'DIFF.patch' && name !== PREVIOUS_RESULT,
-  );
-  if (produced.length > 0) {
-    parts.push(`Files it produced:\n${produced.map((f) => `- ${f}`).join('\n')}`);
+  const { names, more } = producedNames(sandboxDir);
+  if (names.length > 0) {
+    const tail = more > 0 ? `\n- …and ${more} more` : '';
+    parts.push(`Files it produced:\n${names.map((f) => `- ${f}`).join('\n')}${tail}`);
   }
 
   return parts.length > 0 ? parts.join('\n\n') : null;
+}
+
+/** Enough for the close-out to describe the work; short enough not to drown it. */
+const EVIDENCE_FILES = 60;
+
+/**
+ * Directories that hold things the run did not make: the user's attachments,
+ * and the clone — whose changes are the diff's business and whose contents
+ * would bury everything else.
+ */
+const NOT_PRODUCED = new Set(['input', 'repo']);
+
+/**
+ * What the run made, including one level down (D-209).
+ *
+ * `outputNames` lists top-level files only, and a run that tidies its work
+ * into a folder therefore looked, to this pass, like a run that made nothing.
+ * Job `95f42e60` built everything in `work/` — 46 files including a real
+ * composed layout and the location-map overlay — and the close-out, shown
+ * only the paperwork, wrote a PENDING saying it had been "cut before
+ * composition and rendering". That was false, and false in the direction that
+ * tells a reviewer less was done than was.
+ *
+ * One level, not a walk: a clone or a node_modules two deep would cost more
+ * to describe than the run cost to make, and the folder a run organises its
+ * own work into is the case this is for.
+ */
+export function producedNames(sandboxDir: string): { names: string[]; more: number } {
+  const own = (name: string) =>
+    name !== 'RESULT.md' && name !== 'DIFF.patch' && name !== PREVIOUS_RESULT;
+  const names = outputNames(sandboxDir).filter(own);
+
+  let entries: Dirent[] = [];
+  try {
+    entries = readdirSync(sandboxDir, { withFileTypes: true });
+  } catch {
+    return { names: names.slice(0, EVIDENCE_FILES), more: Math.max(0, names.length - EVIDENCE_FILES) };
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.') || NOT_PRODUCED.has(entry.name)) continue;
+    // Posix separators whatever the platform: this is a label in a prompt,
+    // and a backslash in it reads as an escape rather than a path.
+    for (const inner of outputNames(path.join(sandboxDir, entry.name))) {
+      names.push(`${entry.name}/${inner}`);
+    }
+  }
+  return { names: names.slice(0, EVIDENCE_FILES), more: Math.max(0, names.length - EVIDENCE_FILES) };
 }
 
 /**
@@ -1227,13 +1273,18 @@ export class ClaudeAgentExecutor implements Executor {
     const evidence = closeOutEvidence(sandboxDir);
     if (!evidence) return undefined;
 
-    // Gated on the run having made something other than paperwork, not merely
-    // on the report being absent: `deliveredFiles` is computed after this
-    // pass, so writing a RESULT.md for a run that produced nothing would make
-    // an empty run look delivered — the exact fault D-041 fixed on the other
-    // side. A run with real output was going to count as delivered anyway.
+    // Gated on the run having made something, not merely on the report being
+    // absent: `deliveredFiles` is computed after this pass, so writing a
+    // RESULT.md for a run that produced nothing would make an empty run look
+    // delivered — the fault D-041 fixed from the other side.
+    //
+    // Asked of the same widened evidence the brief is built from (D-209), not
+    // of `producedArtefacts`: that reads the top level only, so a run whose
+    // whole output sat in `work/` would have been told it had made nothing and
+    // gone unreported for the second time in one run.
     const reportMissing =
-      !existsSync(path.join(sandboxDir, 'RESULT.md')) && producedArtefacts(sandboxDir);
+      !existsSync(path.join(sandboxDir, 'RESULT.md')) &&
+      producedNames(sandboxDir).names.length > 0;
     const brief = closeOutBrief(job, evidence, known, reportMissing);
     const configPath = path.join(sandboxDir, '.closeout.json');
     writeFileSync(

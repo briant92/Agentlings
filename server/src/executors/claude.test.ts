@@ -866,6 +866,60 @@ describe('closeOutEvidence', () => {
     expect(closeOutEvidence(dir)).toBeNull();
   });
 
+  /**
+   * The subdirectory blind spot (D-209). Job `95f42e60` built everything in
+   * `work/` — 46 files including a real composed layout and the location-map
+   * overlay — and the close-out, shown only the paperwork, wrote a PENDING
+   * saying the run was "cut before composition and rendering". False, and
+   * false in the direction that tells a reviewer less was done than was.
+   */
+  describe('work organised into a folder', () => {
+    it('names files one level down, with the folder in the label', () => {
+      mkdirSync(path.join(dir, 'work'));
+      writeFileSync(path.join(dir, 'work', 'composite.png'), 'x');
+      writeFileSync(path.join(dir, 'work', 'overlay.png'), 'x');
+      const evidence = closeOutEvidence(dir)!;
+      expect(evidence).toContain('work/composite.png');
+      expect(evidence).toContain('work/overlay.png');
+      // A backslash here reads as an escape in the prompt it lands in.
+      expect(evidence).not.toContain('work\\composite.png');
+    });
+
+    // Without this the close-out sees nothing and never runs, so a run that
+    // did real work in a folder banks no lesson, no approach and no PENDING.
+    it('is evidence enough on its own, with nothing at the top level', () => {
+      mkdirSync(path.join(dir, 'work'));
+      writeFileSync(path.join(dir, 'work', 'plan.pdf'), '%PDF-1.4\n');
+      expect(closeOutEvidence(dir)).toContain('work/plan.pdf');
+    });
+
+    /**
+     * The clone is not what the run made — its changes are the diff's
+     * business — and listing it would bury every real file. `input/` is what
+     * the user gave, for the same reason.
+     */
+    it('leaves the clone and the given files out of what the run produced', () => {
+      mkdirSync(path.join(dir, 'repo'));
+      writeFileSync(path.join(dir, 'repo', 'package.json'), '{}');
+      mkdirSync(path.join(dir, 'input'));
+      writeFileSync(path.join(dir, 'input', 'offer.pdf'), 'x');
+      mkdirSync(path.join(dir, 'work'));
+      writeFileSync(path.join(dir, 'work', 'made.png'), 'x');
+      const evidence = closeOutEvidence(dir)!;
+      expect(evidence).toContain('work/made.png');
+      expect(evidence).not.toContain('package.json');
+      expect(evidence).not.toContain('offer.pdf');
+    });
+
+    it('caps a huge sandbox rather than drowning a two-turn errand', () => {
+      mkdirSync(path.join(dir, 'work'));
+      for (let i = 0; i < 90; i++) writeFileSync(path.join(dir, 'work', `f${i}.png`), 'x');
+      const evidence = closeOutEvidence(dir)!;
+      expect(evidence).toContain('…and 30 more');
+      expect(evidence.split('\n- ').length).toBeLessThan(70);
+    });
+  });
+
   it('does not list the report and the diff twice', () => {
     writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
     writeFileSync(path.join(dir, 'DIFF.patch'), 'diff --git a/x.ts b/x.ts\n');

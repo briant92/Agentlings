@@ -52,6 +52,19 @@ it could. Live re-read owed after the next few runs: PENDING's rate against
 56%, a close-out report appearing where one was missing, and zero reports
 overwritten.
 
+**Read live the same day, and it passed (D-209).** Job `95f42e60` — same
+sentence, fresh, cut at 41/40 for $3.79, the tenth wall cut — came back with
+`PENDING.md` written, the run's own `RESULT.md` untouched, and `LESSON.md`
+holding the `known` sentinel. Three of three. **The banked method did not
+help**: $3.79 against $4.00, and it got *less* far — no PDF this time, where
+`29ddccb7` produced one (D-071's finding again). **And it exposed the next
+defect**: it built everything in a `work/` subdirectory, `closeOutEvidence`
+reads top-level files only, so the close-out saw four paperwork files and
+wrote a PENDING saying the run was "cut before composition and rendering" —
+false, with a real composed layout and the location-map overlay sitting in
+`work/`. Fixed by looking one level down (D-209); `outputNames` itself left
+alone, because it decides what counts as a delivery everywhere.
+
 ## 1. The evidence
 
 Two real tasks ran in `home-chores` on 2026-08-18/19. Ten runs, five dead at

@@ -8,17 +8,32 @@ Figures were read from `.agentlings/ledger.jsonl` and the `home-chores` job
 store on 2026-08-20; the standing rule applies — recompute before trusting
 them later.
 
-Current position: **Phase 1 COMPLETE (D-198): drafter built, live gate run
-and read 2026-08-21 — three clauses pass twice, the wall clause fails in
-letter and passes in substance twice; billing cure (a) applied same day,
-a hypothesis until the next real spatial job files `done` on its own and
-bills.** **THE PLAN IS CLOSED — every item in §3 is ticked** (D-199 to
-D-205, plus the Phase 3 writing pass, all 2026-08-21). Two things outlive it
-and are not checkboxes: **cure (a) is still unmeasured** — it reads on the
-next real drawing queued for the drafter, which also exercises D-201's
-reply-quoting and D-202's tags on fresh data — and the pre-D-150 residue,
-**charged 2026-08-21 at $10.19 of the $15.05 named** (D-206), which is
-closed.
+Current position: **the plan is closed and cure (a) is FALSIFIED** (D-207,
+2026-08-22). Phase 1 landed the drafter (D-198); every §3 item is ticked
+(D-199 to D-205, plus the Phase 3 writing pass); the pre-D-150 residue is
+charged (D-206, $10.19 of the $15.05 named).
+
+**The cure (a) test, run on the §4 sentence as job `29ddccb7`: the drafter
+did NOT stop itself.** Cut at 41/40 turns — the ninth consecutive wall cut,
+and the turn grant was **40, the hard `TURN_CEILING`**, five above the
+drafter's own 35, so more turns is no longer a lever that exists. **Yet the
+work is the best this task has produced**: party-wall residuals 3,02 cm and
+1,93 cm (vs the gate's 6,4/5,0 and Phase 0's 10,6–13,7), location-map fit
+0,21/0,41/0,21 map px, the composed PDF and the overlay both delivered,
+nothing cropped, and the pairing proven from the sheets themselves by
+mirror-symmetric wall tilts (−1,93° against +1,86°). $4.00 inside a $4.24
+quote; promoted, priced and settled `done`.
+
+**The new failure mode — D-202 in mirror image: the artefacts outran the
+report.** `RESULT.md` was left at "STATUS: IN PROGRESS" listing as "still to
+land" four things that had all landed, with the residuals sitting computed
+and unreported in `model.json`. Cure (a)'s premise is what broke: it asks the
+run to land a deliverable early and improve it, and here composition cannot
+precede the geometry it composes. **No new cure is proposed** — D-207 records
+three candidates (move the report off the session's turns as D-020 moved the
+close-out; have the close-out write the report from the artefacts when the
+session was cut; raise `TURN_CEILING`, which this evidence argues against)
+and leaves the choice to Brian.
 
 ## 1. The evidence
 
@@ -431,8 +446,11 @@ bills.** Cure (b) stays parked for the Phase 2 batch.
     untouched. The carve-outs are enforced in `priceAccepted`, not in the
     script that calls it.
   - *Consequence:* cure (b) does **not** supersede cure (a) — the half
-    that would have replaced it was a phantom. **Cure (a) is the only
-    lever left on wall-cutting, and is still unmeasured.**
+    that would have replaced it was a phantom. Cure (a) then **failed its
+    own test** the next day (D-207), and cure (b) would not have caught it
+    in either form: there was no `PENDING.md` at all and the report read
+    IN PROGRESS, so a PENDING-gated bill would never have fired. The
+    caution and the evidence point the same way from opposite directions.
 
 ### Phase 3 — close out
 
@@ -540,7 +558,14 @@ recipe.
 1. ~~Phase 0 go~~ — done 2026-08-21; bar missed, verdict in §2.
 2. ~~Phase 1 / role shape~~ — decided 2026-08-21: new `drafter`, built
    (D-198). Open within it: the live gate above.
-3. Phase 2 fixes: D-199 to D-202 are built; close-out done-recognition
-   (cure b) is the one left, and it supersedes cure (a) if that fails.
+3. ~~Phase 2 fixes~~ — D-199 to D-202 built; cure (b) settled 2026-08-21
+   (D-205: billing half declined, truth half built).
+5. **OPEN — the only one left in this file.** Cure (a) is falsified
+   (D-207) and no replacement is chosen. Three candidates, each its own
+   decision: move the **report** off the session's turns as D-020 moved
+   the close-out; have the **close-out write the report from the
+   artefacts** when the session was cut; or raise `TURN_CEILING`, which
+   the evidence argues against — the run already had 40, the ceiling
+   itself.
 4. ~~Photoreal fork~~ — declined 2026-08-21 (D-204): decided-not-built on
    measured demand, with the ceiling and staged reopen triggers recorded.

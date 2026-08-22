@@ -648,8 +648,8 @@ Three rules, all enforced in `priceFor` rather than promised in prose:
 - **A promise of free that fails stays free.** If a compiled tool claimed a job,
   could not prove its output, and a session had to do it, the run is absorbed.
 
-Over those 422 jobs that came to: **spent $271.69, chargeable $207.37, absorbed
-$53.99.** Twenty per cent of all money spent was never charged for — down from
+Over those jobs that came to: **spent $275.69, chargeable $211.37, absorbed
+$53.99** (423 jobs, re-read 2026-08-22). Twenty per cent of all money spent was never charged for — down from
 41% in mid-August, and the fall has two causes worth keeping apart. Most of it
 is that the runs added since were runs that landed: absorption barely moved
 while spend nearly doubled. The last $10.19 of it is a decision rather than a

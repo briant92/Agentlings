@@ -216,6 +216,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-204 — 2026-08-21 — Photoreal declined: the demand is one request, and the gap is unused three.js](#d-204--2026-08-21--photoreal-declined-the-demand-is-one-request-and-the-gap-is-unused-threejs)
 - [D-205 — 2026-08-21 — Cure (b): the billing half was already cured, and the ledger was calling accepted work a failure](#d-205--2026-08-21--cure-b-the-billing-half-was-already-cured-and-the-ledger-was-calling-accepted-work-a-failure)
 - [D-206 — 2026-08-21 — The pre-D-150 residue, charged — and the three rules that made it smaller](#d-206--2026-08-21--the-pre-d-150-residue-charged--and-the-three-rules-that-made-it-smaller)
+- [D-207 — 2026-08-22 — Cure (a) falsified on the best delivery the task has produced: the artefacts outran the report](#d-207--2026-08-22--cure-a-falsified-on-the-best-delivery-the-task-has-produced-the-artefacts-outran-the-report)
 
 ## By theme
 
@@ -14818,3 +14819,67 @@ and `AGENTLING.md`'s absorbed table.
 landed on 2026-08-11 no promote has left an accepted row unpriced, and D-205's
 `settleOutcome` now runs behind it. After this there are **zero** promoted
 rows with real cost and no price, outside the two deliberate carve-outs.
+
+## D-207 — 2026-08-22 — Cure (a) falsified on the best delivery the task has produced: the artefacts outran the report
+
+The test cure (a) was waiting for, run on the pre-registered §4 sentence with
+the offer PDF attached and queued fresh (job `29ddccb7`). The hypothesis: the
+drafter's self-stop persona line makes a spatial run end itself, file `done`
+and bill. **It does not.**
+
+**The verdict, plainly.** Cut at the wall at **41/40 turns**, `error_max_turns`
+— the **ninth** consecutive turn-wall cut on this task. Filed `partial`, and
+so billed nothing until the review. $4.00 spent inside a $4.24 quote, 16.3
+minutes of a 25-minute wall. And the turn grant is the part with no headroom
+left: the quote funded **40 turns, the hard `TURN_CEILING`**, five above the
+drafter's own `maxTurns: 35`. More turns is not a lever that exists any more
+without raising the ceiling itself, and D-015's rule stands against doing that
+on this evidence.
+
+**And the work is the best this task has ever produced.** Party-wall residuals
+of **3.02 cm and 1.93 cm max**, against the gate's 6.4/5.0 and the Phase 0
+chain's 10.6–13.7. Location-map fit 0.21/0.41/0.21 map px. Both required
+artefacts on disk — the composed PDF and the overlay — plus its own eye-check
+renders, and nothing cropped: three offices as one continuous curved layout,
+each unit rotated onto the building's arc. It also found the evidence nobody
+had before, that the pairing is provable from the drawings themselves:
+**816's left party wall tilts −1.93° and 818's right tilts +1.86°**,
+mirror-symmetric, which proves both the mating and that all three sheets share
+one scale. That is what it banked as its lesson.
+
+**The failure mode is new, and it is D-202 in mirror image.** `RESULT.md` was
+left saying **"STATUS: IN PROGRESS"**, with a "Still to land" list naming the
+placement transforms, the composed PDF, the overlay and the residuals — *every
+one of which had landed*. There, a report claimed something the bytes did not
+support; here the bytes support something the report does not claim. A
+reviewer reading that card would conclude the run failed. The residuals were
+sitting in `model.json` the whole time, computed and unreported.
+
+**Why the persona line could not have worked here.** It asks the run to "land
+a complete deliverable early and improve it while turns are plentiful". For
+this task that order is not available: composition *requires* the placement,
+which requires the geometry, so the deliverable can only exist near the end.
+The run did the right things in the right order and the wall ate the write-up
+— the same shape D-020 already fixed once by moving the close-out off the
+session's turns. Cure (a)'s premise is wrong for spatial work specifically,
+not wrong in general.
+
+**And cure (b) would not have saved it either — in either form.** Billing at
+close-out on `PENDING = done` was declined in D-205 for trusting the run's own
+claim; here there is **no `PENDING.md` at all** and the report says IN
+PROGRESS, so the gate would not have fired. The caution and the evidence point
+the same way from opposite directions.
+
+**What did work, proven live on this run.** D-199's open row existed on disk
+while the session was in flight — the first time that has been observed on
+paid work rather than a free test. At the promote, D-150 priced the row
+$0.00 → $4.00 and **D-205 settled its outcome `failed` → `done`** in the
+tested order, the first real exercise of that seam. Ledger: 423 jobs,
+chargeable $211.37, zero rows saying `failed` while carrying a price.
+
+**Left open deliberately.** No new cure is proposed here. Three candidates
+exist and each is its own decision: moving the *report* off the session's
+turns as D-020 moved the close-out; teaching the close-out to write the report
+from the artefacts when the session was cut; or raising `TURN_CEILING`, which
+this evidence argues against. Recorded, not built — the measurement is the
+deliverable, and picking among them is Brian's.

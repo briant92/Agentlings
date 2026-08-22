@@ -196,9 +196,19 @@ export interface Group {
  * fourteen runs of one sentence rather than three asks that happen to look
  * alike. The root is found by walking `continues`, which is the one link
  * the queue keeps between a leg and what it continues.
+ *
+ * The walk reads `all`, never the rows being grouped: the backoffice groups
+ * the filtered rows, and a filter that drops a root — kept-only when the
+ * root was partial, one worker when another ran the root — would otherwise
+ * stop the walk at the leg, key the ask on its stitched reply text and
+ * split one ask into several (review of 2026-08-22).
  */
-export function groupsFor(entries: readonly Entry[], crew: readonly CrewMember[]): Group[] {
-  const byId = new Map(entries.map((e) => [e.job.id, e.job]));
+export function groupsFor(
+  entries: readonly Entry[],
+  crew: readonly CrewMember[],
+  all: readonly Entry[],
+): Group[] {
+  const byId = new Map(all.map((e) => [e.job.id, e.job]));
   const colors = new Map(crew.map((m) => [m.id, m.color]));
   const groups = new Map<string, Group>();
   for (const entry of entries) {

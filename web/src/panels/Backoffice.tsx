@@ -217,7 +217,7 @@ export function Backoffice({
       matches(e, find),
   );
   const totals = tally(shown);
-  const groups = groupsFor(shown, crew);
+  const groups = groupsFor(shown, crew, all);
   // Only offer names that actually did something, so the list is never a
   // menu of filters that all come back empty.
   const workers = crew.filter((m) => all.some((e) => e.job.assignedTo === m.id));

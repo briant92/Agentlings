@@ -274,28 +274,40 @@ describe('groupsFor', () => {
     }),
   ];
 
+  const all = entriesFor(jobs, crew);
+
   it('puts every leg of one sentence under one ask, continuations by their root', () => {
-    const groups = groupsFor(entriesFor(jobs, crew), crew);
+    const groups = groupsFor(all, crew, all);
     expect(groups.map((g) => g.legs.length)).toEqual([3, 1]);
     expect(groups[0].legs.map((e) => e.job.id)).toEqual(['fresh', 'leg2', 'root']);
     expect(groups[0].prompt).toBe('Draw the plans');
   });
 
   it('orders asks by their latest activity and badges each with its newest leg', () => {
-    const groups = groupsFor(entriesFor(jobs, crew), crew);
+    const groups = groupsFor(all, crew, all);
     expect(groups.map((g) => g.lastAt)).toEqual([300, 250]);
     expect(groups[0].latest.job.id).toBe('fresh');
     expect(badgeOf(groups[0].latest)).toBe('closed');
   });
 
   it('counts who worked it, what it cost and what could not be measured', () => {
-    const [plans] = groupsFor(entriesFor(jobs, crew), crew);
+    const [plans] = groupsFor(all, crew, all);
     expect(plans.who.map((w) => [w.name, w.legs, w.color])).toEqual([
       ['Rue', 2, 0x99e550],
       ['Ash', 1, 0x639bff],
     ]);
     expect(plans.costUsd).toBeCloseTo(3, 5);
     expect(plans.unmeasured).toBe(1);
+  });
+
+  it('keys a filtered leg on its root even when the filter dropped the root', () => {
+    // The kept-only filter drops the partial root and keeps its promoted leg.
+    const shown = all.filter((e) => e.job.id === 'leg2');
+    const groups = groupsFor(shown, crew, all);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].key).toBe('draw the plans');
+    expect(groups[0].prompt).toBe('Draw the plans');
+    expect(groups[0].legs.map((e) => e.job.id)).toEqual(['leg2']);
   });
 
   it('stops at the last known leg when the root has left the queue', () => {

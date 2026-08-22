@@ -909,7 +909,8 @@ tried, measured and rejected is in `DECISIONS.md`:
     (D-077): Tier 1 is Telegram, Google (Gmail + Calendar + Contacts on one
     consent), WhatsApp Business and Slack; Tier 2 adds nine more on the same
     two credential shapes; six apps are declined with the reason on the row,
-    WhatsApp personal first among them. Sends never happen in a session
+    WhatsApp personal first among them — and one act beside them by
+    decision, initiating a payment or transfer (D-219). Sends never happen in a session
     (D-075): a run writes `OUTBOX.json` — one channel, up to 20 messages —
     review shows the messages, and **Approve is the send**, replayed by the
     server through the channel's client exactly as a patch is replayed by

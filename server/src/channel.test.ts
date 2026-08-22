@@ -3,6 +3,7 @@ import {
   briefForJob,
   channelBrief,
   channelShelf,
+  claimedChannel,
   detectChannelAsk,
   LEGEND_CAP,
   legendAudience,
@@ -215,6 +216,15 @@ describe('channelShelf', () => {
       expect(row.label.length).toBeGreaterThan(0);
       expect(row.detail.length).toBeGreaterThan(0);
     }
+  });
+
+  // D-219: the one row that is a kind of act rather than an app. It is a
+  // shelf row only — no sentence word maps to it, so intake is untouched.
+  it('puts initiating a payment on the shelf of never, with the reason', () => {
+    const payments = channelShelf().never.find((r) => r.channel === 'payments');
+    expect(payments?.label).toBe('Payments and transfers');
+    expect(payments?.detail).toMatch(/a wrong wire is gone/);
+    expect(claimedChannel('wire 500 dollars to Ana')).toBeNull();
   });
 
   it('never lists a wired channel on either shelf', () => {

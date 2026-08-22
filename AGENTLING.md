@@ -1606,6 +1606,10 @@ without an API key.
   unchanged reviews, locked to the approved recipient set. A scheduled
   send holding both is the loop closed whole — it queues itself and sends
   itself, audited — and everything else runs only when you queue it.
+- **Not a payer.** Initiating a payment or a transfer is on the shelf of
+  never with the other refusals, by decision rather than by omission (D-219):
+  a wrong message is embarrassing, a wrong wire is gone, and no review can
+  reverse it. Reading a statement is ordinary work; moving money is not.
 - **Not a planner.** A sentence splits into steps only where *you* wrote the
   order out — "then", "after that", "next", "finally", or a numbered list
   (D-105, D-177) — shown before Start, at most four, each step an ordinary

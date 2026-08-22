@@ -140,6 +140,7 @@ const LABELS: Record<string, string> = {
   signal: 'Signal',
   imessage: 'iMessage',
   linkedin: 'LinkedIn',
+  payments: 'Payments and transfers',
   wechat: 'WeChat',
   messenger: 'Messenger / Instagram',
 };
@@ -189,6 +190,10 @@ const NEVER: Record<string, string> = {
   linkedin: "LinkedIn's API is closed to personal automation",
   wechat: 'WeChat official accounts need Chinese business verification',
   messenger: "Meta's DM APIs are for business accounts behind Meta app review",
+  // Not an app but a kind of act, on the shelf by decision (D-219): a wrong
+  // message is embarrassing, a wrong wire is gone, and no review reverses it.
+  payments:
+    'Initiating a payment or transfer is never done here — a wrong message is embarrassing, a wrong wire is gone, and no review can reverse it',
 };
 
 /**

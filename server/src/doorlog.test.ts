@@ -91,4 +91,14 @@ describe('readDoorUsage (UI.md, step 8)', () => {
   it('reads nothing where no trail exists', () => {
     expect(readDoorUsage(mkdtempSync(path.join(tmpdir(), 'agentlings-nodoors-')))).toEqual([]);
   });
+
+  it('counts a tool named like an Object property as a tool, not a prototype slot', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-doors-proto-'));
+    logDoor(root, 'web', 'constructor', { url: 'x' }, { text: 'ok' }, AT);
+    logDoor(root, 'web', 'toString', { url: 'y' }, { text: 'ok' }, AT + 1);
+    const [web] = readDoorUsage(root);
+    expect(web.tools['constructor']).toBe(1);
+    expect(web.tools['toString']).toBe(1);
+    expect(Object.keys(web.tools).sort()).toEqual(['constructor', 'toString']);
+  });
 });

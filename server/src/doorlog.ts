@@ -90,7 +90,10 @@ export function readDoorUsage(root: string): DoorUsage[] {
       errors: 0,
       firstAt: line.at,
       lastAt: line.at,
-      tools: {},
+      // Keyed by whatever the log names: a null prototype, so a tool called
+      // 'constructor' counts like any other instead of reading the slot
+      // Object already has there (review of 2026-08-22).
+      tools: Object.create(null) as Record<string, number>,
     };
     use.calls += 1;
     if (line.ok === false) use.errors += 1;

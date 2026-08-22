@@ -664,6 +664,19 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       on the same 40-turn leash (the meter says 44/40, so `num_turns` is not
       the quantity the SDK caps — noted, not chased). Awaiting your verdict.
       One run; the bar in §6.2 applies here too.
+- [ ] **A fifth run, nothing edited, and the reading of both corrected.**
+      `8aef2a7c` (2026-08-22, $4.91, `done`, 50 calls, 23 min): the
+      re-banked approach put the PDF back after the checks — it landed at
+      minute 20.2, after two re-matings the run found through the pillars
+      (max gap 5.96 cm, against the fourth run’s 29.6, which this run shows
+      was a face-to-opposite-face mating, not a property of the drawings)
+      — and the run again ended on its own. But the trail gives the round
+      trip each PDF came on: **#40 for the fourth run, #46 for the fifth**,
+      under a leash of 40. Neither lived inside the leash; the leash did not
+      bind (§6.5), so “ended on its own” is not “fitted inside 40 turns”, and
+      the comparison that survives is where the PDF sat — trip 40 at $3.65
+      against trip 46 at $4.91 — not whether the run was cut. Both await
+      your verdict.
 - [ ] **The open question is not "more turns".** It is whether the PDF step is
       reachable inside one run at all, or whether this task is honestly a
       two-leg job — geometry and placement in one run, render in a reply that
@@ -771,6 +784,8 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
         own brief are the candidates — and the honest next step is a second
         run with nothing edited, to see what the re-banked approach does on
         its own before anything is built.
+        (Read with §6.5: that run’s PDF came at round trip #40 under a leash
+        that did not bind, so “stopped by itself” proves less than it reads.)
 
 ### 4. On disk only — not in any repository
 
@@ -778,3 +793,31 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       D-199's backfill, D-205's settle and D-206's charge. Gitignored.
 - [ ] D-203's crew-memory edit (Tam's annotated lesson) lives only on disk;
       **D-203 quotes the before/after as its sole durable record.**
+
+### 5. The leash does not always bind — found 2026-08-22, cause open (D-212)
+
+- [ ] The three cut runs reported 41/40; the fourth and fifth 44/40 and
+      51/40 with outcome `result`, and the trail counts their API round
+      trips at ~43 and ~50 with parallel calls collapsed — so this is not a
+      counting quirk: the runs made more trips than the leash allows and
+      were not cut. The ledger holds 17 such rows since 2026-07-31 (+2 to
+      +15, researchers and scribes mostly) beside 98 cuts at exactly +1, so
+      it predates D-211, which changed no dependency; the runner still
+      passes `maxTurns: config.maxTurns`; same SDK 0.3.220, same win32-x64
+      binary, same home.
+- [ ] Two direct calls of the SDK from a session shell (six sequential Bash
+      calls, `maxTurns: 3`, ~6c each) cut at `num_turns` 4 both times —
+      once silent, once with a sentence before every call — so the cap
+      works in the plain case and narration does not evade it. What marks
+      the runs it skips is not known. Candidate, untested: auto-compaction
+      on long image-heavy contexts (each trial run read ~3M cached tokens)
+      resetting the counter. The cheapest instrument is one runner line
+      emitting the SDK’s `system` messages (`compact_boundary`) into the
+      trail and one server line writing them — a restart — after which the
+      next long run answers it.
+- [ ] Reading rule until then: a cut reports `turnsAllowed + 1`; a finished
+      run’s `turns` is `toolCalls + 1` and may exceed the leash; +2 or more
+      on a finished run means it ran past the leash, not that the leash
+      was generous. The session-shell probe needs every `CLAUDE*` variable
+      unset before `.env` is sourced, or the host session’s OAuth shadows
+      the API key (401).

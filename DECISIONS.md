@@ -221,6 +221,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-209 — 2026-08-22 — A run that tidies its work into a folder was invisible: the evidence looks one level down](#d-209--2026-08-22--a-run-that-tidies-its-work-into-a-folder-was-invisible-the-evidence-looks-one-level-down)
 - [D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof](#d-210--2026-08-22--the-reconcile-line-and-the-cap-that-was-throwing-away-the-proof)
 - [D-211 — 2026-08-22 — The three-tier brief read against the engine: one layer missing, one door broken, nothing adopted whole](#d-211--2026-08-22--the-three-tier-brief-read-against-the-engine-one-layer-missing-one-door-broken-nothing-adopted-whole)
+- [D-212 — 2026-08-22 — The leash does not always bind: a finished run can make more round trips than its turns allow](#d-212--2026-08-22--the-leash-does-not-always-bind-a-finished-run-can-make-more-round-trips-than-its-turns-allow)
 
 ## By theme
 
@@ -489,6 +490,13 @@ entry updates one file rather than two.
   row the moment a run starts, so a process dying under a session leaves an
   `interrupted` row rather than nothing — the vanish mode that had eaten 13
   runs, all backfilled by identification
+- **The leash, continued** — D-212: the turn cap the SDK is handed binds on some
+  runs and not others — three drafter runs cut at 41/40 one evening, two
+  finished at 44/40 and 51/40 the next morning having made ~43 and ~50 API
+  round trips, seventeen older ledger rows likewise — while two direct probes
+  cut at `maxTurns + 1` on the dot; recorded with the reading rule (+1 is a
+  cut, +2 or more is a run that finished past its leash) and the one-line
+  instrument that would find the cause, nothing changed in pricing.
 - **Outside access, continued** — D-040; and D-158, the reading desks —
   calendar-read first because it sits inside the consent already granted,
   read tools as sendsOnly-preserving sibling connections, a clerk trade on
@@ -15361,3 +15369,60 @@ what today's 18 were — twelve `ToolSearch` re-issues of the same
 times, before the first real `mail_search` at message 34. The calendar run
 needed one. No ledger row could have shown that; this is the layer the brief
 was right about.
+
+## D-212 — 2026-08-22 — The leash does not always bind: a finished run can make more round trips than its turns allow
+
+**Decision:** recorded, not fixed. `turnsAllowed` stays the ceiling the SDK is
+handed, the meter's `turns` stays the SDK's `num_turns`, and nothing in pricing
+moves — a cut still reports `turnsAllowed + 1` (D-022, D-025) and a finished
+run is priced on its cost. What changes is how a number is read: `44/40 done`
+means the run made more API round trips than its leash allowed and was not
+cut, and until the mechanism is found a run that "ended on its own" may not
+be read as one that fitted inside its turns.
+
+### What was seen
+
+The two approach-reorder trials of the blueprint job (SPATIAL §6.1, §6.3)
+finished `done` at 44/40 and 51/40 with outcome `result`, the morning after
+three runs of the same prompt, role and leash were cut at exactly 41/40
+(`error_max_turns`). The trail (D-211) counts API round trips directly — the
+results of parallel calls share one stamp — and puts them at ~43 and ~50, one
+parallel pair each; the PDF-producing call came at trip #40 in the first and
+#46 in the second. So the figures are not a counting quirk of `num_turns`.
+The ledger holds seventeen older rows at +2 to +15 (a researcher at 54/39, a
+scout at 21/12, scribes and workers at 12/10) beside ninety-eight cuts at
+exactly +1, from 2026-07-31 on — the behaviour is intermittent and old.
+
+### What was ruled out
+
+D-211: its commit changed no dependency; the runner's only change is the
+assistant-message counter and the `user`-message branch, and it still passes
+`maxTurns: config.maxTurns` (40 in both `.session.json`). The SDK: 0.3.220
+installed 2026-08-12, the `claude-agent-sdk-win32-x64` binary, one home for
+the server's runner and the probes alike. Narration: the second probe below.
+
+### What proved the cap works in the plain case
+
+Two direct `query()` calls from a session shell, six sequential Bash calls
+under `maxTurns: 3`: `error_max_turns` at `num_turns` 4 with 3 calls (5.8c),
+and the same with a sentence written before every call — 3 text blocks, 3
+calls, cut at 4 (5.9c). The probe needed every `CLAUDE*` variable unset before
+`.env` was sourced; with them set the host session's OAuth token shadowed the
+API key and the SDK returned 401.
+
+### What is open, and the instrument
+
+What distinguishes the runs the cap skips is not known. The one candidate with
+a mechanism is auto-compaction on long, image-heavy contexts resetting the
+CLI's counter — both trial runs read ~3M cached tokens — but the three cut runs
+were of similar size, so it is a guess. The cheapest instrument is a runner
+line emitting the SDK's `system` messages (`compact_boundary`) into the trail
+and a server line writing them, then the next long run; a restart either way.
+
+### What it does to the two trial runs
+
+Under a binding leash the second run would have been cut without its PDF and
+the first is a coin flip at trip #40. The comparison that survives: the
+reordered approach moved the PDF six trips earlier and cost a third less
+($3.65 against $4.91); neither approach put it comfortably inside 40 trips;
+and both runs await a verdict on what they delivered, not on how they ended.

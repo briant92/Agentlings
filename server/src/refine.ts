@@ -120,8 +120,13 @@ function remember(key: string, value: Refinement | null): void {
   cache.set(key, value);
 }
 
-/** Runs the single-turn session and returns its raw reply, or null. */
-function askClaude(prompt: string): Promise<string | null> {
+/**
+ * Runs the single-turn session and returns its raw reply, or null. `secrets`
+ * are the catalog's, dropped from the child's env like every other runner
+ * spawn (D-217) — a classifier with no tools cannot use them, but a process
+ * should not hold what it cannot use.
+ */
+function askClaude(prompt: string, secrets: readonly string[]): Promise<string | null> {
   return new Promise((resolve) => {
     const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-match-'));
     const configPath = path.join(dir, 'config.json');
@@ -140,7 +145,7 @@ function askClaude(prompt: string): Promise<string | null> {
 
     const child = spawn(process.execPath, [RUNNER, configPath], {
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: launderedEnv(),
+      env: launderedEnv(secrets),
     });
     let answer: string | null = null;
     let settled = false;
@@ -179,11 +184,12 @@ export async function refineMatch(
   text: string,
   roles: RoleInfo[],
   skills: SkillInfo[],
+  secrets: readonly string[] = [],
 ): Promise<Refinement | null> {
   const key = cacheKey(text, roles, skills);
   if (cache.has(key)) return cache.get(key) ?? null;
 
-  const raw = await askClaude(buildPrompt(text, roles, skills));
+  const raw = await askClaude(buildPrompt(text, roles, skills), secrets);
   const refined = raw === null ? null : parseRefinement(raw, roles, skills);
   // A failed call isn't cached: auth may be fixed a minute from now.
   if (raw !== null) remember(key, refined);

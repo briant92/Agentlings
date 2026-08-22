@@ -3,11 +3,14 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { readConnections, secretNames } from '../connections';
 import { LEASH_CREDIBLE_UP_TO } from '../recipes';
 import {
   closeOutBrief,
   closeOutEvidence,
   COMPILE_TURNS,
+  launderedEnv,
   RECIPE_TURNS,
   repoListing,
   turnCapFor,
@@ -980,5 +983,66 @@ describe('closeOutEvidence', () => {
     writeFileSync(path.join(dir, 'RESULT.md'), '# Done\n');
     writeFileSync(path.join(dir, 'DIFF.patch'), 'diff --git a/x.ts b/x.ts\n');
     expect(closeOutEvidence(dir)).not.toContain('Files it produced');
+  });
+});
+
+describe('launderedEnv (D-217)', () => {
+  const env = {
+    PATH: 'bin',
+    ANTHROPIC_API_KEY: 'key',
+    CLAUDE_CODE_OAUTH_TOKEN: 'setup-token',
+    CLAUDE_CODE_SESSION: 'host',
+    ANTHROPIC_BASE_URL: 'proxy',
+    ANTHROPIC_AUTH_TOKEN: 'host-auth',
+    TELEGRAM_BOT_TOKEN: 'tg',
+    GOOGLE_OAUTH_REFRESH_TOKEN: 'g',
+    WHATSAPP_USD_PER_MESSAGE: '0.025',
+  };
+
+  it('still launders the host session and keeps what the runner authenticates with', () => {
+    expect(launderedEnv([], env)).toEqual({
+      PATH: 'bin',
+      ANTHROPIC_API_KEY: 'key',
+      CLAUDE_CODE_OAUTH_TOKEN: 'setup-token',
+      TELEGRAM_BOT_TOKEN: 'tg',
+      GOOGLE_OAUTH_REFRESH_TOKEN: 'g',
+      WHATSAPP_USD_PER_MESSAGE: '0.025',
+    });
+  });
+
+  it('drops every connection secret it is given, and nothing else', () => {
+    const out = launderedEnv(['TELEGRAM_BOT_TOKEN', 'GOOGLE_OAUTH_REFRESH_TOKEN'], env);
+    expect(out).not.toHaveProperty('TELEGRAM_BOT_TOKEN');
+    expect(out).not.toHaveProperty('GOOGLE_OAUTH_REFRESH_TOKEN');
+    expect(out.ANTHROPIC_API_KEY).toBe('key');
+    expect(out.CLAUDE_CODE_OAUTH_TOKEN).toBe('setup-token');
+    expect(out.WHATSAPP_USD_PER_MESSAGE).toBe('0.025'); // a declared rate, not a secret
+    expect(out.PATH).toBe('bin');
+  });
+
+  // The list the spawn sites pass is the catalog's own, so the shipped
+  // catalog has to name every secret .env.example documents — a connection
+  // added without its secrets block would ride into every session.
+  it('the shipped catalog names every documented secret, and the whole list is dropped', () => {
+    const catalog = fileURLToPath(new URL('../../../catalog/connections.json', import.meta.url));
+    const names = secretNames(readConnections(catalog));
+    for (const name of [
+      'GITHUB_TOKEN',
+      'BRAVE_API_KEY',
+      'BLS_REGISTRATION_KEY',
+      'TELEGRAM_BOT_TOKEN',
+      'GOOGLE_OAUTH_CLIENT_ID',
+      'GOOGLE_OAUTH_CLIENT_SECRET',
+      'GOOGLE_OAUTH_REFRESH_TOKEN',
+      'WHATSAPP_TOKEN',
+      'WHATSAPP_PHONE_NUMBER_ID',
+      'SLACK_BOT_TOKEN',
+    ]) {
+      expect(names).toContain(name);
+    }
+    const loaded = Object.fromEntries(names.map((n) => [n, 'x']));
+    expect(launderedEnv(names, { ...loaded, ANTHROPIC_API_KEY: 'key' })).toEqual({
+      ANTHROPIC_API_KEY: 'key',
+    });
   });
 });

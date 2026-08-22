@@ -74,7 +74,13 @@ import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
 import { performOutboxSend } from './outboxsend';
-import { describe, doorEndpoints, missingSecrets, readConnections } from './connections';
+import {
+  describe,
+  doorEndpoints,
+  missingSecrets,
+  readConnections,
+  secretNames,
+} from './connections';
 import {
   enabledNames,
   grantedTools,
@@ -3234,7 +3240,12 @@ app.post('/api/match/refine', async (c) => {
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   if (!useClaude) return c.json({ available: false, refined: null });
-  const refined = await refineMatch(text, registry.list(), listSkills(SKILLS_DIR));
+  const refined = await refineMatch(
+    text,
+    registry.list(),
+    listSkills(SKILLS_DIR),
+    secretNames(readConnections(CONNECTIONS_FILE)),
+  );
   return c.json({ available: true, refined });
 });
 

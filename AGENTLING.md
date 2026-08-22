@@ -1155,6 +1155,7 @@ you would not let a shell near.
 | Tools are the intersection of the role and what you allowed | `allowedTools` is a strict allowlist; `permissionMode: dontAsk` means there is no prompt to talk past |
 | The SDK never enters the server | Sessions run in `agent-runner.mjs`, plain JS spawned with plain node — its import graph stays out, and a wedged session cannot take the server down |
 | A server started inside a Claude Code terminal cannot inherit that session | The child environment is laundered of `CLAUDE*`, `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` |
+| A session cannot read a connection's secret out of its own environment | Every name the catalog declares under `secrets` is dropped from the runner child's env at both spawn sites — the job session and the matcher's one-turn refine (D-217). Measured before the fix: seven secret-named variables visible to a run. `ANTHROPIC_API_KEY` stays, because it is what the run authenticates with |
 | A session cannot run forever | 10-minute timeout, 40-turn hard ceiling whatever a role's frontmatter says |
 | A compiled tool cannot run forever | 60-second timeout, killed |
 | Remote paths cannot climb out of their folder | Refused rather than sanitised — there is no legitimate skill that needs `..` or a drive letter |
@@ -1321,7 +1322,11 @@ What is true today:
   when the Settings drawer stores it — validated with one real call first,
   written to `.env`, the only store (D-078) — and is never returned, never
   listed, never echoed in an error, and passed only to the connection that
-  declared it.
+  declared it. Nor does it ride into a session: the runner child's
+  environment is laundered of every name the catalog declares, at both
+  spawn sites (D-217) — the compiled-tool runner had stripped the same list
+  since D-100, the session spawn never had, and a probe run before the fix
+  saw seven secret-named variables.
 - **Sign-in without a password.** The browser's storage-state file is one you
   make yourself; the app passes a path and never reads a credential. The file
   is a bearer token for every site in it, so it is gitignored.
@@ -1377,8 +1382,8 @@ What is **not built**, and should not be assumed:
   instruction, not a jail — see §10. A session with `Bash` runs as you do.
 
 The honest one-line summary: **privacy here is the sandbox, the localhost
-boundary and the absence of any credential the app holds itself — not a data
-control plane.**
+boundary, and the tokens the app does hold staying in `.env` and out of every
+session — not a data control plane.**
 
 ---
 

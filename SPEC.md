@@ -507,7 +507,9 @@ tried, measured and rejected is in `DECISIONS.md`:
   Code login (auto-detected; `AGENTLINGS_EXECUTOR` overrides). The child
   env is laundered of `CLAUDE*`/`ANTHROPIC_BASE_URL` so a server started
   from inside a Claude Code terminal doesn't inherit that session's
-  endpoint or auth.
+  endpoint or auth — and, since D-217, of every secret the connection
+  catalog declares, so a session holding `Bash` cannot read a token the
+  doors were built to keep from it.
 - **M2 — durability & quality of life (built).** Persist jobs (`jobs.json`
   per level), survive restarts, cancel button, per-job live log stream.
   External-app access via an in-app MCP connection registry: named

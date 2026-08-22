@@ -22,7 +22,13 @@ import type {
 import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
-import { mcpToolNames, resolveForJob, toMcpServers, type Connection } from '../connections';
+import {
+  mcpToolNames,
+  resolveForJob,
+  secretNames,
+  toMcpServers,
+  type Connection,
+} from '../connections';
 import { applyPatch, cloneRepo, patchFile, repoDir, writeDiff } from '../gitwork';
 import { rateFor, type LedgerEntry } from '../ledger';
 import type { MemoryStore } from '../memory';
@@ -135,15 +141,29 @@ export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.ur
  * vars (an ANTHROPIC_BASE_URL proxy, CLAUDE_CODE_*) would point a spawned
  * runner's CLI at the host session's endpoint and break auth. Launder them so
  * the child authenticates like a fresh terminal would.
+ *
+ * `secrets` are dropped too (D-217): every name a catalog connection declares.
+ * The runner needs none of them — a builtin door adds its credential on the
+ * server side, and a stdio server has its `${VAR}` filled into its args
+ * before the config is written — yet `spawn` was handing the whole `.env` to
+ * a child whose roles hold `Bash`. The compiled-tool runner has stripped the
+ * same list since `routed.ts` learned to; this was the sibling seam that
+ * never did. `env` is a parameter so the rule can be pinned by a test
+ * without touching the process.
  */
-export function launderedEnv(): Record<string, string | undefined> {
+export function launderedEnv(
+  secrets: readonly string[] = [],
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string | undefined> {
+  const dropped = new Set(secrets);
   return Object.fromEntries(
-    Object.entries(process.env).filter(
+    Object.entries(env).filter(
       ([key]) =>
-        key === 'CLAUDE_CODE_OAUTH_TOKEN' || // long-lived token from `claude setup-token`
-        (!key.startsWith('CLAUDE') &&
-          key !== 'ANTHROPIC_BASE_URL' &&
-          key !== 'ANTHROPIC_AUTH_TOKEN'),
+        !dropped.has(key) &&
+        (key === 'CLAUDE_CODE_OAUTH_TOKEN' || // long-lived token from `claude setup-token`
+          (!key.startsWith('CLAUDE') &&
+            key !== 'ANTHROPIC_BASE_URL' &&
+            key !== 'ANTHROPIC_AUTH_TOKEN')),
     ),
   );
 }
@@ -1430,7 +1450,7 @@ export class ClaudeAgentExecutor implements Executor {
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [this.runner, configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: launderedEnv(),
+        env: launderedEnv(secretNames(this.connections())),
       });
       this.running.set(jobId, child);
       // The trail lands beside the config that started the child — the

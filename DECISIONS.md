@@ -15336,3 +15336,28 @@ first; the running server ignores the new event types until its restart, after
 which the file starts to land. A fault in the runner half cannot fail a job;
 it can only leave `result` lines missing, which the report's coverage line
 would show. Suites: 77 files / 1,903 server, 18 / 203 web; typecheck clean.
+
+### Proven live — 2026-08-22, the first three runs after the restart
+
+The 08:00 calendar brief (`3f6c1b4e`, 21 lines), the 08:10 mail brief
+(`6702bcbc`, 58) and its check pass (`19f7461b`, 34) each left a
+`.trajectory.jsonl`, both passes tagged (`session`, `closeout`). Every `call`
+has its `result` (7/7, 21/21, 12/12); each pass ends with an `end` line whose
+`toolCalls` equals the ledger meter (4, 18, 8); the door results carry real
+heads — *No events on Sat 2026-08-22.*, *8 messages for "newer_than:1d"* —
+and so do Read and Write; the dotfile is absent from all three deliveries
+lists; `npm run ledger:report` says 3 of 419; the server log has nothing to
+say. Two things the live stream taught that `sdk.d.ts` did not: a
+`ToolSearch` result has no text the trail can keep (heads of 0–1 characters,
+the only empty ones), and `turn` is the runner's assistant-message counter
+(`agent-runner.mjs`, one per message), so it runs past `num_turns` — 47
+against the meter's 19 on the mail run — and reads as order, not as the
+ledger's turns.
+
+First yield, recorded not acted on: the mail desk's five firings of one
+sentence have swung between 5 and 19 calls (11c to 22c), and the trail shows
+what today's 18 were — twelve `ToolSearch` re-issues of the same
+`select:mcp__mail__mail_search…` query, "Now I'll search your mail" said six
+times, before the first real `mail_search` at message 34. The calendar run
+needed one. No ledger row could have shown that; this is the layer the brief
+was right about.

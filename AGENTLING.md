@@ -479,7 +479,8 @@ reaches the result message the SDK reports cost and turns on, so its row shows
 last reading. **Since D-211 the sandbox keeps the calls themselves**:
 `.trajectory.jsonl`, one line per call, result and remark, clipped, with how
 the child ended — the transcript sandboxes never had, and the first seam of
-the runner protocol a test pins rather than a live run.
+the runner protocol a test pins — and, from the 2026-08-22 desk firings
+on, seen live: three trails, every result present.
 
 **`lastTool` is what the model asked for, not what it got.** A run whose last
 call was `browser_evaluate` was *refused* it — that tool is not granted. Read

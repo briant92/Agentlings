@@ -656,6 +656,14 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       `29ddccb7` promoted **with** the PDF ($4.00); `95f42e60` no PDF ($3.79);
       `106140b4` discarded, no PDF ($4.68). **All three cut at 41/40** — the
       grant is `TURN_CEILING` itself, so there is no headroom left to give.
+- [ ] **A fourth run, with §6.3’s lever (b) applied, is the first to end on
+      its own.** `39a1ff24` (2026-08-22, $3.65, `done`): PDF, composite,
+      overlay and `placement.json` all at the top level, the PDF at minute
+      13.8 of 14.4, two report edits after it, then *Delivered, and read back
+      from the files’ own bytes* — outcome `result`, not `error_max_turns`,
+      on the same 40-turn leash (the meter says 44/40, so `num_turns` is not
+      the quantity the SDK caps — noted, not chased). Awaiting your verdict.
+      One run; the bar in §6.2 applies here too.
 - [ ] **The open question is not "more turns".** It is whether the PDF step is
       reachable inside one run at all, or whether this task is honestly a
       two-leg job — geometry and placement in one run, render in a reply that
@@ -738,6 +746,31 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
         (`readRecipes` reads the file per call), good for exactly one run
         because the next close-out re-banks, and with the trail now live the
         run would show where every turn went.
+      - **Lever (b), tried once (2026-08-22, `39a1ff24`).** The drafter
+        entry’s last two approach lines were replaced with: *Save the placed
+        model JSON, then render the composite from the placed geometry and
+        write the PDF in the same step. Deliverables — the PDF, the overlay
+        image — go at the top level of the working directory, not under
+        work/; intermediates can live anywhere. The PDF is the deliverable:
+        every run that left it for last was cut before it.* and *Only after
+        the PDF exists: the overlay of the three placed outlines over the
+        location map, the residuals (max and RMS gap in cm between mated
+        party walls, measured perpendicular to each wall) and any zoom on
+        the seams. Fold them into the PDF if turns remain; never hold the
+        PDF for them.* The brief carried it (checked in `.session.json`) and
+        the run delivered everything and stopped by itself at $3.65 (§6.1).
+        It did not follow the order to the letter — placement and composite
+        at minute 10, `pdf.mjs` written at 12 but run at 13.8 together with
+        the overlay, RESULT.md in between — but the PDF was never again
+        behind a check. As predicted, the close-out then **re-banked its
+        own account** of the run: the recipe now reads *Render PDF and
+        overlay image once from the validated placement*, with no top-level
+        line, so the next run starts from an approach that again puts the
+        PDF after validation. The ordering has no durable home yet — the
+        drafter role (a matcher replay), `plan-geometry`, or the close-out’s
+        own brief are the candidates — and the honest next step is a second
+        run with nothing edited, to see what the re-banked approach does on
+        its own before anything is built.
 
 ### 4. On disk only — not in any repository
 

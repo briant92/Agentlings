@@ -83,6 +83,19 @@ if (!write) {
   process.exit(0);
 }
 
+// The ledger is rewritten whole below, and a row a run finished mid-write
+// would be lost — with no trace in the backup either — so refuse while a
+// server is up (review of 2026-08-22).
+const up = await fetch('http://localhost:4600/api/levels', { signal: AbortSignal.timeout(1500) })
+  .then((r) => r.ok)
+  .catch(() => false);
+if (up) {
+  console.error(
+    'a server is answering on :4600 — stop it first: the ledger is rewritten whole, and a row written mid-way would be lost',
+  );
+  process.exit(1);
+}
+
 const backup = `${LEDGER}.pre-cut.bak`;
 copyFileSync(LEDGER, backup);
 const changed = markCut(ROOT, cuts);

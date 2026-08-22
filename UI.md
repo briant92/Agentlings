@@ -223,16 +223,16 @@ true, not when its code compiles.
 
 ## Phase 4 — the record
 
-- [ ] **19. `AGENTLING.md`** — the trail is now read in the review (Live), the
+- [x] **19. `AGENTLING.md`** — done 2026-08-22: §§6, 11 and 12 re-read against abc0263 — the trail read back as the turns strip, the over-the-cap count re-read (115 of 430 rows, 24 unflagged) with the rows own flag beside it, the stamp in the loop. The trail is now read in the review (Live), the
       ledger row carries the cut, the job carries what it left; numbers
       re-read from source.
-- [ ] **20. `DECISIONS.md`** — one entry for the unclogging decisions and what
+- [x] **20. `DECISIONS.md`** — done 2026-08-22: D-213 (the unclogging; overflow 643 / 376 / 191 → 0 / 0 / 39 as drawn, and 10 / 0 / 0 re-measured live at 1280×720), D-214 (the cut on the row: 100 of 430 flagged, 19 left, 46 silent) and D-215 (what a run left: 373 of 395 stamped, 16 PDF runs the old reading called nothing), both indexes in the same edit. One entry for the unclogging decisions and what
       each board proved (measured: body overflow 643 / 376 / 191 px down to
       0 / 0 / 39 on Library / Settings / Abilities at the same content); one
       for the ledger's cut field with the backfill count; one for "what a run
       left" as the single notion behind the backoffice line. Indexes updated
       in the same edit.
-- [ ] **21. Memory note updated; push offered.**
+- [x] **21. Memory note updated; push offered.** — done 2026-08-22; the push was offered, not made.
 
 ## Hazards to keep in view
 

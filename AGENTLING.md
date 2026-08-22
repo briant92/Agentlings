@@ -17,13 +17,16 @@ Every capability carries a status:
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
 
-Written 2026-08-01 against `e5c80c9`, last re-read against `3839d4d`
+Written 2026-08-01 against `e5c80c9`, re-read against `3839d4d`
 (2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,
 the calendar connection, sixteen skills, and the reading row ticked; §§5 and
 15 corrected again the same day where D-191 landed: the mail connection, nine
 credentialed connections, the email reading row ticked; §§4, 6 and 11
 corrected 2026-08-22 where D-211 landed: the sandbox trajectory trail, and
-the document brief's scan line repaired. §8's figures
+the document brief's scan line repaired; §§6, 11 and 12 re-read against
+`abc0263` the same day where the UI unclogging landed (D-213–D-215): the
+trail read back in the review, the ledger row carrying the cut, the job
+carrying what it left. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 
@@ -465,22 +468,39 @@ rather than quoting it.
 **The rate prices a turn *granted*, never a turn the SDK reports.** A cap of 4
 came back as 6 when the run was cut off, and lower when it finished early. The
 gap can be much wider: a scout capped at 12 reported **21**. Across the ledger
-`turns > turnsAllowed` fires on **110 of the 335 paid runs carrying both counts,
-and 19 of those finished `done`** (re-read 2026-08-21; it was 43 of 88 with
-seven finishing in mid-August, so the proportion has held at roughly a third
-while the sample quadrupled). The reported count is therefore not a cut-off
-marker, and reasoning built on it has already been wrong once (D-022, D-052).
+`turns > turnsAllowed` fires on **115 rows, and 24 of them carry no cut flag
+at all** (re-read 2026-08-22 over 430 rows; it was 110 of 335 with 19
+finished `done` the day before, and 43 of 88 in mid-August — roughly a third
+throughout). The reported count is therefore not a cut-off marker, and
+reasoning built on it has already been wrong once (D-022, D-052) — which is
+why, since D-214, **the row carries the cut itself**: `outOfTurns` or
+`timedOut`, written off the meter when the row is built and backfilled by
+identification for the rows from before the field — 100 of 430 flagged, 91 by
+the turn budget and 9 by the clock, with 19 stored rows over the cap
+deliberately left unflagged because their jobs finished on their own (D-212)
+and 46 rows naming a job no longer stored left silent. Every cut the app shows
+— the backoffice chip, the facts strip, the profile's tile — reads that flag
+and never the count.
 
 **Since D-052 a row also records what the run spent itself on** — `toolCalls`
-and `lastTool`, counted off the tool stream. Recorded and read by nobody, but
-it is the only number that survives a *killed* run: a cancelled session never
+and `lastTool`, counted off the tool stream. Recorded — and since D-213 read
+back on the review's facts strip, `52 tool calls · Bash, Read, Write` — and
+the only number that survives a *killed* run: a cancelled session never
 reaches the result message the SDK reports cost and turns on, so its row shows
 `costUnknown` and no turns at all, while still saying it made 3 calls and was
 last reading. **Since D-211 the sandbox keeps the calls themselves**:
 `.trajectory.jsonl`, one line per call, result and remark, clipped, with how
 the child ended — the transcript sandboxes never had, and the first seam of
 the runner protocol a test pins — and, from the 2026-08-22 desk firings
-on, seen live: three trails, every result present.
+on, seen live: three trails by that morning and five by midday, every result
+present. **Since D-213 the review reads the trail back** as "where the turns
+went": the session pass as one block per call in the order the session made
+them, coloured by tool, a failed call ringed, the legend with each tool's
+count, the longest run of one tool and whether a failed call was retried —
+counts of calls, never turns — and a run from before the trail says so rather
+than drawing an empty strip. Seen live: 39a1ff24 at 43 blocks, Bash 28 ·
+Read 11 · Edit 2 · ToolSearch 1 · Write 1, call 39 failed and retried on the
+next; 106140b4 with the no-trail line.
 
 **`lastTool` is what the model asked for, not what it got.** A run whose last
 call was `browser_evaluate` was *refused* it — that tool is not granted. Read
@@ -1332,9 +1352,13 @@ What is **not built**, and should not be assumed:
   the door trail records every door call (D-192); and since D-211 each
   sandbox keeps `.trajectory.jsonl` — every tool call with its clipped
   arguments, a 160-character head of what came back, what the run said
-  between calls, and how it ended. What is still not recorded is the content:
-  a fetched page or a read file enters the session whole, and the trail keeps
-  the first line of it. The ledger still records only what a job cost.
+  between calls, and how it ended — and since D-213 the review shows it back
+  as the turns strip. What is still not recorded is the content: a fetched
+  page or a read file enters the session whole, and the trail keeps the first
+  line of it. The ledger row records what a job cost and, since D-214, whether
+  a limit stopped it; the job itself carries a count of what the run left —
+  files, PDFs, images and the folders beside them with their weight (D-215) —
+  and never their content.
 - **No per-level or per-job data boundary beyond the sandbox directory.**
   Levels do not share sandboxes, but nothing stops you pointing two levels at
   the same repository.
@@ -1372,12 +1396,12 @@ flowchart TD
   F5 --> D
   SE --> D
   SE2 --> D
-  D --> C["close-out: LESSON.md + APPROACH.md"]
+  D --> C["close-out: LESSON.md + APPROACH.md — then what it left is counted and stamped on the job (D-215)"]
   C --> X["carries the result to the exit"]
   X --> V{"you review"}
   V -->|"Approve"| P["git apply to the real repo → promoted"]
   V -->|"Discard"| DI["discarded"]
-  P --> LN["recipe credited · ledger row · tool candidate counted"]
+  P --> LN["recipe credited · ledger row, with the cut flag (D-214) · tool candidate counted"]
   DI --> LN
 ```
 

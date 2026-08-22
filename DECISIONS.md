@@ -222,6 +222,9 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-210 — 2026-08-22 — The reconcile line, and the cap that was throwing away the proof](#d-210--2026-08-22--the-reconcile-line-and-the-cap-that-was-throwing-away-the-proof)
 - [D-211 — 2026-08-22 — The three-tier brief read against the engine: one layer missing, one door broken, nothing adopted whole](#d-211--2026-08-22--the-three-tier-brief-read-against-the-engine-one-layer-missing-one-door-broken-nothing-adopted-whole)
 - [D-212 — 2026-08-22 — The leash does not always bind: a finished run can make more round trips than its turns allow](#d-212--2026-08-22--the-leash-does-not-always-bind-a-finished-run-can-make-more-round-trips-than-its-turns-allow)
+- [D-213 — 2026-08-22 — Six panels unclogged: folds that remember, rows that expand, and what each board proved](#d-213--2026-08-22--six-panels-unclogged-folds-that-remember-rows-that-expand-and-what-each-board-proved)
+- [D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification](#d-214--2026-08-22--the-ledger-row-carries-the-cut-itself-backfilled-by-identification)
+- [D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there](#d-215--2026-08-22--what-a-run-left-is-one-notion-counted-where-the-run-ends-stamped-on-the-job-read-everywhere-from-there)
 
 ## By theme
 
@@ -484,7 +487,11 @@ entry updates one file rather than two.
   `continues`; and D-145, where the review modal stops contradicting D-138 —
   a cut run's red error becomes a neutral boundary sentence naming the limit
   and the delivery's substance in the same breath, More turns/time untouched
-  beneath it
+  beneath it; and D-213, six panels unclogged into one disclosure vocabulary —
+  folds that remember per panel, rows that expand in place, ten rows then
+  more, a pinned bar, tabs for Settings alone — with body overflow measured
+  from 643 / 376 / 191 px down to 0 / 0 / 39 on the boards and 10 / 0 / 0 on
+  the built panels, and each board proven live
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -521,7 +528,11 @@ entry updates one file rather than two.
   tools on D-053's find/read split, the `gmail.readonly` scope pinned onto
   the consent walk itself, and the working notes' "blocked on the
   re-consent" corrected against source: a token never grows scopes, so
-  consent is the build's last step, not its gate
+  consent is the build's last step, not its gate; and D-214, the ledger row
+  carrying the cut itself — outOfTurns or timedOut off the meter, backfilled
+  by identification (100 of 430 rows; 19 over-the-cap rows left unmarked
+  because their jobs finished, D-212's population) — so no reading of turns
+  over the cap remains anywhere in the app
 - **Delivery and roles** — D-041
 - **Quoting, continued** — D-042
 - **The fourth tier, in service** — D-043, D-044, D-045; and D-100, which
@@ -564,7 +575,9 @@ entry updates one file rather than two.
   D-056; and D-115, where the sim zeroed the careers the roster persisted and
   `syncRoster` wrote the zeros back over the record — caught because D-056's
   ledger held the second derivation to disagree with, and repaired from it by
-  identification
+  identification; and D-215, where what a run left became one notion counted
+  at the sandbox and stamped on the job — the backoffice line had been reading
+  diffs and summaries and calling a kept run with a PDF nothing on disk
 - **Documents, continued** — produced in D-031, and shown rather than merely
   offered in D-058, which also collapses the second listing and the second
   ordering (D-030's shape again); read *into* the knowledge store by D-059,
@@ -576,7 +589,9 @@ entry updates one file rather than two.
   charged the wrong number — plus a correction to what D-061 claimed
 - **Counting what is actually there** — a per-source count taken before dedupe,
   and the second derivation left in place on purpose rather than collapsed:
-  D-057, which is D-030's rule met head-on and answered
+  D-057, which is D-030's rule met head-on and answered; and D-215, what a run
+  left counted once at the sandbox's top level with the folders weighed, the
+  client's second derivation retired rather than kept
 - **Running out of turns** — the first real job in a real level died with an
   empty sandbox because nobody had told it there was a budget: D-063, where the
   fix is measured as a paired re-run rather than asserted; and D-064, where that
@@ -604,7 +619,9 @@ entry updates one file rather than two.
   increments — and D-095, the fourth, where
   a bound of *twice* the leash let one completion recorded at six turns arm a
   five-turn one, until three cut runs and a leashed completion put the bound at
-  the leash itself and let a run the leash cut raise the need it disproved
+  the leash itself and let a run the leash cut raise the need it disproved;
+  and D-214, the cut as a flag on the ledger row and the profile counting it
+  off that flag, never off the turn count
 - **What a recurring job does to the notes** — the same lesson re-banked every
   run until every slot a session reads held one fact; dedup at the append
   seams, and the close-out shown what is already on file: D-073; and D-201,
@@ -729,7 +746,10 @@ entry updates one file rather than two.
   buttons a failure never renders read as close-only; and D-136, the
   failed card's button saying SEE WHAT HAPPENED instead of promising a
   verdict, and every review opening with `the ask` — the verbatim prompt
-  and its desk clarifications, the trace from result back to question
+  and its desk clarifications, the trace from result back to question; and
+  D-213's profile half — memory listing a discard's note tagged as what it is,
+  the record line, the true cut tile off D-214's flag, and
+  spent-the-whole-quote moved onto the bottom line
 - **Recurrence** — and D-184, where the *sentence* learned to carry the
   cadence: read off the words, quoted back so the reading can be checked, the
   repeat row filled in once per sentence and never acted on — because Start
@@ -15426,3 +15446,170 @@ the first is a coin flip at trip #40. The comparison that survives: the
 reordered approach moved the PDF six trips earlier and cost a third less
 ($3.65 against $4.91); neither approach put it comfortably inside 40 trips;
 and both runs await a verdict on what they delivered, not on how they ended.
+
+## D-213 — 2026-08-22 — Six panels unclogged: folds that remember, rows that expand, and what each board proved
+
+**Decision:** the panels adopt one disclosure vocabulary, and the six Brian
+screenshotted on 2026-08-22 were rebuilt in it — sections that fold and
+remember their state per panel in the browser (`agentlings:fold:<panel>:<section>`,
+the section a panel is opened for starting open), one-line rows that expand
+in place, lists that show ten rows and a "more" row, a filter bar and totals
+pinned while the list scrolls, and tabs for Settings alone (reads · sends ·
+app). Nothing is hover-only, because the horde is also on the phone (D-175).
+The spec was a design canvas of ten artboards drawn in the app's own chrome
+and revamped to Brian's six decisions before a line of code; `UI.md` is the
+order the work landed in — 21 steps in four phases, each with the evidence
+line it had to meet, ticked as it did.
+
+### What the mockups surfaced before anything was built
+
+Four readings that were bugs rather than taste, and each one a fix of the
+build rather than of the drawing: the backoffice's "what it left" was derived
+on the client from repo diffs and the summary, so a kept run that wrote a PDF
+read "nothing on disk" (D-215); the profile's "hit the turn ceiling" tile was
+`atCeiling` — cost at or above 99.5 % of the quote — and read 0 of 5 while
+five of Ash's runs were cut at 41/40 (D-214); the note a discard banks (D-201)
+rendered as a lesson because `isJournal()` did not know its shape; and More
+turns never said what the next leg receives — `carryForward` copies top-level
+files, `input/` and the report, while `work/` stays behind (SPATIAL §6.3).
+
+### What each board proved, seen live through DOM reads
+
+- **Backoffice** — grouped by ask with every leg of one sentence under its
+  root (walking `continues`), groups collapsed, "every run" one click away:
+  49 runs in 22 asks on Home Chores; the cut chip reads `outOfTurns` only; a
+  delivery awaiting a verdict reads "to review", never "done".
+- **Review** — a facts strip (who · spend of the quote · the turns or the
+  cut · minutes · tool calls · when); what is left and the files as folds; the
+  reply started from the run's own pending items; "where the turns went"
+  reading the D-211 trail's session pass as one block per call (39a1ff24: 43
+  blocks, Bash 28 · Read 11 · Edit 2 · ToolSearch 1 · Write 1, call 39 failed
+  and retried on the next), the honest line for a run from before the trail;
+  `work/` and `input/` as rows in the rail with their weight; the More-turns
+  note from the carry manifest itself.
+- **Profile** — hired-to folded with its first words in the header; memory
+  with the discard note tagged among the lessons by date; the record line and
+  the true cut tile: Ash at 7 runs · 2 finished on their own · 5 cut short ·
+  4 kept, 88 % of quoted spent, 0 of 7 spending the whole quote.
+- **Library** — held-by from the level's crew (7 held on Home Chores, 3 held
+  by nobody, with a hire-one link), the leash off the role file, ability
+  counts with no-job abilities in amber, browse-all as a rail beside the
+  results ten at a time.
+- **What this level can read** — formats as chips, the explanations folded
+  under how reading works with their gist in the header; nothing else
+  touched.
+- **Settings** — reads · 8 / sends · 4 / app, rows with the door trail's
+  count and last call (web 69×, search 96×, mail 38× last today 08:13, three
+  doors not used since the trail began on Aug 18), the open row reading calls
+  per tool and refusals, needs-set-up rows whose add-it-here link opens the
+  secret drawer, the never-list folded at six channels.
+
+### Measured
+
+Body overflow at the same content, the panels as they stood against the
+boards as drawn (the mockup session, 2026-08-22 morning): Library 643 → 0 px,
+Settings 376 → 0 px, Abilities 191 → 39 px. Re-measured on the built panels
+at 1280 × 720 the same afternoon: Library 10 px, Settings 0 / 0 / 0 px across
+its three tabs, Abilities 0 px; the profile tab itself, with the record open
+by default, 276 px — not one of the original three and reading as intended.
+Tests: the web suite went from 18 files / 203 tests to 26 files / 273; the
+server suite from 1,904 to 1,923 with the batch behind one restart. Twelve
+commits: 06d412e, 81d387e, 88c51a4, f543911, 9a5667e (phase 1, client only,
+shipping on a reload); 8447b3a, d7b2b4f, 96883f7 (phase 2, the server batch
+behind a single restart Brian made from his own terminal); edce05c, 80cdb76,
+731afc9, abc0263 (phase 3, the client halves the batch unblocked).
+
+### One wording call against the board
+
+The profile's cut tile says "cut short · by the turn budget or the clock"
+rather than the board's "cut at the turn ceiling", because `record.cut`
+counts `timedOut` rows too (D-138) — 9 of the 100 flagged rows were cut by
+the clock, and a tile that named the ceiling would have been wrong for them.
+
+### Hazards it leaves
+
+`.agentlings/` is gitignored — the ledger's `.pre-cut.bak` and the boot
+stamps exist on disk only. A role or skill text edit reshuffles BM25 routing
+(D-190's lesson) and nothing here edits one; the leash the Library shows is
+read, not written. The strip reads the session pass only and counts calls,
+not turns — a turn is one assistant message and may carry several calls.
+
+## D-214 — 2026-08-22 — The ledger row carries the cut itself, backfilled by identification
+
+**Decision:** `LedgerEntry` gains `outOfTurns` and `timedOut`, written off
+the meter and only when true; `recordOf` counts `cut` and `finished` off
+those flags; `markCut()` with `scripts/backfill-ledger-cut.ts` stamps the rows
+from before the field, by identification from each job's own meter and never
+by guess; and every cut the app shows — the backoffice chip, the facts
+strip, the profile's tile and record line — keys on the flag and never on
+`turns > turnsAllowed` (D-022, D-212).
+
+### Why the count could not be read off turns
+
+D-022 already said the reported turn count is not a cut marker; D-212 proved
+why, with runs finishing `done` at 44/40 and 51/40. The profile tile that
+claimed to count the ceiling counted something else — `atCeiling`, spend at
+or above 99.5 % of the quote — and read 0 of 5 against five cuts at 41/40: a
+reading that sounded like the fact standing in for it, the shape D-019 and
+D-030 keep finding. The fact itself lived only on the job's meter, which a
+profile reading the ledger never saw.
+
+### What the backfill found
+
+Dry first, then `--write` on 2026-08-22 with a `.bak` taken: 430 rows; 100
+marked from their jobs' own meters — 91 `outOfTurns`, 9 `timedOut`, none
+both; 19 stored rows over the cap deliberately not marked because their jobs
+finished on their own — D-212's population exactly, and by the afternoon it
+included 39a1ff24 at 44/40, 8aef2a7c at 51/40 and c0cf3b9d at 41/40 — the gather of a repo party on 2026-08-18 that
+finished `done` with no error and no flag, on a meter that has carried the
+flag since 2026-08-04 — so D-212's reading rule that +1 is always a cut no
+longer holds on its own, and the flag is the only reading; 46 silent rows name a job no longer
+stored, so the profile's cut count is a floor for them rather than an
+estimate. Re-run dry that afternoon: 0 to mark, the same 19 and the same 46.
+Off the raw file: 343 rows carry both counts, 115 are over the cap, 91 of
+those are flagged and 24 are not — the 19 stored ones and 5 whose job is
+gone.
+
+### What reads it, and how the fixtures say it
+
+`cutChip` shows `41/40` only when flagged and nothing for a finished 51/40;
+`factsOf` says "cut at turn 41 of 40" for a cut and "51 turns" — never "51 of
+40" — for a finished run; `AgentlingRecord.cut` and `finished` feed the tile
+and the record line. A test fixture that needs a cut run gives it
+`outOfTurns: true`; one that needs a finished run that ran long gives it
+51/40 and no flag (UI.md, hazards).
+
+## D-215 — 2026-08-22 — What a run left is one notion: counted where the run ends, stamped on the job, read everywhere from there
+
+**Decision:** `deliverySummary(dir)` in `outputs.ts` is the one function that
+says what a run left — the top-level files minus the crew's paperwork, PDFs
+and images told apart, the folders beside them with their file count and
+weight (never the clone or `node_modules`, a folder counted to 5,000 files
+and called "at least" past that) — stamped on the job as `delivered` at every
+ending, and once at the next start for finished jobs that lack it; the output
+route returns the folders as `dirs`; the backoffice line (`producedBy`), the
+review's files header and the rail's folder rows all read from there. D-030's
+rule applied where it had been broken again: "it delivered" was being
+re-derived on the client from diffs and summaries, and every copy silently
+assumed a repository.
+
+### What it replaced, measured
+
+Across 395 finished jobs on six levels, 373 carry the stamp; the 22 that do
+not have no sandbox left to count (HQ 11, bootcamp 5, ui-check 5, random 1).
+Forty of the stamped runs left a PDF, and 16 of those carry neither a summary
+nor a diff — 12 on Home Chores, 4 on HQ — which is exactly the population the
+old reading called "nothing on disk": 29ddccb7 among them, promoted at $4.00
+with a PDF and 14 images. The boot backfill stamped 49 of 49 Home Chores jobs
+at the 2026-08-22 restart.
+
+### What it reads as now
+
+"PDF, 14 images + 60 files" for 29ddccb7; "nothing delivered · work/ 68" for
+the cut discard 106140b4, whose whole evidence sits one level down (D-209);
+"a written answer" when only the report exists; the patch first for a repo
+job; the old reading only where the stamp is absent. The review's files
+header reads "4 delivered · 4 paperwork · input/ 1 · work/ 36" off the same
+listing the rail shows, and the rail's "work/ 68 files · 49.5 MB · not carried
+forward" off the same `carryManifest` the copy is made from — SPATIAL §6.3's
+gap, now visible on the button before it is pressed.

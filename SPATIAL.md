@@ -656,15 +656,16 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       `29ddccb7` promoted **with** the PDF ($4.00); `95f42e60` no PDF ($3.79);
       `106140b4` discarded, no PDF ($4.68). **All three cut at 41/40** — the
       grant is `TURN_CEILING` itself, so there is no headroom left to give.
-- [ ] **A fourth run, with §6.3’s lever (b) applied, is the first to end on
+- [x] **A fourth run, with §6.3’s lever (b) applied, is the first to end on
       its own.** `39a1ff24` (2026-08-22, $3.65, `done`): PDF, composite,
       overlay and `placement.json` all at the top level, the PDF at minute
       13.8 of 14.4, two report edits after it, then *Delivered, and read back
       from the files’ own bytes* — outcome `result`, not `error_max_turns`,
       on the same 40-turn leash (the meter says 44/40, so `num_turns` is not
-      the quantity the SDK caps — noted, not chased). Awaiting your verdict.
-      One run; the bar in §6.2 applies here too.
-- [ ] **A fifth run, nothing edited, and the reading of both corrected.**
+      the quantity the SDK caps — noted, not chased). **Your verdict,
+      2026-08-22 afternoon: discarded.** One run; the bar in §6.2 applies
+      here too.
+- [x] **A fifth run, nothing edited, and the reading of both corrected.**
       `8aef2a7c` (2026-08-22, $4.91, `done`, 50 calls, 23 min): the
       re-banked approach put the PDF back after the checks — it landed at
       minute 20.2, after two re-matings the run found through the pillars
@@ -675,15 +676,24 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       under a leash of 40. Neither lived inside the leash; the leash did not
       bind (§6.5), so “ended on its own” is not “fitted inside 40 turns”, and
       the comparison that survives is where the PDF sat — trip 40 at $3.65
-      against trip 46 at $4.91 — not whether the run was cut. Both await
-      your verdict.
+      against trip 46 at $4.91 — not whether the run was cut. **Your
+      verdicts, 2026-08-22 afternoon: the fourth run discarded, this one
+      promoted.** So the run lever (b) made cheaper — the PDF six trips
+      earlier — is the one that was not wanted, and the run kept is the
+      unedited one at trip 46 and $4.91, from the order the close-out
+      re-banked on its own. Why is recorded nowhere; only the two verdicts
+      are (the job carries its status, the ledger row its outcome). By the
+      D-215 stamp the fourth run left a PDF, two images and
+      `placement.json`; the fifth a PDF, one image and one more file.
 - [ ] **The open question is not "more turns".** It is whether the PDF step is
       reachable inside one run at all, or whether this task is honestly a
       two-leg job — geometry and placement in one run, render in a reply that
       starts from `placement.json`. Three runs say the first is unreliable.
       Nobody has tried the second deliberately — and costed against the code
       on 2026-08-22 (§6.3) it cannot be tried as the runs now stand: a reply
-      leg would not receive `placement.json`.
+      leg would not receive `placement.json`. The two verdicts above do not
+      settle it either way: they judged the deliveries, and the one kept came
+      at trip 46.
 
 ### 2. The report seam — one fix unproven, one path never exercised
 
@@ -804,7 +814,10 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       +15, researchers and scribes mostly) beside 98 cuts at exactly +1, so
       it predates D-211, which changed no dependency; the runner still
       passes `maxTurns: config.maxTurns`; same SDK 0.3.220, same win32-x64
-      binary, same home.
+      binary, same home. Re-read 2026-08-22 afternoon off the whole ledger
+      (D-214): 343 rows carry both counts, 115 are over the cap, 91 of those
+      are flagged cuts and 24 are not — 19 whose job is stored and finished
+      on its own, 5 whose job is gone.
 - [ ] Two direct calls of the SDK from a session shell (six sequential Bash
       calls, `maxTurns: 3`, ~6c each) cut at `num_turns` 4 both times —
       once silent, once with a sentence before every call — so the cap
@@ -815,9 +828,17 @@ on run 5's own card) · D-205 (`settleOutcome` at promote) · D-206 (the $10.19)
       emitting the SDK’s `system` messages (`compact_boundary`) into the
       trail and one server line writing them — a restart — after which the
       next long run answers it.
-- [ ] Reading rule until then: a cut reports `turnsAllowed + 1`; a finished
-      run’s `turns` is `toolCalls + 1` and may exceed the leash; +2 or more
-      on a finished run means it ran past the leash, not that the leash
-      was generous. The session-shell probe needs every `CLAUDE*` variable
-      unset before `.env` is sourced, or the host session’s OAuth shadows
-      the API key (401).
+- [x] **The reading rule is retired (D-214).** It said a cut reports
+      `turnsAllowed + 1` and that +2 or more on a finished run means it ran
+      past the leash. Two things replaced it on 2026-08-22: the ledger row
+      now carries the cut itself — `outOfTurns` or `timedOut`, written off
+      the meter and backfilled by identification, 100 of 430 rows, with the
+      19 stored rows over the cap left unflagged because their jobs finished
+      on their own — and `c0cf3b9d`, an hq party gather of 2026-08-18,
+      finished `done` at **41/40** with no error and no flag, on a meter
+      that has carried the flag since 2026-08-04: a +1 that was not a cut.
+      Read the flag, never the count. A finished run’s `turns` is still
+      `toolCalls + 1` and may exceed the leash — a description, deciding
+      nothing. The session-shell probe needs every `CLAUDE*` variable unset
+      before `.env` is sourced, or the host session’s OAuth shadows the API
+      key (401).

@@ -11,7 +11,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { normalise, readRecipes, TOOL_CANDIDATE_RUNS } from '../server/src/recipes';
-import { totals } from '../server/src/ledger';
+import { totals, type LedgerEntry } from '../server/src/ledger';
 import { compileBlockers } from '../server/src/capability';
 import { readConnections } from '../server/src/connections';
 import { usableTools } from '../server/src/tools';
@@ -80,22 +80,22 @@ function read() {
     .sort((a, b) => a.at - b.at);
 }
 
-const usd = (n) => (n < 1 ? `${(n * 100).toFixed(1)}c` : `$${n.toFixed(2)}`);
-const pad = (s, n) => String(s).padEnd(n);
-const num = (s, n) => String(s).padStart(n);
+const usd = (n: number) => (n < 1 ? `${(n * 100).toFixed(1)}c` : `$${n.toFixed(2)}`);
+const pad = (s: unknown, n: number) => String(s).padEnd(n);
+const num = (s: unknown, n: number) => String(s).padStart(n);
 
 /**
  * What one *granted* turn cost, narrowed to a shape. Same unit as ledger.ts:
  * turnsAllowed, never the SDK's reported turns, and failures count — a session
  * that died still burnt its turns at a real rate.
  */
-function perTurn(rows, tier, hasRepo) {
+function perTurn(rows: LedgerEntry[], tier: string, hasRepo: boolean) {
   const v = rows.filter(
     (r) => r.tier === tier && r.hasRepo === hasRepo && r.costUsd > 0 && (r.turnsAllowed ?? 0) > 0,
   );
   if (!v.length) return null;
   const cost = v.reduce((s, r) => s + r.costUsd, 0);
-  const turns = v.reduce((s, r) => s + r.turnsAllowed, 0);
+  const turns = v.reduce((s, r) => s + (r.turnsAllowed ?? 0), 0);
   return { n: v.length, usd: cost / turns };
 }
 
@@ -166,7 +166,7 @@ const half = Math.floor(rows.length / 2);
 for (const [label, v] of [
   ['first half ', rows.slice(0, half)],
   ['second half', rows.slice(half)],
-]) {
+] as const) {
   const c = v.reduce((s, r) => s + r.costUsd, 0);
   const f = v.filter((r) => r.costUsd === 0).length;
   console.log(
@@ -261,7 +261,7 @@ if (!repeated.length) {
   }
 }
 
-const meanOf = (v) => (v.length ? v.reduce((s, r) => s + r.costUsd, 0) / v.length : 0);
+const meanOf = (v: LedgerEntry[]) => (v.length ? v.reduce((s, r) => s + r.costUsd, 0) / v.length : 0);
 const sessionMean = meanOf(rows.filter((r) => r.tier === 'session' && r.costUsd > 0));
 const oneshotMean = meanOf(rows.filter((r) => r.tier === 'oneshot' && r.costUsd > 0));
 if (sessionMean > 0 && oneshotMean > 0) {
@@ -313,8 +313,8 @@ for (const r of rows) {
   if (!byClass.has(cls)) byClass.set(cls, []);
   byClass.get(cls)!.push(r);
 }
-const isFree = (r) => r.tier === 'routed' || r.tier === 'tool';
-const freeShare = (v) => (v.length ? `${Math.round((100 * v.filter(isFree).length) / v.length)}%` : '—');
+const isFree = (r: LedgerEntry) => r.tier === 'routed' || r.tier === 'tool';
+const freeShare = (v: LedgerEntry[]) => (v.length ? `${Math.round((100 * v.filter(isFree).length) / v.length)}%` : '—');
 const cutAt = rows[half]?.at ?? Infinity;
 for (const [cls, v] of [...byClass.entries()].sort((a, b2) => b2[1].length - a[1].length)) {
   const free = v.filter(isFree).length;
@@ -376,10 +376,10 @@ console.log(
  */
 console.log('\n## Absorbed, bucketed\n');
 const fullAbs = rows.filter((r) => r.priceUsd === 0 && r.costUsd > 0);
-const bucketOf = (r): string => {
+const bucketOf = (r: LedgerEntry): string => {
   if (r.compile) return 'compiles (tuition by design — D-096)';
   if (r.toolFellBack) return 'tool fall-backs (promised free)';
-  if (r.outcome === 'failed' && (r.turnsAllowed ?? 0) > 0 && r.turns === r.turnsAllowed + 1)
+  if (r.outcome === 'failed' && (r.turnsAllowed ?? 0) > 0 && r.turns === (r.turnsAllowed ?? 0) + 1)
     return 'cut at the turn wall';
   if (r.outcome === 'failed') return 'failed inside its budget';
   return 'done at price zero (free-quoted or unpriced)';

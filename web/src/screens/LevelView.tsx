@@ -241,6 +241,7 @@ export function LevelView({
           job={reviewJob}
           file={review?.file}
           queue={pileQueue}
+          crew={world?.agentlings ?? []}
           onDecided={review?.fromPile ? () => advancePile(reviewJob.id) : undefined}
           onClose={() => setReview(null)}
         />

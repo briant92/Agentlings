@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DeliveryFile, Job, PackDraft, Quote, SendApprovalInfo } from '@agentlings/shared';
+import type {
+  Agentling,
+  DeliveryFile,
+  Job,
+  PackDraft,
+  Quote,
+  SendApprovalInfo,
+} from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { cutNotice } from './cut';
+import { factsOf, replyFromPending } from './facts';
 import { fileUrl } from './files';
 import { FileViewer } from './FileViewer';
+import { Section } from './Section';
 import { moveRows, movesLeft, movesSummary } from './moves';
 import { noSendLine } from './noSend';
 import { allLooks, renderScenePreview } from '../world/looks';
@@ -31,6 +40,7 @@ export function ReviewModal({
   /** The file to open on, when the inbox already knows which one was clicked. */
   file,
   queue,
+  crew,
   onDecided,
   onClose,
 }: {
@@ -39,6 +49,8 @@ export function ReviewModal({
   file?: string;
   /** Set when this review is a stop in the parcel desk's flow. */
   queue?: { position: number; total: number; onSkip: () => void };
+  /** The level's crew, so the facts strip can name who did it. */
+  crew?: readonly Agentling[];
   /**
    * A verdict landed (promote, discard, more turns, a reply, a redo) — the
    * desk advances to the next parcel. Absent, deciding simply closes.
@@ -215,6 +227,8 @@ export function ReviewModal({
   );
   const moveLeft = job.moves ? movesLeft(job.moves.moves, job.movesRun?.done ?? []) : [];
   const movedCount = job.movesRun?.done.length ?? 0;
+  const worker = crew?.find((a) => a.id === job.assignedTo);
+  const facts = factsOf(job, worker ? { name: worker.name, role: worker.role } : null);
 
   /** Undo a reorganization: the server replays the journal backwards (D-132). */
   const undoMoves = async () => {
@@ -247,7 +261,7 @@ export function ReviewModal({
               step {job.step.n} of {job.step.of}
             </span>
           )}
-          <span className="m-title">{job.title}</span>
+          <span className="m-title rv-title">{job.title}</span>
           {/* The desk's flow strip: where this stop sits in the pile, the way
               back, and past it without a verdict. */}
           {queue && (
@@ -265,6 +279,21 @@ export function ReviewModal({
           )}
           <button onClick={onClose}>✕</button>
         </div>
+        {/* The facts strip (UI.md, step 3): who, spend against the quote,
+            turns, minutes, tool calls, when — all already on the meter, said
+            once here instead of found in three places. */}
+        {facts.length > 0 && (
+          <div className="rv-facts">
+            {facts.map((fact, i) => (
+              <span key={i} className="rv-fact">
+                {i > 0 && <span className="sep">|</span>}
+                {fact.pre && `${fact.pre} `}
+                <b>{fact.value}</b>
+                {fact.post && ` ${fact.post}`}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="m-body">
           {/* The sentence that produced all of this, verbatim, with the desk
               answers that rode along — the trace from result back to ask
@@ -566,27 +595,44 @@ export function ReviewModal({
               judgement rather than a coin flip (D-114). Absent means the
               close-out never ran — said plainly, never as "nothing left". */}
           {job.pending && (
-            <div className="rv-pending">
-              <div className="sect">What is left</div>
-              <p className="rv-pending-state">{job.pending.state}</p>
-              {job.pending.items.length > 0 ? (
-                <ul className="rv-pending-list">
-                  {job.pending.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="dim">Nothing — it believed the work finished.</p>
-              )}
-            </div>
+            // A section that folds once read (UI.md, step 3): the account stays
+            // a tap away, and the files below it come up the screen.
+            <Section
+              panel="review"
+              id="pending"
+              label="what is left"
+              count={job.pending.items.length > 0 ? `${job.pending.items.length} items` : 'nothing'}
+              defaultOpen
+            >
+              <div className="rv-pending">
+                <p className="rv-pending-state">{job.pending.state}</p>
+                {job.pending.items.length > 0 ? (
+                  <ul className="rv-pending-list">
+                    {job.pending.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="dim">Nothing — it believed the work finished.</p>
+                )}
+              </div>
+            </Section>
           )}
           {!job.pending && canCarryOn && (
             <p className="dim">
               No account of what is left — the write-up did not run, so carrying on is a guess.
             </p>
           )}
-          {files === null && <p className="dim">Loading…</p>}
-          {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
+          <Section
+            panel="review"
+            id="files"
+            label="files"
+            count={files === null ? '…' : files.length}
+            defaultOpen
+          >
+            {files === null && <p className="dim">Loading…</p>}
+            {files && <FileViewer levelId={levelId} jobId={job.id} files={files} initial={file} />}
+          </Section>
           {refusal && <p className="error">{refusal}</p>}
           {offer && !offer.auto && (
             <div className="rv-standing">
@@ -668,15 +714,31 @@ export function ReviewModal({
           {/* Only for a run the server will actually let continue — a button
               certain to be refused is worse than none. */}
           {!offer && canCarryOn && (
-            <>
-              <button className="btn-more" disabled={busy} onClick={() => void carryOn()}>
-                {job.meter?.timedOut && !job.meter?.outOfTurns ? 'More time' : 'More turns'}
-                {carryQuote ? ` · up to $${carryQuote.ceilingUsd.toFixed(2)}` : ''}
-              </button>
-              {/* The asymmetry that makes this an easy call: a cut run is
-                  filed failed and priced at zero, so only a landing costs. */}
-              <span className="rv-free">charged only if it finishes</span>
-            </>
+            <div className="rv-carry">
+              <div className="rv-carry-row">
+                <button className="btn-more" disabled={busy} onClick={() => void carryOn()}>
+                  {job.meter?.timedOut && !job.meter?.outOfTurns ? 'More time' : 'More turns'}
+                  {carryQuote ? ` · up to $${carryQuote.ceilingUsd.toFixed(2)}` : ''}
+                </button>
+                {/* The asymmetry that makes this an easy call: a cut run is
+                    filed failed and priced at zero, so only a landing costs. */}
+                <span className="rv-free">charged only if it finishes</span>
+              </div>
+              {/* The reply, started from the run's own account of what is
+                  left (UI.md, step 3) — the two-leg shape SPATIAL §6 keeps
+                  arriving at, one tap from the list that names the legs. */}
+              {job.pending && job.pending.items.length > 0 && (
+                <p className="rv-carry-note">
+                  <button
+                    className="work-link"
+                    onClick={() => setClarify(replyFromPending(job.pending))}
+                  >
+                    start the reply from what is left
+                  </button>
+                  {' '}— puts the {job.pending.items.length} items above into the box
+                </p>
+              )}
+            </div>
           )}
           {/* An answered failure says so instead of asking again (D-139) —
               the reply box already did its work once. */}

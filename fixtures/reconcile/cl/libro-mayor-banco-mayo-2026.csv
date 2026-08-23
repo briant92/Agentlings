@@ -1,0 +1,12 @@
+Fecha;Comprobante;Glosa;Debe;Haber;Saldo
+01/05/2026;SI;Saldo inicial;;;3000000
+04/05/2026;CI-1201;Transferencia recibida — Comercial Andes SpA, factura 4512;1190000;;4190000
+06/05/2026;CE-3307;Pago proveedor — Distribuidora Sur Ltda., factura 88721;;892500;3297500
+11/05/2026;CI-1202;Transferencia recibida — Servicios Maipo Ltda., factura 4513;595000;;3892500
+13/05/2026;CE-3308;Pago proveedor — Ferretería Central SpA, factura 10944;;476000;3416500
+18/05/2026;CI-1203;Transferencia recibida — Inversiones Lircay SA, factura 4514;833000;;4249500
+20/05/2026;CE-3309;Pago proveedor — Transportes Valle Ltda., factura 2201;;238000;4011500
+26/05/2026;CI-1204;Transferencia recibida — Comercial Andes SpA, factura 4515;357000;;4368500
+29/05/2026;CE-3310;Remuneraciones mayo;;240650;4127850
+30/05/2026;CE-3311;Transferencia a proveedor — Imprenta Norte Ltda., factura 5610;;120000;4007850
+31/05/2026;CI-1205;Depósito — Servicios Maipo Ltda., factura 4516;242150;;4250000

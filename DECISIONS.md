@@ -229,6 +229,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-217 — 2026-08-22 — The session child carried every connection secret: laundered at both spawn sites by the catalog's own list](#d-217--2026-08-22--the-session-child-carried-every-connection-secret-laundered-at-both-spawn-sites-by-the-catalogs-own-list)
 - [D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten](#d-218--2026-08-22--disconnect-the-drawers-inverse-with-googles-token-revoked-before-the-line-is-forgotten)
 - [D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps](#d-219--2026-08-22--payments-on-the-shelf-of-never-a-kind-of-act-refused-by-decision-beside-the-apps)
+- [D-220 — 2026-08-22 — B0 measured on generic fixtures: the analyst fits its quote, and the sentence-keyed recipe drifts toward the last counterpart](#d-220--2026-08-22--b0-measured-on-generic-fixtures-the-analyst-fits-its-quote-and-the-sentence-keyed-recipe-drifts-toward-the-last-counterpart)
 
 ## By theme
 
@@ -864,6 +865,14 @@ entry updates one file rather than two.
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
   doing the rest — plus the `plan-geometry` skill; the live gate is the open
   clause.
+- **Reconciliation — reading money, never moving it** — D-219, the act put
+  on the shelf of never beside the apps; and D-220, the reconciliation line's
+  first measurement: three generic-fixture runs through the desk on one
+  sentence, the analyst finishing inside its quote every time (the six-turn
+  premise withdrawn — the quote outranks the role's standing cap, D-067), the
+  invariant produced only when asked, and the sentence-keyed recipe rewritten
+  toward each counterpart in turn, one success short of compiling the wrong
+  shape — the board is `RECONCILE.md`
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -15946,3 +15955,74 @@ pinning the row's label and reason and that *wire 500 dollars to Ana* claims
 no channel. Mutation after committing: the row's key misspelt fails exactly
 that test (1 failed, 70 passed); restored, 71/71. AGENTLING §14 gains *Not a
 payer*; SPEC M5.11 the clause.
+
+## D-220 — 2026-08-22 — B0 measured on generic fixtures: the analyst fits its quote, and the sentence-keyed recipe drifts toward the last counterpart
+
+**Decision:** the reconciliation line proceeds in this order — **B1 before any
+fourth run of the trial sentence** (attachment shape joins recipe identity),
+then **B3 as contract-first** (`RECONCILIATION.json` asked for in the brief,
+checked at parse, the equality invariant computed on the server, Approve
+refused when it does not balance; a skill mounted only if a measured run still
+misses the statement), B4 unchanged, B2 last. The earlier standing preference
+to *widen the analyst* is withdrawn: its premise was false. The board for the
+line is `RECONCILE.md`.
+
+### What was measured
+
+Brian chose published exercises over his own files so nothing proprietary
+rides a test. Two were expanded to line level with their answers kept aside —
+Lumen Learning's "My Company" bank reconciliation (CC BY 4.0) and Edig's
+conciliación al 31 de mayo de 2026 — plus a no-books variant of the Chilean
+month built from the SII sales and purchase registers. `make-fixtures.mjs`
+asserts the published balances before writing a file. An analyst was hired on
+Training Ground for the trial, since the level held none and a role nobody
+holds does nothing (D-112). Three jobs, one sentence, through the desk route
+with the files attached:
+
+| Run | Files | Job | Turns / allowed | Cost | Recipe |
+|---|---|---|---|---|---|
+| 1 | statement + own cash ledger | `1a3e591c` | 11 / 40 | $0.19 | banked |
+| 2 | cartola + libro mayor banco | `3086d9b8` | 9 / 40 | $0.19 | exact match, approach rewritten |
+| 3 | cartola + SII ventas + compras | `bf8ed949` | 12 / 40 | $0.21 | exact match, rewritten again; hits 2, successes 2 |
+
+Against the keys: run 1 matched 12 of 12 and named all twelve unmatched items,
+cheque 2005's −360 included, and reported the raw +2,938 difference without the
+adjusted balances — the sentence had not asked for them. Run 2 matched 8 of 8,
+named all five reconciling items and wrote a full equation from the cartola's
+4.118.500 to the libro's 4.250.000, one-directional. Run 3 matched 7 of 7 by
+folio and amount with a two-to-three-day lag, matched the bank's fee invoice
+one-to-many against two cartola lines (17.850 = 15.000 + 2.850), read payroll
+and interest as out of scope and the four unpaid invoices as open. Every run
+kept its script; none was cut; $0.59 in all.
+
+### What it settled
+
+**The six-turn premise was false.** `turnCapFor` lets the quote's turn budget
+override the role's standing `maxTurns` in both directions (D-067); a $2
+ceiling at Haiku prices granted the 40-turn ceiling, and the runs used 11, 9
+and 12. Decision 4 of the review — widen the analyst, or add a trade — answers
+itself: neither.
+
+**The method transfers; the invariant does not.** The runs adapted to each
+counterpart unaided, but only one produced an equation and none the two-sided
+statement. What the app wants from a reconciliation has to be asked for, as a
+contract — which is what B3 is, and the reason a skill is deferred until a
+contract-carrying run is measured to miss (D-190's bar).
+
+**The recipe drifts toward the last counterpart, and is one success from
+compiling it.** One sentence is one key, and each close-out replaced the
+approach rather than merging it — D-073's replace rule reaching recipes.
+After run 3 the banked method calls bank fees *out-of-scope*, which is true
+against an invoice register and wrong against a ledger, where they are
+book-side adjustments needing entries. The model survived the drift because
+it reads the files; a tool compiled from the third success (`tool-candidates`
+is already on the level) would apply the last run's script to the next pair
+without reading anything. This is the B1 hazard measured rather than argued,
+and why B1 moves ahead of everything else in the line.
+
+### What it did not measure
+
+The real exports. The SII register's header here is the one Chilean tooling
+commonly parses, not one taken from a "Descargar Detalles" file; a bank's own
+Excel cartola may carry more columns than the six used. Both are checks B3's
+fixtures owe before a test pins them.

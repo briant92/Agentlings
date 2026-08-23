@@ -1515,16 +1515,20 @@ matched rightly — that reading is the reviewer's, and the card says so. No
 skill is mounted for it: D-220 measured the method transferring on its own,
 and only the statement had to be asked for.
 
-Approving one banks it as the level's roll-forward state (D-223, **Partial —
-built, not yet proven live**): `reconciliations/<jobId>.json` in the level
-directory, the stamped summary verbatim plus the files' shape (D-221). The
-next reconciliation job whose attachments carry the same shape finds the
-newest such state in its sandbox as `PRIOR-RECONCILIATION.json`, and its
-brief says what to do with the items open then: one that appears this period
-has cleared; one still absent is aged and carried again; records-side items
-are settled once the books include them, never adjusted twice. Clearing or
-discarding a reconciliation banks nothing — a clear is a shrug and a discard
-judges the run, not the account.
+Approving one banks it as the level's roll-forward state (D-223, **Live**):
+`reconciliations/<jobId>.json` in the level directory, the stamped summary
+verbatim plus the files' shape (D-221). The next reconciliation job whose
+attachments carry the same shape finds the newest such state in its sandbox
+as `PRIOR-RECONCILIATION.json`, and its brief names it as a third input to
+the matching script: a prior statement-side item is looked for in this
+period's statement (found, it cleared; absent, it is carried again), a prior
+records-side item in this period's records (found, it is booked and settled;
+absent, it is carried again, same sign), and nothing this period's own files
+already carry is adjusted twice. Proven on an invented October of the US
+fixture whose books were 360 high with no trace in October's own files — the
+run carried the error off the prior and both sides met at the key. Clearing
+or discarding a reconciliation banks nothing — a clear is a shrug and a
+discard judges the run, not the account.
 
 ## 13. Reference — every number that binds
 

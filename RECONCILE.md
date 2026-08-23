@@ -177,6 +177,7 @@ Total: $0.59. Every run finished on its own; none was cut.
       for September's booked items in October's *statement*, re-adjusted
       them; the unposted −360 left in prose), 3,012 apart, no plug, gate
       refuses. The side-agnostic line was the fault; now side-specific
-      (`bc9c704`). **Owed after restart:** October again → 34,239 both
-      sides with the −360 carried → AGENTLING Partial → Live.
+      (`bc9c704`). **October re-run `931bde50` ($0.40): 34,239 both sides,
+      the −360 carried off the prior, approved; two states banked and the
+      newest is what November would get. The roll-forward is Live.**
 - [ ] B2 — the desk names the shape; the arrest.

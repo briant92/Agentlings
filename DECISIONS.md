@@ -16468,3 +16468,33 @@ the prior is *a third input to your matching script, not a note*. Still
 three lines; pinned. Owed after the next restart: October again, expecting
 34,239 on both sides with the −360 carried. `AGENTLING.md` stays Partial
 until then.
+
+### Proven live — 2026-08-23 08:05: the roll-forward is Live
+
+Brian restarted and October ran again (`931bde50`, 12 turns, $0.40,
+6.3 min; the side-specific lines confirmed in its `.session.json`). The
+server's own recomputation: **`balances` true, difference 0, 34,239 on
+both sides** — the answer key. The six adjustments declared are the key's
+six: statement −925 (2017), −4,800 (2018), +2,950 in transit; records −5,
++4, and **−360, kind `error`, ref 2005 — the item only the prior could
+know about, carried one period on**. The five September bookings were read
+as *"now recorded in the ledger, confirming the prior outstanding items"*
+and adjusted nothing; the five cleared statement lines likewise. The trail
+shows the prior read after the two CSVs. Approved through the route →
+`reconciliations/931bde50.json` banked beside September's; on the live
+level directory `latestRollForward` for the US shape now returns October
+(newest of two) with the −360 still open for a November run, and a Chilean
+shape gets nothing. Cleared nothing this time — the promote is the chain.
+
+One blemish, the reviewer's reading rather than the gate's: every
+`unmatched` line carries `category: "unclassified"` while RESULT.md
+classifies each in prose, and the cleared 6,700 deposit is missing from
+`unmatched.statement`. The card says what the gate checks; this is what it
+does not.
+
+**What the line cost to learn:** the October fixture, three runs ($1.22),
+one brief precision. **What it taught:** a run reads and uses a prior when
+there is something to carry; the statement side needed only a check number
+to get right, the records side needed the brief to say *which file* each
+side's items are looked for in. `AGENTLING.md` moves the roll-forward to
+**Live**.

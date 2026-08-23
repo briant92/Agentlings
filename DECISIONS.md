@@ -232,6 +232,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-220 — 2026-08-22 — B0 measured on generic fixtures: the analyst fits its quote, and the sentence-keyed recipe drifts toward the last counterpart](#d-220--2026-08-22--b0-measured-on-generic-fixtures-the-analyst-fits-its-quote-and-the-sentence-keyed-recipe-drifts-toward-the-last-counterpart)
 - [D-221 — 2026-08-22 — The files a job was given join what the crew learns: a recipe, a credit and a tool keyed on the shape they were learned over](#d-221--2026-08-22--the-files-a-job-was-given-join-what-the-crew-learns-a-recipe-a-credit-and-a-tool-keyed-on-the-shape-they-were-learned-over)
 - [D-222 — 2026-08-22 — The reconciliation contract: the statement is asked for, the server recomputes it, and Approve refuses one that does not balance](#d-222--2026-08-22--the-reconciliation-contract-the-statement-is-asked-for-the-server-recomputes-it-and-approve-refuses-one-that-does-not-balance)
+- [D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it](#d-223--2026-08-22--the-roll-forward-an-approved-reconciliation-is-banked-in-the-level-and-the-next-period-starts-from-it)
 
 ## By theme
 
@@ -884,7 +885,10 @@ entry updates one file rather than two.
   from the run's own adjustments and stamps the verdict on the job, the
   review shows it, and Approve is refused by name when the sides do not
   meet — no skill, on D-220's measurement that only the statement had to
-  be asked for
+  be asked for; and D-223, the roll-forward: an approved statement banked
+  as `reconciliations/<jobId>.json` in the level, keyed by attachment
+  shape, and the next matching job starting from it as
+  `PRIOR-RECONCILIATION.json` in its sandbox — a clear writes nothing
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -16304,3 +16308,65 @@ unchanged from the entry: the SII header verified against a real export,
 and a measured contract-in-hand run before any skill is considered — the
 Chilean run was that measurement for `cl` (7 turns, $0.13, no skill
 needed); `rcv` has not met the contract yet.
+
+## D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it
+
+**Decision.** When a reconciliation is Approved, the stamped summary is
+banked — verbatim, with the job's attachment shape and the moment — as
+`reconciliations/<jobId>.json` inside the level directory (RECONCILE.md
+decision 5). The next reconciliation job whose files match that shape gets
+the newest such state copied into its sandbox as `PRIOR-RECONCILIATION.json`,
+and its brief grows three lines: the pointer, the one number both sides met
+at, and what to do with the items open then — cleared if they appear this
+period, aged and carried again if they do not, records-side items never
+adjusted twice once the books catch up. A **clear writes nothing** (D-216),
+and a discard writes nothing either — it is a verdict on the run, not on the
+account.
+
+**Why this shape.**
+
+- *The whole summary, not a distillation.* The statement-side items are what
+  should clear next period; the records-side items stay visible because the
+  books still owed entries for them, and a successor that cannot see them
+  cannot notice they were never booked. Nothing is re-derived at read time,
+  so the write is one `JSON.stringify` of what the gate already proved.
+- *Shape is the key* (D-221). The same export carries the same header, so in
+  a level that mixes accounts — Training Ground holds a USD pair and a CLP
+  pair today — the cartola's state can never ride a US run. A state banked
+  without a shape is unknown provenance and serves only a shapeless job:
+  `sameInputShape`, the recipe rule, reused unchanged. No shape overlap, no
+  section — silence, not a wrong prior.
+- *The file rides in the sandbox; the brief carries a pointer.* The
+  adjustments cap is 200, and 200 items in the brief would ride every turn
+  of every run. The run's matching script reads the JSON whole — §3's rule,
+  match in code — and the brief spends three lines.
+- *At Approve, after the stamp, synchronously.* The write sits in the same
+  synchronous stretch as `resolve()`, so no interleaving window opens
+  (D-162); it repeats the gate's own `balances` check so no future caller
+  can bank a state the gate would have refused.
+
+**Seams touched.** `ReconciliationRollForward` in shared;
+`writeRollForward` / `latestRollForward` / `RECONCILIATIONS_DIR` /
+`PRIOR_RECONCILIATION_FILE` and the brief's optional tail in
+`reconciliation.ts`; the promote branch of the resolve route; a ninth
+constructor thunk on `ClaudeAgentExecutor` wired to `latestRollForward` at
+level construction, asked with `inputShapeOf(job.attachments)` only when
+`wantsReconciliation`.
+
+**Gate.** Typecheck clean in all three workspaces; server 79 files / 1,977
+tests, web 27 / 282. Six new unit tests (bank, refuse-unbalanced, newest-of-
+same-shape, unknown-provenance, corrupt-file, brief-tail) and a wired test
+on the runner-protocol seam. Five mutations killed: the balances guard at
+the write, the shape filter, latest→oldest, the prior dropped from the brief
+call, the sandbox write disabled. The fourth mutation **survived its first
+run** — the executor wiring had no test until the wired pair pinned it; the
+runner-protocol seam (D-211) is what made that pinnable at all.
+
+### Still untested live
+
+The route write and the served prior reach a run only after the next
+restart. The proof planned: approve a fixture run → the state file appears
+under `training-ground/reconciliations/`; re-run the same pair → the
+sandbox holds `PRIOR-RECONCILIATION.json` and the report speaks to the open
+items; clear a reconciliation → nothing new under `reconciliations/`.
+Appended here when it lands.

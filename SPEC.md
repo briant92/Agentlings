@@ -499,6 +499,12 @@ tried, measured and rejected is in `DECISIONS.md`:
   by name when they do not meet — contract first and no skill, on D-220's
   measurement that the method transfers and only the statement had to be
   asked for → D-222
+- M5.32 the roll-forward (RECONCILE B4): an approved reconciliation is
+  banked in the level directory keyed by its files' shape, and the next
+  reconciliation job of the same shape starts from it — the state in its
+  sandbox as PRIOR-RECONCILIATION.json, the brief naming the file and the
+  number, open items expected to clear or be aged; a clear or a discard
+  banks nothing → D-223
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

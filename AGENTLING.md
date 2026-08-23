@@ -1515,6 +1515,17 @@ matched rightly — that reading is the reviewer's, and the card says so. No
 skill is mounted for it: D-220 measured the method transferring on its own,
 and only the statement had to be asked for.
 
+Approving one banks it as the level's roll-forward state (D-223, **Partial —
+built, not yet proven live**): `reconciliations/<jobId>.json` in the level
+directory, the stamped summary verbatim plus the files' shape (D-221). The
+next reconciliation job whose attachments carry the same shape finds the
+newest such state in its sandbox as `PRIOR-RECONCILIATION.json`, and its
+brief says what to do with the items open then: one that appears this period
+has cleared; one still absent is aged and carried again; records-side items
+are settled once the books include them, never adjusted twice. Clearing or
+discarding a reconciliation banks nothing — a clear is a shrug and a discard
+judges the run, not the account.
+
 ## 13. Reference — every number that binds
 
 ### Turns

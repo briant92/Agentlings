@@ -160,5 +160,12 @@ Total: $0.59. Every run finished on its own; none was cut.
       all pinned. The contract-in-hand measurement is those runs: no skill
       needed (D-190's bar untouched). Still owed: the SII header verified
       against a real export, and `rcv` has not met the contract.
-- [ ] B4 — roll-forward state at Approve, inside the level directory.
+- [x] B4 — landed 2026-08-22 (D-223): an approved statement banked as
+      `reconciliations/<jobId>.json` in the level, keyed by attachment shape;
+      the next matching job starts from it as `PRIOR-RECONCILIATION.json` in
+      its sandbox, three brief lines naming it; a clear or discard banks
+      nothing. Five mutations killed — the fourth survived its first run and
+      forced the wired test on the runner-protocol seam. Still owed live,
+      after the next restart: approve → the file appears; re-run → the prior
+      rides and the report speaks to the open items; clear → nothing banked.
 - [ ] B2 — the desk names the shape; the arrest.

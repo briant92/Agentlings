@@ -505,6 +505,10 @@ tried, measured and rejected is in `DECISIONS.md`:
   sandbox as PRIOR-RECONCILIATION.json, the brief naming the file and the
   number, open items expected to clear or be aged; a clear or a discard
   banks nothing → D-223
+- M5.33 the arrest (RECONCILE B2): a reconcile sentence with one file or
+  none is stopped at the desk — the server's preview names it, the card
+  counts the files, the reason lands on the Start button and a second
+  press queues anyway; a single workbook passes as two sides → D-224
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

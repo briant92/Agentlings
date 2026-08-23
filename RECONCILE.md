@@ -180,4 +180,18 @@ Total: $0.59. Every run finished on its own; none was cut.
       (`bc9c704`). **October re-run `931bde50` ($0.40): 34,239 both sides,
       the −360 carried off the prior, approved; two states banked and the
       newest is what November would get. The roll-forward is Live.**
-- [ ] B2 — the desk names the shape; the arrest.
+- [x] B2 — landed 2026-08-23 (D-224): the arrest, soft — the server's preview
+      names a reconcile sentence, the card counts the files, one side or none
+      puts the reason on the Start button, a second press queues; a single
+      workbook passes. No vocabulary: which file is which stays the run's
+      reading off the headers. Three mutations killed. Owed live after the
+      next restart: the preview flag (`POST /work/plan` → `reconcile: true`)
+      and the card in the browser with one file attached.
+
+**The board is closed.** Every item landed and was measured; what stays
+open is listed once, here, rather than on a ticked list: the SII header is
+still unverified against a real "Descargar Detalles" export; the `rcv`
+variant never ran against the contract; the quote probe prices an attached
+job as unattached (D-221's seam); and one October run returned every
+unmatched category as `unclassified` — the reviewer's reading, outside the
+gate, watched rather than fixed.

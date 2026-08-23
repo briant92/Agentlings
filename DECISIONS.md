@@ -233,6 +233,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-221 — 2026-08-22 — The files a job was given join what the crew learns: a recipe, a credit and a tool keyed on the shape they were learned over](#d-221--2026-08-22--the-files-a-job-was-given-join-what-the-crew-learns-a-recipe-a-credit-and-a-tool-keyed-on-the-shape-they-were-learned-over)
 - [D-222 — 2026-08-22 — The reconciliation contract: the statement is asked for, the server recomputes it, and Approve refuses one that does not balance](#d-222--2026-08-22--the-reconciliation-contract-the-statement-is-asked-for-the-server-recomputes-it-and-approve-refuses-one-that-does-not-balance)
 - [D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it](#d-223--2026-08-22--the-roll-forward-an-approved-reconciliation-is-banked-in-the-level-and-the-next-period-starts-from-it)
+- [D-224 — 2026-08-23 — The desk arrests a reconciliation with nothing to reconcile against](#d-224--2026-08-23--the-desk-arrests-a-reconciliation-with-nothing-to-reconcile-against)
 
 ## By theme
 
@@ -888,7 +889,9 @@ entry updates one file rather than two.
   be asked for; and D-223, the roll-forward: an approved statement banked
   as `reconciliations/<jobId>.json` in the level, keyed by attachment
   shape, and the next matching job starting from it as
-  `PRIOR-RECONCILIATION.json` in its sandbox — a clear writes nothing
+  `PRIOR-RECONCILIATION.json` in its sandbox — a clear writes nothing; and D-224, the arrest: a reconcile sentence with one file or
+  none stopped at the desk the missingAttachment way — the reason on the
+  button, a second press queues, a single workbook passes — the board's last item
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -16498,3 +16501,62 @@ there is something to carry; the statement side needed only a check number
 to get right, the records side needed the brief to say *which file* each
 side's items are looked for in. `AGENTLING.md` moves the roll-forward to
 **Live**.
+
+## D-224 — 2026-08-23 — The desk arrests a reconciliation with nothing to reconcile against
+
+**Decision.** A sentence that asks to reconcile and arrives with one file or
+none is arrested at the desk, softly: the server's preview names the sentence
+a reconciliation (`plan.reconcile`, the `organize` flag's twin — the verb is
+the server's to hear, and the preview carries no files), the card counts what
+is attached, and the reason lands on the Start button — *one side attached —
+a reconciliation needs the statement and the records*, or *nothing to
+reconcile — attach the statement and the records*. A second press queues
+anyway. A single workbook (`.xlsx`, `.xlsm`, `.xls`, `.ods`) is not arrested:
+two sheets are two sides, and the run reads them with a script. The specific
+reason replaces the generic *nothing attached* when both would fire. No
+server refusal at `/work`, and the desk does not say which file is which.
+This closes the board in `RECONCILE.md` — B2 was its last item.
+
+**Why this shape.**
+
+- *Soft, the `missingAttachment` way (D-134).* The desk has one arrest
+  contract: the reason on the button, never a modal, and the second press
+  queues because the sentence itself may carry the content. A hard 400 at
+  `/work` would have refused a pasted-content sentence outright, broken
+  that contract for one verb, and stopped API callers the desk never sees —
+  a second mechanism for one notion (D-030).
+- *The server names, the desk counts.* Re-deriving `wantsReconciliation`'s
+  regex in the web is two copies of one notion; the preview already
+  announces server-detected facts the card cannot know from the words, and
+  `reconcile: true` rides beside `organize: true`.
+- *The workbook passes.* Arresting the most common way people keep both
+  sides in one file would be a false refusal on every press; the exception
+  is a file-name test, pinned.
+- *No vocabulary.* Which file is the statement is the run's reading, off the
+  headers — D-221 chose the header over a desk vocabulary for recipe
+  identity, and nothing measured since has asked for one: D-220's nine runs
+  read their files whole and never needed the desk's help. The arrest guards
+  a case not yet seen live; it is a guard, not a capability, and it costs
+  nothing per job (D-011).
+
+**Seams touched.** `reconcile?: boolean` on the plan type in shared; one
+line in the `/work/plan` response; `reconcileGap(files)` in
+`web/src/panels/askFacts.ts` beside `missingAttachment`; the card's arrest
+list in `WorkBar.tsx`.
+
+**Gate.** Typecheck clean in all three workspaces; server 79 files / 1,978
+tests, web 27 / 286 (+4). Three mutations killed — one file passing, the
+workbook exception removed, `.csv` counted as a workbook. The first two
+mutation attempts were **no-ops that passed**: `askFacts.ts` is CRLF and a
+`\n`-anchored replacement matched nothing; a mutation that passes is a claim
+about the mutation before it is a claim about the tests, so each was
+re-applied with the change verified before the run.
+
+### Still untested live
+
+The preview flag and the card's wiring have no route or component harness,
+like `organize` and `missingAttachment` before them. Owed after the next
+restart: `POST /work/plan` with the trial sentence → `reconcile: true`, with
+"summarise the attached expenses" → absent; and the card, in Brian's
+browser, with one file attached → the reason on the button, a second press
+queuing. Appended here when it lands.

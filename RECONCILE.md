@@ -168,11 +168,15 @@ Total: $0.59. Every run finished on its own; none was cut.
       forced the wired test on the runner-protocol seam. **Proven live
       2026-08-23** on the mechanism: approve `47dce15e` → the file appeared;
       re-run `a9fdd461` → the prior in its sandbox and the brief naming it;
-      two clears → nothing banked. **Not proven:** the run never opened the
-      prior — a same-period re-run cannot say whether that is "nothing to
-      carry" or the banked method ignoring the brief. Needs a next-period
-      fixture (October: September's open items clearing) before the
-      roll-forward is more than Partial. On the way, D-222's seventh case:
+      two clears → nothing banked. On the way, D-222's seventh case:
       `"records"` as a bare ref (lenient now) and the gate's first real
       catch — one adjustment declared, eleven claimed, 3,298 apart.
+      **October measured** (`us-oct/`, `1f6221e8`, $0.41): the prior was
+      read and used — statement side exactly the key, five September items
+      cleared by check number off the prior; records side inverted (looked
+      for September's booked items in October's *statement*, re-adjusted
+      them; the unposted −360 left in prose), 3,012 apart, no plug, gate
+      refuses. The side-agnostic line was the fault; now side-specific
+      (`bc9c704`). **Owed after restart:** October again → 34,239 both
+      sides with the −360 carried → AGENTLING Partial → Live.
 - [ ] B2 — the desk names the shape; the arrest.

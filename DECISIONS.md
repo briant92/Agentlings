@@ -16421,3 +16421,50 @@ outstanding cheques and the night drop clear, a new outstanding item
 appears, and the prior's `-360` error is or is not booked. Whether the run
 reads the prior then, and what it costs to make it, is the open question;
 `AGENTLING.md` keeps the roll-forward at **Partial** until it is answered.
+
+### The October measurement — 2026-08-23 07:30: read and used, half right, and the half that broke is named
+
+**The fixture** (`fixtures/reconcile/us-oct/`, commit `cd73384`): the next
+period of the same books, invented as an accountant would carry it — every
+September timing item clears in the first days of October, the bookkeeper
+posts September's five bank items on the 1st, and the check 2005 correction
+is **not** posted, so the books are 360 high with no trace in October's own
+files. Both sides meet at 34,239; without the prior they end exactly 360
+apart. Asserted by the generator and re-summed independently; same headers
+as September, so `sameInputShape` selected the banked state.
+
+**The run** (`1f6221e8`, 16 turns, $0.41, 6.5 min) — the first to open
+`PRIOR-RECONCILIATION.json` (the trail shows it, after the two CSVs).
+
+- **Statement side: exactly the key.** 34,239 — outstanding 2017 and 2018,
+  the 2,950 in transit; and the five September items named *"cleared from
+  September (was outstanding in Sept)"* by check number off the prior,
+  adjusting nothing. Without the prior those were five unexplained lines;
+  this is the roll-forward changing the answer.
+- **Records side: the rule inverted.** The brief said *check each open item
+  against this period's files* — side-agnostic — and the run looked for
+  September's records-side items (the note, the fees, the NSF, the
+  interest) in October's **statement**, found them absent, and carried
+  them again as "aged" — re-adjusting what the ledger had posted on the 1st
+  (JE-0901…0905), the one thing the third line said never to do. It also
+  matched September's 5 service charge to October's 5 and read September's
+  3 interest against October's 4 as a "difference of 1". The unposted
+  −360, the item the fixture exists for, it named in prose as *"no evidence
+  of resolution"* and did not carry.
+- Net: 34,239 against 37,251, **3,012 apart** (its own summary says 2,414
+  — the third-figure habit again). It left them apart, wrote the file, and
+  said *unexplained* — no plug. The gate refuses; correctly.
+
+**Verdict on the open question.** A run reads the prior when there is
+something to carry, and acts on it — the same-period silence was "nothing
+to carry", not the banked method winning. What failed was the brief's
+precision, not the mechanism: the check was stated once for both sides and
+each side needs its own file. **Fixed in `bc9c704`:** the three lines now
+say a prior statement-side item is looked for in this period's STATEMENT
+(found: cleared; absent: carry again), a prior records-side item in this
+period's RECORDS (found: booked and settled; absent: carry again, same
+sign), a line matched to a prior item is matched and adjusts nothing, and
+the prior is *a third input to your matching script, not a note*. Still
+three lines; pinned. Owed after the next restart: October again, expecting
+34,239 on both sides with the −360 carried. `AGENTLING.md` stays Partial
+until then.

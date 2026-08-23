@@ -103,7 +103,9 @@ html.crt body::after {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(240px, 1fr);
-  height: calc(100vh - 24px);
+  /* dvh, not vh: on a phone in landscape (wider than the 900px stack below)
+     vh counts the space a collapsing address bar still covers. */
+  height: calc(100dvh - 24px);
   gap: 16px;
   align-items: stretch;
 }
@@ -3628,7 +3630,6 @@ button.danger:hover {
     height: 560px;
   }
 }
-
 /* The knowledge store: folders this level reads from. */
 .k-intro {
   font-size: 12px;
@@ -5263,4 +5264,76 @@ button.danger:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Phone portrait. The two-column insides of the Review and Library
+   modals keep a fixed rail (186px, 200px) that at a 94vw modal on a ~400px
+   screen leaves the content column about 170px - a file is unreadable there.
+   Both stack: the rail on top as a short scroller of its own, the content
+   under it with the width. Nothing else here is fixed-width past what a
+   400px panel holds; every other row already wraps. */
+@media (max-width: 560px) {
+  /* The header actions are a third of the width on their own; measured at
+     412px the page scrolled sideways to 671px. They drop to a row of their
+     own and wrap. */
+  header {
+    flex-wrap: wrap;
+  }
+  .h-actions {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+  .fv {
+    flex-direction: column;
+  }
+  .fv-rail {
+    width: auto;
+    max-height: 140px;
+    border-right: none;
+    border-bottom: 1px solid #262b36;
+    padding-right: 0;
+    padding-bottom: 6px;
+  }
+  /* Kept at the end of the file: the base .br-split rule sits below the
+     900px block, and an equal-specificity override must come after it. */
+  .br-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .br-rail {
+    max-height: 140px;
+    border-right: none;
+    border-bottom: 1px solid #262b36;
+  }
+}
+
+/* Touch. Gated on the pointer, not the width: a narrow desktop window keeps
+   its mouse-sized targets and a phone in landscape gets the touch ones. The
+   targets grow for real (padding), not by an invisible hit box - the small
+   toggles sit side by side, and overlapping hit boxes would land taps on the
+   neighbour. Measured at 412px before this: header ghosts 22px tall, the
+   modal close 17px, toggles 15px. */
+@media (pointer: coarse) {
+  button {
+    padding: 10px 12px;
+  }
+  .m-head button,
+  .h-actions .ghost {
+    padding: 8px 12px;
+  }
+  .rail-row {
+    padding: 7px 6px;
+  }
+  .t-filters button {
+    padding: 8px 10px;
+  }
+}
+/* Small type at phone scale is the one thing D-175 measured on the device.
+   The panels and modals scale as a whole rather than 235 font-size rules
+   being reopened; the world canvas is left alone. */
+@media (pointer: coarse) and (max-width: 560px) {
+  .side,
+  .modal {
+    zoom: 1.15;
+  }
 }

@@ -258,6 +258,17 @@ why is D-226; this is the checklist's record that they landed.
       always on · 2 with *Use a web browser* a source row, the 47-file review
       with the rail at 400 of 2,110 and the body, bar and modal at 0, Crew
       absent during Review and back on Escape.
+- [x] **23. The phone at phone width** — landed 2026-08-23 (D-227).
+      (`styles.css` only, +75 / −2) — D-175 had measured Desktop Mode;
+      at 412 px the page scrolled sideways to 671 (the header actions never
+      wrapped). Now: `100dvh`; under 560 px the header wraps and the
+      Review / Library rails stack over their content; under
+      `pointer: coarse` the buttons, header ghosts, modal close, rail rows
+      and feed filters carry real padding (15–22 px → 32–33); under both,
+      `.side` and `.modal` at `zoom: 1.15`, the canvas untouched.
+      Evidence: headless Edge at 412 × 915 with coarse pointer vs 1280 × 600
+      with a mouse — every desktop number unchanged; on the S26 Ultra in
+      mobile mode, Brian: looks and feels great.
 
 ## Hazards to keep in view
 

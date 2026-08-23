@@ -236,6 +236,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-224 — 2026-08-23 — The desk arrests a reconciliation with nothing to reconcile against](#d-224--2026-08-23--the-desk-arrests-a-reconciliation-with-nothing-to-reconcile-against)
 - [D-225 — 2026-08-23 — The provenance index: the level's own record, mapped from identifiers it already carries, read by the panel and by nothing that briefs a run](#d-225--2026-08-23--the-provenance-index-the-levels-own-record-mapped-from-identifiers-it-already-carries-read-by-the-panel-and-by-nothing-that-briefs-a-run)
 - [D-226 — 2026-08-23 — Four frictions from the first day of use: an always-on tier in Settings, one folder picker, a rail that scrolls alone, Review stacking over Crew](#d-226--2026-08-23--four-frictions-from-the-first-day-of-use-an-always-on-tier-in-settings-one-folder-picker-a-rail-that-scrolls-alone-review-stacking-over-crew)
+- [D-227 — 2026-08-23 — The phone at phone width: D-175 was measured in Desktop Mode, and in mobile mode the page scrolled sideways](#d-227--2026-08-23--the-phone-at-phone-width-d-175-was-measured-in-desktop-mode-and-in-mobile-mode-the-page-scrolled-sideways)
 
 ## By theme
 
@@ -510,7 +511,11 @@ entry updates one file rather than two.
   the built panels, and each board proven live; and D-226, the first day's
   four frictions — an always-on tier in Settings (no secret *and* on by
   default, the catalog having shown `browser` fails the first alone), one
-  folder picker, the Review rail scrolling alone, Review stacking over Crew
+  folder picker, the Review rail scrolling alone, Review stacking over Crew;
+  and D-227, the phone at its own width — D-175 had measured Desktop Mode,
+  mobile mode scrolled sideways, and the fixes are a header that wraps, two
+  modal rails that stack, real padding under `pointer: coarse`, and
+  `zoom: 1.15` on the panels
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -16795,3 +16800,85 @@ Review sequence as above. Brian had already confirmed the Settings fold, the
 single picker and the stacking by hand; the scroll was the one not yet seen.
 No server change, no `AGENTLING.md` line moves. `UI.md` gains step 22
 pointing here.
+
+## D-227 — 2026-08-23 — The phone at phone width: D-175 was measured in Desktop Mode, and in mobile mode the page scrolled sideways
+
+Brian asked for the mobile view, used daily from the S26 Ultra over the
+tailnet (D-175), to be tuned: `web/src` only, CSS and touch behaviour, no
+server or gameplay change. He brought seven observations against
+`styles.css` and asked that each be checked against the file rather than
+taken on its line numbers, with anything carrying a real tradeoff presented
+before being touched.
+
+### What the re-read found that the list did not
+
+D-175's verdict — *usable, cramped, small type* — was taken **in Desktop
+Mode**. In that mode the phone reports a viewport near 980 CSS px, wider than
+the one breakpoint the file had (`max-width: 900px`), so no phone rule had
+ever fired on the device. Measured in headless Edge at the phone's own width,
+412 px portrait: **the page scrolled sideways to 671 px.** The header's
+`.h-actions` row (hire / crew / library / reading) is a plain flex row that
+never wrapped. Nothing on Brian's list named it; the seven items were all real
+or partly real, and the broken one was off the list. The rule that measurement
+precedes tuning (D-016, D-021) held again: the premise "works but cramped" was
+true of a different viewport.
+
+### The seven, checked
+
+- *One breakpoint, min-widths overflow* — partly. The named suspects were
+  fine: `.work-repo-row` wraps, every modal is already `min(…, 92–94vw)`,
+  the 280 / 300 px floats fit. The real squeezes were inside two modals: the
+  Review file-viewer rail (`.fv-rail`, 186 px) and the Library browse rail
+  (`.br-split`, a 200 px column) left ~170 px of content in a 379 px modal.
+- *Tap targets* — real. Header ghosts 22 px tall, modal close 17, the
+  terminal feed filters 15, `.rail-row` ~36, `.crew-row` 53.
+- *10–12 px copy* — real and intentional: 235 rules at 10–13 px against 8
+  above. The one thing D-175 found on the device.
+- *`100vh`* — moot in portrait: under 900 px `.app` is already
+  `height: auto`. It would bite in landscape, above 900 px with the address
+  bar present.
+- *Canvas `touch-action`* — deprioritised. The canvas wires only
+  `pointermove` / `pointerleave` with no `preventDefault`, so the
+  browser keeps the scroll gesture. Left alone; nothing showed on the device.
+- *13 px inputs and iOS zoom* — true and irrelevant to an Android target.
+- *`safe-area-inset`* — no notch, and Android Chrome reports zero insets
+  without `viewport-fit=cover` in the meta tag, which `index.html` does
+  not set; the CSS alone would be inert.
+
+### What changed, and the two choices
+
+All in `styles.css`, +75 / −2, every new rule at the end of the file.
+
+Without a tradeoff: `.app` to `100dvh`; a `max-width: 560px` block
+where the header wraps and `.h-actions` takes a row of its own, and the
+Review and Library rails stack over their content as 140 px scrollers. The
+block had to sit at the file's end: placed beside the 900 px block it silently
+lost to the base `.br-split` rule written later at equal specificity, and
+only the probe (`200px 212px` where one column was expected) said so.
+
+With a tradeoff, presented as options and decided by Brian:
+
+- **Tap targets: real padding, gated on `@media (pointer: coarse)`** — over
+  an invisible hit box, because the terminal filters sit side by side and
+  overlapping hit boxes land taps on the neighbour; and over a width gate,
+  because the pointer is the touch signal — a narrow desktop window keeps its
+  mouse-sized buttons and a phone in landscape gets the touch ones. `button`
+  10 / 12 px, the header ghosts and modal close 8 / 12, `.rail-row` 7 / 6,
+  and `.t-filters button` named on its own since its `1px 8px` outranks
+  the element rule.
+- **Type: `zoom: 1.15` on `.side` and `.modal`** under coarse pointer
+  and 560 px — over per-site browser zoom (scales the canvas and header too,
+  and lives in a phone setting rather than the repo) and over reopening the
+  235 rules (non-surgical, and it would change the desktop). The canvas is
+  untouched.
+
+### Evidence
+
+Headless Edge, coarse-pointer emulation at 412 × 915: scrollWidth 412 (was
+671), no element past the right edge, `.fv` computed `column`, `.br-split`
+one column, filters 15 → 33 px, header ghosts 22 → 32, modal close 17 → 33,
+panels and modals at zoom 1.15. The same script at 1280 × 600 with a mouse:
+filters 15, ghosts 22, zoom 1, `.app` 576 px — every desktop number
+unchanged. On the device itself, in mobile mode over the tailnet, Brian:
+*looks and feels great*. D-175's phone-shaped view stays declined; this is
+the readability reopen that entry named, answered in 75 lines of CSS.

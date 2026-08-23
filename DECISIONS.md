@@ -16282,7 +16282,25 @@ its signed example — *a cheque booked at 5,483 that the bank paid at 5,843
 is −360 on the records side*. Still fourteen lines. Gate: typecheck clean in all three workspaces; server 79 files / 1969 tests, web 27 / 282; the
 optional `ref` pinned by a test that fails when the field is required again.
 
-### Still untested live
+### Proven live on the US pair — 2026-08-22 22:47; the contract is closed
 
-The US pair against this brief, after the next restart — expecting
-`balances` true and the green line. Appended below when it lands.
+Brian restarted and re-ran the US pair (`62329702`, statement + cash
+ledger, 12 turns, $0.27; the sandbox's `.session.json` carries the signed
+error example, confirming the brief was v3). **Balances true, difference
+0**: statement 27,395 and ledger 24,457 both adjust to **26,745**, the
+answer key's number. Every prior refusal stayed fixed in one run — no
+empty-string `ref` anywhere (the deposit's unmatched line has a real
+`DEP` ref, the adjustment for it none), cheque 2005's error on the records
+side at **−360** with the sign the example gives, no plug, currency `USD`,
+every timing item on its side. `entries` empty — right, the counterpart is
+the company's own cash ledger asking only for adjustments, and the run's
+RESULT.md still describes the needed book entries in prose. Brian approved;
+the gate let it through and the job is `promoted`.
+
+Both fixtures have now passed the gate live — cartola/libro at 4.240.650,
+statement/ledger at 26,745 — each after the brief lesson its own refusals
+taught. Six refusal cases, all fixed, all pinned. What D-222 still owes is
+unchanged from the entry: the SII header verified against a real export,
+and a measured contract-in-hand run before any skill is considered — the
+Chilean run was that measurement for `cl` (7 turns, $0.13, no skill
+needed); `rcv` has not met the contract yet.

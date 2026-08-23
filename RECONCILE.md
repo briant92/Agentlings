@@ -154,8 +154,11 @@ Total: $0.59. Every run finished on its own; none was cut.
       another (D-221, proven live).
 - [x] B3 — landed 2026-08-22 (D-222): the contract told in the brief, the
       invariant recomputed at completion, the card, Approve refused when the
-      sides differ; the answer keys are its tests. Still owed: the SII header
-      verified against a real export, and a measured run with the contract in
-      hand before any skill is considered.
+      sides differ; the answer keys are its tests. **Both pairs proven live
+      and approved through the gate** — cl at 4.240.650 ($0.13, 7 turns), us
+      at 26,745 ($0.27, 12 turns) — after six refusals, each one a brief fix,
+      all pinned. The contract-in-hand measurement is those runs: no skill
+      needed (D-190's bar untouched). Still owed: the SII header verified
+      against a real export, and `rcv` has not met the contract.
 - [ ] B4 — roll-forward state at Approve, inside the level directory.
 - [ ] B2 — the desk names the shape; the arrest.

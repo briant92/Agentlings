@@ -18,11 +18,13 @@ import type {
   JobAttachment,
   JobMeter,
   Pending,
+  ReconciliationRollForward,
 } from '@agentlings/shared';
 import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
-import { reconciliationBrief, wantsReconciliation } from '../reconciliation';
+import { PRIOR_RECONCILIATION_FILE, reconciliationBrief, wantsReconciliation } from '../reconciliation';
+import { inputShapeOf } from '../inputshape';
 import {
   mcpToolNames,
   resolveForJob,
@@ -1034,6 +1036,9 @@ export class ClaudeAgentExecutor implements Executor {
     private audience: (channel: string) => AudiencePerson[] = () => [],
     /** The last body sent on a channel, for "send the same again" (D-094). */
     private lastSend: (channel: string) => string | undefined = () => undefined,
+    /** The level's newest approved reconciliation of a shape (D-223), for the roll-forward. */
+    private rollForward: (shapes?: string[]) => ReconciliationRollForward | undefined = () =>
+      undefined,
   ) {}
 
   /** Live sessions by job id, so one can be stopped on request. */
@@ -1143,6 +1148,20 @@ export class ClaudeAgentExecutor implements Executor {
     // next session will read", or the two drift apart (D-073).
     const relevantNotes = relevantLines(this.knowledge(), job.prompt, 8);
 
+    // The roll-forward (D-223): a reconciliation job whose files match an
+    // approved predecessor's shape starts from that state. The file rides in
+    // the sandbox — the run's matching script reads it whole — and the brief
+    // carries the pointer and the one number, never two hundred items.
+    const prior = wantsReconciliation(job.prompt)
+      ? this.rollForward(inputShapeOf(job.attachments))
+      : undefined;
+    if (prior) {
+      writeFileSync(
+        path.join(sandboxDir, PRIOR_RECONCILIATION_FILE),
+        `${JSON.stringify(prior, null, 2)}\n`,
+      );
+    }
+
     const configPath = path.join(sandboxDir, '.session.json');
     writeFileSync(
       configPath,
@@ -1170,7 +1189,7 @@ export class ClaudeAgentExecutor implements Executor {
           // The same number the timer kills at, so the brief and the wall
           // cannot disagree about how long the run has.
           timeoutMsFor(role) / 60_000,
-          wantsReconciliation(job.prompt) ? reconciliationBrief() : undefined,
+          wantsReconciliation(job.prompt) ? reconciliationBrief(prior) : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

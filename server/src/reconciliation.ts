@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   MAX_RECONCILIATION_ADJUSTMENTS,
@@ -12,10 +12,12 @@ import {
   type ReconciliationAdjustment,
   type ReconciliationEntry,
   type ReconciliationMatch,
+  type ReconciliationRollForward,
   type ReconciliationSide,
   type ReconciliationSummary,
   type ReconciliationUnmatched,
 } from '@agentlings/shared';
+import { inputShapeOf, sameInputShape } from './inputshape';
 
 /**
  * The reconciliation contract (D-222): what a run asked to reconcile one
@@ -310,13 +312,88 @@ export function reconciliationRefusal(
   );
 }
 
+/** Where a level banks its approved reconciliations (D-223, decision 5). */
+export const RECONCILIATIONS_DIR = 'reconciliations';
+/** The prior state, copied into the sandbox for the run to read (D-223). */
+export const PRIOR_RECONCILIATION_FILE = 'PRIOR-RECONCILIATION.json';
+
+/**
+ * Bank an approved reconciliation as the level's roll-forward state (D-223).
+ * At Approve only — a clear writes nothing (D-216), and a discard is a
+ * verdict on the run, not on the account. One file per approved job, the
+ * stamped summary verbatim: the statement-side items are what should clear
+ * next period, and the records-side items stay visible because the books
+ * still owed entries for them. The balanced check is the gate's own,
+ * repeated here so no caller can bank a state the gate would have refused.
+ */
+export function writeRollForward(
+  levelDir: string,
+  job: Pick<Job, 'id' | 'attachments' | 'reconciliation'>,
+  now = Date.now(),
+): void {
+  if (!job.reconciliation?.balances) return;
+  const dir = path.join(levelDir, RECONCILIATIONS_DIR);
+  mkdirSync(dir, { recursive: true });
+  const shape = inputShapeOf(job.attachments);
+  const state: ReconciliationRollForward = {
+    jobId: job.id,
+    approvedAt: now,
+    ...(shape ? { inputShape: shape } : {}),
+    reconciliation: job.reconciliation,
+  };
+  writeFileSync(path.join(dir, `${job.id}.json`), `${JSON.stringify(state, null, 2)}\n`);
+}
+
+/**
+ * The newest approved reconciliation of this shape, or nothing. Shape is the
+ * key (D-221): the same export carries the same header, so in a level that
+ * mixes accounts the CLP cartola's state can never ride a USD run. A state
+ * banked without a shape is unknown provenance and serves only a shapeless
+ * job — the recipe rule, reused. A file that does not parse loses itself,
+ * never the feature.
+ */
+export function latestRollForward(
+  levelDir: string,
+  shapes?: string[],
+): ReconciliationRollForward | undefined {
+  const dir = path.join(levelDir, RECONCILIATIONS_DIR);
+  if (!existsSync(dir)) return undefined;
+  let latest: ReconciliationRollForward | undefined;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith('.json')) continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(path.join(dir, name), 'utf8'));
+    } catch {
+      continue;
+    }
+    const rf = parsed as ReconciliationRollForward;
+    if (typeof rf?.jobId !== 'string' || typeof rf?.approvedAt !== 'number') continue;
+    if (rf.reconciliation?.balances !== true) continue;
+    if (!sameInputShape(rf.inputShape, shapes)) continue;
+    if (!latest || rf.approvedAt > latest.approvedAt) latest = rf;
+  }
+  return latest;
+}
+
 /**
  * The contract, told to the session (D-222). Told because a capability nobody
  * is told about is not one (D-031): without this section a run writes a fine
  * report with a raw difference and no statement, which is what every D-220
  * run did. Compact on purpose — every line rides every turn.
+ *
+ * With a prior state in hand (D-223) the section grows three lines naming
+ * PRIOR-RECONCILIATION.json — the file itself rides in the sandbox, so the
+ * brief carries the pointer and the one number, never two hundred items.
  */
-export function reconciliationBrief(): string {
+export function reconciliationBrief(prior?: ReconciliationRollForward): string {
+  const rollForward = prior
+    ? [
+        `- ${PRIOR_RECONCILIATION_FILE} at the working directory root is the last approved reconciliation of files of this same shape${prior.reconciliation.period ? ` (${prior.reconciliation.period})` : ''}: both sides met at ${plain(prior.reconciliation.statement.adjusted)}${prior.reconciliation.currency ? ` ${prior.reconciliation.currency}` : ''}. Its adjustments were the items open then.`,
+        "- Check each of those open items against this period's files: one that appears now has cleared and needs no adjustment; one still absent is aged — carry it as an adjustment again and say its age in RESULT.md.",
+        '- Items that adjusted the records side were awaiting book entries; if this period\'s records include them they are settled — never adjust twice.',
+      ]
+    : [];
   return [
     '## Reconciliation — what to deliver',
     `This job reconciles one record of money against another. Besides RESULT.md, write ${RECONCILIATION_FILE} at the working directory root, exactly this shape (the values are placeholders — take period, currency and every number from the files):`,
@@ -332,5 +409,6 @@ export function reconciliationBrief(): string {
     '- Match in a script you keep beside the result — amount first, then a date window, then reference (folio, cheque number, RUT, payee) — and list every unmatched line on each side with its category: in-transit, outstanding, fee, interest, returned, error, open-invoice, out-of-scope, unexplained.',
     '- "entries" are the entries the records side needs for items only the statement has; leave it empty when the records are not books.',
     '- Numbers are plain numbers — no thousands separators, a dot for decimals, none for a currency without them. Leave an optional field out rather than writing an empty string.',
+    ...rollForward,
   ].join('\n');
 }

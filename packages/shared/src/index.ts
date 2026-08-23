@@ -660,6 +660,22 @@ export interface ReconciliationSummary {
   };
 }
 
+/**
+ * One approved reconciliation, kept in the level's `reconciliations/`
+ * directory so the next period starts from it (D-223): what it ended at,
+ * the items open then, and the shape of the files it was read from — the
+ * key a successor job is matched on (D-221). Written at Approve only; a
+ * clear writes nothing (D-216).
+ */
+export interface ReconciliationRollForward {
+  jobId: string;
+  approvedAt: number;
+  /** The approved job's attachment shape — how a successor finds this state. */
+  inputShape?: string[];
+  /** The stamped summary, verbatim — nothing re-derived, nothing dropped. */
+  reconciliation: ReconciliationSummary;
+}
+
 export const MAX_RECONCILIATION_ADJUSTMENTS = 200;
 export const MAX_RECONCILIATION_MATCHES = 2000;
 export const MAX_RECONCILIATION_UNMATCHED = 500;

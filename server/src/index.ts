@@ -73,7 +73,7 @@ import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
-import { reconciliationRefusal } from './reconciliation';
+import { latestRollForward, reconciliationRefusal, writeRollForward } from './reconciliation';
 import { performOutboxSend } from './outboxsend';
 import {
   describe,
@@ -377,6 +377,8 @@ function makeLevel(dir: string): LevelRuntime {
             readSends(SANDBOX_ROOT)
               .filter((r) => r.channel === channel && r.ok && r.body)
               .at(-1)?.body,
+          // The level's roll-forward state, keyed by attachment shape (D-223).
+          (shapes) => latestRollForward(dir, shapes),
         )
       : simulated,
     // Absent without a key, which is what makes the free tier refuse to claim
@@ -3098,6 +3100,13 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
 
   try {
     const job = rt.queue.resolve(pending.id, body.action);
+    // The approved statement becomes the level's roll-forward state (D-223),
+    // banked only after the stamp landed and only for a promote: a clear
+    // writes nothing (D-216), a discard is a verdict on the run. Synchronous,
+    // so the stretch between stamp and state admits no interleaving (D-162).
+    if (body.action === 'promote' && pending.reconciliation?.balances) {
+      writeRollForward(rt.dir, pending);
+    }
     // A reviewed, fully sent outbox is one more unchanged approval — the
     // count a standing approval is earned by (D-082). Recorded only on a
     // promote that got this far: every message either sent now or before.

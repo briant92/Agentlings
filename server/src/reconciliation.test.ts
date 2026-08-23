@@ -1,15 +1,19 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   checkReconciliation,
   readReconciliation,
+  latestRollForward,
+  PRIOR_RECONCILIATION_FILE,
   reconciliationBrief,
   reconciliationRefusal,
   RECONCILIATION_FILE,
+  RECONCILIATIONS_DIR,
   summariseReconciliation,
   wantsReconciliation,
+  writeRollForward,
 } from './reconciliation';
 
 /** Edig's worked example, 31 May 2026 — the cl/ fixture's answer key. */
@@ -201,5 +205,81 @@ describe('reconciliationBrief (D-222)', () => {
     expect(brief).not.toContain('4118500');
     expect(brief).toContain('rather than writing an empty string');
     expect(brief.split('\n').length).toBeLessThanOrEqual(15);
+  });
+});
+
+describe('roll-forward state (D-223)', () => {
+  const summary = () => summariseReconciliation(checkReconciliation(EDIG).reconciliation!);
+  const job = (id: string, over: Partial<Parameters<typeof writeRollForward>[1]> = {}) => ({
+    id,
+    attachments: [
+      { name: 'cartola.csv', bytes: 1, shape: 'csv:fecha|descripción|cargos|abonos|saldo' },
+      { name: 'libro.csv', bytes: 1, shape: 'csv:fecha|glosa|debe|haber|saldo' },
+    ],
+    reconciliation: summary(),
+    ...over,
+  });
+  const SHAPE = ['csv:fecha|descripción|cargos|abonos|saldo', 'csv:fecha|glosa|debe|haber|saldo'];
+
+  it('banks an approved statement as <jobId>.json — the summary verbatim, the shape, the stamp', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    writeRollForward(dir, job('ab12cd34'), 1700000000000);
+    const state = JSON.parse(
+      readFileSync(path.join(dir, RECONCILIATIONS_DIR, 'ab12cd34.json'), 'utf8'),
+    );
+    expect(state.jobId).toBe('ab12cd34');
+    expect(state.approvedAt).toBe(1700000000000);
+    expect(state.inputShape).toEqual([...SHAPE].sort());
+    expect(state.reconciliation).toEqual(summary());
+  });
+
+  it('refuses to bank a statement that does not balance — the gate\'s check, repeated at the write', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    const bad = summary();
+    writeRollForward(dir, job('bad00000', { reconciliation: { ...bad, balances: false } }));
+    expect(existsSync(path.join(dir, RECONCILIATIONS_DIR))).toBe(false);
+  });
+
+  it('serves the newest state of the same shape and never another shape\'s', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    writeRollForward(dir, job('older111'), 1000);
+    writeRollForward(dir, job('newer222'), 2000);
+    writeRollForward(
+      dir,
+      job('usa33333', {
+        attachments: [{ name: 'statement.csv', bytes: 1, shape: 'csv:date|desc|amount' }],
+      }),
+      3000,
+    );
+    expect(latestRollForward(dir, SHAPE)?.jobId).toBe('newer222');
+    expect(latestRollForward(dir, ['csv:date|desc|amount'])?.jobId).toBe('usa33333');
+    expect(latestRollForward(dir, ['csv:something|else'])).toBeUndefined();
+  });
+
+  it('a state banked without a shape is unknown provenance — served only to a shapeless job', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    writeRollForward(dir, job('noshape1', { attachments: [] }), 1000);
+    expect(latestRollForward(dir, SHAPE)).toBeUndefined();
+    expect(latestRollForward(dir, undefined)?.jobId).toBe('noshape1');
+  });
+
+  it('a file that does not parse loses itself, never the feature', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    writeRollForward(dir, job('good1111'), 1000);
+    writeFileSync(path.join(dir, RECONCILIATIONS_DIR, 'junk.json'), '{not json');
+    writeFileSync(path.join(dir, RECONCILIATIONS_DIR, 'hollow.json'), '{"jobId": 7}');
+    expect(latestRollForward(dir, SHAPE)?.jobId).toBe('good1111');
+  });
+
+  it('the brief names the prior file and its number only when a state is handed in', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'rollfwd-'));
+    writeRollForward(dir, job('prior001'), 1000);
+    const prior = latestRollForward(dir, SHAPE);
+    const brief = reconciliationBrief(prior);
+    expect(brief).toContain(PRIOR_RECONCILIATION_FILE);
+    expect(brief).toContain('4,240,650 CLP');
+    expect(brief).toContain('still absent is aged');
+    expect(brief).toContain('never adjust twice');
+    expect(reconciliationBrief()).not.toContain(PRIOR_RECONCILIATION_FILE);
   });
 });

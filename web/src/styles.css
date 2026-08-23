@@ -5900,3 +5900,20 @@ button.danger:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── the world's postings (D-232): the measured half of the positions board ── */
+.cv-world { margin-top: 22px; border-top: 1px dashed #4a4a5e; padding-top: 14px; }
+.cv-world-h { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.cv-world-h small { font-weight: normal; }
+.cv-meas {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid #8a76b8; color: #b9a7e0; border-radius: 3px;
+}
+/* A world card is the same card at a different temperature: dashed, cooler. */
+.cv-pos.world { border-style: dashed; border-color: #5a4f7a; }
+.cv-pos.world[aria-pressed='true'] { border-color: #8a76b8; }
+.cv-world-add p { max-width: 60ch; }
+.cv-world-err { color: #d95763; }
+.cv-world-line { margin: 6px 0 0; }
+.cv-world-note { margin: 2px 0 8px; }
+.hire-world { margin: 2px 0 0; font-style: italic; }

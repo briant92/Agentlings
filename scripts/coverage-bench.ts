@@ -76,13 +76,19 @@ if (level) {
 
 // Profiles.
 const only = flag('only')?.split(',');
+// With no source named, the job board's own install (D-232) is the default
+// when present, so the benchmark and the board read the same data; the
+// checked-in fixtures otherwise.
+const boardDir = path.join(SANDBOX_ROOT, 'onet');
 const profiles = flag('onet')
   ? readOnet(flag('onet')!, only)
   : flag('esco')
     ? readEsco(flag('esco')!, undefined, only)
     : flag('profiles')
       ? readProfiles(flag('profiles')!)
-      : [...readProfiles(path.join(ROOT, 'fixtures/workprofiles/profiles.json')), ...readOnet(path.join(ROOT, 'fixtures/workprofiles/onet'))];
+      : existsSync(path.join(boardDir, 'Occupation Data.txt'))
+        ? readOnet(boardDir, only)
+        : [...readProfiles(path.join(ROOT, 'fixtures/workprofiles/profiles.json')), ...readOnet(path.join(ROOT, 'fixtures/workprofiles/onet'))];
 
 const library = has('library') ? loadIndex(SANDBOX_ROOT)?.entries : undefined;
 const top = Number(flag('top') ?? 25);

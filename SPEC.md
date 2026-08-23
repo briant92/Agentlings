@@ -556,6 +556,16 @@ tried, measured and rejected is in `DECISIONS.md`:
   overclaim cells empty (scripts/coverage-calibrate.ts), and the one
   review-worthy cluster proven a matcher gap by three live compliance
   jobs → D-231
+- M5.38 the job board: the O*NET database as an optional local data set
+  (one user-initiated ~13 MB download into .agentlings/onet, never
+  committed; CC BY 4.0 attribution kept) behind the positions board — the
+  world's postings, searched by the hand board's rule with exact-name and
+  title-before-alias refinements, each hit graded on demand by the same
+  coverage() as the benchmark against the live doors, shown as counts
+  with every duty's reason and marked measured, never vouched; HIRE
+  unchanged through the level picker; a one-line measured hint in the
+  Hire modal when the sentence names an occupation; bench:coverage reads
+  the installed board by default → D-232
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

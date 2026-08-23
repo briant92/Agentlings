@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ConnectionInfo, CrewCv, CrewRole, SettingsInfo, SkillInfo } from '@agentlings/shared';
+import type { ConnectionInfo, CrewCv, CrewRole, JobBoardHit, JobBoardInfo, SettingsInfo, SkillInfo } from '@agentlings/shared';
 import { api } from '../api';
 import {
   cardFacts,
@@ -15,6 +15,7 @@ import {
   type DoorState,
 } from './crew';
 import { fills, NO_SEAT, search, tally, type Position } from './positions';
+import { GRADE_CLASS, WORLD_MARK, shortReason, worldTally } from './jobboard';
 import type { HireFor } from '../screens/hire';
 
 /**
@@ -24,7 +25,10 @@ import type { HireFor } from '../screens/hire';
  * `/api/crew`; skills come off `/api/skills`, doors off `/api/settings`; only
  * the plain-language prose is typed, in `crew.ts`. The positions board
  * (D-229) starts from a human job instead: `positions.ts` grades each duty
- * against what is built, and HIRE hands the trade to the level picker.
+ * against what is built, and HIRE hands the trade to the level picker. Under
+ * it, the world's postings (D-232): the O*NET database, added by one
+ * download, searched by the same rule and graded on demand by the benchmark
+ * grader — measured beside the hand board's vouched, and marked as such.
  */
 
 type Board = 'trades' | 'skills' | 'powers' | 'reach' | 'price' | 'never' | 'positions';
@@ -65,7 +69,17 @@ function Sprite({ tint, hat, big }: { tint: string; hat: string; big?: boolean }
   );
 }
 
-const usd = (n: number) => (n < 1 ? `${Math.round(n * 100)}c` : `$${n.toFixed(2)}`);
+const usd = (n: number) => (n < 1 ? `${Math.round(n * 100)}c` : `${n.toFixed(2)}`);
+
+const article = (word: string) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
+
+/** The result's own six-sentence line rides in `coverage` via the tally; recompute the short form here. */
+const worldLine = (cov: JobBoardHit['coverage']) =>
+  cov.notThisCrew
+    ? 'Not this crew — every duty stops at a recorded boundary.'
+    : cov.role
+      ? `${worldTally(cov.counts)} — by ${cov.role}, under its existing contract where marked ✓.`
+      : `${worldTally(cov.counts)} — no trade takes the larger part.`;
 
 const PILL: Record<DoorState, string> = {
   on: 'on',
@@ -82,12 +96,42 @@ export function CrewModal({ onClose, onHire }: { onClose: () => void; onHire: (h
   const [picked, setPicked] = useState(0);
   const [query, setQuery] = useState('');
   const [position, setPosition] = useState<string | null>(null);
+  const [world, setWorld] = useState<JobBoardInfo | null>(null);
+  const [worldHits, setWorldHits] = useState<JobBoardHit[] | null>(null);
+  const [worldPicked, setWorldPicked] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     void api<CrewCv>('/api/crew').then(setCv).catch(() => setCv({ roles: [], turnCeiling: 40, defaultTurns: 10, tiers: { oneshot: { samples: 0, meanUsd: 0 }, session: { samples: 0, meanUsd: 0 } } }));
     void api<SkillInfo[]>('/api/skills').then(setSkills).catch(() => setSkills([]));
     void api<SettingsInfo>('/api/settings').then((s) => setDoors(s.connections)).catch(() => setDoors([]));
+    void api<JobBoardInfo>('/api/jobboard').then(setWorld).catch(() => setWorld({ present: false }));
   }, []);
+
+  // The world half searches as you type, debounced; absent board, empty
+  // query or a fetch that fails all leave it quiet rather than wrong.
+  useEffect(() => {
+    if (!world?.present || query.trim() === '') {
+      setWorldHits(null);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void api<{ hits: JobBoardHit[] }>(`/api/jobboard/search?q=${encodeURIComponent(query.trim())}`)
+        .then((r) => setWorldHits(r.hits))
+        .catch(() => setWorldHits(null));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [world, query]);
+
+  const addBoard = () => {
+    setSyncing(true);
+    setSyncError(null);
+    void api<JobBoardInfo>('/api/jobboard/sync', { method: 'POST' })
+      .then(setWorld)
+      .catch((e: unknown) => setSyncError(e instanceof Error ? e.message : 'download failed'))
+      .finally(() => setSyncing(false));
+  };
 
   const roles = cv?.roles ?? [];
   const current: CrewRole | undefined = roles[picked];
@@ -220,7 +264,9 @@ export function CrewModal({ onClose, onHire }: { onClose: () => void; onHire: (h
             ? 'Type a job title, or what you need done. Pick a card to see the match.'
             : positions.length > 0
               ? `${positions.length} position${positions.length === 1 ? '' : 's'} match — the nearest first, never just one`
-              : `Nothing matches. The crew has no seat for ${NO_SEAT.join(' · ')} — each needs a person to talk, act or pay.`}
+              : worldHits && worldHits.length > 0
+                ? 'None of the twelve hand-graded postings match — the world’s postings below answer.'
+                : `Nothing matches. The crew has no seat for ${NO_SEAT.join(' · ')} — each needs a person to talk, act or pay.`}
         </p>
         <div className="cv-positions">
           {positions.map((p) => (
@@ -336,7 +382,141 @@ export function CrewModal({ onClose, onHire }: { onClose: () => void; onHire: (h
             </div>
           </div>
         )}
+        {worldBoard()}
       </>
+    );
+  };
+
+  /**
+   * The world's postings: measured, never vouched. The section only ever
+   * adds — the hand cards stay first, and a duty row here always carries
+   * the reason its grade rests on.
+   */
+  const worldBoard = () => {
+    const picked = worldHits?.find((h) => h.occupationId === worldPicked) ?? worldHits?.[0];
+    const cov = picked?.coverage;
+    const tradeC = cov?.role ? tradeCopy({ name: cov.role, description: '' }) : null;
+    return (
+      <div className="cv-world">
+        <h3 className="cv-world-h">
+          the world's postings
+          <span className="cv-meas">measured</span>
+          {world?.present && <small className="dim"> · O*NET {world.version} · {world.occupations} occupations</small>}
+        </h3>
+        {world === null && <p className="dim">Loading…</p>}
+        {world && !world.present && (
+          <div className="cv-world-add">
+            <p className="dim">
+              Every real occupation, graded duty by duty by the same measure as the benchmark — not
+              hand-checked like the cards above. One download adds it.
+            </p>
+            <button className="cv-hire ghost" disabled={syncing} onClick={addBoard}>
+              {syncing ? 'downloading…' : 'add the job board — O*NET, ~13 MB once, CC BY 4.0'}
+            </button>
+            {syncError && <p className="cv-world-err">{syncError}</p>}
+          </div>
+        )}
+        {world?.present && query.trim() === '' && (
+          <p className="dim cv-hint">The search above reads these too — type a job title.</p>
+        )}
+        {world?.present && query.trim() !== '' && worldHits && worldHits.length === 0 && (
+          <p className="dim cv-hint">Nothing in {world.occupations} occupations matches those words.</p>
+        )}
+        {worldHits && worldHits.length > 0 && (
+          <>
+            <div className="cv-positions">
+              {worldHits.map((h) => (
+                <button
+                  key={h.occupationId ?? h.title}
+                  className={h.coverage.role ? 'cv-pos world' : 'cv-pos world noseat'}
+                  aria-pressed={picked?.occupationId === h.occupationId}
+                  onClick={() => setWorldPicked(h.occupationId ?? null)}
+                >
+                  <span className="cv-pos-t">{h.title}</span>
+                  <span className="cv-pos-aka">{h.aliases.join(' · ')}</span>
+                  <span className="cv-pips">
+                    {h.coverage.tasks.slice(0, 14).map((x, i) => (
+                      <i key={i} className={`cv-pip ${GRADE_CLASS[x.grade]}`} />
+                    ))}
+                    <small>{h.coverage.role ? `→ ${h.coverage.role}` : 'uncovered'}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            {picked && cov && (
+              <div className="cv-match">
+                <div className="cv-col">
+                  <h2>
+                    {picked.title}
+                    <small>the world's posting · {picked.occupationId}</small>
+                  </h2>
+                  {picked.aliases.length > 0 && (
+                    <>
+                      <h3>also known as</h3>
+                      <span className="cv-chips">
+                        {picked.aliases.map((x) => (
+                          <span key={x} className="cv-chip tool">{x}</span>
+                        ))}
+                      </span>
+                    </>
+                  )}
+                  {picked.sourceUrl && (
+                    <p className="cv-needs dim">
+                      source: <a href={picked.sourceUrl} target="_blank" rel="noreferrer">O*NET {picked.occupationId}</a>
+                    </p>
+                  )}
+                </div>
+                <div className="cv-col">
+                  {cov.role && tradeC ? (
+                    <div className="cv-head">
+                      <Sprite tint={tradeC.tint} hat={tradeC.hat} />
+                      <div>
+                        <h2>
+                          {cov.role}
+                          <small>the crew's match · measured</small>
+                        </h2>
+                        <span className="cv-tag">{tradeC.tag}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <h2>
+                      currently uncovered<small>the crew's match · measured</small>
+                    </h2>
+                  )}
+                  <div className="cv-tally">
+                    <span className="y">✓ {cov.counts.covered}</span>
+                    <span className="p">◐ {cov.counts.partial}</span>
+                    <span className="n">✕ {cov.counts.uncovered}</span>
+                  </div>
+                  <p className="cv-world-line">{worldLine(cov)}</p>
+                  <p className="cv-world-note dim">
+                    Graded by the benchmark, not by hand — each grade shows what it rests on.
+                  </p>
+                  <div className="cv-verdicts">
+                    {cov.tasks.map((x) => (
+                      <div key={x.taskId} className={`cv-duty ${GRADE_CLASS[x.grade]}`}>
+                        <span className="cv-m">{WORLD_MARK[x.grade]}</span>
+                        <div>
+                          <b>{x.text}</b>
+                          <span>{shortReason(x)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {cov.role && (
+                    <button
+                      className="cv-hire"
+                      onClick={() => onHire({ role: cov.role as string, text: picked.title.toLowerCase() })}
+                    >
+                      hire {article(cov.role)} {cov.role} — pick the level
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     );
   };
 

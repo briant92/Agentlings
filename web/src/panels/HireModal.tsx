@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   Agentling,
+  JobBoardHint,
   LibrarySearchResult,
   MatchSuggestion,
   Refinement,
@@ -9,6 +10,7 @@ import type {
 import { api, lvl, postJson } from '../api';
 import { renderPortrait } from '../world/sprites';
 import { LibraryResults } from './LibraryResults';
+import { hintText } from './jobboard';
 
 /** Below this the matcher says so rather than guessing (mirrors the server). */
 const MIN_CONFIDENCE = 0.35;
@@ -48,6 +50,7 @@ export function HireModal({
   const [suggestion, setSuggestion] = useState<MatchSuggestion | null>(null);
   const [refined, setRefined] = useState<Refinement | null>(null);
   const [library, setLibrary] = useState<LibrarySearchResult | null>(null);
+  const [worldHint, setWorldHint] = useState<JobBoardHint | null>(null);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [override, setOverride] = useState<string | null>(preset?.role ?? null);
   const [saving, setSaving] = useState(false);
@@ -80,6 +83,15 @@ export function HireModal({
     const match = await api<MatchSuggestion>('/api/match', postJson({ text: query }));
     setSuggestion(match);
     setRefined(null);
+
+    // The world's posting the sentence names, if any (D-232): one dim line,
+    // measured, never steering the suggestion. Quiet on any failure — the
+    // board is optional and a hire must not depend on it.
+    void api<{ hint: JobBoardHint | null }>(`/api/jobboard/hint?text=${encodeURIComponent(query)}`)
+      .then((r) => {
+        if (latest.current === query) setWorldHint(r.hint);
+      })
+      .catch(() => setWorldHint(null));
 
     // Tier 2 runs alongside, never in front: the card is already drawn, and a
     // slow or unavailable refinement changes nothing.
@@ -204,6 +216,10 @@ export function HireModal({
                 )
               )}
             </div>
+          )}
+
+          {hintText(worldHint) && (
+            <p className="hire-world dim">{hintText(worldHint)}</p>
           )}
 
           {suggestion && !confident && (

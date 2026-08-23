@@ -1618,6 +1618,31 @@ export interface CoverageResult {
   notThisCrew: boolean;
 }
 
+/** The job board (D-232): the O*NET database as an optional local data set. */
+export interface JobBoardInfo {
+  present: boolean;
+  version?: string;
+  occupations?: number;
+}
+
+/** One board search hit: the occupation and its coverage, graded on demand. */
+export interface JobBoardHit {
+  title: string;
+  occupationId?: string;
+  sourceUrl?: string;
+  aliases: string[];
+  coverage: CoverageResult;
+}
+
+/** The hire hint: the one occupation a hire sentence names, or nothing. */
+export interface JobBoardHint {
+  title: string;
+  occupationId?: string;
+  role: string | null;
+  counts: Record<TaskGrade, number>;
+  line: string;
+}
+
 /** One crew member as the Crew panel sees them — resting ones included. */
 export interface CrewMember {
   id: string;

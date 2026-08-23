@@ -241,6 +241,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-229 — 2026-08-23 — Positions: a human job graded duty by duty against what is built, hand-written and hand-graded, with HIRE carrying the trade through the level picker](#d-229--2026-08-23--positions-a-human-job-graded-duty-by-duty-against-what-is-built-hand-written-and-hand-graded-with-hire-carrying-the-trade-through-the-level-picker)
 - [D-230 — 2026-08-23 — The coverage benchmark: O*NET's 1,016 occupations graded duty by duty, with five kinds of "less than covered" kept apart so a weak word match can never become a hiring recommendation](#d-230--2026-08-23--the-coverage-benchmark-onets-1016-occupations-graded-duty-by-duty-with-five-kinds-of-less-than-covered-kept-apart-so-a-weak-word-match-can-never-become-a-hiring-recommendation)
 - [D-231 — 2026-08-23 — The four D-230 follow-ups: the grader calibrated against the hand grades (76 % → 90 %, the overclaim cells emptied), three compliance jobs run live through the crew as routed, the overlaps left alone with their trigger named, the screen question sequenced behind the calibration](#d-231--2026-08-23--the-four-d-230-follow-ups-the-grader-calibrated-against-the-hand-grades-76--90--the-overclaim-cells-emptied-three-compliance-jobs-run-live-through-the-crew-as-routed-the-overlaps-left-alone-with-their-trigger-named-the-screen-question-sequenced-behind-the-calibration)
+- [D-232 — 2026-08-23 — The job board: the O*NET database behind the positions board, one download, searched by the hand board's rule and graded by the benchmark's grader, measured never vouched](#d-232--2026-08-23--the-job-board-the-onet-database-behind-the-positions-board-one-download-searched-by-the-hand-boards-rule-and-graded-by-the-benchmarks-grader-measured-never-vouched)
 
 ## By theme
 
@@ -836,7 +837,11 @@ entry updates one file rather than two.
   D-231, the grader calibrated against D-229's 58 hand grades — 76 % → 90 %
   exact with both overclaim cells emptied, the residue being context no
   sentence carries — and three live compliance jobs ($3.28) proving the
-  cluster a matcher gap, not a capability gap, so no compliance role; and D-178,
+  cluster a matcher gap, not a capability gap, so no compliance role; and
+  D-232, the job board — the O*NET 1,016 behind the positions board, one
+  download, the hand board's search rule with exact-name and title-first
+  refinements, every hit graded on demand by the benchmark's grader and
+  marked measured, never dressed as the hand-vouched twelve; and D-178,
   the first of those four taken — the drop made **loud** before it is made
   possible, one job per channel refused on a taxonomy (only one of five
   two-channel sentences is the same message twice) and on two code facts
@@ -17379,3 +17384,79 @@ fixes bought precision, not coverage. The three live jobs: ledger rows
 ($1.73, researcher), all `done`, all under quote, all in review on
 training-ground. The fixture Read Me fix is in this commit, with the
 licensor's own notice URL retained from the full release.
+
+## D-232 — 2026-08-23 — The job board: the O*NET database behind the positions board, one download, searched by the hand board's rule and graded by the benchmark's grader, measured never vouched
+
+Brian asked how a user reaches the complete list of real jobs. The answer
+was: nowhere — the 1,016 occupations existed only in a benchmark JSON.
+Three choices were put with recommendations and taken: the dataset as a
+one-time download into `.agentlings/` (never committed — the repo
+convention stands); the world's postings as a second section of the
+positions board plus a one-line hint in the Hire modal; built the same
+session.
+
+### The shape
+
+- **`server/src/jobboard.ts`** — sync (fetch the release zip from
+  onetcenter.org, unpack only the three files the board reads: ~5 MB
+  instead of ~40, attribution and the licensor's notice kept in the
+  release's own Read Me), status, a cached `loadBoard` over the existing
+  O*NET adapter, and search. The search is D-229's plain-code rule with
+  two refinements the big list forced, both measured before adoption: an
+  **exact name wins outright** ("bookkeeper" is an exact alias of the
+  clerks and a substring of the supervisors' "Head Bookkeeper" — O*NET's
+  own answer is the clerks, and score-order gave the supervisors), and a
+  **title word outranks an alias word** ("bookkeeping" found Business
+  Teachers first through their "Bookkeeping Teacher" alias, tie-broken by
+  SOC order, with the actual Bookkeeping Clerks below them).
+- **Routes** — `GET /api/jobboard` (status), `POST /api/jobboard/sync`
+  (the one download, user-initiated), `GET /api/jobboard/search?q=`
+  (top five, each graded on demand by the same `coverage()` the benchmark
+  runs, against the full catalog and the doors live right now, so card
+  and benchmark cannot disagree), `GET /api/jobboard/hint?text=` (the
+  Hire modal's line — a stricter title-or-alias-only match, so a hint
+  under someone's own sentence never fires on one shared duty word).
+- **The board** (`CrewModal`, `web/src/panels/jobboard.ts` for the pure
+  parts) — under the twelve hand cards, *the world's postings*: absent
+  until added (one button, size and licence named), then searched by the
+  same input box. World cards are the same card at a different
+  temperature — dashed border, a MEASURED badge — and a picked card shows
+  the tally as counts, the coverage line, a note saying *graded by the
+  benchmark, not by hand*, and every duty with the readable half of the
+  reason its grade rests on. HIRE reuses D-229's flow unchanged. The
+  hand board's miss line learnt about its neighbour: "nothing matches …
+  no seat" was contradicted by five world matches right below it, and now
+  defers to them when they exist.
+- **The hint** (`HireModal`) — one dim line when the hire sentence names
+  an occupation: *the world's posting "Bookkeeping, Accounting, and
+  Auditing Clerks" — analyst covers 16 of 28 duties, measured*. It never
+  steers the suggestion and the modal never depends on the board.
+- **`bench:coverage`** now defaults to the installed board when no source
+  is named, so the benchmark and the screen read the same data.
+
+### The epistemics, kept
+
+D-229's hand grades are claims with reasons a person verified; these are
+measured by a grader whose calibration is on record (D-231: 90 % exact,
+overclaim cells empty). The two never dress alike: the world section is
+labelled measured at the section, on the match column, and in the note;
+counts, never percentages; "not this crew" only on boundary evidence
+(the grader's own rule); and each duty row carries its reason, so a
+wrong grade is arguable on sight.
+
+### Evidence
+
+`jobboard.test.ts` (5: install from a release-shaped zip incl. the
+refusal of a non-release, sync through an injected fetch, absent-board
+emptiness, exact/title/alias/duty ranking, hint strictness) and 4 web
+tests on the pure parts; server 86 files / 2,042, web 32 / 306,
+typecheck clean. The real sync ran live: 17.1 s, 1,016 occupations,
+18,797 duties into `.agentlings/onet/`. Headless Edge at 1280 × 700 and
+412 × 915 with the jobboard routes answered by the real grader's own
+JSON (the running server predates the routes): 5 world cards for
+"bookkeeping" with the clerks first, 28 graded duty rows on the picked
+card, the MEASURED badge, the hire button, the corrected miss line, no
+sideways scroll, no page errors; the Hire modal hint verified with the
+agentling POST intercepted so nothing landed in HQ. The routes go live
+on the next server restart; the board data is already installed, so no
+download will be needed then.

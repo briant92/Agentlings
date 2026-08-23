@@ -104,7 +104,8 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
-import { coverage as gradeCoverage, type CoverageContext } from './coverage';
+import { coverage as gradeCoverage, coverageLine, type CoverageContext } from './coverage';
+import { boardStatus, loadBoard, searchBoard, syncOnet, titleMatch } from './jobboard';
 import { crewCv } from './cv';
 import {
   channelShelf,
@@ -4152,6 +4153,64 @@ app.post('/internal/render', async (c) => {
 app.get('/api/roles', (c) => c.json(registry.list()));
 
 /** The crew's CV (Meet the crew, behind Settings): every role, its quote ceiling, and what it has cost. */
+/**
+ * The job board (D-232): the O*NET occupation database as an optional local
+ * data set behind the positions board. Absent until the user adds it —
+ * `sync` is the one download, user-initiated, ~13 MB from onetcenter.org
+ * (CC BY 4.0, the release's own notice kept). Search is the positions
+ * board's plain-code rule over the 1,016; every hit is graded on demand by
+ * the same `coverage()` the benchmark runs, against the full catalog and
+ * the doors live right now, so the card and the benchmark cannot disagree.
+ */
+app.get('/api/jobboard', (c) => c.json(boardStatus(SANDBOX_ROOT)));
+
+app.post('/api/jobboard/sync', async (c) => {
+  try {
+    return c.json(await syncOnet(SANDBOX_ROOT));
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'download failed' }, 502);
+  }
+});
+
+function jobboardCtx(): CoverageContext {
+  const live = new Set(enabledNames(readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env));
+  return {
+    index: matcher(),
+    roles: registry.list(),
+    doors: readConnections(CONNECTIONS_FILE).map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
+  };
+}
+
+app.get('/api/jobboard/search', (c) => {
+  const q = c.req.query('q') ?? '';
+  const ctx = jobboardCtx();
+  const hits = searchBoard(loadBoard(SANDBOX_ROOT), q).map((p) => ({
+    title: p.title,
+    occupationId: p.occupationId,
+    sourceUrl: p.sourceUrl,
+    aliases: p.aliases.slice(0, 3),
+    coverage: gradeCoverage(ctx, p),
+  }));
+  return c.json({ hits });
+});
+
+/** The hire modal's one-line hint: a title or alias the sentence names, graded, or null. */
+app.get('/api/jobboard/hint', (c) => {
+  const q = c.req.query('text') ?? '';
+  const hit = titleMatch(loadBoard(SANDBOX_ROOT), q);
+  if (!hit) return c.json({ hint: null });
+  const result = gradeCoverage(jobboardCtx(), hit);
+  return c.json({
+    hint: {
+      title: hit.title,
+      occupationId: hit.occupationId,
+      role: result.role,
+      counts: result.counts,
+      line: coverageLine(result),
+    },
+  });
+});
+
 /**
  * A real-world job graded against the crew (D-230): a normalised
  * `WorkProfile` in, a `CoverageResult` out — every duty covered, partial

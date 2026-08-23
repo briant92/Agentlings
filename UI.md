@@ -323,3 +323,17 @@ why is D-226; this is the checklist's record that they landed.
   here edits one; the leash shown in the Library is read, not written.
 - The D-211 trail is session-pass and close-out-pass; the strip reads the
   session pass only, and its counts are calls, not turns.
+- [x] **26. The world's postings** — landed 2026-08-23 (D-232).
+      (`server/src/jobboard.ts` + 5 tests, routes, `web/src/panels/jobboard.ts`
+      + 4 tests, `CrewModal.tsx`, `HireModal.tsx`, `styles.css` tail) — the
+      O*NET 1,016 as a second section of the positions board: one download
+      into `.agentlings/onet` (button on the board, size and licence named),
+      the same search box, world cards dashed with a MEASURED badge, a
+      picked card showing counts, the coverage line, the graded-by-the-
+      benchmark note and every duty's reason; HIRE through the level picker
+      unchanged; the hand board's miss line defers to world matches; a dim
+      measured hint in the Hire modal when the sentence names an occupation.
+      Evidence: live sync 17.1 s / 1,016 occupations; headless Edge at
+      1280 × 700 and 412 × 915 with the routes answered by the real
+      grader's JSON — 5 cards, 28 duty rows, no sideways scroll, no page
+      errors, the hire POST intercepted so nothing landed in HQ.

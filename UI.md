@@ -250,7 +250,8 @@ why is D-226; this is the checklist's record that they landed.
       header "+" gone, *choose a folder…* the one picker, the typed path a
       labelled field with an *add* button; Review: `.fv` bounded, rail and
       body scrolling alone, bar pinned — the rail was the whole symptom, the
-      body had its own 420 px cap since the viewer was built; Crew: hidden
+      body had its own 420 px cap since the viewer was built, and that cap is
+      now gone so there is one vertical scroller; Crew: hidden
       while a review is open and back when it closes, the Backoffice's early
       `onClose()` removed. No server change. Evidence: typecheck clean, web
       28 / 291 with the browser case mutation-tested; live in headless Edge —

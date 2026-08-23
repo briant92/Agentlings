@@ -3378,9 +3378,10 @@ button.danger:hover {
   border-color: #33415c;
   color: #d8dce6;
 }
+/* The body scrolls the open file (D-226); this keeps only the sideways
+   scroll a wide table needs, so there is one vertical scroller, not two. */
 .fv-scroll {
-  overflow: auto;
-  max-height: 420px;
+  overflow-x: auto;
 }
 .fv-grid {
   border-collapse: collapse;
@@ -3447,8 +3448,6 @@ button.danger:hover {
   font-size: 11px;
   line-height: 1.6;
   margin: 0;
-  max-height: 420px;
-  overflow: auto;
   white-space: pre-wrap;
 }
 .fv-mm-draw {

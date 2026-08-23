@@ -16768,6 +16768,14 @@ themselves at 420 px with their own scrollbar since the viewer was built, and
 every job measured reads body `scrollHeight == clientHeight`. The rail was
 the whole symptom.
 
+*Then the caps came off.* With the body owning the scroll, the inner 420 px
+caps were a second scroller inside the first — at a 600 px-tall viewport the
+body has 338 px, so a long file meant scrolling the body to reach a pre
+that then scrolled on its own. `.fv-text` lost its cap and `.fv-scroll`
+keeps only the sideways overflow a wide table needs. Live at 1280 × 600 on a
+24k-px text file: body `scrollTop` 400 with the rail and bar at 0, and the
+reverse.
+
 **Clicking outside a Review card closed Crew.** `LevelView` rendered
 `CrewPanel` on `crewOpen` alone, and the fix that looked obvious —
 `crewOpen && !reviewJob`, the guard `parcelsOpen` already had — did nothing

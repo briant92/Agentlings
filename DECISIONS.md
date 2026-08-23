@@ -16702,3 +16702,13 @@ bundle builds in 11.7 s. The routes and the panel await a live look after the
 next restart (`npm run serve` — the running server predates them and the
 panel says so rather than showing *Not Found*), which is what moves
 `AGENTLING.md`'s entry from Partial to Live.
+
+**Seen live, 2026-08-23 ~09:45.** After the restart the three routes
+answered on the real `hq`: the map built in 57.5 ms (252 jobs, 153 notes,
+195 lessons, 84 recipes, 5 tools, 8 candidates, 7 agentlings; 29 of 55
+lesson edges and 59 of 137 note edges ambiguous, 17 pointers to nothing),
+`search?q=exports` returned the EXPORTS.md jobs, and the dry-run priced
+*what do we know about the close-out pass* as `routed` with Pip's own
+delivery of that sentence as the first note — D-049's example, answered
+free, shown without a run. Brian opened *reading* → the two sections and
+called it fine; `AGENTLING.md` moves the entry to Live.

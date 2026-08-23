@@ -1134,7 +1134,7 @@ free against `hq` from a note about `EXPORTS.md`: 1 of 86 notes matched, sharing
 exactly `['know']`. The free tier's promise is never guess, and it had been
 guessing on the one word guaranteed to be there.
 
-### Seeing where a lesson came from — Partial, live look owed (D-225)
+### Seeing where a lesson came from — Live (D-225)
 
 The level's record is mapped from the identifiers the records already
 carry: a ledger row's recipe key, a lesson's `(job: title)` stamp, a tool

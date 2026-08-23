@@ -140,6 +140,129 @@ Cash 360.
   );
 }
 
+// ---------------------------------------------------------- US, October ------
+//
+// The next period, invented here as a continuation of the Lumen exercise (no
+// published October exists) and carried the way an accountant would: every
+// September timing item clears in the first days of October; the bookkeeper
+// posts September's five bank items on the 1st; the check 2005 correction is
+// NOT posted, so the books are still 360 high and nothing in October's own
+// files says so — only the prior reconciliation does (D-223's measurement:
+// without it the sides end 360 apart, with it they meet). Same headers as
+// September on purpose: that is the shape the roll-forward is keyed on.
+{
+  const usd = (n) => n.toFixed(2);
+  const book = [
+    ['2026-10-01', 'BAL', 'Opening balance', 0, 0],
+    ['2026-10-01', 'JE-0901', 'Interest — September', 3, 0],
+    ['2026-10-01', 'JE-0902', 'Note collected — Acme Co. (September)', 3500, 0],
+    ['2026-10-01', 'JE-0903', 'Collection fee — Acme note (September)', 0, 500],
+    ['2026-10-01', 'JE-0904', 'Service charge — September', 0, 5],
+    ['2026-10-01', 'JE-0905', 'Returned check — NSF — J. Doe (September)', 0, 350],
+    ['2026-10-02', '2013', 'Ridge Supply Co.', 0, 1450],
+    ['2026-10-03', 'DEP', 'Deposit — daily receipts', 3100, 0],
+    ['2026-10-08', '2014', 'Northside Utilities', 0, 780],
+    ['2026-10-10', 'DEP', 'Deposit — daily receipts', 4750, 0],
+    ['2026-10-14', '2015', 'Metro Leasing — October rent', 0, 2200],
+    ['2026-10-17', 'DEP', 'Deposit — daily receipts', 2600, 0],
+    ['2026-10-21', '2016', 'Lakeside Printing', 0, 1050],
+    ['2026-10-24', 'DEP', 'Deposit — daily receipts', 5300, 0],
+    ['2026-10-29', '2017', 'Crown Cleaning Services', 0, 925],
+    ['2026-10-31', '2018', 'Payroll — period ending 10/31', 0, 4800],
+    ['2026-10-31', 'DEP', 'Deposit — daily receipts (night drop)', 2950, 0],
+  ];
+  const bank = [
+    ['2026-10-01', 'Opening balance', '', 0, 0],
+    ['2026-10-01', 'Deposit', '', 0, 6700],
+    ['2026-10-02', 'Check', '2012', 5500, 0],
+    ['2026-10-02', 'Check', '2004', 1000, 0],
+    ['2026-10-03', 'Deposit', '', 0, 3100],
+    ['2026-10-03', 'Check', '2008', 650, 0],
+    ['2026-10-06', 'Check', '2009', 200, 0],
+    ['2026-10-06', 'Check', '2013', 1450, 0],
+    ['2026-10-10', 'Deposit', '', 0, 4750],
+    ['2026-10-12', 'Check', '2014', 780, 0],
+    ['2026-10-17', 'Deposit', '', 0, 2600],
+    ['2026-10-19', 'Check', '2015', 2200, 0],
+    ['2026-10-24', 'Deposit', '', 0, 5300],
+    ['2026-10-26', 'Check', '2016', 1050, 0],
+    ['2026-10-31', 'Service charge', '', 5, 0],
+    ['2026-10-31', 'Interest', '', 0, 4],
+  ];
+  // Each side opens where September closed it.
+  let b = 24457;
+  const bookRows = book.map(([d, ref, desc, dep, wd]) => {
+    b += dep - wd;
+    return [d, ref, desc, dep ? usd(dep) : '', wd ? usd(wd) : '', usd(b)].join(',');
+  });
+  let k = 27395;
+  const bankRows = bank.map(([d, desc, chk, debit, credit]) => {
+    k += credit - debit;
+    return [d, desc, chk, debit ? usd(debit) : '', credit ? usd(credit) : '', usd(k)].join(',');
+  });
+  assertEq('US Oct book ending', b, 34600);
+  assertEq('US Oct bank ending', k, 37014);
+  // The invariant the fixture is built to: only October's own timing items
+  // and bank lines adjust, plus the one September item still unbooked.
+  assertEq('US Oct statement adjusted', k + 2950 - 925 - 4800, 34239);
+  assertEq('US Oct records adjusted', b - 5 + 4 - 360, 34239);
+  out(
+    'us-oct/bank-statement-2026-10.csv',
+    ['Date,Description,Check No,Debit,Credit,Balance', ...bankRows].join('\n') + '\n',
+  );
+  out(
+    'us-oct/cash-ledger-2026-10.csv',
+    ['Date,Ref,Description,Deposit,Withdrawal,Balance', ...bookRows].join('\n') + '\n',
+  );
+  out(
+    'us-oct/SOLUTION.md',
+    `# Expected reconciliation — My Company, October 31, 2026
+
+A continuation of the September exercise invented here (no published October
+exists), carried as an accountant would. Kept OUT of the job's attachments.
+The point of the month: **the prior reconciliation is the only evidence for
+the 360** — September's check 2005 correction was never posted, and nothing in
+October's own files says so.
+
+Bank statement balance 37,014.00 · Book balance 34,600.00
+
+| Bank side | | Book side | |
+|---|---|---|---|
+| Ending bank balance | 37,014.00 | Ending book balance | 34,600.00 |
+| + Deposit in transit 10/31 | 2,950.00 | + Interest | 4.00 |
+| − Outstanding checks 2017, 2018 | (5,725.00) | − Service charge | (5.00) |
+| | | − Check 2005 correction, **carried from September, still unposted** | (360.00) |
+| **Adjusted** | **34,239.00** | **Adjusted** | **34,239.00** |
+
+Matched within October: deposits 3,100 / 4,750 / 2,600 / 5,300 and checks
+2013, 2014, 2015, 2016.
+
+**Cleared from the prior period — findings, not adjustments.** Bank only, in
+the first days of October, with no October book line because September's books
+already carried them: the 6,700 night-drop deposit (10/1) and checks 2012
+(10/2), 2004 (10/2), 2008 (10/3), 2009 (10/6). Every one was an open item in
+the September reconciliation.
+
+**Prior-period bank items now booked — settled, never adjusted twice.** Book
+only, all dated 10/1 (JE-0901 … JE-0905): interest 3, note collected 3,500,
+collection fee 500, service charge 5, NSF 350 — September's records-side
+adjustments, posted. No October statement line, because the bank did them in
+September.
+
+**Aged.** Check 2005 recorded 5,483 and paid 5,843: the books are still 360
+high, one period on. The only way to know is the prior reconciliation.
+
+Unmatched, bank only, October's own: service charge 5, interest 4. Unmatched,
+book only, October's own: checks 2017 (925) and 2018 (4,800) outstanding;
+deposit 2,950 in transit. Journal entries: Cash 4 / Interest revenue 4;
+Bank fees 5 / Cash 5; Equipment 360 / Cash 360 (overdue since September).
+
+A run **without** the prior, done honestly, ends 360 apart — statement 34,239
+against records 34,599 — and must say so rather than plug.
+`,
+  );
+}
+
 // ---------------------------------------------------------------- CL ---------
 {
   const clp = (n) => String(Math.round(n)); // CLP has no cents
@@ -271,6 +394,7 @@ Generic, attributed, no proprietary data. Generated by make-fixtures.mjs, which
 asserts the published ending balances before writing anything.
 
 - us/  — bank-statement-2026-09.csv + cash-ledger-2026-09.csv (self-kept books, USD, comma CSV)
+- us-oct/ — the next period of the same books (invented continuation, same headers): the prior reconciliation is the only evidence for a 360 the books still carry (D-223)
 - cl/  — cartola-mayo-2026.csv + libro-mayor-banco-mayo-2026.csv (contador's ledger, CLP, semicolon CSV)
          + sii-rcv-ventas-mayo-2026.csv + sii-rcv-compras-mayo-2026.csv (the no-books variant)
 - SOLUTION.md in each folder is the answer key — never attached to a job.

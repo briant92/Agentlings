@@ -1,0 +1,18 @@
+Date,Ref,Description,Deposit,Withdrawal,Balance
+2026-10-01,BAL,Opening balance,,,24457.00
+2026-10-01,JE-0901,Interest — September,3.00,,24460.00
+2026-10-01,JE-0902,Note collected — Acme Co. (September),3500.00,,27960.00
+2026-10-01,JE-0903,Collection fee — Acme note (September),,500.00,27460.00
+2026-10-01,JE-0904,Service charge — September,,5.00,27455.00
+2026-10-01,JE-0905,Returned check — NSF — J. Doe (September),,350.00,27105.00
+2026-10-02,2013,Ridge Supply Co.,,1450.00,25655.00
+2026-10-03,DEP,Deposit — daily receipts,3100.00,,28755.00
+2026-10-08,2014,Northside Utilities,,780.00,27975.00
+2026-10-10,DEP,Deposit — daily receipts,4750.00,,32725.00
+2026-10-14,2015,Metro Leasing — October rent,,2200.00,30525.00
+2026-10-17,DEP,Deposit — daily receipts,2600.00,,33125.00
+2026-10-21,2016,Lakeside Printing,,1050.00,32075.00
+2026-10-24,DEP,Deposit — daily receipts,5300.00,,37375.00
+2026-10-29,2017,Crown Cleaning Services,,925.00,36450.00
+2026-10-31,2018,Payroll — period ending 10/31,,4800.00,31650.00
+2026-10-31,DEP,Deposit — daily receipts (night drop),2950.00,,34600.00

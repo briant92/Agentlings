@@ -4,6 +4,7 @@
 //   node run-trial.mjs us     (bank statement + own cash ledger)
 //   node run-trial.mjs cl     (cartola + libro mayor banco)
 //   node run-trial.mjs rcv    (cartola + the two SII registers — the no-books variant)
+//   node run-trial.mjs us-oct (the next period of the US books — the roll-forward test, D-223)
 //
 // Same sentence every time, on purpose: the second run is the inheritance test.
 
@@ -20,11 +21,12 @@ const SENTENCE =
 const SETS = {
   us: ['us/bank-statement-2026-09.csv', 'us/cash-ledger-2026-09.csv'],
   cl: ['cl/cartola-mayo-2026.csv', 'cl/libro-mayor-banco-mayo-2026.csv'],
+  'us-oct': ['us-oct/bank-statement-2026-10.csv', 'us-oct/cash-ledger-2026-10.csv'],
   rcv: ['cl/cartola-mayo-2026.csv', 'cl/sii-rcv-ventas-mayo-2026.csv', 'cl/sii-rcv-compras-mayo-2026.csv'],
 };
 const set = SETS[process.argv[2]];
 if (!set) {
-  console.error('usage: node run-trial.mjs us|cl|rcv');
+  console.error('usage: node run-trial.mjs us|cl|rcv|us-oct');
   process.exit(1);
 }
 

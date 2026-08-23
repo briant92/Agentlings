@@ -2,7 +2,7 @@
 
 Working file for one line of work, like `SPATIAL.md` and `TEAMWORK.md`: what
 was decided, what was measured, what is next. Decisions live in `DECISIONS.md`
-(D-217–D-220 so far); this is the board.
+(D-217–D-224); this is the board, closed 2026-08-23.
 
 ## 1. Where it came from
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KnowledgeStatus } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { ProvenanceSection } from './ProvenanceSection';
 import { Section } from './Section';
 
 /** What the store reads, as the chips say it. */
@@ -340,6 +341,9 @@ export function KnowledgeModal({
               stops being used until you read the folders again.
             </p>
           </Section>
+
+          {/* The level's own record, searchable, and what a run would read (D-225). */}
+          <ProvenanceSection levelId={levelId} />
 
           {note && <p className="lib-status">{note}</p>}
           {error && <p className="lib-warn">{error}</p>}

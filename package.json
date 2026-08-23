@@ -24,6 +24,7 @@
     "pack:quantize": "tsx scripts/quantize-pack.ts",
     "ledger:report": "tsx scripts/ledger-report.ts",
     "bench:intake": "tsx scripts/intake-bench.ts",
+    "bench:coverage": "tsx scripts/coverage-bench.ts",
     "demo:record": "tsx scripts/record-demo.ts"
   },
   "devDependencies": {

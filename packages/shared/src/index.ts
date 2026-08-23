@@ -1506,6 +1506,118 @@ export interface MatchSuggestion {
   alternatives: { name: string; description: string }[];
 }
 
+/**
+ * A real-world job record, normalised from whatever source wrote it — an
+ * O*NET occupation, an ESCO occupation, later a posting or a CV — so the
+ * coverage grader and the screens read one shape and never a source's own
+ * field names. Provenance is kept on purpose: `source`, `sourceVersion`,
+ * `occupationId`, `sourceUrl` and each task's `sourceId` are what let an
+ * aggregate be traced back to the record that produced it.
+ */
+export interface WorkProfile {
+  id: string;
+  /** Adapter name: `onet`, `esco`, `fixture` … */
+  source: string;
+  sourceVersion?: string;
+  sourceUrl?: string;
+  title: string;
+  aliases: string[];
+  tasks: WorkTask[];
+  skills: string[];
+  tools: string[];
+  domain?: string;
+  /** The source's own identifier for the occupation (an O*NET-SOC code, an ESCO URI). */
+  occupationId?: string;
+}
+
+export interface WorkTask {
+  id: string;
+  text: string;
+  /** Core duty, as the source rates it; a supplemental one is `false`. */
+  required: boolean;
+  /** The source's own identifier for the task statement. */
+  sourceId?: string;
+}
+
+export type TaskGrade = 'covered' | 'partial' | 'uncovered';
+
+/**
+ * Why a duty is less than covered. Kept apart because each has a different
+ * remedy, and collapsing them is how a weak word match turns into a hiring
+ * recommendation:
+ *  - `matcher`    — the wording was not understood, or the words reach a role
+ *                   but no recorded power vouches for the duty; the crew may
+ *                   well be capable.
+ *  - `capability` — evidence says the crew cannot do it: a decided-not-built
+ *                   or not-built boundary.
+ *  - `door`       — the duty needs a connection: one that exists and is
+ *                   closed (`doorExists`), or one the app has no door for.
+ *  - `policy`     — the agentling will not do it by decision (pay, act, talk).
+ *  - `roster`     — a role covers it but nobody awake in this level holds it.
+ */
+export type GapKind = 'matcher' | 'capability' | 'door' | 'policy' | 'roster';
+
+/** What the grade rests on: a recorded power, a recorded boundary, the words alone, or nothing. */
+export type CoverageEvidence = 'power' | 'boundary' | 'lexical' | 'none';
+
+export interface TaskCoverage {
+  taskId: string;
+  sourceId?: string;
+  text: string;
+  required: boolean;
+  grade: TaskGrade;
+  gap: GapKind | null;
+  evidence: CoverageEvidence;
+  /** The role this duty resolved to, or null. */
+  role: string | null;
+  /** The matcher's 0–1 confidence on this duty's words. */
+  confidence: number;
+  /** One line per thing the grade rests on, in the order they were weighed. */
+  reasons: string[];
+  matchedTerms: string[];
+  /** Words of the duty nothing installed understands. */
+  uncoveredTerms: string[];
+  /** Ids of the powers and boundaries that fired. */
+  powers: string[];
+  boundaries: string[];
+  /** What would have to exist or be on before the grade improves. */
+  missing: { skills: string[]; tools: string[]; connections: string[] };
+  /** The door it needs exists in the catalog and is merely closed. */
+  doorExists?: boolean;
+  /** The evidence supports saying "not this crew" for this duty. */
+  notThisCrew: boolean;
+  alternatives: string[];
+}
+
+export interface RosterState {
+  role: string | null;
+  /** Someone awake in the level holds the role. */
+  held: boolean;
+  /** The only holders are resting. */
+  resting: boolean;
+  /** Who the queue would hand it to instead, as their own role (D-200); null when held or no crew. */
+  fallbackRole: string | null;
+}
+
+/** The coverage of one real-world job by the crew as it stands. Reusable app-wide. */
+export interface CoverageResult {
+  profileId: string;
+  source: string;
+  sourceVersion?: string;
+  occupationId?: string;
+  title: string;
+  role: string | null;
+  confidence: number;
+  tasks: TaskCoverage[];
+  counts: Record<TaskGrade, number>;
+  gaps: Record<GapKind, number>;
+  roster: RosterState;
+  missing: { skills: string[]; tools: string[]; connections: string[] };
+  alternatives: string[];
+  /** Every task is graded off a boundary and none is a mere word gap. */
+  notThisCrew: boolean;
+}
+
 /** One crew member as the Crew panel sees them — resting ones included. */
 export interface CrewMember {
   id: string;

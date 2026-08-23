@@ -33,7 +33,11 @@ here, and the prose typed in `web/src/panels/crew.ts`; when a section here
 changes, that file is the one to re-read; its positions board (D-229) grades
 twelve human jobs duty by duty against §§4, 5, 11 and 14, in
 `web/src/panels/positions.ts`, and a capability landing or leaving owes
-those grades a re-read too. §8's figures
+those grades a re-read too — as it owes the power and boundary ledgers in
+`server/src/coverage.ts` (D-230), which grade a real occupation's duties
+against §§4, 5, 10, 11 and 14 by the same evidence; `npm run
+bench:coverage` measures the result over a downloaded O*NET or ESCO
+release. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 

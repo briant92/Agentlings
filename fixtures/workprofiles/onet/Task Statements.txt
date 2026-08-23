@@ -1,0 +1,13 @@
+O*NET-SOC Code	Task ID	Task	Task Type	Incumbents Responding	Date	Domain Source
+15-1252.00	21662	Analyze user needs and software requirements to determine feasibility of design within time and cost constraints.	Core	72	08/2025	Incumbent
+15-1252.00	21669	Develop or direct software system testing or validation procedures, programming, or documentation.	Core	72	08/2025	Incumbent
+15-1252.00	21664	Confer with systems analysts, engineers, programmers and others to design systems and to obtain information on project limitations and capabilities, performance requirements and interfaces.	Core	72	08/2025	Incumbent
+15-1252.00	21670	Modify existing software to correct errors, adapt it to new hardware, or upgrade interfaces and improve performance.	Core	72	08/2025	Incumbent
+15-1252.00	21673	Prepare reports or correspondence concerning project specifications, activities, or status.	Core	72	08/2025	Incumbent
+15-1252.00	21661	Analyze information to determine, recommend, and plan installation of a new system or modification of an existing system.	Core	72	08/2025	Incumbent
+43-3031.00	2487	Operate computers programmed with accounting software to record, store, and analyze information.	Core	128	07/2017	Incumbent
+43-3031.00	2486	Check figures, postings, and documents for correct entry, mathematical accuracy, and proper codes.	Core	129	07/2017	Incumbent
+43-3031.00	2488	Comply with federal, state, and company policies, procedures, and regulations.	Core	129	07/2017	Incumbent
+43-3031.00	2495	Operate 10-key calculators, typewriters, and copy machines to perform calculations and produce documents.	Core	130	07/2017	Incumbent
+43-3031.00	2500	Receive, record, and bank cash, checks, and vouchers.	Core	125	07/2017	Incumbent
+43-3031.00	2493	Code documents according to company procedures.	Core	129	07/2017	Incumbent

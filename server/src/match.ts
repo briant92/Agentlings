@@ -191,7 +191,7 @@ function words(text: string): string[] {
     .filter((w) => w.length > 1 && !STOPWORDS.has(w));
 }
 
-function tokenize(text: string): string[] {
+export function tokenize(text: string): string[] {
   return words(text).map(stem);
 }
 

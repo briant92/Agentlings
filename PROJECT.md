@@ -55,6 +55,8 @@ behavioral base lives there alone; this is the project half, split out on
   for the URL — use the MagicDNS name, not the `100.x` IP (D-175). Never
   `tailscale funnel`: the API has no auth and funnel is the public-internet
   sibling of the same command.
+- Coverage benchmark: `npm run bench:coverage -- --onet <dir>` over a
+  downloaded O*NET text release (fixtures alone with no flags; D-230)
 - Test: `npm test`
 - Lint / typecheck: `npm run typecheck`
 

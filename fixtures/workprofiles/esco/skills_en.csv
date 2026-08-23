@@ -1,0 +1,4 @@
+conceptType,conceptUri,skillType,reuseLevel,preferredLabel,altLabels,hiddenLabels,status,modifiedDate,scopeNote,definition,inScheme,description
+KnowledgeSkillCompetence,http://data.europa.eu/esco/skill/s-001,skill/competence,occupation-specific,maintain financial records,,,released,2024-01-01,,,http://data.europa.eu/esco/concept-scheme/skills,"Keep track of and finalise all formal documents representing the financial transactions of a business."
+KnowledgeSkillCompetence,http://data.europa.eu/esco/skill/s-002,skill/competence,sector-specific,"prepare financial statements, reports",,,released,2024-01-01,,,http://data.europa.eu/esco/concept-scheme/skills,"Collect, enter and prepare the set of financial records."
+KnowledgeSkillCompetence,http://data.europa.eu/esco/skill/k-001,knowledge,sector-specific,accounting,,,released,2024-01-01,,,http://data.europa.eu/esco/concept-scheme/skills,"The documentation and processing of data regarding financial activities."

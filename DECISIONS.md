@@ -239,6 +239,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-227 — 2026-08-23 — The phone at phone width: D-175 was measured in Desktop Mode, and in mobile mode the page scrolled sideways](#d-227--2026-08-23--the-phone-at-phone-width-d-175-was-measured-in-desktop-mode-and-in-mobile-mode-the-page-scrolled-sideways)
 - [D-228 — 2026-08-23 — Meet the crew: AGENTLING.md as a character-select screen, every number read from the role file and the ledger, and a per-role measure that history() could not give](#d-228--2026-08-23--meet-the-crew-agentlingmd-as-a-character-select-screen-every-number-read-from-the-role-file-and-the-ledger-and-a-per-role-measure-that-history-could-not-give)
 - [D-229 — 2026-08-23 — Positions: a human job graded duty by duty against what is built, hand-written and hand-graded, with HIRE carrying the trade through the level picker](#d-229--2026-08-23--positions-a-human-job-graded-duty-by-duty-against-what-is-built-hand-written-and-hand-graded-with-hire-carrying-the-trade-through-the-level-picker)
+- [D-230 — 2026-08-23 — The coverage benchmark: O*NET's 1,016 occupations graded duty by duty, with five kinds of "less than covered" kept apart so a weak word match can never become a hiring recommendation](#d-230--2026-08-23--the-coverage-benchmark-onets-1016-occupations-graded-duty-by-duty-with-five-kinds-of-less-than-covered-kept-apart-so-a-weak-word-match-can-never-become-a-hiring-recommendation)
 
 ## By theme
 
@@ -522,7 +523,11 @@ entry updates one file rather than two.
   numbers from the role file and the ledger, nominal ceiling beside measured
   cost; and D-229, positions — a human job graded duty by duty against what
   is built, hand-written so the grade is a claim with a reason rather than
-  a word match, HIRE carrying the trade through the level picker
+  a word match, HIRE carrying the trade through the level picker; and D-230,
+  the coverage benchmark — O*NET's 1,016 occupations graded duty by duty
+  through the same matcher, with matcher, capability, door, policy and
+  roster gaps kept apart, 14 % covered / 22 % partial / 64 % uncovered on
+  the shipped doors, no role created
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -823,7 +828,10 @@ entry updates one file rather than two.
   concept-map bridges checked against the catalog first — with the four
   structural gaps it exposed left open and named as corpus cases: one channel
   per job (multi-channel dropped **silently**), `MAX_STEPS` at 3, no
-  redaction anywhere, and a cadence in the sentence going unread; and D-178,
+  redaction anywhere, and a cadence in the sentence going unread; and D-230,
+  the coverage benchmark — the same idea pointed at a thousand real
+  occupations instead of fifty-one sentences, with the five kinds of "less
+  than covered" told apart and every aggregate carrying its task ids; and D-178,
   the first of those four taken — the drop made **loud** before it is made
   possible, one job per channel refused on a taxonomy (only one of five
   two-channel sentences is the same message twice) and on two code facts
@@ -17037,3 +17045,204 @@ owes them a re-read — AGENTLING.md's header now says so. Twelve positions
 is the measured need; the next one is added when a search misses on a job
 someone actually typed.
 
+
+## D-230 — 2026-08-23 — The coverage benchmark: O*NET's 1,016 occupations graded duty by duty, with five kinds of "less than covered" kept apart so a weak word match can never become a hiring recommendation
+
+D-229 graded twelve hand-written positions and said the real source could
+replace the data later. This is that source — and a grader, because a
+thousand occupations cannot be hand-graded and a word match between a duty
+and a role's prompt is still not evidence the role can do it. The task as
+set: a source-backed model of real-world work, matched against the roster
+through the existing deterministic matcher, every duty explained as
+covered / partial / currently uncovered, and the gaps aggregated into
+evidence for roster changes — *measurement first, no new roles by
+intuition.*
+
+### The model
+
+`WorkProfile` / `WorkTask` in `packages/shared`: title, aliases, tasks
+(each with `required` and the source's own task id), skills, tools,
+domain, `occupationId`, `source`, `sourceVersion`, `sourceUrl`. Two
+adapters in `server/src/workprofile.ts`, both over downloaded files and
+nothing else: **O*NET** (the tab-delimited text release — Occupation Data,
+Task Statements with Core/Supplemental, Alternate Titles, Skills at
+importance ≥ 3, Technology Skills, Tools Used; the release read off
+`Read Me.txt`) and **ESCO** (the CSV release — essential and optional
+skills become the tasks, knowledge items the skills, URIs kept as ids).
+A plain JSON reader for the normalised shape. Nothing past this file
+knows a source's field names.
+
+### The grader (`server/src/coverage.ts`)
+
+Three kinds of evidence, weighed in this order, and every result says
+which one it rests on:
+
+1. **Boundaries** — the shelf of never and the not-builts as words a duty
+   uses, each citing its decision: `money` (D-219), `people` (not a chat,
+   not a manager — D-075, §14), `act` (never deploys, publishes, installs,
+   enforces), `sign` (the decision is yours), `system` (no door to a live
+   business system), `physical` (no body), `not-built` (D-204 and the
+   media tools); and three soft ones — `send` (the approval-time half),
+   `watch` (one job, one result), `login` (the browser door). A hard
+   boundary decides the duty whole and is **the only way a duty earns the
+   visible "not this crew"**.
+2. **Powers** — what is built, which trades carry it, which door it needs,
+   each citing its decision: build-code, read-code, write, research,
+   find-pages, numbers, documents, design, drawings, desk, files,
+   attachments, code-host, labour-stats. A power vouches only on **two
+   hits, a phrase, or the matcher independently naming a trade the power
+   carries** — one bare word is *unverified*.
+3. **The matcher**, unchanged — `MatchIndex` is not replaced and no model
+   is consulted. Its confidence and its unknown words make the *matcher*
+   gap, and a duty the words reach with no power behind it stays a
+   matcher gap too.
+
+Five gap kinds, never collapsed: `matcher` (not understood, or unverified),
+`capability` (a recorded boundary), `door` (a catalog door closed, or no
+door at all — `doorExists` says which), `policy`, `roster` (a role covers
+it and nobody awake here holds it — with the fallback the queue *would*
+make written beside the grade, never made; `planWork`/`runnerRole` are
+untouched and a test pins it). `coverageLine()` turns a result into one of
+the six sentences the task asked the app to tell apart, by the evidence
+and not by a score. `POST /api/coverage` grades a profile against a
+level's real crew or the full catalog, over the same registry, matcher and
+connection state the desk uses.
+
+### What the measurement forced, before any number was believed
+
+Sampling the grades on the real release found the grader wrong in both
+directions, and the rules above are the corrections — each one measured,
+not argued:
+
+- A hard boundary beside a power used to read as *partial*: "pay supplier
+  invoices" was half the analyst's on the word *invoices*. Now the
+  boundary decides whole and the power is recorded for the reader.
+- One bare word used to be a power: *projection* covered "clean the
+  projection booth", *data* covered "decrypt seized data", *formula\**
+  matched *formulate*, *slide\** matched "slide material back and forth".
+  Hence the two-hits-or-a-phrase rule, and a pass over every single-word
+  term.
+- Nouns used as topics fired boundaries: *sales* made "analyze sales
+  data" a payment, *equipment* made "evaluate equipment specifications"
+  physical, *pilot\** caught "pilot projects", *animal\** caught "study
+  animals in their habitats". The physical list is now verb phrases, the
+  noun topics are gone, and the noun world shows up where it belongs — as
+  the largest *matcher* cluster, which is the honest reading.
+- The worker's own description ("takes any job, masters none") matched
+  any generic sentence and let it vouch for anything; it no longer counts
+  as independent evidence.
+- Array order chose the role: "develop graphics and layouts for Web
+  sites" went to the researcher on one hit of *web* because research was
+  listed first. Roles are now chosen by hit count, the matcher breaking
+  ties.
+
+After those, a stride sample of 50 *covered* duties read as defensible in
+roughly 35; the rest are one plausible-looking phrase on a physical or
+managerial duty, and they are the reason the benchmark reports the
+*unverified* bucket apart. The lexicon is a hand ledger like D-229's
+grades and will stay one; it is the evidence, and it is editable.
+
+### The benchmark (`server/src/coveragebench.ts`, `npm run bench:coverage`)
+
+Deterministic — proven byte-identical on two full runs of the release
+(769,138 bytes of JSON) and order-independent in the test — with every
+aggregate carrying the task ids it was counted from. Reports totals by
+grade and by core duty, the five gap kinds with the matcher split three
+ways, per source and per occupation, roles by work taken, fallbacks to
+another role, roster gaps, door and policy limitations with examples,
+capability boundaries, the words nothing installed understands
+(connectives filtered), the source's own skills and tools no power names,
+library templates the uncovered duties reach (when `--library`), candidate
+role clusters over the matcher-gap duties (a term recurring across ≥ 3
+profiles, its companions, what the profiles still could not do, and
+whether it clears D-229's bar), overlapping role pairs with the powers the
+overlap is made of, and the profiles the evidence calls not this crew.
+Nothing is created.
+
+### Measured — O*NET 30.0, 1,016 occupations, 18,797 duties (14,489 core)
+
+Every installed role held, only the doors that ship on (`web`, `render`):
+
+| | duties | share |
+|---|---|---|
+| covered | 2,660 | 14 % (core 15 %) |
+| partial | 4,065 | 22 % |
+| currently uncovered | 12,072 | 64 % |
+
+Why less than covered: **matcher 6,317** (3,361 not understood, 2,956
+unverified word match) · **policy 5,707** (people 4,111, act 961, money
+582, sign 384) · **capability 3,502** (physical 3,230, watch 1,423,
+not-built 337 — a duty can carry several) · **door 611** (the
+approval-time `send` half 1,076 duties across 507 occupations; no door at
+all, `system`, 154; closed calendar and mail 98 each, google 126) ·
+roster 0. With every door this machine has live the covered count moves
+to 2,708 and door gaps to 563 — the doors are not what is missing. Against
+HQ's real crew of seven, covered falls to 1,120 (6 %) and **roster gaps
+are 1,588 duties** — covered ones only, an unverified word match is never
+relabelled as a roster gap: analyst 1,065 across 468 occupations,
+researcher 345, drafter 91, mason 87 — each of which the queue would hand
+to a worker (D-200: analyst → worker in 406 occupations), and the
+benchmark says so without doing it.
+
+No occupation is fully covered; 110 of 923 with duties are half or more.
+The best: Financial Managers 8/17 (analyst), Wind Energy Development
+Managers 7/15, Loss Prevention Managers 8/27, Claims Adjusters 8/29,
+Treasurers and Controllers 6/22. Work goes to the analyst (2,007 duties,
+1,051 covered), scribe (1,180 / 580), researcher (833 / 339), designer
+(666 / 262); clerk and architect take duties and cover almost none (1
+each) — the clerk's door is closed in this run and the architect is only
+ever the matcher's second choice behind the scout. 93 occupations carry no
+task statements in the release and grade as nothing. Four are called not
+this crew on the full evidence: Substitute Teachers, Tutors, Dancers, Water
+and Wastewater Treatment Plant Operators.
+
+**Candidate clusters.** None of the thirty is office work. The top of the
+list is the physical world named by nouns — *equipment* (530 duties, 318
+occupations), *material*, *test*, *system*, *product*, *clean*, *machin*,
+*part*, *inspect* — and the next band is management — *plan*, *program*,
+*direct*, *evaluate*, *control*, *policy*. Both are boundary-shaped, not
+role-shaped; the clusters that clear the bar (*select*, *supplies*,
+*obtain*, *development*) are the procurement and people halves of the
+same two. What a reviewer can read as role-shaped, from the companions:
+**compliance review** (specification / standard / conformance /
+regulation / inspect — documents read against rules), **quality-result
+analysis** (test / result / quality control), **case examination**
+(record / permit / licence / application). Each still stops at *sign*,
+*people* and *act* in the same occupations.
+
+**Overlaps.** analyst + scribe share 263 duties (numbers ×220, write
+×184); researcher + scout 186 (research ×179); analyst + researcher 170;
+scribe + worker 156 (files ×122). The first pair is the write-the-report
+half of the analyst's work; the second is the known scout/researcher seam
+(D-129) seen from the source side.
+
+### Decided, and not decided
+
+- Hard boundary decides whole; one word is not a power; the worker's
+  description is not evidence; roles by hit count. Each measured above.
+- **No role is added or proposed for creation.** The three role-shaped
+  clusters are evidence for a review with Brian, and each carries a
+  boundary it would inherit.
+- The positions board (D-229) is untouched: its twelve grades are
+  hand-graded claims and stay so; the grader is the way a *source* gets
+  graded, and the two can be compared on the same duty later.
+- Not wired into a screen: the result model and `coverageLine` are
+  app-wide and the route exists; what the Meet-the-crew board does with a
+  thousand occupations is a screen decision, not taken here.
+- The route is live on the next restart; proven by its pure function and
+  the suite, not by a call, because the running server holds the port.
+
+### Evidence
+
+`server/src/workprofile.test.ts` (8: both adapters, provenance, the JSON
+reader), `server/src/coverage.test.ts` (15: the ledgers name only installed
+roles and catalog doors; strong / partial-by-door / policy / no-role /
+vocabulary-gap / unverified / roster / resting / routing-fallback-
+unchanged), `server/src/coveragebench.test.ts` (7: totals, byte-identical
+and order-independent, matcher apart from capability, evidence ids on
+every count, a repeated vocabulary gap into a cluster and not into a
+role, the fallback recorded apart, library suggestions). Fixtures:
+`fixtures/workprofiles/` — five hand-written profiles, a two-occupation
+slice of the real O*NET text format, a one-occupation ESCO CSV set. Server
+85 files / 2,037 tests, web 31 / 302, typecheck clean across the three
+workspaces. The full release grades in ~10 s.

@@ -1,0 +1,3 @@
+conceptType,conceptUri,iscoGroup,preferredLabel,altLabels,hiddenLabels,status,modifiedDate,regulatedProfessionNote,scopeNote,definition,inScheme,description,code
+Occupation,http://data.europa.eu/esco/occupation/0001-test,2411,bookkeeper,"accounts clerk
+ledger clerk",,released,2024-01-01,,,"",http://data.europa.eu/esco/concept-scheme/occupations,"Bookkeepers record and assemble the day-to-day financial transactions of an organisation.",2411.1

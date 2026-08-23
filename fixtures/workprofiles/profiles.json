@@ -1,0 +1,77 @@
+{
+  "$comment": "Hand-written profiles in the normalised WorkProfile shape, one per case the coverage tests pin: strong, partial-by-door, policy boundary, no suitable role, vocabulary gap. Source 'fixture' on purpose — nothing here claims to be O*NET.",
+  "profiles": [
+    {
+      "id": "fixture:technical-writer",
+      "source": "fixture",
+      "sourceVersion": "2026-08-23",
+      "title": "Technical writer",
+      "aliases": ["documentation writer", "docs"],
+      "occupationId": "fixture-tw",
+      "skills": ["plain English", "Markdown"],
+      "tools": ["Word"],
+      "tasks": [
+        { "id": "fixture:tw:1", "sourceId": "tw-1", "text": "Write user guides and README documentation for the software.", "required": true },
+        { "id": "fixture:tw:2", "sourceId": "tw-2", "text": "Summarize the release notes into a changelog.", "required": true },
+        { "id": "fixture:tw:3", "sourceId": "tw-3", "text": "Produce the documentation as a styled PDF report.", "required": false }
+      ]
+    },
+    {
+      "id": "fixture:research-analyst",
+      "source": "fixture",
+      "sourceVersion": "2026-08-23",
+      "title": "Research analyst",
+      "aliases": ["desk researcher"],
+      "occupationId": "fixture-ra",
+      "skills": ["source evaluation", "citations"],
+      "tools": [],
+      "tasks": [
+        { "id": "fixture:ra:1", "sourceId": "ra-1", "text": "Research a question across many independent online sources and write a cited brief.", "required": true },
+        { "id": "fixture:ra:2", "sourceId": "ra-2", "text": "Search the web for recent publications on the topic.", "required": true },
+        { "id": "fixture:ra:3", "sourceId": "ra-3", "text": "Extract the figures from the attached PDF reports.", "required": false }
+      ]
+    },
+    {
+      "id": "fixture:accounts-payable",
+      "source": "fixture",
+      "sourceVersion": "2026-08-23",
+      "title": "Accounts payable clerk",
+      "aliases": ["AP clerk"],
+      "occupationId": "fixture-ap",
+      "skills": ["payments"],
+      "tools": ["banking portal"],
+      "tasks": [
+        { "id": "fixture:ap:1", "sourceId": "ap-1", "text": "Pay supplier invoices by bank transfer before the due date.", "required": true },
+        { "id": "fixture:ap:2", "sourceId": "ap-2", "text": "Approve purchase orders under the delegated limit.", "required": true },
+        { "id": "fixture:ap:3", "sourceId": "ap-3", "text": "Answer telephone calls from vendors about payment status.", "required": false }
+      ]
+    },
+    {
+      "id": "fixture:forklift-operator",
+      "source": "fixture",
+      "sourceVersion": "2026-08-23",
+      "title": "Forklift operator",
+      "aliases": ["warehouse operative"],
+      "occupationId": "fixture-fo",
+      "skills": ["forklift licence"],
+      "tools": ["forklift"],
+      "tasks": [
+        { "id": "fixture:fo:1", "sourceId": "fo-1", "text": "Operate a forklift to move pallets across the warehouse floor.", "required": true },
+        { "id": "fixture:fo:2", "sourceId": "fo-2", "text": "Load and unload trucks at the dock.", "required": true }
+      ]
+    },
+    {
+      "id": "fixture:sommelier",
+      "source": "fixture",
+      "sourceVersion": "2026-08-23",
+      "title": "Sommelier",
+      "aliases": ["wine steward"],
+      "occupationId": "fixture-so",
+      "skills": ["tasting"],
+      "tools": [],
+      "tasks": [
+        { "id": "fixture:so:1", "sourceId": "so-1", "text": "Grade tannin and acidity of each vintage by appellation.", "required": true }
+      ]
+    }
+  ]
+}

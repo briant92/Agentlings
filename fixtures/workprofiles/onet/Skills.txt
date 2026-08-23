@@ -1,0 +1,17 @@
+O*NET-SOC Code	Element ID	Element Name	Scale ID	Data Value	N	Standard Error	Lower CI Bound	Upper CI Bound	Recommend Suppress	Not Relevant	Date	Domain Source
+15-1252.00	2.A.1.a	Reading Comprehension	IM	3.50	8	0.1890	3.1296	3.8704	N	n/a	08/2025	Analyst
+15-1252.00	2.A.1.a	Reading Comprehension	LV	4.25	8	0.2500	3.7600	4.7400	N	N	08/2025	Analyst
+15-1252.00	2.A.1.b	Active Listening	IM	3.38	8	0.1830	3.0164	3.7336	N	n/a	08/2025	Analyst
+15-1252.00	2.A.1.b	Active Listening	LV	3.88	8	0.2266	3.4309	4.3191	N	N	08/2025	Analyst
+15-1252.00	2.A.1.c	Writing	IM	3.25	8	0.1637	2.9292	3.5708	N	n/a	08/2025	Analyst
+15-1252.00	2.A.1.c	Writing	LV	3.62	8	0.1830	3.2664	3.9836	N	N	08/2025	Analyst
+15-1252.00	2.A.1.d	Speaking	IM	3.12	8	0.1250	2.8800	3.3700	N	n/a	08/2025	Analyst
+15-1252.00	2.A.1.d	Speaking	LV	3.62	8	0.1830	3.2664	3.9836	N	N	08/2025	Analyst
+43-3031.00	2.A.1.a	Reading Comprehension	IM	3.25	8	0.1637	2.9292	3.5708	N	n/a	07/2017	Analyst
+43-3031.00	2.A.1.a	Reading Comprehension	LV	3.75	8	0.1637	3.4292	4.0708	N	N	07/2017	Analyst
+43-3031.00	2.A.1.b	Active Listening	IM	3.25	8	0.1637	2.9292	3.5708	N	n/a	07/2017	Analyst
+43-3031.00	2.A.1.b	Active Listening	LV	3.75	8	0.1637	3.4292	4.0708	N	N	07/2017	Analyst
+43-3031.00	2.A.1.c	Writing	IM	3.12	8	0.1250	2.8800	3.3700	N	n/a	07/2017	Analyst
+43-3031.00	2.A.1.c	Writing	LV	3.12	8	0.1250	2.8800	3.3700	N	N	07/2017	Analyst
+43-3031.00	2.A.1.d	Speaking	IM	3.12	8	0.1250	2.8800	3.3700	N	n/a	07/2017	Analyst
+43-3031.00	2.A.1.d	Speaking	LV	3.12	8	0.1250	2.8800	3.3700	N	N	07/2017	Analyst

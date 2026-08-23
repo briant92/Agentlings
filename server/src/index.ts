@@ -23,6 +23,7 @@ import type {
   ConnectionInfo,
   SettingsInfo,
   WorkPlan,
+  WorkProfile,
 } from '@agentlings/shared';
 import {
   awaitingVerdict,
@@ -103,6 +104,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
+import { coverage as gradeCoverage, type CoverageContext } from './coverage';
 import { crewCv } from './cv';
 import {
   channelShelf,
@@ -4150,6 +4152,39 @@ app.post('/internal/render', async (c) => {
 app.get('/api/roles', (c) => c.json(registry.list()));
 
 /** The crew's CV (Meet the crew, behind Settings): every role, its quote ceiling, and what it has cost. */
+/**
+ * A real-world job graded against the crew (D-230): a normalised
+ * `WorkProfile` in, a `CoverageResult` out — every duty covered, partial
+ * or currently uncovered with the reason, and the gap kind kept apart
+ * (matcher, capability, door, policy, roster). Against a level's real
+ * crew when `levelId` is named, else with every installed role held; the
+ * doors are what is live right now. Pure over the same registry, matcher
+ * and connection state the desk uses, so the screen and the benchmark
+ * cannot drift.
+ */
+app.post('/api/coverage', async (c) => {
+  const body = (await c.req.json().catch(() => null)) as (WorkProfile & { levelId?: string }) | null;
+  if (!body || typeof body.id !== 'string' || typeof body.title !== 'string' || !Array.isArray(body.tasks)) {
+    return c.json({ error: 'a profile needs id, title and tasks' }, 400);
+  }
+  const live = new Set(enabledNames(readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env));
+  const rt = body.levelId ? getLevel(body.levelId) : undefined;
+  if (body.levelId && !rt) return c.json({ error: 'no such level' }, 404);
+  const ctx: CoverageContext = {
+    index: matcher(),
+    roles: registry.list(),
+    doors: readConnections(CONNECTIONS_FILE).map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
+    crew: rt
+      ? {
+          awake: rt.sim.agentlings.map((a) => ({ role: a.role, state: a.state })),
+          resting: rt.roster.filter((seed) => seed.resting).map((seed) => ({ role: seed.role })),
+        }
+      : undefined,
+  };
+  const { levelId: _level, ...profile } = body;
+  return c.json(gradeCoverage(ctx, { ...profile, aliases: profile.aliases ?? [], skills: profile.skills ?? [], tools: profile.tools ?? [], source: profile.source ?? 'request' }));
+});
+
 app.get('/api/crew', (c) =>
   c.json(
     crewCv(

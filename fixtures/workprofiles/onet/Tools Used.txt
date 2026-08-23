@@ -1,0 +1,7 @@
+O*NET-SOC Code	Example	Commodity Code	Commodity Title
+15-1252.00	Application servers	43211501	Computer servers
+15-1252.00	Computer servers	43211501	Computer servers
+15-1252.00	Desktop computers	43211507	Desktop computers
+43-3031.00	10-key calculators	44101809	Desktop calculator
+43-3031.00	Desktop computers	43211507	Desktop computers
+43-3031.00	Financial calculators	44101808	Scientific calculator

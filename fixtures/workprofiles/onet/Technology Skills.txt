@@ -1,0 +1,9 @@
+O*NET-SOC Code	Example	Commodity Code	Commodity Title	Hot Technology	In Demand
+15-1252.00	3M Post-it App	43232104	Word processing software	N	N
+15-1252.00	A programming language APL	43232402	Development environment software	N	N
+15-1252.00	ABC Compiler	43232402	Development environment software	N	N
+15-1252.00	ABC: the AspectBench Compiler for AspectJ	43232405	Object or component oriented development software	N	N
+43-3031.00	Accounting software	43231601	Accounting software	N	Y
+43-3031.00	Accounts payable software	43231601	Accounting software	N	N
+43-3031.00	Accounts receivable software	43231601	Accounting software	N	N
+43-3031.00	Accurate NXG	43231601	Accounting software	N	N

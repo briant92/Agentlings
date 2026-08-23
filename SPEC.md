@@ -541,6 +541,17 @@ tried, measured and rejected is in `DECISIONS.md`:
   the crew has none of, and HIRE carrying the trade and the job through
   the level picker into that level's Hire modal; a trade's card lists the
   positions it fills, and cost stays on the trade → D-229
+- M5.37 the coverage benchmark: a real-world job record (O*NET or ESCO,
+  downloaded files, provenance kept) normalised to a `WorkProfile` and
+  graded duty by duty against the crew through the same matcher the desk
+  uses — covered, partial or currently uncovered, every grade with its
+  reason, and the gap kept apart as matcher, capability, door, policy or
+  roster so a weak word match is never a hiring recommendation and "not
+  this crew" needs a recorded boundary; `POST /api/coverage` and
+  `coverageLine()` app-wide; `npm run bench:coverage` deterministic over
+  a release, every aggregate carrying its task ids, candidate clusters
+  for review and nothing created; O*NET 30.0 measured at 14 % covered /
+  22 % partial / 64 % uncovered on the shipped doors → D-230
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

@@ -1,0 +1,9 @@
+O*NET-SOC Code	Alternate Title	Short Title	Source(s)
+15-1252.00	AI Specialist (Artificial Intelligence Specialist)	AI Specialist	08
+15-1252.00	Application Analyst	n/a	08
+15-1252.00	Application Architect	n/a	08
+15-1252.00	Application Developer	n/a	02,04,08
+43-3031.00	Account Administrator	n/a	09
+43-3031.00	Account Clerk	n/a	02
+43-3031.00	Account Information Clerk	n/a	04,06
+43-3031.00	Account Receivable Clerk	n/a	02

@@ -92,11 +92,23 @@ describe('checkReconciliation (D-222)', () => {
       period: '',
       adjustments: [{ side: 'records', kind: 'returned', amount: -350, what: 'NSF', ref: '' }],
       matched: [{ statement: 'a', records: ['b'], amount: 1, date: '' }],
+      // A deposit line has no reference of its own — the second US run wrote "".
+      unmatched: {
+        statement: [{ ref: '', date: '2026-09-19', amount: -350, what: 'Returned check', category: 'returned' }],
+        records: [{ amount: 6700, what: 'Night drop', category: 'in-transit' }],
+      },
       entries: [{ debit: 'a', credit: 'b', amount: 1, memo: '   ' }],
     };
     const read = checkReconciliation(written);
     expect(read.error).toBeUndefined();
     expect(read.reconciliation?.period).toBeUndefined();
+    expect(read.reconciliation?.unmatched.statement[0]).toEqual({
+      date: '2026-09-19',
+      amount: -350,
+      what: 'Returned check',
+      category: 'returned',
+    });
+    expect(read.reconciliation?.unmatched.records[0].ref).toBeUndefined();
     expect(read.reconciliation?.adjustments[0]).toEqual({ side: 'records', kind: 'returned', amount: -350, what: 'NSF' });
     expect(read.reconciliation?.matched[0]).toEqual({ statement: 'a', records: ['b'], amount: 1 });
     expect(read.reconciliation?.entries[0]).toEqual({ debit: 'a', credit: 'b', amount: 1 });
@@ -184,6 +196,7 @@ describe('reconciliationBrief (D-222)', () => {
     expect(brief).toContain('the side that does NOT yet have the item');
     expect(brief).toContain('in-transit on the statement side (+)');
     expect(brief).toContain('Never add a plug');
+    expect(brief).toContain('is -360 on the records side');
     expect(brief).toContain('the values are placeholders');
     expect(brief).not.toContain('4118500');
     expect(brief).toContain('rather than writing an empty string');

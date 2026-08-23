@@ -196,7 +196,9 @@ export function checkReconciliation(parsed: unknown): ReconciliationRead {
     for (const [i, raw] of list.entries()) {
       const n = `unmatched.${which} ${i + 1}`;
       if (!isRecord(raw)) return { error: `${n} is not an object` };
-      const ref = text(raw.ref, `${n}: "ref"`);
+      // Optional: the second contract-carrying US run wrote "" for a deposit
+      // line's ref — it has none — and was refused at parse for it.
+      const ref = optionalText(raw.ref, `${n}: "ref"`);
       if (failed(ref)) return ref;
       const amount = money(raw.amount, `${n}: "amount"`);
       if (failed(amount)) return amount;
@@ -206,7 +208,7 @@ export function checkReconciliation(parsed: unknown): ReconciliationRead {
       if (failed(category)) return category;
       const date = optionalText(raw.date, `${n}: "date"`);
       if (failed(date)) return date;
-      unmatched[which].push({ ref, amount, what, category, ...(date ? { date } : {}) });
+      unmatched[which].push({ ...(ref ? { ref } : {}), amount, what, category, ...(date ? { date } : {}) });
     }
   }
 
@@ -323,9 +325,9 @@ export function reconciliationBrief(): string {
     '  "records":   { "label": "<the other side — a ledger, a register of invoices, your own list>", "closing": <number> },',
     '  "adjustments": [ { "side": "statement" | "records", "kind": "in-transit" | "outstanding" | "fee" | "interest" | "returned" | "error" | "other", "amount": <signed: + adds to that side, - subtracts>, "what": "<one line>", "ref": "<optional — leave the field out when there is none>" } ],',
     '  "matched":   [ { "statement": "<statement line ref>", "records": ["<record ref>"], "amount": <number>, "date": "<optional>" } ],',
-    '  "unmatched": { "statement": [ { "ref": "<ref>", "date": "<optional>", "amount": <number>, "what": "<one line>", "category": "<category>" } ], "records": [ ...the same shape ] },',
+    '  "unmatched": { "statement": [ { "ref": "<optional>", "date": "<optional>", "amount": <number>, "what": "<one line>", "category": "<category>" } ], "records": [ ...the same shape ] },',
     '  "entries":   [ { "debit": "<account>", "credit": "<account>", "amount": <number>, "memo": "<optional>" } ] }',
-    '- An adjustment goes on the side that does NOT yet have the item, so that side catches up: a deposit the records show and the bank has not yet credited is in-transit on the statement side (+); a cheque or transfer the records show and the bank has not yet paid is outstanding on the statement side (-); a fee or a returned cheque the bank shows and the records have not booked goes on the records side (-); interest the bank credited goes on the records side (+); a recording error goes on the side whose figure is wrong, by the difference.',
+    '- An adjustment goes on the side that does NOT yet have the item, so that side catches up: a deposit the records show and the bank has not yet credited is in-transit on the statement side (+); a cheque or transfer the records show and the bank has not yet paid is outstanding on the statement side (-); a fee or a returned cheque the bank shows and the records have not booked goes on the records side (-); interest the bank credited goes on the records side (+); a recording error goes on the side whose figure is wrong, signed so that side\'s balance becomes what it should have been (a cheque booked at 5,483 that the bank paid at 5,843 is -360 on the records side).',
     '- Adjusted balances must then be equal: statement.closing plus its adjustments equals records.closing plus its adjustments. Review recomputes both and refuses to approve when they differ. Never add a plug or an "unexplained" adjustment to force them to meet: if they do not, leave them apart, write the file anyway, and say in RESULT.md what is unexplained and on which side.',
     '- Match in a script you keep beside the result — amount first, then a date window, then reference (folio, cheque number, RUT, payee) — and list every unmatched line on each side with its category: in-transit, outstanding, fee, interest, returned, error, open-invoice, out-of-scope, unexplained.',
     '- "entries" are the entries the records side needs for items only the statement has; leave it empty when the records are not books.',

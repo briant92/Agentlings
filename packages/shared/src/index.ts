@@ -607,7 +607,8 @@ export interface ReconciliationMatch {
 }
 
 export interface ReconciliationUnmatched {
-  ref: string;
+  /** The line's own reference where it has one — a deposit line often has none. */
+  ref?: string;
   date?: string;
   amount: number;
   what: string;

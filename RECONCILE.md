@@ -165,7 +165,14 @@ Total: $0.59. Every run finished on its own; none was cut.
       the next matching job starts from it as `PRIOR-RECONCILIATION.json` in
       its sandbox, three brief lines naming it; a clear or discard banks
       nothing. Five mutations killed — the fourth survived its first run and
-      forced the wired test on the runner-protocol seam. Still owed live,
-      after the next restart: approve → the file appears; re-run → the prior
-      rides and the report speaks to the open items; clear → nothing banked.
+      forced the wired test on the runner-protocol seam. **Proven live
+      2026-08-23** on the mechanism: approve `47dce15e` → the file appeared;
+      re-run `a9fdd461` → the prior in its sandbox and the brief naming it;
+      two clears → nothing banked. **Not proven:** the run never opened the
+      prior — a same-period re-run cannot say whether that is "nothing to
+      carry" or the banked method ignoring the brief. Needs a next-period
+      fixture (October: September's open items clearing) before the
+      roll-forward is more than Partial. On the way, D-222's seventh case:
+      `"records"` as a bare ref (lenient now) and the gate's first real
+      catch — one adjustment declared, eleven claimed, 3,298 apart.
 - [ ] B2 — the desk names the shape; the arrest.

@@ -16309,6 +16309,30 @@ and a measured contract-in-hand run before any skill is considered — the
 Chilean run was that measurement for `cl` (7 turns, $0.13, no skill
 needed); `rcv` has not met the contract yet.
 
+### A seventh case — 2026-08-23, the first run after D-223
+
+`300af555` (19 turns, $0.30) balanced in its report and was refused at
+parse: *matched 1: "records" must be a non-empty array of record refs*.
+Every one of its thirteen one-to-one matches wrote `"records": "DEP"` — the
+ref itself, where the contract's example shows a list. The run before it
+wrote lists; this one did not; the spelling is an honest one for a single
+record, the `""`-for-none case's twin. **Fixed in `8211050`:** a string
+reads as a list of one; an empty list or an empty ref still refuses; pinned,
+and the mutation that drops the branch fails the test.
+
+Read with that leniency, the same file then **fails honestly** — the gate's
+first real catch: `adjustments` carries one item (the −360 error) while
+RESULT.md's equation lists eleven. The run filed every timing item under
+`unmatched` with its category and never copied it into `adjustments`, then
+claimed 26,745 on both sides in prose. Recomputed from the declaration:
+27,395 against 24,097, **3,298 apart**. Approve would have been refused
+with that number — *never trusts a balance the file claims*, doing its job.
+The invariant line gained one clause: *Review recomputes both from
+"adjustments" alone — an unmatched line is a finding, an adjustment is what
+moves a balance, and every unmatched line that explains the difference must
+appear in both.* Still fourteen lines, 3.1k characters; the next run
+(`47dce15e`) wrote all eleven and balanced.
+
 ## D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it
 
 **Decision.** When a reconciliation is Approved, the stamped summary is
@@ -16362,11 +16386,38 @@ call, the sandbox write disabled. The fourth mutation **survived its first
 run** — the executor wiring had no test until the wired pair pinned it; the
 runner-protocol seam (D-211) is what made that pinnable at all.
 
-### Still untested live
+### Proven live — 2026-08-23 06:30–06:58: the mechanism on all three steps; the run did not read what it was handed
 
-The route write and the served prior reach a run only after the next
-restart. The proof planned: approve a fixture run → the state file appears
-under `training-ground/reconciliations/`; re-run the same pair → the
-sandbox holds `PRIOR-RECONCILIATION.json` and the report speaks to the open
-items; clear a reconciliation → nothing new under `reconciliations/`.
-Appended here when it lands.
+Brian restarted twice (the second for D-222's seventh case, below) and the
+US pair ran three times, $0.98 in all.
+
+- **Run 1, `300af555`** (19 turns, $0.30): refused at parse — D-222's
+  seventh case, recorded there. The negative controls held: no
+  `reconciliations/` directory existed, and the sandbox held no prior.
+- **Run 2, `47dce15e`** (21 turns, $0.44): `balances` true at 26,745, 11
+  adjustments, 5 entries. Approved through the resolve route → **`reconciliations/47dce15e.json` appeared at the moment of Approve**,
+  carrying the two shapes, `approvedAt`, and the summary verbatim. Step 1.
+- **Run 3, `a9fdd461`** (15 turns, $0.24): queued on the same pair. Before
+  the session wrote its first file the sandbox already held
+  `PRIOR-RECONCILIATION.json`, and `.session.json`'s brief read *"the last
+  approved reconciliation of files of this same shape (2026-09): both sides
+  met at 26,745 USD"*. Selection by shape, the copy, the brief — step 2's
+  mechanism. It balanced at 26,745 again.
+- **Clear `a9fdd461` and `300af555`** → `reconciliations/` still holds
+  exactly `47dce15e.json`. Step 3.
+
+**What did not happen.** The trail shows run 3 reading the two CSVs and its
+own `RECONCILIATION.json` — **it never opened the prior**, and its report
+says nothing of it. Two readings, not yet separable: the fixture is the
+*same* September, so a run that glanced at the brief could rightly see
+nothing to carry; and the three lines sit last in a fourteen-line section
+late in a long brief, while the run's first remark was *"Reading the input
+files to start"* — the banked method, which predates the roll-forward and
+never learned to look for one (the D-017 pattern: a learned method keeps
+being used after the ground moves). A same-period re-run cannot tell these
+apart — a measurement I designed badly. The fair test is a **next-period
+fixture**: an October statement and ledger in which September's four
+outstanding cheques and the night drop clear, a new outstanding item
+appears, and the prior's `-360` error is or is not booked. Whether the run
+reads the prior then, and what it costs to make it, is the open question;
+`AGENTLING.md` keeps the roll-forward at **Partial** until it is answered.

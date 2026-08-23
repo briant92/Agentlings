@@ -3231,13 +3231,17 @@ button.danger:hover {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  height: min(60vh, 520px);
   min-height: 320px;
 }
+/* Its own scrollbar: browsing the rail must never depend on where the open
+   file has scrolled to, and the other way about. */
 .fv-rail {
   width: 186px;
   flex-shrink: 0;
   border-right: 1px solid #262b36;
   padding-right: 6px;
+  overflow-y: auto;
 }
 .fv-row {
   display: flex;
@@ -3283,6 +3287,9 @@ button.danger:hover {
 .fv-pane {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .fv-bar {
   display: flex;
@@ -3290,6 +3297,7 @@ button.danger:hover {
   gap: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid #262b36;
+  flex-shrink: 0;
 }
 .fv-open {
   font-size: 12px;
@@ -3341,6 +3349,9 @@ button.danger:hover {
 }
 .fv-body {
   padding-top: 8px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
 }
 .fv-note {
   font-size: 10px;
@@ -3655,6 +3666,15 @@ button.danger:hover {
   text-transform: uppercase;
   color: var(--db-orange);
   white-space: nowrap;
+}
+/* The typed-path fallback: an explicit add button beside it, so the field
+   reads as a path to submit rather than a prompt that runs on Enter alone. */
+.k-path-row {
+  display: flex;
+  gap: 6px;
+}
+.k-path-row .lib-search {
+  flex: 1;
 }
 /* A record of the level's own (D-225): words, not a path, so it reads left
    to right and wraps; the sentence about where it came from sits dimmer

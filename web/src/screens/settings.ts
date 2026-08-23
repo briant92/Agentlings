@@ -25,6 +25,25 @@ export function byKind(connections: readonly ConnectionInfo[]): {
   };
 }
 
+/**
+ * The reads board's two tiers (D-226): a read that holds no secret and is on
+ * by default (`web`, `render` — nothing to configure, nothing to decide)
+ * reads as one summary line rather than a row apiece; everything else is a
+ * source the user actually manages, and keeps its own row. Both conditions
+ * are needed: `browser` holds no secret either, but it is off until chosen,
+ * so it is a decision and not an always-on.
+ */
+export function splitReads(reads: readonly ConnectionInfo[]): {
+  alwaysOn: ConnectionInfo[];
+  sources: ConnectionInfo[];
+} {
+  const always = (c: ConnectionInfo) => !c.credentialed && c.defaultOn;
+  return {
+    alwaysOn: reads.filter(always),
+    sources: reads.filter((c) => !always(c)),
+  };
+}
+
 /** When the door trail began: the earliest call on any door, or null before the first. */
 export function trailBegan(doors: readonly DoorUsage[]): number | null {
   if (doors.length === 0) return null;

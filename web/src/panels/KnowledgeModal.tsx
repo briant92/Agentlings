@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { KnowledgeStatus } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { ProvenanceSection } from './ProvenanceSection';
@@ -30,12 +30,9 @@ function ago(at?: number): string {
 export function KnowledgeModal({
   levelId,
   onClose,
-  pickOnOpen,
 }: {
   levelId: string;
   onClose: () => void;
-  /** Open the native folder dialog immediately — the header's "+" (D-102). */
-  pickOnOpen?: boolean;
 }) {
   const [status, setStatus] = useState<KnowledgeStatus | null>(null);
   const [draft, setDraft] = useState('');
@@ -43,8 +40,6 @@ export function KnowledgeModal({
   const [picking, setPicking] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** StrictMode mounts twice; a second native dialog must not open over the first. */
-  const pickedOnMount = useRef(false);
 
   const load = async (): Promise<KnowledgeStatus> => {
     const fresh = await api<KnowledgeStatus>(lvl(levelId, '/knowledge'));
@@ -55,11 +50,7 @@ export function KnowledgeModal({
   useEffect(() => {
     void (async () => {
       try {
-        const fresh = await load();
-        if (pickOnOpen && !pickedOnMount.current) {
-          pickedOnMount.current = true;
-          await browse(fresh.sources);
-        }
+        await load();
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       }
@@ -268,20 +259,25 @@ export function KnowledgeModal({
                 disabled={busy || picking}
                 onClick={() => void browse(status?.sources ?? [])}
               >
-                {picking ? 'waiting for the folder window…' : 'choose a folder…'}
+                {picking ? 'waiting for the folder window…' : '+ choose a folder…'}
               </button>
-              {' · or type a path below'}
             </p>
-            <input
-              className="lib-search"
-              placeholder="C:\Users\you\Documents"
-              value={draft}
-              disabled={busy}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void add();
-              }}
-            />
+            <p className="lib-status">folder path, if you'd rather type it:</p>
+            <div className="k-path-row">
+              <input
+                className="lib-search"
+                placeholder="C:\Users\you\Documents"
+                value={draft}
+                disabled={busy}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void add();
+                }}
+              />
+              <button className="work-link" disabled={busy || !draft.trim()} onClick={() => void add()}>
+                add
+              </button>
+            </div>
           </Section>
 
           <Section

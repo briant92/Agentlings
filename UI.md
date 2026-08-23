@@ -234,6 +234,30 @@ true, not when its code compiles.
       in the same edit.
 - [x] **21. Memory note updated; push offered.** — done 2026-08-22; the push was offered, not made.
 
+## Phase 5 — after the first day of use
+
+Not on the canvas: four frictions reported on 2026-08-23 against the built
+panels, each the unclogging's own vocabulary applied one step further. The
+why is D-226; this is the checklist's record that they landed.
+
+- [x] **22. The first day's four frictions** — landed 2026-08-23 (D-226).
+      (`settings.ts` + test, `SettingsModal.tsx`, `KnowledgeModal.tsx`,
+      `LevelView.tsx`, `CrewPanel.tsx`, `styles.css`) — Settings reads:
+      the no-secret, on-by-default reads (web, render) fold into one
+      `Section` labelled *always on, nothing to set up*, the rest under a
+      *sources* heading, split by the pure `splitReads` (both conditions —
+      `browser` holds no secret and is still a decision); Knowledge: the
+      header "+" gone, *choose a folder…* the one picker, the typed path a
+      labelled field with an *add* button; Review: `.fv` bounded, rail and
+      body scrolling alone, bar pinned — the rail was the whole symptom, the
+      body had its own 420 px cap since the viewer was built; Crew: hidden
+      while a review is open and back when it closes, the Backoffice's early
+      `onClose()` removed. No server change. Evidence: typecheck clean, web
+      28 / 291 with the browser case mutation-tested; live in headless Edge —
+      always on · 2 with *Use a web browser* a source row, the 47-file review
+      with the rail at 400 of 2,110 and the body, bar and modal at 0, Crew
+      absent during Review and back on Escape.
+
 ## Hazards to keep in view
 
 - `.agentlings/` is gitignored: the ledger backup and the boot backfill live

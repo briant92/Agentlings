@@ -313,12 +313,7 @@ export function CrewPanel({
               jobs={jobs}
               crew={crew ?? []}
               productivity={productivity}
-              onOpenReview={(jobId) => {
-                // One overlay at a time: the review takes the screen rather
-                // than stacking a second backdrop over this one.
-                onClose();
-                onOpenReview(jobId);
-              }}
+              onOpenReview={onOpenReview}
             />
           )}
 

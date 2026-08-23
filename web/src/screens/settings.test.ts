@@ -6,6 +6,7 @@ import {
   disconnectLabel,
   disconnectWording,
   needsLine,
+  splitReads,
   tabOf,
   trailBegan,
   trailNote,
@@ -67,6 +68,22 @@ describe('byKind', () => {
     const { reads, sends } = byKind(list);
     expect(reads.map((c) => c.name)).toEqual(['web', 'mail']);
     expect(sends.map((c) => c.name)).toEqual(['telegram', 'slack']);
+  });
+});
+
+describe('splitReads', () => {
+  it('keeps the credential-free, on-by-default builtins out of the source rows', () => {
+    const list = [
+      connection({ name: 'web', credentialed: false, defaultOn: true }),
+      connection({ name: 'render', credentialed: false, defaultOn: true }),
+      connection({ name: 'bls', credentialed: true, defaultOn: false }),
+      connection({ name: 'calendar', credentialed: true, defaultOn: false }),
+      // No secret, but off until chosen: a decision, so a source row.
+      connection({ name: 'browser', credentialed: false, defaultOn: false }),
+    ];
+    const { alwaysOn, sources } = splitReads(list);
+    expect(alwaysOn.map((c) => c.name)).toEqual(['web', 'render']);
+    expect(sources.map((c) => c.name)).toEqual(['bls', 'calendar', 'browser']);
   });
 });
 

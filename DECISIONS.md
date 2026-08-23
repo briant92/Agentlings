@@ -235,6 +235,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it](#d-223--2026-08-22--the-roll-forward-an-approved-reconciliation-is-banked-in-the-level-and-the-next-period-starts-from-it)
 - [D-224 — 2026-08-23 — The desk arrests a reconciliation with nothing to reconcile against](#d-224--2026-08-23--the-desk-arrests-a-reconciliation-with-nothing-to-reconcile-against)
 - [D-225 — 2026-08-23 — The provenance index: the level's own record, mapped from identifiers it already carries, read by the panel and by nothing that briefs a run](#d-225--2026-08-23--the-provenance-index-the-levels-own-record-mapped-from-identifiers-it-already-carries-read-by-the-panel-and-by-nothing-that-briefs-a-run)
+- [D-226 — 2026-08-23 — Four frictions from the first day of use: an always-on tier in Settings, one folder picker, a rail that scrolls alone, Review stacking over Crew](#d-226--2026-08-23--four-frictions-from-the-first-day-of-use-an-always-on-tier-in-settings-one-folder-picker-a-rail-that-scrolls-alone-review-stacking-over-crew)
 
 ## By theme
 
@@ -506,7 +507,10 @@ entry updates one file rather than two.
   folds that remember per panel, rows that expand in place, ten rows then
   more, a pinned bar, tabs for Settings alone — with body overflow measured
   from 643 / 376 / 191 px down to 0 / 0 / 39 on the boards and 10 / 0 / 0 on
-  the built panels, and each board proven live
+  the built panels, and each board proven live; and D-226, the first day's
+  four frictions — an always-on tier in Settings (no secret *and* on by
+  default, the catalog having shown `browser` fails the first alone), one
+  folder picker, the Review rail scrolling alone, Review stacking over Crew
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -577,6 +581,7 @@ entry updates one file rather than two.
   folder it reads is picked in the OS's own Select Folder dialog served by
   the server (a browser never reveals an absolute path), the second
   deliberately Windows-only file — its first serving picked Wave 5's folder
+  (its header "+" entry point retired by D-226; the dialog stands)
 - **The free tier's honesty** — the recall tier scoring on its own asking
   words: D-048
 - **The store measured on real work, and quoting `noRouter`** — D-049, which
@@ -16712,3 +16717,73 @@ lesson edges and 59 of 137 note edges ambiguous, 17 pointers to nothing),
 delivery of that sentence as the first note — D-049's example, answered
 free, shown without a run. Brian opened *reading* → the two sections and
 called it fine; `AGENTLING.md` moves the entry to Live.
+
+## D-226 — 2026-08-23 — Four frictions from the first day of use: an always-on tier in Settings, one folder picker, a rail that scrolls alone, Review stacking over Crew
+
+The unclogging (D-213–D-215) shipped on 2026-08-22 and was used for a day.
+Four things rubbed, reported together, fixed in one uncommitted pass in a
+separate session and reviewed here before anything was recorded. None
+changes what a job can reach or what the app records; all four are the
+client alone, shipping on a reload. This entry is the why, so the next
+session reads it here and not in a chat.
+
+**Settings announced every read as a feature.** The reads tab listed eight
+rows with a switch apiece, and two of them — *Read web pages* and *Print
+HTML to PDF* — hold no secret, are on by default and have never been
+switched off. A row each made them read as things to decide. They now fold
+into one `Section` (the D-213 vocabulary: label · count, the gist at the
+right edge, still opening to the same switchable rows) labelled *always on,
+nothing to set up*, with everything else under a *sources* heading. The
+split is one pure function, `splitReads` in `settings.ts`, beside `byKind`
+(D-030: the tier is a notion, so it has one home and a test).
+
+*What the review corrected.* The first cut split on `credentialed` alone,
+and the test pinned four connections that all agree with it. Read against
+the catalog — the population, not the logic (the hard-won rule) — that rule
+files `browser` as always-on: a stdio server, no secret, **off until
+chosen**. It is a decision, which is exactly what the fold says it is not.
+The tier now needs both: no secret *and* `defaultOn`. The test gained the
+browser case, and killing the second condition fails it with `browser`
+leaking into the always-on list; restored, 291 pass. Live: *always on · 2*,
+six source rows with *Use a web browser* among them.
+
+**Two ways into one folder picker.** D-102 gave the header a "+" beside
+*reading* that opened the panel already in the OS dialog, and the panel its
+own *choose a folder…* for later additions. Two triggers for one dialog, one
+of them a bare glyph with its meaning in a `title` (D-175's rule: nothing
+lives in a hover alone). The "+" is gone with its `pickOnOpen` plumbing and
+the StrictMode double-mount guard it needed; the panel's button is the one
+way in, and the typed-path fallback reads as what it is — a labelled field
+with an *add* button, instead of an unlabelled box that ran on Enter and
+read like a prompt. D-102's mechanism — the native dialog, served by the
+server — is untouched; only its entry point is amended.
+
+**Review's rail and its open file scrolled as one.** With 52 files the rail
+ran 2,110 px and the whole `.fv` grew with it, so reaching a late file
+scrolled the open one off the top. `.fv` is now bounded (`min(60vh, 520px)`,
+the 320 px floor kept), the rail and the body each own an `overflow-y`, and
+the bar is pinned. *The diagnosis in the report was half right:* the open
+file never drove the shared scroll — `.fv-text` and `.fv-scroll` had capped
+themselves at 420 px with their own scrollbar since the viewer was built, and
+every job measured reads body `scrollHeight == clientHeight`. The rail was
+the whole symptom.
+
+**Clicking outside a Review card closed Crew.** `LevelView` rendered
+`CrewPanel` on `crewOpen` alone, and the fix that looked obvious —
+`crewOpen && !reviewJob`, the guard `parcelsOpen` already had — did nothing
+on its own, because the Backoffice's `onOpenReview` handler called
+`onClose()` before opening the review ("one overlay at a time"), clearing
+`crewOpen` for good. That call is gone; the guard hides Crew while Review is
+up and brings it back when Review closes. Live: backoffice open → a run →
+Crew's buttons absent from the DOM → Escape → Crew back.
+
+**Evidence.** Typecheck clean across the three workspaces; web 28 files /
+291 tests (one new, mutation-tested as above). Live, headless Edge on
+`playwright-core` against the running `serve` at 1280 × 800, the scripts in
+the session scratchpad: the 47-file hotel-research review (8ddd715c) with
+the rail at `scrollTop` 400 of 2,110 and the bar, the body and the modal's
+`.m-body` all still at 0; the Settings fold and rows as above; the Crew /
+Review sequence as above. Brian had already confirmed the Settings fold, the
+single picker and the stacking by hand; the scroll was the one not yet seen.
+No server change, no `AGENTLING.md` line moves. `UI.md` gains step 22
+pointing here.

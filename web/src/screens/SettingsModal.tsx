@@ -17,6 +17,7 @@ import {
   authWording,
   byKind,
   needsLine,
+  splitReads,
   tabOf,
   trailBegan,
   trailNote,
@@ -400,6 +401,7 @@ export function SettingsModal({
   }, [onClose]);
 
   const { reads, sends } = byKind(settings?.connections ?? []);
+  const { alwaysOn, sources } = splitReads(reads);
   const usage = new Map((doors ?? []).map((d) => [d.door, d]));
   const began = trailBegan(doors ?? []);
   const now = Date.now();
@@ -637,7 +639,19 @@ export function SettingsModal({
                 that back, once, rather than deciding it again for every job.
               </p>
               {settings === null && <p className="dim">Loading…</p>}
-              {reads.map(row)}
+              {alwaysOn.length > 0 && (
+                <Section
+                  panel="settings"
+                  id="always-on"
+                  label="always on, nothing to set up"
+                  count={alwaysOn.length}
+                  summary={alwaysOn.map((c) => c.label).join(' · ')}
+                >
+                  {alwaysOn.map(row)}
+                </Section>
+              )}
+              {sources.length > 0 && <div className="sect">sources</div>}
+              {sources.map(row)}
               <p className="lib-status door-foot">
                 Switching a door off is level-wide: every job that would have used it costs a
                 session instead. {trailNote(doors)}

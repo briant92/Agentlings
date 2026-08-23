@@ -551,7 +551,11 @@ tried, measured and rejected is in `DECISIONS.md`:
   `coverageLine()` app-wide; `npm run bench:coverage` deterministic over
   a release, every aggregate carrying its task ids, candidate clusters
   for review and nothing created; O*NET 30.0 measured at 14 % covered /
-  22 % partial / 64 % uncovered on the shipped doors → D-230
+  22 % partial / 64 % uncovered on the shipped doors → D-230; calibrated
+  against the positions board's 58 hand grades at 90 % exact with both
+  overclaim cells empty (scripts/coverage-calibrate.ts), and the one
+  review-worthy cluster proven a matcher gap by three live compliance
+  jobs → D-231
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

@@ -2,5 +2,5 @@ O*NET 30.0 Database
 August 2025 Release
 -------------------
 A two-occupation slice of the text release, first rows only, for the adapter tests. Full release: https://www.onetcenter.org/database.html
-O*NET 30.0 Database by the U.S. Department of Labor, Employment and Training
-Administration (USDOL/ETA), used under the CC BY 4.0 licence.
+
+O*NET 30.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/); the licensor's own licence notice is at https://www.onetcenter.org/license_db.html. This slice is modified from the full release (two occupations, first rows only). Provided as-is, without warranties — see the licence for the disclaimer.

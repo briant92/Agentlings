@@ -240,6 +240,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-228 — 2026-08-23 — Meet the crew: AGENTLING.md as a character-select screen, every number read from the role file and the ledger, and a per-role measure that history() could not give](#d-228--2026-08-23--meet-the-crew-agentlingmd-as-a-character-select-screen-every-number-read-from-the-role-file-and-the-ledger-and-a-per-role-measure-that-history-could-not-give)
 - [D-229 — 2026-08-23 — Positions: a human job graded duty by duty against what is built, hand-written and hand-graded, with HIRE carrying the trade through the level picker](#d-229--2026-08-23--positions-a-human-job-graded-duty-by-duty-against-what-is-built-hand-written-and-hand-graded-with-hire-carrying-the-trade-through-the-level-picker)
 - [D-230 — 2026-08-23 — The coverage benchmark: O*NET's 1,016 occupations graded duty by duty, with five kinds of "less than covered" kept apart so a weak word match can never become a hiring recommendation](#d-230--2026-08-23--the-coverage-benchmark-onets-1016-occupations-graded-duty-by-duty-with-five-kinds-of-less-than-covered-kept-apart-so-a-weak-word-match-can-never-become-a-hiring-recommendation)
+- [D-231 — 2026-08-23 — The four D-230 follow-ups: the grader calibrated against the hand grades (76 % → 90 %, the overclaim cells emptied), three compliance jobs run live through the crew as routed, the overlaps left alone with their trigger named, the screen question sequenced behind the calibration](#d-231--2026-08-23--the-four-d-230-follow-ups-the-grader-calibrated-against-the-hand-grades-76--90--the-overclaim-cells-emptied-three-compliance-jobs-run-live-through-the-crew-as-routed-the-overlaps-left-alone-with-their-trigger-named-the-screen-question-sequenced-behind-the-calibration)
 
 ## By theme
 
@@ -831,7 +832,11 @@ entry updates one file rather than two.
   redaction anywhere, and a cadence in the sentence going unread; and D-230,
   the coverage benchmark — the same idea pointed at a thousand real
   occupations instead of fifty-one sentences, with the five kinds of "less
-  than covered" told apart and every aggregate carrying its task ids; and D-178,
+  than covered" told apart and every aggregate carrying its task ids; and
+  D-231, the grader calibrated against D-229's 58 hand grades — 76 % → 90 %
+  exact with both overclaim cells emptied, the residue being context no
+  sentence carries — and three live compliance jobs ($3.28) proving the
+  cluster a matcher gap, not a capability gap, so no compliance role; and D-178,
   the first of those four taken — the drop made **loud** before it is made
   possible, one job per channel refused on a taxonomy (only one of five
   two-channel sentences is the same message twice) and on two code facts
@@ -17246,3 +17251,131 @@ role, the fallback recorded apart, library suggestions). Fixtures:
 slice of the real O*NET text format, a one-occupation ESCO CSV set. Server
 85 files / 2,037 tests, web 31 / 302, typecheck clean across the three
 workspaces. The full release grades in ~10 s.
+
+## D-231 — 2026-08-23 — The four D-230 follow-ups: the grader calibrated against the hand grades (76 % → 90 %, the overclaim cells emptied), three compliance jobs run live through the crew as routed, the overlaps left alone with their trigger named, the screen question sequenced behind the calibration
+
+D-230 ended with four open decisions. Brian took the recommendations as a
+set: calibrate first, then the live test, no description edits, no screen
+work yet.
+
+### 1. The calibration (`scripts/coverage-calibrate.ts`)
+
+The grader run over the one labelled set whose labels it did not write:
+the positions board's 58 hand-graded duties (D-229), every role held,
+every door open, machine grade mapped covered→does, partial→partly,
+uncovered→not-this-crew.
+
+**Before any fix: 44/58 exact (76 %),** 7 overclaims (1 of them the
+dangerous n→y flip), 7 underclaims. Reading the diff split it cleanly:
+
+- **Lexicon faults, fixed:** bare `carry` in the physical list graded
+  "Carry the closing balance into the next period" as lifting (hand: does
+  → machine: not-this-crew — the worst possible direction); `brief` the
+  noun let the scribe claim "Draw new plans from a brief"; `invite*` in
+  the soft send list demoted the clerk's own briefing duty ("invites
+  awaiting a reply" is reading, D-158); bare `meeting*` made "Book
+  meetings" a conversation when it is the approval-time scheduling half;
+  `docs` was missing from the write power — the technical writer's first
+  duty used it; nothing in read-code said "flag risks in a change";
+  workshops, "to stakeholders" and "with the team" were missing from the
+  people boundary; and the carry-forward capability (a reply carries the
+  last run, §9) had no power entry at all — added as `revise`, partial,
+  every trade.
+- **Irreducible context, accepted:** hand grades that rest on facts the
+  sentence does not carry — "Read PDFs and reports" is *partly* because
+  of logins and scans, "Produce a 3D massing view" because of D-204's
+  eye-level caveat, "Propose a target architecture" because the
+  organisation is unseen, "Draw new plans from a brief" because it does
+  not design buildings. No lexicon can know these; the positions board
+  stays hand-graded for exactly this reason (D-229 confirmed from the
+  other side).
+
+**After: 52/58 exact (90 %), zero n→y, zero y→n** — both dangerous cells
+empty; what remains is the machine being conservative on one-word duties
+(the thin rule refusing "Produce charts", the price of refusing "rate the
+tannin") and the four context cases. Full suite green after the fixes;
+the O*NET headline moved only in the noise (2,680 / 4,090 / 12,027 —
+14 % / 22 % / 64 % unchanged), confirming these were precision fixes,
+not a coverage lever. Role agreement on duties the hand grades does or
+partly: 22/34 — the misses are largely the board's own `also` seconds
+(scout for the reading half, scribe for the write-up).
+
+### 2. The live test — three compliance-shaped jobs, routed by the desk
+
+D-230's one review-worthy cluster was compliance review (documents read
+against rules). Before any role is considered, the crew as it stands got
+three real conformance jobs on `training-ground` — real in the plain
+sense: each answers a question this repo actually has. A researcher (Bea)
+and a scout (Fen) were hired there first, so the specialists existed to
+route to; the desk then routed on its own and the jobs ran as routed.
+
+| | routed to | quoted | cost | delivered |
+|---|---|---|---|---|
+| A — our O*NET fixture attribution vs CC BY 4.0, clause by clause | **analyst** (0.47), Dot, Haiku, 6 turns | ~13c | **$0.13** | 8 licence conditions each with a verdict; 2 real gaps + 1 partial found |
+| B — `connections.json` vs the rules its own comment block states | researcher (0.62), Bea | ~$2.29, $4 cap | **$1.42** | 12/12 connections conformant on all three checks; 5 maintainer notes |
+| C — three.js MIT conformance for the vendored render copy | researcher (0.59), Bea | ~$2.29, $4 cap | **$1.73** | clause-by-clause MET, incl. the SPDX-header subtlety argued properly |
+
+Total $3.28, every run under its quote, all three in Brian's review queue
+(none resolved from here — the verdict is his).
+
+**Quality, read against ground truth where it exists.** Job A found that
+our own attribution — written by hand in this repo the same day — was
+missing the licence URI, the modification indication was fine, and no
+warranty pointer existed; all correct, and the Read Me was fixed from its
+recommendations, retaining the licensor's own notice URL from the full
+release's Read Me. Job C independently corrected two errors in the brief
+it was handed (the served file is `three.module.min.js`, and the pin is
+the lockfile's, not the manifest's) and reasoned the one strict-reading
+trap (SPDX header vs full notice text) to a defensible non-issue. Job B
+made seventeen-odd checkable claims and got one wrong: it reports
+`catalog.test.ts` "is not in this clone", and the file is tracked and
+present. One false claim across three reports, in the safe direction
+(a hedge, not an invented conformance).
+
+**The verdict on the cluster.** The capability exists — cheaply. What the
+test surfaced instead is D-230's own taxonomy working: job A routed to
+the *analyst* at 0.47 because compliance vocabulary (licence,
+conformance, comply, clause) reaches nothing in the catalog — a
+**matcher gap, not a capability gap**, live. So: **no compliance role.**
+The identified lever, if the shape recurs in real use, is a concept-map
+bridge (`comply`/`conformance`/`licence` → review/findings/sources) —
+priced honestly: match.ts edits reshuffle every role's routing and owe
+the matcher replay (D-190), so the bridge waits for a real typed sentence
+to miss, the same trigger as everything else here.
+
+Side effects of the test, on the record: training-ground now holds Bea
+(researcher) and Fen (scout), and its level repo is set to this repo —
+both done for the test and kept, both visible in the UI and reversible.
+
+### 3. The overlaps: no description edit
+
+analyst+scribe (263 shared duties, numbers×220/write×184) and
+researcher+scout (186, research×179) read as properties of the work —
+compute-and-write-it-up, and the D-129 short-look/long-brief seam — not
+routing confusion. An edit would reshuffle BM25 for every role (D-190)
+and owe the 213-prompt matcher replay, against a benefit no real typed
+sentence has yet asked for. **Reopen trigger, the D-229 rule:** a real
+sentence someone actually types routing to the wrong half of either pair.
+
+### 4. The screen: sequenced, not built
+
+Machine grades beside D-229's hand grades would put two epistemically
+different claims in one UI. The calibration now bounds the difference —
+90 % exact, overclaim-free on this set — which is evidence the grades
+could be shown *marked as measured, with their reasons*, but whether they
+should is a design decision with Brian, informed by what the live test
+said about the grades' relationship to actual output quality. Nothing
+built here.
+
+### Evidence
+
+`scripts/coverage-calibrate.ts` (run it for the current diff — the 58-duty
+matrix, both directions separated, machine reasons beside every row).
+Suites green after the lexicon fixes: coverage 15 + bench 7 + workprofile
+8, server 85 files / 2,037, web 31 / 302. O*NET headline re-measured:
+2,680 / 4,090 / 12,027 — unchanged at 14 / 22 / 64 %, so the calibration
+fixes bought precision, not coverage. The three live jobs: ledger rows
+3172fe15 ($0.13, analyst), 55bc6d05 ($1.42, researcher), 89af1b04
+($1.73, researcher), all `done`, all under quote, all in review on
+training-ground. The fixture Read Me fix is in this commit, with the
+licensor's own notice URL retained from the full release.

@@ -18,6 +18,7 @@ import {
   missingRecipient,
   missingWords,
   recipientProblem,
+  reconcileGap,
 } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
@@ -292,7 +293,12 @@ export function WorkBar({
     // "The attached X" with an empty queue dooms any plan shape, send or
     // not — the run has no other way to receive a file (D-134; the proof
     // run's whole delivery was the question back).
-    if (missingAttachment(text, files.length)) parts.push('nothing attached');
+    // A reconciliation with one side or none (D-224, RECONCILE B2): the
+    // server named the verb, the card counts the files. Its reason is the
+    // specific one, so the generic 'nothing attached' stands down for it.
+    const reconcileReason = plan?.reconcile ? reconcileGap(files) : null;
+    if (reconcileReason) parts.push(reconcileReason);
+    else if (missingAttachment(text, files.length)) parts.push('nothing attached');
     // "Build me a level" is authoring, and authoring lives behind the New
     // Level door where it prices as design work (D-110, D-144) — typed here
     // it would run as an ordinary worker job.

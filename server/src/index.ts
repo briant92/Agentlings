@@ -73,7 +73,12 @@ import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
-import { latestRollForward, reconciliationRefusal, writeRollForward } from './reconciliation';
+import {
+  latestRollForward,
+  reconciliationRefusal,
+  wantsReconciliation,
+  writeRollForward,
+} from './reconciliation';
 import { performOutboxSend } from './outboxsend';
 import {
   describe,
@@ -1332,6 +1337,9 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     // only the native picker yields the absolute path, so the desk shows a
     // "choose the folder" step rather than claiming one from the words.
     ...(wantsOrganize(text) ? { organize: true } : {}),
+    // A reconciliation is named here and counted at the desk (D-224): the
+    // preview carries no files, and the verb is the server's to hear.
+    ...(wantsReconciliation(text) ? { reconcile: true } : {}),
     // The sentence asked for a check pass (TEAMWORK T1) — said on the card
     // like the cadence is (D-184): what the desk read, before Start acts on
     // it, with the second session's cost visible in the plan.

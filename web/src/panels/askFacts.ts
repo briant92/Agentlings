@@ -148,6 +148,30 @@ export function missingAttachment(text: string, attachedCount: number): boolean 
   return attachedCount === 0 && /\battach(?:ed|ments?)\b/i.test(inboundClaims);
 }
 
+/** A spreadsheet proper may hold both sides as two sheets. */
+const WORKBOOK = /\.(xlsx|xlsm|xls|ods)$/i;
+
+/**
+ * A reconciliation with nothing to reconcile against (D-224, RECONCILE B2).
+ *
+ * The server named the sentence a reconciliation (`plan.reconcile`); this
+ * counts what rides with it. One file is one side — a statement and nothing
+ * to check it against — and a run given that can only spend its turns asking
+ * for the other, the D-134 shape. A single workbook is the exception: two
+ * sheets are two sides, and the run reads them with a script. Soft like
+ * `missingAttachment`: the reason goes on the button, the second press queues,
+ * because the sentence itself may carry the other side.
+ */
+export function reconcileGap(files: readonly { name: string }[]): string | null {
+  if (files.length >= 2) return null;
+  if (files.length === 1) {
+    return WORKBOOK.test(files[0].name)
+      ? null
+      : 'one side attached — a reconciliation needs the statement and the records';
+  }
+  return 'nothing to reconcile — attach the statement and the records';
+}
+
 /**
  * A sentence asking for a new world, typed where worlds are not made (D-144).
  *

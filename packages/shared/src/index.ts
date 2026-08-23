@@ -1797,6 +1797,14 @@ export interface WorkPlan {
    */
   organize?: boolean;
   /**
+   * The sentence asks to reconcile (D-224). Named by the server so the desk
+   * never re-derives the verb; the desk counts the files and arrests a
+   * statement with nothing to reconcile it against — softly, the
+   * missingAttachment way (D-134): the reason on the button, a second press
+   * queues anyway.
+   */
+  reconcile?: boolean;
+  /**
    * A channel word with no send verb beside it (D-093) — the near-miss the
    * ask stays quiet on, surfaced as a question the user can confirm. Absent
    * whenever a real ask fired.

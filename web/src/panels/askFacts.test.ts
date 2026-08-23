@@ -87,6 +87,7 @@ import {
   authoringSentence,
   matchRecipient,
   missingAttachment,
+  reconcileGap,
   missingRecipient,
   missingWords,
   recipientProblem,
@@ -245,6 +246,33 @@ describe('missingRecipient (D-124, D-180)', () => {
 
   it('no To question, nothing missing', () => {
     expect(missingRecipient([], {})).toEqual([]);
+  });
+});
+
+describe('reconcileGap (D-224, RECONCILE B2)', () => {
+  const csv = (name: string) => ({ name });
+
+  it('one side attached is arrested by name — a statement with nothing to check it against', () => {
+    expect(reconcileGap([csv('bank-statement-2026-10.csv')])).toBe(
+      'one side attached — a reconciliation needs the statement and the records',
+    );
+  });
+
+  it('nothing attached is arrested with the specific reason, not the generic one', () => {
+    expect(reconcileGap([])).toBe('nothing to reconcile — attach the statement and the records');
+  });
+
+  it('two files clear it, whatever they are', () => {
+    expect(reconcileGap([csv('cartola.csv'), csv('libro.csv')])).toBeNull();
+    expect(reconcileGap([csv('a.pdf'), csv('b.csv'), csv('c.csv')])).toBeNull();
+  });
+
+  it('a single workbook passes — two sheets are two sides', () => {
+    for (const name of ['september.xlsx', 'libros.XLS', 'conciliacion.ods', 'macros.xlsm']) {
+      expect(reconcileGap([csv(name)])).toBeNull();
+    }
+    // A lone text file is still one side, whatever it is called.
+    expect(reconcileGap([csv('both-sides.csv')])).not.toBeNull();
   });
 });
 

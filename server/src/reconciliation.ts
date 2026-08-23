@@ -394,9 +394,9 @@ export function latestRollForward(
 export function reconciliationBrief(prior?: ReconciliationRollForward): string {
   const rollForward = prior
     ? [
-        `- ${PRIOR_RECONCILIATION_FILE} at the working directory root is the last approved reconciliation of files of this same shape${prior.reconciliation.period ? ` (${prior.reconciliation.period})` : ''}: both sides met at ${plain(prior.reconciliation.statement.adjusted)}${prior.reconciliation.currency ? ` ${prior.reconciliation.currency}` : ''}. Its adjustments were the items open then.`,
-        "- Check each of those open items against this period's files: one that appears now has cleared and needs no adjustment; one still absent is aged — carry it as an adjustment again and say its age in RESULT.md.",
-        '- Items that adjusted the records side were awaiting book entries; if this period\'s records include them they are settled — never adjust twice.',
+        `- ${PRIOR_RECONCILIATION_FILE} at the working directory root is the last approved reconciliation of files of this same shape${prior.reconciliation.period ? ` (${prior.reconciliation.period})` : ''}: both sides met at ${plain(prior.reconciliation.statement.adjusted)}${prior.reconciliation.currency ? ` ${prior.reconciliation.currency}` : ''}. Its adjustments were the items open then — a third input to your matching script, not a note.`,
+        "- A prior statement-side item (a deposit in transit, an outstanding cheque) is looked for in this period's STATEMENT: found, by ref or amount, it has cleared; absent, it is still outstanding — carry it again on the statement side. A prior records-side item (a fee, interest, a returned cheque, an error, a note) is looked for in this period's RECORDS: found, it is booked and settled; absent, it is still unbooked — carry it again on the records side, same sign.",
+        '- A line matched to a prior item is matched, not unmatched, and adjusts nothing. A carried item says its age in "what". Never adjust an item this period\'s own files already carry.',
       ]
     : [];
   return [

@@ -295,8 +295,14 @@ describe('roll-forward state (D-223)', () => {
     const brief = reconciliationBrief(prior);
     expect(brief).toContain(PRIOR_RECONCILIATION_FILE);
     expect(brief).toContain('4,240,650 CLP');
-    expect(brief).toContain('still absent is aged');
-    expect(brief).toContain('never adjust twice');
+    // The October run looked for September's records-side items in October's
+    // STATEMENT, found them absent, and adjusted again what the books had
+    // already posted — the side-agnostic "check against this period's files"
+    // broke exactly there. Each side is now looked for in its own file.
+    expect(brief).toContain("looked for in this period's STATEMENT");
+    expect(brief).toContain("looked for in this period's RECORDS");
+    expect(brief).toContain('carry it again on the records side, same sign');
+    expect(brief).toContain('a third input to your matching script');
     expect(reconciliationBrief()).not.toContain(PRIOR_RECONCILIATION_FILE);
   });
 });

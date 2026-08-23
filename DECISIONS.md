@@ -230,6 +230,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-218 — 2026-08-22 — Disconnect: the drawer's inverse, with Google's token revoked before the line is forgotten](#d-218--2026-08-22--disconnect-the-drawers-inverse-with-googles-token-revoked-before-the-line-is-forgotten)
 - [D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps](#d-219--2026-08-22--payments-on-the-shelf-of-never-a-kind-of-act-refused-by-decision-beside-the-apps)
 - [D-220 — 2026-08-22 — B0 measured on generic fixtures: the analyst fits its quote, and the sentence-keyed recipe drifts toward the last counterpart](#d-220--2026-08-22--b0-measured-on-generic-fixtures-the-analyst-fits-its-quote-and-the-sentence-keyed-recipe-drifts-toward-the-last-counterpart)
+- [D-221 — 2026-08-22 — The files a job was given join what the crew learns: a recipe, a credit and a tool keyed on the shape they were learned over](#d-221--2026-08-22--the-files-a-job-was-given-join-what-the-crew-learns-a-recipe-a-credit-and-a-tool-keyed-on-the-shape-they-were-learned-over)
 
 ## By theme
 
@@ -872,7 +873,11 @@ entry updates one file rather than two.
   premise withdrawn — the quote outranks the role's standing cap, D-067), the
   invariant produced only when asked, and the sentence-keyed recipe rewritten
   toward each counterpart in turn, one success short of compiling the wrong
-  shape — the board is `RECONCILE.md`
+  shape — the board is `RECONCILE.md`; and D-221, the line's first build:
+  each attachment stamped with its shape as it is written, and a recipe, a
+  credit and a compiled tool keyed on the shape they were learned over, so
+  one sentence over two kinds of file is two recipes and a tool claims only
+  the files it was compiled against — `hasRepo`'s rule on a second axis
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -16026,3 +16031,67 @@ The real exports. The SII register's header here is the one Chilean tooling
 commonly parses, not one taken from a "Descargar Detalles" file; a bank's own
 Excel cartola may carry more columns than the six used. Both are checks B3's
 fixtures owe before a test pins them.
+
+## D-221 — 2026-08-22 — The files a job was given join what the crew learns: a recipe, a credit and a tool keyed on the shape they were learned over
+
+**Decision:** an attachment is stamped with its *shape* the moment the queue
+writes it — a spreadsheet-shaped text file (`.csv`, `.tsv`, `.txt`) by its
+header columns, normalised (delimiter by majority with comma on a tie, BOM and
+quotes stripped, lowercased, accents removed), anything else by its extension
+— and the job's shape is the sorted set of those stamps. Everything the crew
+learns from a job carries that shape: `rememberRecipe` files the method under
+the sentence *and* the shape, so one sentence over two kinds of file is two
+recipes that never overwrite each other; `creditRecipe` lands on the recipe
+of the shape that ran and not its namesake; `findRecipe` refuses a recipe of
+another shape outright — not a demotion to a hint, a refusal, since a method
+learned over a ledger is no hint at all for an invoice register; `findTool`
+claims only the shape a tool was compiled for, beside `hasRepo`, and the
+promote route keeps the shape on the manifest and blocks a compile only on
+its own shape. The router never replays a banked answer over attachments,
+the reading-side twin of the rule routed.ts already kept at bank time. A
+recipe or tool from before shapes were recorded matches only a job with no
+files — the unknown-provenance rule `capabilities` has followed since D-036.
+
+### What forced it
+
+D-220, measured the same evening: one sentence over three pairs of files on
+Training Ground, and each close-out replaced the banked approach with the
+last pair's habits — D-073's replace rule reaching recipes — until the method
+said bank fees were *out-of-scope*, true against the SII register it had just
+seen and wrong against the ledger it had been learned on. The recipe stood at
+two successes; the third would have compiled that approach into a `$0` tool
+keyed on the sentence, and the fourth run of the sentence over a ledger would
+have run the register's script without reading anything. The model had
+survived the drift because it reads its files; a script does not.
+
+### What was weighed
+
+Folding the shape into the recipe key was the obvious form and was not taken:
+the key is shown on ledger rows and in the backoffice and names compiled
+tools, and a hash in it would have made every label worse to buy nothing a
+second field does not. A coarser shape — *a cartola*, *a ledger* — is B2's
+desk sniff and a vocabulary to maintain; the header itself is what a method
+written against a file actually depends on, costs nothing to derive and
+cannot drift from the file. Spreadsheets proper (`.xlsx`) are named by
+extension for now: their first row needs a workbook reader, and the queue
+writes attachments synchronously; the seam is one function, `attachmentShape`,
+and widening it is a later line. The quote's probe carries no attachments, so
+the quote matches recipes as if the job had none; a recipe banked without
+files by the same sentence could therefore price a hint the run will refuse —
+bounded by the quote being a ceiling, and recorded here rather than fixed.
+
+### What proved it
+
+`f315de6`: typecheck clean in all three workspaces; server 78 files / 1,957
+tests (+14), web 26 / 278. Mutations after committing, each restored and
+re-run green (213/213 across the five files): `sameInputShape` forced true
+fails seven tests in four files; the stamp dropped from `writeAttachments`
+fails four; the router forgetting the shape on its main lookup fails one.
+
+### Untested live
+
+The stamp and the split reach a run only after Brian's restart. The live
+proof planned for then is B0's own sentence over a fourth pair: the drifted
+recipe on Training Ground has no shape and must not be served, and the new
+run must bank a recipe of its own shape beside it. Appended below when it
+lands.

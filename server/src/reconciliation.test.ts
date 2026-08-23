@@ -120,6 +120,20 @@ describe('checkReconciliation (D-222)', () => {
     expect(checkReconciliation({ ...EDIG, period: 5 }).error).toBe('period must be a non-empty string');
   });
 
+  it('reads one record spelled as the ref itself — "records": "DEP" is one-to-one, not malformed', () => {
+    const scalar = { ...EDIG, matched: [{ ...EDIG.matched[0], records: 'CI-1201' }] };
+    const read = checkReconciliation(scalar);
+    expect(read.error).toBeUndefined();
+    expect(read.reconciliation?.matched[0].records).toEqual(['CI-1201']);
+    // An empty list, or an empty ref, is still nothing to match against.
+    expect(checkReconciliation({ ...EDIG, matched: [{ ...EDIG.matched[0], records: [] }] }).error).toBe(
+      'matched 1: "records" must be a non-empty array of record refs',
+    );
+    expect(checkReconciliation({ ...EDIG, matched: [{ ...EDIG.matched[0], records: '' }] }).error).toBe(
+      'matched 1: a record ref must be a non-empty string',
+    );
+  });
+
   it('treats "entries" as optional — a personal register has no books to post to', () => {
     const { entries: _gone, ...noEntries } = EDIG;
     const read = checkReconciliation(noEntries);
@@ -204,6 +218,9 @@ describe('reconciliationBrief (D-222)', () => {
     expect(brief).toContain('the values are placeholders');
     expect(brief).not.toContain('4118500');
     expect(brief).toContain('rather than writing an empty string');
+    // The first post-roll-forward run filed every timing item under
+    // unmatched and one under adjustments, then claimed the balance in prose.
+    expect(brief).toContain('must appear in both');
     expect(brief.split('\n').length).toBeLessThanOrEqual(15);
   });
 });

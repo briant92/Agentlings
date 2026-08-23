@@ -169,11 +169,16 @@ export function checkReconciliation(parsed: unknown): ReconciliationRead {
     if (!isRecord(raw)) return { error: `${n} is not an object` };
     const stmt = text(raw.statement, `${n}: "statement"`);
     if (failed(stmt)) return stmt;
-    if (!Array.isArray(raw.records) || raw.records.length === 0) {
+    // One record may be spelled as the ref itself rather than a list of
+    // one: the first post-roll-forward run wrote `"records": "DEP"` on all
+    // thirteen one-to-one matches and was refused at parse — the `""`
+    // leniency's twin, for the other honest spelling.
+    const records = typeof raw.records === 'string' ? [raw.records] : raw.records;
+    if (!Array.isArray(records) || records.length === 0) {
       return { error: `${n}: "records" must be a non-empty array of record refs` };
     }
     const refs: string[] = [];
-    for (const r of raw.records) {
+    for (const r of records) {
       const ref = text(r, `${n}: a record ref`);
       if (failed(ref)) return ref;
       refs.push(ref);
@@ -405,7 +410,7 @@ export function reconciliationBrief(prior?: ReconciliationRollForward): string {
     '  "unmatched": { "statement": [ { "ref": "<optional>", "date": "<optional>", "amount": <number>, "what": "<one line>", "category": "<category>" } ], "records": [ ...the same shape ] },',
     '  "entries":   [ { "debit": "<account>", "credit": "<account>", "amount": <number>, "memo": "<optional>" } ] }',
     '- An adjustment goes on the side that does NOT yet have the item, so that side catches up: a deposit the records show and the bank has not yet credited is in-transit on the statement side (+); a cheque or transfer the records show and the bank has not yet paid is outstanding on the statement side (-); a fee or a returned cheque the bank shows and the records have not booked goes on the records side (-); interest the bank credited goes on the records side (+); a recording error goes on the side whose figure is wrong, signed so that side\'s balance becomes what it should have been (a cheque booked at 5,483 that the bank paid at 5,843 is -360 on the records side).',
-    '- Adjusted balances must then be equal: statement.closing plus its adjustments equals records.closing plus its adjustments. Review recomputes both and refuses to approve when they differ. Never add a plug or an "unexplained" adjustment to force them to meet: if they do not, leave them apart, write the file anyway, and say in RESULT.md what is unexplained and on which side.',
+    '- Adjusted balances must then be equal: statement.closing plus its adjustments equals records.closing plus its adjustments. Review recomputes both from "adjustments" alone — an unmatched line is a finding, an adjustment is what moves a balance, and every unmatched line that explains the difference must appear in both. It refuses to approve when the sides differ. Never add a plug or an "unexplained" adjustment to force them to meet: if they do not, leave them apart, write the file anyway, and say in RESULT.md what is unexplained and on which side.',
     '- Match in a script you keep beside the result — amount first, then a date window, then reference (folio, cheque number, RUT, payee) — and list every unmatched line on each side with its category: in-transit, outstanding, fee, interest, returned, error, open-invoice, out-of-scope, unexplained.',
     '- "entries" are the entries the records side needs for items only the statement has; leave it empty when the records are not books.',
     '- Numbers are plain numbers — no thousands separators, a dot for decimals, none for a currency without them. Leave an optional field out rather than writing an empty string.',

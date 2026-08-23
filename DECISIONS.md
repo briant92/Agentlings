@@ -16205,3 +16205,51 @@ restart. The proof planned for then: B0's sentence over the `us/` and `cl/`
 fixtures with the contract in hand, reading `job.reconciliation.balances`
 and the card; then one finished job's file edited to drop an adjustment and
 Approve pressed, expecting the refusal by name. Appended below when it lands.
+
+### The first two contract-carrying runs — both refused, live, 2026-08-22 22:03–22:15
+
+Brian restarted and ran B0's sentence over both pairs. Both briefs carried
+the section (at character 1,703 of each `.session.json`), both runs wrote
+the file, and **the gate refused both** — which is the gate working, and
+four lessons for the contract it was checking:
+
+- `14dca36c`, the US pair (17 turns, $0.45): refused at parse —
+  *adjustment 7: "ref" must be a non-empty string*. The run wrote
+  `"ref": ""` to mean *none*, an honest spelling the parser called
+  malformed. The file also put cheque 2005's error on the statement side
+  rather than the records side whose figure was wrong, then added a
+  **720 plug** — "unexplained difference, to be investigated" — to force the
+  sides to meet, and its report called dollars CLP: the brief's example
+  values had leaked into the work.
+- `1f524bb7`, the Chilean pair (12 turns, $0.28): parsed, and **did not
+  balance by 227,300** — every adjustment sat on the wrong side, fees and
+  interest on the statement, in-transit and outstanding on the records. The
+  brief had named the two sides and the kinds and never said which side an
+  item goes on; the run read "recorded by the bank, not yet in the books"
+  as a statement-side fact, the opposite of the accountant's convention.
+
+Approve pressed through the route on both: `400 not reconciled — the two
+sides differ by 227,300 CLP (statement 4,144,850 against records
+4,372,150)…` and `400 not reconciled — RECONCILIATION.json: adjustment 7:
+"ref" must be a non-empty string…`; both jobs still `done` and reviewable.
+Both refusal paths are therefore proven live, on the contract's first
+outing, before any fix.
+
+**Fixed in `9f19821`:** an empty or whitespace optional (`ref`, `date`,
+`memo`, `period`, `currency`, `note`) reads as absent; the brief states the
+side rule with its canonical cases — in-transit on the statement side (+),
+outstanding on the statement side (−), a fee or a returned cheque on the
+records side (−), interest on the records side (+), an error on the side
+whose figure is wrong — forbids plugs by name ("leave them apart, write the
+file anyway, say what is unexplained and on which side"), replaces the
+example's real values with placeholders and says to take period, currency
+and every number from the files, and asks for an optional field to be left
+out rather than written empty. Fourteen lines, 2.8k characters. Gate:
+typecheck clean in all three workspaces; server 79 files / 1,969 tests, web 27 / 282; the leniency pinned by a test that fails when the empty-string
+branch is removed.
+
+### Still untested live
+
+The fixed contract reaches a run only after the next restart. The proof
+planned for then is the same two runs, expecting `balances` true on both
+and the green line on the card. Appended below when it lands.

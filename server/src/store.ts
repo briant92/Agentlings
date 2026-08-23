@@ -465,7 +465,45 @@ export function asLine(entry: StoreEntry): string {
  * tool committing.
  */
 export function storeLines(dir: string, now: number): string[] {
+  const held = heldLines(dir);
+  if (!held || now - held.syncedAt > STALE_MS) return [];
+  return held.lines;
+}
+
+/**
+ * The rendered lines of each level's index, kept between calls.
+ *
+ * The index is read on every job and on every keystroke of the plan route
+ * (the quote runs the router over it), and at the store's own caps — 250
+ * files of 200 passages — that is a 30 MB parse each time: measured at 103 ms
+ * a call, against 0.22 ms on a real level today. Keyed on the file's mtime
+ * and size, so a sync that rewrites the file is seen on the next call and a
+ * file that has not moved is never parsed twice. The staleness rule stays in
+ * `storeLines`, applied to `now` on every call, because a held index goes
+ * stale by the clock and not by the file.
+ *
+ * The array is shared between calls; every consumer spreads or maps it and
+ * none writes into it.
+ */
+const held = new Map<string, { mtimeMs: number; size: number; syncedAt: number; lines: string[] }>();
+
+function heldLines(dir: string): { syncedAt: number; lines: string[] } | null {
+  const file = indexFile(dir);
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch {
+    held.delete(dir);
+    return null;
+  }
+  const have = held.get(dir);
+  if (have && have.mtimeMs === stat.mtimeMs && have.size === stat.size) return have;
   const index = readIndex(dir);
-  if (!index || isStale(index, now)) return [];
-  return index.entries.map(asLine);
+  if (!index) {
+    held.delete(dir);
+    return null;
+  }
+  const fresh = { mtimeMs: stat.mtimeMs, size: stat.size, syncedAt: index.syncedAt, lines: index.entries.map(asLine) };
+  held.set(dir, fresh);
+  return fresh;
 }

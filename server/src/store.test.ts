@@ -523,6 +523,38 @@ describe('staleness', () => {
     expect(storeLines(dir, NOW)).toEqual([]);
   });
 
+  /**
+   * The index is held between calls (D-225, step 5): read on every job and
+   * every keystroke of the plan route, and 103 ms a parse at the caps. A held
+   * copy must follow the file — a re-sync rewrites it and the next call has to
+   * see the new passages — and must still go stale by the clock, since the
+   * file does not move when a week passes.
+   */
+  it('holds the parsed index between calls and follows the file when a sync rewrites it', async () => {
+    indexed(NOW - DAY);
+    const first = storeLines(dir, NOW);
+    expect(storeLines(dir, NOW)).toBe(first);
+    // A rewrite inside the same millisecond with the same size would be the
+    // one change an mtime-and-size key cannot see; a real sync is neither.
+    await new Promise((r) => setTimeout(r, 15));
+    writeIndex(dir, {
+      sources: ['/notes'],
+      syncedAt: NOW - DAY,
+      entries: [
+        { text: 'Deploys run on Fridays.', source: 'ops/deploy.md', syncedAt: NOW - DAY },
+        { text: 'Rollbacks on Mondays.', source: 'ops/deploy.md', syncedAt: NOW - DAY },
+      ],
+      skipped: 0,
+    });
+    expect(storeLines(dir, NOW)).toHaveLength(2);
+    // Held, yet stale by the clock: nothing.
+    expect(storeLines(dir, NOW + STALE_MS + DAY)).toEqual([]);
+    // A torn rewrite is a missing index, held copy or not.
+    await new Promise((r) => setTimeout(r, 15));
+    writeFileSync(path.join(dir, 'store-index.json'), '{ torn');
+    expect(storeLines(dir, NOW)).toEqual([]);
+  });
+
   it('measures staleness from when it was synced', () => {
     const index = { sources: [], syncedAt: NOW, entries: [], skipped: 0 };
     expect(isStale(index, NOW + STALE_MS - 1)).toBe(false);

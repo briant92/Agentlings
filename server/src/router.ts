@@ -121,13 +121,36 @@ export function wantedTerms(query: string): Set<string> {
  * so a question whose subject appears nowhere on file matches nothing and the
  * job falls through to a session that can go and look.
  */
+/**
+ * The content words of each line seen, kept between calls.
+ *
+ * `terms` is run over every line of the corpus on every call, and a session
+ * start makes two calls (its eight notes, then `recallSignal` over all of
+ * them). On a real level that is under a millisecond; at the store's caps —
+ * 50,000 passages — it measured 607 ms a call. The words of a line never
+ * change, so they are kept by the line itself. Bounded, and emptied rather
+ * than trimmed when full: a corpus past the bound is re-tokenised once per
+ * call, which is the behaviour this had before, not a slow leak.
+ */
+const TOKENISED_CAP = 200_000;
+const tokenised = new Map<string, string[]>();
+
+function lineTerms(line: string): string[] {
+  const have = tokenised.get(line);
+  if (have) return have;
+  if (tokenised.size >= TOKENISED_CAP) tokenised.clear();
+  const fresh = terms(line);
+  tokenised.set(line, fresh);
+  return fresh;
+}
+
 export function relevantLines(lines: string[], query: string, limit = 6): string[] {
   const wanted = wantedTerms(query);
   // A question with no subject left — "what do we know" — is not a question
   // this tier can answer, and showing it something anyway would be the guess.
   if (wanted.size === 0) return [];
   return lines
-    .map((line) => ({ line, score: terms(line).filter((t) => wanted.has(t)).length }))
+    .map((line) => ({ line, score: lineTerms(line).filter((t) => wanted.has(t)).length }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

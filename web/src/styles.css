@@ -4417,6 +4417,39 @@ button.danger:hover {
   color: #8a8172;
 }
 
+/* The reconciliation card (D-222): the withheld panel's cream, two sides
+   with what adjusts each, and a verdict line green or red. */
+.rv-recon-side {
+  flex-wrap: wrap;
+}
+.rv-recon-n {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: #4a4455;
+}
+.rv-recon-adj {
+  flex-basis: 100%;
+  padding-left: 10px;
+  font-size: 10.5px;
+  color: #8a8172;
+}
+.rv-recon-ok,
+.rv-recon-bad {
+  margin: 8px 0 0;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.rv-recon-ok {
+  background: #e7f2df;
+  color: #2f5c22;
+}
+.rv-recon-bad {
+  background: #f7dfdc;
+  color: #8a2b22;
+}
+
 /* The check pass verdict (TEAMWORK T1, D-194). Above the messages like the
    withheld panel: a second opinion is context for reading the work, not a
    footnote after. Green holds, red refutes, amber for a check that named no

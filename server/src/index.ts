@@ -73,6 +73,7 @@ import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
+import { reconciliationRefusal } from './reconciliation';
 import { performOutboxSend } from './outboxsend';
 import {
   describe,
@@ -2757,6 +2758,19 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   if (body.action === 'discard' || body.action === 'clear') {
     const abandoned = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
     if (abandoned) rmSync(toolDir(rt.dir, abandoned.name), { recursive: true, force: true });
+  }
+  /**
+   * The reconciliation gate (D-222): the run was asked for a statement whose
+   * two sides meet, the queue recomputed both at completion, and an Approve
+   * of one that does not balance is refused by name before anything real
+   * happens. The job stays reviewable; the fix is the run's, on a reply. A
+   * declaration that did not parse blocks too, for WITHHELD's reason: read
+   * as "nothing to check", the gate would be off exactly where it was asked
+   * for. A clear or a discard pass — neither keeps anything.
+   */
+  if (body.action === 'promote' && promotable) {
+    const unreconciled = reconciliationRefusal(pending);
+    if (unreconciled) return c.json({ error: unreconciled }, 400);
   }
   /**
    * A reviewed outbox is replayed exactly as a reviewed patch is: at Approve,

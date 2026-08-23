@@ -23,6 +23,7 @@ import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
 import { attachmentShape } from './inputshape';
+import { readReconciliation, summariseReconciliation } from './reconciliation';
 import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
 import { PARTY_FILE, readPartyDraft } from './party';
@@ -556,6 +557,7 @@ export class JobQueue {
   private finish(job: Job): void {
     this.stampOutbox(job);
     this.stampWithheld(job);
+    this.stampReconciliation(job);
     this.stampPackDraft(job);
     this.stampPartyDraft(job);
     this.stampMoves(job);
@@ -634,6 +636,21 @@ export class JobQueue {
     if (!read) return;
     if (read.error) job.withheldError = `WITHHELD.json: ${read.error}`;
     else job.withheld = read.withheld;
+  }
+
+  /**
+   * The reconciliation the run declared, recomputed here and stamped on the
+   * job (D-222) — the card and the Approve gate read this summary and never
+   * the file's own claim of a balance. Same seam as the outbox and the
+   * withheld declaration, for the same reason: one place decides what the
+   * run left.
+   */
+  private stampReconciliation(job: Job): void {
+    if (job.compile) return;
+    const read = readReconciliation(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.reconciliation) job.reconciliation = summariseReconciliation(read.reconciliation);
+    else job.reconciliationError = `RECONCILIATION.json: ${read.error}`;
   }
 
   /**

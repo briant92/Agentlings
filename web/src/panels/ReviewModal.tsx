@@ -22,6 +22,7 @@ import { Section } from './Section';
 import { callsOf } from './strip';
 import { TurnsStrip } from './TurnsStrip';
 import { moveRows, movesLeft, movesSummary } from './moves';
+import { adjustmentLine, amountText, balanceWording, countsLine } from './reconcile';
 import { noSendLine } from './noSend';
 import { allLooks, renderScenePreview } from '../world/looks';
 
@@ -482,6 +483,52 @@ export function ReviewModal({
                 Approve checks every message, subject and readable attachment for these and refuses
                 to send if one is still there. It checks what the run said it removed — not
                 everything that might be sensitive, and not inside a PDF or a spreadsheet.
+              </p>
+            </div>
+          )}
+          {/* The reconciliation the run declared, as the server recomputed
+              it (D-222): both sides, what adjusts each, and whether they meet.
+              Above the files like the withheld panel — the verdict is context
+              for reading the report, not a footnote after it. */}
+          {job.reconciliationError && (
+            <p className="rv-error">
+              {job.reconciliationError} — approving keeps nothing until the run writes it
+              properly.
+            </p>
+          )}
+          {job.reconciliation && (
+            <div className="rv-withheld">
+              <div className="rv-withheld-t">
+                Reconciliation
+                {job.reconciliation.period ? ` — ${job.reconciliation.period}` : ''}
+                {job.reconciliation.currency ? ` · ${job.reconciliation.currency}` : ''}
+              </div>
+              <ul className="rv-withheld-list">
+                {(['statement', 'records'] as const).map((side) => {
+                  const s = job.reconciliation![side];
+                  const adj = job.reconciliation!.adjustments.filter((a) => a.side === side);
+                  return (
+                    <li key={side} className="rv-recon-side">
+                      <span className="rv-withheld-what">
+                        {s.label} <span className="rv-withheld-n">({side})</span>
+                      </span>
+                      <span className="rv-recon-n">
+                        {amountText(s.closing)} → <b>{amountText(s.adjusted)}</b>
+                      </span>
+                      {adj.length > 0 && (
+                        <span className="rv-recon-adj">{adj.map(adjustmentLine).join(' · ')}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className={job.reconciliation.balances ? 'rv-recon-ok' : 'rv-recon-bad'}>
+                {balanceWording(job.reconciliation)}
+              </p>
+              <p className="rv-withheld-foot">
+                {countsLine(job.reconciliation)} · Approve recomputes both sides from the run's own
+                adjustments and refuses when they differ. It checks the arithmetic the run declared
+                — not that every line was matched rightly; the lists are in RECONCILIATION.json.
               </p>
             </div>
           )}

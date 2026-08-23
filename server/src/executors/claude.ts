@@ -22,6 +22,7 @@ import type {
 import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
+import { reconciliationBrief, wantsReconciliation } from '../reconciliation';
 import {
   mcpToolNames,
   resolveForJob,
@@ -625,6 +626,12 @@ export function buildAppend(
    * whole ten minutes composing and died with an empty sandbox.
    */
   minutes?: number,
+  /**
+   * The reconciliation contract, when the sentence asks to reconcile (D-222).
+   * Told for D-031's reason, like the outbox: every D-220 run wrote a fine
+   * report with a raw difference and no statement, because nothing had asked.
+   */
+  reconciliationText?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -671,6 +678,7 @@ export function buildAppend(
   );
   if (outboxBrief) parts.push(outboxBrief);
   if (organizeText) parts.push(organizeText);
+  if (reconciliationText) parts.push(reconciliationText);
   if (attachments.length > 0) {
     parts.push(
       [
@@ -1162,6 +1170,7 @@ export class ClaudeAgentExecutor implements Executor {
           // The same number the timer kills at, so the brief and the wall
           // cannot disagree about how long the run has.
           timeoutMsFor(role) / 60_000,
+          wantsReconciliation(job.prompt) ? reconciliationBrief() : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

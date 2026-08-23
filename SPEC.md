@@ -492,6 +492,13 @@ tried, measured and rejected is in `DECISIONS.md`:
   its shape, a recipe and a compiled tool keyed on the shape they were
   learned over, a job with files never inheriting a method learned over
   other files, and never a banked answer at all → D-221
+- M5.31 the reconciliation contract (RECONCILE B3): a sentence that asks
+  to reconcile has its run deliver RECONCILIATION.json, the server
+  recomputes both adjusted sides from the run's adjustments at completion,
+  the review shows the two sides and the verdict, and Approve is refused
+  by name when they do not meet — contract first and no skill, on D-220's
+  measurement that the method transfers and only the statement had to be
+  asked for → D-222
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

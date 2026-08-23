@@ -1103,3 +1103,50 @@ describe('attachment shape (D-221)', () => {
     expect(job.attachments?.map((a) => a.shape)).toEqual(['csv:date|amount|ref', 'ext:pdf']);
   });
 });
+
+describe('reconciliation stamp (D-222)', () => {
+  const file = (queue: JobQueue, id: string) => path.join(queue.sandboxDir(id), 'RECONCILIATION.json');
+
+  it('recomputes both sides at completion, and refuses a malformed file by name', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-recon-stamp-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Reconcile', prompt: 'reconcile the attached statement' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    writeFileSync(
+      file(queue, job.id),
+      JSON.stringify({
+        currency: 'USD',
+        statement: { label: 'bank', closing: 100 },
+        records: { label: 'ledger', closing: 90 },
+        adjustments: [{ side: 'records', kind: 'interest', amount: 10, what: 'interest' }],
+        matched: [],
+        unmatched: { statement: [], records: [] },
+      }),
+    );
+    queue.complete(job.id, 'done it');
+    const done = queue.get(job.id)!;
+    expect(done.reconciliation?.balances).toBe(true);
+    expect(done.reconciliation?.records.adjusted).toBe(100);
+    expect(done.reconciliation?.adjustments).toHaveLength(1);
+    expect(done.reconciliationError).toBeUndefined();
+
+    const bad = queue.add({ title: 'Reconcile', prompt: 'reconcile the attached statement' });
+    queue.assign(bad.id, 'a1');
+    queue.start(bad.id);
+    writeFileSync(file(queue, bad.id), '{ "statement": 1 }');
+    queue.complete(bad.id, 'done it');
+    expect(queue.get(bad.id)!.reconciliationError).toBe(
+      'RECONCILIATION.json: "statement" must be an object with "label" and "closing"',
+    );
+    expect(queue.get(bad.id)!.reconciliation).toBeUndefined();
+
+    // Nothing written, nothing stamped — an ordinary job is untouched by the gate.
+    const plain = queue.add({ title: 'Plain', prompt: 'summarise the attached expenses' });
+    queue.assign(plain.id, 'a1');
+    queue.start(plain.id);
+    queue.complete(plain.id, 'done it');
+    expect(queue.get(plain.id)!.reconciliation).toBeUndefined();
+    expect(queue.get(plain.id)!.reconciliationError).toBeUndefined();
+  });
+});

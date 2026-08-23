@@ -575,6 +575,98 @@ export const MIN_WITHHELD_CHARS = 3;
 export const MAX_WITHHELD_ITEMS = 20;
 export const MAX_WITHHELD_VALUES = 200;
 
+/**
+ * The reconciliation contract (D-222): what a run asked to reconcile one
+ * record of money against another writes as RECONCILIATION.json. The server
+ * recomputes both adjusted sides from `adjustments` — the file never states
+ * a balance it is trusted on — and Approve is refused when they do not meet.
+ */
+export interface ReconciliationSide {
+  /** Which file this side was, in the reviewer's terms — usually its name. */
+  label: string;
+  closing: number;
+}
+
+export interface ReconciliationAdjustment {
+  /** Which side's closing this adjusts: the bank's, or the records'. */
+  side: 'statement' | 'records';
+  /** in-transit · outstanding · fee · interest · returned · error · other */
+  kind: string;
+  /** Signed: positive adds to that side's closing, negative subtracts. */
+  amount: number;
+  what: string;
+  ref?: string;
+}
+
+export interface ReconciliationMatch {
+  statement: string;
+  /** One record, or several when a statement line settles more than one. */
+  records: string[];
+  amount: number;
+  date?: string;
+}
+
+export interface ReconciliationUnmatched {
+  ref: string;
+  date?: string;
+  amount: number;
+  what: string;
+  /** in-transit · outstanding · fee · interest · returned · error · open-invoice · out-of-scope · unexplained */
+  category: string;
+}
+
+/** An entry the records side would post for an item only the statement has. */
+export interface ReconciliationEntry {
+  debit: string;
+  credit: string;
+  amount: number;
+  memo?: string;
+}
+
+export interface Reconciliation {
+  period?: string;
+  currency?: string;
+  statement: ReconciliationSide;
+  records: ReconciliationSide;
+  adjustments: ReconciliationAdjustment[];
+  matched: ReconciliationMatch[];
+  unmatched: { statement: ReconciliationUnmatched[]; records: ReconciliationUnmatched[] };
+  entries: ReconciliationEntry[];
+  note?: string;
+}
+
+/**
+ * What the server says the file says: both sides adjusted by the run's own
+ * adjustments, recomputed at completion and stamped on the job, so the card
+ * and the Approve gate read one truth (D-030).
+ */
+export interface ReconciliationSummary {
+  period?: string;
+  currency?: string;
+  statement: { label: string; closing: number; adjusted: number };
+  records: { label: string; closing: number; adjusted: number };
+  /** The run's adjustments as read — what the reviewer sees beside each balance. */
+  adjustments: ReconciliationAdjustment[];
+  /** statement adjusted minus records adjusted, in the file's own units. */
+  difference: number;
+  balances: boolean;
+  counts: {
+    matched: number;
+    unmatchedStatement: number;
+    unmatchedRecords: number;
+    adjustments: number;
+    entries: number;
+  };
+}
+
+export const MAX_RECONCILIATION_ADJUSTMENTS = 200;
+export const MAX_RECONCILIATION_MATCHES = 2000;
+export const MAX_RECONCILIATION_UNMATCHED = 500;
+export const MAX_RECONCILIATION_ENTRIES = 100;
+export const MAX_RECONCILIATION_TEXT_CHARS = 200;
+/** Under this the two adjusted sides are equal; sums are done in cents, so it is a guard, not a fudge. */
+export const RECONCILIATION_TOLERANCE = 0.005;
+
 export type MoveOp =
   | { op: 'mkdir'; path: string }
   | { op: 'move'; from: string; to: string };
@@ -1037,6 +1129,14 @@ export interface Job {
   withheld?: Withheld;
   /** WITHHELD.json existed and was not a valid declaration — the reason, never a silent drop. */
   withheldError?: string;
+  /**
+   * The reconciliation the run declared, as the server recomputed it at
+   * completion (D-222): both sides adjusted, whether they meet, and the
+   * counts. Approve is refused while `balances` is false.
+   */
+  reconciliation?: ReconciliationSummary;
+  /** RECONCILIATION.json existed and was not a valid declaration — the reason, never a silent drop. */
+  reconciliationError?: string;
   /** Move results so far, merged across retries — the accumulator behind the journal. */
   movesRun?: MovesRun;
   /**

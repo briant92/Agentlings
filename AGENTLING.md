@@ -1498,6 +1498,23 @@ untouched until you press Approve.
 
 ---
 
+### Reconciling, specifically
+
+A sentence that asks to reconcile — *reconcile*, *conciliación*, *cuadrar* —
+tells the run, in its brief, to deliver `RECONCILIATION.json` beside its
+report (D-222): the two sides with their closing balances, the adjustments
+each needs (signed; in transit, outstanding, fee, interest, returned, error),
+the matched pairs, the unmatched lines on each side with a category, and the
+entries the records side would post. At completion the server **recomputes
+both adjusted balances from the run's own adjustments** — the file's claim of
+a balance is never read — and stamps the summary on the job; the review shows
+both sides, what adjusts each, and the verdict; **Approve is refused by name
+when the sides do not meet**, and the job stays reviewable for a reply. What
+that checks is the arithmetic the run declared, not that every line was
+matched rightly — that reading is the reviewer's, and the card says so. No
+skill is mounted for it: D-220 measured the method transferring on its own,
+and only the statement had to be asked for.
+
 ## 13. Reference — every number that binds
 
 ### Turns
@@ -1581,6 +1598,8 @@ untouched until you press Approve.
 | `MAX_QUESTIONS` | 3 | `clarify.ts` | Above this the box has become a form |
 | `MAX_ATTACHMENTS` | 5 | `shared` | Per job |
 | `MAX_ATTACHMENT_BYTES` | 10 MB | `shared` | Per file |
+| `MAX_RECONCILIATION_ADJUSTMENTS` · `_MATCHES` · `_UNMATCHED` · `_ENTRIES` | 200 · 2,000 · 500 · 100 | `shared` | The reconciliation contract's caps (D-222) |
+| `RECONCILIATION_TOLERANCE` | 0.005 | `shared` | Under it the two adjusted sides are equal; the sums are done in cents, so it is a guard and not a fudge |
 | `SNIFF_BYTES` | 8,000 | `outputs.ts` | How much to read before calling a file binary |
 | `MAX_COMPANIONS` | 200 | `library.ts` | Files a skill folder may bring |
 | `MAX_COMPANION_BYTES` | 2 MB | `library.ts` | Per companion file |

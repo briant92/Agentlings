@@ -152,7 +152,10 @@ Total: $0.59. Every run finished on its own; none was cut.
       (`8d0a8a68` US, `bee2d016` CL): neither served the shapeless recipe, and
       the sentence now holds three recipes, one per shape, none overwriting
       another (D-221, proven live).
-- [ ] B3 — the contract, the invariant, the card; the fixtures become its
-      tests; the SII header verified against a real export.
+- [x] B3 — landed 2026-08-22 (D-222): the contract told in the brief, the
+      invariant recomputed at completion, the card, Approve refused when the
+      sides differ; the answer keys are its tests. Still owed: the SII header
+      verified against a real export, and a measured run with the contract in
+      hand before any skill is considered.
 - [ ] B4 — roll-forward state at Approve, inside the level directory.
 - [ ] B2 — the desk names the shape; the arrest.

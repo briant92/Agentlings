@@ -16552,11 +16552,16 @@ mutation attempts were **no-ops that passed**: `askFacts.ts` is CRLF and a
 about the mutation before it is a claim about the tests, so each was
 re-applied with the change verified before the run.
 
-### Still untested live
+### Proven live — 2026-08-23 09:05
 
-The preview flag and the card's wiring have no route or component harness,
-like `organize` and `missingAttachment` before them. Owed after the next
-restart: `POST /work/plan` with the trial sentence → `reconcile: true`, with
-"summarise the attached expenses" → absent; and the card, in Brian's
-browser, with one file attached → the reason on the button, a second press
-queuing. Appended here when it lands.
+After the restart, `POST /work/plan` answered `reconcile: true` for the
+trial sentence and for *Concilia la cartola con el libro mayor de mayo*, and
+carried no flag for *Summarise the attached expenses by category* or for
+the word-boundary control *reconnect the printer and list the unattached
+fixtures*. In Brian's browser, the reconcile sentence with one `.csv`
+attached put *Queue anyway — one side attached…* on the Start button on the
+first press. A second try with a single `Book1.xlsx` was **not** arrested
+and queued — the workbook exception, seen live — and Brian cancelled it
+before it spent anything (`f9334d27`, cleared). The preview flag and the
+card's wiring have no harness, like `organize` and `missingAttachment`
+before them; this is their proof. `AGENTLING.md` moves the arrest to Live.

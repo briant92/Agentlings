@@ -184,9 +184,10 @@ Total: $0.59. Every run finished on its own; none was cut.
       names a reconcile sentence, the card counts the files, one side or none
       puts the reason on the Start button, a second press queues; a single
       workbook passes. No vocabulary: which file is which stays the run's
-      reading off the headers. Three mutations killed. Owed live after the
-      next restart: the preview flag (`POST /work/plan` → `reconcile: true`)
-      and the card in the browser with one file attached.
+      reading off the headers. Three mutations killed. **Proven live
+      2026-08-23:** the preview flag on both languages and absent on the
+      controls; the card arrested a lone .csv on the first press and let a
+      lone .xlsx through — the workbook exception, seen.
 
 **The board is closed.** Every item landed and was measured; what stays
 open is listed once, here, rather than on a ticked list: the SII header is

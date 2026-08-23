@@ -1531,7 +1531,7 @@ or discarding a reconciliation banks nothing — a clear is a shrug and a
 discard judges the run, not the account.
 
 At the desk, a reconcile sentence with one file or none is **arrested**
-(D-224, **Partial — built, the preview flag and the card await a live look**):
+(D-224, **Live**):
 the server's preview names the sentence a reconciliation, the card counts the
 files, and the reason lands on the Start button — *one side attached — a
 reconciliation needs the statement and the records* — the way "nothing

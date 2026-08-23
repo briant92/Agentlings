@@ -86,6 +86,24 @@ describe('checkReconciliation (D-222)', () => {
     expect(checkReconciliation({ ...EDIG, period: 5 }).error).toBe('period must be a non-empty string');
   });
 
+  it('reads an empty optional as absent — "ref": "" is an honest spelling of none, not a malformed file', () => {
+    const written = {
+      ...EDIG,
+      period: '',
+      adjustments: [{ side: 'records', kind: 'returned', amount: -350, what: 'NSF', ref: '' }],
+      matched: [{ statement: 'a', records: ['b'], amount: 1, date: '' }],
+      entries: [{ debit: 'a', credit: 'b', amount: 1, memo: '   ' }],
+    };
+    const read = checkReconciliation(written);
+    expect(read.error).toBeUndefined();
+    expect(read.reconciliation?.period).toBeUndefined();
+    expect(read.reconciliation?.adjustments[0]).toEqual({ side: 'records', kind: 'returned', amount: -350, what: 'NSF' });
+    expect(read.reconciliation?.matched[0]).toEqual({ statement: 'a', records: ['b'], amount: 1 });
+    expect(read.reconciliation?.entries[0]).toEqual({ debit: 'a', credit: 'b', amount: 1 });
+    // Non-empty still has to be a string.
+    expect(checkReconciliation({ ...EDIG, period: 5 }).error).toBe('period must be a non-empty string');
+  });
+
   it('treats "entries" as optional — a personal register has no books to post to', () => {
     const { entries: _gone, ...noEntries } = EDIG;
     const read = checkReconciliation(noEntries);
@@ -154,12 +172,21 @@ describe('summariseReconciliation and the gate (D-222)', () => {
 });
 
 describe('reconciliationBrief (D-222)', () => {
-  it('names the file, the shape, the invariant and the categories, compactly', () => {
+  it('names the file, the shape, the side rule, the invariant and the categories, compactly', () => {
     const brief = reconciliationBrief();
     expect(brief).toContain(RECONCILIATION_FILE);
     expect(brief).toContain('"adjustments"');
-    expect(brief).toContain('Adjusted balances must be equal');
+    expect(brief).toContain('Adjusted balances must then be equal');
     expect(brief).toContain('open-invoice');
-    expect(brief.split('\n').length).toBeLessThanOrEqual(14);
+    // The first two contract-carrying runs: one put every adjustment on the
+    // wrong side, one forced the sides to meet with a 720 plug, and one
+    // copied the example's CLP into a dollar report. Each rule is a sentence.
+    expect(brief).toContain('the side that does NOT yet have the item');
+    expect(brief).toContain('in-transit on the statement side (+)');
+    expect(brief).toContain('Never add a plug');
+    expect(brief).toContain('the values are placeholders');
+    expect(brief).not.toContain('4118500');
+    expect(brief).toContain('rather than writing an empty string');
+    expect(brief.split('\n').length).toBeLessThanOrEqual(15);
   });
 });

@@ -84,11 +84,16 @@ function text(value: unknown, field: string): string | { error: string } {
   return value.trim();
 }
 
-/** An optional one-line string: absent stays absent, present must be a string. */
+/**
+ * An optional one-line string. Absent stays absent, and so does an empty one:
+ * the first contract-carrying run wrote `"ref": ""` to mean *none* and was
+ * refused at parse for it — an honest spelling of "nothing here" is not a
+ * malformed file. Present and non-empty, it must still be a bounded string.
+ */
 function optionalText(value: unknown, field: string): string | undefined | { error: string } {
-  if (value === undefined) return undefined;
-  const got = text(value, field);
-  return got;
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'string' && value.trim() === '') return undefined;
+  return text(value, field);
 }
 
 /** A finite number — the one shape money takes in this file. */
@@ -312,17 +317,18 @@ export function reconciliationRefusal(
 export function reconciliationBrief(): string {
   return [
     '## Reconciliation — what to deliver',
-    `This job reconciles one record of money against another. Besides RESULT.md, write ${RECONCILIATION_FILE} at the working directory root, exactly this shape:`,
-    '{ "period": "2026-05", "currency": "CLP",',
-    '  "statement": { "label": "the bank\'s side — the statement or cartola file", "closing": 4118500 },',
-    '  "records":   { "label": "the other side — a ledger, a register of invoices, your own list", "closing": 4250000 },',
-    '  "adjustments": [ { "side": "statement" | "records", "kind": "in-transit" | "outstanding" | "fee" | "interest" | "returned" | "error" | "other", "amount": <signed: + adds to that side, - subtracts>, "what": "one line", "ref": "optional" } ],',
-    '  "matched":   [ { "statement": "statement line ref", "records": ["record ref"], "amount": 1190000, "date": "optional" } ],',
-    '  "unmatched": { "statement": [ { "ref": "", "date": "optional", "amount": 0, "what": "", "category": "" } ], "records": [ ...the same shape ] },',
-    '  "entries":   [ { "debit": "account", "credit": "account", "amount": 17850, "memo": "optional" } ] }',
-    '- Adjusted balances must be equal: statement.closing plus its adjustments equals records.closing plus its adjustments. Review recomputes both and refuses to approve when they differ. If you cannot make them meet, write the file anyway with what you found and say in RESULT.md what is unexplained.',
+    `This job reconciles one record of money against another. Besides RESULT.md, write ${RECONCILIATION_FILE} at the working directory root, exactly this shape (the values are placeholders — take period, currency and every number from the files):`,
+    '{ "period": "<as the files say>", "currency": "<as the files say>",',
+    '  "statement": { "label": "<the bank\'s side — the statement or cartola file>", "closing": <number> },',
+    '  "records":   { "label": "<the other side — a ledger, a register of invoices, your own list>", "closing": <number> },',
+    '  "adjustments": [ { "side": "statement" | "records", "kind": "in-transit" | "outstanding" | "fee" | "interest" | "returned" | "error" | "other", "amount": <signed: + adds to that side, - subtracts>, "what": "<one line>", "ref": "<optional — leave the field out when there is none>" } ],',
+    '  "matched":   [ { "statement": "<statement line ref>", "records": ["<record ref>"], "amount": <number>, "date": "<optional>" } ],',
+    '  "unmatched": { "statement": [ { "ref": "<ref>", "date": "<optional>", "amount": <number>, "what": "<one line>", "category": "<category>" } ], "records": [ ...the same shape ] },',
+    '  "entries":   [ { "debit": "<account>", "credit": "<account>", "amount": <number>, "memo": "<optional>" } ] }',
+    '- An adjustment goes on the side that does NOT yet have the item, so that side catches up: a deposit the records show and the bank has not yet credited is in-transit on the statement side (+); a cheque or transfer the records show and the bank has not yet paid is outstanding on the statement side (-); a fee or a returned cheque the bank shows and the records have not booked goes on the records side (-); interest the bank credited goes on the records side (+); a recording error goes on the side whose figure is wrong, by the difference.',
+    '- Adjusted balances must then be equal: statement.closing plus its adjustments equals records.closing plus its adjustments. Review recomputes both and refuses to approve when they differ. Never add a plug or an "unexplained" adjustment to force them to meet: if they do not, leave them apart, write the file anyway, and say in RESULT.md what is unexplained and on which side.',
     '- Match in a script you keep beside the result — amount first, then a date window, then reference (folio, cheque number, RUT, payee) — and list every unmatched line on each side with its category: in-transit, outstanding, fee, interest, returned, error, open-invoice, out-of-scope, unexplained.',
     '- "entries" are the entries the records side needs for items only the statement has; leave it empty when the records are not books.',
-    '- Numbers are plain numbers — no thousands separators, a dot for decimals, none for CLP.',
+    '- Numbers are plain numbers — no thousands separators, a dot for decimals, none for a currency without them. Leave an optional field out rather than writing an empty string.',
   ].join('\n');
 }

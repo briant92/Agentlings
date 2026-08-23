@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { CrewModal } from './panels/CrewModal';
 import { RolesModal } from './panels/RolesModal';
 import { LevelView } from './screens/LevelView';
 import { SelectScreen, type LevelEntry } from './screens/SelectScreen';
@@ -26,6 +27,7 @@ export default function App() {
   const [wipe, setWipe] = useState<'close' | 'open' | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [crewOpen, setCrewOpen] = useState(false);
   const timers = useRef<number[]>([]);
   const last = loadLast();
 
@@ -84,9 +86,14 @@ export default function App() {
             setSettingsOpen(false);
             setRolesOpen(true);
           }}
+          onOpenCrew={() => {
+            setSettingsOpen(false);
+            setCrewOpen(true);
+          }}
         />
       )}
       {rolesOpen && <RolesModal onClose={() => setRolesOpen(false)} />}
+      {crewOpen && <CrewModal onClose={() => setCrewOpen(false)} />}
     </>
   );
 }

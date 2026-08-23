@@ -335,6 +335,7 @@ catalog, settings and spend are global because they are.
 | Route | Purpose |
 |---|---|
 | `GET /api/roles` · `GET /api/skills` | What is installed |
+| `GET /api/crew` | The crew's CV: every role with its quote ceiling and what its sessions have cost (Meet the crew, D-228) |
 | `POST /api/match` · `POST /api/match/refine` | The local concept matcher, and the optional one-call tier that only refines it |
 | `GET /api/library` · `POST /api/library/refresh` | Index status, and re-reading the sources |
 | `POST /api/library/search` | The same matcher against the remote index |
@@ -524,6 +525,14 @@ tried, measured and rejected is in `DECISIONS.md`:
   Knowledge panel, with a dry-run of what a sentence would be handed; read
   by nothing that briefs a run; the knowledge-graph proposal's other
   options rejected on the measurements → D-225
+- M5.35 Meet the crew: AGENTLING.md as a character-select screen behind
+  Settings → catalog — six boards (trades, skills, powers, reach, price,
+  never); a trade's card reads its tools, skills, model and turns off the
+  role file, its quote ceiling off the same resolution a quote uses, and
+  what its sessions have cost off the ledger keyed by the role that ran
+  them, nominal beside measured; the skills and doors boards read the
+  installed catalog and the live connections; only the plain-language
+  prose is typed → D-228
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

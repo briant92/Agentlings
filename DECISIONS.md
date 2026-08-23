@@ -237,6 +237,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-225 — 2026-08-23 — The provenance index: the level's own record, mapped from identifiers it already carries, read by the panel and by nothing that briefs a run](#d-225--2026-08-23--the-provenance-index-the-levels-own-record-mapped-from-identifiers-it-already-carries-read-by-the-panel-and-by-nothing-that-briefs-a-run)
 - [D-226 — 2026-08-23 — Four frictions from the first day of use: an always-on tier in Settings, one folder picker, a rail that scrolls alone, Review stacking over Crew](#d-226--2026-08-23--four-frictions-from-the-first-day-of-use-an-always-on-tier-in-settings-one-folder-picker-a-rail-that-scrolls-alone-review-stacking-over-crew)
 - [D-227 — 2026-08-23 — The phone at phone width: D-175 was measured in Desktop Mode, and in mobile mode the page scrolled sideways](#d-227--2026-08-23--the-phone-at-phone-width-d-175-was-measured-in-desktop-mode-and-in-mobile-mode-the-page-scrolled-sideways)
+- [D-228 — 2026-08-23 — Meet the crew: AGENTLING.md as a character-select screen, every number read from the role file and the ledger, and a per-role measure that history() could not give](#d-228--2026-08-23--meet-the-crew-agentlingmd-as-a-character-select-screen-every-number-read-from-the-role-file-and-the-ledger-and-a-per-role-measure-that-history-could-not-give)
 
 ## By theme
 
@@ -515,7 +516,10 @@ entry updates one file rather than two.
   and D-227, the phone at its own width — D-175 had measured Desktop Mode,
   mobile mode scrolled sideways, and the fixes are a header that wraps, two
   modal rails that stack, real padding under `pointer: coarse`, and
-  `zoom: 1.15` on the panels
+  `zoom: 1.15` on the panels; and D-228, Meet the crew — AGENTLING.md as
+  a character-select screen behind Settings, a trade's card reading its
+  numbers from the role file and the ledger, nominal ceiling beside measured
+  cost
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -16882,3 +16886,72 @@ filters 15, ghosts 22, zoom 1, `.app` 576 px — every desktop number
 unchanged. On the device itself, in mobile mode over the tailnet, Brian:
 *looks and feels great*. D-175's phone-shaped view stays declined; this is
 the readability reopen that entry named, answered in 75 lines of CSS.
+
+## D-228 — 2026-08-23 — Meet the crew: AGENTLING.md as a character-select screen, every number read from the role file and the ledger, and a per-role measure that history() could not give
+
+Brian asked for a consolidated summary of `AGENTLING.md` inside the app, in
+plain language, showing every kind of job, skill and capability, in the
+style of an old-school character-select screen, opened from a button in
+Settings — mockup first. The mockup was a six-board modal (trades, skills,
+powers, reach, price, never) over a stubbed Settings; three questions were
+put with it and decided: the numbers on a trade's card come from the app,
+the spend line shows the nominal beside the measured so the two can be
+contrasted, and the sprites stay as drawn in the mockup. All six boards
+kept.
+
+### What was built
+
+- `GET /api/crew` (`server/src/cv.ts`, pure, 2 tests): every role as
+  served, its quote ceiling — `roleCeilingUsd(role.maxCostUsd, env)`
+  falling to `MAX_CEILING_USD`, the same resolution a quote uses — and
+  what full sessions of it have cost on the ledger (samples, mean, max);
+  plus the two paid tiers' means across every role, so the price ladder's
+  rungs are read rather than typed. `TURN_CEILING` and
+  `DEFAULT_MAX_TURNS` exported from the executor for the turns bar.
+- `web/src/panels/crew.ts` (pure, 6 tests): the prose — a tag, a blurb
+  and three special moves per trade, one plain sentence per skill, the
+  powers, the doors, the ladder, the refusals — and the helpers: tool
+  names in a person's words, the model id as the CV says it (Haiku 4.5),
+  the spend line with the measured mean drawn as a share of the ceiling,
+  who carries a skill read off the roles, a door's pill off the live
+  connection. A trade or skill the copy does not know shows on its own
+  description, so the screen cannot hide what the catalog holds.
+- `CrewModal.tsx`: the screen. Settings → catalog gains *Meet the crew*
+  beside *Open roles & skills*; the modal is opened from `App` the way the
+  roles modal is. ← → browse the roster, Esc closes.
+
+### The seam the measure found
+
+The first cut measured a role through `ledger.history()`, and the drafter
+read *no full session yet* against seven sessions on record at $3.43–$4.91.
+`history()` keys a row on `recipeKey ?? jobClass` — right for a quote,
+where a recipe is the finer class — so every session that carried a recipe
+key belongs to the recipe and to no role: **133 of the 335 session rows**,
+all seven drafter runs among them. The CV measures by `jobClass` directly,
+the role that ran the row (the field's own definition since D-049), and
+the test carries a recipe-keyed mason row that must count. `history()` is
+untouched: that seam is the quote's (D-221), and the CV is not a quote.
+Re-read against the real ledger, the measure moved on every role — worker
+115 → 185 sessions, analyst 6 → 20, clerk 3 → 15, drafter 0 → 7 at $4.00
+mean against its $5.00 ceiling.
+
+### Evidence
+
+Typecheck clean; server 82 files / web 29 files green. Headless Edge at
+1280 × 700 (mouse) and 412 × 915 (coarse), the route served from the real
+roles and ledger through a Playwright route so Brian's running server was
+not restarted: no sideways scroll at either width, no page error, two
+right-arrows land on clerk with *14c avg · 22c most · 15 sessions*, every
+board rendered. The phone's first pass put the sixth tab outside the
+viewport — D-227's class — so the CV's tab strip wraps and the keyboard
+hint hides under `pointer: coarse`. The ladder reads **19c / 88c** off 374
+paid rows; AGENTLING.md §7 says 19.2c / 87c, computed separately by
+`ledger:report`, which is the figure this screen exists to stop copying.
+
+### Standing
+
+AGENTLING.md's header names the screen and `crew.ts` as the file to re-read
+when a section changes — the prose there is typed and can drift; the
+numbers cannot. The sprites are the mockup's: one body, a hat and tint per
+trade, not the in-world sheet — decided, not deferred.
+

@@ -26,7 +26,11 @@ corrected 2026-08-22 where D-211 landed: the sandbox trajectory trail, and
 the document brief's scan line repaired; §§6, 11 and 12 re-read against
 `abc0263` the same day where the UI unclogging landed (D-213–D-215): the
 trail read back in the review, the ledger row carrying the cut, the job
-carrying what it left. §8's figures
+carrying what it left. Since 2026-08-23 (D-228) the app shows this file's
+substance itself — Settings → catalog → *Meet the crew* — with every number
+on a trade's card read from the role file and the ledger rather than from
+here, and the prose typed in `web/src/panels/crew.ts`; when a section here
+changes, that file is the one to re-read. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 

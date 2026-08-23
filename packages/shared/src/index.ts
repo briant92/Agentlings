@@ -1358,6 +1358,34 @@ export interface RoleInfo {
   maxCostUsd?: number;
 }
 
+/**
+ * One trade on the crew's CV (the Meet-the-crew screen): the role as it is
+ * served, plus what a session of it may be quoted at most and what sessions
+ * of it have actually cost — nominal beside measured, so the two can be read
+ * against each other rather than one standing in for the other.
+ */
+export interface CrewRole extends RoleInfo {
+  /** The most one session may be quoted, after the role's own ceiling and the env clamp. */
+  ceilingUsd: number;
+  /** Full sessions of this role on the ledger: how many, and what they cost. */
+  measured: { samples: number; meanUsd: number; maxUsd: number };
+}
+
+export interface CrewCv {
+  roles: CrewRole[];
+  /** The hard turn ceiling every role is clamped to. */
+  turnCeiling: number;
+  /** The default budget a role naming none gets. */
+  defaultTurns: number;
+  /** What the two paid tiers have cost across every role: the price ladder's own rungs. */
+  tiers: { oneshot: TierCost; session: TierCost };
+}
+
+export interface TierCost {
+  samples: number;
+  meanUsd: number;
+}
+
 export interface SkillInfo {
   name: string;
   description: string;

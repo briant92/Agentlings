@@ -103,6 +103,7 @@ import {
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
+import { crewCv } from './cv';
 import {
   channelShelf,
   detectChannelAsk,
@@ -4147,6 +4148,17 @@ app.post('/internal/render', async (c) => {
 });
 
 app.get('/api/roles', (c) => c.json(registry.list()));
+
+/** The crew's CV (Meet the crew, behind Settings): every role, its quote ceiling, and what it has cost. */
+app.get('/api/crew', (c) =>
+  c.json(
+    crewCv(
+      registry.list(),
+      readLedger(SANDBOX_ROOT),
+      Number(process.env.AGENTLINGS_MAX_COST_USD) || undefined,
+    ),
+  ),
+);
 
 /**
  * Hand a skill to a role (D-089). Role-level on purpose — capability lives

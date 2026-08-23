@@ -269,6 +269,26 @@ why is D-226; this is the checklist's record that they landed.
       Evidence: headless Edge at 412 × 915 with coarse pointer vs 1280 × 600
       with a mouse — every desktop number unchanged; on the S26 Ultra in
       mobile mode, Brian: looks and feels great.
+- [x] **24. Meet the crew** — landed 2026-08-23 (D-228). AGENTLING.md as a
+      character-select screen, opened from Settings → catalog beside
+      *Open roles & skills*: six boards. Trades is a 4-wide roster of pixel
+      sprites (one body, a hat and tint per trade) and a fighter-card sheet
+      — class tag, plain blurb, a turns bar against the 40 ceiling, a
+      *may cost* bar that draws the measured average as a share of the
+      quote ceiling with *has cost: avg · most · sessions* beneath it,
+      model, tool and skill chips, three special moves; ← → browse, Esc
+      closes. Skills, powers, reach, price, never are card grids; the doors
+      carry on / needs a key / off / send · at approval pills off the live
+      connections, the price ladder's two paid rungs read the ledger. New
+      `GET /api/crew` (`server/src/cv.ts`), `web/src/panels/crew.ts` holds
+      the prose, `CrewModal.tsx` the screen; `.cv-*` rules at the end of
+      `styles.css`, the six tabs wrapping on a phone and the key hint
+      hidden under `pointer: coarse`. Evidence: server 82 / web 29 files
+      green (cv 2, crew 6); headless Edge at 1280 × 700 and 412 × 915
+      with the route served from the real roles and ledger — no sideways
+      scroll, no page error, two arrows land on clerk with *14c avg · 22c
+      most · 15 sessions*; the ladder reads 19c / 88c off 374 paid rows,
+      against AGENTLING.md's 19.2c / 87c.
 
 ## Hazards to keep in view
 

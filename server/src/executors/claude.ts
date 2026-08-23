@@ -63,8 +63,8 @@ const SESSION_TIMEOUT_MS = 10 * 60_000;
  * stalling is not a slower loop, it is a loop that never reaches its last
  * stage. Cheap to be generous, expensive to be tight.
  */
-const DEFAULT_MAX_TURNS = 10;
-const TURN_CEILING = 40;
+export const DEFAULT_MAX_TURNS = 10;
+export const TURN_CEILING = 40;
 /**
  * What a job runs on when the crew has a recipe for it. Was 1, which sounds
  * like the ideal saving and cannot work: a single turn ends before the model

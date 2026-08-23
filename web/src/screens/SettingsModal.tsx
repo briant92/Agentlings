@@ -153,9 +153,11 @@ function ConnectionRow({
 export function SettingsModal({
   onClose,
   onOpenRoles,
+  onOpenCrew,
 }: {
   onClose: () => void;
   onOpenRoles: () => void;
+  onOpenCrew: () => void;
 }) {
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
   const [tab, setTab] = useState<Tab>(readTab);
@@ -753,7 +755,11 @@ export function SettingsModal({
               )}
               <div className="sect">catalog</div>
               <p className="dim">Roles and skills are a global library shared by every level.</p>
-              <button onClick={onOpenRoles}>Open roles &amp; skills</button>
+              <div className="cat-btns">
+                <button onClick={onOpenRoles}>Open roles &amp; skills</button>
+                <button onClick={onOpenCrew}>Meet the crew</button>
+              </div>
+              <p className="dim">Meet the crew is the whole capability sheet in plain words — every trade, skill, power and door.</p>
               <div className="sect">maintenance</div>
               <div className="maint-card">
                 <div className="maint-title">Working copies</div>

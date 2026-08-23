@@ -559,3 +559,38 @@ describe('rememberRecipe records the tools a method actually used', () => {
     expect(learn([]) [0].usedTools).toBeUndefined();
   });
 });
+
+describe('attachment shape in recipe identity (D-221)', () => {
+  const base = { prompt: 'Reconcile the attached statement', role: 'analyst', approach: 'match by folio', at: 1 };
+  const LEDGER = ['csv:date|amount|ref'];
+  const REGISTER = ['csv:folio|rut|total'];
+
+  it('keeps one sentence learned over two shapes as two recipes, each updated in place', () => {
+    let recipes = rememberRecipe([], { ...base, inputShape: LEDGER });
+    recipes = rememberRecipe(recipes, { ...base, approach: 'match by invoice total', inputShape: REGISTER });
+    expect(recipes).toHaveLength(2);
+    recipes = rememberRecipe(recipes, { ...base, approach: 'match by folio, then amount', inputShape: LEDGER });
+    expect(recipes).toHaveLength(2);
+    expect(recipes.map((r) => r.approach)).toEqual(['match by folio, then amount', 'match by invoice total']);
+  });
+
+  it('serves a method only to a job of the same shape, and a pre-shape recipe to no attached job', () => {
+    const recipes = rememberRecipe([], { ...base, inputShape: LEDGER });
+    expect(findRecipe(recipes, base.prompt, undefined, LEDGER)?.exact).toBe(true);
+    expect(findRecipe(recipes, base.prompt, undefined, REGISTER)).toBeNull();
+    expect(findRecipe(recipes, base.prompt)).toBeNull();
+    const old = rememberRecipe([], base); // learned before shapes were recorded
+    expect(findRecipe(old, base.prompt, undefined, LEDGER)).toBeNull();
+    expect(findRecipe(old, base.prompt)?.exact).toBe(true);
+  });
+
+  it('credits the recipe of the shape that ran, not its namesake', () => {
+    let recipes = rememberRecipe([], { ...base, inputShape: LEDGER });
+    recipes = rememberRecipe(recipes, { ...base, inputShape: REGISTER });
+    recipes = creditRecipe(recipes, normalise(base.prompt), 2, true, false, undefined, undefined, undefined, REGISTER);
+    expect(recipes.map((r) => [r.inputShape?.[0], r.hits, r.successes ?? 0])).toEqual([
+      ['csv:date|amount|ref', 0, 0],
+      ['csv:folio|rut|total', 1, 1],
+    ]);
+  });
+});

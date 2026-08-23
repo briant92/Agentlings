@@ -22,6 +22,7 @@ import type { Verdict } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
+import { attachmentShape } from './inputshape';
 import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
 import { PARTY_FILE, readPartyDraft } from './party';
@@ -386,7 +387,7 @@ export class JobQueue {
       const name = safeAttachmentName(file.name);
       if (!name) continue;
       writeFileSync(path.join(dir, name), file.data);
-      written.push({ name, bytes: file.data.length });
+      written.push({ name, bytes: file.data.length, shape: attachmentShape(name, file.data) });
     }
     return written;
   }

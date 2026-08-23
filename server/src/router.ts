@@ -1,5 +1,6 @@
 import type { Job } from '@agentlings/shared';
 import { findRecipe, terms, type Recipe } from './recipes';
+import { inputShapeOf } from './inputshape';
 import { findTool, type ToolManifest } from './tools';
 import { wantsWithholding } from './redact';
 import { extractUrls } from './web';
@@ -239,6 +240,9 @@ export function decide(job: Job, context: RouterContext): Decision {
    * one would remove it — so the guard is written down.
    */
   const withholding = job.withholding === true || wantsWithholding(prompt);
+  // What it was given, as the learning keys on it (D-221): a recipe or a tool
+  // learned over other files is no match, however well the words fit.
+  const inputShape = inputShapeOf(job.attachments);
 
   // Mid-flight work — a continuation, or a reply — carries its sandbox
   // forward, and every shortcut below starts from nothing: a stored answer
@@ -248,7 +252,7 @@ export function decide(job: Job, context: RouterContext): Decision {
   // method, and carries its key so the run is recorded and priced as a run of
   // that job (D-072).
   if (job.continues) {
-    const found = findRecipe(context.recipes, prompt, context.capabilities);
+    const found = findRecipe(context.recipes, prompt, context.capabilities, inputShape);
     return found
       ? { kind: 'agent', approach: found.recipe.approach, recipeKey: found.recipe.key }
       : { kind: 'agent' };
@@ -324,7 +328,7 @@ export function decide(job: Job, context: RouterContext): Decision {
   // purpose.
   const tool = withholding
     ? null
-    : findTool(context.tools ?? [], prompt, Boolean(job.repoPath), job.tools ?? []);
+    : findTool(context.tools ?? [], prompt, Boolean(job.repoPath), job.tools ?? [], inputShape);
   if (tool) {
     return {
       kind: 'tool',
@@ -335,13 +339,22 @@ export function decide(job: Job, context: RouterContext): Decision {
 
   // The job's own connections, so a method found without them cannot shorten
   // a run that now has them — the crew has to be able to notice it has grown.
-  const found = findRecipe(context.recipes, prompt, context.capabilities);
+  const found = findRecipe(context.recipes, prompt, context.capabilities, inputShape);
   if (found) {
     // Only an exact repeat with no outside inputs may reuse an answer: the
     // same words with a different repository is a different question.
     // A banked answer is text decided before this instruction existed, so it
     // cannot have withheld anything (D-181) — the method may still ride.
-    if (found.exact && found.recipe.answer && !job.repoPath && urls.length === 0 && !withholding) {
+    // Attachments are outside inputs too: a run given files never banks an
+    // answer (routed.ts), and this is the same rule from the reading side.
+    if (
+      found.exact &&
+      found.recipe.answer &&
+      !job.repoPath &&
+      urls.length === 0 &&
+      !withholding &&
+      !job.attachments?.length
+    ) {
       return {
         kind: 'answer',
         summary: 'Answered from the last time this exact job was done.',

@@ -497,7 +497,7 @@ describe('JobQueue', () => {
         prompt: 'summarise the attached contract',
         attachments: [{ name: 'contract.pdf', data: Buffer.from('%PDF-1.7\n') }],
       });
-      expect(job.attachments).toEqual([{ name: 'contract.pdf', bytes: 9 }]);
+      expect(job.attachments).toEqual([{ name: 'contract.pdf', bytes: 9, shape: 'ext:pdf' }]);
       expect(readFileSync(path.join(queue.inputDir(job.id), 'contract.pdf'), 'utf8')).toBe(
         '%PDF-1.7\n',
       );
@@ -529,7 +529,7 @@ describe('JobQueue', () => {
         prompt: 'x',
         attachments: [{ name: '../../jobs.json', data: Buffer.from('owned') }],
       });
-      expect(job.attachments).toEqual([{ name: 'jobs.json', bytes: 5 }]);
+      expect(job.attachments).toEqual([{ name: 'jobs.json', bytes: 5, shape: 'ext:json' }]);
       expect(existsSync(path.join(queue.inputDir(job.id), 'jobs.json'))).toBe(true);
       // The level's real job list is untouched.
       expect(readFileSync(jobsFile(root), 'utf8')).not.toBe('owned');
@@ -541,7 +541,7 @@ describe('JobQueue', () => {
         prompt: 'x',
         attachments: [{ name: 'a.docx', data: Buffer.from('one') }],
       });
-      expect(new JobQueue(root).get(job.id)!.attachments).toEqual([{ name: 'a.docx', bytes: 3 }]);
+      expect(new JobQueue(root).get(job.id)!.attachments).toEqual([{ name: 'a.docx', bytes: 3, shape: 'ext:docx' }]);
     });
 
     it('writes no attachments field when none were given', () => {
@@ -1085,5 +1085,21 @@ describe('delivered, the one notion of what a run left (UI.md, step 9)', () => {
     writeFs(path.join(root, 'jobs', 'old3'), 'not a folder');
     const queue = new JobQueue(root);
     expect(queue.get('old3')?.delivered).toBeUndefined();
+  });
+});
+
+describe('attachment shape (D-221)', () => {
+  it('stamps each attachment with the shape the learning keys on', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-shape-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({
+      title: 'Reconcile',
+      prompt: 'reconcile the attached statement',
+      attachments: [
+        { name: 'bank.csv', data: Buffer.from('Date,Amount,Ref\n2026-09-01,1,a\n') },
+        { name: 'scan.pdf', data: Buffer.from('%PDF-1.7\n') },
+      ],
+    });
+    expect(job.attachments?.map((a) => a.shape)).toEqual(['csv:date|amount|ref', 'ext:pdf']);
   });
 });

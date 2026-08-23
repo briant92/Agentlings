@@ -984,6 +984,19 @@ by rarity, and recomputed from the key on read rather than trusted from disk —
 so changing how words are stemmed can never strand the recipes written before
 it.
 
+**And keyed on the files, since D-221.** The same sentence over a different
+kind of file is a different recipe: each attachment is stamped with its shape
+when it is written — a spreadsheet-shaped text file by its header columns,
+anything else by its extension — and a recipe, a credit and a compiled tool
+all carry the shape they were learned over. One learned over a bank ledger is
+no hint at all for the same words over an invoice register, never mind a
+shortening, and a tool claims only the shape it was compiled for, `hasRepo`'s
+rule on a second axis. Measured before it existed: three runs of one sentence
+over three pairs of files rewrote one recipe toward each counterpart in turn,
+until it called bank fees out-of-scope and sat one success from compiling that
+(D-220). A recipe written before shapes were recorded matches only a job with
+no files, the unknown-provenance rule `capabilities` already follows.
+
 **Two bars, because the two mistakes cost different amounts.** A strong match
 (0.65) shortens the run to five turns. A weak one (0.3) hands over the method
 and leaves the leash alone: a wrong method given to a full-length session
@@ -1519,6 +1532,7 @@ untouched until you press Approve.
 | landings before a leash | 1 | `recipes.ts` | `canShortenLeash`: similarity says two jobs are alike, not that the method works |
 | `RARITY_NEEDS` | 5 | `recipes.ts` | Corpus size before rarity weighting is trusted |
 | `TOOL_CANDIDATE_RUNS` | 3 | `recipes.ts` | Deliveries before a recipe is compilable |
+| `SHAPE_SNIFF_BYTES` | 4 KB | `inputshape.ts` | How much of an attachment is read for its header — the shape a recipe, a credit and a tool are keyed on (D-221) |
 | `STRIKES_ALLOWED` | 2 | `tools.ts` | Consecutive failures that retire a tool |
 | `TOOL_TIMEOUT_MS` | 60 s | `tools.ts` | A compiled tool that hangs is not cheaper |
 | KNOWLEDGE notes per session | 8 | `executors/claude.ts` | Chosen by term overlap, not recency |

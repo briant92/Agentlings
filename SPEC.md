@@ -487,6 +487,11 @@ tried, measured and rejected is in `DECISIONS.md`:
   sandbox — a fact about the bytes rather than a verdict on the report,
   because the detector the trial asked for would have accused 40 honest
   files to catch one (D-202)
+- M5.30 the reconciliation line's first build (RECONCILE B1): the files a
+  job was given join what the crew learns — each attachment stamped with
+  its shape, a recipe and a compiled tool keyed on the shape they were
+  learned over, a job with files never inheriting a method learned over
+  other files, and never a banked answer at all → D-221
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

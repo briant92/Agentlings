@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { SIMILAR_ENOUGH, normalise, similarity, terms } from './recipes';
+import { sameInputShape } from './inputshape';
 
 /**
  * The fourth tier: a job the crew has done enough times to compile.
@@ -36,6 +37,14 @@ export interface ToolManifest {
    * the two jobs can be identical.
    */
   hasRepo: boolean;
+  /**
+   * The shape of the files the recipe was learned over (D-221) — `hasRepo`'s
+   * rule for the other thing that makes the same words a different job: a
+   * script written against one header has nothing to read in another. Absent
+   * on tools compiled before shapes were recorded, which then claim only
+   * jobs with no files, the one shape they provably fit.
+   */
+  inputShape?: string[];
   /**
    * The capability surface of the recipe this was compiled from — what the
    * crew could reach when the method was found.
@@ -202,12 +211,15 @@ export function findTool(
    * contract.
    */
   granted: string[] = [],
+  /** The job's attachment shape (D-221); a tool fits only the shape it was compiled for. */
+  inputShape?: string[],
 ): ToolManifest | null {
   const key = normalise(prompt);
   const usable = tools.filter(
     (t) =>
       !t.retiredReason &&
       t.hasRepo === hasRepo &&
+      sameInputShape(t.inputShape, inputShape) &&
       (t.connections ?? []).every((conn) => granted.includes(conn)),
   );
   const exact = usable.find((t) => t.recipeKey === key);

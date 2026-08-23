@@ -144,7 +144,7 @@ Total: $0.59. Every run finished on its own; none was cut.
 
 ## 5. Next
 
-- [ ] B1 — `inputShape` on the job and the recipe; a mismatch is never
+- [x] B1 — landed 2026-08-22 (D-221): `inputShape` on the job and the recipe; a mismatch is never
       *strong*; attachments count as outside inputs for the exact-repeat
       answer rule (`router.ts`); pinned by the same sentence over `us/` and
       `cl/`.

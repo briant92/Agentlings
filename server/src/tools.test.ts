@@ -367,3 +367,19 @@ describe('promotion', () => {
     });
   });
 });
+
+describe('attachment shape on a tool (D-221)', () => {
+  const ask = 'total the invoices in the spreadsheet';
+
+  it('claims only a job of the shape it was compiled for', () => {
+    const tool = manifest({ inputShape: ['csv:invoice|total'] });
+    expect(findTool([tool], ask, false, [], ['csv:invoice|total'])).not.toBeNull();
+    expect(findTool([tool], ask, false, [], ['csv:folio|rut|total'])).toBeNull();
+    expect(findTool([tool], ask, false, [])).toBeNull();
+  });
+
+  it('a tool compiled before shapes were recorded keeps its unattached jobs and loses the attached ones', () => {
+    expect(findTool([manifest()], ask, false, [])).not.toBeNull();
+    expect(findTool([manifest()], ask, false, [], ['csv:invoice|total'])).toBeNull();
+  });
+});

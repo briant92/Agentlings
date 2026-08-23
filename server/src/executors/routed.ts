@@ -13,6 +13,7 @@ import {
   updateRecipes,
   type Recipe,
 } from '../recipes';
+import { inputShapeOf, sameInputShape } from '../inputshape';
 import { type Connection, doorEndpoints, secretNames } from '../connections';
 import { FILE_CHANNELS, OUTBOX_FILE, composeOutbox } from '../outbox';
 import { deliveredFiles, producedArtefacts } from '../outputs';
@@ -313,7 +314,19 @@ export class RoutedExecutor implements Executor {
       writeFileSync(path.join(sandboxDir, 'RESULT.md'), `${decision.body}\n`);
       if (decision.recipeKey) {
         const key = decision.recipeKey;
-        updateRecipes(this.levelDir, (fresh) => creditRecipe(fresh, key, Date.now()));
+        updateRecipes(this.levelDir, (fresh) =>
+          creditRecipe(
+            fresh,
+            key,
+            Date.now(),
+            false,
+            false,
+            undefined,
+            undefined,
+            undefined,
+            inputShapeOf(job.attachments),
+          ),
+        );
       }
       onProgress?.(`answered without a session — ${decision.reason}`);
       return {
@@ -434,7 +447,9 @@ export class RoutedExecutor implements Executor {
       !midFlight &&
       !(failure instanceof SessionFailure && failure.message === CANCELLED)
     ) {
-      const used = recipes.find((r) => r.key === usedKey);
+      const used = recipes.find(
+        (r) => r.key === usedKey && sameInputShape(r.inputShape, inputShapeOf(job.attachments)),
+      );
       if (used && (used.successes ?? 0) >= TOOL_CANDIDATE_RUNS) {
         // Not acted on: this only counts how often a compiled tool could have
         // served the job for nothing, so the fourth tier gets built on evidence
@@ -578,6 +593,7 @@ export class RoutedExecutor implements Executor {
           // The bound a cut leash disproved is a fact about the run that was
           // cut, so it only speaks for the keyed job when it *is* that job.
           ownWork ? leashCutFrom : undefined,
+          inputShapeOf(job.attachments),
         ),
       );
     }
@@ -603,6 +619,9 @@ export class RoutedExecutor implements Executor {
         approach,
         ...(answer !== undefined && !madeSomething ? { answer } : {}),
         capabilities: this.capabilities(job, agentling?.role),
+        // The files it was given, so the method is filed under their shape
+        // and a sibling shape banks its own rather than overwriting (D-221).
+        inputShape: inputShapeOf(job.attachments),
         // What it reached for, against what it could have (D-100). Taken from
         // the failure's meter too: a run that died having called the code host
         // still proves the method reaches outside, and that is exactly what

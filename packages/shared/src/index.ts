@@ -358,6 +358,12 @@ export interface ChannelShelf {
 export interface JobAttachment {
   name: string;
   bytes: number;
+  /**
+   * What kind of file this is, as the learning keys on it (D-221): a
+   * spreadsheet-shaped text file by its header columns, anything else by its
+   * extension. Absent on attachments stamped before shapes were recorded.
+   */
+  shape?: string;
 }
 
 /** As many as one job may carry, and how large each may be. */

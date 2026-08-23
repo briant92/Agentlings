@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { sameInputShape } from './inputshape';
 import { sameSurface } from './capability';
 
 /**
@@ -37,6 +38,14 @@ export interface Recipe {
    * unknown, which is treated as changed rather than assumed to match.
    */
   capabilities?: string[];
+  /**
+   * The shape of the files the method was learned over (D-221) — one
+   * sentence over two kinds of file is two recipes, each banking its own
+   * approach, never overwriting the other's. Absent means learned before
+   * shapes were recorded, or learned with no files: it matches a job with
+   * none and never a job with some, the unknown-provenance rule above.
+   */
+  inputShape?: string[];
   /**
    * Every tool the runs of this method actually called, accumulated across
    * them — what it *used*, against `capabilities`' what it *could reach*.
@@ -369,16 +378,22 @@ export function findRecipe(
   recipes: Recipe[],
   prompt: string,
   capabilities?: string[],
+  /** The job's attachment shape (D-221); only a recipe of the same shape is a match at all. */
+  inputShape?: string[],
 ): { recipe: Recipe; exact: boolean; strong: boolean } | null {
   const key = normalise(prompt);
-  const exact = recipes.find((r) => r.key === key);
+  // Not a demotion but a refusal: a method learned over one kind of file is
+  // no hint for another — the trial that forced this watched one sentence's
+  // approach rewritten toward each counterpart in turn (D-221).
+  const candidates = recipes.filter((r) => sameInputShape(r.inputShape, inputShape));
+  const exact = candidates.find((r) => r.key === key);
   if (exact) return { recipe: exact, exact: true, strong: canShortenLeash(exact, capabilities) };
 
   const wanted = terms(prompt);
   const corpus = recipes.map((r) => r.terms);
   let best: Recipe | null = null;
   let bestScore = 0;
-  for (const recipe of recipes) {
+  for (const recipe of candidates) {
     const score = similarity(wanted, recipe.terms, corpus);
     if (score > bestScore) {
       best = recipe;
@@ -413,6 +428,8 @@ export function rememberRecipe(
     capabilities?: string[];
     /** Tools this run actually called, unioned into what the method has used. */
     usedTools?: string[];
+    /** The shape of the files the run was given (D-221). */
+    inputShape?: string[];
   },
 ): Recipe[] {
   const key = normalise(entry.prompt);
@@ -425,7 +442,10 @@ export function rememberRecipe(
     const all = [...(before ?? []), ...(entry.usedTools ?? [])];
     return all.length > 0 ? [...new Set(all)].sort() : undefined;
   };
-  const existing = recipes.find((r) => r.key === key);
+  // The same sentence over a different shape is a different recipe (D-221).
+  const existing = recipes.find(
+    (r) => r.key === key && sameInputShape(r.inputShape, entry.inputShape),
+  );
   if (existing) {
     existing.approach = entry.approach;
     existing.role = entry.role;
@@ -444,6 +464,7 @@ export function rememberRecipe(
       role: entry.role,
       approach: entry.approach,
       ...(capabilities ? { capabilities } : {}),
+      ...(entry.inputShape ? { inputShape: [...entry.inputShape].sort() } : {}),
       ...(used ? { usedTools: used } : {}),
       ...(entry.answer !== undefined ? { answer: entry.answer } : {}),
       hits: 0,
@@ -479,8 +500,10 @@ export function creditRecipe(
    * cut run testifies to, and the only revision D-095 allows it to make.
    */
   leashCutFrom?: number,
+  /** The shape of the job that ran, so the credit lands on its own recipe and not a namesake (D-221). */
+  inputShape?: string[],
 ): Recipe[] {
-  const found = recipes.find((r) => r.key === key);
+  const found = recipes.find((r) => r.key === key && sameInputShape(r.inputShape, inputShape));
   if (found) {
     found.hits += 1;
     found.lastUsedAt = at;

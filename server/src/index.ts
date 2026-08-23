@@ -219,6 +219,7 @@ import {
 import { readSends } from './sends';
 import { Sim } from './sim';
 import { TOOL_CANDIDATE_RUNS, readRecipes, readToolCandidates } from './recipes';
+import { sameInputShape } from './inputshape';
 import {
   RUN_SCRIPT,
   VERIFY_SCRIPT,
@@ -3674,7 +3675,11 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
   const key = body.recipeKey?.trim();
   if (!key) return c.json({ error: 'recipeKey is required' }, 400);
 
-  const recipe = readRecipes(rt.dir).find((r) => r.key === key);
+  // One sentence may be several recipes, one per file shape (D-221); the
+  // one that has landed most is the one worth a script.
+  const recipe = readRecipes(rt.dir)
+    .filter((r) => r.key === key)
+    .sort((a, b) => (b.successes ?? 0) - (a.successes ?? 0))[0];
   if (!recipe) return c.json({ error: `no recipe for "${key}"` }, 404);
   if ((recipe.successes ?? 0) < TOOL_CANDIDATE_RUNS) {
     return c.json(
@@ -3701,7 +3706,11 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     return job?.status === 'queued' || job?.status === 'running';
   };
   const blocking = readTools(rt.dir).find(
-    (t) => t.recipeKey === key && !t.retiredReason && (isComplete(rt.dir, t) || inFlight(t)),
+    (t) =>
+      t.recipeKey === key &&
+      sameInputShape(t.inputShape, recipe.inputShape) &&
+      !t.retiredReason &&
+      (isComplete(rt.dir, t) || inFlight(t)),
   );
   if (blocking) {
     return c.json(
@@ -3807,6 +3816,9 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
     recipeKey: key,
     terms: recipe.terms,
     hasRepo: Boolean(rt.meta.repoPath),
+    // The shape the method was learned over, so the script claims only the
+    // files it was written against (D-221) — hasRepo's rule, one axis over.
+    ...(recipe.inputShape ? { inputShape: recipe.inputShape } : {}),
     // Copied from the recipe rather than read off the level now: the surface
     // that matters is the one the *method* was found under, and this is the
     // only moment both are in hand. Absent when the recipe predates D-036,

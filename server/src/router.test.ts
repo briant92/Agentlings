@@ -415,3 +415,31 @@ describe('a recipe that only half fits', () => {
     expect(decision).toEqual({ kind: 'agent' });
   });
 });
+
+describe('attachment shape (D-221)', () => {
+  const ask = 'reconcile the attached statement';
+  const learned = (over: Partial<Recipe> = {}): Recipe => ({
+    key: ask,
+    terms: terms(ask),
+    role: 'analyst',
+    approach: 'match by folio',
+    hits: 3,
+    learnedAt: 1,
+    ...over,
+  });
+  const attached = (shape: string) => job({ prompt: ask, attachments: [{ name: 'a.csv', bytes: 1, shape }] });
+
+  it('never replays a banked answer over attachments, whatever the words', () => {
+    const decision = decide(attached('csv:a|b'), context({ recipes: [learned({ answer: 'all matched' })] }));
+    expect(decision.kind).not.toBe('answer');
+  });
+
+  it('hands a method only to a job of the same shape', () => {
+    const recipes = [learned({ inputShape: ['csv:date|amount'] })];
+    const same = decide(attached('csv:date|amount'), context({ recipes }));
+    expect('approach' in same ? same.approach : undefined).toBe('match by folio');
+    const other = decide(attached('csv:folio|rut|total'), context({ recipes }));
+    expect('approach' in other ? other.approach : undefined).toBeUndefined();
+    expect(other.kind).toBe('agent');
+  });
+});

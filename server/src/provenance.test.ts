@@ -1,9 +1,17 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { LedgerEntry } from './ledger';
-import { buildProvenance, countByKind, neighbourhood, type Provenance } from './provenance';
+import {
+  buildProvenance,
+  countByKind,
+  inputsStamp,
+  neighbourhood,
+  ProvenanceCache,
+  searchProvenance,
+  type Provenance,
+} from './provenance';
 
 /**
  * One level on disk with one record of every kind and one identifier of every
@@ -262,4 +270,58 @@ describe('a neighbourhood', () => {
     expect(capped!.more).toBe(5);
     expect(neighbourhood(p, 'job:nope')).toBeNull();
   });
+});
+
+describe('search', () => {
+  it('ranks records by the words shared with the question, the asking words dropped', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
+    const hits = searchProvenance(p, 'what do we know about the exports');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].shared).toBeGreaterThanOrEqual(hits[hits.length - 1].shared);
+    expect(hits.every((h) => /export/i.test(h.node.label))).toBe(true);
+    // "know" alone is not a subject (D-048): nothing matches on the asking word.
+    expect(searchProvenance(p, 'what do we know')).toEqual([]);
+    expect(searchProvenance(p, 'exports', 1)).toHaveLength(1);
+  });
+});
+
+describe('the cache', () => {
+  it('keeps a build until a file moves, then rebuilds, and forgets on request', async () => {
+    const cache = new ProvenanceCache(path.join(root, 'ledger.jsonl'), () => ledger);
+    const first = await cache.get(level, 'lvl', NOW);
+    const again = await cache.get(level, 'lvl', NOW + 1);
+    expect(again).toBe(first);
+    // A write in the same millisecond as the build would be invisible to an
+    // mtime compare; the test moves the clock the way a real edit does.
+    await new Promise((r) => setTimeout(r, 15));
+    writeFileSync(path.join(level, 'KNOWLEDGE.md'), `# Level knowledge\n\n- ${DAY} · Pip (worker) delivered "Tidy the exports" — a new line\n`);
+    const rebuilt = await cache.get(level, 'lvl', NOW + 2);
+    expect(rebuilt).not.toBe(first);
+    expect(rebuilt.nodes.filter((n) => n.kind === 'note')).toHaveLength(1);
+    expect(cache.size()).toBe(1);
+    cache.forget('lvl');
+    expect(cache.size()).toBe(0);
+  });
+
+  it('stamps every input it would read, the ledger included', () => {
+    const before = inputsStamp(level, path.join(root, 'ledger.jsonl'));
+    writeFileSync(path.join(root, 'ledger.jsonl'), '{}\n');
+    const after = inputsStamp(level, path.join(root, 'ledger.jsonl'));
+    expect(after).toBeGreaterThanOrEqual(before);
+  });
+});
+
+/**
+ * The index is for looking, not for routing. The modules that decide a tier,
+ * price a job, or brief a run never import it — pinned here, in a leaf, the
+ * way `LEASH_CREDIBLE_UP_TO` is held in step with `RECIPE_TURNS`.
+ */
+describe('what never reads the index', () => {
+  it.each(['router.ts', 'quote.ts', 'executors/claude.ts', 'executors/routed.ts', 'store.ts', 'levels.ts', 'memory.ts', 'recipes.ts'])(
+    '%s does not import provenance',
+    (file) => {
+      const source = readFileSync(path.join(__dirname, file), 'utf8');
+      expect(source).not.toMatch(/from '\.{1,2}\/provenance'/);
+    },
+  );
 });

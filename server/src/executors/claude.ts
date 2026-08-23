@@ -85,6 +85,15 @@ const TURN_CEILING = 40;
  */
 export const RECIPE_TURNS = 5;
 /**
+ * What a session is handed of the level's own record: the notes most relevant
+ * to its sentence (D-020, the eight most relevant rather than the twelve most
+ * recent) and its agentling's newest lessons (D-073). Named here, where they
+ * are spent, so the panel's dry-run (D-225) shows exactly these windows and
+ * not a copy that could drift.
+ */
+export const SESSION_NOTES = 8;
+export const SESSION_LESSONS = 5;
+/**
  * What compiling a recipe into a tool runs on, which is not what an ordinary
  * job runs on. A compile has to write two programs that agree with each other
  * — `run.mjs` and the `verify.mjs` that refuses its output — and the halves
@@ -1061,7 +1070,7 @@ export class ClaudeAgentExecutor implements Executor {
     hint?: RunHint,
   ): Promise<ExecutorResult> {
     const role = agentling ? this.registry.get(agentling.role) : undefined;
-    const lessons = agentling ? this.memory.lessons(agentling.name).slice(-5) : [];
+    const lessons = agentling ? this.memory.lessons(agentling.name).slice(-SESSION_LESSONS) : [];
 
     let hasRepo = false;
     if (job.repoPath) {
@@ -1146,7 +1155,7 @@ export class ClaudeAgentExecutor implements Executor {
     // the same selection the recall tier uses. Hoisted because the close-out is
     // shown the same window: "already known" has to mean "already in what the
     // next session will read", or the two drift apart (D-073).
-    const relevantNotes = relevantLines(this.knowledge(), job.prompt, 8);
+    const relevantNotes = relevantLines(this.knowledge(), job.prompt, SESSION_NOTES);
 
     // The roll-forward (D-223): a reconciliation job whose files match an
     // approved predecessor's shape starts from that state. The file rides in

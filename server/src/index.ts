@@ -13,6 +13,10 @@ import type {
   CrewMember,
   Job,
   LevelInfo,
+  ProvenanceDryRun,
+  ProvenanceHit,
+  ProvenanceNeighbourhood,
+  ProvenanceSummary,
   MergePreview,
   Quote,
   ServerMessage,
@@ -128,7 +132,22 @@ import {
 } from './google';
 import { quoteFor } from './estimate';
 import { EventLog } from './events';
-import { carryManifest, ClaudeAgentExecutor, COMPILE_TURNS, mapTools } from './executors/claude';
+import {
+  carryManifest,
+  ClaudeAgentExecutor,
+  COMPILE_TURNS,
+  mapTools,
+  SESSION_LESSONS,
+  SESSION_NOTES,
+} from './executors/claude';
+import {
+  countByKind,
+  countByVia,
+  neighbourhood,
+  ProvenanceCache,
+  searchProvenance,
+} from './provenance';
+import { relevantLines } from './router';
 import type { Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
@@ -180,6 +199,7 @@ import {
   finalize as finalizeLedger,
   ledgerRow,
   openRow,
+  ledgerFile,
   readLedger,
   repriceChain,
   settleOutcome,
@@ -350,6 +370,20 @@ function isBusy(rt: LevelRuntime, id: string): boolean {
   return rt.sim.agentlings.find((a) => a.id === id)?.state === 'working';
 }
 
+/**
+ * What a session of this level reads as "what this level knows": the crew's
+ * notes plus the indexed store, one corpus, each store line carrying its own
+ * source and date (D-047). One function, because the run and the dry-run that
+ * shows what the run would get must read the same thing.
+ */
+function levelCorpus(dir: string): string[] {
+  return [...readKnowledge(dir), ...storeLines(dir, Date.now())];
+}
+
+/** A neighbourhood past this many edges says how many more; a search past this many stops. */
+const NEIGHBOURHOOD_CAP = 50;
+const SEARCH_CAP = 50;
+
 function makeLevel(dir: string): LevelRuntime {
   const meta = readMeta(dir);
   const queue = new JobQueue(dir);
@@ -373,7 +407,7 @@ function makeLevel(dir: string): LevelRuntime {
           // session picks the 8 most relevant either way, and a store line
           // carries its own source and date so the prompt stays honest about
           // where each came from. Stale contributes nothing (D-047).
-          () => [...readKnowledge(dir), ...storeLines(dir, Date.now())],
+          () => levelCorpus(dir),
           () => readConnections(CONNECTIONS_FILE),
           () => readLedger(SANDBOX_ROOT),
           (channel) => readAudience(SANDBOX_ROOT, rosterChannel(channel)),
@@ -3643,6 +3677,76 @@ app.post('/api/levels/:lid/knowledge/sync', async (c) => {
     unscanned: index.unscanned ?? 0,
     syncedAt: index.syncedAt,
   });
+});
+
+/**
+ * The provenance index (D-225): what this level has on file and which record
+ * came from which. Built on the first look, kept ten minutes, rebuilt when
+ * the files move; read by these three routes and by nothing that briefs a
+ * run — the executors and the router never import it, and a test holds that.
+ * One level per index: the ledger is the one global file and is filtered here.
+ */
+const provenance = new ProvenanceCache(ledgerFile(SANDBOX_ROOT), (lid) =>
+  readLedger(SANDBOX_ROOT).filter((e) => e.levelId === lid),
+);
+
+/** Counts and the build, or with `?node=` one record and everything one hop away. */
+app.get('/api/levels/:lid/provenance', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const built = await provenance.get(rt.dir, rt.meta.id, Date.now());
+  const id = c.req.query('node');
+  if (id) {
+    const around = neighbourhood(built, id, NEIGHBOURHOOD_CAP);
+    if (!around) return c.json({ error: 'no such record' }, 404);
+    return c.json(around satisfies ProvenanceNeighbourhood);
+  }
+  return c.json({
+    levelId: built.levelId,
+    builtAt: built.builtAt,
+    buildMs: built.buildMs,
+    nodes: countByKind(built),
+    edges: countByVia(built),
+    unresolved: built.unresolved,
+  } satisfies ProvenanceSummary);
+});
+
+/** Records sharing words with the query, ranked as a session's notes are; capped. */
+app.get('/api/levels/:lid/provenance/search', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const q = (c.req.query('q') ?? '').trim();
+  if (!q) return c.json({ error: 'q is required' }, 400);
+  const built = await provenance.get(rt.dir, rt.meta.id, Date.now());
+  const hits: ProvenanceHit[] = searchProvenance(built, q, SEARCH_CAP);
+  return c.json({ hits });
+});
+
+/**
+ * What a session would be handed for a sentence, written nowhere: the tier
+ * the router would choose (the quote's own answer, so it cannot disagree with
+ * the run), the eight notes, the six the recall tier would answer from, and
+ * the named agentling's five newest lessons — each by the same call the run
+ * makes. No recipe is credited, no ledger row is opened, no sandbox is made.
+ */
+app.post('/api/levels/:lid/provenance/dry-run', async (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as { text?: unknown; agentling?: unknown; tools?: unknown };
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!text) return c.json({ error: 'text is required' }, 400);
+  const tools = Array.isArray(body.tools) && body.tools.every((t) => typeof t === 'string') ? (body.tools as string[]) : undefined;
+  const who = typeof body.agentling === 'string' ? body.agentling : undefined;
+  const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, rt.meta.repoPath, text);
+  const quote = quoteFor_(QUOTE_CTX, rt.dir, text, granted(tools), runnerRole(plan), rt.meta.repoPath || undefined);
+  const corpus = levelCorpus(rt.dir);
+  return c.json({
+    tier: quote.tier,
+    notes: relevantLines(corpus, text, SESSION_NOTES),
+    recall: relevantLines(corpus, text),
+    lessons: who ? rt.memory.lessons(who).slice(-SESSION_LESSONS) : [],
+    ...(who ? { agentling: who } : {}),
+  } satisfies ProvenanceDryRun);
 });
 
 /** The compiled tools this level has earned, and what they have done. */

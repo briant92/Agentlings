@@ -106,6 +106,15 @@ const ASKING = new Set(
 );
 
 /**
+ * What a question is *about*: its content words with the asking words gone.
+ * Exported so the Knowledge panel's search ranks by exactly this set and not a
+ * copy of it (D-030) — the panel shows the ranking the session is given.
+ */
+export function wantedTerms(query: string): Set<string> {
+  return new Set(terms(query).filter((t) => !ASKING.has(t)));
+}
+
+/**
  * Knowledge lines that share the most words with the question, best first.
  *
  * Scored on what the question is *about*: the asking words are dropped first,
@@ -113,7 +122,7 @@ const ASKING = new Set(
  * job falls through to a session that can go and look.
  */
 export function relevantLines(lines: string[], query: string, limit = 6): string[] {
-  const wanted = new Set(terms(query).filter((t) => !ASKING.has(t)));
+  const wanted = wantedTerms(query);
   // A question with no subject left — "what do we know" — is not a question
   // this tier can answer, and showing it something anyway would be the guess.
   if (wanted.size === 0) return [];

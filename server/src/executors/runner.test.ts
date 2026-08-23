@@ -216,3 +216,52 @@ describe('the roll-forward, wired', () => {
     expect(config.append).not.toContain('PRIOR-RECONCILIATION.json');
   });
 });
+
+/**
+ * The provenance index, wired (D-225): a level that has been mapped — the
+ * index built over its files, cached, searched — briefs a run byte for byte
+ * as a level that has not. The index is for looking; the zero bytes is the
+ * promise the review made, and it is pinned at the seam where the brief is
+ * actually written, not by reading the index module's imports.
+ */
+describe('the provenance index, wired', () => {
+  it('adds nothing to the brief: the .session.json append is identical with the level mapped', async () => {
+    const { buildProvenance, ProvenanceCache, searchProvenance } = await import('../provenance');
+    const dir = mkdtempSync(path.join(tmpdir(), 'runner-'));
+    const level = path.join(dir, 'level');
+    mkdirSync(path.join(level, 'memory'), { recursive: true });
+    writeFileSync(path.join(level, 'jobs.json'), JSON.stringify([{ id: 'p1', title: 'Tidy the exports', prompt: 'Tidy the exports', status: 'done', createdAt: 1000 }]));
+    writeFileSync(path.join(level, 'KNOWLEDGE.md'), '# Level knowledge\n\n- 2026-08-10 · Pip (worker) delivered "Tidy the exports" — exports live under src/\n');
+    writeFileSync(path.join(level, 'memory', 'pip.md'), '# Pip — lessons\n\n- 2026-08-10 · exports live under src/ (job: Tidy the exports)\n');
+    const knowledge = () => ['2026-08-10 · Pip (worker) delivered "Tidy the exports" — exports live under src/'];
+
+    const briefFor = async (): Promise<string> => {
+      const exec = new ClaudeAgentExecutor(
+        new RoleRegistry(path.join(dir, 'roles')),
+        new MemoryStore(path.join(level, 'memory')),
+        path.join(dir, 'skills'),
+        knowledge,
+      );
+      exec.runner = fakeRunner(dir, `
+        writeFileSync(config.cwd + '/RESULT.md', 'done');
+        emit({ type: 'result', summary: 'Done.', meter: { costUsd: 0.01, turns: 1 } });
+      `);
+      const sandbox = mkdtempSync(path.join(dir, 'sandbox-'));
+      const job = { id: 'p2', title: 'Tidy the exports', prompt: 'Tidy the exports' } as unknown as Job;
+      await exec.run(job, sandbox, undefined, { id: 'a1', name: 'Pip', role: 'worker' } as never);
+      return JSON.parse(readFileSync(path.join(sandbox, '.session.json'), 'utf8')).append as string;
+    };
+
+    const unmapped = await briefFor();
+    // Map the level the way the panel would: build, cache, search.
+    const cache = new ProvenanceCache(path.join(dir, 'ledger.jsonl'), () => []);
+    const built = await cache.get(level, 'lvl', 5000);
+    expect(built.nodes.length).toBeGreaterThan(0);
+    expect(searchProvenance(built, 'exports').length).toBeGreaterThan(0);
+    expect((await buildProvenance(level, 'lvl', [], 5000)).edges.length).toBeGreaterThan(0);
+    const mapped = await briefFor();
+
+    expect(mapped).toBe(unmapped);
+    expect(mapped).toContain('exports live under src/');
+  });
+});

@@ -256,6 +256,86 @@ export interface KnowledgeStatus {
   stale: boolean;
 }
 
+/**
+ * The provenance index (D-225): what a level has on file and which record came
+ * from which, built from identifiers the records already carry. Derived,
+ * per level, read by the Knowledge panel and by nothing that briefs a run.
+ */
+export type ProvenanceKind =
+  | 'job'
+  | 'note'
+  | 'lesson'
+  | 'recipe'
+  | 'tool'
+  | 'candidate'
+  | 'source'
+  | 'passage'
+  | 'reconciliation'
+  | 'agentling';
+
+export type ProvenanceFlag = 'stale' | 'missing' | 'retired' | 'scanned' | 'unparsed' | 'unlisted';
+
+export interface ProvenanceNode {
+  id: string;
+  kind: ProvenanceKind;
+  /** The record's own first line or title, trimmed. */
+  label: string;
+  /** The file it was read from, relative to the level, and the line where there is one. */
+  origin: { file: string; line?: number };
+  at?: number;
+  flags?: ProvenanceFlag[];
+}
+
+export interface ProvenanceEdge {
+  from: string;
+  to: string;
+  /** The identifier this edge was read off — `ledger.recipeKey`, `lesson.jobStamp`, … Never a score. */
+  via: string;
+  /** Set when a title named this many jobs; the edge points at the first. */
+  ambiguous?: number;
+}
+
+/** `GET /api/levels/:lid/provenance` — the level's counts and how the build went. */
+export interface ProvenanceSummary {
+  levelId: string;
+  builtAt: number;
+  buildMs: number;
+  nodes: Record<ProvenanceKind, number>;
+  edges: Record<string, { edges: number; ambiguous: number }>;
+  /** Identifiers that named nothing, by the edge kind they would have made. Shown, never hidden. */
+  unresolved: Record<string, number>;
+}
+
+/** `GET /api/levels/:lid/provenance?node=` — one record and everything one hop away. */
+export interface ProvenanceNeighbourhood {
+  node: ProvenanceNode;
+  edges: ProvenanceEdge[];
+  nodes: ProvenanceNode[];
+  /** Edges past the cap, counted rather than dropped. */
+  more: number;
+}
+
+/** `GET /api/levels/:lid/provenance/search?q=` — records sharing words with the query, best first. */
+export interface ProvenanceHit {
+  node: ProvenanceNode;
+  /** Words shared with the query — the same count the recall tier and a session's notes are ranked by. */
+  shared: number;
+}
+
+/**
+ * `POST /api/levels/:lid/provenance/dry-run` — what a session would be handed
+ * for a sentence, computed by the same selection the run makes and written
+ * nowhere: the tier the router would choose, the eight notes, the six the
+ * recall tier would answer from, and the named agentling's five newest lessons.
+ */
+export interface ProvenanceDryRun {
+  tier: 'routed' | 'tool' | 'oneshot' | 'session';
+  notes: string[];
+  recall: string[];
+  lessons: string[];
+  agentling?: string;
+}
+
 /** A connection a job can opt into. Secret values never appear here. */
 export interface ConnectionInfo {
   name: string;

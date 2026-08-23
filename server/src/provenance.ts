@@ -5,7 +5,8 @@ import type { LedgerEntry } from './ledger';
 import { readKnowledge } from './levels';
 import { undated } from './memory';
 import { jobsFile, readStoredJobs } from './queue';
-import { normalise, readRecipes, readToolCandidates, recipesFile, toolCandidatesFile } from './recipes';
+import { normalise, readRecipes, readToolCandidates, recipesFile, terms, toolCandidatesFile } from './recipes';
+import { wantedTerms } from './router';
 import { PRIOR_RECONCILIATION_FILE, RECONCILIATIONS_DIR } from './reconciliation';
 import { indexFile, readIndex } from './store';
 import { readTools, toolsDir } from './tools';
@@ -630,4 +631,95 @@ export function countByVia(p: Provenance): Record<string, { edges: number; ambig
     if (e.ambiguous) out[e.via].ambiguous++;
   }
   return out;
+}
+
+/**
+ * Records sharing words with a query, best first — ranked by the same rule a
+ * session's eight notes are: content words, the asking words dropped, counted.
+ * `shared` is shown so the ranking is legible, not so it can be tuned here.
+ */
+export function searchProvenance(
+  p: Provenance,
+  query: string,
+  limit = 50,
+): { node: Node; shared: number }[] {
+  const wanted = wantedTerms(query);
+  if (wanted.size === 0) return [];
+  return p.nodes
+    .map((node) => ({ node, shared: terms(node.label).filter((t) => wanted.has(t)).length }))
+    .filter((hit) => hit.shared > 0)
+    .sort((a, b) => b.shared - a.shared)
+    .slice(0, limit);
+}
+
+/** How long a built index stays in memory after its last use. */
+export const CACHE_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * The newest mtime among a level's inputs, stat'd rather than read — a few
+ * hundred stats on hq, under 10 ms — so a panel open can tell whether the
+ * cached build is still the level. Compared to `Provenance.inputsMtime`,
+ * which the build records off the same files.
+ */
+export function inputsStamp(levelDir: string, ledgerFile: string): number {
+  let stamp = Math.max(
+    mtime(ledgerFile),
+    mtime(jobsFile(levelDir)),
+    mtime(path.join(levelDir, 'KNOWLEDGE.md')),
+    mtime(recipesFile(levelDir)),
+    mtime(indexFile(levelDir)),
+    mtime(toolCandidatesFile(levelDir)),
+  );
+  const under = (dir: string, pick: (name: string) => string | null): void => {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir)) {
+      const file = pick(name);
+      if (file) stamp = Math.max(stamp, mtime(file));
+    }
+  };
+  under(path.join(levelDir, 'memory'), (n) => (n.endsWith('.md') ? path.join(levelDir, 'memory', n) : null));
+  under(toolsDir(levelDir), (n) => path.join(toolsDir(levelDir), n, 'tool.json'));
+  under(path.join(levelDir, RECONCILIATIONS_DIR), (n) => path.join(levelDir, RECONCILIATIONS_DIR, n));
+  under(path.join(levelDir, 'jobs'), (n) => path.join(levelDir, 'jobs', n, 'RESULT.md'));
+  return stamp;
+}
+
+/**
+ * One built index per level, kept while a panel is looking and rebuilt when
+ * the files move. Never warmed at boot, never touched by a job or a tick.
+ */
+export class ProvenanceCache {
+  private entries = new Map<string, { built: Provenance; stamp: number; drop: NodeJS.Timeout }>();
+
+  constructor(
+    private ledgerFile: string,
+    private ledgerFor: (levelId: string) => readonly LedgerEntry[],
+    private ttlMs = CACHE_TTL_MS,
+  ) {}
+
+  async get(levelDir: string, levelId: string, now: number): Promise<Provenance> {
+    const stamp = inputsStamp(levelDir, this.ledgerFile);
+    const have = this.entries.get(levelId);
+    if (have && have.stamp >= stamp) {
+      have.drop.refresh();
+      return have.built;
+    }
+    const built = await buildProvenance(levelDir, levelId, this.ledgerFor(levelId), now);
+    if (have) clearTimeout(have.drop);
+    const drop = setTimeout(() => this.entries.delete(levelId), this.ttlMs);
+    drop.unref();
+    this.entries.set(levelId, { built, stamp, drop });
+    return built;
+  }
+
+  /** For tests and for a level being closed. */
+  forget(levelId: string): void {
+    const have = this.entries.get(levelId);
+    if (have) clearTimeout(have.drop);
+    this.entries.delete(levelId);
+  }
+
+  size(): number {
+    return this.entries.size;
+  }
 }

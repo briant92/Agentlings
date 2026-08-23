@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Job } from '@agentlings/shared';
+import type { Job, ReconciliationRollForward } from '@agentlings/shared';
 import { MemoryStore } from '../memory';
 import { outputNames } from '../outputs';
 import { RoleRegistry } from '../roles';
@@ -129,5 +129,90 @@ describe('the runner protocol, wired', () => {
     const lines = trail(sandbox);
     expect(lines.at(-1)).toMatchObject({ kind: 'end', outcome: 'cancelled', toolCalls: 1 });
     expect(lines.at(-1)).not.toHaveProperty('message');
+  });
+});
+
+/**
+ * The roll-forward, wired (D-223): the thunk is asked with the job's own
+ * shape, the state lands in the sandbox as PRIOR-RECONCILIATION.json, and
+ * the brief the run reads names it — none of which a unit on the module
+ * could see, and all of which mutation 4 proved unpinned.
+ */
+describe('the roll-forward, wired', () => {
+  const prior: ReconciliationRollForward = {
+    jobId: 'prior001',
+    approvedAt: 1000,
+    inputShape: ['csv:date|desc|amount'],
+    reconciliation: {
+      period: '2026-08',
+      currency: 'USD',
+      statement: { label: 'Bank', closing: 100, adjusted: 90 },
+      records: { label: 'Ledger', closing: 80, adjusted: 90 },
+      adjustments: [{ side: 'statement', kind: 'outstanding', amount: -10, what: 'Check 9' }],
+      difference: 0,
+      balances: true,
+      counts: { matched: 1, unmatchedStatement: 0, unmatchedRecords: 0, adjustments: 1, entries: 0 },
+    },
+  };
+
+  function reconcileSetUp(prompt: string): {
+    exec: ClaudeAgentExecutor;
+    sandbox: string;
+    askedWith: (string[] | undefined)[];
+    theJob: Job;
+  } {
+    const dir = mkdtempSync(path.join(tmpdir(), 'runner-'));
+    const askedWith: (string[] | undefined)[] = [];
+    const exec = new ClaudeAgentExecutor(
+      new RoleRegistry(path.join(dir, 'roles')),
+      new MemoryStore(path.join(dir, 'memory')),
+      path.join(dir, 'skills'),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      (shapes) => {
+        askedWith.push(shapes);
+        return prior;
+      },
+    );
+    exec.runner = fakeRunner(dir, `
+      writeFileSync(config.cwd + '/RESULT.md', 'done');
+      emit({ type: 'result', summary: 'Done.', meter: { costUsd: 0.01, turns: 1 } });
+    `);
+    const sandbox = path.join(dir, 'sandbox');
+    mkdirSync(sandbox);
+    const theJob = {
+      id: 'r1',
+      title: 'Reconcile',
+      prompt,
+      attachments: [{ name: 'statement.csv', bytes: 1, shape: 'csv:date|desc|amount' }],
+    } as unknown as Job;
+    return { exec, sandbox, askedWith, theJob };
+  }
+
+  it('asks the level with the job\'s shape, lands the state in the sandbox, and the brief names it', async () => {
+    const { exec, sandbox, askedWith, theJob } = reconcileSetUp(
+      'Reconcile the attached bank statement against the attached records',
+    );
+    await exec.run(theJob, sandbox);
+    expect(askedWith).toEqual([['csv:date|desc|amount']]);
+    const landed = JSON.parse(
+      readFileSync(path.join(sandbox, 'PRIOR-RECONCILIATION.json'), 'utf8'),
+    );
+    expect(landed).toEqual(prior);
+    const config = JSON.parse(readFileSync(path.join(sandbox, '.session.json'), 'utf8'));
+    expect(config.append).toContain('PRIOR-RECONCILIATION.json');
+    expect(config.append).toContain('90 USD');
+  });
+
+  it('a job that does not reconcile gets no prior file and never asks', async () => {
+    const { exec, sandbox, askedWith, theJob } = reconcileSetUp('summarise the attached expenses');
+    await exec.run(theJob, sandbox);
+    expect(askedWith).toEqual([]);
+    expect(existsSync(path.join(sandbox, 'PRIOR-RECONCILIATION.json'))).toBe(false);
+    const config = JSON.parse(readFileSync(path.join(sandbox, '.session.json'), 'utf8'));
+    expect(config.append).not.toContain('PRIOR-RECONCILIATION.json');
   });
 });

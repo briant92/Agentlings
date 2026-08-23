@@ -42,7 +42,7 @@ function ledgerRows(): LedgerEntry[] {
     .filter((row) => !row.open && row.levelId === levelId);
 }
 
-const p = buildProvenance(levelDir, levelId, ledgerRows(), Date.now());
+const p = await buildProvenance(levelDir, levelId, ledgerRows(), Date.now());
 
 console.log(`# ${levelId} — provenance index\n`);
 console.log(`built in ${p.buildMs} ms · ${p.nodes.length} nodes · ${p.edges.length} edges\n`);

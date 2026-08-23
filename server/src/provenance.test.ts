@@ -104,8 +104,8 @@ const edge = (p: Provenance, via: string) => p.edges.filter((e) => e.via === via
 const node = (p: Provenance, id: string) => p.nodes.find((n) => n.id === id);
 
 describe('the provenance index', () => {
-  it('makes one node per record, of every kind', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('makes one node per record, of every kind', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(countByKind(p)).toEqual({
       job: 6, // j1..j4 listed, j9 a sandbox only, j8 a ledger row only
       note: 4, // three notes and the line that is not one — all lines are records
@@ -124,8 +124,8 @@ describe('the provenance index', () => {
     expect(node(p, 'job:j1')?.label).toBe('Tidy the exports');
   });
 
-  it('resolves every edge kind off the identifier it names', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('resolves every edge kind off the identifier it names', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(edge(p, 'job.continues')).toEqual([{ from: 'job:j2', to: 'job:j1', via: 'job.continues' }]);
     expect(edge(p, 'job.prompt=recipe.key').map((e) => e.from).sort()).toEqual(['job:j1', 'job:j2']);
     expect(edge(p, 'ledger.recipeKey')).toHaveLength(2);
@@ -145,8 +145,8 @@ describe('the provenance index', () => {
     expect(edge(p, 'note.agentling').filter((e) => e.from.startsWith('note:'))).toHaveLength(2);
   });
 
-  it('narrows a title shared by several jobs to the one finished on the line\'s date', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('narrows a title shared by several jobs to the one finished on the line\'s date', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     // "Tidy the exports" is j1 (on DAY) and j3 (the day after); the lesson is dated DAY.
     const stamped = edge(p, 'lesson.jobStamp');
     expect(stamped).toEqual([expect.objectContaining({ to: 'job:j1', via: 'lesson.jobStamp' })]);
@@ -156,7 +156,7 @@ describe('the provenance index', () => {
     expect(titled.every((e) => e.to === 'job:j1' && e.ambiguous === undefined)).toBe(true);
   });
 
-  it('says when a title still names several jobs, pointing at the first', () => {
+  it('says when a title still names several jobs, pointing at the first', async () => {
     // Give j3 the same day as j1, so the date cannot separate them.
     write(
       path.join(level, 'jobs.json'),
@@ -165,14 +165,14 @@ describe('the provenance index', () => {
         { id: 'j3', title: 'Tidy the exports', prompt: 'y', status: 'done', createdAt: AT, finishedAt: AT },
       ]),
     );
-    const p = buildProvenance(level, 'lvl', [], NOW);
+    const p = await buildProvenance(level, 'lvl', [], NOW);
     expect(edge(p, 'lesson.jobStamp')).toEqual([
       { from: expect.stringMatching(/^lesson:pip:/), to: 'job:j1', via: 'lesson.jobStamp', ambiguous: 2 },
     ]);
   });
 
-  it('counts an identifier that names nothing instead of hiding it', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('counts an identifier that names nothing instead of hiding it', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(p.unresolved).toEqual({
       'lesson.jobStamp': 1, // (job: Never Ran)
       'note.title': 1, // Zed delivered "Never Ran"
@@ -180,8 +180,8 @@ describe('the provenance index', () => {
     });
   });
 
-  it('shows a recipe rows still name but the file no longer holds as missing, not as nothing', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('shows a recipe rows still name but the file no longer holds as missing, not as nothing', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     const gone = node(p, 'recipe:a method since dropped#none');
     expect(gone?.flags).toEqual(['missing']);
     expect(p.edges.filter((e) => e.to === gone?.id).map((e) => e.via).sort()).toEqual([
@@ -190,21 +190,21 @@ describe('the provenance index', () => {
     ]);
   });
 
-  it('flags a store source whose file is gone, and a scanned passage, and a stale index', () => {
-    const fresh = buildProvenance(level, 'lvl', [], NOW);
+  it('flags a store source whose file is gone, and a scanned passage, and a stale index', async () => {
+    const fresh = await buildProvenance(level, 'lvl', [], NOW);
     expect(node(fresh, 'source:notes/gone.md')?.flags).toEqual(['missing']);
     expect(node(fresh, 'source:notes/deploy.md')?.flags).toEqual([]);
     expect(node(fresh, 'passage:notes/deploy.md#2')?.flags).toEqual(['scanned']);
-    const later = buildProvenance(level, 'lvl', [], NOW + 8 * 24 * 60 * 60 * 1000);
+    const later = await buildProvenance(level, 'lvl', [], NOW + 8 * 24 * 60 * 60 * 1000);
     expect(node(later, 'passage:notes/deploy.md#1')?.flags).toEqual(['stale']);
     expect(node(later, 'source:notes/gone.md')?.flags).toEqual(['stale', 'missing']);
   });
 
-  it('keeps a torn file as an unparsed node and builds the rest', () => {
+  it('keeps a torn file as an unparsed node and builds the rest', async () => {
     write(path.join(level, 'recipes.json'), '{ not json');
     write(path.join(level, 'store-index.json'), '[[[');
     write(path.join(level, 'reconciliations', 'bad.json'), '{');
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(node(p, 'recipe:recipes.json')?.flags).toEqual(['unparsed']);
     expect(node(p, 'source:store-index.json')?.flags).toEqual(['unparsed']);
     expect(node(p, 'reconciliation:bad.json')?.flags).toEqual(['unparsed']);
@@ -212,36 +212,36 @@ describe('the provenance index', () => {
     expect(countByKind(p).lesson).toBe(3);
   });
 
-  it('marks a prior a sandbox names but nobody banked as missing', () => {
-    const p = buildProvenance(level, 'lvl', [], NOW);
+  it('marks a prior a sandbox names but nobody banked as missing', async () => {
+    const p = await buildProvenance(level, 'lvl', [], NOW);
     expect(node(p, 'reconciliation:j0')?.flags).toEqual(['missing']);
     expect(node(p, 'reconciliation:j4')?.label).toBe('reconciliation 2026-10');
   });
 
-  it('never reads another level: two levels share no node id', () => {
+  it('never reads another level: two levels share no node id', async () => {
     const other = path.join(root, 'levels', 'other');
     mkdirSync(other, { recursive: true });
     write(path.join(other, 'jobs.json'), JSON.stringify([{ id: 'k1', title: 'Elsewhere', prompt: 'z', status: 'done', createdAt: AT }]));
     write(path.join(other, 'KNOWLEDGE.md'), `# Level knowledge\n\n- ${DAY} · Rue (worker) delivered "Elsewhere" — a different lesson\n`);
-    const a = buildProvenance(level, 'lvl', ledger, NOW);
-    const b = buildProvenance(other, 'other', [], NOW);
+    const a = await buildProvenance(level, 'lvl', ledger, NOW);
+    const b = await buildProvenance(other, 'other', [], NOW);
     const ids = new Set(a.nodes.map((n) => n.id));
     expect(b.nodes.some((n) => ids.has(n.id))).toBe(false);
     expect(b.edges.some((e) => ids.has(e.from) || ids.has(e.to))).toBe(false);
   });
 
-  it('reports the newest input mtime, so a cache can tell when to rebuild', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('reports the newest input mtime, so a cache can tell when to rebuild', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(p.inputsMtime).toBeGreaterThan(0);
     writeFileSync(path.join(level, 'KNOWLEDGE.md'), `# Level knowledge\n\n- ${DAY} · a new line\n`);
-    const q = buildProvenance(level, 'lvl', ledger, NOW);
+    const q = await buildProvenance(level, 'lvl', ledger, NOW);
     expect(q.inputsMtime).toBeGreaterThanOrEqual(p.inputsMtime);
   });
 });
 
 describe('a neighbourhood', () => {
-  it('is the node, every edge touching it, and the nodes at the other end — capped, with the rest counted', () => {
-    const p = buildProvenance(level, 'lvl', ledger, NOW);
+  it('is the node, every edge touching it, and the nodes at the other end — capped, with the rest counted', async () => {
+    const p = await buildProvenance(level, 'lvl', ledger, NOW);
     const around = neighbourhood(p, 'job:j1');
     expect(around?.node.id).toBe('job:j1');
     const vias = around!.edges.map((e) => e.via).sort();

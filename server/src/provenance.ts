@@ -97,6 +97,19 @@ export const LABEL_CHARS = 160;
 /** A week, the store's own bound. Imported as a number rather than from store.ts to keep this a leaf. */
 const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Store passages between turns of the event loop. The sim ticks every 100 ms
+ * and a build at the store's caps (50,000 passages) took 390 ms in one piece
+ * — four ticks the world would have skipped for a panel. Measured at this
+ * batch size: the worst pause at the caps is 52 ms, and that slice is the
+ * index's own parse (31 ms bare), which nothing here can split; the build
+ * still finishes inside half a second.
+ */
+const YIELD_EVERY = 500;
+
+/** One turn of the loop, so a tick or a frame can go out mid-build. */
+const breathe = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+
 function hash(text: string): string {
   return createHash('sha1').update(text).digest('hex').slice(0, 12);
 }
@@ -129,12 +142,12 @@ export const recipeNodeId = (key: string, shape?: readonly string[]): string =>
  * belong to it. The ledger is the one global file, so the caller filters it;
  * this function never sees another level's rows.
  */
-export function buildProvenance(
+export async function buildProvenance(
   levelDir: string,
   levelId: string,
   ledger: readonly LedgerEntry[],
   now: number,
-): Provenance {
+): Promise<Provenance> {
   const started = performance.now();
   const nodes = new Map<string, Node>();
   const edges: Edge[] = [];
@@ -221,7 +234,11 @@ export function buildProvenance(
         }
       })
     : [];
+  let opened = 0;
   for (const id of sandboxIds) {
+    // Sandboxes are file reads; a level with hundreds of them is the other
+    // place a build could hold the loop.
+    if (++opened % 25 === 0) await breathe();
     const dir = path.join(sandboxes, id);
     const result = path.join(dir, 'RESULT.md');
     let head: string | undefined;
@@ -263,6 +280,7 @@ export function buildProvenance(
     }
   }
 
+  await breathe();
   // --- recipes ---
   const recipesPath = recipesFile(levelDir);
   touch(recipesPath);
@@ -320,6 +338,7 @@ export function buildProvenance(
     }
   }
 
+  await breathe();
   // --- tools and candidates ---
   const tools = readTools(levelDir);
   const toolsByKey = new Map<string, string>();
@@ -358,6 +377,7 @@ export function buildProvenance(
     }
   });
 
+  await breathe();
   // --- the ledger, already filtered to this level by the caller ---
   for (const row of ledger) {
     const from = jobNodeId(row.jobId);
@@ -385,6 +405,7 @@ export function buildProvenance(
     }
   }
 
+  await breathe();
   // --- agentlings and lessons ---
   const memoryDir = path.join(levelDir, 'memory');
   const memoryFiles = existsSync(memoryDir)
@@ -438,6 +459,7 @@ export function buildProvenance(
     });
   }
 
+  await breathe();
   // --- level knowledge ---
   const knowledgePath = path.join(levelDir, 'KNOWLEDGE.md');
   touch(knowledgePath);
@@ -461,14 +483,19 @@ export function buildProvenance(
     }
   });
 
+  await breathe();
   // --- the store ---
   const storePath = indexFile(levelDir);
   touch(storePath);
   const index = readIndex(levelDir);
+  // The parse of a cap-sized index is 30 ms on its own; it gets its own slice.
+  await breathe();
   if (index) {
     const stale = now - index.syncedAt > STALE_MS;
     const ordinal = new Map<string, number>();
+    let seen = 0;
     for (const entry of index.entries) {
+      if (++seen % YIELD_EVERY === 0) await breathe();
       const sourceId = `source:${entry.source}`;
       if (!nodes.has(sourceId)) {
         const present = index.sources.some((root) => existsSync(path.join(root, entry.source)));
@@ -504,6 +531,7 @@ export function buildProvenance(
     });
   }
 
+  await breathe();
   // --- banked reconciliations (D-223) ---
   const reconDir = path.join(levelDir, RECONCILIATIONS_DIR);
   if (existsSync(reconDir)) {

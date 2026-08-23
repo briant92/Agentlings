@@ -1134,6 +1134,32 @@ free against `hq` from a note about `EXPORTS.md`: 1 of 86 notes matched, sharing
 exactly `['know']`. The free tier's promise is never guess, and it had been
 guessing on the one word guaranteed to be there.
 
+### Seeing where a lesson came from — Partial, live look owed (D-225)
+
+The level's record is mapped from the identifiers the records already
+carry: a ledger row's recipe key, a lesson's `(job: title)` stamp, a tool
+manifest's recipe key, a store passage's source file, a banked
+reconciliation's job id. Every connection names the identifier it was read
+off and none is a score — "learnt on this job, by its stamp" is a weaker
+claim than "ran under this method, by its ledger row", and the panel says
+which. A title that names several jobs is narrowed by the line's date and
+otherwise said to be ambiguous; a method rows still name but the file has
+lost is shown as missing; a pointer to nothing is counted, never hidden.
+
+In the Knowledge panel: a search over the level's own record, ranked by the
+same shared-word count a session's notes are; for any record, everything one
+hop away (capped at 50, the rest counted); and **what would a session be
+handed** — a sentence, an agentling, and the tier the router would price it
+at, the eight note slots as filled, the six the recall tier would answer
+from, the five lesson slots — with nothing run and nothing written.
+
+It reads the level; nothing reads it back. The executors, the router and
+the quote never import it, and a wired test pins that a mapped level briefs
+a run byte for byte as an unmapped one. Measured on the real levels: hq in
+55 ms, 704 records, 839 connections, the worst kind 90% resolved; and the
+title stamp found not to be an identifier — 29 of hq's 55 lesson edges name
+several same-day jobs even after the date.
+
 ---
 
 ## 10. Boundaries
@@ -1577,8 +1603,12 @@ the headers (D-221 declined the vocabulary).
 | `SHAPE_SNIFF_BYTES` | 4 KB | `inputshape.ts` | How much of an attachment is read for its header — the shape a recipe, a credit and a tool are keyed on (D-221) |
 | `STRIKES_ALLOWED` | 2 | `tools.ts` | Consecutive failures that retire a tool |
 | `TOOL_TIMEOUT_MS` | 60 s | `tools.ts` | A compiled tool that hangs is not cheaper |
-| KNOWLEDGE notes per session | 8 | `executors/claude.ts` | Chosen by term overlap, not recency |
+| KNOWLEDGE notes per session | 8 | `SESSION_NOTES`, `executors/claude.ts` | Chosen by term overlap, not recency |
 | KNOWLEDGE notes per recall | 6 | `router.ts` | The `answer` tier |
+| Provenance neighbourhood cap | 50 | `index.ts` | Edges past it are counted, not dropped (D-225) |
+| Provenance search cap | 50 | `index.ts` | Ranked by the same shared-word count as the notes |
+| Provenance cache | 10 min | `provenance.ts` | Per level, from the last look; rebuilt when a file moves |
+| Provenance yield | 500 passages, 25 sandboxes | `provenance.ts` | The build breathes; worst slice 52 ms at the caps |
 | `STALE_MS` | 7 days | `store.ts` | Past it the knowledge store contributes nothing at all |
 | `MAX_PER_SOURCE` | 250 | `store.ts` | Files indexed per folder; the overflow is reported |
 | `MAX_ENTRY_CHARS` | 600 | `store.ts` | One passage, so eight of them are still a small prompt |

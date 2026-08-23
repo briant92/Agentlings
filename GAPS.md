@@ -50,6 +50,12 @@ capability roadmap; this is the short list of what matters most, in order.
       Acceptable for one user on localhost by decision; each becomes a
       blocker at the first second user, as does billing (D-012's spine has
       no invoice on purpose).
+      Named under it on 2026-08-23 (D-225): the store skips dotfiles and
+      unknown extensions, so `.env` never enters, but a plain `notes.txt`
+      holding a key-shaped string is indexed today, and the Knowledge
+      panel's search now makes such a line easy to find. A count of
+      key-shaped entries at sync time, reported like `skipped` and not
+      indexed, is the item — not built.
 - [ ] **G5 — The quote's blind spots, one of three now closed.** Attachments
       (+$0.83 measured on one 74KB file, T2·1) and per-level context weight
       (the ~5–8c per-call floor that pushed five predictions low the same way)

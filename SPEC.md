@@ -155,6 +155,11 @@ the loop runs end to end without one.
   Never read live: the index is an artefact you can inspect before a session
   can use it, each line carries its source and sync date, and a stale index
   contributes nothing so the free tier falls through rather than serving it.
+- `provenance.ts` — the level's own record mapped (D-225): one derived node
+  per record on disk and one edge per identifier a record already carries,
+  each edge naming that identifier (`via`) and never a score. Built on
+  demand, yielding to the tick, held per level until a file moves; read by
+  the Knowledge panel's routes and by nothing that briefs a run.
 - `documents.ts` — getting the data out of a Word file, a PDF, a spreadsheet
   or a deck, in one place. Two callers want the same files for different
   reasons — the review panel shows them, the store indexes them — so this
@@ -318,6 +323,9 @@ catalog, settings and spend are global because they are.
 | `GET /api/levels/:lid/knowledge` | The store: sources, counts, what could not be read, and whether the index has gone stale |
 | `POST /api/levels/:lid/knowledge/sources` | Point this level at folders of your own material, and index them |
 | `POST /api/levels/:lid/knowledge/sync` | Re-read those folders — the crew reads the index, so nothing changes until this runs |
+| `GET /api/levels/:lid/provenance` | The level's record mapped (D-225): counts by kind and how the build went; with `?node=` one record and everything one hop away, capped at 50 |
+| `GET /api/levels/:lid/provenance/search?q=` | Records sharing words with the query, ranked as a session's notes are; capped at 50 |
+| `POST /api/levels/:lid/provenance/dry-run` | What a session would be handed for a sentence — the tier, the eight notes, the six recall lines, an agentling's five lessons — written nowhere |
 | `GET /api/levels/:lid/tools` | Compiled tools, and what could be compiled next |
 | `POST /api/levels/:lid/tools/promote` | Compile a proven recipe into a tool |
 | `POST /api/levels/:lid/tools/:name/retire` | Take a tool out of service, with the reason |
@@ -509,6 +517,13 @@ tried, measured and rejected is in `DECISIONS.md`:
   none is stopped at the desk — the server's preview names it, the card
   counts the files, the reason lands on the Start button and a second
   press queues anyway; a single workbook passes as two sides → D-224
+- M5.34 the provenance index: the level's own record mapped from the
+  identifiers it already carries — a ledger row's recipe key, a lesson's
+  job stamp, a manifest's recipe key, a passage's source — every edge
+  naming the identifier and never a score; searched and walked in the
+  Knowledge panel, with a dry-run of what a sentence would be handed; read
+  by nothing that briefs a run; the knowledge-graph proposal's other
+  options rejected on the measurements → D-225
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

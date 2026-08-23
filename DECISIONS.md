@@ -234,6 +234,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-222 — 2026-08-22 — The reconciliation contract: the statement is asked for, the server recomputes it, and Approve refuses one that does not balance](#d-222--2026-08-22--the-reconciliation-contract-the-statement-is-asked-for-the-server-recomputes-it-and-approve-refuses-one-that-does-not-balance)
 - [D-223 — 2026-08-22 — The roll-forward: an approved reconciliation is banked in the level and the next period starts from it](#d-223--2026-08-22--the-roll-forward-an-approved-reconciliation-is-banked-in-the-level-and-the-next-period-starts-from-it)
 - [D-224 — 2026-08-23 — The desk arrests a reconciliation with nothing to reconcile against](#d-224--2026-08-23--the-desk-arrests-a-reconciliation-with-nothing-to-reconcile-against)
+- [D-225 — 2026-08-23 — The provenance index: the level's own record, mapped from identifiers it already carries, read by the panel and by nothing that briefs a run](#d-225--2026-08-23--the-provenance-index-the-levels-own-record-mapped-from-identifiers-it-already-carries-read-by-the-panel-and-by-nothing-that-briefs-a-run)
 
 ## By theme
 
@@ -892,6 +893,18 @@ entry updates one file rather than two.
   `PRIOR-RECONCILIATION.json` in its sandbox — a clear writes nothing; and D-224, the arrest: a reconcile sentence with one file or
   none stopped at the desk the missingAttachment way — the reason on the
   button, a second press queues, a single workbook passes — the board's last item
+- **The level's record, mapped — the provenance index** — D-225: the
+  knowledge-graph proposal reviewed against the code and the record and
+  answered with a derived, per-level map built from identifiers the records
+  already carry (a ledger row's recipe key, a lesson's job stamp, a manifest's
+  recipe key, a passage's source), every edge naming the identifier it was
+  read off and never a score; read by the Knowledge panel — search ranked as
+  a session's notes are, a record's neighbourhood, and a dry-run of what a
+  sentence would be handed — and by nothing that briefs a run, pinned at the
+  brief seam; graph database, embeddings, vault storage, source chat, related
+  content in briefs and cross-level traversal rejected on the measurements,
+  FTS5 gated on the cap fixture; the title stamp found not to be an
+  identifier; `storeLines` and `relevantLines` memoised for the caps
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -16565,3 +16578,127 @@ and queued — the workbook exception, seen live — and Brian cancelled it
 before it spent anything (`f9334d27`, cleared). The preview flag and the
 card's wiring have no harness, like `organize` and `missingAttachment`
 before them; this is their proof. `AGENTLING.md` moves the arrest to Live.
+
+## D-225 — 2026-08-23 — The provenance index: the level's own record, mapped from identifiers it already carries, read by the panel and by nothing that briefs a run
+
+**Decision.** A proposal to add an Obsidian / Logseq / LLM-Wiki-style
+knowledge graph over the context system — backlinks, related jobs, graph
+exploration, tags and aliases, SQLite FTS5, optional embeddings, a
+source-chat view, a graph canvas — was reviewed on 2026-08-23 against the
+code and the record, and answered with the smallest thing the code was
+already most of the way to. What was built is a *provenance index*: one
+derived map per level, built on demand from the level directory and the
+ledger rows tagged with its id, in which every node is a record that exists
+on disk — job, level note, lesson, recipe, tool, tool candidate, store source
+and passage, banked reconciliation, agentling — and every edge names the
+identifier it was read off (`via`: `ledger.recipeKey`, `lesson.jobStamp`,
+`manifest.recipeKey`, `entry.source`, `job.continues`,
+`reconciliation.jobId`, `prior.jobId`, …). No edge is ever a score. An
+identifier that names nothing is counted under `unresolved`; a title that
+names several jobs is narrowed by the line's own date and otherwise marked
+`ambiguous: n`; a recipe that rows still name but `recipes.json` has lost is
+a node flagged `missing`; a torn file is a node flagged `unparsed`. The
+index is read by three routes under `/api/levels/:lid/provenance` — the
+counts, one record's neighbourhood capped at 50, a search ranked by the
+words shared with the question (`router.wantedTerms`, exported so the panel
+ranks by the same set and not a copy) — and by a fourth, `dry-run`, which
+shows what a session would be handed for a sentence: the quote's own tier,
+the eight notes, the six the recall tier would answer from, the named
+agentling's five newest lessons, written nowhere. It is read by **nothing
+that briefs a run**: the executors, the router, the quote, the store, the
+levels, memory and recipes modules never import it, and a wired
+runner-protocol test pins that a level mapped, cached and searched briefs a
+run byte for byte as one that is not. Two folded sections at the foot of the
+Knowledge panel show it. The three windows a run reads are now named where
+they are spent — `SESSION_NOTES = 8`, `SESSION_LESSONS = 5` in `claude.ts`,
+the recall tier's 6 in `router.ts` — and the corpus closure is one function,
+`levelCorpus`, read by the run and the dry-run alike.
+
+**Rejected, on the review's measurements, and recorded so they are not
+re-litigated.** A graph database (one or two thousand nodes fit an adjacency
+map that answers any hop in microseconds; a server or native binding for
+that is weight without a query). Embeddings and `sqlite-vec` (D-211's
+trigger — a reworded repeat shown to miss the hint bar — has not fired; a
+nearest neighbour always exists, which is the guess the router refuses; API
+embeddings ship every private passage off the machine, the opposite of
+D-047's *nothing arrives unread*; a local model is a download, a loadable
+native extension and minutes of CPU a sync at the caps). An Obsidian vault
+or Logseq database as storage (D-167 already: the data shape does not exist
+here and would have to be invented; a vault gets edited and becomes a second
+source of truth). A source-chat view (every turn an unquoted paid call —
+*never billed above the quote* and the absorbed-failure rule both break; the
+app already has the honest version: a free recall tier that never guesses
+and a paid session that is reviewed). Related jobs or related knowledge in a
+brief (job results are context for **no** session today; a fourth tier
+nobody decided). Cross-level traversal (D-050: prose never crosses; the
+index lives inside the level directory and has no cross-level key, the same
+structural enforcement every reader relies on). Agent-authored tags,
+aliases or confidence (authority a dated line does not have; every flag
+shown is read off the records — stale, scanned, retired, missing). Generated
+summary nodes (D-047's wiki page that asserts what is currently true). FTS5
+is neither adopted nor rejected: `node:sqlite` in the installed Node 24.14
+answers an FTS5 query in memory with an ExperimentalWarning, so the
+dependency cost can be zero, but the repo's engine floor is 20.19 and at 154
+notes it buys ranking, not speed — it is gated on the cap fixture's search
+p95 passing 100 ms or a real index passing ~10k passages. A one-way vault
+export and a drawn neighbourhood are deferred until someone wants them.
+
+**Why it preserves the product.** The app's one safety shape is an artefact
+you can inspect before the crew uses it (D-047); this is that shape applied
+to the crew's own learning. The world stays presentation; routing stays
+deterministic and unchanged; levels stay sealed by the same mechanism as
+before; lessons stay per agentling; review, promotion, the quote and the
+turn budget are untouched because the brief is identical. What would have
+made it a notes app — tags, a force graph, a vault — and what would have
+made it a RAG chatbot — an *ask your knowledge* box that calls a model — are
+the things the review declined.
+
+**What the prototype measured, before a route existed.**
+`scripts/provenance-report.ts` built the map for the real levels, $0: hq in
+55 ms, 704 nodes, 839 edges, worst edge kind 90% resolved; home-chores in
+42 ms, 97%; training-ground in 35 ms, worst kind 75% — on n=4,
+`ledger.tier=tool`, the one unresolved being a tool run that matched on
+similarity, which the index refuses to identify by design. Two findings the
+map made visible: one sentence on training-ground has 26 ledger rows and 23
+candidate lines and its recipe is no longer in `recipes.json` — a method
+dropped or rewritten, now shown as a `missing` node the 49 runs point at
+rather than lost as a count; and the D-089 title stamp is not an identifier —
+after the date narrowed it, 29 of hq's 55 lesson edges and 59 of 137 note
+edges still name several jobs, same-day repeats of one sentence. A job id
+beside the title in the stamp is the named next measurement, not built here.
+
+**Performance, measured against the budgets set before the build.** The
+build yields to the event loop between phases, every 25 sandboxes, after the
+index parse and every 500 store passages, because one piece at the store's
+caps (50,000 passages) held the loop 390 ms — four ticks. After: an
+hq-shaped fixture (238 jobs, 154 notes, 196 lessons, 60 recipes over three
+shapes, 5 tools) builds in 34 ms unloaded with no pause over 27 ms; the caps
+fixture (50,650 nodes) in 400 ms with a worst pause of 52 ms, and that slice
+is the 30 MB index's own read-and-parse (31 ms bare) which the store pays on
+every job today and nothing here can split. The in-suite assertions became
+order-of-magnitude guards after the parallel suite measured the same 34 ms
+build at 204 ms by starvation alone — the D-166 shape, a negative result
+from the instrument first. The cache keeps one build per level, rebuilt when
+any input's mtime moves (a few hundred stats), dropped ten minutes after the
+last look, never warmed at boot, never touched by a job or a tick.
+
+**Two hot-path costs the review found, fixed in the same line (step 5).**
+`storeLines` re-read and re-parsed `store-index.json` on every job and every
+keystroke of the plan route — 103 ms a call at the caps — and now holds the
+parsed index keyed on the file's mtime and size, 0.0 ms warm, the staleness
+rule still applied to the clock on every call. `relevantLines` ran `terms`
+over every line on every call — 607 ms at the caps, and a session start
+makes two — and now keeps each line's words by the line, bounded at 200k and
+emptied when full: 17 ms warm. On a real level today both were under a
+millisecond; the memo is for the caps, and its tests pin the held index
+following a rewrite and going stale by the clock.
+
+**Evidence.** Six commits, 8ac37d9 through the paperwork, each mutation-
+tested after committing: dropping the date narrowing, the missing-recipe
+node, the held index's mtime compare, adding a provenance import to
+`claude.ts`, and leaking the cache into the brief each failed exactly the
+test written for it. Server 81 files, 2,005 tests; web 27 files, 290; the
+bundle builds in 11.7 s. The routes and the panel await a live look after the
+next restart (`npm run serve` — the running server predates them and the
+panel says so rather than showing *Not Found*), which is what moves
+`AGENTLING.md`'s entry from Partial to Live.

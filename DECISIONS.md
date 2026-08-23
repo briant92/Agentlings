@@ -231,6 +231,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-219 — 2026-08-22 — Payments on the shelf of never: a kind of act refused by decision, beside the apps](#d-219--2026-08-22--payments-on-the-shelf-of-never-a-kind-of-act-refused-by-decision-beside-the-apps)
 - [D-220 — 2026-08-22 — B0 measured on generic fixtures: the analyst fits its quote, and the sentence-keyed recipe drifts toward the last counterpart](#d-220--2026-08-22--b0-measured-on-generic-fixtures-the-analyst-fits-its-quote-and-the-sentence-keyed-recipe-drifts-toward-the-last-counterpart)
 - [D-221 — 2026-08-22 — The files a job was given join what the crew learns: a recipe, a credit and a tool keyed on the shape they were learned over](#d-221--2026-08-22--the-files-a-job-was-given-join-what-the-crew-learns-a-recipe-a-credit-and-a-tool-keyed-on-the-shape-they-were-learned-over)
+- [D-222 — 2026-08-22 — The reconciliation contract: the statement is asked for, the server recomputes it, and Approve refuses one that does not balance](#d-222--2026-08-22--the-reconciliation-contract-the-statement-is-asked-for-the-server-recomputes-it-and-approve-refuses-one-that-does-not-balance)
 
 ## By theme
 
@@ -877,7 +878,13 @@ entry updates one file rather than two.
   each attachment stamped with its shape as it is written, and a recipe, a
   credit and a compiled tool keyed on the shape they were learned over, so
   one sentence over two kinds of file is two recipes and a tool claims only
-  the files it was compiled against — `hasRepo`'s rule on a second axis
+  the files it was compiled against — `hasRepo`'s rule on a second axis;
+  and D-222, the contract: a sentence that asks to reconcile has its run
+  deliver `RECONCILIATION.json`, the server recomputes both adjusted sides
+  from the run's own adjustments and stamps the verdict on the job, the
+  review shows it, and Approve is refused by name when the sides do not
+  meet — no skill, on D-220's measurement that only the statement had to
+  be asked for
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -16121,3 +16128,80 @@ their attachments already stamped — the queued job's record showed
 
 Three recipes, one sentence, three shapes, none overwriting another: the
 drift D-220 measured cannot recur, and a compile now keys on a shape.
+
+## D-222 — 2026-08-22 — The reconciliation contract: the statement is asked for, the server recomputes it, and Approve refuses one that does not balance
+
+**Decision:** a sentence that asks to reconcile — *reconcile*, *conciliación*,
+*cuadrar*, word-bounded in either language — has its run told, in its brief,
+to deliver `RECONCILIATION.json` beside its report: the two sides with their
+closing balances, the signed adjustments each needs, the matched pairs, the
+unmatched lines on each side with a category, and the entries the records
+side would post. At completion the queue **recomputes both adjusted balances
+from the run's own adjustments**, in cents, and stamps the summary on the job
+beside the outbox and withheld stamps — the file's own claim of a balance is
+never read. The review card shows both sides, what adjusts each, the counts
+and the verdict; **Approve is refused by name when the sides do not meet**,
+or when the file did not parse, and the job stays reviewable for a reply. A
+clear or a discard pass, since neither keeps anything. No skill is mounted:
+this is the contract alone, and whether a skill is ever needed is measured
+against a contract-carrying run, not assumed.
+
+### What forced it
+
+D-220: five runs of one sentence over three kinds of pair, every one
+matching in a kept script and reading its residue sensibly, only one writing
+an equation and none the two-sided statement a reconciliation *is*. The
+method transferred on its own; the invariant had to be asked for. Brian took
+the contract-first shape on 2026-08-22 with the card mocked up first, on the
+recommendation that a skill costs about 14% of every turn (D-190) and would
+be bought here to teach a method the runs already had.
+
+### What the contract checks, and what it does not
+
+It checks the arithmetic the run declared: `statement.closing` plus its
+adjustments equals `records.closing` plus its adjustments, the sums done in
+cents so decimal money cannot drift into a false difference, equal under a
+guard of half a cent. It does not check that every line was matched rightly
+— a run that calls a cheque *in transit* when it was *outstanding* balances
+just the same — and the card says so in the same breath as the verdict. That
+is the honest scope D-181 set for the withholding gate: a check that claims a
+coverage it does not have is worse at the irreversible moment than no check.
+A declaration that did not parse blocks too, for WITHHELD's reason: read as
+"nothing to check", the gate would be off exactly where it was asked for.
+
+`entries` is optional — a personal register has no books to post to. A
+reconciliation job can never auto-send under a standing approval, because
+it leaves files and D-082 drops any extra file back to review; no new
+blocker was needed.
+
+### What was done
+
+`reconciliation.ts`: `wantsReconciliation`, the strict parse with every
+refusal naming its field, `summariseReconciliation`, `reconciliationRefusal`
+and the brief's section — compact, thirteen lines, since every line rides
+every turn. `buildAppend` gains the section as its last parameter, passed
+when the sentence asks. `queue.finish` stamps the summary on the same seam
+as the outbox and the withheld declaration. The resolve route's gate sits
+before the outbox block and before anything real. The web's card reuses the
+withheld panel's cream with a green or red verdict line, its words pure and
+pinned. Shared types carry the contract and the summary, with caps of 200
+adjustments, 2,000 matched, 500 unmatched a side and 100 entries.
+
+### What proved it
+
+`0d90046`: typecheck clean in all three workspaces; server 79 files / 1,968
+tests (+11), web 27 / 282 (+4). The Edig worked example (31 May 2026, the
+`cl/` fixture's answer key) is the test fixture: it meets at 4.240.650, and
+with the IVA adjustment dropped it does not, by 2.850. Mutations after
+committing, each restored and re-run green (88/88 across the two server
+files): the sum ignoring which side an adjustment belongs to fails three
+tests; the side check accepting any word fails one; the stamp never landing
+fails one.
+
+### Untested live
+
+The brief's section, the stamp and the gate reach a run only after Brian's
+restart. The proof planned for then: B0's sentence over the `us/` and `cl/`
+fixtures with the contract in hand, reading `job.reconciliation.balances`
+and the card; then one finished job's file edited to drop an adjustment and
+Approve pressed, expecting the refusal by name. Appended below when it lands.

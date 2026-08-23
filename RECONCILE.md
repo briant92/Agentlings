@@ -148,8 +148,10 @@ Total: $0.59. Every run finished on its own; none was cut.
       *strong*; attachments count as outside inputs for the exact-repeat
       answer rule (`router.ts`); pinned by the same sentence over `us/` and
       `cl/`.
-- [ ] Re-run the sentence over a fourth pair **after** B1, and read whether
-      the recipe keeps its shapes apart.
+- [x] Re-run the sentence **after** B1 — done 2026-08-22 21:37–21:57, two runs
+      (`8d0a8a68` US, `bee2d016` CL): neither served the shapeless recipe, and
+      the sentence now holds three recipes, one per shape, none overwriting
+      another (D-221, proven live).
 - [ ] B3 — the contract, the invariant, the card; the fixtures become its
       tests; the SII header verified against a real export.
 - [ ] B4 — roll-forward state at Approve, inside the level directory.

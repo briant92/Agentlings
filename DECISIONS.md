@@ -16095,3 +16095,29 @@ proof planned for then is B0's own sentence over a fourth pair: the drifted
 recipe on Training Ground has no shape and must not be served, and the new
 run must bank a recipe of its own shape beside it. Appended below when it
 lands.
+
+### Proven live — 2026-08-22 21:37–21:57, after the restart
+
+Two runs of B0's sentence through the desk route on the restarted server
+(pid 12540, up at 21:36:47, two minutes after `f315de6`), both queued with
+their attachments already stamped — the queued job's record showed
+`csv:date|description|check no|debit|credit|balance` and
+`csv:date|ref|description|deposit|withdrawal|balance` before the run began.
+
+- `8d0a8a68`, the US pair again: done, 8 turns of 40, $0.22, 3.8 minutes.
+  **No recipe key on its ledger row** — the shapeless recipe was not served
+  — and its counters did not move (hits 2, successes 2, `lastUsedAt`
+  unchanged). The close-out banked a **second recipe under the same
+  sentence**, `inputShape` the two US headers, hits 0, with its own
+  ledger-flavoured approach (quantity mismatch, NSF, service charge, missing
+  ledger entry). The delivery matched run 1's item for item, adjusted
+  balances again unasked-for and absent — B3's finding, unchanged.
+- `bee2d016`, the Chilean pair: done, 6 turns, $0.14, 2.5 minutes, no
+  recipe key either, and a **third recipe** banked beside the other two,
+  `inputShape` `csv:fecha|comprobante|glosa|debe|haber|saldo` and
+  `csv:fecha|descripcion|n° documento|cargo|abono|saldo` — the accents
+  normalised as the stamp promises — with its own approach, the two earlier
+  ones untouched.
+
+Three recipes, one sentence, three shapes, none overwriting another: the
+drift D-220 measured cannot recur, and a compile now keys on a shape.

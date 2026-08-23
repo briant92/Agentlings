@@ -5660,3 +5660,243 @@ button.danger:hover {
     display: none;
   }
 }
+
+/* Positions (D-229): the search, the posting cards with a pip per duty, and
+   the two-column match — the human posting beside the crew's graded answer. */
+.cv-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0 6px;
+}
+.cv-search label {
+  font: 7px var(--font-pixel);
+  color: var(--db-steel);
+  white-space: nowrap;
+}
+.cv-search input {
+  flex: 1;
+  background: #10131a;
+  border: 3px solid var(--db-indigo);
+  color: #d8dce6;
+  font: 14px ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  padding: 10px 12px;
+  border-radius: 0;
+}
+.cv-search input:focus {
+  border-color: var(--db-yellow);
+  outline: none;
+}
+.cv-hint {
+  font-size: 11px;
+  margin: 0 0 10px;
+}
+.cv-positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.cv-pos {
+  background: #10131a;
+  border: 3px solid var(--db-indigo);
+  border-radius: 0;
+  padding: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: #d8dce6;
+  display: grid;
+  gap: 6px;
+  font: inherit;
+}
+.cv-pos:hover {
+  border-color: var(--db-steel);
+}
+.cv-pos[aria-pressed='true'] {
+  border-color: var(--db-yellow);
+  box-shadow: 0 0 0 2px #10131a, 0 0 0 4px var(--db-yellow);
+}
+.cv-pos-t {
+  font: 8px/1.5 var(--font-pixel);
+  color: var(--db-lime-light);
+}
+.cv-pos[aria-pressed='true'] .cv-pos-t {
+  color: var(--db-yellow);
+}
+.cv-pos.noseat {
+  border-style: dashed;
+}
+.cv-pos.noseat .cv-pos-t {
+  color: var(--db-steel);
+}
+.cv-pos-aka {
+  font-size: 11px;
+  color: #8a93a6;
+}
+.cv-pips {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.cv-pip {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #10131a;
+}
+.cv-pip.y {
+  background: var(--db-lime);
+}
+.cv-pip.p {
+  background: var(--db-orange);
+}
+.cv-pip.n {
+  background: #ac3232;
+}
+.cv-pips small {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--db-steel);
+}
+.cv-match {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 16px;
+}
+.cv-col {
+  font-size: 13px;
+  background: #10131a;
+  border: 3px solid var(--db-indigo);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.cv-col h2 {
+  font: 11px/1.5 var(--font-pixel);
+  margin: 0;
+  color: var(--db-lime-light);
+  text-transform: uppercase;
+}
+.cv-col h2 small {
+  display: block;
+  font: 7px var(--font-pixel);
+  color: var(--db-steel);
+  margin-top: 6px;
+  text-transform: none;
+}
+.cv-col h3 {
+  font: 7px var(--font-pixel);
+  color: var(--db-yellow);
+  margin: 6px 0 0;
+}
+.cv-col ul {
+  margin: 0;
+  padding-left: 16px;
+}
+.cv-col li {
+  margin: 3px 0;
+}
+.cv-tally {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font: 7px/1.8 var(--font-pixel);
+}
+.cv-tally .y {
+  color: var(--db-lime);
+}
+.cv-tally .p {
+  color: var(--db-orange);
+}
+.cv-tally .n {
+  color: #e0645f;
+}
+.cv-verdicts {
+  display: grid;
+  gap: 6px;
+}
+.cv-duty {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  background: var(--db-ink);
+  border-left: 4px solid var(--db-indigo);
+}
+.cv-m {
+  font: 10px/1.4 var(--font-pixel);
+}
+.cv-duty.y {
+  border-left-color: var(--db-lime);
+}
+.cv-duty.y .cv-m {
+  color: var(--db-lime);
+}
+.cv-duty.p {
+  border-left-color: var(--db-orange);
+}
+.cv-duty.p .cv-m {
+  color: var(--db-orange);
+}
+.cv-duty.n {
+  border-left-color: #ac3232;
+}
+.cv-duty.n .cv-m {
+  color: #e0645f;
+}
+.cv-duty b {
+  display: block;
+}
+.cv-duty span:not(.cv-m) {
+  font-size: 12px;
+  color: var(--db-steel);
+}
+.cv-needs {
+  margin: 0;
+  font-size: 12px;
+}
+.cv-needs b {
+  color: #d8dce6;
+}
+.cv-hire {
+  font: 8px var(--font-pixel);
+  color: #10131a;
+  background: var(--db-lime);
+  border: 0;
+  border-radius: 0;
+  padding: 12px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--db-green);
+  justify-self: start;
+}
+.cv-hire:hover {
+  background: var(--db-lime-light);
+}
+.cv-noseat {
+  background: #1d1618;
+  border: 3px solid #5a2a2a;
+  padding: 12px;
+}
+.cv-noseat h3 {
+  color: var(--db-orange);
+  margin: 0 0 8px;
+}
+.cv-noseat p {
+  margin: 0;
+  font-size: 12px;
+}
+.cv-fills {
+  margin: 0;
+  font-size: 12px;
+}
+.ss-hire {
+  margin: 0 0 12px;
+  font: 8px/1.8 var(--font-pixel);
+  color: var(--db-yellow);
+}
+@media (max-width: 760px) {
+  .cv-match {
+    grid-template-columns: 1fr;
+  }
+}

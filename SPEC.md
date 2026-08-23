@@ -533,6 +533,14 @@ tried, measured and rejected is in `DECISIONS.md`:
   them, nominal beside measured; the skills and doors boards read the
   installed catalog and the live connections; only the plain-language
   prose is typed → D-228
+- M5.36 positions: a seventh board in Meet the crew that starts from a
+  human job — twelve postings, hand-written and hand-graded duty by duty
+  against what is built (done / partly / not this crew's, each with the
+  power, door or decision it rests on), a plain-code search over titles,
+  aliases and duties that shows the nearest matches and names the seats
+  the crew has none of, and HIRE carrying the trade and the job through
+  the level picker into that level's Hire modal; a trade's card lists the
+  positions it fills, and cost stays on the trade → D-229
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

@@ -17,6 +17,7 @@ import { useWorld } from '../useWorld';
 import type { AnchorFn } from '../world/anchor';
 import { WorldCanvas } from '../world/WorldCanvas';
 import type { LevelEntry } from './SelectScreen';
+import type { HireFor } from './hire';
 
 /** One level's world: the diorama, queue bar, and terminal, fully scoped. */
 export function LevelView({
@@ -24,6 +25,8 @@ export function LevelView({
   onExit,
   onOpenSettings,
   onMissing,
+  hireFor = null,
+  onHireDone,
 }: {
   level: LevelEntry;
   onExit: () => void;
@@ -31,6 +34,9 @@ export function LevelView({
   onOpenSettings: () => void;
   /** The level no longer exists — go somewhere that does, and stop offering it. */
   onMissing: () => void;
+  /** A hire started from a position (D-229): the trade and the job are already chosen. */
+  hireFor?: HireFor | null;
+  onHireDone?: () => void;
 }) {
   const { world, connected, events, gone } = useWorld(level.id);
   // The file is optional and only the inbox sets it: everywhere else opens a
@@ -115,6 +121,15 @@ export function LevelView({
     const agentling = await api<Agentling>(lvl(level.id, '/agentlings'), { method: 'POST' });
     arrival.current = window.setTimeout(() => setHired(agentling), 700);
   };
+
+  // A hire carried in from the positions board: the arrival happens on its
+  // own once the level is up, and the modal opens already filled.
+  const pending = useRef(false);
+  useEffect(() => {
+    if (!hireFor || !world || pending.current) return;
+    pending.current = true;
+    void hire();
+  }, [hireFor, world]);
 
   /** A review opened from the desk: snapshot the flow and join it. */
   const openFromPile = (jobId: string) => {
@@ -256,7 +271,15 @@ export function LevelView({
         />
       )}
       {hired && (
-        <HireModal levelId={level.id} agentling={hired} onClose={() => setHired(null)} />
+        <HireModal
+          levelId={level.id}
+          agentling={hired}
+          preset={hireFor ?? undefined}
+          onClose={() => {
+            setHired(null);
+            if (hireFor) onHireDone?.();
+          }}
+        />
       )}
       {rolesOpen && (
         <RolesModal

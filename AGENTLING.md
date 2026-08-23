@@ -30,7 +30,10 @@ carrying what it left. Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
-changes, that file is the one to re-read. §8's figures
+changes, that file is the one to re-read; its positions board (D-229) grades
+twelve human jobs duty by duty against §§4, 5, 11 and 14, in
+`web/src/panels/positions.ts`, and a capability landing or leaving owes
+those grades a re-read too. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 

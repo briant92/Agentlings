@@ -8,6 +8,7 @@ import type {
   WorkPlan,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { hireBanner, type HireFor } from './hire';
 import { readSeen } from '../panels/Inbox';
 import { allLooks, loadLooks, renderThumbnail } from '../world/looks';
 
@@ -98,9 +99,12 @@ function LevelBlocks({ level }: { level: LevelInfo }) {
 export function SelectScreen({
   onEnter,
   onBack,
+  hireFor = null,
 }: {
   onEnter: (level: LevelEntry) => void;
   onBack: () => void;
+  /** A hire waiting on the choice (D-229): the picker says so over the grid. */
+  hireFor?: HireFor | null;
 }) {
   const [levels, setLevels] = useState<LevelInfo[] | null>(null);
   const [creating, setCreating] = useState(false);
@@ -141,6 +145,7 @@ export function SelectScreen({
         <span className="ss-title">SELECT LEVEL</span>
         <span className="dim">esc title</span>
       </div>
+      {hireBanner(hireFor) && <p className="ss-hire">{hireBanner(hireFor)}</p>}
       <div className="ss-grid">
         {(levels ?? []).map((l) => (
           <div key={l.id} className="lvl-slot">

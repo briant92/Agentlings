@@ -238,6 +238,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-226 — 2026-08-23 — Four frictions from the first day of use: an always-on tier in Settings, one folder picker, a rail that scrolls alone, Review stacking over Crew](#d-226--2026-08-23--four-frictions-from-the-first-day-of-use-an-always-on-tier-in-settings-one-folder-picker-a-rail-that-scrolls-alone-review-stacking-over-crew)
 - [D-227 — 2026-08-23 — The phone at phone width: D-175 was measured in Desktop Mode, and in mobile mode the page scrolled sideways](#d-227--2026-08-23--the-phone-at-phone-width-d-175-was-measured-in-desktop-mode-and-in-mobile-mode-the-page-scrolled-sideways)
 - [D-228 — 2026-08-23 — Meet the crew: AGENTLING.md as a character-select screen, every number read from the role file and the ledger, and a per-role measure that history() could not give](#d-228--2026-08-23--meet-the-crew-agentlingmd-as-a-character-select-screen-every-number-read-from-the-role-file-and-the-ledger-and-a-per-role-measure-that-history-could-not-give)
+- [D-229 — 2026-08-23 — Positions: a human job graded duty by duty against what is built, hand-written and hand-graded, with HIRE carrying the trade through the level picker](#d-229--2026-08-23--positions-a-human-job-graded-duty-by-duty-against-what-is-built-hand-written-and-hand-graded-with-hire-carrying-the-trade-through-the-level-picker)
 
 ## By theme
 
@@ -519,7 +520,9 @@ entry updates one file rather than two.
   `zoom: 1.15` on the panels; and D-228, Meet the crew — AGENTLING.md as
   a character-select screen behind Settings, a trade's card reading its
   numbers from the role file and the ledger, nominal ceiling beside measured
-  cost
+  cost; and D-229, positions — a human job graded duty by duty against what
+  is built, hand-written so the grade is a claim with a reason rather than
+  a word match, HIRE carrying the trade through the level picker
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -16954,4 +16957,83 @@ AGENTLING.md's header names the screen and `crew.ts` as the file to re-read
 when a section changes — the prose there is typed and can drift; the
 numbers cannot. The sprites are the mockup's: one body, a hat and tint per
 trade, not the in-world sheet — decided, not deferred.
+
+## D-229 — 2026-08-23 — Positions: a human job graded duty by duty against what is built, hand-written and hand-graded, with HIRE carrying the trade through the level picker
+
+Brian proposed a second way into the roster: real-world jobs a person
+would apply for, with their actual responsibilities and skill requirements,
+so someone looking to fill a human position finds the plain-language
+match in the crew and sees what the agentling does and does not cover of
+it. Reviewed thoroughly, mocked up, assessed together.
+
+### The review
+
+The value is the per-responsibility contrast, and it is exactly where the
+honesty of AGENTLING.md (Live / Partial / Not built) meets a job someone
+recognises: a posting lists six duties; for each the crew does it, does
+part of it, or never will, and the never column is §14's refusals made
+concrete. The trap is the headline — a coverage percentage or a "replaces
+a bookkeeper" sentence would overclaim in the way the router's never-guess
+rule forbids. So the tally is counts, never a percentage, and the red rows
+are always shown.
+
+Four choices put to Brian, with the recommendation first, and decided:
+
+1. **Source** — hand-written, O*NET-shaped (title, also-known-as, duties,
+   skills), twelve positions; an O*NET or ESCO import later is a data
+   swap. Decided: hand-written; a real source can be added later.
+2. **Grading** — hand-graded against the code, each grade carrying the
+   power, door or decision it rests on. Not a word match: a BM25 hit
+   between "prepare reports" and the scribe's prompt is not evidence the
+   scribe can do it. Decided as proposed.
+3. **Search** — plain code over titles, aliases and duty words, nearest
+   matches shown, never one; no router, no model, no role text touched
+   (so D-190's reshuffle hazard is not in play). A miss names the seats
+   the crew has none of — the D-053 lesson, a missing capability named
+   rather than substituted. Decided as proposed.
+4. **HIRE** — Brian: keep it, and make it trigger a level selection to
+   place the hiring.
+5. **Cost** — Brian: no cost on the human posting; track it only on the
+   trade, since one agentling job covers more than one human job. So the
+   trade card gained *fills: …* and the positions board carries no cost.
+
+Grade tone — *not this crew* for the red row, because half the reds are
+refusals (pay, act, talk) and half are plain absences (no database door) —
+accepted.
+
+### What was built
+
+- `web/src/panels/positions.ts` (pure, 4 tests): the twelve positions,
+  `tally`, `score`/`search`, `fills`; the test pins that every duty has
+  a reason, every trade named is in the catalog, a no-seat position has
+  no clean *does*, search finds by alias before duty and misses honestly.
+- `CrewModal` gains the *positions* board and the *fills* line on a
+  trade's card; `screens/hire.ts` carries `HireFor` and the picker's
+  banner (1 test); `App` holds the pending hire, `SelectScreen` shows the
+  banner, `LevelView` hires on arrival when one is pending, `HireModal`
+  takes a `preset` that fills the sentence and pre-chooses the trade —
+  the question is still asked and *Looks right* still decides.
+- Customer support is on the board on purpose, as the no-seat case, with
+  the one draftable duty graded partly.
+
+### Evidence
+
+Typecheck clean; web 31 files green. Headless Edge at 1280 × 700 and
+412 × 915, the agentling POST and the role PUT intercepted so no agentling
+landed in HQ: *inbox* → one match (executive assistant → clerk), *sales*
+→ the four-seat miss line, *support* → no seat; HIRE → *Hiring a clerk as
+executive assistant — pick the level it joins* → HQ → one POST → the Hire
+modal open with the sentence written and clerk chosen; no sideways scroll,
+no page error. Two faults found live: `.cv-v` collided with the trades
+board's stat-value class (pixel face, `nowrap`) and blew the match
+columns out — renamed `.cv-duty`; and the modal body inherits 16 px, so
+the columns pin 13 px. Vite served a stale transform of `SelectScreen`
+after two writes in one command — a touch cleared it.
+
+### Standing
+
+The grades are claims with reasons, and a capability landing or leaving
+owes them a re-read — AGENTLING.md's header now says so. Twelve positions
+is the measured need; the next one is added when a search misses on a job
+someone actually typed.
 

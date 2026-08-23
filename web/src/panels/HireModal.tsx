@@ -36,17 +36,20 @@ export function HireModal({
   levelId,
   agentling,
   onClose,
+  preset,
 }: {
   levelId: string;
   agentling: Agentling;
   onClose: () => void;
+  /** A trade and a job already chosen on the positions board (D-229); the question is still asked. */
+  preset?: { role: string; text: string };
 }) {
-  const [text, setText] = useState('');
+  const [text, setText] = useState(preset?.text ?? '');
   const [suggestion, setSuggestion] = useState<MatchSuggestion | null>(null);
   const [refined, setRefined] = useState<Refinement | null>(null);
   const [library, setLibrary] = useState<LibrarySearchResult | null>(null);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
-  const [override, setOverride] = useState<string | null>(null);
+  const [override, setOverride] = useState<string | null>(preset?.role ?? null);
   const [saving, setSaving] = useState(false);
   const portraitRef = useRef<HTMLCanvasElement>(null);
   /** The sentence a refinement must still match to be worth showing. */

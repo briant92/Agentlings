@@ -289,6 +289,28 @@ why is D-226; this is the checklist's record that they landed.
       scroll, no page error, two arrows land on clerk with *14c avg · 22c
       most · 15 sessions*; the ladder reads 19c / 88c off 374 paid rows,
       against AGENTLING.md's 19.2c / 87c.
+- [x] **25. Positions** — landed 2026-08-23 (D-229). The seventh board:
+      *who would you hire?* over twelve hand-written postings
+      (`web/src/panels/positions.ts`), each card a pip row — green /
+      orange / red per duty — and the trade it maps to or *no seat*; the
+      match is two columns, the human posting (responsibilities, skills
+      asked for, also known as) beside the crew's answer (sprite, tally
+      as counts, every duty graded with its reason, needs, also fits) and
+      a HIRE button. HIRE closes the modal, shows *Hiring a clerk as
+      executive assistant — pick the level it joins* over the level
+      picker (`screens/hire.ts`), and the chosen level hires on arrival
+      with the Hire modal already filled (`HireModal` `preset`). The
+      trade card gains *fills: …* links into the board; the board carries
+      no cost line — one trade fills several jobs, so cost stays on the
+      trade. A search that misses names the four seats the crew has none
+      of. Evidence: web 31 files green (positions 4, hire 1); headless
+      Edge at 1280 × 700 and 412 × 915 with the agentling POST and the
+      role PUT intercepted — no sideways scroll, no page error, *inbox* →
+      one match → HIRE → banner → HQ → the modal with *executive
+      assistant* and clerk. Found on the way: `.cv-v` was already the
+      trades board's stat-value class, so the verdict rows inherited the
+      pixel face and `nowrap` and blew the columns out; renamed
+      `.cv-duty`.
 
 ## Hazards to keep in view
 

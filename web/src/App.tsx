@@ -5,6 +5,7 @@ import { LevelView } from './screens/LevelView';
 import { SelectScreen, type LevelEntry } from './screens/SelectScreen';
 import { SettingsModal } from './screens/SettingsModal';
 import { TitleScreen } from './screens/TitleScreen';
+import type { HireFor } from './screens/hire';
 
 type Screen = { name: 'title' } | { name: 'select' } | { name: 'level'; level: LevelEntry };
 
@@ -28,6 +29,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [crewOpen, setCrewOpen] = useState(false);
+  /** A hire started from a position (D-229): carried through the level picker into the level. */
+  const [hireFor, setHireFor] = useState<HireFor | null>(null);
   const timers = useRef<number[]>([]);
   const last = loadLast();
 
@@ -62,7 +65,14 @@ export default function App() {
         />
       )}
       {screen.name === 'select' && (
-        <SelectScreen onEnter={enter} onBack={() => go({ name: 'title' })} />
+        <SelectScreen
+          onEnter={enter}
+          onBack={() => {
+            setHireFor(null);
+            go({ name: 'title' });
+          }}
+          hireFor={hireFor}
+        />
       )}
       {screen.name === 'level' && (
         <LevelView
@@ -70,6 +80,8 @@ export default function App() {
           level={screen.level}
           onExit={() => go({ name: 'select' })}
           onOpenSettings={() => setSettingsOpen(true)}
+          hireFor={hireFor}
+          onHireDone={() => setHireFor(null)}
           onMissing={() => {
             // Forget it as well as leaving it, or Continue walks straight back
             // into the level that just turned out not to exist.
@@ -93,7 +105,16 @@ export default function App() {
         />
       )}
       {rolesOpen && <RolesModal onClose={() => setRolesOpen(false)} />}
-      {crewOpen && <CrewModal onClose={() => setCrewOpen(false)} />}
+      {crewOpen && (
+        <CrewModal
+          onClose={() => setCrewOpen(false)}
+          onHire={(hire) => {
+            setCrewOpen(false);
+            setHireFor(hire);
+            go({ name: 'select' });
+          }}
+        />
+      )}
     </>
   );
 }

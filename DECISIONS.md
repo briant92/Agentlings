@@ -16253,3 +16253,36 @@ branch is removed.
 The fixed contract reaches a run only after the next restart. The proof
 planned for then is the same two runs, expecting `balances` true on both
 and the green line on the card. Appended below when it lands.
+
+### Proven live on the Chilean pair — 2026-08-22 22:34; the US pair refused once more
+
+Brian restarted and ran both pairs against the fixed brief (each sandbox's
+`.session.json` carries the *Never add a plug* line).
+
+- `1c252df8`, cartola + libro mayor (7 turns, $0.13): **balances** — every
+  adjustment on its right side now, fees and interest on the records,
+  outstanding and in-transit on the statement, both sides meeting at
+  **4.240.650**, the answer key's number. Brian reviewed it and pressed
+  Approve; the gate let it through and the job is `promoted`. The first
+  reconciliation the app has approved.
+- `139e9cb9`, statement + cash ledger (19 turns, $0.32): refused at parse
+  again — *unmatched.statement 1: "ref" must be a non-empty string*. A sixth
+  case: the run wrote `""` for a deposit line's reference, which a deposit
+  line does not have, and `ref` on an unmatched line was required while
+  `ref` on an adjustment was not. The file behind the refusal shows the
+  brief's other four lessons landing — no plug, dollars called USD, every
+  timing item on its side — and one clause still ambiguous: cheque 2005's
+  error sat on the records side, correctly, with the wrong sign (+360), so
+  the sides missed by twice the error. The run's own report carried a
+  third figure again. Brian cleared it.
+
+**Fixed in `c8b1c27`:** `ref` is optional on an unmatched line, read as
+absent when empty like every other optional; the error clause now carries
+its signed example — *a cheque booked at 5,483 that the bank paid at 5,843
+is −360 on the records side*. Still fourteen lines. Gate: typecheck clean in all three workspaces; server 79 files / 1969 tests, web 27 / 282; the
+optional `ref` pinned by a test that fails when the field is required again.
+
+### Still untested live
+
+The US pair against this brief, after the next restart — expecting
+`balances` true and the green line. Appended below when it lands.

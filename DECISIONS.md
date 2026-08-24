@@ -256,6 +256,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-244 — 2026-08-24 — Any MCP server, added by the user: the catalog stops being the ceiling, and the tool list is read from the server rather than typed](#d-244--2026-08-24--any-mcp-server-added-by-the-user-the-catalog-stops-being-the-ceiling-and-the-tool-list-is-read-from-the-server-rather-than-typed)
 - [D-245 — 2026-08-24 — Suggestions, not connections: the app ships the shape and the server supplies the truth](#d-245--2026-08-24--suggestions-not-connections-the-app-ships-the-shape-and-the-server-supplies-the-truth)
 - [D-246 — 2026-08-24 — A schedule can carry files: a folder and a rule, read fresh at every firing, because next month's statement is a new file](#d-246--2026-08-24--a-schedule-can-carry-files-a-folder-and-a-rule-read-fresh-at-every-firing-because-next-months-statement-is-a-new-file)
+- [D-247 — 2026-08-24 — No bookkeeper trade: the measurement said `analyst` already has the job, so the method went to the role that was already doing it](#d-247--2026-08-24--no-bookkeeper-trade-the-measurement-said-analyst-already-has-the-job-so-the-method-went-to-the-role-that-was-already-doing-it)
 
 ## By theme
 
@@ -826,6 +827,16 @@ entry updates one file rather than two.
   D-213's profile half — memory listing a discard's note tagged as what it is,
   the record line, the true cut tile off D-214's flag, and
   spent-the-whole-quote moved onto the bottom line
+- **Roles and what they attract** — and D-247, where a bookkeeper trade was
+  **declined on measurement**: all 16 real reconciliation runs already routed
+  to `analyst`, which already took 15 of the bookkeeping occupation's 28
+  duties and covered 13, leaving at most four a role could reach against six
+  policy boundaries and three closed doors it could not — so the method went
+  into the existing role instead of a fourteenth competitor in the same BM25
+  pool, written from two discarded runs that reported an unexplained residual
+  as finished; intake held at 53/54 and the headline did not move, but
+  `drafter` lost a covered duty to the reshuffle, which is reported rather
+  than netted away.
 - **Recurrence** — and D-246, where a schedule learned to carry *files*: a
   standing input naming a folder and a rule rather than a path, resolved
   afresh at every firing, because the bank writes next month's statement
@@ -19181,3 +19192,83 @@ a standing input, so today it is reachable only through
 "I need an accountant" still routes to `clerk` or `analyst`. The acting half of
 the 08-18 ask — *sending wires, reviewing bills* — is Wave 4 behind the acts
 ledger and is deliberately untouched.
+
+---
+
+## D-247 — 2026-08-24 — No bookkeeper trade: the measurement said `analyst` already has the job, so the method went to the role that was already doing it
+
+**The plan was a new trade, and three measurements taken before writing one
+said not to.** Brian picked "bookkeeper trade" as the other half of D-246's
+*"I need an accountant"* — the machinery could now feed a monthly
+reconciliation, but nothing seemed to route the ask to a role that knew one.
+That premise turned out to be false.
+
+**1. Routing is already correct.** All **16** real reconciliation runs in
+`training-ground` routed to `analyst`. Not one misrouted. 15 done, 1 failed;
+review verdicts 10 `cleared`, 4 `promoted`, 2 `discarded`; $4.19 spent. There
+is no routing problem to fix.
+
+**2. `analyst` already owns the occupation.** Grading *Bookkeeping, Accounting,
+and Auditing Clerks* (43-3031.00) alone through the unchanged matcher:
+
+```
+covered 15 (54%)   partial 5   uncovered 8
+  analyst  15 duties, 13 covered   ← already takes and covers most of it
+why less than covered:  policy 6 · matcher 4 · door 3 · capability 0
+```
+
+**3. So at most four duties were reachable, and nine were not.** The `policy 6`
+is money (5) and people (1) — moving money is Wave 4 behind the acts ledger,
+and a role file does not touch a boundary. The `door 3` is two sends and a
+closed `google`. **A role file moves neither.** What remained was four
+"unverified word match" duties, and the occupation stays 0-hireable either way.
+
+**Against four duties, the cost is measured.** Any role edit reshuffles every
+role's BM25 routing, and `match.ts:286` indexes `role.prompt` — the **body**,
+not just the description, so even a body-only edit perturbs everything. D-235
+paid for this once already: `security`'s *"never a live system"* pulled *"Query
+a live database"* to itself on the word `live` and cost a calibration point.
+Intake sits at 53/54 with 0 misses; that is what a new competitor in the pool
+would have been risking. D-236's finding stands — **naming is a rung with a
+top.**
+
+**So the prize was never routing or coverage. It was method** — and method goes
+to the role already doing the work rather than to a fourteenth competitor.
+Three rules added to `roles/analyst.md`, each traced to an **observed failure**
+rather than to an idea of what bookkeeping involves:
+
+- Both discarded runs **reported an unexplained residual and presented the job
+  as finished** — 720 CLP in one, `~14,850 CLP` in the other. An approximation
+  sign inside a tie-out is the tell.
+- D-221's own doc comment records a run **calling bank fees out of scope** —
+  true against an invoice register, wrong against a ledger.
+
+The rules: a reconciliation is not finished until the difference is zero or
+every part of it is named; an unexplained remainder is reported as unexplained
+in exact figures and put in `PENDING.md`; and no line is ruled out of scope for
+looking incidental, because what is incidental in one record is the whole
+variance in another. **The `description` is deliberately untouched**, since
+routing is already 16/16 — the smallest perturbation that carries the method.
+
+**Before and after, because the hazard is real:**
+
+| | before | after |
+|---|---|---|
+| Intake | 53/54, 1 asked, 0 misses, 111 checks | **unchanged** |
+| Hireable | 5–10 of 922 | **unchanged**, same ten names |
+| Covered / uncovered | 2976 / 11443 | **2979 / 11434** |
+| 43-3031.00 | covered 15, core 46%, analyst 13 | covered 16, core 54%, analyst 14 |
+
+**Not free, and not netted away.** `drafter` lost one covered duty to the
+reshuffle (91 → 90) and `operations` gained 10 duties while covering none more.
+The hazard did not fire on intake, but it did move things.
+
+**Owed.** Whether the method actually improves a run is **unmeasured** —
+proving it needs paired runs on real work, which costs money, and the sample
+that motivated it is two discards out of sixteen. A role file also reaches
+nothing until the server restarts (roles are read at boot), so this is on disk
+and not yet in any session.
+
+**What this does not do.** It does not move the headline; it was never going
+to. And it does not make *"I need an accountant"* served — the money duties are
+a deliberate boundary, not a gap.

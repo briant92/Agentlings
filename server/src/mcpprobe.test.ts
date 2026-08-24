@@ -1,6 +1,8 @@
 import { createServer, type Server } from 'node:http';
 import { fileURLToPath } from 'node:url';
+import { Server as LowLevelServer } from '@modelcontextprotocol/sdk/server/index.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -136,6 +138,75 @@ describe('probing a stdio server', () => {
     expect(result.ok).toBe(false);
     expect(result.error).toBeTruthy();
   }, 30_000);
+});
+
+/**
+ * A server that connects and offers nothing is the quietest failure available:
+ * every check passes, the connection saves, and it grants a job exactly no
+ * tools — a door that installs and does nothing. Found by a mutation that
+ * deleted the guard and survived every other test in this file.
+ */
+describe('a server that offers no tools', () => {
+  let empty: Server;
+  let emptyPort: number;
+
+  beforeAll(async () => {
+    empty = createServer(async (req, res) => {
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+      res.on('close', () => transport.close());
+      // A real MCP server, correctly implemented, that simply registers nothing.
+      await new McpServer({ name: 'hollow', version: '1.0.0' }).connect(transport);
+      await transport.handleRequest(req, res);
+    });
+    await new Promise<void>((r) => empty.listen(0, '127.0.0.1', () => r()));
+    emptyPort = (empty.address() as { port: number }).port;
+  });
+
+  afterAll(() => empty?.close());
+
+  it('is refused when it registers nothing, so the capability is absent entirely', async () => {
+    // `listTools` answers -32601 Method not found here, which is true and no
+    // use to whoever pasted the address. It is said the readable way instead.
+    const result = await probeConnection({
+      name: 'hollow',
+      label: 'Hollow',
+      transport: 'http',
+      url: `http://127.0.0.1:${emptyPort}/`,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.tools).toEqual([]);
+    expect(result.error).toContain('no tools');
+  });
+
+  it('is refused when it advertises tools and lists none — the other nothing', async () => {
+    // The low-level Server rather than McpServer, because this shape cannot be
+    // built with the high-level one: it declares the tools capability and then
+    // answers the list with nothing.
+    const server = createServer(async (req, res) => {
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+      res.on('close', () => transport.close());
+      const one = new LowLevelServer(
+        { name: 'bare', version: '1.0.0' },
+        { capabilities: { tools: {} } },
+      );
+      one.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
+      await one.connect(transport);
+      await transport.handleRequest(req, res);
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+    const p = (server.address() as { port: number }).port;
+    const result = await probeConnection({
+      name: 'bare',
+      label: 'Bare',
+      transport: 'http',
+      url: `http://127.0.0.1:${p}/`,
+    });
+    server.close();
+    expect(result.ok).toBe(false);
+    // Both nothings say the same thing, because to the person adding it they
+    // are one thing: it connected and it is useless.
+    expect(result.error).toContain('no tools');
+  });
 });
 
 describe('what it refuses to probe', () => {

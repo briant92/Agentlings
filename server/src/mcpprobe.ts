@@ -29,6 +29,12 @@ import { expandArgs, type Connection } from './connections';
 /** Long enough for `npx` to fetch a package it has never seen, short enough to be a UI. */
 const PROBE_TIMEOUT_MS = 60_000;
 
+/**
+ * Said the same way whichever kind of nothing happened, because to the person
+ * who pasted the address they are one thing: it connected and it is useless.
+ */
+const NO_TOOLS = 'the server connected but offers no tools';
+
 export interface ProbeResult {
   ok: boolean;
   tools: string[];
@@ -91,12 +97,17 @@ export async function probeConnection(
     );
 
     const tools = (listed.tools ?? []).map((t) => t.name).filter(Boolean);
-    if (!tools.length) {
-      return { ok: false, tools: [], error: 'the server connected but offers no tools' };
-    }
+    if (!tools.length) return fail(NO_TOOLS);
     return { ok: true, tools, serverName: client.getServerVersion()?.name };
   } catch (err) {
-    return fail(err instanceof Error ? err.message : String(err));
+    const message = err instanceof Error ? err.message : String(err);
+    // The two shapes of "connected, and useless". A server with no tools at
+    // all does not advertise the capability, so `listTools` comes back
+    // `-32601 Method not found` — which is true, and no use at all to someone
+    // who just pasted an address. One that advertises tools and lists none
+    // reaches the check above. Both say the same readable thing.
+    if (/-32601|method not found/i.test(message)) return fail(NO_TOOLS);
+    return fail(message);
   } finally {
     // Both halves, and neither may throw past the result: a probe that
     // reported success and then blew up on cleanup would look like a failure

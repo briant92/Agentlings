@@ -105,7 +105,18 @@ import {
   readConnections,
   secretNames,
   sharingSecrets,
+  type Connection,
 } from './connections';
+import { probeConnection } from './mcpprobe';
+import {
+  connectionFromDraft,
+  draftProblem,
+  mergeConnections,
+  readUserConnections,
+  userConnectionsFile,
+  writeUserConnections,
+  type ConnectionDraft,
+} from './userconnections';
 import {
   clearIdentity,
   enabledNames,
@@ -310,6 +321,28 @@ const ARTWORK_DIR = path.join(ROOT, 'Artwork');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
+const USER_CONNECTIONS_FILE = userConnectionsFile(SANDBOX_ROOT);
+
+/**
+ * Every connection this machine has: the shipped catalog, then the user's own
+ * (D-244).
+ *
+ * Read fresh each time rather than cached at boot, because adding a connection
+ * has to work without a restart — roles are read once at boot and that is
+ * exactly the friction this is not repeating.
+ *
+ * Every caller was switched to this at once, deliberately. The interesting one
+ * is `secretNames`, which feeds `launderedEnv`: a user connection's secrets
+ * must be stripped from a spawned runner just like a shipped one's, and the
+ * seam D-242 found is the shape of what happens when a list built from one
+ * registry is asked to protect something in another.
+ */
+function allConnections(): Connection[] {
+  return mergeConnections(
+    readConnections(CONNECTIONS_FILE),
+    readUserConnections(USER_CONNECTIONS_FILE),
+  );
+}
 const ENV_FILE = path.join(ROOT, '.env');
 
 try {
@@ -414,7 +447,7 @@ function makeLevel(dir: string): LevelRuntime {
   const executor: Executor = new RoutedExecutor(
     dir,
     () => readKnowledge(dir),
-    () => readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web') ?? null,
+    () => allConnections().find((conn) => conn.name === 'web') ?? null,
     surfaceFor,
     useClaude
       ? new ClaudeAgentExecutor(
@@ -426,7 +459,7 @@ function makeLevel(dir: string): LevelRuntime {
           // carries its own source and date so the prompt stays honest about
           // where each came from. Stale contributes nothing (D-047).
           () => levelCorpus(dir),
-          () => readConnections(CONNECTIONS_FILE),
+          () => allConnections(),
           () => readLedger(SANDBOX_ROOT),
           (channel) => readAudience(SANDBOX_ROOT, rosterChannel(channel)),
           // The newest audited body on the channel — what "the same" means.
@@ -450,7 +483,7 @@ function makeLevel(dir: string): LevelRuntime {
       : undefined,
     // Read fresh per run, not captured: a connection switched off in Settings
     // must reach the next compiled-tool run, not the next restart.
-    () => readConnections(CONNECTIONS_FILE),
+    () => allConnections(),
   );
   const roster = readRoster(dir);
   const sim = new Sim(
@@ -540,7 +573,7 @@ async function autoSendIfApproved(
     if (!autoSendable(approval, outboxes)) return;
     const refusal = outboxRefusal(
       outboxes,
-      readConnections(CONNECTIONS_FILE),
+      allConnections(),
       readSettings(SANDBOX_ROOT),
       process.env,
     );
@@ -795,7 +828,7 @@ const QUOTE_CTX: QuoteContext = {
 
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {
-  const connections = readConnections(CONNECTIONS_FILE);
+  const connections = allConnections();
   const settings = readSettings(SANDBOX_ROOT);
   return describe(
     connections,
@@ -911,7 +944,7 @@ app.delete('/api/channels/:channel/audience/:id', (c) =>
  */
 app.patch('/api/settings/connections/:name', async (c) => {
   const name = c.req.param('name');
-  const known = readConnections(CONNECTIONS_FILE).some((conn) => conn.name === name);
+  const known = allConnections().some((conn) => conn.name === name);
   if (!known) return c.json({ error: 'no such connection' }, 404);
   const body = await c.req.json<{ enabled?: boolean }>();
   if (typeof body.enabled !== 'boolean') return c.json({ error: 'enabled must be a boolean' }, 400);
@@ -932,7 +965,7 @@ app.patch('/api/settings/connections/:name', async (c) => {
  */
 app.post('/api/settings/connections/:name/secret', async (c) => {
   const name = c.req.param('name');
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === name);
+  const connection = allConnections().find((conn) => conn.name === name);
   if (!connection) return c.json({ error: 'no such connection' }, 404);
   const body = await c.req.json<{
     secret?: string;
@@ -985,7 +1018,7 @@ app.post('/api/settings/connections/:name/secret', async (c) => {
  */
 app.delete('/api/settings/connections/:name/secrets', async (c) => {
   const name = c.req.param('name');
-  const connections = readConnections(CONNECTIONS_FILE);
+  const connections = allConnections();
   const connection = connections.find((conn) => conn.name === name);
   if (!connection) return c.json({ error: 'no such connection' }, 404);
   const names = Object.keys(connection.secrets ?? {});
@@ -1376,7 +1409,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // gets a different card once a channel is connected (D-079).
   const channelAsk = detectChannelAsk(
     text,
-    readConnections(CONNECTIONS_FILE),
+    allConnections(),
     readSettings(SANDBOX_ROOT),
     process.env,
   );
@@ -1664,7 +1697,7 @@ function queueSentence(
   // stamp built from `channelAsk` alone would name neither.
   const detected = detectChannelAsk(
     text,
-    readConnections(CONNECTIONS_FILE),
+    allConnections(),
     readSettings(SANDBOX_ROOT),
     process.env,
   );
@@ -2037,7 +2070,7 @@ function queueParty(
     settledChannels(
       detectChannelAsk(
         text,
-        readConnections(CONNECTIONS_FILE),
+        allConnections(),
         readSettings(SANDBOX_ROOT),
         process.env,
       ),
@@ -2096,7 +2129,7 @@ function queuePartyPlan(
   const carried = settledChannels(
     detectChannelAsk(
       text,
-      readConnections(CONNECTIONS_FILE),
+      allConnections(),
       readSettings(SANDBOX_ROOT),
       process.env,
     ),
@@ -2628,7 +2661,7 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
         (() => {
           const found = detectChannelAsk(
             reply,
-            readConnections(CONNECTIONS_FILE),
+            allConnections(),
             readSettings(SANDBOX_ROOT),
             process.env,
           );
@@ -2943,7 +2976,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     if (remaining.length > 0) {
       const refusal = outboxRefusal(
         outboxes,
-        readConnections(CONNECTIONS_FILE),
+        allConnections(),
         readSettings(SANDBOX_ROOT),
         process.env,
       );
@@ -3458,7 +3491,7 @@ app.post('/api/match/refine', async (c) => {
     text,
     registry.list(),
     listSkills(SKILLS_DIR),
-    secretNames(readConnections(CONNECTIONS_FILE)),
+    secretNames(allConnections()),
   );
   return c.json({ available: true, refined });
 });
@@ -3546,7 +3579,7 @@ function compileQuote(rt: LevelRuntime, role: string): Quote {
 function granted(requested: string[] | undefined): string[] {
   return grantedTools(
     requested,
-    readConnections(CONNECTIONS_FILE),
+    allConnections(),
     readSettings(SANDBOX_ROOT),
     process.env,
   );
@@ -3989,7 +4022,7 @@ app.post('/api/levels/:lid/tools/promote', async (c) => {
    * as such would approve a compile that cannot exist — the one thing D-044
    * was built to stop.
    */
-  const catalog = readConnections(CONNECTIONS_FILE);
+  const catalog = allConnections();
   const needs = compileBlockers(recipe, catalog);
   if (needs.length > 0) {
     return c.json(
@@ -4113,6 +4146,104 @@ app.get('/api/spend', (c) => {
 
 app.get('/api/connections', (c) => c.json(connectionList()));
 
+/**
+ * Adding a connection nobody shipped (D-244).
+ *
+ * The shape of the flow is the point: a draft is **validated, then probed,
+ * then stored**, and it cannot be stored without a server having answered.
+ * D-044 requires a connection to name the tools a job may call, and for a
+ * server nobody curated the only honest source of that list is the server —
+ * so asking it is not a nicety, it is the only way the grant can mean
+ * anything. It also means the config is proven before it is kept: a wrong
+ * command or a refused token fails here with something to read, instead of
+ * inside somebody's paid job.
+ *
+ * Secret values are held for the length of the probe and written to `.env`
+ * only once the server has answered — a connection that never worked leaves
+ * nothing behind.
+ */
+async function probeDraft(
+  body: { draft?: ConnectionDraft; values?: Record<string, unknown> },
+): Promise<{ status: 200 | 400; body: Record<string, unknown>; connection?: Connection; values?: Record<string, string> }> {
+  const draft = body.draft ?? {};
+  const problem = draftProblem(draft, allConnections());
+  if (problem) return { status: 400, body: { error: problem } };
+
+  const values: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(body.values ?? {})) {
+    if (!Object.hasOwn((draft.secrets as Record<string, string>) ?? {}, key)) {
+      return { status: 400, body: { error: `this connection declares no secret named "${key}"` } };
+    }
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    const bad = secretValueProblem(value);
+    if (bad) return { status: 400, body: { error: `${key}: ${bad}` } };
+    values[key] = value;
+  }
+
+  // Built with an empty tool list only so the probe has a Connection to read;
+  // the real list is whatever the server answers with, a line below.
+  const candidate = connectionFromDraft(draft, []);
+  const probe = await probeConnection(candidate, { ...process.env, ...values });
+  if (!probe.ok) return { status: 400, body: { error: probe.error ?? 'the server did not answer' } };
+
+  return {
+    status: 200,
+    body: { tools: probe.tools, serverName: probe.serverName ?? null },
+    connection: connectionFromDraft(draft, probe.tools),
+    values,
+  };
+}
+
+/** Try a draft and report what the server offers, without keeping anything. */
+app.post('/api/connections/probe', async (c) => {
+  const body = await c.req.json<{ draft?: ConnectionDraft; values?: Record<string, unknown> }>().catch(() => ({}));
+  const result = await probeDraft(body);
+  return c.json(result.body, result.status);
+});
+
+/** The same, and then keep it. */
+app.post('/api/connections', async (c) => {
+  const body = await c.req.json<{ draft?: ConnectionDraft; values?: Record<string, unknown> }>().catch(() => ({}));
+  const result = await probeDraft(body);
+  if (result.status !== 200 || !result.connection) return c.json(result.body, result.status);
+
+  for (const [key, value] of Object.entries(result.values ?? {})) {
+    storeSecret(ENV_FILE, key, value, process.env);
+  }
+  writeUserConnections(USER_CONNECTIONS_FILE, [
+    ...readUserConnections(USER_CONNECTIONS_FILE),
+    result.connection,
+  ]);
+  return c.json({ ...result.body, connections: connectionList() }, 201);
+});
+
+/**
+ * Removes a connection the user added. The shipped catalog is not editable
+ * from here — a connection this repo ships is part of the product, and the way
+ * to stop using one is the switch that already exists.
+ *
+ * Its secrets are deliberately left in `.env`: Disconnect (D-218) is the route
+ * that forgets a value, and doing it silently here would take a token the user
+ * may share with something else.
+ */
+app.delete('/api/connections/:name', (c) => {
+  const name = c.req.param('name');
+  const mine = readUserConnections(USER_CONNECTIONS_FILE);
+  if (!mine.some((conn) => conn.name === name)) {
+    const shipped = readConnections(CONNECTIONS_FILE).some((conn) => conn.name === name);
+    return c.json(
+      {
+        error: shipped
+          ? `"${name}" ships with the app — switch it off in Settings instead`
+          : 'no such connection',
+      },
+      shipped ? 400 : 404,
+    );
+  }
+  writeUserConnections(USER_CONNECTIONS_FILE, mine.filter((conn) => conn.name !== name));
+  return c.json({ connections: connectionList() });
+});
+
 /** Every door's use off the trail (D-192), for the switches in Settings (UI.md, step 8). */
 app.get('/api/doors/usage', (c) => c.json({ doors: readDoorUsage(SANDBOX_ROOT) }));
 
@@ -4125,7 +4256,7 @@ app.post('/internal/fetch', async (c) => {
   const body = await c.req.json<{ url?: string }>();
   const url = body.url?.trim();
   if (!url) return c.json({ error: 'url is required' }, 400);
-  const web = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'web');
+  const web = allConnections().find((conn) => conn.name === 'web');
   if (!web) return c.json({ error: 'web access is not configured' }, 404);
   const result = await fetchPage(url, { allow: web.allow, maxChars: web.maxChars });
   logDoor(SANDBOX_ROOT, 'web', 'fetch_page', { url }, result);
@@ -4140,7 +4271,7 @@ app.post('/internal/fetch', async (c) => {
 app.post('/internal/github', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'github');
+  const connection = allConnections().find((conn) => conn.name === 'github');
   if (!connection) return c.json({ error: 'the code host connection is not configured' }, 404);
   // The catalog's own list is the grant. A tool this connection does not
   // declare is refused here as well as by the allowlist, so the two cannot
@@ -4164,7 +4295,7 @@ app.post('/internal/github', async (c) => {
 app.post('/internal/search', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'search');
+  const connection = allConnections().find((conn) => conn.name === 'search');
   if (!connection) return c.json({ error: 'the search connection is not configured' }, 404);
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
@@ -4185,7 +4316,7 @@ app.post('/internal/search', async (c) => {
 app.post('/internal/bls', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'bls');
+  const connection = allConnections().find((conn) => conn.name === 'bls');
   if (!connection) return c.json({ error: 'the BLS connection is not configured' }, 404);
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
@@ -4208,7 +4339,7 @@ app.post('/internal/bls', async (c) => {
 app.post('/internal/calendar', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'calendar');
+  const connection = allConnections().find((conn) => conn.name === 'calendar');
   if (!connection) return c.json({ error: 'the calendar connection is not configured' }, 404);
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
@@ -4227,7 +4358,7 @@ app.post('/internal/calendar', async (c) => {
 app.post('/internal/mail', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'mail');
+  const connection = allConnections().find((conn) => conn.name === 'mail');
   if (!connection) return c.json({ error: 'the mail connection is not configured' }, 404);
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
@@ -4240,7 +4371,7 @@ app.post('/internal/mail', async (c) => {
 app.post('/internal/render', async (c) => {
   const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
   if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = readConnections(CONNECTIONS_FILE).find((conn) => conn.name === 'render');
+  const connection = allConnections().find((conn) => conn.name === 'render');
   if (!connection) return c.json({ error: 'the render connection is not configured' }, 404);
   if (!(connection.tools ?? []).includes(body.tool)) {
     return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
@@ -4273,11 +4404,11 @@ app.post('/api/jobboard/sync', async (c) => {
 });
 
 function jobboardCtx(): CoverageContext {
-  const live = new Set(enabledNames(readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env));
+  const live = new Set(enabledNames(allConnections(), readSettings(SANDBOX_ROOT), process.env));
   return {
     index: matcher(),
     roles: registry.list(),
-    doors: readConnections(CONNECTIONS_FILE).map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
+    doors: allConnections().map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
   };
 }
 
@@ -4326,13 +4457,13 @@ app.post('/api/coverage', async (c) => {
   if (!body || typeof body.id !== 'string' || typeof body.title !== 'string' || !Array.isArray(body.tasks)) {
     return c.json({ error: 'a profile needs id, title and tasks' }, 400);
   }
-  const live = new Set(enabledNames(readConnections(CONNECTIONS_FILE), readSettings(SANDBOX_ROOT), process.env));
+  const live = new Set(enabledNames(allConnections(), readSettings(SANDBOX_ROOT), process.env));
   const rt = body.levelId ? getLevel(body.levelId) : undefined;
   if (body.levelId && !rt) return c.json({ error: 'no such level' }, 404);
   const ctx: CoverageContext = {
     index: matcher(),
     roles: registry.list(),
-    doors: readConnections(CONNECTIONS_FILE).map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
+    doors: allConnections().map((conn) => ({ name: conn.name, open: live.has(conn.name) })),
     crew: rt
       ? {
           awake: rt.sim.agentlings.map((a) => ({ role: a.role, state: a.state })),

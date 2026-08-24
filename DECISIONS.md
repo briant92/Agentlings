@@ -18555,6 +18555,70 @@ not a measurement and no amount of scheduling makes it one: that data arrives
 by *using* the app. It was never a task, and a board item that cannot be worked
 is worse than no item, because it reads as debt.
 
+### The mutation pass, which cost more than it usually does
+
+Six aimed, and **two survived the first time** — both the same shape, and the
+shape is one this repo keeps meeting: *the logic was in a place no test could
+reach.* Deleting the lockout check from the route survived everything, because
+`index.ts` calls `serve()` at import and no test can mount that route.
+Stubbing the runner's stdin read survived everything, because
+`agent-runner.mjs` runs a whole session at import.
+
+**The first fix for the first survivor was worse than useless, and that is the
+entry's most useful paragraph.** A source-text assertion was added: that
+`lockoutRemaining` appears before `passwordAccepted` inside the handler. It
+passed — and it passed **on the mutant too**, because disabling the check with
+`if (false && …)` leaves both identifiers exactly where they were. D-237's rule
+arriving from the inside: *a negative example only tests a rule if it would
+fail without it.*
+
+So the decision moved instead of the test. `attemptLogin()` holds the whole
+login decision and the route is an adapter; `resolveSecrets`/`readSecrets` moved
+into `runner-secrets.mjs`, imported by the runner and by a test, plain JS both
+ways because the runner is spawned with plain `node`. **All six then died.**
+
+Two process failures, recorded because an archive changes no behaviour:
+
+- **The pass ran against uncommitted work**, so `git checkout` between
+  mutations deleted `attemptLogin` outright — D-021, which PROJECT.md states as
+  *"mutation-test after committing"*, walked into anyway. It was caught by
+  grepping for the symbol, not by the suite, which would have gone red on the
+  next run and looked like a broken test.
+- **D-224, fifth sighting, with a new wrinkle: the pass changed the line
+  endings under itself.** Two mutations no-op'd because `session.ts` was CRLF —
+  and it was CRLF *because `git checkout` had just rewritten it*; it was LF when
+  written. `\r?\n` killed both. A second trap sits beside it: `od` on piped
+  `sed` output showed clean LF while the file on disk was CRLF, so the byte
+  check has to read the **file**, never a pipeline's idea of it.
+
 ### Evidence
 
-Typecheck clean. Server **2,129** across 88 files (from 2,117), web **333**.
+Typecheck clean. Server **2,144** across 89 files (from 2,117), web **333**.
+
+**Proven live across two restarts with the queue empty (R-07) — 40 checks:**
+
+- **Gate OFF — 5/5.** The half D-241 could only prove by unit test. With the
+  password commented out, every probe answers exactly as it did before Wave 0:
+  reads 200, the doors open, and `/ws` opens and delivers 580,555 bytes. D-239
+  still fires 4403 on a hostile origin, which shows the origin check is
+  independent of the gate rather than riding on it.
+- **Gate ON — 16/16**, on the restructured code: 401 with no cookie, 4401 with
+  0 bytes on the socket against 580,563 signed in, the cookie's three flags, all
+  three W0.9 origins.
+- **The app — 17/17** in headless Edge.
+- **The lockout — 2/2**, and the sequence is the measurement:
+  `401,401,401,401,401,401,429` — six tries then the door closes, matching
+  `LOGIN_ATTEMPTS`. The right password is refused 429 too, so it cannot be used
+  as an oracle.
+
+**The seam's own live proof** was two direct spawns of the real runner, one per
+stdin shape, because the wired test uses a stand-in runner and the direct spawn
+used the real one: `ignore` (the `refine.ts` path — instant EOF) and **piped,
+written and ended by the parent** (the production path — EOF only if `end()` is
+called). Both completed a real session, 5.6s and 3.8s, and the secret sent on
+stdin appeared in no output line. They cost $0.32 between them, unintentionally
+— a deliberately bogus `ANTHROPIC_API_KEY` was ignored because a Claude Code
+login is auto-detected, which is `.env.example`'s option 3 doing exactly what it
+says.
+
+**Nothing is now owed on this line.** Wave 2 is unblocked.

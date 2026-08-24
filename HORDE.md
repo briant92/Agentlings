@@ -3,10 +3,12 @@
 The open board for the coverage-and-capability line. Opened on demand, never
 imported — the same shape as `SPATIAL.md` and `RECONCILE.md` before it.
 
-**Read `§3 Wave 0` first: that is the pick-up point, and it waits on one
-decision that is Brian's.**
+**The line is complete through Wave 0 and nothing is owed. §4 is the pick-up
+point, and every wave in it starts with a decision that is Brian's — none of
+them begins in code.**
 
-Written 2026-08-24, at `ddbd218`. The line so far is D-235 → D-240; the plan it
+Written 2026-08-24, at `ddbd218`; updated through D-242. The line so far is
+D-235 → D-242; the plan it
 implements is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
@@ -22,7 +24,8 @@ the measurement behind it in *How Far Can the Horde Go*
 | Coverage | 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties |
 | Calibration | 52/58 (90 %) against the hand grades, both overclaim cells empty |
 | Intake | 53/54, 0 misses |
-| Suites | server 2,080 across 87 files · web 333 · typecheck clean |
+| Suites | server 2,144 across 89 files · web 333 · typecheck clean |
+| Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed and pushed. Nothing is in flight.
 
@@ -42,24 +45,30 @@ Everything below is committed and pushed. Nothing is in flight.
   credential decided.
 - **D-240** — D-239 proven live (946 KB of level state to any website → zero);
   the `security` re-run completing at 24 turns; 7 advisories → 4.
+- **D-241** — **Wave 0's credential**: a password for an `HttpOnly` cookie,
+  chosen by the socket rather than by taste. Off until `.env` arms it. Proven
+  live across two restarts, 38 checks.
+- **D-242** — **the security ledger closed**: the `.session.json` seam fixed
+  over **stdin**, a six-try login lockout, and one board item struck as
+  something that was never a task. Wave 2 unblocked.
 
 ---
 
-## 2. Owed before anything else in its wave
+## 2. Owed before anything else in its wave — **NOTHING**
 
-- **The `.session.json` seam — OWED BEFORE WAVE 2.** `toMcpServers`
-  (`connections.ts:262-266`) writes **real secret values** into
-  `mcpServers[].env`, serialized into `.session.json` inside the sandbox the
-  agentling reads all job long. It leaks nothing today and that was *verified*:
-  every secret-bearing connection is `transport: builtin`, the only `stdio` one
-  declares no secrets, and the audit opened its own job's file and found an
-  empty `env`. **One stdio connection that declares a secret makes this high
-  severity** — which is exactly what Wave 2 adds. Fix: write `${NAME}`
-  placeholders and resolve them in the runner from the env it was handed.
-  **Wave 2 must not start without it.**
-- **A re-read of the four trades' cost shape.** All four ran on the default
-  model on a repo level; `logistics` finished in 4 turns for 49c and may belong
-  on the cheap model, but one run is not a measurement.
+Both items that stood here are closed.
+
+- ~~The `.session.json` seam~~ — **fixed in D-242.** `toMcpServers` emits
+  `${NAME}` placeholders and the values reach the runner on **stdin**. Note for
+  anyone reading the old plan: its prescribed fix — *resolve them in the runner
+  from the env it was handed* — **does not work**, because `launderedEnv`
+  strips exactly those names (D-217) and a `Bash` child inherits the runner's
+  environment anyway. **Wave 2 is unblocked.**
+- ~~A re-read of the four trades' cost shape~~ — **struck, it was never a
+  task.** The ledger holds one run each (operations 14t/$0.74, logistics
+  4t/$0.49, planner 17t/$1.42, security 24t/$1.58 plus the cut $0 run). One run
+  is not a measurement and no scheduling makes it one: that data arrives by
+  *using* the app. A board item that cannot be worked reads as debt.
 
 ---
 
@@ -83,15 +92,17 @@ bytes where the signed-in one is handed 580,561.** D-239 was re-checked rather
 than assumed — a hostile origin still gets 4403 on the socket and **403, not
 401**, on a POST, which also proves the order.
 
-**Two things are still owed, and both are small:**
+**Both of Wave 0's debts are now closed (D-242), and nothing is owed:**
 
-- **The gate-OFF live run.** `prove-wave0.mjs` is built to run twice — arming
-  it meant the off run would have cost a second restart, so "an unset password
-  changes nothing" is proven by unit test, not live. A step below this
-  project's bar, recorded rather than glossed.
-- **`POST /api/session` has no rate limiting.** Unlimited guesses. Bounded by a
-  42.5-bit passphrase and the loopback bind, so not urgent — but real, and
-  introduced by D-241.
+- **The gate-OFF live run happened** — 5/5, on its own restart. With the
+  password commented out every probe answers exactly as it did before Wave 0,
+  and D-239 still fires 4403, which shows the origin check is independent of
+  the gate rather than riding on it.
+- **`POST /api/session` is rate limited** — six tries, five minutes, proven
+  live as `401,401,401,401,401,401,429`. The right password is refused 429 too,
+  so a locked door is not an oracle.
+- **The lockout probe is opt-in** (`--lockout`) because proving it locks the
+  door for five minutes. A restart clears it.
 
 ---
 

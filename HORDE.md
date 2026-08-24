@@ -18,9 +18,21 @@ committed and pushed; the last commit was `14a894f`.
 **One thing the numbers here do not say.** Everything from D-241 onward is
 *capability* — a gate, three seams closed, a transport, a way to add
 connections. None of it has been exercised on real work, and the headline is
-unmoved at 5–10 of 922 because reach, not machinery, is what moves it. The
-cheapest next step that changes that is not on this board: add one real
-connection and give the horde a real job through it.
+unmoved at 5–10 of 922 because reach, not machinery, is what moves it. This
+board said the cheapest next step was to add one real connection and give the
+horde a real job through it.
+
+**That step was taken and it went somewhere else — see D-246.** Asked which
+system, Brian had none in mind, so the job history was read backwards instead:
+446 prompts, and *accounting* is asked for four times in seven days and served
+none of them. Then the connection premise died on a fact — the books are Excel
+files, and there is no MCP server for a spreadsheet. The real blocker was a
+seam: a schedule carried a prompt and a channel and nothing else, so recurring
+work could only reach what was ambient. Schedules can now carry files. **The
+headline is still 5–10 of 922**, because that counts duty coverage and plumbing
+adds no duties — a different trade, recorded as a different trade. What is
+still owed for *"I need an accountant"*: a UI to set a standing input, and a
+bookkeeper trade, since the ask routes to `clerk` or `analyst` today.
 
 Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
 D-235 → D-245; the plan it
@@ -257,11 +269,15 @@ node scripts/prove-http-mcp.mjs          #  6/6  — the http transport, real MC
 node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports
 node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form
 node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
+node scripts/prove-standing.mjs          # 22/22 — a schedule carrying files (D-246)
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
 as *"restart it first"* rather than as a failure. `prove-http-mcp` runs one
-cheap model turn (~$0.15); the rest cost nothing.
+cheap model turn (~$0.15); the rest cost nothing. `prove-standing` takes about
+three minutes of wall clock, nearly all of it waiting out two real cadences,
+and its first version cost $0.38 because a crew guard passed by never
+executing — it now fails closed and adds zero ledger rows.
 
 **How the machine was left on 2026-08-24:**
 

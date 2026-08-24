@@ -1951,8 +1951,8 @@ list per channel (D-077; SPEC M5.11 has the slices):
       (daily / weekly / monthly at HH:MM, local time), per level, fired by a
       30-second server sweep through the same quoted glue `/work` uses.
       Downtime collapses to one catch-up firing, pause resumes from now
-      rather than firing a backlog, attachments do not repeat, and a firing
-      job says so on its queued line (D-103). The repeat row can also
+      rather than firing a backlog, and a firing job says so on its queued
+      line (D-103). The repeat row can also
       **schedule only** — no run today — with the first firing's date said
       from the server's own arithmetic (D-106). Since D-184 the **sentence
       itself** can carry the cadence — "every Monday at 9", "every morning",
@@ -1960,6 +1960,20 @@ list per channel (D-077; SPEC M5.11 has the slices):
       in and quotes the words it read back at you. It never acts on it: Start
       still makes the schedule, "not a repeat" is one click, and a date rather
       than a cadence ("on Monday", singular) is left alone
+- [~] **Standing inputs on a schedule** — *Partial: the mechanism is Live and
+      proven live 22/22, but nothing in the UI can set one.* A schedule may
+      name a folder and a rule ("newest file whose name contains estado")
+      rather than a path, and every firing reads whatever is in that folder now
+      and lands it in the job's `input/` under a stable name the prompt can
+      keep saying. Built because a schedule carried a prompt and a channel and
+      nothing else, so recurring work could only reach what was ambient: the
+      bank writes next month's statement beside last month's, and a fixed path
+      would reconcile August forever. A firing that cannot see all of its
+      inputs refuses and says why rather than reconciling half-blind, Excel's
+      `~$` lock file is skipped because it is newer than the workbook it
+      guards, and an input that could never resolve is refused when the
+      schedule is made. Today reachable only through
+      `POST /api/levels/:lid/schedules` (D-246)
 - [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
       editing without destroying formatting does not, because Node has no good
       round-tripper. *Blocked on: a second runtime. Python would do it and was

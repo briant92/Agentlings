@@ -38,7 +38,10 @@ those grades a re-read too — as it owes the power and boundary ledgers in
 `server/src/coverage.ts` (D-230), which grade a real occupation's duties
 against §§4, 5, 10, 11 and 14 by the same evidence; `npm run
 bench:coverage` measures the result over a downloaded O*NET or ESCO
-release. §8's figures
+release, and since D-237 it leads with the one number this file is really
+about — **hireable positions, 5–10 of 922**, how many real occupations the
+crew could hold down, counted only off duties whose grade rests on recorded
+evidence and never off a word match. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 

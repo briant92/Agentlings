@@ -830,12 +830,16 @@ const QUOTE_CTX: QuoteContext = {
 function connectionList(): ConnectionInfo[] {
   const connections = allConnections();
   const settings = readSettings(SANDBOX_ROOT);
+  // Which ones this machine added, so Settings can offer to remove those and
+  // only those. Marked here rather than inside `describe`, which is given a
+  // flat list and has no way to know where an entry came from.
+  const mine = new Set(readUserConnections(USER_CONNECTIONS_FILE).map((conn) => conn.name));
   return describe(
     connections,
     process.env,
     new Set(enabledNames(connections, settings, process.env)),
     settings.identities ?? {},
-  );
+  ).map((info) => ({ ...info, added: mine.has(info.name) }));
 }
 
 app.get('/api/settings', (c) =>

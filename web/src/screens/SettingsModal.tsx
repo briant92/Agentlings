@@ -9,6 +9,7 @@ import type {
   WorkingCopiesInfo,
 } from '@agentlings/shared';
 import { api } from '../api';
+import { AddConnection } from './AddConnection';
 import { ChannelLogo } from '../panels/ChannelLogo';
 import { ExpandRow, Section } from '../panels/Section';
 import { resetTour, tourSeen } from '../panels/Tour';
@@ -181,6 +182,8 @@ export function SettingsModal({
   const [reconnectError, setReconnectError] = useState<string | null>(null);
   /** Disconnect (D-218): which row is armed, which is mid-call, and what the last one said. */
   const [disconnectArmed, setDisconnectArmed] = useState<string | null>(null);
+  /** Press-twice for removing an added connection, the same shape as Disconnect. */
+  const [removeArmed, setRemoveArmed] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [disconnectNote, setDisconnectNote] = useState<{
     name: string;
@@ -498,6 +501,36 @@ export function SettingsModal({
   /** What a row's body carries beyond its description: a re-approval, the drawer, the off note, the people a bot knows. */
   const body = (connection: ConnectionInfo) => (
     <>
+      {/* Only a connection this machine added can be removed (D-244): one the
+          app ships is part of the product, and the way to stop using it is the
+          switch above. Its keys stay in `.env` — forgetting a value is
+          Disconnect's job (D-218), and doing it quietly here could take a token
+          shared with something else. */}
+      {connection.added && (
+        <p>
+          <button
+            className="work-link"
+            onClick={() => {
+              if (removeArmed !== connection.name) {
+                setRemoveArmed(connection.name);
+                return;
+              }
+              setRemoveArmed(null);
+              void api<{ connections: SettingsInfo['connections'] }>(
+                `/api/connections/${connection.name}`,
+                { method: 'DELETE' },
+              )
+                .then((reply) =>
+                  setSettings((prev) => (prev ? { ...prev, connections: reply.connections } : prev)),
+                )
+                .catch(() => setRemoveArmed(null));
+            }}
+          >
+            {removeArmed === connection.name ? 'remove — press again' : 'remove this connection'}
+          </button>{' '}
+          — you added this one. Its keys stay in <code>.env</code>; use Disconnect to forget those.
+        </p>
+      )}
       {connection.name === 'google' && connection.ready && (
         <p>
           {reconnectSent ? (
@@ -654,6 +687,15 @@ export function SettingsModal({
               )}
               {sources.length > 0 && <div className="sect">sources</div>}
               {sources.map(row)}
+              {/* Any MCP server, not only the ones this app happens to ship
+                  (D-244). It lives under `reads` because that is where a job's
+                  reach is decided; a sending connection is still the outbox's
+                  business and is not addable here. */}
+              <AddConnection
+                onAdded={(connections) =>
+                  setSettings((prev) => (prev ? { ...prev, connections } : prev))
+                }
+              />
               <p className="lib-status door-foot">
                 Switching a door off is level-wide: every job that would have used it costs a
                 session instead. {trailNote(doors)}

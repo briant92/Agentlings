@@ -336,6 +336,15 @@ off, so the app's fetch was gated and this second door was not.
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
 | `slack` — send messages, at approval only | builtin | off, needs `SLACK_BOT_TOKEN` | Live; grants a session **no tools** — posts as your own bot (D-104) |
 
+**The table above is the shipped set, not the ceiling (D-244).** Settings →
+*reads* has "add a connection of your own": any MCP server, either a command
+run on this machine (`stdio`) or a remote address (`http`). It is checked
+before it is kept — the app connects, asks the server what tools it offers, and
+those are what the connection grants, so a connection cannot exist without
+someone knowing what it can do. Added ones live under `.agentlings/`, ship
+**off**, take their keys from `.env` like every other credential, and can never
+take a shipped connection's name. Live.
+
 Your own notes are **not** a connection and deliberately never became one — see
 below.
 

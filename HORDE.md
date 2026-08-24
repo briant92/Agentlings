@@ -8,8 +8,8 @@ transport landed in D-243. §4 is the pick-up point — the remaining parts are
 listed there in the order they should be taken, and the next one needs a
 decision that is Brian's.**
 
-Written 2026-08-24, at `ddbd218`; updated through D-243. The line so far is
-D-235 → D-243; the plan it
+Written 2026-08-24, at `ddbd218`; updated through D-244. The line so far is
+D-235 → D-244; the plan it
 implements is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
@@ -25,7 +25,7 @@ the measurement behind it in *How Far Can the Horde Go*
 | Coverage | 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties |
 | Calibration | 52/58 (90 %) against the hand grades, both overclaim cells empty |
 | Intake | 53/54, 0 misses |
-| Suites | server 2,155 across 89 files · web 333 · typecheck clean |
+| Suites | server 2,185 across 91 files · web 333 · typecheck clean |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed and pushed. Nothing is in flight.
@@ -53,9 +53,12 @@ Everything below is committed and pushed. Nothing is in flight.
   over **stdin**, a six-try login lockout, and one board item struck as
   something that was never a task. Wave 2 unblocked.
 - **D-243** — **Wave 2 opens**: `transport: http`, a remote MCP server over
-  streamable HTTP. Chosen because it largely subsumes business-system doors
-  and supersedes nothing. Proven 6/6 against a real MCP server; no catalog
-  entry yet, because which one to adopt is a decision.
+  streamable HTTP. Proven 6/6 against a real MCP server. Its own correction is
+  attached: it does **not** subsume accounting, which is `stdio`.
+- **D-244** — **the catalog stops being the ceiling**: Settings can add **any**
+  MCP server, stdio or http, with its tool list read from the server rather
+  than typed. Not the vendor question I was asking — Brian's reframe was that
+  ANY user should reach the system they need.
 
 ---
 
@@ -193,7 +196,10 @@ plan's order, with what each reverses:
 1. **Event triggers** — extends D-103 from calendar cadences to something
    happening. Mail arriving is the obvious first, since `mail` already reads.
    Note it pulls Wave 3's decision forward.
-2. **Business-system doors** — mostly *catalog* work, but **check the transport
+2. **Business-system doors — LARGELY ANSWERED by D-244**, which lets a user
+   add any MCP server themselves rather than waiting for us to curate one.
+   What remains is seeding a few good defaults. Still: **check the transport
+   before assuming it is `http`** **check the transport
    before assuming it is `http`** (D-243's correction). Xero's official MCP
    server is **`stdio`** (`npx -y @xeroapi/xero-mcp-server@latest`, secrets in
    `env`), so the accounting side needs nothing D-243 added and works today.

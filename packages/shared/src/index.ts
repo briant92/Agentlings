@@ -370,6 +370,12 @@ export interface ConnectionInfo {
    * before it is pressed, never after.
    */
   sharesSecretsWith: string[];
+  /**
+   * Added on this machine rather than shipped in the catalog (D-244). Only
+   * these can be removed: a connection the app ships is part of the product,
+   * and the way to stop using one is the switch that already exists.
+   */
+  added?: boolean;
 }
 
 /**

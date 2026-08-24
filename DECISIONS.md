@@ -253,6 +253,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-241 — 2026-08-24 — Wave 0's credential: a password for an HttpOnly cookie, chosen by the socket, off until `.env` arms it — and the seam that would have handed it to every session](#d-241--2026-08-24--wave-0s-credential-a-password-for-an-httponly-cookie-chosen-by-the-socket-off-until-env-arms-it--and-the-seam-that-would-have-handed-it-to-every-session)
 - [D-242 — 2026-08-24 — Closing the security ledger: the sandbox stops holding secrets, the login door stops answering forever, and the board loses an item that was never a task](#d-242--2026-08-24--closing-the-security-ledger-the-sandbox-stops-holding-secrets-the-login-door-stops-answering-forever-and-the-board-loses-an-item-that-was-never-a-task)
 - [D-243 — 2026-08-24 — Wave 2 opens with the HTTP MCP transport, and a live run caught the design flaw three unit tests had agreed to miss](#d-243--2026-08-24--wave-2-opens-with-the-http-mcp-transport-and-a-live-run-caught-the-design-flaw-three-unit-tests-had-agreed-to-miss)
+- [D-244 — 2026-08-24 — Any MCP server, added by the user: the catalog stops being the ceiling, and the tool list is read from the server rather than typed](#d-244--2026-08-24--any-mcp-server-added-by-the-user-the-catalog-stops-being-the-ceiling-and-the-tool-list-is-read-from-the-server-rather-than-typed)
 
 ## By theme
 
@@ -553,7 +554,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses; and D-244, the catalog stopping being the ceiling — Settings can add **any MCP server**, `stdio` or `http`, on Brian's reframe that this is not about one user's stack but about any user reaching the system they need; the tool list is **read from the server** rather than typed, because D-044 requires a connection to name what it grants and for a server nobody curated the only honest source is the server itself — which also means the config is proven before it is stored and a connection that never worked leaves nothing behind; a user entry may never take a shipped name, since a second `github` would inherit every grant and recipe that already names one; and the twenty-eighth read site was `secretNames`, so a user connection's secrets are stripped from a spawned runner exactly like a shipped one's — the same shape as the seam D-242 closed
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18775,3 +18776,115 @@ was worth more than the transport it was cleared for.
 
 Sources for the two facts: the Xero server's own repository, and the remote-MCP
 directories listing the endpoints above.
+
+## D-244 — 2026-08-24 — Any MCP server, added by the user: the catalog stops being the ceiling, and the tool list is read from the server rather than typed
+
+**Decision.** Settings can add a connection this repo never shipped — any MCP
+server, `stdio` or `http`. The app connects to it, asks what tools it offers,
+and stores it only once a server has answered.
+
+### The reframe, which was Brian's and was the useful part
+
+I had been asking *which system do you use*, and building toward one door. The
+correction: **it is not about one user's stack — as many options as possible,
+so that any user can get the connection they need.** That turns a vendor
+question into an architecture one, and the architecture was in the way.
+
+`catalog/connections.json` was the only source and **nothing could write it**.
+The routes could switch a connection on or off (D-097) and store its secret
+(D-078), but there was no route to *add* one. Reaching your own system meant
+editing a JSON file inside the repo and restarting — which is a patch, not a
+product. MCP is a standard with a large ecosystem; the catalog should be a
+starting set.
+
+### Validated, then probed, then stored — in that order
+
+**The probe is the design, not a convenience.** D-044 requires a connection to
+name the tools a job may call, so that granting one is not granting everything
+it happens to expose. For a server nobody curated, the only honest source of
+that list is **the server itself**: a typed list is a guess, and a wrong guess
+produces a connection that installs and never works.
+
+It follows that a connection **cannot be saved until a server has answered**,
+which buys a second thing for free: the config is proven before it is kept. A
+command that is not installed, a URL that is wrong, a token that is refused —
+each fails at the door with something to read, rather than later and silently
+inside somebody's paid job.
+
+Secret values are held only for the length of the probe and written to `.env`
+once the server answers, so **a connection that never worked leaves nothing
+behind**.
+
+### The judgements inside it
+
+- **Under `.agentlings/`, never in the repo.** A `git pull` must not take a
+  user's connections away, and a shipped catalog entry must not arrive as a
+  merge conflict in their file.
+- **A user entry may never take a shipped name** — refused at the door and
+  filtered again on merge. A connection called `github` would inherit every
+  grant, recipe and role prompt that already names `github`, and nothing in the
+  app would say so; order alone would decide it, silently.
+- **Names are held to what a tool id can carry**, because the name becomes
+  `mcp__<name>__<tool>`. Anything else produces a tool nobody can call.
+- **https off this machine**, loopback exempt — a credential must not ride the
+  wire in clear, and loopback is how a server is tested before it is hosted.
+- **A new connection ships OFF.** Adding one says *this works*, not *every job
+  may now use it*; the grant is still per job.
+- **Removal is only for what the user added**, and it leaves the keys in
+  `.env`: forgetting a value is Disconnect's job (D-218), and doing it quietly
+  here could take a token shared with something else.
+- **The MCP SDK is now a declared dependency** of the server package. It
+  arrived transitively through the agent SDK, and a dependency you did not ask
+  for is one a version bump can take away without a line in any diff.
+
+### The seam that was already waiting
+
+All 28 sites reading the catalog were switched to one `allConnections()` at
+once. Twenty-seven are bookkeeping. The twenty-eighth is `secretNames`, which
+feeds `launderedEnv` — so **a user connection's secrets are stripped from a
+spawned runner exactly like a shipped one's**. That is the same shape as the
+seam D-242 closed: a list built from one registry, asked to protect something
+in another. Missing it would have handed a user's own API key to every session
+on the box, and no test in this repo would have said so, because until today
+there was no such thing as a user's own connection.
+
+### Running someone else's command, decided rather than absorbed
+
+A `stdio` entry means the app runs an arbitrary local command — `npx -y
+anything` — started from a web form. Put to Brian as its own choice against an
+http-only alternative, and taken deliberately.
+
+The argument for: **it is not a new class of risk.** This app already spawns
+sessions holding `Bash` (D-031), so "the UI can cause arbitrary local
+execution" was true before today. The argument against, which is real: a
+session's Bash runs inside a sandbox with a role's grants, while an MCP server
+command runs as the runner's own child. What bounds it is the same thing that
+bounds everything else here — the loopback bind, the tailnet, and now Wave 0's
+gate in front of the route.
+
+The http-only alternative was refused on measurement rather than taste: Xero's
+official server is `stdio`, and so are most vendor-official ones, so http-only
+would have excluded the accounting case and much of what people would actually
+ask for (see D-243's correction).
+
+### Evidence
+
+Tests run against **real MCP servers on both transports**, no model involved —
+an http one on loopback and a stdio one spawned as a real process — because the
+whole point of the probe is that it asks a server, and a mocked server would
+only prove that a mock answers. The stdio fixture refuses to start without its
+declared secret, so the test proves the probe **passes a secret through**
+rather than that a happy path happens to work.
+
+The fixture lives in the repo rather than being written to a temp directory,
+and that is not tidiness: **a file outside the tree cannot resolve
+`@modelcontextprotocol/sdk`**, because Node walks *up* from the file looking
+for `node_modules`. The first version did exactly that and failed with a
+module-not-found no assertion could show — the third time today that a fixture,
+not the code, was what a red test was actually reporting.
+
+Typecheck clean. Server **2,185** across 91 files (from 2,155), web **333**.
+
+**Not yet proven live.** The routes and the form exist and nothing has been
+added through them on a running server; that needs a restart, and the bar is a
+real MCP server added through the UI with its tools appearing on the row.

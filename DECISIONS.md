@@ -18171,7 +18171,24 @@ Typecheck clean; server **2,080** tests across 87 files (six new in
 `origin.test.ts`: the app's own origins on any port, the tailnet by MagicDNS
 name, another site refused, the three lookalike hosts refused, the opaque
 `"null"` origin a sandboxed iframe sends refused, the no-Origin caller allowed
-on purpose, and the method split) and web **333** green. The live proof — the
-same probe refused, a bad-Origin handshake closed, and the app itself still
-working from `localhost` — rides the next restart, since the server reads this
-code at boot.
+on purpose, and the method split) and web **333** green.
+
+**Mutation pass after committing.** Four aimed at the judgements above, all
+four killed by their own named test — the first pass in this run of entries
+where nothing survived, because the lesson from D-235–D-237 was applied when
+choosing them rather than afterwards:
+
+| Mutation | Killed by |
+|---|---|
+| `endsWith('.ts.net')` → `endsWith('ts.net')` | *refuses another site* — `evilts.net` gets in |
+| `host === 'localhost'` → `host.includes('localhost')` | *refuses another site* — `localhost.evil.example` gets in |
+| the malformed-origin `catch` returns `true` | *refuses an opaque origin* — `"null"` gets in |
+| `GET` added to `UNSAFE_METHODS` | *gates the methods whose effect is the point* |
+
+The third had to be re-aimed once: a `$`-anchored perl replace did not apply at
+all, because the line ends `\r\n` and `$` will not match before the `\r`
+(D-224, third sighting). The hashes said so before the suite did.
+
+The live proof — the same probe refused, a bad-Origin handshake closed, and the
+app itself still working from `localhost` — rides the next restart, since the
+server reads this code at boot.

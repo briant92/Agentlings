@@ -18595,7 +18595,7 @@ Two process failures, recorded because an archive changes no behaviour:
 
 Typecheck clean. Server **2,144** across 89 files (from 2,117), web **333**.
 
-**Proven live across two restarts with the queue empty (R-07) — 40 checks:**
+**Proven live across two restarts with the queue empty (R-07) — 41 checks:**
 
 - **Gate OFF — 5/5.** The half D-241 could only prove by unit test. With the
   password commented out, every probe answers exactly as it did before Wave 0:
@@ -18606,10 +18606,15 @@ Typecheck clean. Server **2,144** across 89 files (from 2,117), web **333**.
   0 bytes on the socket against 580,563 signed in, the cookie's three flags, all
   three W0.9 origins.
 - **The app — 17/17** in headless Edge.
-- **The lockout — 2/2**, and the sequence is the measurement:
+- **The lockout — 3/3**, and the sequence is the measurement:
   `401,401,401,401,401,401,429` — six tries then the door closes, matching
   `LOGIN_ATTEMPTS`. The right password is refused 429 too, so it cannot be used
-  as an oracle.
+  as an oracle. **And it reopens on its own**: a poll every 20 s saw the right
+  password accepted again at **~301 s**, against a 300,000 ms window. That one
+  was worth waiting five minutes for — a lockout that never lifted would be
+  indistinguishable from a working one until the day it locked the user out,
+  and the unit test could only prove the arithmetic, not that a live server
+  ever re-reads the clock.
 
 **The seam's own live proof** was two direct spawns of the real runner, one per
 stdin shape, because the wired test uses a stand-in runner and the direct spawn

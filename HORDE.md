@@ -47,7 +47,7 @@ Everything below is committed and pushed. Nothing is in flight.
   the `security` re-run completing at 24 turns; 7 advisories → 4.
 - **D-241** — **Wave 0's credential**: a password for an `HttpOnly` cookie,
   chosen by the socket rather than by taste. Off until `.env` arms it. Proven
-  live across two restarts, 38 checks.
+  live across two restarts. With D-242, 41 live checks in all.
 - **D-242** — **the security ledger closed**: the `.session.json` seam fixed
   over **stdin**, a six-try login lockout, and one board item struck as
   something that was never a task. Wave 2 unblocked.
@@ -100,7 +100,8 @@ than assumed — a hostile origin still gets 4403 on the socket and **403, not
   the gate rather than riding on it.
 - **`POST /api/session` is rate limited** — six tries, five minutes, proven
   live as `401,401,401,401,401,401,429`. The right password is refused 429 too,
-  so a locked door is not an oracle.
+  so a locked door is not an oracle — **and it reopens on its own at ~301 s**
+  against a 300,000 ms window, which is the half a unit test cannot reach.
 - **The lockout probe is opt-in** (`--lockout`) because proving it locks the
   door for five minutes. A restart clears it.
 

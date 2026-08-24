@@ -3,10 +3,12 @@
 The open board for the coverage-and-capability line. Opened on demand, never
 imported — the same shape as `SPATIAL.md` and `RECONCILE.md` before it.
 
-**Wave 0 is complete and nothing is owed. Wave 2 is open: its HTTP MCP
-transport landed in D-243. §4 is the pick-up point — the remaining parts are
-listed there in the order they should be taken, and the next one needs a
-decision that is Brian's.**
+**Wave 0 is complete and nothing is owed. Wave 2 is open and two of its four
+parts are done** — the `http` transport (D-243) and business-system doors,
+answered by letting users add any MCP server themselves (D-244) with four
+verified starting points (D-245). **§4 is the pick-up point.** What remains
+there is **event triggers**, and then browser acting tools, which are last
+deliberately and for a reason worth reading before starting them.
 
 Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
 D-235 → D-245; the plan it
@@ -64,7 +66,8 @@ Everything below is committed and pushed. Nothing is in flight.
   Notion, Sentry, Stripe) that *fill the form* rather than ship as connections,
   because we have never authenticated to any of them. Every shape read from a
   primary source and dated; OAuth-only servers excluded because our transports
-  carry a static credential; **three of the four are `stdio`**.
+  carry a static credential; **three of the four are `stdio`**. Proven live
+  15/15 — including that choosing a chip saves nothing.
 
 ---
 

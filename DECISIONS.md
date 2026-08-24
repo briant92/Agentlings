@@ -18988,5 +18988,28 @@ would fail the moment it was submitted.
 
 Typecheck clean. Server **2,198** across 92 files (from 2,187), web **333**.
 
-**Not yet proven live** — the route and the chips exist and have not been used
-against a running server.
+### Proven live — 15/15
+
+`scripts/prove-suggestions.mjs`, on the restarted server.
+
+The API half: four offered, each with a `source` and a `docs` link, none
+carrying tools, both transports present, and no shipped name among them. Then
+the filter proven rather than asserted — **a name was actually taken**, with a
+local stand-in server since the name is all the filter looks at, and `xero`
+stopped being offered (4 → 3); freeing it brought it back. No dead ends in the
+list.
+
+The UI half is the one that matters, and its last check is the point of the
+entry: **choosing a chip saves nothing.** Clicking Xero fills the name, the
+arguments (`-y`, `@xeroapi/xero-mcp-server@latest`) and both key names, the
+note changes from *"never tried from here"* to one naming the source and
+linking their instructions — and `/api/connections` still has no `xero` in it.
+A suggestion that quietly looked like a verified connection would be the exact
+claim this entry exists to avoid making, so the probe asserts both notes and
+the absence.
+
+**Mutations: five aimed, five killed** — and three of them were on the JSON
+rather than the code, which is what makes them worth reporting. Deleting a
+`docs` link, renaming an entry to something the form would refuse, and planting
+a live-looking `rk_live_…` key all fail the suite. The shipped file is guarded
+as data, not merely surrounded by guarded code.

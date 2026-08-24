@@ -246,6 +246,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-234 — 2026-08-23 — Brand chips in the work box: a channel word wears its service's colour, a matched word gains a wash, and the routing line carries the mark](#d-234--2026-08-23--brand-chips-in-the-work-box-a-channel-word-wears-its-services-colour-a-matched-word-gains-a-wash-and-the-routing-line-carries-the-mark)
 - [D-235 — 2026-08-24 — Wave 1 of the coverage programme: four trades hired off a measurement, vouched by their own powers, and nothing on the shelf of never touched](#d-235--2026-08-24--wave-1-of-the-coverage-programme-four-trades-hired-off-a-measurement-vouched-by-their-own-powers-and-nothing-on-the-shelf-of-never-touched)
 - [D-236 — 2026-08-24 — The phrase widening, and where naming stops paying: four existing powers given phrases, +53 duties, and the structural blocker named rather than loosened](#d-236--2026-08-24--the-phrase-widening-and-where-naming-stops-paying-four-existing-powers-given-phrases-53-duties-and-the-structural-blocker-named-rather-than-loosened)
+- [D-237 — 2026-08-24 — The scoreboard: hireable positions counted on evidence rather than on word matches, and the first thing it found was a false positive of its own](#d-237--2026-08-24--the-scoreboard-hireable-positions-counted-on-evidence-rather-than-on-word-matches-and-the-first-thing-it-found-was-a-false-positive-of-its-own)
 
 ## By theme
 
@@ -546,7 +547,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -17879,3 +17880,97 @@ than engineered away — it is the same redundancy D-235 found, now measured
 deliberately instead of stumbled into. **A mutation is a claim about the
 mutation first** (D-224's rule, in a second form): before reading a survivor
 as a weak test, check that the thing you removed was ever on the path.
+
+## D-237 — 2026-08-24 — The scoreboard: hireable positions counted on evidence rather than on word matches, and the first thing it found was a false positive of its own
+
+**Decision:** the coverage benchmark gains **one headline number** — *hireable
+positions*, how many of the board's 922 gradeable occupations the crew could
+actually hold down — and it counts a duty toward that number **only when the
+duty's grade rests on recorded evidence**. It is printed as a range with the
+strict figure first. Today it reads **5–10 of 922**.
+
+### Why a headline number at all
+
+Everything the programme has measured so far is a duty count, and duty counts
+do not answer the question anybody actually asks. 18,797 duties at 16 %
+covered is a fact about a corpus; *"could this thing hold down a job"* is the
+question the positions board was built to ask (D-229) and the one the
+expansion plan set as its goal. A number that answers it is what makes the
+plan steerable — pick the wave that moves it, then check whether it moved.
+
+### The definition, corrected against the plan that proposed it
+
+The plan defined hireable as *"≥70 % of core duties covered **or partial**"*.
+Reading the grader rather than the plan showed that to be wrong, and the
+correction is the substance of this entry: `partial` also holds the matcher's
+**unverified word matches**, and D-229's founding rule is that a word match
+between a duty and a role's prompt is not evidence the role can do it.
+Counting those would have built the programme's headline out of precisely
+what the grader refuses to claim — the overclaim trap, arriving through the
+one door nobody was watching, the summary statistic.
+
+So `vouchedFor` counts a duty when it is **covered**, or **partial on power
+or boundary evidence** — a closed door, an approval-time half, a partial
+power, a roster gap. Partial on `lexical` or `none` evidence never counts.
+`coveragebench.test.ts` pins that with the cellar jobs and the sommelier: pure
+matcher gaps, confidently word-matched, and never hireable.
+
+Two smaller rules, both to stop the number flattering itself:
+
+- **An occupation with no core duties is out of the denominator**, not
+  counted as a failure — there was nothing to grade. That is 1,016 profiles
+  down to **922** positions.
+- **The list is the count.** The report carries every qualifying title,
+  sorted, and a test asserts `titles.length === positions`, so the number can
+  always be read back as names and audited. Which is exactly what happened.
+
+### What it found on its first run: itself
+
+The first run said **11 of 922**, and the list held *Postal Service Clerks* —
+which is not a job this crew can do. Read duty by duty:
+
+```
+[Y] partial/power  Sort incoming and outgoing mail, according to type and destination…
+[Y] partial/power  Obtain signatures from recipients of registered or special delivery mail.
+[Y] partial/power  Transport mail from one work station to another.
+```
+
+The `desk` power fired on the word **mail** — the clerk's Gmail door — and
+vouched for physically sorting and carrying post. The `physical` boundary
+should have decided all three and did not, because its terms are phrases and
+the word order did not match: it holds `sort mail` and `deliver mail`, and
+the duty says *"Sort incoming and outgoing mail"*.
+
+Fixed in the safe direction, by widening the boundary rather than narrowing
+the power: `postage`, `parcel*`, `transport mail`, `incoming mail`,
+`outgoing mail`, `mail room`, `mailroom`, `obtain signature*` join
+`physical`. Postal Service Clerks left the list; covered fell by 4 duties,
+which is the whole point — those four were being claimed and should not have
+been. Calibration held at 52/58 with both overclaim cells empty.
+
+**A new instrument's first job is to be audited, and this one paid for itself
+in one run.** The lesson generalises past this fix: the grader is lexical, its
+false positives cluster where a generic word (`mail`, `data`, `projection`)
+belongs to two different worlds, and a summary number is where such a mistake
+stops being visible. Reading the list is what makes it visible again.
+
+### Why a range and not a number
+
+`5` is every core duty share at 70 % on **covered alone**; `10` adds the
+duties that rest on a door, a boundary or a roster gap — genuinely capable
+work, on ledgers the Postal audit just showed can be wrong. Printing only the
+upper figure would report the crew's best case as its result, and printing
+only the lower would deny the compose-then-approve model the app is built on.
+The range says what is known and the gap between its ends says how much rests
+on hand-written ledgers.
+
+### Evidence
+
+Typecheck clean; server **2,073** tests (two new: the evidence rule with the
+cellar jobs and sommelier excluded and the technical writer included, the
+list-equals-count and low-end-≤-high-end invariants; and the no-core-duties
+exclusion) and web **333** green; `bench:intake` 53/54 unchanged; calibration
+52/58 with the overclaim cells empty before and after; the benchmark
+deterministic test still passes with the new field, which is what proves the
+count is order-independent. The eleven-then-ten list is in the run output
+above, audited by hand.

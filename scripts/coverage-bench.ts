@@ -111,6 +111,18 @@ function print(r: CoverageReport): void {
   console.log(`  sources: ${r.bySource.map((s) => `${s.source}${s.version ? ` ${s.version}` : ''} ×${s.profiles}`).join(', ')}`);
   console.log(`  crew: ${crew ? `level ${level} (${crew.awake.length} awake, ${crew.resting?.length ?? 0} resting)` : 'every installed role held'}; doors open: ${doors.filter((d) => d.open).map((d) => d.name).join(', ') || 'none'}`);
   console.log('');
+  // A range, strict figure first: the two counts bound the same question from
+  // opposite sides, and printing only the larger one would report the crew's
+  // best case as its result.
+  console.log(
+    `  HIREABLE POSITIONS  ${r.hireable.onCoveredAlone}–${r.hireable.positions} of ${r.hireable.of}  ` +
+      `(${pct(r.hireable.positions, r.hireable.of)} at most — ≥${Math.round(r.hireable.share * 100)}% of core duties, ` +
+      `covered alone at the low end, plus door/boundary/roster evidence at the high)`,
+  );
+  if (r.hireable.titles.length > 0 && r.hireable.titles.length <= 40) {
+    for (const t of r.hireable.titles) console.log(`    · ${t}`);
+  }
+  console.log('');
   console.log(`  covered    ${pad(r.grades.covered)}  ${pct(r.grades.covered, T)}   (core ${pct(r.requiredGrades.covered, r.totals.required)})`);
   console.log(`  partial    ${pad(r.grades.partial)}  ${pct(r.grades.partial, T)}`);
   console.log(`  uncovered  ${pad(r.grades.uncovered)}  ${pct(r.grades.uncovered, T)}`);

@@ -47,8 +47,43 @@ export interface RoleCluster {
   meetsBar: boolean;
 }
 
+/**
+ * How much of an occupation's core work must rest on recorded evidence
+ * before the board may call the position hireable. 70 % is the bar the
+ * expansion plan proposed; it is a threshold rather than a measurement, so
+ * it lives here as one named constant and the report carries it out.
+ */
+export const HIREABLE_SHARE = 0.7;
+
+/**
+ * A duty counts toward a hireable position only when its grade rests on
+ * **recorded evidence** — a power that vouches, or a boundary that says
+ * which half the crew takes. That is narrower than "covered or partial",
+ * and deliberately so: `partial` also holds the matcher's unverified word
+ * matches, and D-229's whole rule is that a word match between a duty and a
+ * role's prompt is not evidence the role can do it. Counting those would
+ * build the headline number out of exactly what the grader refuses to claim.
+ */
+export const vouchedFor = (t: TaskCoverage): boolean =>
+  t.grade === 'covered' || (t.grade === 'partial' && t.evidence !== 'lexical' && t.evidence !== 'none');
+
+export interface HireableCount {
+  /** The bar applied, so a report says what it measured against. */
+  share: number;
+  /** Positions clearing the bar on evidence-backed duties. */
+  positions: number;
+  /** Positions with core duties to grade at all. */
+  of: number;
+  /** The stricter read: clearing the same bar on `covered` alone. */
+  onCoveredAlone: number;
+  /** Which ones, for a human read; the whole list, sorted. */
+  titles: string[];
+}
+
 export interface CoverageReport {
   totals: { profiles: number; tasks: number; required: number };
+  /** How many real positions the crew could actually hold down (§the plan's KPI). */
+  hireable: HireableCount;
   grades: Record<TaskGrade, number>;
   requiredGrades: Record<TaskGrade, number>;
   gaps: Record<GapKind, number>;
@@ -223,11 +258,34 @@ export function benchmark(ctx: CoverageContext, profiles: readonly WorkProfile[]
     }
   }
 
+  // The headline: positions the crew could hold down, counted off core duties
+  // whose grade rests on recorded evidence. An occupation with no core duties
+  // is not a position that failed — there was nothing to grade — so it is out
+  // of the denominator rather than counted as a miss.
+  const hireableTitles: string[] = [];
+  let onCoveredAlone = 0;
+  let gradable = 0;
+  for (const { profile, result } of results) {
+    const core = result.tasks.filter((t) => t.required);
+    if (core.length === 0) continue;
+    gradable += 1;
+    if (core.filter(vouchedFor).length / core.length >= HIREABLE_SHARE) hireableTitles.push(profile.title);
+    if (core.filter((t) => t.grade === 'covered').length / core.length >= HIREABLE_SHARE) onCoveredAlone += 1;
+  }
+  hireableTitles.sort();
+
   return {
     totals: {
       profiles: results.length,
       tasks: results.reduce((n, r) => n + r.result.tasks.length, 0),
       required: results.reduce((n, r) => n + r.result.tasks.filter((t) => t.required).length, 0),
+    },
+    hireable: {
+      share: HIREABLE_SHARE,
+      positions: hireableTitles.length,
+      of: gradable,
+      onCoveredAlone,
+      titles: hireableTitles,
     },
     grades,
     requiredGrades,

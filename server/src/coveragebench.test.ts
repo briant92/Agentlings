@@ -53,6 +53,48 @@ describe('benchmark', () => {
     expect(report.bySource.find((s) => s.source === 'onet')?.version).toBe('30.0');
   });
 
+  /**
+   * The headline number (D-237), and the property that keeps it honest: a
+   * position may not become hireable on duties the matcher merely
+   * word-matched. The technical-writer fixture is covered on power evidence
+   * throughout and must count; the sommelier and the three cellar jobs are
+   * pure matcher gaps and must not, however confidently their words matched.
+   */
+  it('counts a position hireable only on evidence, never on an unverified word match', () => {
+    expect(report.hireable.share).toBe(0.7);
+    expect(report.hireable.titles).toContain('Technical writer');
+    for (const cellarJob of ['Cellar job 1', 'Cellar job 2', 'Cellar job 3']) {
+      expect(report.hireable.titles).not.toContain(cellarJob);
+    }
+    expect(report.hireable.titles).not.toContain('Sommelier');
+    // The strict count can never exceed the evidence-backed one: covered is a
+    // subset of vouched, so a report where the low end outran the high end
+    // would mean the two were measuring different populations.
+    expect(report.hireable.onCoveredAlone).toBeLessThanOrEqual(report.hireable.positions);
+    // Sorted and complete, so the list is the count rather than a sample.
+    expect(report.hireable.titles).toEqual([...report.hireable.titles].sort());
+    expect(report.hireable.titles.length).toBe(report.hireable.positions);
+  });
+
+  /**
+   * A profile with no core duties is not a position that failed — there was
+   * nothing to grade — so it stays out of the denominator entirely.
+   */
+  it('leaves an occupation with no core duties out of the count, not counted as a miss', () => {
+    const supplementalOnly: WorkProfile = {
+      id: 'fixture:supplemental-only',
+      source: 'fixture',
+      title: 'Supplemental only',
+      aliases: [],
+      skills: [],
+      tools: [],
+      tasks: [{ id: 'fixture:supplemental-only:1', text: 'Write the documentation.', required: false }],
+    };
+    const withIt = benchmark(ctx, [...fixtures, ...onet, ...CELLAR, supplementalOnly]);
+    expect(withIt.hireable.of).toBe(report.hireable.of);
+    expect(withIt.hireable.titles).not.toContain('Supplemental only');
+  });
+
   it('is deterministic: the same bytes twice, and in any input order', () => {
     const again = benchmark(ctx, [...fixtures, ...onet, ...CELLAR]);
     expect(JSON.stringify(again)).toBe(JSON.stringify(report));

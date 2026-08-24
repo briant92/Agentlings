@@ -2,6 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MAX_ATTACHMENT_BYTES } from '@agentlings/shared';
 import { newestMatch, resolveStanding, validateStanding } from './standing';
 
 let dir: string;
@@ -117,6 +118,16 @@ describe('resolveStanding', () => {
     const gone = path.join(dir, 'moved');
     expect(() => resolveStanding([{ dir: gone, as: 'statement.xlsx' }])).toThrow(
       /no folder at/,
+    );
+  });
+
+  it('refuses a file larger than a job may carry', () => {
+    // The cap exists because these bytes end up in a sandbox and then in a
+    // brief; a workbook that big is a mistake, and a firing is not the place
+    // to discover it silently.
+    writeFileSync(path.join(dir, 'huge.xlsx'), Buffer.alloc(MAX_ATTACHMENT_BYTES + 1));
+    expect(() => resolveStanding([{ dir, match: 'huge', as: 'statement.xlsx' }])).toThrow(
+      /larger than 10 MB/,
     );
   });
 

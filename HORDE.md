@@ -76,6 +76,20 @@ the probe across all three origins in both gate states. Until that runs, D-241
 is a build and not a proof. §3.1–§3.3 below are kept as written, because the
 reasoning is what a later session will want to re-read, not the status.
 
+The instrument is built and refuses a server that predates D-241:
+
+```
+node scripts/prove-wave0.mjs
+```
+
+**Run it twice, and both runs are the proof** — once with
+`AGENTLINGS_PASSWORD` commented out (every probe must answer exactly as it did
+before D-241) and once with it set, each after its own restart. It checks the
+gate on reads, the doors still open, the OAuth callback still exempt, D-239's
+4403 still firing, the cookie's three flags, the `.ts.net` origin on both
+surfaces, and the pair that is the whole point: **0 bytes signed out where
+signed in is handed the level.**
+
 ---
 
 Planned by the crew's own `planner` on 2026-08-24 (job `95f4f5eb`, Training

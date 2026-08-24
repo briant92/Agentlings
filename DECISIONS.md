@@ -242,6 +242,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-230 — 2026-08-23 — The coverage benchmark: O*NET's 1,016 occupations graded duty by duty, with five kinds of "less than covered" kept apart so a weak word match can never become a hiring recommendation](#d-230--2026-08-23--the-coverage-benchmark-onets-1016-occupations-graded-duty-by-duty-with-five-kinds-of-less-than-covered-kept-apart-so-a-weak-word-match-can-never-become-a-hiring-recommendation)
 - [D-231 — 2026-08-23 — The four D-230 follow-ups: the grader calibrated against the hand grades (76 % → 90 %, the overclaim cells emptied), three compliance jobs run live through the crew as routed, the overlaps left alone with their trigger named, the screen question sequenced behind the calibration](#d-231--2026-08-23--the-four-d-230-follow-ups-the-grader-calibrated-against-the-hand-grades-76--90--the-overclaim-cells-emptied-three-compliance-jobs-run-live-through-the-crew-as-routed-the-overlaps-left-alone-with-their-trigger-named-the-screen-question-sequenced-behind-the-calibration)
 - [D-232 — 2026-08-23 — The job board: the O*NET database behind the positions board, one download, searched by the hand board's rule and graded by the benchmark's grader, measured never vouched](#d-232--2026-08-23--the-job-board-the-onet-database-behind-the-positions-board-one-download-searched-by-the-hand-boards-rule-and-graded-by-the-benchmarks-grader-measured-never-vouched)
+- [D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged](#d-233--2026-08-23--one-prompt-one-review-a-step-chain-surfaces-as-one-card-one-door-and-one-panel-settled-from-its-end--execution-unchanged)
 
 ## By theme
 
@@ -820,7 +821,13 @@ entry updates one file rather than two.
   than built towards; and D-183, raising `MAX_STEPS` to four — where the
   four-stage chain the raise exists for turned out to be a redact-then-send
   whose *sending* step lost D-181's gate on the split, so the withholding now
-  rides the chain rather than the sentence; and D-106, where the repeat row learned to schedule
+  rides the chain rather than the sentence; and D-233, where the chain's
+  *review* was merged after a live two-step ask grew two parallel REVIEW
+  cards — a `stepPrev` link (deliberately not `continues`), one inbox card,
+  one terminal door at the chain's end, a step rail in the modal, and the
+  last step's verdict settling every step still awaiting one, with gating
+  step 2's run on step 1's Approve considered and rejected; and D-106,
+  where the repeat row learned to schedule
   **without** running today and to say the first firing's date, found by
   T5's own rule the first evening anyone used the timer
 - **What the desk understands, measured** — D-177, the intake benchmark: 51
@@ -17460,3 +17467,81 @@ sideways scroll, no page errors; the Hire modal hint verified with the
 agentling POST intercepted so nothing landed in HQ. The routes go live
 on the next server restart; the board data is already installed, so no
 download will be needed then.
+
+## D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged
+
+Raised by Brian off a live chain the same evening: "I need an elevator
+pitch … then send it to Pepo on Telegram" split as D-105 says it should,
+ran cleanly, and left **two parallel REVIEW cards** for one ask. The code
+read confirmed the surface was lying about the structure: the completion
+hook queues step 2 off step 1's *delivery*, so by the time step 1's REVIEW
+could be opened its output had already ridden forward — that review gated
+nothing — while the one decision that matters for the whole chain, the
+send, lives on the last step's Approve and nowhere else. Two panels
+implied two independent gates; the truth is one gate, at the end.
+
+### The decision
+
+Execution stays exactly D-105 — steps are ordinary jobs, no waiting
+status, chains run unattended — and the **review surfaces merge**:
+
+- **The link.** `queueNextStep` stamps the new job with `stepPrev`, the
+  previous step's job id. Deliberately a new field and not `continues`:
+  that link means "same sandbox carried forward" and feeds `rootPrompt`'s
+  approval keys and D-150's chain repricing, neither of which a step split
+  wants. Named at every seam so it exists (the D-097 lesson): `Job`,
+  `NewJobSpec`, `queuedJobSpec`, `redoJobSpec` (a redone step keeps its
+  place), `add`, and the `Delivery` row.
+- **One door in the terminal.** A delivered mid-chain step's REVIEW card
+  is suppressed only while its successor exists in the queue — if queueing
+  the next step failed, no successor exists and the card stands, so no
+  delivery is ever doorless. The per-step finished lines stay.
+- **One card in the inbox.** `groupDeliveries` walks `stepPrev` among the
+  visible rows: one card per chain at its newest member's slot, steps
+  stacked in step order behind one unread dot, and a still-running tail
+  named on the card ("step 2 of 2 is working — the review lands here when
+  it delivers"). A member whose siblings fell off the 12-row cap stands
+  alone rather than guessing.
+- **One panel.** The modal takes the chain and a switch callback from
+  `LevelView` (which owns the open job and keys the modal by it): a step
+  rail in the head — the open step lit, a delivered sibling a tab, one
+  still at work named and waiting. The outbox carries a provenance line,
+  because discarding step 1 cannot un-feed the send it composed, and that
+  belonged in view rather than implied by timestamps.
+- **One verdict, from the end.** On the last step (a step with no
+  sentences left to queue), Approve/Discard/Clear settle every step still
+  awaiting a verdict, oldest first, through the same per-job resolve route
+  — each step still banks its own recipe and lessons, which per-step
+  compile convergence needs. `awaitingVerdict` decides who (the shared
+  function, not a private copy — D-030), so a step already carried on by
+  More turns keeps its own decision. Mates' unsent messages count into
+  "Approve & send N", a refusal on any mate stops the verdict before the
+  end settles, and an earlier tab's verdict stays its own — both scopes
+  said in a line above the buttons.
+
+### Considered and rejected
+
+Gating step 2's execution on step 1's Approve — the sequential reading of
+the complaint. It re-adds the waiting job D-105 refused five times, breaks
+scheduled chains that fire with nobody watching and the standing-approval
+auto-send composition, and the money it would protect is already absorbed
+on failure (D-012). The parallel-review *presentation* was the bug, not
+the execution order.
+
+### Evidence
+
+`stepPrev` round-trips the disk (`queue.test.ts`), rides both spec
+builders (`work.test.ts`), and reaches the delivery rows
+(`deliveries.test.ts`); the pure walk in `web/src/panels/chain.ts` has 8
+tests (any-member entry, step-1-first order, truncation on a missing
+sibling, cycle guard, grouping at the newest slot, cap-orphan, running
+tail). Server 86 files / 2,062, web 34 / 328, typecheck clean. Mutated
+after committing (D-021): five mutations — the `add` copy, the
+`queuedJobSpec` spread, the delivery-row fields, `hasNextStep` forced
+false (the old bug reborn), the forward walk removed — five kills, each
+by its own named test, files restored from the commit. Not yet live: the
+web half renders on refresh, the `stepPrev` stamp needs the server
+restart already owed since the D-232 session; the first real two-step ask
+after it is the live proof. Jobs from before the field group as before —
+their steps have no link and stand alone, which is degradation, not
+breakage.

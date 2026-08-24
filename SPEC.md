@@ -566,6 +566,17 @@ tried, measured and rejected is in `DECISIONS.md`:
   unchanged through the level picker; a one-line measured hint in the
   Hire modal when the sentence names an occupation; bench:coverage reads
   the installed board by default → D-232
+- M5.39 one prompt, one review: a step chain (D-105) surfaces as one
+  thing — `stepPrev` links each chain-queued step to the one that queued
+  it (a new field, never `continues`); the terminal offers one REVIEW at
+  the chain's end (a mid-step's card stands only if queueing its
+  successor failed), the inbox shows one card per chain with the steps
+  stacked and a running tail named, and the review modal grows a step
+  rail, an outbox provenance line, and a chain-wide verdict from the last
+  step — every step still awaiting one settles through the same per-job
+  route, oldest first, so recipes and lessons still bank per step;
+  execution unchanged, and gating a step's run on the previous step's
+  Approve rejected by name → D-233
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

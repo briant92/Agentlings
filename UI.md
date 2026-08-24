@@ -337,3 +337,16 @@ why is D-226; this is the checklist's record that they landed.
       1280 × 700 and 412 × 915 with the routes answered by the real
       grader's JSON — 5 cards, 28 duty rows, no sideways scroll, no page
       errors, the hire POST intercepted so nothing landed in HQ.
+- [x] **27. One prompt, one review** — landed 2026-08-23 (D-233).
+      (`packages/shared` Job/Delivery, `server` queue/work/index/deliveries,
+      `web/src/panels/chain.ts` + 8 tests, `Inbox.tsx`, `Terminal.tsx`,
+      `ReviewModal.tsx`, `LevelView.tsx`, `styles.css`) — a step chain
+      (D-105) stops reviewing as parallel panels: `stepPrev` links the
+      steps, the terminal keeps one REVIEW at the chain's end, the inbox
+      groups a chain into one card with its running tail named, and the
+      modal gets a step rail, an outbox provenance line, and a last-step
+      verdict that settles every step still awaiting one (per-job route,
+      oldest first; an earlier tab's verdict stays its own). Evidence:
+      server 86/2,062, web 34/328, typecheck clean; five mutations, five
+      kills by their own tests. Live proof waits on the owed server
+      restart and the next real two-step ask.

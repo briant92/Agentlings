@@ -28,6 +28,12 @@ export interface ChannelDeps {
    * reviewer just looked at it.
    */
   dir?: string;
+  /**
+   * The thread a `reply: true` message threads into (D-248) — supplied by the
+   * send site from the job's own `mailTrigger` stamp, never by the session.
+   * The one thread a job can reach is the one whose mail queued it.
+   */
+  mailThread?: { threadId: string; msgId?: string };
 }
 
 export interface ChannelClient {
@@ -143,12 +149,18 @@ function encodedWord(value: string): string {
 export function emailRfc822(
   message: OutboxMessage,
   files: { name: string; data: Buffer }[] = [],
+  /** In-Reply-To/References for a threaded reply (D-248); the caller supplies the original's Message-ID. */
+  replyTo?: string,
 ): string {
   const subject = message.subject ? [`Subject: ${encodedWord(message.subject)}`] : [];
+  // Both headers, because that is what mail clients actually thread on —
+  // Gmail's threadId places it in the mailbox, these place it everywhere else.
+  const threading = replyTo ? [`In-Reply-To: ${replyTo}`, `References: ${replyTo}`] : [];
   if (files.length === 0) {
     return [
       `To: ${message.to}`,
       ...subject,
+      ...threading,
       'MIME-Version: 1.0',
       'Content-Type: text/plain; charset="UTF-8"',
       '',
@@ -187,8 +199,8 @@ export function emailRfc822(
 }
 
 /** The Gmail API's `raw` field: the RFC 822 message, base64url-encoded. */
-export function emailRaw(message: OutboxMessage): string {
-  return base64url(Buffer.from(emailRfc822(message), 'utf8'));
+export function emailRaw(message: OutboxMessage, replyTo?: string): string {
+  return base64url(Buffer.from(emailRfc822(message, [], replyTo), 'utf8'));
 }
 
 /**
@@ -205,6 +217,12 @@ const gmail: ChannelClient = {
     const refreshToken = deps.env.GOOGLE_OAUTH_REFRESH_TOKEN;
     if (!clientId || !clientSecret || !refreshToken) {
       throw new Error('Google is not connected');
+    }
+    // A reply threads into the mail that queued this job (D-248). The thread
+    // comes from the job's own stamp through deps — a job no mail triggered
+    // has none, and the refusal names that rather than sending unthreaded.
+    if (message.reply && !deps.mailThread) {
+      throw new Error('a reply needs the mail this job was triggered by — this job has none');
     }
     const files = readOutboxFiles(message, deps);
     const doFetch = deps.fetchFn ?? fetch;
@@ -241,7 +259,17 @@ const gmail: ChannelClient = {
             authorization: `Bearer ${access.token}`,
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ raw: emailRaw(message) }),
+          body: JSON.stringify({
+            raw: emailRaw(
+              message,
+              message.reply ? deps.mailThread?.msgId : undefined,
+            ),
+            // threadId is what places the reply in the Gmail conversation;
+            // parse already refused reply+files, so only this path threads.
+            ...(message.reply && deps.mailThread
+              ? { threadId: deps.mailThread.threadId }
+              : {}),
+          }),
           signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
         });
     if (!res.ok) {

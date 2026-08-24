@@ -424,6 +424,37 @@ describe('briefForJob', () => {
     expect(briefForJob(job(), audience, lastSend)).toBeUndefined();
   });
 
+  // The reply contract (D-248), told only when it is true and usable — a
+  // capability described to a job that cannot use it is an invitation to
+  // write a field the parse will refuse.
+  describe('the reply block', () => {
+    const trigger = { from: 'Banco <cartola@banco.cl>', subject: 'Estado de cuenta' };
+
+    it('rides a mail-triggered gmail job, naming the mail', () => {
+      const brief = briefForJob(
+        { channels: ['gmail'], prompt: 'answer what arrived', mailTrigger: trigger },
+        audience,
+        lastSend,
+      )!;
+      expect(brief).toContain('queued by a mail arriving');
+      expect(brief).toContain('input/mail.txt');
+      expect(brief).toContain('"reply": true');
+      expect(brief).toContain('cartola@banco.cl');
+      expect(brief).toContain("waits for the user's review");
+    });
+
+    it('stays out of an untriggered job, and out of a triggered one with no gmail', () => {
+      const plain = briefForJob({ channels: ['gmail'], prompt: 'send it' }, audience, lastSend)!;
+      expect(plain).not.toContain('"reply": true');
+      const telegramOnly = briefForJob(
+        { channels: ['telegram'], prompt: 'ping me', mailTrigger: trigger },
+        audience,
+        lastSend,
+      )!;
+      expect(telegramOnly).not.toContain('"reply": true');
+    });
+  });
+
   it('hands the words to the brief when the desk held them', () => {
     const brief = briefForJob(
       job({ channels: ['telegram'], send: { words: 'A DARLE' } }),

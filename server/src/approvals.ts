@@ -240,10 +240,16 @@ export function autoBlocker(
     | 'checked'
     | 'checkVerdict'
     | 'party'
+    | 'mailTrigger'
   >,
   files: string[],
 ): string | null {
   if (job.compile) return 'a compile is never auto-sent';
+  // A job a mail queued is excluded from standing approval outright (D-248):
+  // mail in → reply out → their auto-reply back in is a loop that spends
+  // money on its own echo, and the human in the moment is what breaks it.
+  // The poll's own guards bound the loop; this is the policy on top.
+  if (job.mailTrigger) return 'a mail-triggered job is always reviewed';
   // A gather is always reviewed (TEAMWORK T2): its prompt is one fixed
   // sentence shared by every party, so a standing approval earned on one
   // party's sends would silently cover every later party reaching the same

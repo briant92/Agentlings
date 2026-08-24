@@ -1311,14 +1311,20 @@ export function WorkBar({
 
       {scheduled && !text.trim() && (
         <p className="work-gaps work-scheduled">
-          scheduled — {scheduled.cadenceLabel}, first run{' '}
-          {new Date(scheduled.nextDueAt).toLocaleString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          scheduled — {scheduled.cadenceLabel}
+          {/* A mail-triggered row has no next occurrence to name (D-248). */}
+          {scheduled.nextDueAt !== undefined && (
+            <>
+              , first run{' '}
+              {new Date(scheduled.nextDueAt).toLocaleString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </>
+          )}
           <span className="dim"> · it lands in review like any job · manage in crew → backoffice</span>
         </p>
       )}

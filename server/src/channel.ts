@@ -648,6 +648,8 @@ export function briefForJob(
     /** The chain asked for something to be kept out, even if this step's own
      *  sentence does not say so (D-183). */
     withholding?: boolean;
+    /** The mail whose arrival queued this job (D-248) — unlocks `reply: true`. */
+    mailTrigger?: { from?: string; subject?: string };
   },
   audience: (channel: string) => AudiencePerson[],
   lastSend: (channel: string) => string | undefined,
@@ -678,8 +680,28 @@ export function briefForJob(
   // about withholding *here*, and that is exactly the step the gate is for.
   const withholding =
     job.withholding || wantsWithholding(job.prompt) ? withholdingBlock() : [];
-  if (briefs.length === 1) return [briefs[0], ...withholding].join('\n');
-  return [...briefs, ...severalChannelsBlock(job.channels), ...withholding].join('\n');
+  // Told only when it is true and the job can act on it — a capability nobody
+  // is told about is not one (D-031), and one described to a job that cannot
+  // use it is an invitation to write a field the parse will refuse.
+  const reply =
+    job.mailTrigger && job.channels.includes('gmail') ? replyBlock(job.mailTrigger) : [];
+  if (briefs.length === 1) return [briefs[0], ...reply, ...withholding].join('\n');
+  return [...briefs, ...severalChannelsBlock(job.channels), ...reply, ...withholding].join('\n');
+}
+
+/** The reply contract for a mail-triggered job (D-248), riding the gmail brief. */
+function replyBlock(trigger: { from?: string; subject?: string }): string[] {
+  const which = [trigger.from, trigger.subject].filter(Boolean).join(' — ');
+  return [
+    '',
+    '## This job was queued by a mail arriving',
+    `The mail that triggered this job${which ? ` (${which})` : ''} is in input/mail.txt — read it there; nothing else about this job says what it asked.`,
+    'To answer INTO that same conversation, add "reply": true to your gmail message and write the subject as a Re: of the original. The server threads it to the right conversation itself — you never see or write a thread id.',
+    '- A reply is still a message like any other: it waits for the user\'s review, and Approve is the send. Nothing goes out because you wrote it.',
+    '- One reply, not a correspondence: answer what the mail asked and finish. If their answer arrives later, it queues its own job.',
+    '- A reply cannot carry files. If a file must ride, send it as its own (non-reply) message and say so in RESULT.md.',
+    '- "reply": true only makes sense on this job because a mail queued it; on any other job the send is refused.',
+  ];
 }
 
 /**

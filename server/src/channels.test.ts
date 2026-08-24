@@ -298,6 +298,68 @@ describe('the gmail channel', () => {
     ).rejects.toThrow('not connected');
   });
 
+  // The reply path (D-248): the thread comes from the job's stamp through
+  // deps, never from the session — the one thread a job can reach is the one
+  // whose mail queued it.
+  describe('a reply threads into the triggering mail (D-248)', () => {
+    const thread = { threadId: 'thr-9', msgId: '<orig@banco.cl>' };
+
+    it('carries the thread id and both threading headers', async () => {
+      const { fn, calls } = scripted([
+        { ok: true, body: { access_token: 'at-1' } },
+        { ok: true, body: { id: 'm1' } },
+      ]);
+      await CHANNELS.gmail.send(
+        { to: 'cartola@banco.cl', subject: 'Re: Estado', body: 'received, thanks', reply: true },
+        { env: ENV, fetchFn: fn, mailThread: thread },
+      );
+      const sent = JSON.parse(String(calls[1].init?.body)) as { raw: string; threadId?: string };
+      expect(sent.threadId).toBe('thr-9');
+      const rfc = Buffer.from(sent.raw, 'base64url').toString('utf8');
+      expect(rfc).toContain('In-Reply-To: <orig@banco.cl>');
+      expect(rfc).toContain('References: <orig@banco.cl>');
+    });
+
+    it('threads by threadId alone when the original carried no Message-ID', async () => {
+      const { fn, calls } = scripted([
+        { ok: true, body: { access_token: 'at-1' } },
+        { ok: true, body: { id: 'm1' } },
+      ]);
+      await CHANNELS.gmail.send(
+        { to: 'a@b.c', subject: 'Re: x', body: 'ok', reply: true },
+        { env: ENV, fetchFn: fn, mailThread: { threadId: 'thr-9' } },
+      );
+      const sent = JSON.parse(String(calls[1].init?.body)) as { raw: string; threadId?: string };
+      expect(sent.threadId).toBe('thr-9');
+      expect(Buffer.from(sent.raw, 'base64url').toString('utf8')).not.toContain('In-Reply-To');
+    });
+
+    it('a reply on a job no mail triggered is refused by name, before any network', async () => {
+      const { fn, calls } = scripted([{ ok: true }]);
+      await expect(
+        CHANNELS.gmail.send(
+          { to: 'a@b.c', body: 'x', reply: true },
+          { env: ENV, fetchFn: fn },
+        ),
+      ).rejects.toThrow('triggered by');
+      expect(calls).toHaveLength(0);
+    });
+
+    it('an ordinary message beside a thread stays unthreaded', async () => {
+      const { fn, calls } = scripted([
+        { ok: true, body: { access_token: 'at-1' } },
+        { ok: true, body: { id: 'm1' } },
+      ]);
+      await CHANNELS.gmail.send(
+        { to: 'a@b.c', subject: 'x', body: 'y' },
+        { env: ENV, fetchFn: fn, mailThread: thread },
+      );
+      const sent = JSON.parse(String(calls[1].init?.body)) as { raw: string; threadId?: string };
+      expect(sent.threadId).toBeUndefined();
+      expect(Buffer.from(sent.raw, 'base64url').toString('utf8')).not.toContain('In-Reply-To');
+    });
+  });
+
   it("a dead refresh token surfaces the reconnect sentence, and the send never happens", async () => {
     const { fn, calls } = scripted([{ ok: false, status: 400, body: { error: 'invalid_grant' } }]);
     await expect(

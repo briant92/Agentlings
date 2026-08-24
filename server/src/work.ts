@@ -202,6 +202,8 @@ export function queuedJobSpec(args: {
   organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
   send?: { to: string; words: string };
+  /** The mail whose arrival queued this job (D-248) — the reply path threads to it. */
+  mailTrigger?: Job['mailTrigger'];
   /** A mentioned channel the job never carried (D-093), for the review. */
   channelMention?: { channel: string; label: string };
   /** Channels it asked for that a one-channel job could not take (D-178). */
@@ -237,6 +239,7 @@ export function queuedJobSpec(args: {
   channels?: string[];
   organizeRoot?: string;
   send?: { to: string; words: string };
+  mailTrigger?: Job['mailTrigger'];
   channelMention?: { channel: string; label: string };
   alsoAsked?: { channel: string; label: string }[];
   steps?: string[];
@@ -270,6 +273,9 @@ export function queuedJobSpec(args: {
     // slips past excess-property checking. The 16.7¢ session that composed a
     // message the desk was already holding is the receipt (D-097).
     ...(args.send ? { send: args.send } : {}),
+    // The trigger stamp rides the same rule as `send` just above: the field
+    // this function does not name does not exist (D-097, D-030).
+    ...(args.mailTrigger ? { mailTrigger: args.mailTrigger } : {}),
     ...(args.channelMention ? { channelMention: args.channelMention } : {}),
     ...(args.alsoAsked?.length ? { alsoAsked: args.alsoAsked } : {}),
     // The chain rides the job (D-105) — the field this function does not

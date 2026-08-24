@@ -41,6 +41,8 @@ export interface OutboxSendOpts {
   /** Where `sends.jsonl` lives. */
   sandboxRoot: string;
   env: Record<string, string | undefined>;
+  /** The job's triggering mail (D-248), for a `reply: true` message to thread into. */
+  mailThread?: { threadId: string; msgId?: string };
   /**
    * Recipients already sent to, as a thunk on purpose: it is called under
    * the claim, so it always reads the stamp the previous send finished
@@ -77,6 +79,7 @@ export async function performOutboxSend(
       const run = await executeOutbox(outbox, opts.alreadySent(outbox.channel), {
         env: opts.env,
         dir: opts.dir,
+        ...(opts.mailThread ? { mailThread: opts.mailThread } : {}),
         ...(opts.fetchFn ? { fetchFn: opts.fetchFn } : {}),
       });
       const at = Date.now();

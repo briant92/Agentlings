@@ -131,6 +131,7 @@ interface RawPart {
 
 interface RawMessage {
   id?: unknown;
+  threadId?: unknown;
   snippet?: unknown;
   labelIds?: unknown;
   internalDate?: unknown;
@@ -307,8 +308,15 @@ async function read(id: string, http: Http, token: string): Promise<MailResult> 
   url.searchParams.set('fields', 'id,labelIds,internalDate,payload');
   const got = await fetchJson(http, url.toString(), token);
   if ('error' in got) return got;
-  const message = got.payload as RawMessage;
+  return { text: renderMail(got.payload as RawMessage) };
+}
 
+/**
+ * One full message as text — `mail_read`'s answer, and word for word what a
+ * trigger firing writes to `input/mail.txt` (D-248). One function on D-030's
+ * rule: two renderings of "the mail" would drift into two documents.
+ */
+function renderMail(message: RawMessage): string {
   const parts = flatten(message.payload);
   const attachments = parts
     .filter((p) => str(p.filename) !== '')
@@ -343,5 +351,69 @@ async function read(id: string, http: Http, token: string): Promise<MailResult> 
       ? [`Attachments (named, never fetched): ${attachments.join(', ')}`]
       : []),
   ];
-  return { text: [...head, '', shown].join('\n') };
+  return [...head, '', shown].join('\n');
+}
+
+/**
+ * One arrived mail as a trigger firing sees it (D-248): the identifiers the
+ * reply path threads to, and the message rendered exactly as `mail_read`
+ * renders one — the trigger's `input/mail.txt` and a session's own reading of
+ * the same mail must never be two different documents.
+ */
+export interface TriggerMail {
+  id: string;
+  threadId: string;
+  /** The RFC 822 Message-ID header, when the mail carried one. */
+  msgId?: string;
+  from: string;
+  subject: string;
+  arrivedMs: number;
+  text: string;
+}
+
+/** The ids a trigger query matches right now, newest first — ids alone, like search. */
+export async function listMailIds(
+  http: Http,
+  token: string,
+  query: string,
+  max: number,
+): Promise<{ ids: string[] } | { error: string }> {
+  const listUrl = new URL(MESSAGES);
+  listUrl.searchParams.set('q', query);
+  listUrl.searchParams.set('maxResults', String(max));
+  listUrl.searchParams.set('fields', 'messages(id)');
+  const listed = await fetchJson(http, listUrl.toString(), token);
+  if ('error' in listed) return listed;
+  const ids = (
+    Array.isArray(listed.payload.messages) ? (listed.payload.messages as { id?: unknown }[]) : []
+  )
+    .map((m) => str(m.id))
+    .filter((id) => id !== '');
+  return { ids };
+}
+
+export async function fetchTriggerMail(
+  http: Http,
+  token: string,
+  id: string,
+): Promise<TriggerMail | { error: string }> {
+  const url = new URL(`${MESSAGES}/${encodeURIComponent(id)}`);
+  url.searchParams.set('format', 'full');
+  url.searchParams.set('fields', 'id,threadId,labelIds,internalDate,payload');
+  const got = await fetchJson(http, url.toString(), token);
+  if ('error' in got) return got;
+  const message = got.payload as RawMessage;
+  const threadId = str(message.threadId);
+  if (!threadId) return { error: `Gmail answered message ${id} without a thread id` };
+  const rendered = renderMail(message);
+  const arrived = Number(str(message.internalDate));
+  return {
+    id: str(message.id) || id,
+    threadId,
+    ...(header(message, 'Message-ID') ? { msgId: header(message, 'Message-ID') } : {}),
+    from: header(message, 'From') || '(no sender)',
+    subject: header(message, 'Subject') || '(no subject)',
+    arrivedMs: Number.isFinite(arrived) && arrived > 0 ? arrived : 0,
+    text: rendered,
+  };
 }

@@ -756,6 +756,15 @@ describe('JobQueue', () => {
       expect(reopened.get(a.id)?.prompt).toBe('x');
     });
 
+    // D-248: the trigger stamp is read at Approve — possibly days after the
+    // firing — so it has to survive the restart in between, or the reply
+    // would send unthreaded from a server that rebooted overnight.
+    it('keeps the mail-trigger stamp across the restart', () => {
+      const stamp = { id: 'm1', threadId: 't1', msgId: '<m1@x>' };
+      const job = queue.add({ title: 'Answer it', prompt: 'x', mailTrigger: stamp });
+      expect(new JobQueue(root).get(job.id)?.mailTrigger).toEqual(stamp);
+    });
+
     it('fails a job that was running, since its session died with the process', () => {
       const job = queue.add({ title: 'Interrupted', prompt: 'x' });
       queue.start(job.id);

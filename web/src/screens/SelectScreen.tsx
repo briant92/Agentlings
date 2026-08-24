@@ -558,8 +558,12 @@ function CloseLevelModal({
                           “{s.prompt}” — {s.cadenceLabel}
                         </span>
                         <span className="then">
-                          {s.paused ? 'already paused' : `next ${firing(s.nextDueAt)}`} — stops;
-                          stays paused if you reopen
+                          {s.paused
+                            ? 'already paused'
+                            : s.nextDueAt !== undefined
+                              ? `next ${firing(s.nextDueAt)}`
+                              : 'fires when mail arrives'}{' '}
+                          — stops; stays paused if you reopen
                         </span>
                       </li>
                     ))}

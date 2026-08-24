@@ -148,6 +148,15 @@ describe('standing approvals', () => {
       expect(autoBlocker(clean, PAPER)).toBeNull();
     });
 
+    // D-248: mail in → reply out → their auto-reply back in is a loop that
+    // spends money on its own echo; the human in the moment breaks it, so a
+    // job a mail queued never rides a standing approval however clean it is.
+    it('a mail-triggered job is always reviewed', () => {
+      expect(
+        autoBlocker({ ...clean, mailTrigger: { id: 'm1', threadId: 't1' } }, PAPER),
+      ).toBe('a mail-triggered job is always reviewed');
+    });
+
     it.each([
       ['a partial run', { ...clean, status: 'partial' as const }, PAPER],
       ['a compile', { ...clean, compile: true }, PAPER],

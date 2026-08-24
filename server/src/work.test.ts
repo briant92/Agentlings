@@ -294,6 +294,29 @@ describe('queuedJobSpec', () => {
     ).toBeUndefined();
   });
 
+  // The same seam a third time (D-248): the trigger stamp is what the reply
+  // path threads to and what excludes the job from standing approval — a
+  // builder dropping it would leave both correct and unreachable.
+  it('carries the mail-trigger stamp, and nothing when no mail queued it', () => {
+    const stamp = { id: 'm1', threadId: 't1', msgId: '<m1@x>', from: 'a@x', subject: 's' };
+    const spec = queuedJobSpec({
+      title: 'Answer the mail',
+      prompt: 'answer what arrived',
+      plan: planFor('answer what arrived'),
+      quote: quote(0.42),
+      mailTrigger: stamp,
+    });
+    expect(spec.mailTrigger).toEqual(stamp);
+    expect(
+      queuedJobSpec({
+        title: 'Answer the mail',
+        prompt: 'answer what arrived',
+        plan: planFor('answer what arrived'),
+        quote: quote(0.42),
+      }).mailTrigger,
+    ).toBeUndefined();
+  });
+
   // Not the same as carrying none by accident: quoteFor returns a zero ceiling
   // only for the tiers that never spend, and every paying tier is bounded
   // below at a cent.

@@ -178,15 +178,27 @@ function checkMessage(
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return { error: `message ${n} is not an object` };
   }
-  const { to, name, subject, params, event, files, body } = raw as {
+  const { to, name, subject, params, event, files, reply, body } = raw as {
     to?: unknown;
     name?: unknown;
     subject?: unknown;
     params?: unknown;
     event?: unknown;
     files?: unknown;
+    reply?: unknown;
     body?: unknown;
   };
+  // A reply threads into the mail that triggered the job (D-248) — a gmail
+  // notion, refused everywhere else for the files-field's reason: a flag that
+  // parses and silently does nothing puts two truths on the review card.
+  if (reply !== undefined) {
+    if (reply !== true && reply !== false) {
+      return { error: `message ${n}: "reply" must be true or false when present` };
+    }
+    if (reply === true && channelName !== 'gmail') {
+      return { error: `message ${n}: "reply" only means something on gmail` };
+    }
+  }
   if (typeof to !== 'string' || to.trim() === '') {
     return { error: `message ${n}: "to" must be a non-empty string` };
   }
@@ -244,6 +256,12 @@ function checkMessage(
     if (checked.error) return { error: checked.error };
     cleanFiles = checked.files;
   }
+  // The threaded send rides Gmail's JSON endpoint, and files ride the media
+  // one, which cannot carry a thread id — so the combination is refused where
+  // the run can still hear it rather than half-honoured at send.
+  if (reply === true && cleanFiles && cleanFiles.length > 0) {
+    return { error: `message ${n}: a reply cannot carry files — send them as their own message` };
+  }
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {
@@ -255,6 +273,7 @@ function checkMessage(
       ...(cleanParams && cleanParams.length > 0 ? { params: cleanParams } : {}),
       ...(cleanEvent ? { event: cleanEvent } : {}),
       ...(cleanFiles && cleanFiles.length > 0 ? { files: cleanFiles } : {}),
+      ...(reply === true ? { reply: true } : {}),
     },
   };
 }

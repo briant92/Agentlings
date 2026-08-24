@@ -10,13 +10,18 @@ import {
   createSchedule,
   describeCadence,
   describeSchedule,
+  describeTrigger,
   dueNow,
   markFired,
+  MAX_TRIGGER_QUERY_CHARS,
+  noteTriggerPoll,
   readSchedules,
   removeSchedule,
   schedulesFile,
   setPaused,
+  TRIGGER_SEEN_CAP,
   validCadence,
+  validTrigger,
 } from './schedules';
 
 // Local-time fixtures, built the way the implementation builds them so the
@@ -326,5 +331,115 @@ describe('standing inputs on a schedule (D-246)', () => {
   it('stays absent when none were given, rather than becoming an empty list', () => {
     createSchedule(dir, { prompt: 'say hi', cadence }, 1000);
     expect(readSchedules(dir)[0]).not.toHaveProperty('inputs');
+  });
+});
+
+describe('mail triggers on a schedule (D-248)', () => {
+  let dir: string;
+  const now = at(2026, 7, 24, 10, 0);
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'sched-trigger-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const make = (query = 'from:banco subject:estado') =>
+    createSchedule(dir, { prompt: 'reconcile what arrived', trigger: { mail: query } }, now);
+
+  describe('validTrigger', () => {
+    it('needs a query', () => {
+      expect(validTrigger(undefined)).toContain('required');
+      expect(validTrigger({ mail: '   ' })).toContain('Gmail query');
+    });
+    it('bounds the query and keeps it one line', () => {
+      expect(validTrigger({ mail: 'x'.repeat(MAX_TRIGGER_QUERY_CHARS + 1) })).toContain('longer');
+      expect(validTrigger({ mail: 'from:a\nto:b' })).toContain('one line');
+      expect(validTrigger({ mail: 'from:banco' })).toBeNull();
+    });
+  });
+
+  it('creates watching from now — a new rule never fires on the mailbox past', () => {
+    const s = make();
+    expect(s.cadence).toBeUndefined();
+    expect(s.triggerState).toEqual({ sinceMs: now, seen: [] });
+    const read = readSchedules(dir)[0];
+    expect(read.trigger?.mail).toBe('from:banco subject:estado');
+    expect(read.triggerState?.sinceMs).toBe(now);
+  });
+
+  /**
+   * The hazard the cadence guard closes: a trigger row's nextDueAt is 0,
+   * which without the guard reads as "due since 1970" — the calendar sweep
+   * would fire the prompt every thirty seconds with no mail anywhere.
+   */
+  it('the calendar sweep never takes a trigger row', () => {
+    make();
+    expect(dueNow(readSchedules(dir), now + 1)).toEqual([]);
+  });
+
+  it('markFired refuses a trigger row — it has no next occurrence to compute', () => {
+    const s = make();
+    expect(markFired(dir, s.id, now + 1000)).toBeUndefined();
+  });
+
+  it('resume moves the watermark to now — mail during a pause stays unfired', () => {
+    const s = make();
+    setPaused(dir, s.id, true, now + 1000);
+    const resumed = setPaused(dir, s.id, false, now + 5000);
+    expect(resumed?.triggerState?.sinceMs).toBe(now + 5000);
+  });
+
+  describe('noteTriggerPoll', () => {
+    it('advances the watermark forwards only, and caps the seen ring', () => {
+      const s = make();
+      noteTriggerPoll(dir, s.id, { sinceMs: now + 9000, seen: ['a', 'b'] });
+      // A poll answering out of order must not rewind past what was seen.
+      noteTriggerPoll(dir, s.id, { sinceMs: now + 4000 });
+      const read = readSchedules(dir)[0];
+      expect(read.triggerState?.sinceMs).toBe(now + 9000);
+      const many = Array.from({ length: TRIGGER_SEEN_CAP + 50 }, (_, i) => `id${i}`);
+      noteTriggerPoll(dir, s.id, { seen: many });
+      expect(readSchedules(dir)[0].triggerState?.seen).toHaveLength(TRIGGER_SEEN_CAP);
+      expect(readSchedules(dir)[0].triggerState?.seen.at(-1)).toBe(`id${TRIGGER_SEEN_CAP + 49}`);
+    });
+
+    it('counts firings within a day and resets on the next', () => {
+      const s = make();
+      noteTriggerPoll(dir, s.id, { day: '2026-08-24', fired: 3 });
+      noteTriggerPoll(dir, s.id, { day: '2026-08-24', fired: 2 });
+      expect(readSchedules(dir)[0].triggerState?.count).toBe(5);
+      noteTriggerPoll(dir, s.id, { day: '2026-08-25', fired: 1 });
+      expect(readSchedules(dir)[0].triggerState?.count).toBe(1);
+    });
+
+    it('lands an error, clears it on null, and leaves it on undefined', () => {
+      const s = make();
+      noteTriggerPoll(dir, s.id, { error: 'Google refused the mailbox' });
+      expect(readSchedules(dir)[0].lastError).toBe('Google refused the mailbox');
+      noteTriggerPoll(dir, s.id, { firedAt: now + 100 });
+      expect(readSchedules(dir)[0].lastError).toBe('Google refused the mailbox');
+      noteTriggerPoll(dir, s.id, { error: null });
+      expect(readSchedules(dir)[0].lastError).toBeUndefined();
+    });
+
+    it('refuses a cadence row — trigger bookkeeping belongs to trigger rows', () => {
+      const s = createSchedule(
+        dir,
+        { prompt: 'x', cadence: { kind: 'daily', hour: 9, minute: 0 } },
+        now,
+      );
+      expect(noteTriggerPoll(dir, s.id, { error: 'nope' })).toBeUndefined();
+      expect(readSchedules(dir)[0].lastError).toBeUndefined();
+    });
+  });
+
+  it('describeSchedule labels the trigger and names no next occurrence', () => {
+    const info = describeSchedule(make('from:banco'));
+    expect(info.cadenceLabel).toBe(describeTrigger({ mail: 'from:banco' }));
+    expect(info.cadenceLabel).toContain('when mail matching');
+    expect(info.cadence).toBeUndefined();
+    expect(info.nextDueAt).toBeUndefined();
+    expect(info.trigger?.mail).toBe('from:banco');
   });
 });

@@ -529,6 +529,15 @@ export interface OutboxMessage {
    * telegram and gmail; everywhere else it is refused at parse.
    */
   files?: string[];
+  /**
+   * This message answers the mail that triggered the job (D-248). Gmail only,
+   * and only meaningful on a job a mail trigger queued: the server supplies
+   * the thread id and In-Reply-To from what the trigger stamped on the job,
+   * so a session can aim at exactly one thread — the one that asked — and
+   * never at an arbitrary id it wrote itself. Refused at send when the job
+   * carries no triggering mail. A reply cannot carry files.
+   */
+  reply?: boolean;
   body: string;
 }
 
@@ -836,11 +845,16 @@ export interface Cadence {
 export interface ScheduleInfo {
   id: string;
   prompt: string;
-  cadence: Cadence;
+  /** Absent on a mail-triggered row (D-248) — exactly one of these two is set. */
+  cadence?: Cadence;
+  /** What fires this row when it is not a calendar: mail arriving (D-248). */
+  trigger?: { mail: string };
+  /** The firing in words, whichever shape it is — the one label the UI shows. */
   cadenceLabel: string;
   channel?: string;
   createdAt: number;
-  nextDueAt: number;
+  /** Absent on a trigger row: mail has no next occurrence to name. */
+  nextDueAt?: number;
   lastFiredAt?: number;
   lastError?: string;
   paused: boolean;
@@ -951,6 +965,21 @@ export interface Job {
   tools?: string[];
   /** Set when the user asked for a proper session after a routed answer. */
   noRouter?: boolean;
+  /**
+   * The mail whose arrival queued this job (D-248). What the reply path
+   * threads to — a session flags `reply: true` and the server supplies these,
+   * so no run ever holds or invents a thread id. Its presence is also the
+   * fact the auto-send gate reads: a mail-triggered job is always reviewed.
+   */
+  mailTrigger?: {
+    /** Gmail's message id — the one mail_read takes. */
+    id: string;
+    threadId: string;
+    /** The RFC 822 Message-ID header, for In-Reply-To when it was present. */
+    msgId?: string;
+    from?: string;
+    subject?: string;
+  };
   /**
    * Composite work (D-105): the sentences still to run after this one. A
    * delivered step queues the next as its own ordinary job — its own recipe

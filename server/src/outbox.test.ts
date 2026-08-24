@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -442,5 +442,53 @@ describe('the files block', () => {
     expect(
       composeOutbox('telegram', 'Brian — 123', 'x', ['input/ghost.pdf'], dir).error,
     ).toContain('"input/ghost.pdf"');
+  });
+});
+
+/**
+ * The reply flag (D-248): gmail only, refused loudly everywhere else — a flag
+ * that parses and silently does nothing puts two truths on the review card —
+ * and never beside files, because the threaded send and the media upload are
+ * different endpoints and only one can thread.
+ */
+describe('the reply flag (D-248)', () => {
+  const withReply = (reply: unknown, channel = 'gmail', extra: object = {}) => ({
+    channel,
+    messages: [{ to: 'a@x.com', subject: 'Re: Estado', body: 'received', reply, ...extra }],
+  });
+
+  it('parses on gmail and survives to the message', () => {
+    const got = checkOutbox(withReply(true));
+    expect(got.error).toBeUndefined();
+    expect(got.outboxes?.[0].messages[0].reply).toBe(true);
+  });
+
+  it('false parses and is dropped rather than stored', () => {
+    const got = checkOutbox(withReply(false));
+    expect(got.error).toBeUndefined();
+    expect(got.outboxes?.[0].messages[0]).not.toHaveProperty('reply');
+  });
+
+  it('is refused on every other channel by name', () => {
+    for (const channel of ['telegram', 'slack', 'whatsapp-business', 'github']) {
+      expect(checkOutbox(withReply(true, channel)).error).toContain(
+        '"reply" only means something on gmail',
+      );
+    }
+  });
+
+  it('must be a boolean', () => {
+    expect(checkOutbox(withReply('yes')).error).toContain('true or false');
+  });
+
+  it('never rides beside files', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-outbox-reply-'));
+    writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
+    try {
+      const got = checkOutbox(withReply(true, 'gmail', { files: ['report.pdf'] }), dir);
+      expect(got.error).toContain('a reply cannot carry files');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

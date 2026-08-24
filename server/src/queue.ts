@@ -58,6 +58,8 @@ export interface NewJobSpec {
   organizeRoot?: string;
   /** Recipient and words both, when the desk holds the whole send (D-097). */
   send?: { to: string; words: string };
+  /** The mail whose arrival queued this job (D-248) — the reply path threads to it. */
+  mailTrigger?: Job['mailTrigger'];
   /** Ceiling quoted before the work. */
   quotedUsd?: number;
   /** The sentences still to run after this one (D-105). */
@@ -345,6 +347,7 @@ export class JobQueue {
       ...(spec.channels?.length ? { channels: spec.channels } : {}),
       ...(spec.organizeRoot ? { organizeRoot: spec.organizeRoot } : {}),
       ...(spec.send ? { send: spec.send } : {}),
+      ...(spec.mailTrigger ? { mailTrigger: spec.mailTrigger } : {}),
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
       ...(spec.step ? { step: spec.step } : {}),

@@ -65,12 +65,15 @@ import {
   describeSchedule,
   dueNow,
   markFired,
+  noteTriggerPoll,
   readSchedules,
   removeSchedule,
   SCHEDULE_SWEEP_MS,
   setPaused,
   validCadence,
+  validTrigger,
 } from './schedules';
+import { MAIL_TRIGGER_SWEEP_MS, MAX_TRIGGER_FIRES_PER_DAY, pollTrigger } from './mailtrigger';
 import { newestMatch, resolveStanding, validateStanding, type StandingInput } from './standing';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
@@ -599,6 +602,9 @@ async function autoSendIfApproved(
       dir: queue.sandboxDir(job.id),
       sandboxRoot: SANDBOX_ROOT,
       env: process.env,
+      ...(job.mailTrigger
+        ? { mailThread: { threadId: job.mailTrigger.threadId, msgId: job.mailTrigger.msgId } }
+        : {}),
       alreadySent: (channel) => sentOn(queue.get(job.id), channel),
       record: (channel, r) => queue.recordOutboxSends(job.id, channel, r),
     });
@@ -1619,6 +1625,8 @@ function queueSentence(
     attachments?: { name: string; data: Buffer }[];
     /** How this job came to exist, said on the queued event's line. */
     note?: string;
+    /** The mail whose arrival queued this job (D-248). */
+    mailTrigger?: Job['mailTrigger'];
     /** The chain, when the caller is the chain itself (D-105). */
     steps?: string[];
     step?: { n: number; of: number };
@@ -1779,6 +1787,7 @@ function queueSentence(
       // question the desk asked of the whole sentence still reaches the step
       // that asks it too — the recompute below decides which ones those are.
       ...(opts.answers ? { answers: opts.answers } : {}),
+      ...(opts.mailTrigger ? { mailTrigger: opts.mailTrigger } : {}),
       ...(withholding ? { withholding: true } : {}),
       ...(checked ? { checked: true } : {}),
       ...(opts.check ? { check: opts.check } : {}),
@@ -2516,15 +2525,28 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   const body = await c.req.json<{
     text?: string;
     cadence?: Cadence;
+    trigger?: { mail?: string };
     channel?: string;
     answers?: Record<string, string>;
     inputs?: StandingInput[];
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  const cadence = body.cadence;
-  const bad = validCadence(cadence);
-  if (bad || !cadence) return c.json({ error: bad ?? 'a cadence is required' }, 400);
+  // Exactly one way to fire: a calendar cadence (D-103) or mail arriving
+  // (D-248). Both at once would be two rules wearing one row.
+  if (body.cadence && body.trigger) {
+    return c.json({ error: 'a schedule fires on a cadence or on mail — not both' }, 400);
+  }
+  const trigger = body.trigger;
+  if (trigger) {
+    const badTrigger = validTrigger(trigger);
+    if (badTrigger) return c.json({ error: badTrigger }, 400);
+  }
+  const cadence = trigger ? undefined : body.cadence;
+  if (!trigger) {
+    const bad = validCadence(cadence);
+    if (bad || !cadence) return c.json({ error: bad ?? 'a cadence is required' }, 400);
+  }
   // The same server-settling rule as queueing: a channel that does not exist
   // is dropped, never stored — a firing replays what Start carried rather
   // than re-detecting (D-079's shape, frozen at creation).
@@ -2541,11 +2563,41 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   }
   const schedule = createSchedule(
     rt.dir,
-    { prompt: text, cadence, channel, answers, inputs },
+    {
+      prompt: text,
+      ...(cadence ? { cadence } : {}),
+      ...(trigger ? { trigger: { mail: trigger.mail!.trim() } } : {}),
+      channel,
+      answers,
+      inputs,
+    },
     Date.now(),
   );
   return c.json(describeSchedule(schedule), 201);
 });
+
+/**
+ * What a trigger query would reach (D-248) — the D-246 match-preview shape for
+ * mail: the rule is validated where someone can still fix it, and the reach is
+ * shown before any money rides on it. Answers `mail_search`'s own lines over
+ * the last week, with the poll's `-from:me` guard already applied, so the
+ * preview and the poll can never disagree about what counts.
+ */
+app.get('/api/trigger/preview', async (c) => {
+  const query = (c.req.query('q') ?? '').trim();
+  const bad = validTrigger({ mail: query });
+  if (bad) return c.json({ error: bad }, 400);
+  const result = await callMail(
+    'mail_search',
+    { query: `${query} -from:me newer_than:7d`, max: TRIGGER_PREVIEW_MAX },
+    { http, env: process.env },
+  );
+  if (result.error) return c.json({ error: result.error }, 502);
+  return c.json({ text: result.text, capPerDay: MAX_TRIGGER_FIRES_PER_DAY });
+});
+
+/** Matches the preview lists — enough to judge a rule's reach, not the mailbox. */
+const TRIGGER_PREVIEW_MAX = 10;
 
 app.post('/api/levels/:lid/schedules/:sid/pause', async (c) => {
   const rt = getLevel(c.req.param('lid'));
@@ -3044,6 +3096,17 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         dir: rt.queue.sandboxDir(pending.id),
         sandboxRoot: SANDBOX_ROOT,
         env: process.env,
+        // The one thread a reply can reach: the mail that queued this job
+        // (D-248). A job with no trigger passes nothing, and a `reply: true`
+        // message is then refused by the channel client by name.
+        ...(pending.mailTrigger
+          ? {
+              mailThread: {
+                threadId: pending.mailTrigger.threadId,
+                msgId: pending.mailTrigger.msgId,
+              },
+            }
+          : {}),
         alreadySent: (channel) => sentOn(rt.queue.get(pending.id), channel),
         record: (channel, r) => rt.queue.recordOutboxSends(pending.id, channel, r),
       });
@@ -4883,3 +4946,91 @@ setInterval(sweepSchedules, SCHEDULE_SWEEP_MS);
 // Boot is a sweep too: whatever came due while the server was off fires
 // once, now, rather than waiting out the first interval.
 sweepSchedules();
+
+/** What the triggering mail lands as in the job's input/ — one fixed name, so the prompt can say it (D-072, D-246). */
+const TRIGGER_MAIL_NAME = 'mail.txt';
+
+/**
+ * The mail-trigger sweep (D-248): D-103's shape, extended from "a time came
+ * due" to "a mail came in". Firings go through the same `queueSentence` glue,
+ * and the discipline is advance-then-attempt exactly as the cadence sweep's —
+ * the seen ring and watermark are written BEFORE the queueing is tried, so a
+ * firing that throws lands as an error on the row rather than re-firing every
+ * two minutes.
+ */
+let mailSweepRunning = false;
+async function sweepMailTriggers(now = Date.now()): Promise<void> {
+  // Gmail answering slowly must stack no second sweep on the first.
+  if (mailSweepRunning) return;
+  mailSweepRunning = true;
+  try {
+    for (const rt of levels.values()) {
+      for (const schedule of readSchedules(rt.dir)) {
+        if (!schedule.trigger || schedule.paused) continue;
+        const poll = await pollTrigger(schedule, now, { http, env: process.env });
+        if ('error' in poll) {
+          // Written only on change: this loop runs every two minutes forever,
+          // and a standing misconfiguration must not grind the disk with it.
+          if (schedule.lastError !== poll.error) {
+            noteTriggerPoll(rt.dir, schedule.id, { error: poll.error });
+          }
+          continue;
+        }
+        // Nothing fresh and nothing to clear — leave the file untouched.
+        if (poll.fired.length === 0 && poll.skippedByCap === 0 && !schedule.lastError) continue;
+        const capNote =
+          poll.skippedByCap > 0
+            ? `daily cap of ${MAX_TRIGGER_FIRES_PER_DAY} reached — ${poll.skippedByCap} more matched and did not fire`
+            : undefined;
+        // Advanced before the queueing is attempted (D-103's rule): a message
+        // in the ring never fires twice, whatever the attempt below does.
+        noteTriggerPoll(rt.dir, schedule.id, {
+          sinceMs: poll.sinceMs,
+          seen: poll.seen,
+          day: poll.day,
+          error: capNote ?? null,
+        });
+        let queued = 0;
+        let firstError: string | undefined;
+        for (const mail of poll.fired) {
+          try {
+            // Read inside the try for D-246's reason: a standing input that
+            // cannot resolve queues nothing and says why on the row.
+            const attachments = [
+              ...(schedule.inputs?.length ? resolveStanding(schedule.inputs) : []),
+              { name: TRIGGER_MAIL_NAME, data: Buffer.from(`${mail.text}\n`, 'utf8') },
+            ];
+            queueSentence(rt, schedule.prompt, {
+              channel: schedule.channel,
+              answers: schedule.answers,
+              attachments,
+              mailTrigger: {
+                id: mail.id,
+                threadId: mail.threadId,
+                ...(mail.msgId ? { msgId: mail.msgId } : {}),
+                from: mail.from,
+                subject: mail.subject,
+              },
+              note: `queued by mail arriving — ${mail.from}: ${mail.subject}`,
+            });
+            queued++;
+          } catch (err) {
+            firstError = err instanceof Error ? err.message : String(err);
+          }
+        }
+        noteTriggerPoll(rt.dir, schedule.id, {
+          day: poll.day,
+          fired: queued,
+          ...(queued > 0 ? { firedAt: now } : {}),
+          ...(firstError ? { error: firstError } : {}),
+        });
+      }
+    }
+  } finally {
+    mailSweepRunning = false;
+  }
+}
+setInterval(() => void sweepMailTriggers(), MAIL_TRIGGER_SWEEP_MS);
+// No boot firing beyond the watermark: `sinceMs` persists, so mail that
+// arrived while the server was off fires on the first interval, bounded by
+// the daily cap like any other batch.

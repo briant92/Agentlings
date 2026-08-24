@@ -18428,6 +18428,53 @@ rather than shipping quiet.
 Typecheck clean. Server **2,117** across 88 files (from 2,080/87), web **333**
 unchanged.
 
-**Not yet proven live.** W0.9 (dev, direct `:4600` and tailnet origins) and
-W0.10 (a restarted server, both gate states) are owed and are the bar; the
-restart is the user's, with the queue empty (R-07).
+### Proven live, same day, on the restarted server
+
+The queue was empty on all three levels (163 / 220 / 52 jobs, 0 running) before
+the restart, so R-07 was satisfied rather than hoped for.
+
+`node scripts/prove-wave0.mjs` — **16/16**. Reads gated 401 with no cookie;
+`/internal/fetch` answered 400 not 401, so the doors are open to the runner as
+W0.5 decided; the OAuth callback likewise; a wrong password refused 401; the
+cookie `HttpOnly`, `SameSite=Lax`, and **carrying no `Secure` over plain http**,
+which is R-04 shown rather than argued. And the pair that is the whole point,
+as one number: **an ungated `/ws` handshake closed 4401 with 0 bytes where the
+signed-in one was handed 580,561.**
+
+D-239 was checked as still standing rather than assumed: a hostile-origin
+handshake still closes **4403** with zero bytes, and a hostile-origin POST
+still answers **403, not 401** — which also proves the order, since the origin
+check refuses before the gate is ever consulted.
+
+W0.9's three origins, each with and without the cookie: Vite dev on `:5173`,
+the API direct on `:4600` (200 with, 401 without), and a `.ts.net` name on both
+surfaces (200, and 293,110 bytes over the socket).
+
+`node scripts/prove-wave0-ui.mjs` — **17/17**, in a real headless Edge against
+the real app, because an HTTP probe cannot tell you whether the React app
+works. A cold visit renders the login screen with the title screen *not* behind
+it; a wrong password shows *"That password was not accepted."*, stays put and
+clears the field; the right one reaches the title screen; the cookie is
+`HttpOnly` and **`document.cookie` is empty**, so page script cannot read it; a
+reload stays signed in, which is the cookie doing the work rather than React
+state; the level picker loads behind the gate; and clearing the cookie
+mid-session returns to the login screen.
+
+That last check **failed on its first run, and the failure was the test.** It
+triggered the 401 with `page.evaluate(() => fetch(...))`, which bypasses
+`api()` — the only place that recognises the gate's 401 — so it was measuring a
+path the app never takes. Re-aimed at an app-originated call, it passed. The
+general form is one this project keeps meeting: *a negative result from an
+instrument you just built is a claim about the instrument first.*
+
+**One thing is proven by test rather than live:** that an *unset* password
+changes nothing. `prove-wave0.mjs` is built to be run twice for exactly this,
+but arming the gate meant the off-run would have cost a second restart. The
+unit tests cover it (`requestAllowed` returns true throughout when no password
+is set), which is a step below this project's usual bar and is recorded as such
+rather than glossed.
+
+**Still open: `POST /api/session` has no rate limiting.** Unlimited guesses. The
+passphrase in use is 42.5 bits and the loopback bind bounds who can reach the
+port at all, so it is not urgent — but it is a real gap this entry introduced
+and it is named here rather than left for someone to find.

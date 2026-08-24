@@ -63,32 +63,35 @@ Everything below is committed and pushed. Nothing is in flight.
 
 ---
 
-## 3. Wave 0 — API authentication · **BUILT, AWAITING ITS LIVE PROOF**
+## 3. Wave 0 — API authentication · **DONE AND PROVEN LIVE**
 
 **M0 was answered on 2026-08-24: option B, the password → `HttpOnly` cookie,
-and W0.5 is "leave `/internal/*` uncredentialed". Recorded as D-241.** W0.1–
-W0.8 and W0.11 are done and committed; the gate is **off until
-`AGENTLINGS_PASSWORD` is set in `.env`**, so the commit changes nothing until
-it is armed.
+and W0.5 is "leave `/internal/*` uncredentialed". Recorded as D-241.** All
+eleven tasks are done, and **the gate is ARMED** — `AGENTLINGS_PASSWORD` is set
+in `.env` and the server has been restarted on it. §3.1–§3.3 below are kept as
+written, because the reasoning is what a later session will want to re-read.
 
-**What is owed: W0.9 and W0.10** — a restart with the queue empty (R-07), then
-the probe across all three origins in both gate states. Until that runs, D-241
-is a build and not a proof. §3.1–§3.3 below are kept as written, because the
-reasoning is what a later session will want to re-read, not the status.
-
-The instrument is built and refuses a server that predates D-241:
+Proven on the restarted server with the queue empty (R-07):
 
 ```
-node scripts/prove-wave0.mjs
+node scripts/prove-wave0.mjs        # 16/16 — the HTTP and socket surfaces
+node scripts/prove-wave0-ui.mjs     # 17/17 — the real app, headless Edge
 ```
 
-**Run it twice, and both runs are the proof** — once with
-`AGENTLINGS_PASSWORD` commented out (every probe must answer exactly as it did
-before D-241) and once with it set, each after its own restart. It checks the
-gate on reads, the doors still open, the OAuth callback still exempt, D-239's
-4403 still firing, the cookie's three flags, the `.ts.net` origin on both
-surfaces, and the pair that is the whole point: **0 bytes signed out where
-signed in is handed the level.**
+The headline as one number: **an ungated `/ws` handshake is closed 4401 with 0
+bytes where the signed-in one is handed 580,561.** D-239 was re-checked rather
+than assumed — a hostile origin still gets 4403 on the socket and **403, not
+401**, on a POST, which also proves the order.
+
+**Two things are still owed, and both are small:**
+
+- **The gate-OFF live run.** `prove-wave0.mjs` is built to run twice — arming
+  it meant the off run would have cost a second restart, so "an unset password
+  changes nothing" is proven by unit test, not live. A step below this
+  project's bar, recorded rather than glossed.
+- **`POST /api/session` has no rate limiting.** Unlimited guesses. Bounded by a
+  42.5-bit passphrase and the loopback bind, so not urgent — but real, and
+  introduced by D-241.
 
 ---
 

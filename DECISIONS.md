@@ -249,6 +249,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-237 — 2026-08-24 — The scoreboard: hireable positions counted on evidence rather than on word matches, and the first thing it found was a false positive of its own](#d-237--2026-08-24--the-scoreboard-hireable-positions-counted-on-evidence-rather-than-on-word-matches-and-the-first-thing-it-found-was-a-false-positive-of-its-own)
 - [D-238 — 2026-08-24 — The four trades proven live: three delivered, the security audit was cut by a wall nobody had set, and two of them found the same hole in this app](#d-238--2026-08-24--the-four-trades-proven-live-three-delivered-the-security-audit-was-cut-by-a-wall-nobody-had-set-and-two-of-them-found-the-same-hole-in-this-app)
 - [D-239 — 2026-08-24 — The cross-origin hole the crew found in us, closed on both surfaces: an Origin check on the socket and on every request whose effect is the point](#d-239--2026-08-24--the-cross-origin-hole-the-crew-found-in-us-closed-on-both-surfaces-an-origin-check-on-the-socket-and-on-every-request-whose-effect-is-the-point)
+- [D-240 — 2026-08-24 — D-239 proven live and the security trade re-run: the wall fix works, the advisories are unreachable, and the seam that is one commit away from a high-severity leak](#d-240--2026-08-24--d-239-proven-live-and-the-security-trade-re-run-the-wall-fix-works-the-advisories-are-unreachable-and-the-seam-that-is-one-commit-away-from-a-high-severity-leak)
 
 ## By theme
 
@@ -549,7 +550,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18192,3 +18193,104 @@ all, because the line ends `\r\n` and `$` will not match before the `\r`
 The live proof — the same probe refused, a bad-Origin handshake closed, and the
 app itself still working from `localhost` — rides the next restart, since the
 server reads this code at boot.
+
+## D-240 — 2026-08-24 — D-239 proven live and the security trade re-run: the wall fix works, the advisories are unreachable, and the seam that is one commit away from a high-severity leak
+
+**Decision:** D-239 is proven live rather than merely tested; `security`'s
+`timeoutMinutes: 25` is proven by a run that finished where the first was cut;
+three dependencies are bumped inside their existing ranges; and the four
+advisories that remain are **deliberately left**, on the audit's own reasoning.
+
+### D-239, proven on the restarted server
+
+Every line of the entry's claim, re-run against the running app:
+
+| Probe | Result |
+|---|---|
+| The cross-origin simple POST that *worked before* | **403**, with the refusal sentence |
+| `evilts.net`, `localhost.evil.example`, `null` | 403 — the lookalikes really are refused |
+| `localhost:5173`, a `.ts.net` name | 200 — the app still works |
+| No `Origin` at all (curl, runner, tests) | 200 — the deliberate allowance holds |
+| `GET` with a hostile origin | 200 — reads deliberately not gated |
+| `/ws` handshake, hostile origin | closed **4403**, **zero messages** |
+| `/ws` handshake, the app's own origin | connected, **946,402 bytes** |
+
+That last pair is the finding stated as one number: **946 KB of level state —
+every job, prompts included — is what any website you visited was being handed,
+and is now zero.**
+
+### The re-run, against the run that was cut
+
+| | first (`f73a5e6b`) | re-run (`f14fecd5`) |
+|---|---|---|
+| outcome | **failed, timed out** | **done** |
+| turns | –/15 | 24/15 |
+| cost | unknown (killed before the SDK reports) | $1.583 |
+| charged | $0 — absorbed | $1.583 |
+
+One frontmatter line was the whole difference. It also re-audited at `5db8c20`,
+the commit carrying D-239, so the report is against the fixed code.
+
+**And it refused to confirm the thing it would have been flattering to
+confirm.** Its scope section says the `/ws` fix "is described as closed by
+commit `51db1f5` … Re-verifying that fix was not part of this job and I did not
+read the code that implements it — do not take this report as confirmation
+either way." That is the role's *say plainly when a finding is theoretical*
+instruction holding under the temptation to claim credit, which is the version
+of that instruction that matters.
+
+### What it found, and what is deliberately not being fixed
+
+Seven advisories, each traced to a call site: **none reachable as the code is
+written** — unimported middleware, a dev-only path, an image format nothing
+here produces. The honest count of live defects was zero, and the report says
+the tool's number is the false signal.
+
+Acted on, all inside existing semver ranges, no code edit: **hono 4.12.32 →
+4.13.4** (closing four advisories at once), **fast-uri → 3.1.6**, **nanoid**
+bumped. Seven became **four**.
+
+**The four survivors stay, on the audit's own argument.** `npm audit fix`
+offers only `exceljs 4.4.0 → 3.4.0` and `pptxgenjs 4.0.1 → 1.1.5` — *major
+downgrades*, trading two unreachable DoS bugs for years of missing fixes and a
+broken API. Recorded so nobody "fixes" this later by running the command the
+tool suggests.
+
+The hono bump had a forward-looking reason the audit supplied and I would not
+have had: the gap between unreachable and reachable there is one
+`import { cors } from 'hono/cors'` — and **D-239 makes someone reaching for
+CORS a realistic near-term event.** The crew reasoned about the consequences of
+our own commit from three hours earlier.
+
+### The seam worth more than the advisories
+
+`toMcpServers` (`connections.ts:262-266`) fills `mcpServers[<name>].env` with
+**real secret values**, and that object is serialized into `.session.json`,
+written into `sandboxDir` — the directory the agentling reads and writes all
+job long.
+
+**It leaks nothing today, and that was verified rather than assumed:** every
+secret-bearing connection in the catalog is `transport: builtin`, never passed
+through `toMcpServers`; the only `stdio` one, `browser`, declares no secrets;
+and the audit opened *its own job's* `.session.json` and found an empty `env`
+and zero token-shaped strings.
+
+**The risk is the next commit.** One stdio MCP connection that declares a
+secret writes that key in plaintext inside the working directory of a session
+instructed to read its sandbox — defeating the `launderedEnv` laundering the
+same audit verified as *"the strongest part of the codebase's security
+posture."* Severity then: high.
+
+This is **not built yet and is recorded as owed**, because it is precisely what
+the expansion plan's Wave 2 does — HTTP and stdio MCP transports, business
+system doors. The fix is small and pre-emptive (placeholders in `.session.json`
+resolved by the runner from the env it was handed, rather than values on disk),
+and it belongs *before* the first secret-bearing stdio connection, not after.
+**Wave 2 must not start without it.**
+
+### Evidence
+
+The seven probes above against the running server; both ledger rows; the
+re-run's `RESULT.md` (17,480 bytes) and its `audit.json`. Typecheck clean,
+server **2,080** across 87 files and web **333** green after all three bumps —
+the lockfile moved nine lines and no source file moved at all.

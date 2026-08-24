@@ -1355,58 +1355,37 @@ select {
 }
 
 .title-screen {
-  position: relative;
-  height: 520px;
+  position: fixed;
+  inset: 0;
   background: var(--db-ink);
-  border: 1px solid #262b36;
-  border-radius: 8px;
   overflow: hidden;
-  margin-top: 12px;
 }
-.ts-ceiling {
+/* The pre-rendered Starbase plate (art/blender/starbase_render.py) — a smooth
+   photographic backdrop, the HD-2D contrast against the pixel horde on top. */
+.ts-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 34px;
-  background: #8f563b;
-  clip-path: polygon(0 0, 100% 0, 100% 55%, 86% 90%, 70% 55%, 52% 95%, 36% 60%, 18% 88%, 0 65%);
+  inset: 0;
+  background-size: cover;
+  background-position: center bottom;
 }
-.ts-vine {
+/* Logo and menu on a solid signboard, so contrast never depends on what the
+   scene behind them happens to be painting at that spot. */
+.ts-plaque {
   position: absolute;
-  width: 2px;
-  background: var(--db-lime);
-}
-.ts-vine.v1 {
-  top: 28px;
-  left: 14%;
-  height: 34px;
-}
-.ts-vine.v2 {
-  top: 24px;
-  right: 18%;
-  height: 46px;
-  background: var(--db-green);
-}
-.ts-pillar {
-  position: absolute;
-  bottom: 46px;
-  width: 26px;
-  height: 180px;
-  background: #8a6f30;
-  opacity: 0.45;
-}
-.ts-pillar.p1 {
-  left: 7%;
-}
-.ts-pillar.p2 {
-  right: 7%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  background: rgba(16, 19, 26, 0.88);
+  border: 2px solid var(--db-steel);
+  border-radius: 6px;
+  padding: 22px 36px;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.5);
 }
 .ts-logo {
-  position: absolute;
-  top: 120px;
-  left: 0;
-  right: 0;
   text-align: center;
 }
 .ts-name {
@@ -1450,10 +1429,6 @@ select {
   margin-top: 16px;
 }
 .ts-menu {
-  position: absolute;
-  top: 260px;
-  left: 0;
-  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1477,12 +1452,38 @@ select {
 .ts-item:not(.on) .ts-cursor {
   animation: none;
 }
+/* Two crossings of the floor, anchored to where the painted ground sits
+   regardless of viewport size — the upper row at desk height, the lower at
+   the true floor line. */
+.ts-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px;
+}
+.ts-row.upper {
+  bottom: 24%;
+}
+.ts-row.ground {
+  bottom: 10%;
+}
 .ts-march {
   position: absolute;
-  bottom: 46px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  gap: 72px;
-  animation: march 30s linear infinite;
+  align-items: flex-end;
+  gap: 34px;
+  padding-left: 20px;
+  animation: march 26s linear infinite;
+}
+.ts-march.fast {
+  animation-duration: 15s;
+}
+.ts-march.rev {
+  animation-name: march-rev;
+  animation-duration: 22s;
 }
 @keyframes march {
   from {
@@ -1492,31 +1493,70 @@ select {
     transform: translateX(1500px);
   }
 }
-.ts-spr {
-  width: 16px;
+@keyframes march-rev {
+  from {
+    transform: translateX(1500px);
+  }
+  to {
+    transform: translateX(-360px);
+  }
 }
-.ts-spr div:nth-child(1) {
-  height: 8px;
-  background: var(--db-lime);
+.ts-unit {
+  position: relative;
 }
-.ts-spr div:nth-child(2) {
-  height: 5px;
-  background: #eec39a;
-  margin: 0 3px;
-}
-.ts-spr div:nth-child(3) {
-  height: 10px;
-  background: #5b6ee1;
-  margin: 0 1px;
-}
-.ts-ground {
+/* A soft contact shadow so a walker reads as standing on the ground, not floating. */
+.ts-unit::before {
+  content: '';
   position: absolute;
+  left: 50%;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 46px;
-  background: #8f563b;
-  border-top: 3px solid var(--db-lime);
+  width: 30px;
+  height: 7px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  filter: blur(1px);
+}
+.ts-walker {
+  display: block;
+  image-rendering: pixelated;
+}
+/* The farther row reads as farther: smaller and a touch duller. */
+.ts-row.upper .ts-walker {
+  transform: scale(0.8);
+  opacity: 0.85;
+  filter: brightness(0.88);
+}
+/* A row walking right-to-left needs its steps mirrored, or it reads as walking backwards. */
+.ts-march.rev .ts-walker {
+  transform: scaleX(-1);
+}
+/* The horde "solving issues": a tick pops over one walker's head per row. */
+.ts-ticket {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--db-lime-light);
+  animation: ticket-pop 2.6s ease-in-out infinite;
+}
+@keyframes ticket-pop {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  15%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -6px);
+  }
+  85% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
 }
 .ts-build {
   position: absolute;
@@ -1878,6 +1918,35 @@ button.warn:hover:not(:disabled) {
   display: flex;
   gap: 14px;
   padding-top: 12px;
+}
+.hire-portrait {
+  position: relative;
+  flex-shrink: 0;
+  width: 128px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hire-portrait::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  background: radial-gradient(circle, var(--tint) 0%, transparent 72%);
+  opacity: 0.35;
+}
+.hire-portrait .portrait {
+  position: relative;
+  animation: hire-bob 2.4s ease-in-out infinite;
+}
+@keyframes hire-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 .hire-field {
   flex: 1;
@@ -5505,6 +5574,12 @@ button.rv-step:hover {
     max-height: 140px;
     border-right: none;
     border-bottom: 1px solid #262b36;
+  }
+  /* A bigger portrait beside a full-width textarea is too tight at 400px;
+     stack them instead. */
+  .hire-ask {
+    flex-direction: column;
+    align-items: center;
   }
 }
 

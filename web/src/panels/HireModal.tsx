@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type {
   Agentling,
   JobBoardHint,
@@ -8,6 +8,7 @@ import type {
   RoleInfo,
 } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { css } from '../world/palette';
 import { renderPortrait } from '../world/sprites';
 import { LibraryResults } from './LibraryResults';
 import { hintText } from './jobboard';
@@ -61,7 +62,7 @@ export function HireModal({
   const loadRoles = useCallback(() => api<RoleInfo[]>('/api/roles').then(setRoles), []);
 
   useEffect(() => {
-    if (portraitRef.current) renderPortrait(portraitRef.current, 3, agentling.color);
+    if (portraitRef.current) renderPortrait(portraitRef.current, 6, agentling.color);
     void loadRoles();
   }, [loadRoles, agentling.color]);
 
@@ -165,7 +166,9 @@ export function HireModal({
 
         <div className="m-body">
           <div className="hire-ask">
-            <canvas ref={portraitRef} className="portrait" />
+            <div className="hire-portrait" style={{ '--tint': css(agentling.color) } as CSSProperties}>
+              <canvas ref={portraitRef} className="portrait" />
+            </div>
             <div className="hire-field">
               <label htmlFor="hire-job">What will {agentling.name}&apos;s job be?</label>
               <textarea

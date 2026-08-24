@@ -70,6 +70,20 @@ export function renderPortrait(canvas: HTMLCanvasElement, scale = 4, tint?: numb
   paint(ctx, FRAMES.stand, paletteFor(tint), scale);
 }
 
+/** How many frames the walk cycle has, for anyone stepping through it by hand. */
+export const WALK_FRAME_COUNT = ANIMATIONS.walk.length;
+
+/** One frame of the walk cycle on a plain canvas, for a horde outside Pixi (the title screen). */
+export function renderWalkFrame(canvas: HTMLCanvasElement, frame: number, scale = 3, tint?: number): void {
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const name = ANIMATIONS.walk[frame % WALK_FRAME_COUNT];
+  paint(ctx, FRAMES[name], paletteFor(tint), scale);
+}
+
 function texturesWith(palette: Record<string, string>): Record<AgentAnim, Texture[]> {
   const cached = new Map<string, Texture>();
   const frame = (name: string): Texture => {

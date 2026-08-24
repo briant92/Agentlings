@@ -60,6 +60,19 @@ describe('JobQueue', () => {
     expect(new JobQueue(root).get(job.id)?.alsoAsked?.[0]?.channel).toBe('gmail');
   });
 
+  // The step-chain link (D-233): the field this builder does not copy does
+  // not exist, which is how channelMention went missing above.
+  it('stores the previous step of a chain-queued job, and it survives the disk', () => {
+    const job = queue.add({
+      title: 'Send',
+      prompt: 'telegram Brian the total',
+      step: { n: 2, of: 2 },
+      stepPrev: 'a1b2c3d4',
+    });
+    expect(job.stepPrev).toBe('a1b2c3d4');
+    expect(new JobQueue(root).get(job.id)?.stepPrev).toBe('a1b2c3d4');
+  });
+
   // The pricing seam's walk (D-150): the whole chain, end first, so a
   // promote can name every cut leg that fed it.
   it('answers a chain whole through ancestry, end first', () => {

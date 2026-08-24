@@ -210,6 +210,8 @@ export function queuedJobSpec(args: {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The previous step's job id — the chain link the review groups by. */
+  stepPrev?: string;
   /** The chain asked for something to be kept out (D-183). */
   withholding?: boolean;
   /** The sentence asked for the work to be checked (TEAMWORK T1, D-194). */
@@ -239,6 +241,7 @@ export function queuedJobSpec(args: {
   alsoAsked?: { channel: string; label: string }[];
   steps?: string[];
   step?: { n: number; of: number };
+  stepPrev?: string;
   answers?: Record<string, string>;
   withholding?: boolean;
   checked?: boolean;
@@ -273,6 +276,7 @@ export function queuedJobSpec(args: {
     // name does not exist, which is this file's own hard-won rule.
     ...(args.steps?.length ? { steps: args.steps } : {}),
     ...(args.step ? { step: args.step } : {}),
+    ...(args.stepPrev ? { stepPrev: args.stepPrev } : {}),
     // Only while a chain still has steps to queue: once the last one is
     // running there is nobody left to hand them to, and the answers this job
     // itself uses are already in its clarifications.
@@ -336,9 +340,11 @@ export function redoJobSpec(
     ...(attachments.length ? { attachments } : {}),
     ...(quotedUsd ? { quotedUsd } : {}),
     // Redoing a step redoes the step, not the chain's end: the remaining
-    // steps ride so its delivery still queues the next one (D-105).
+    // steps ride so its delivery still queues the next one (D-105), and the
+    // chain link rides so the review still shows it as one thing (D-233).
     ...(previous.steps?.length ? { steps: previous.steps } : {}),
     ...(previous.step ? { step: previous.step } : {}),
+    ...(previous.stepPrev ? { stepPrev: previous.stepPrev } : {}),
   };
 }
 

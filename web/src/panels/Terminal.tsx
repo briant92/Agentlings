@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Job, JobEvent, WorldState } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { hasNextStep } from './chain';
 import { Inbox } from './Inbox';
 
 type Filter = 'all' | 'active' | 'results';
@@ -156,6 +157,12 @@ export function Terminal({
             key={e.id}
             event={e}
             job={jobById(world, e.jobId)}
+            // A delivered mid-chain step already queued its successor, so its
+            // card would be a second door to a decision the chain's end owns
+            // (D-233). Computed here, where the whole queue is in reach; if
+            // queueing the next step failed there is no successor and the
+            // card stays, so no delivery is ever left doorless.
+            chainHasNext={world ? hasNextStep(world.jobs, e.jobId) : false}
             onOpenReview={onOpenReview}
             onCancel={cancel}
           />
@@ -165,7 +172,12 @@ export function Terminal({
         <span>{paused ? 'paused' : 'following'}</span>
         <span className="cursor" />
       </div>
-      <Inbox levelId={levelId} revision={revision} onOpenReview={onOpenReview} />
+      <Inbox
+        levelId={levelId}
+        revision={revision}
+        jobs={world?.jobs}
+        onOpenReview={onOpenReview}
+      />
     </aside>
   );
 }
@@ -173,11 +185,14 @@ export function Terminal({
 function EventEntry({
   event,
   job,
+  chainHasNext,
   onOpenReview,
   onCancel,
 }: {
   event: JobEvent;
   job: Job | undefined;
+  /** A later step of this job's chain exists — the review door is there. */
+  chainHasNext: boolean;
   onOpenReview: (jobId: string) => void;
   onCancel: (jobId: string) => Promise<void>;
 }) {
@@ -236,7 +251,14 @@ function EventEntry({
               <span className="t-meter t-meter-right">{meterLine(job)}</span>
             )}
           </div>
-          {job?.status === 'done' && <ReviewCard job={job} onOpenReview={onOpenReview} />}
+          {/* A mid-chain step's card would parallel the chain end's review
+              (D-233): the next step is already queued off this delivery, so
+              the one door is at the end — or on this card again if queueing
+              the successor failed, which is exactly when chainHasNext stays
+              false. */}
+          {job?.status === 'done' && !chainHasNext && (
+            <ReviewCard job={job} onOpenReview={onOpenReview} />
+          )}
         </>
       );
     case 'failed':

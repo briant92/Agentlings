@@ -1492,6 +1492,8 @@ function queueSentence(
     /** The chain, when the caller is the chain itself (D-105). */
     steps?: string[];
     step?: { n: number; of: number };
+    /** The previous step's job id — the chain link the review groups by. */
+    stepPrev?: string;
     /** Standing instructions for the session, rides Job.brief. */
     brief?: string;
     /** The user chose "run as one job" — the split is skipped. */
@@ -1642,6 +1644,7 @@ function queueSentence(
       ...(opts.brief ? { brief: opts.brief } : {}),
       ...(steps?.length ? { steps } : {}),
       ...(step ? { step } : {}),
+      ...(opts.stepPrev ? { stepPrev: opts.stepPrev } : {}),
       // The card's answers ride on while the chain has steps left, so a
       // question the desk asked of the whole sentence still reaches the step
       // that asks it too — the recompute below decides which ones those are.
@@ -1725,6 +1728,9 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
       attachments,
       steps: job.steps.slice(1),
       step: { n, of },
+      // The chain link (D-233): the review surfaces walk it to show one
+      // prompt's steps as one thing instead of parallel reviews.
+      stepPrev: job.id,
       // What the user typed on the card, still travelling with the chain: this
       // step re-derives its own questions from its own sentence, so it hears
       // only the answers it would itself have asked for.

@@ -64,6 +64,8 @@ export interface NewJobSpec {
   steps?: string[];
   /** Which step this job is, for the cards. */
   step?: { n: number; of: number };
+  /** The previous step's job id — the chain link the review groups by. */
+  stepPrev?: string;
   /** The chain asked for something to be kept out (D-183). */
   withholding?: boolean;
   /** The sentence asked for the work to be checked (TEAMWORK T1, D-194). */
@@ -346,6 +348,7 @@ export class JobQueue {
       ...(spec.quotedUsd ? { quotedUsd: spec.quotedUsd } : {}),
       ...(spec.steps?.length ? { steps: spec.steps } : {}),
       ...(spec.step ? { step: spec.step } : {}),
+      ...(spec.stepPrev ? { stepPrev: spec.stepPrev } : {}),
       ...(spec.answers && Object.keys(spec.answers).length ? { answers: spec.answers } : {}),
       ...(spec.withholding ? { withholding: true } : {}),
       ...(spec.checked ? { checked: true } : {}),

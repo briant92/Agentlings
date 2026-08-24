@@ -69,6 +69,9 @@ export function deliveriesFor(
             : null,
         files: describeOutputs(sandboxDir(job.id)),
         ...(job.changes ? { changes: job.changes } : {}),
+        // The chain, so the inbox can show one prompt's steps as one card.
+        ...(job.step ? { step: job.step } : {}),
+        ...(job.stepPrev ? { stepPrev: job.stepPrev } : {}),
       }))
   );
 }

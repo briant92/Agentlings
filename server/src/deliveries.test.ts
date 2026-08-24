@@ -135,6 +135,23 @@ describe('deliveriesFor', () => {
     expect(read).toEqual(['kept']);
   });
 
+  it('carries the chain on its rows, so the inbox can group one prompt as one card (D-233)', () => {
+    const jobs = [
+      job({ id: 's2', finishedAt: 90, step: { n: 2, of: 2 }, stepPrev: 's1' }),
+      job({ id: 's1', finishedAt: 50, step: { n: 1, of: 2 }, steps: ['send it'] }),
+      job({ id: 'lone', finishedAt: 10 }),
+    ];
+    const rows = deliveriesFor(jobs, names, dirFor, 10);
+    expect(rows.find((d) => d.jobId === 's2')).toMatchObject({
+      step: { n: 2, of: 2 },
+      stepPrev: 's1',
+    });
+    expect(rows.find((d) => d.jobId === 's1')).toMatchObject({ step: { n: 1, of: 2 } });
+    const alone = rows.find((d) => d.jobId === 'lone')!;
+    expect(alone.step).toBeUndefined();
+    expect(alone.stepPrev).toBeUndefined();
+  });
+
   it('dates a job that never recorded finishing by when it was made', () => {
     const jobs = [
       job({ id: 'a', createdAt: 5, finishedAt: undefined }),

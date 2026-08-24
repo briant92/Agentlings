@@ -564,6 +564,27 @@ describe('steps ride the specs (D-105)', () => {
     expect(spec.steps).toEqual(['write it up properly']);
     expect(spec.step).toEqual({ n: 1, of: 2 });
   });
+
+  // The link that lets the review show one prompt as one panel (D-233) — a
+  // spread past these builders is exactly how a field goes missing (D-097).
+  it('both builders carry the chain link', () => {
+    const spec = queuedJobSpec({
+      title: 'T',
+      prompt: 'telegram Brian the total',
+      plan,
+      quote,
+      step: { n: 2, of: 2 },
+      stepPrev: 'a1b2c3d4',
+    });
+    expect(spec.stepPrev).toBe('a1b2c3d4');
+    const redone = redoJobSpec(
+      { title: 'T', prompt: 'p q', step: { n: 2, of: 2 }, stepPrev: 'a1b2c3d4' } as unknown as Job,
+      [],
+      0.5,
+      'mason',
+    );
+    expect(redone.stepPrev).toBe('a1b2c3d4');
+  });
 });
 
 // The feed's half of the roster gap (D-200): the desk card has said it since

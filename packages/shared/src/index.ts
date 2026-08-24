@@ -955,6 +955,15 @@ export interface Job {
   /** Which step this job is, for the cards: 2 of 3. */
   step?: { n: number; of: number };
   /**
+   * The job id of the step before this one — the chain link the review
+   * surfaces group by. One prompt used to end as parallel REVIEW cards with
+   * nothing tying them together but timestamps; this lets the client walk a
+   * chain in both directions and show it as one thing. Deliberately not
+   * `continues`: that link means "same sandbox carried forward" and feeds
+   * approval keys and chain repricing, neither of which a step split wants.
+   */
+  stepPrev?: string;
+  /**
    * This job belongs to a chain whose sentence asked for something to be kept
    * out (D-183).
    *
@@ -1971,6 +1980,10 @@ export interface Delivery {
   costUsd: number | null;
   files: DeliveryFile[];
   changes?: JobChanges;
+  /** Which step of its chain this was (D-105), so the inbox can group. */
+  step?: { n: number; of: number };
+  /** The previous step's job id — the link the grouping walks. */
+  stepPrev?: string;
 }
 
 /**

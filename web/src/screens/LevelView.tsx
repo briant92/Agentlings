@@ -4,6 +4,7 @@ import { api, lvl } from '../api';
 import { CrewPanel } from '../panels/CrewPanel';
 import { CrewRail } from '../panels/CrewRail';
 import { HireModal } from '../panels/HireModal';
+import { chainOf } from '../panels/chain';
 import { ParcelDesk } from '../panels/ParcelDesk';
 import { parcelOrder } from '../panels/parcels';
 import { ProfileModal } from '../panels/ProfileModal';
@@ -70,6 +71,9 @@ export function LevelView({
   /** The world's live sprite-anchor query; the ask-bubble reads it (D-084). */
   const anchorFor = useRef<AnchorFn | null>(null);
   const reviewJob = world?.jobs.find((j) => j.id === review?.jobId) ?? null;
+  // The chain the open review belongs to (D-233), for the modal's step rail;
+  // a job with no chain gets none and the modal renders as ever.
+  const reviewChain = reviewJob && world ? chainOf(world.jobs, reviewJob) : null;
 
   useEffect(() => () => clearTimeout(arrival.current), []);
 
@@ -250,6 +254,10 @@ export function LevelView({
           file={review?.file}
           queue={pileQueue}
           crew={world?.agentlings ?? []}
+          chain={reviewChain && reviewChain.length > 1 ? reviewChain : undefined}
+          // Switching steps keeps the desk flow flag: a verdict on whichever
+          // step still advances the pile.
+          onSwitchJob={(jobId) => setReview({ jobId, fromPile: review?.fromPile })}
           onDecided={review?.fromPile ? () => advancePile(reviewJob.id) : undefined}
           onClose={() => setReview(null)}
         />

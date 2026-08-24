@@ -11,6 +11,7 @@ import type {
   TrajectoryLine,
 } from '@agentlings/shared';
 import type { Verdict } from '@agentlings/shared';
+import { awaitingVerdict, outcomeOf } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { carryNote } from './carry';
@@ -49,6 +50,8 @@ export function ReviewModal({
   file,
   queue,
   crew,
+  chain,
+  onSwitchJob,
   onDecided,
   onClose,
 }: {
@@ -59,6 +62,13 @@ export function ReviewModal({
   queue?: { position: number; total: number; onSkip: () => void };
   /** The level's crew, so the facts strip can name who did it. */
   crew?: readonly Agentling[];
+  /**
+   * The whole chain this job is a step of, step 1 first (D-233) — the rail
+   * that makes one prompt one review. Absent for a job with no chain.
+   */
+  chain?: readonly Job[];
+  /** Show another step of the chain: the parent swaps the job prop. */
+  onSwitchJob?: (jobId: string) => void;
   /**
    * A verdict landed (promote, discard, more turns, a reply, a redo) — the
    * desk advances to the next parcel. Absent, deciding simply closes.
@@ -173,9 +183,37 @@ export function ReviewModal({
     if (!offer) approveRef.current?.focus();
   }, [offer]);
 
+  /**
+   * One prompt, one verdict (D-233). This job being the chain's end — a step
+   * with no sentences left to queue — makes its buttons settle the whole
+   * chain: the earlier steps still waiting on a verdict take the same one,
+   * in step order, through the same per-job route as ever, so each still
+   * banks its own recipe and lessons. An earlier step viewed on the rail
+   * keeps its verdict to itself.
+   */
+  const chainEnd = Boolean(job.step && !job.steps?.length);
+  // `awaitingVerdict`, not a private copy of it (D-030): a mate already
+  // carried on by More turns had its decision, and must not take this one.
+  const chainMates = chainEnd
+    ? (chain ?? []).filter((j) => j.id !== job.id && awaitingVerdict(j))
+    : [];
+
   const resolve = async (action: Verdict) => {
     setRefusal(null);
     try {
+      // Earlier steps first: a refusal there (a mid-chain send the channel
+      // rejects) stops the whole verdict before the end settles, so nothing
+      // is half-decided behind an error message.
+      for (const mate of chainMates) {
+        try {
+          await api<Job>(lvl(levelId, `/jobs/${mate.id}/resolve`), postJson({ action }));
+        } catch (err) {
+          setRefusal(
+            `step ${mate.step?.n ?? '?'} — ${err instanceof Error ? err.message : String(err)}`,
+          );
+          return;
+        }
+      }
       const reply = await api<Job & { sendApproval?: SendApprovalInfo }>(
         lvl(levelId, `/jobs/${job.id}/resolve`),
         postJson({ action, ...(job.packDraft ? { packSlug } : {}) }),
@@ -258,6 +296,19 @@ export function ReviewModal({
   const unsent = (job.outbox ?? []).flatMap((outbox) =>
     outbox.messages.filter((m) => !sentOn(outbox.channel).includes(m.to)),
   );
+  // What a chain-wide Approve fires beyond this job's own outbox (D-233): a
+  // mid-chain step can hold a send too, and the button must count it or the
+  // label under-claims what the click does.
+  const mateUnsent = chainMates.reduce(
+    (n, mate) =>
+      n +
+      (mate.outbox ?? []).reduce((k, outbox) => {
+        const sent = mate.outboxSent?.find((s) => s.channel === outbox.channel)?.sentTo ?? [];
+        return k + outbox.messages.filter((m) => !sent.includes(m.to)).length;
+      }, 0),
+    0,
+  );
+  const sendTotal = unsent.length + mateUnsent;
   const moveLeft = job.moves ? movesLeft(job.moves.moves, job.movesRun?.done ?? []) : [];
   const movedCount = job.movesRun?.done.length ?? 0;
   const worker = crew?.find((a) => a.id === job.assignedTo);
@@ -289,10 +340,38 @@ export function ReviewModal({
               {job.party.gather ? 'the gather' : `hand ${job.party.hand} of ${job.party.of}`}
             </span>
           )}
-          {job.step && (
-            <span className="badge">
-              step {job.step.n} of {job.step.of}
+          {/* The chain as a rail (D-233): one prompt's steps, one panel. A
+              delivered sibling is a tab; one still at work says so and waits.
+              Without the chain in hand the lone badge stands as before. */}
+          {chain && chain.length > 1 ? (
+            <span className="rv-steps">
+              {chain.map((s) =>
+                s.id === job.id ? (
+                  <span key={s.id} className="rv-step on">
+                    step {s.step?.n ?? '?'}
+                  </span>
+                ) : outcomeOf(s.status) !== null && onSwitchJob ? (
+                  <button
+                    key={s.id}
+                    className="rv-step"
+                    title={s.title}
+                    onClick={() => onSwitchJob(s.id)}
+                  >
+                    step {s.step?.n ?? '?'}
+                  </button>
+                ) : (
+                  <span key={s.id} className="rv-step wait" title={s.title}>
+                    step {s.step?.n ?? '?'} · {s.status === 'running' ? 'working' : s.status}
+                  </span>
+                ),
+              )}
             </span>
+          ) : (
+            job.step && (
+              <span className="badge">
+                step {job.step.n} of {job.step.of}
+              </span>
+            )
           )}
           <span className="m-title rv-title">{job.title}</span>
           {/* The desk's flow strip: where this stop sits in the pile, the way
@@ -532,6 +611,16 @@ export function ReviewModal({
               </p>
             </div>
           )}
+          {/* Where these words came from (D-233): a step's outbox is composed
+              from the previous step's delivery, and the provenance should be
+              in view where the send is approved — not implied by timestamps.
+              Discarding the earlier step cannot un-feed this one. */}
+          {job.stepPrev && !!job.outbox?.length && (
+            <p className="rv-mention-guard">
+              These messages were composed from the previous step&rsquo;s delivery — its work is
+              one step away on the rail above.
+            </p>
+          )}
           {(job.outbox ?? []).map((outbox) => {
             // One card per channel (D-179), each with its own sent/failed
             // truth — a job may have reached everyone on Telegram and nobody
@@ -742,6 +831,21 @@ export function ReviewModal({
             )}
           </Section>
           {refusal && <p className="error">{refusal}</p>}
+          {/* What the buttons below reach (D-233): the chain settles as one
+              from its end, and an earlier tab's verdict stays its own. */}
+          {chainMates.length > 0 && (job.status === 'done' || job.status === 'partial') && (
+            <p className="dim rv-chain-note">
+              This is the last step of the ask — Approve, Discard and Clear settle all{' '}
+              {chainMates.length + 1} steps together. To judge one step alone, open it on the rail
+              above.
+            </p>
+          )}
+          {!!job.steps?.length && (job.status === 'done' || job.status === 'partial') && (
+            <p className="dim rv-chain-note">
+              This is one step of the ask — a verdict here touches this step alone; the whole chain
+              settles on the last step&rsquo;s review.
+            </p>
+          )}
           {offer && !offer.auto && (
             <div className="rv-standing">
               <div className="rv-standing-t">
@@ -797,11 +901,11 @@ export function ReviewModal({
             <>
               <button
                 ref={approveRef}
-                className={unsent.length > 0 || moveLeft.length > 0 ? 'btn-send' : undefined}
+                className={sendTotal > 0 || moveLeft.length > 0 ? 'btn-send' : undefined}
                 onClick={() => void resolve('promote')}
               >
-                {unsent.length > 0
-                  ? `Approve & send ${unsent.length}`
+                {sendTotal > 0
+                  ? `Approve & send ${sendTotal}`
                   : moveLeft.length > 0
                     ? `Approve & move ${moveLeft.filter((m) => m.op === 'move').length}`
                     : 'Approve'}

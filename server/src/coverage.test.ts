@@ -157,6 +157,70 @@ describe('a matcher vocabulary gap', () => {
   });
 });
 
+/**
+ * The Wave 1 trades (D-235). Each power is pinned by a duty it vouches for
+ * *and* by one it must not: these four were added to reach duties nothing
+ * understood, and the way that goes wrong is claiming the doing of the work
+ * rather than the record of it. The boundary half of each pair is the test
+ * that matters — a hard boundary outranks any power (gradeTask step 1), and
+ * these assert that rule still holds with the new vocabulary in the ledger.
+ */
+describe('the Wave 1 powers', () => {
+  const graded = (text: string) => gradeTask(fullHouse, { id: 'w1', text, required: true });
+
+  it('vouches for the operations record and never for the operating', () => {
+    const record = graded('Write standard operating procedures and acceptance criteria for the assembly process.');
+    expect(record.grade).toBe('covered');
+    expect(record.evidence).toBe('power');
+    expect(record.powers).toContain('procedures');
+    expect(record.role).toBe('operations');
+
+    // The same subject, done with hands: the physical boundary decides it.
+    const doing = graded('Set up and adjust machines according to the operating procedure.');
+    expect(doing.grade).toBe('uncovered');
+    expect(doing.gap).toBe('capability');
+    expect(doing.boundaries).toContain('physical');
+    expect(doing.notThisCrew).toBe(true);
+  });
+
+  it('vouches for the supply comparison and never for the buying', () => {
+    const compare = graded('Compare carrier rates and lead times to recommend a distribution network.');
+    expect(compare.grade).toBe('covered');
+    expect(compare.powers).toContain('supply');
+    expect(compare.role).toBe('logistics');
+
+    // Ordering is money, and money is a hard policy boundary (D-219).
+    const buy = graded('Order supplies and materials to maintain stock levels.');
+    expect(buy.grade).toBe('uncovered');
+    expect(buy.gap).toBe('policy');
+    expect(buy.boundaries).toContain('money');
+  });
+
+  it('vouches for the plan on paper and never for directing the people in it', () => {
+    const plan = graded('Prepare a work breakdown structure and project schedule with milestones.');
+    expect(plan.grade).toBe('covered');
+    expect(plan.powers).toContain('planning');
+    expect(plan.role).toBe('planner');
+
+    const direct = graded('Direct and coordinate the activities of project staff.');
+    expect(direct.grade).toBe('uncovered');
+    expect(direct.gap).toBe('policy');
+    expect(direct.boundaries).toContain('people');
+  });
+
+  it('vouches for the audit of a copy and never for reaching a running system', () => {
+    const audit = graded('Audit dependencies for known vulnerabilities and exposed credentials.');
+    expect(audit.grade).toBe('covered');
+    expect(audit.powers).toContain('security-audit');
+    expect(audit.role).toBe('security');
+
+    // Scanning is done to something running, and nothing here reaches one:
+    // the duty may reach the trade lexically, but no power may vouch for it.
+    const scan = graded('Scan networks, using vulnerability assessment tools to identify vulnerabilities.');
+    expect(scan.grade).not.toBe('covered');
+  });
+});
+
 describe('roster', () => {
   const tw = profile('fixture:technical-writer');
 

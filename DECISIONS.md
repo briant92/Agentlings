@@ -244,6 +244,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-232 — 2026-08-23 — The job board: the O*NET database behind the positions board, one download, searched by the hand board's rule and graded by the benchmark's grader, measured never vouched](#d-232--2026-08-23--the-job-board-the-onet-database-behind-the-positions-board-one-download-searched-by-the-hand-boards-rule-and-graded-by-the-benchmarks-grader-measured-never-vouched)
 - [D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged](#d-233--2026-08-23--one-prompt-one-review-a-step-chain-surfaces-as-one-card-one-door-and-one-panel-settled-from-its-end--execution-unchanged)
 - [D-234 — 2026-08-23 — Brand chips in the work box: a channel word wears its service's colour, a matched word gains a wash, and the routing line carries the mark](#d-234--2026-08-23--brand-chips-in-the-work-box-a-channel-word-wears-its-services-colour-a-matched-word-gains-a-wash-and-the-routing-line-carries-the-mark)
+- [D-235 — 2026-08-24 — Wave 1 of the coverage programme: four trades hired off a measurement, vouched by their own powers, and nothing on the shelf of never touched](#d-235--2026-08-24--wave-1-of-the-coverage-programme-four-trades-hired-off-a-measurement-vouched-by-their-own-powers-and-nothing-on-the-shelf-of-never-touched)
 
 ## By theme
 
@@ -536,7 +537,11 @@ entry updates one file rather than two.
   draws that brand, a matched word gaining a wash over its underline, the
   routing line carrying the channel's mark, and the atomic ChatGPT-style
   pill rejected because anything with width shifts the twin against the
-  input
+  input; and D-235, the first trades hired off a measurement — operations,
+  logistics, planner and security, each named for a cluster the benchmark
+  counted, each with a POWERS entry so what they reach is vouched rather
+  than matched, and the three instruments read before and after to prove
+  the routing was not reshuffled and the grader did not start overclaiming
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -17606,3 +17611,117 @@ of the server's channel-word regexes takes only its first hit, so in
 "email … via gmail" the word evidence lands on "email", the verb wins
 that merge, and "gmail" goes unpainted — a `channelSpans` matter, out of
 this entry's scope.
+
+## D-235 — 2026-08-24 — Wave 1 of the coverage programme: four trades hired off a measurement, vouched by their own powers, and nothing on the shelf of never touched
+
+**Decision:** the crew gains four trades — `operations`, `logistics`,
+`planner`, `security` — and the coverage ledger gains one power each, so a
+duty they reach is vouched rather than merely matched. **No boundary moved,
+no door opened, no decision reversed.** This is the first wave of the
+expansion programme drafted on 2026-08-23 ("The Hireable Horde"), and it was
+chosen to go first precisely because it is the only wave that reverses
+nothing: every later one supersedes a recorded decision and needs its own
+entry, its own risk machinery and a live paid run before it may claim
+anything.
+
+### Why these four, and not six
+
+The plan named six candidates. Two were dropped on reading the benchmark
+rather than the plan: an **HR/comp analyst** would take duties that are
+mostly `people`-boundary work (evaluate employees, supervise, interview),
+where a hard boundary decides the duty whole and a new trade changes
+nothing; and a **grants writer** is the scribe's `write` power in a costume —
+D-171's rule, a capability declined for competing with something already
+free. The four that stayed are the ones the benchmark's own cluster list
+argues for, and they are named for clusters, not for jobs anybody asked for:
+
+- **operations** — the `equipment`/`test`/`specification`/`standard`/
+  `inspect`/`safety` family, the largest group of ○ clusters in the report.
+- **logistics** — `select` (151 duties, 139 profiles) and `suppli` (144 in
+  130), the **only two clusters that met D-230's bar** (●).
+- **planner** — `plan` (222 in 162) and `program` (190 in 121).
+- **security** — the one shape nothing installed had at all: the sampled
+  "not understood" bucket held *"Scan networks, using vulnerability
+  assessment tools"* and its neighbours, and no trade spoke that language.
+
+### What a new trade is allowed to be
+
+New **seats, not new reach**. Every one works the way the crew already
+works — files in a sandbox, `RESULT.md` out, review before anything counts —
+and each prompt spends as much text on what it refuses as on what it does:
+operations never operates or certifies, logistics never orders or commits
+spend, planner never schedules a person, security never scans or signs in to
+anything running and never applies its own fixes. That is deliberate: the
+duties these trades sit next to are exactly the ones the shelf of never
+refuses, so a trade whose prompt is vague about the line would earn coverage
+the app cannot honour.
+
+The same discipline shaped the POWERS entries. Terms are phrase-heavy and
+narrow, and the grader's own two guards do the rest: a hard boundary decides
+a duty whole and a power beside it buys nothing (step 1 of `gradeTask`), and
+`thin()` refuses to vouch on one bare word. So the new vocabulary can only
+reach duties that no boundary claims — the desk-shaped half — which is the
+honest half. `coverage.test.ts` pins that as four pairs: the record is
+covered and the doing is not (procedures vs *"set up and adjust machines"*;
+carrier comparison vs *"order supplies"*; the breakdown vs *"direct and
+coordinate the activities of project staff"*; the dependency audit vs
+*"scan networks"*).
+
+### Measured before and after, on the three instruments that could show harm
+
+A role file edit reshuffles every role's BM25 routing, and a widened power
+ledger can start overclaiming — both were read before the change and again
+after, because the point of an instrument is to be run:
+
+| Instrument | Before | After | |
+|---|---|---|---|
+| `bench:intake` — 54 sentences | 52/54 clean, 1 miss | **53/54 clean, 0 misses** | role-04 (*"Check this CSV for anomalies…"*) went back to `analyst` |
+| `coverage-calibrate` — 58 hand grades | 52/58 (90 %), overclaim n→y 0 | **52/58 (90 %), overclaim n→y 0** | identical confusion matrix |
+| `bench:coverage` — 18,797 duties | 15 % / 21 % / 64 % | **16 % / 24 % / 61 %** | covered 2,732 → 2,926, uncovered 12,027 → 11,431 |
+
+The intake improvement is a side effect, not a fix: BM25's idf is
+corpus-relative, four new documents moved it, and a sentence that had been
+lost to `researcher` came home. It is recorded as measured rather than
+claimed as designed — the same effect that *broke* a row when the designer
+shipped (D-041's canary), landing the other way for once.
+
+The calibration line is the load-bearing one. It went 52/58 → **51/58** on
+the first pass, and the cause was not a power at all: the security prompt
+said *"never a live system"*, and BM25 has no negation, so *"Query a live
+database"* — hand-graded not-this-crew — started reaching `security` on the
+word `live`. Rewording to *"nothing that is running"* restored the baseline
+exactly. Two lessons worth the ink: a role prompt's **refusals are indexed
+as strongly as its offers**, and the calibration set caught in one run what
+18,797 duties could not, because it is the only labelled set whose labels
+were not written by reading the grader's output (D-231).
+
+### What this did not buy
+
+The programme's estimate for this wave was ≈3,500 duties; it delivered
+**+194 covered and +402 partial**, with uncovered down 596. The gap is
+instructive and is recorded rather than smoothed: the estimate assumed the
+vocabulary would both *reach* duties and *vouch* for them, and most of what
+moved landed as partial — "unverified word match" actually rose, 2,968 →
+3,348, because the new trades attract duties lexically that no power claims.
+That is the grader being honest, not the trades failing. Closing the rest is
+the same work again — more POWERS entries, each earned — and the plan's
+figure should be read as the ceiling of the *whole* name-and-prove line,
+not of one commit.
+
+**And none of these trades has run a job.** Their routing is measured and
+their powers are vouched by ledger, which is not the same as proven: a role
+nobody has watched work is a claim (D-112 — a role nobody holds does
+nothing, and the first designer run is what taught the class its turns).
+AGENTLING §2 says so in place. The first real job for each is the outstanding
+proof, and until then this entry claims a catalog, not a capability.
+
+### Evidence
+
+Typecheck clean; server **2,066** tests (four new pairs in `coverage.test.ts`)
+and web **333** green; `bench:intake` 53/54; `coverage-calibrate` 52/58 with
+both overclaim cells empty; `bench:coverage` re-run over the installed O*NET
+30.0 board (1,016 profiles, 23.5 s). The starter set's two canaries carried
+the change: the roster assertion was updated to name the four with their
+reasons, and each new trade gained a reach row it must win on its own
+vocabulary — the bar the clerk's two anchor tests set. Mutation pass after
+committing, below.

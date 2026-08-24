@@ -26,7 +26,8 @@ corrected 2026-08-22 where D-211 landed: the sandbox trajectory trail, and
 the document brief's scan line repaired; §§6, 11 and 12 re-read against
 `abc0263` the same day where the UI unclogging landed (D-213–D-215): the
 trail read back in the review, the ledger row carrying the cut, the job
-carrying what it left. Since 2026-08-23 (D-228) the app shows this file's
+carrying what it left; §2 gains the four Wave 1 trades on 2026-08-24 (D-235),
+read from the four role files rather than from the plan that proposed them. Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
@@ -112,6 +113,19 @@ the SDK session, not advised in a prompt.
 | `drafter` | Technical drawings — blueprints, floor plans, CAD plots, site maps; extracts the geometry, builds the dimensioned model, then composites, corrects or renders from it (D-198) | read, write, edit, bash | plan-geometry, see-your-work, check-your-work, concise-reports | default | 35 · 25-min wall · $5 ceiling |
 | `architect` | Architecture — C4 blueprints, module maps, ADRs, from the files that are there | read, grep, bash, write | architecture-blueprints, cite-sources, concise-reports | default | 15 |
 | `clerk` | Standing desks — reads the connected calendar and mail and briefs the day: events, conflicts, invites and mail awaiting a reply (D-158, D-191) | read, write | concise-reports | Haiku 4.5 | 6 |
+| `operations` | Quality and procedure — the record of how work is done: SOPs, work instructions, acceptance criteria, test and inspection findings read against a named standard, corrective actions (D-235) | read, write, grep, bash | concise-reports, tables-and-numbers, check-your-work, plain-language | default | 12 |
+| `logistics` | Supply — stock positions, reorder points, lead times, supplier and carrier comparisons, freight and landed cost (D-235) | read, write, grep, bash | concise-reports, tables-and-numbers, data-analysis, cite-sources | default | 12 |
+| `planner` | Project planning — work breakdowns, milestones, sequencing and dependencies, estimates carrying their basis, risk registers (D-235) | read, write, grep | concise-reports, tables-and-numbers, plain-language | default | 12 |
+| `security` | Security auditing — a clone read for dependency advisories, committed secrets, permission and configuration weakness, each finding at a file and line with the smallest fix (D-235) | read, write, grep, bash | concise-reports, cite-sources, check-your-work | default | 15 |
+
+The last four are the **Wave 1 trades (D-235)**, and they are the first roles
+hired off a measurement rather than off a request: each is named for a cluster
+the coverage benchmark counted in O*NET's 18,797 duties, not for a job somebody
+thought of. They are **new seats, not new reach** — every one works the way the
+crew already works, on files in a sandbox, and the four prompts spend as much
+text on what they do not do (operate, order, schedule, probe) as on what they
+do. None of them has run a real job yet: their powers are vouched by the
+ledger and their routing is measured, which is not the same as proven (§15).
 
 Role tool names map onto SDK tools (`grep` → `Grep` + `Glob`, `web_fetch` →
 `WebFetch`). A role naming no tools gets the default set: Read, Write, Edit,

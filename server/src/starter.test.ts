@@ -42,7 +42,7 @@ describe('shipped starter set', () => {
     }
   });
 
-  it('ships ten generalist jobs and eighteen abilities', () => {
+  it('ships fourteen generalist jobs and eighteen abilities', () => {
     expect(roles.map((r) => r.name).sort()).toEqual([
       'analyst',
       'architect',
@@ -54,13 +54,22 @@ describe('shipped starter set', () => {
       // plans and renders, priced to finish — its own class from day one so
       // the quote funds the turns the work takes, with plan-geometry mounted.
       'drafter',
+      // The four Wave 1 trades (D-235), each named by a cluster the coverage
+      // benchmark counted rather than by a job someone imagined: logistics
+      // takes the `select`/`suppli` clusters — the only two that met D-230's
+      // bar — operations the equipment/test/specification/standard family,
+      // planner the plan/program one, and security a shape nothing here had.
+      'logistics',
       'mason',
+      'operations',
+      'planner',
       // researcher is P3: deep multi-source research on the default model
       // with a longer wall (timeoutMinutes 25) — scout stays the cheap
       // errand-reader on Haiku; the reach rows below keep them apart.
       'researcher',
       'scout',
       'scribe',
+      'security',
       'worker',
     ]);
     expect(skills.map((s) => s.name).sort()).toEqual([
@@ -169,6 +178,13 @@ describe('shipped starter set', () => {
       ['do deep research on the european drone delivery market', 'researcher'],
       ['brief me on my calendar this morning', 'clerk'],
       ['brief me on my mail this morning', 'clerk'],
+      // The Wave 1 four (D-235). Each row is a sentence from the family its
+      // trade was hired for, and each must win it on its own vocabulary —
+      // the same bar the clerk's two anchor tests set.
+      ['check these test results against the specification', 'operations'],
+      ['work out our reorder points from the stock records', 'logistics'],
+      ['break this project into a work breakdown with milestones', 'planner'],
+      ['check the repo for committed secrets and weak permissions', 'security'],
     ];
     for (const [text, expected] of reach) {
       const result = suggest(text);

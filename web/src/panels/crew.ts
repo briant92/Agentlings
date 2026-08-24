@@ -96,6 +96,38 @@ export const TRADES: Record<string, TradeCopy> = {
     tint: '#ac3232',
     hat: '#45283c',
   },
+  operations: {
+    tag: 'QUALITY',
+    blurb:
+      'How the work is done, written down: procedures, work instructions, acceptance criteria, and test or inspection findings read against the standard they are meant to meet.',
+    moves: ['Names the clause it is checking against', 'Puts the measurement beside the limit', 'Prepares the record — a qualified person signs it'],
+    tint: '#8f974a',
+    hat: '#4b692f',
+  },
+  logistics: {
+    tag: 'SUPPLY',
+    blurb:
+      'Stock, reorder points, lead times and what the freight really costs. Compares suppliers, carriers and routes on criteria it names before the verdict.',
+    moves: ['Scores every option, including the losers', 'Keeps the script, so the sums can be replayed', 'Never places an order — you do'],
+    tint: '#cbdbfc',
+    hat: '#595652',
+  },
+  planner: {
+    tag: 'PLAN',
+    blurb:
+      'Breaks work into pieces and puts them in order: work breakdowns, milestones, dependencies, and a risk register with owners against it.',
+    moves: ['Every estimate carries its basis', 'Names the critical path and what slips with it', 'Plans on paper — schedules nobody'],
+    tint: '#847e87',
+    hat: '#45283c',
+  },
+  security: {
+    tag: 'AUDIT',
+    blurb:
+      'Audits a clone for dependency advisories, committed secrets and weak permissions — every finding at a file and line, ranked by how it would actually be exploited.',
+    moves: ['Ranks by exploitability, not by count', 'Says plainly when a finding is theoretical', 'Reads a copy — never probes anything running'],
+    tint: '#d95763',
+    hat: '#45283c',
+  },
   clerk: {
     tag: 'DESK',
     blurb:

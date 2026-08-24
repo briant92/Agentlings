@@ -577,6 +577,19 @@ tried, measured and rejected is in `DECISIONS.md`:
   route, oldest first, so recipes and lessons still bank per step;
   execution unchanged, and gating a step's run on the previous step's
   Approve rejected by name → D-233
+- M5.40 the first trades hired off a measurement: four roles named for
+  clusters the coverage benchmark counted rather than for work somebody
+  asked for — `operations` (procedures, acceptance criteria, test and
+  inspection findings against a named standard), `logistics` (stock,
+  reorder points, lead times, supplier and carrier comparisons),
+  `planner` (work breakdowns, milestones, dependencies, risk registers)
+  and `security` (a clone audited for advisories, committed secrets and
+  weak permissions) — with a POWERS entry each so a duty they reach is
+  vouched rather than merely matched; new seats and no new reach, every
+  one working on files in a sandbox behind the same review; measured
+  before and after on the three instruments that could show a regression
+  (intake 52/54 → 53/54, calibration 90% unchanged with the overclaim
+  cells still empty, coverage 15%/21%/64% → 16%/24%/61%) → D-235
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

@@ -29,24 +29,47 @@ export async function readSecrets(stdin) {
 }
 
 /**
- * Fills `${NAME}` in each server's `env` from the secrets read off stdin.
+ * Fills every `${NAME}` inside one bag of key→value, dropping any entry it
+ * cannot fully resolve.
+ *
+ * Anywhere in the value, not only as the whole of it: the header that matters
+ * is `Bearer ${TOKEN}`. A whole-value rule shipped first and a live run caught
+ * it — the far end saw the literal `Bearer ${DESK_TOKEN}` and answered 401.
+ * An entry with no placeholders at all is a constant and passes through, which
+ * is how an API-version header survives.
+ */
+function fill(bag, secrets) {
+  const out = {};
+  for (const [key, value] of Object.entries(bag ?? {})) {
+    const raw = String(value);
+    const wanted = [...raw.matchAll(/\$\{(\w+)\}/g)].map((m) => m[1]);
+    if (wanted.some((name) => !secrets[name])) continue;
+    const filled = raw.replace(/\$\{(\w+)\}/g, (_, name) => secrets[name]);
+    if (filled) out[key] = filled;
+  }
+  return out;
+}
+
+/**
+ * Fills `${NAME}` from the secrets read off stdin — in a stdio server's `env`
+ * and in an http server's `headers`, which are the same problem wearing two
+ * names. An `Authorization` header is a bearer token, and it would land in
+ * `.session.json` beside the work if it were not a placeholder there (D-242).
  *
  * A placeholder with no matching secret is **dropped rather than passed
- * through**, so an MCP server never receives the literal string `${TOKEN}` as
- * its credential — it fails to authenticate with a clear absence instead of a
- * value that looks real in a log. Anything that is not a placeholder is left
- * exactly as it is.
+ * through**, so a server never receives the literal string `${TOKEN}` as its
+ * credential — it fails with a clear absence instead of a value that looks
+ * real in a log, and `Authorization: Bearer ${TOKEN}` would look real in
+ * somebody else's log. Anything that is not a placeholder is left as it is,
+ * which is how a constant header like an API version survives.
  */
 export function resolveSecrets(servers, secrets) {
   const out = {};
   for (const [name, server] of Object.entries(servers ?? {})) {
-    const env = {};
-    for (const [key, value] of Object.entries(server.env ?? {})) {
-      const match = /^\$\{(\w+)\}$/.exec(String(value));
-      const resolved = match ? secrets[match[1]] : value;
-      if (resolved) env[key] = resolved;
-    }
-    out[name] = { ...server, env };
+    out[name] =
+      server.type === 'http'
+        ? { ...server, headers: fill(server.headers, secrets) }
+        : { ...server, env: fill(server.env, secrets) };
   }
   return out;
 }

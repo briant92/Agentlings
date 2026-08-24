@@ -18,7 +18,23 @@ export interface Connection {
   name: string;
   label: string;
   description?: string;
-  transport: 'builtin' | 'stdio';
+  /**
+   * How a session reaches it.
+   *
+   * `builtin` — the server owns the call, so it owns the size of the reply.
+   * `stdio` — the SDK spawns a local process and talks to it over pipes.
+   * `http` — the SDK talks to a *remote* MCP server over streamable HTTP
+   * (Wave 2). Added because the alternative was a hand-written door per
+   * service: a vendor that already publishes an MCP server becomes a catalog
+   * entry with no code at all, which is what makes "business-system doors"
+   * mostly a catalog exercise rather than engineering.
+   *
+   * `sse` is deliberately absent. The SDK accepts it and it is the legacy
+   * shape of the same idea; adding it is one line on the day something we
+   * actually want speaks only SSE, and shipping it now would be a branch with
+   * no caller.
+   */
+  transport: 'builtin' | 'stdio' | 'http';
   /** On for every job unless the user turns it off in Settings. */
   defaultOn?: boolean;
   /**
@@ -54,6 +70,16 @@ export interface Connection {
   /** stdio only. */
   command?: string;
   args?: string[];
+  /** http only — the remote MCP endpoint. */
+  url?: string;
+  /**
+   * http only. Values may name a secret as `${NAME}`, exactly as a stdio
+   * connection's `env` does, and for the same reason: this object is
+   * serialized into `.session.json` inside the sandbox the agentling reads
+   * (D-242). An `Authorization` header is a bearer token by another name, so
+   * it travels the same path — placeholder on disk, value over stdin.
+   */
+  headers?: Record<string, string>;
   /** Environment variable name → why it is needed. */
   secrets?: Record<string, string>;
   /** Plain-words steps for getting the secret; the settings drawer shows them. */
@@ -269,29 +295,60 @@ export function expandArgs(args: string[], env: Record<string, string | undefine
  * `/proc/<pid>/environ`, the parent's included. Stdin is read once at startup
  * and held in a variable no tool reaches.
  */
+export type McpServerSpec =
+  | { type: 'stdio'; command: string; args: string[]; env: Record<string, string> }
+  | { type: 'http'; url: string; headers: Record<string, string> };
+
 export function toMcpServers(
   granted: Connection[],
   env: Record<string, string | undefined>,
-): Record<string, { type: 'stdio'; command: string; args: string[]; env: Record<string, string> }> {
-  const servers: Record<
-    string,
-    { type: 'stdio'; command: string; args: string[]; env: Record<string, string> }
-  > = {};
+): Record<string, McpServerSpec> {
+  const servers: Record<string, McpServerSpec> = {};
   for (const connection of granted) {
-    if (connection.transport !== 'stdio' || !connection.command) continue;
-    const secrets: Record<string, string> = {};
-    for (const name of Object.keys(connection.secrets ?? {})) {
-      // Named only where the value actually exists, so an unset secret stays
-      // absent rather than becoming a placeholder the runner cannot resolve —
-      // the same "optional means absent" rule `expandArgs` follows.
-      if (env[name]) secrets[name] = `\${${name}}`;
+    // Named only where the value actually exists, so an unset secret stays
+    // absent rather than becoming a placeholder the runner cannot resolve —
+    // the same "optional means absent" rule `expandArgs` follows.
+    const placeholder = (name: string): string | null =>
+      env[name] ? `\${${name}}` : null;
+
+    if (connection.transport === 'stdio' && connection.command) {
+      const secrets: Record<string, string> = {};
+      for (const name of Object.keys(connection.secrets ?? {})) {
+        const value = placeholder(name);
+        if (value) secrets[name] = value;
+      }
+      servers[connection.name] = {
+        type: 'stdio',
+        command: connection.command,
+        args: expandArgs(connection.args ?? [], env),
+        env: secrets,
+      };
+      continue;
     }
-    servers[connection.name] = {
-      type: 'stdio',
-      command: connection.command,
-      args: expandArgs(connection.args ?? [], env),
-      env: secrets,
-    };
+
+    if (connection.transport === 'http' && connection.url) {
+      // `${NAME}` is matched ANYWHERE in the value, not only as the whole of
+      // it, because the header that matters is `Bearer ${TOKEN}` — a prefix
+      // and a placeholder. A live run caught this: a whole-value rule left
+      // `Authorization: Bearer ${DESK_TOKEN}` verbatim and the far end
+      // answered 401. The unit tests had passed because their fixture used the
+      // bare `${NAME}`, which is a shape no real API uses.
+      //
+      // A header naming an unset secret is dropped entirely rather than sent
+      // half-filled: `Authorization: Bearer ` is a request that looks
+      // authenticated and is not, and the error it earns says nothing about
+      // the missing key. That is `expandArgs`'s rule, which had it right
+      // first — the same decision reached twice, so it reads the same way in
+      // both places.
+      const headers: Record<string, string> = {};
+      for (const [key, raw] of Object.entries(connection.headers ?? {})) {
+        const wanted = [...raw.matchAll(/\$\{(\w+)\}/g)].map((m) => m[1]!);
+        if (wanted.some((name) => !placeholder(name))) continue;
+        // The placeholder text is what lands on disk; the runner fills it.
+        headers[key] = raw;
+      }
+      servers[connection.name] = { type: 'http', url: connection.url, headers };
+    }
   }
   return servers;
 }
@@ -300,10 +357,10 @@ export function toMcpServers(
  * The real values behind `toMcpServers`'s placeholders — the half that never
  * touches the sandbox.
  *
- * Only the granted stdio connections' own declared secrets, so the runner is
- * handed the smallest set that lets it start the servers it was told to start,
- * and never the whole `.env`. Empty for every job that grants no stdio
- * connection, which today is every job.
+ * Only the granted `stdio` and `http` connections' own declared secrets, so
+ * the runner is handed the smallest set that starts the servers it was told to
+ * start and never the whole `.env`. `builtin` is excluded because the server
+ * makes those calls itself and the session never holds the credential at all.
  */
 export function mcpSecretValues(
   granted: Connection[],
@@ -311,7 +368,10 @@ export function mcpSecretValues(
 ): Record<string, string> {
   const values: Record<string, string> = {};
   for (const connection of granted) {
-    if (connection.transport !== 'stdio' || !connection.command) continue;
+    const reachable =
+      (connection.transport === 'stdio' && connection.command) ||
+      (connection.transport === 'http' && connection.url);
+    if (!reachable) continue;
     for (const name of Object.keys(connection.secrets ?? {})) {
       const value = env[name];
       if (value) values[name] = value;

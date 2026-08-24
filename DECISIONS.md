@@ -252,6 +252,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-240 — 2026-08-24 — D-239 proven live and the security trade re-run: the wall fix works, the advisories are unreachable, and the seam that is one commit away from a high-severity leak](#d-240--2026-08-24--d-239-proven-live-and-the-security-trade-re-run-the-wall-fix-works-the-advisories-are-unreachable-and-the-seam-that-is-one-commit-away-from-a-high-severity-leak)
 - [D-241 — 2026-08-24 — Wave 0's credential: a password for an HttpOnly cookie, chosen by the socket, off until `.env` arms it — and the seam that would have handed it to every session](#d-241--2026-08-24--wave-0s-credential-a-password-for-an-httponly-cookie-chosen-by-the-socket-off-until-env-arms-it--and-the-seam-that-would-have-handed-it-to-every-session)
 - [D-242 — 2026-08-24 — Closing the security ledger: the sandbox stops holding secrets, the login door stops answering forever, and the board loses an item that was never a task](#d-242--2026-08-24--closing-the-security-ledger-the-sandbox-stops-holding-secrets-the-login-door-stops-answering-forever-and-the-board-loses-an-item-that-was-never-a-task)
+- [D-243 — 2026-08-24 — Wave 2 opens with the HTTP MCP transport, and a live run caught the design flaw three unit tests had agreed to miss](#d-243--2026-08-24--wave-2-opens-with-the-http-mcp-transport-and-a-live-run-caught-the-design-flaw-three-unit-tests-had-agreed-to-miss)
 
 ## By theme
 
@@ -552,7 +553,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18627,3 +18628,91 @@ login is auto-detected, which is `.env.example`'s option 3 doing exactly what it
 says.
 
 **Nothing is now owed on this line.** Wave 2 is unblocked.
+
+## D-243 — 2026-08-24 — Wave 2 opens with the HTTP MCP transport, and a live run caught the design flaw three unit tests had agreed to miss
+
+**Decision.** `Connection.transport` gains `'http'` beside `builtin` and
+`stdio`: a remote MCP server reached over streamable HTTP, addressed by `url`
+and credentialed by `headers`.
+
+### Why this part of Wave 2 first
+
+Wave 2 lists four things, and they are not equal. **The transport largely
+subsumes "business-system doors"**: a vendor that already publishes an MCP
+server becomes a catalog entry with no code at all, where a hand-written door
+is a day's work per service. It is also the only one of the four that
+supersedes nothing — it carries reads and tools, never sends, so D-075 stands
+untouched.
+
+**Browser acting tools were ranked last and should stay there.** Clicking
+*submit* on a website is a session changing someone else's state with no
+outbox and no approval, which is D-075's *not-an-actor* clause superseded
+through a side door — and Wave 4 is where acting belongs, behind the acts
+ledger that is deliberately not built. D-035 also *measured* the browser's
+value as lower than the case made for it.
+
+`sse` is deliberately absent. The SDK accepts it, it is the legacy shape of the
+same idea, and adding it is one line on the day something we want speaks only
+that. Shipping it now would be a branch with no caller. A test pins the absence
+so it reads as a decision rather than an oversight.
+
+### The credential takes D-242's path, from the first day rather than after someone notices
+
+An `Authorization` header **is** a bearer token, so it is the same seam
+`.session.json` had: `${NAME}` in the config that lands in the sandbox, value
+over stdin, filled in the runner. The leak test was extended to cover `http` in
+the same commit that added it — the first time in this line that a seam was
+closed in the same breath as the surface that opens it.
+
+### The flaw a live run found and three unit tests agreed to miss
+
+The first cut matched a placeholder **only when it was the whole value** —
+`Authorization: '${TOKEN}'`. Every unit test passed. The live run then showed
+the far end receiving the literal string `Bearer ${DESK_TOKEN}` and answering
+401, because **no real API uses the bare shape**: an auth header is a prefix
+*and* a placeholder.
+
+The tests passed because I chose the fixture, and I chose one that suited the
+code. That is D-237's rule for the third time in a day — *a negative example
+only tests a rule if it would fail without it* — arriving in its most
+uncomfortable form, since here the fixture was not merely weak but **unlike
+anything real**. The rule now matches `${NAME}` anywhere in the value, which is
+what `expandArgs` had done correctly since D-078; the same decision reached
+twice now reads the same way in both places. The fixtures were rewritten to
+`Bearer ${DESK_TOKEN}` with a comment saying why, so the next person cannot
+quietly restore the shape that passes.
+
+**A header naming an unset secret is dropped entirely, never sent
+half-filled.** `Authorization: Bearer ` is a request that looks authenticated
+and is not, and the error it earns at the far end says nothing about the
+missing key.
+
+### Evidence
+
+`scripts/prove-http-mcp.mjs` — **6/6**, and it is a live proof rather than a
+mock: it stands up a real MCP server over streamable HTTP, builds the config
+with the shipped `toMcpServers`, spawns the **real** runner, and lets the
+server check `Authorization` for itself, so a broken round trip fails as a 401
+from a third party rather than as an assertion written to pass.
+
+- the token is **not** in `.session.json`, and the header there is `${NAME}`
+- the SDK reached the server and called `desk_echo`
+- the far end authorized 5 requests, `Authorization` an **exact match**
+- the tool's answer came back into the session: `"desk saw: wave 2"`
+
+Typecheck clean. Server **2,155** across 89 files (from 2,144), web **333**.
+
+**One process note, and it cost two runs.** Stateless streamable HTTP needs a
+**fresh** `McpServer` and transport per request; one shared instance answers
+`initialize` with a clean 200 and then 500s on everything after. The agent SDK
+reports that only as `mcp_servers: [{status: "failed"}]` with no reason, and
+the tool simply is not in the session's list — a symptom that reads exactly
+like *our* config being wrong. What found it was the fixture server's own
+request log (`200, 500, 500, 500`), after a raw `curl` of `initialize`
+succeeded and proved the server was not the suspect the SDK made it look like.
+**When a third party reports a bare failure, instrument the third party.**
+
+**No catalog entry ships with this.** The transport is proven and nothing uses
+it yet, because *which* remote MCP server to adopt first depends on what Brian
+actually runs his business on — that is a decision, and this line does not
+start those in code.

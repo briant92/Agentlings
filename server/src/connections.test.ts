@@ -8,6 +8,7 @@ import {
   resolveForJob,
   toMcpServers,
   type Connection,
+  type McpServerSpec,
   sharingSecrets,
 } from './connections';
 
@@ -154,6 +155,26 @@ describe('expandArgs', () => {
   });
 });
 
+/** Narrow the union in a test without repeating the assertion at every call. */
+const stdio = (s: McpServerSpec): Extract<McpServerSpec, { type: 'stdio' }> => {
+  if (s.type !== 'stdio') throw new Error(`expected a stdio server, got ${s.type}`);
+  return s;
+};
+const http = (s: McpServerSpec): Extract<McpServerSpec, { type: 'http' }> => {
+  if (s.type !== 'http') throw new Error(`expected an http server, got ${s.type}`);
+  return s;
+};
+
+/** A remote MCP server: the Wave 2 transport, credentialed by a header. */
+const DESK: Connection = {
+  name: 'desk',
+  label: 'Business desk',
+  transport: 'http',
+  url: 'https://mcp.example.com/v1',
+  headers: { Authorization: 'Bearer ${DESK_TOKEN}', 'X-Api-Version': '2026-01-01' },
+  secrets: { DESK_TOKEN: 'API token for the desk' },
+};
+
 describe('toMcpServers', () => {
   it('names only the declared secrets, as placeholders', () => {
     const servers = toMcpServers([TRACKER], { TRACKER_TOKEN: 'abc', UNRELATED: 'leak-me' });
@@ -163,11 +184,11 @@ describe('toMcpServers', () => {
       args: ['-y', 'some-mcp-server'],
       env: { TRACKER_TOKEN: '${TRACKER_TOKEN}' },
     });
-    expect(servers.tracker.env).not.toHaveProperty('UNRELATED');
+    expect(stdio(servers.tracker).env).not.toHaveProperty('UNRELATED');
   });
 
   it('omits a secret with no value, rather than naming one the runner cannot resolve', () => {
-    expect(toMcpServers([TRACKER], {}).tracker.env).toEqual({});
+    expect(stdio(toMcpServers([TRACKER], {}).tracker).env).toEqual({});
   });
 
   it('does not try to spawn the builtin', () => {
@@ -188,10 +209,52 @@ describe('toMcpServers', () => {
    * shipping quiet.
    */
   it('never lets a secret VALUE reach the config that lands in the sandbox', () => {
-    const env = { TRACKER_TOKEN: 'sk-live-must-not-appear', UNRELATED: 'leak-me' };
-    const onDisk = JSON.stringify(toMcpServers([TRACKER, WEB], env));
+    const env = {
+      TRACKER_TOKEN: 'sk-live-must-not-appear',
+      DESK_TOKEN: 'bearer-must-not-appear',
+      UNRELATED: 'leak-me',
+    };
+    // Every transport that can carry a credential, in one string, because the
+    // string is what lands on disk. `http` is here from its first day rather
+    // than after somebody notices: an Authorization header is a bearer token
+    // and would have been the second instance of the seam D-242 closed.
+    const onDisk = JSON.stringify(toMcpServers([TRACKER, DESK, WEB], env));
     expect(onDisk).not.toContain('sk-live-must-not-appear');
+    expect(onDisk).not.toContain('bearer-must-not-appear');
     expect(onDisk).not.toContain('leak-me');
+  });
+});
+
+describe('toMcpServers — the http transport (Wave 2)', () => {
+  it('emits the SDK shape, with the credential named rather than filled', () => {
+    expect(toMcpServers([DESK], { DESK_TOKEN: 'bearer-abc' }).desk).toEqual({
+      type: 'http',
+      url: 'https://mcp.example.com/v1',
+      headers: { Authorization: 'Bearer ${DESK_TOKEN}', 'X-Api-Version': '2026-01-01' },
+    });
+  });
+
+  it('keeps a constant header, which is not a secret and has nothing to resolve', () => {
+    const headers = http(toMcpServers([DESK], {}).desk).headers;
+    expect(headers['X-Api-Version']).toBe('2026-01-01');
+  });
+
+  it('DROPS a header whose secret is unset rather than sending an empty one', () => {
+    // `Authorization: Bearer ` is a request that looks authenticated and is
+    // not, and the far end's error would say nothing about the missing key.
+    expect(http(toMcpServers([DESK], {}).desk).headers).not.toHaveProperty('Authorization');
+  });
+
+  it('ignores an http connection with no url, the way stdio ignores one with no command', () => {
+    expect(toMcpServers([{ ...DESK, url: undefined }], { DESK_TOKEN: 'x' })).toEqual({});
+  });
+
+  it('carries no `sse`, because nothing asked for it yet', () => {
+    // Pinned so the absence reads as a decision rather than an oversight
+    // (D-243): the SDK accepts `sse` and adding it is one line the day
+    // something we want speaks only that.
+    const spec = toMcpServers([DESK], { DESK_TOKEN: 'x' }).desk;
+    expect(spec.type).toBe('http');
   });
 });
 
@@ -207,9 +270,22 @@ describe('mcpSecretValues — the half that never touches the sandbox', () => {
     expect(mcpSecretValues([], { TRACKER_TOKEN: 'abc' })).toEqual({});
   });
 
+  it('carries the credential of an http connection too, over the same channel', () => {
+    expect(mcpSecretValues([DESK], { DESK_TOKEN: 'bearer-abc' })).toEqual({
+      DESK_TOKEN: 'bearer-abc',
+    });
+  });
+
+  it('names exactly what an http placeholder asks for, so neither half can drift', () => {
+    const env = { DESK_TOKEN: 'bearer-abc' };
+    const headers = http(toMcpServers([DESK], env).desk).headers;
+    expect(headers.Authorization).toBe('Bearer ${DESK_TOKEN}');
+    expect(mcpSecretValues([DESK], env)).toHaveProperty('DESK_TOKEN');
+  });
+
   it('names exactly what the placeholders ask for, so neither half can drift', () => {
     const env = { TRACKER_TOKEN: 'abc' };
-    const placeholders = Object.values(toMcpServers([TRACKER], env).tracker.env);
+    const placeholders = Object.values(stdio(toMcpServers([TRACKER], env).tracker).env);
     const values = mcpSecretValues([TRACKER], env);
     expect(placeholders).toEqual(Object.keys(values).map((n) => `\${${n}}`));
   });

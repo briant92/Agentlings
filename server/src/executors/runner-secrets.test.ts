@@ -67,6 +67,49 @@ describe('resolveSecrets', () => {
     expect(resolveSecrets(plain, {}).s.env).toEqual({ MODE: 'headless' });
   });
 
+  /**
+   * The http transport (Wave 2). An `Authorization` header is a bearer token,
+   * so it takes exactly the path a stdio server's `env` takes — placeholder in
+   * `.session.json`, value over stdin. Same problem, two names.
+   */
+  const remote = {
+    desk: {
+      type: 'http',
+      url: 'https://mcp.example.com/v1',
+      // `Bearer ${NAME}`, not a bare `${NAME}`: the bare shape is what the
+      // first version of this fixture used, it passed, and a live run then
+      // showed the far end receiving the literal text. A fixture no real API
+      // would produce tests nothing (D-237).
+      headers: { Authorization: 'Bearer ${DESK_TOKEN}', 'X-Api-Version': '2026-01-01' },
+    },
+  };
+
+  it('fills an http header from the same secrets', () => {
+    expect(resolveSecrets(remote, { DESK_TOKEN: 'bearer-abc' }).desk.headers).toEqual({
+      Authorization: 'Bearer bearer-abc',
+      'X-Api-Version': '2026-01-01',
+    });
+  });
+
+  it('keeps the url and type', () => {
+    const out = resolveSecrets(remote, { DESK_TOKEN: 'bearer-abc' }).desk;
+    expect(out.type).toBe('http');
+    expect(out.url).toBe('https://mcp.example.com/v1');
+  });
+
+  it('DROPS an unresolvable header rather than sending `Authorization: ${DESK_TOKEN}`', () => {
+    const headers = resolveSecrets(remote, {}).desk.headers;
+    expect(headers).toEqual({ 'X-Api-Version': '2026-01-01' });
+    expect(JSON.stringify(headers)).not.toContain('${');
+  });
+
+  it('does not grow an `env` on an http server, or `headers` on a stdio one', () => {
+    // Two shapes through one function is how a spec ends up carrying both and
+    // the SDK rejecting it.
+    expect(resolveSecrets(remote, {}).desk).not.toHaveProperty('env');
+    expect(resolveSecrets(servers, {}).tracker).not.toHaveProperty('headers');
+  });
+
   it('handles a server with no env, and no servers at all', () => {
     expect(resolveSecrets({ s: { command: 'npx' } }, {}).s.env).toEqual({});
     expect(resolveSecrets({}, {})).toEqual({});

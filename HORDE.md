@@ -3,12 +3,13 @@
 The open board for the coverage-and-capability line. Opened on demand, never
 imported — the same shape as `SPATIAL.md` and `RECONCILE.md` before it.
 
-**The line is complete through Wave 0 and nothing is owed. §4 is the pick-up
-point, and every wave in it starts with a decision that is Brian's — none of
-them begins in code.**
+**Wave 0 is complete and nothing is owed. Wave 2 is open: its HTTP MCP
+transport landed in D-243. §4 is the pick-up point — the remaining parts are
+listed there in the order they should be taken, and the next one needs a
+decision that is Brian's.**
 
-Written 2026-08-24, at `ddbd218`; updated through D-242. The line so far is
-D-235 → D-242; the plan it
+Written 2026-08-24, at `ddbd218`; updated through D-243. The line so far is
+D-235 → D-243; the plan it
 implements is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
@@ -24,7 +25,7 @@ the measurement behind it in *How Far Can the Horde Go*
 | Coverage | 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties |
 | Calibration | 52/58 (90 %) against the hand grades, both overclaim cells empty |
 | Intake | 53/54, 0 misses |
-| Suites | server 2,144 across 89 files · web 333 · typecheck clean |
+| Suites | server 2,155 across 89 files · web 333 · typecheck clean |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed and pushed. Nothing is in flight.
@@ -51,6 +52,10 @@ Everything below is committed and pushed. Nothing is in flight.
 - **D-242** — **the security ledger closed**: the `.session.json` seam fixed
   over **stdin**, a six-try login lockout, and one board item struck as
   something that was never a task. Wave 2 unblocked.
+- **D-243** — **Wave 2 opens**: `transport: http`, a remote MCP server over
+  streamable HTTP. Chosen because it largely subsumes business-system doors
+  and supersedes nothing. Proven 6/6 against a real MCP server; no catalog
+  entry yet, because which one to adopt is a decision.
 
 ---
 
@@ -177,11 +182,26 @@ plan's order, with what each reverses:
 
 | Wave | What it opens | Supersedes |
 |---|---|---|
-| 2 | Event triggers; HTTP MCP transport; business-system doors; browser acting tools | extends D-103; D-053/D-035 for the browser half |
+| 2 | Event triggers; ~~HTTP MCP transport~~ **done, D-243**; business-system doors (mostly catalog now); browser acting tools **(ranked last — see below)** | extends D-103; D-053/D-035 for the browser half |
 | 3 | Two-way conversation — the mail loop first | D-075's *not-a-chat* clause only |
 | 4 | Deploy / publish / file; e-signature; then money in three steps | D-075's *not-an-actor*; D-229's signing half; **D-219 by its own reopen clause** |
 | 5 | Media, voice, CAD out | **D-204 when its own demand test passes** |
 | 6 | Coordination — a manager trade | nothing: **D-197's bar is re-run on its named triggers** |
+
+**Wave 2's remaining three, in the order they should be taken (D-243):**
+
+1. **Event triggers** — extends D-103 from calendar cadences to something
+   happening. Mail arriving is the obvious first, since `mail` already reads.
+   Note it pulls Wave 3's decision forward.
+2. **Business-system doors** — now mostly *catalog* work, because a vendor
+   publishing an MCP server is a `transport: 'http'` entry with no code. **The
+   open question is which one**, and that depends on what Brian actually runs
+   his business on.
+3. **Browser acting tools — last, and deliberately.** `click`/`type`/`submit`
+   is a session changing someone else's state with **no outbox and no
+   approval**, which supersedes D-075's *not-an-actor* clause through a side
+   door when Wave 4 is where acting belongs, behind the acts ledger. D-035 also
+   *measured* the browser's value as lower than the case made for it.
 
 The generalization the acting waves rest on — the **acts ledger** (D-075's
 outbox made typed: compose → validate → review → replay → audit) and the

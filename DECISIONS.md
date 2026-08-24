@@ -18712,6 +18712,28 @@ request log (`200, 500, 500, 500`), after a raw `curl` of `initialize`
 succeeded and proved the server was not the suspect the SDK made it look like.
 **When a third party reports a bare failure, instrument the third party.**
 
+### The mutation pass — seven aimed, seven killed, and a new way to be lied to
+
+Both halves of the placeholder rule anchored to whole-value-only die (the
+header rule and the runner's fill); filling real values into the headers dies
+on the leak test with three failures; sending a half-filled header dies;
+passing an unresolvable placeholder through dies; and dropping `http` from
+`mcpSecretValues` dies.
+
+**One reported SURVIVED and was lying.** The mutation that fills real values
+into headers came back green the first time. It had applied — the hash guard
+said so — but perl's replacement had eaten the backslash in `\w`, so the
+substitution landed as `(w+)` and matched nothing. A textually-changed,
+semantically-inert mutant reads exactly like a gap in the tests.
+
+This is the D-224 family with a new member, and the general form is worth more
+than the instance: **the hash guard proves a change happened, not that the
+change means what you intended.** The pass now prints the mutated line itself
+before running the suite — which is also what caught a second mislabelling in
+the same run, where the mutation meant for the header rule landed on
+`expandArgs` instead, because that function's identical call site comes first
+in the file. Both were re-aimed and both died.
+
 **No catalog entry ships with this.** The transport is proven and nothing uses
 it yet, because *which* remote MCP server to adopt first depends on what Brian
 actually runs his business on — that is a decision, and this line does not

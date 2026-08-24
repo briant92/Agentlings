@@ -17723,5 +17723,35 @@ both overclaim cells empty; `bench:coverage` re-run over the installed O*NET
 30.0 board (1,016 profiles, 23.5 s). The starter set's two canaries carried
 the change: the roster assertion was updated to name the four with their
 reasons, and each new trade gained a reach row it must win on its own
-vocabulary — the bar the clerk's two anchor tests set. Mutation pass after
-committing, below.
+vocabulary — the bar the clerk's two anchor tests set.
+
+**The mutation pass, after committing (D-021), and what it caught.** Five
+mutations, and the first two attempts *survived* — which is the whole reason
+the rule exists, so both are recorded rather than replaced with kills:
+
+| | Mutation | Result |
+|---|---|---|
+| — | one redundant term (`'standard operating procedure*'`) gutted | **survived** — the pinned duty carries a second term of the same power, so no single term is load-bearing. Redundancy by design; the test pins the power, not the word |
+| M1 | the whole `procedures` power deleted | killed — *vouches for the operations record* |
+| M2 | the `supply` power's roles reordered to `['analyst', 'logistics']` | killed — *vouches for the supply comparison* (`chooseRole` gives the first-named trade full weight) |
+| M3 | the `planning` power demoted to `kind: 'partial'` | killed — *vouches for the plan on paper* |
+| M4 | `'scan network*'` added to the security terms | killed — *never for reaching a running system*, which is the guard that matters most |
+| M5 | `reorder points` / `stock levels` stripped from the logistics role file | **survived**, then killed after a fix |
+
+M5 is the finding. The reach row still passed with the words it was meant to
+test removed, because the role file says `supply` and `inventory` further up
+and the sentence coasted on those — D-041's canary lesson in a new place, and
+exactly what the clerk's *"wins on the calendar word, not on brief alone"*
+tests were written to stop. The fix is one test in the same shape: each of the
+four must win its sentence **and** own an anchor word in `matchedTerms`
+(`specification`, `reorder`, `milestones`, `secrets`). With it, M5 dies.
+
+M3 also caught a hazard already on the books: the first attempt was a
+`\n`-anchored perl replace on a CRLF file and was a **silent no-op** — the
+suite passed because nothing had changed. Every mutation here hashes the file
+before and after and prints both, which is the only reason that was visible
+(D-224).
+
+Final state after the pass: typecheck clean, server **2,067** and web **333**
+green, intake 53/54, calibration 52/58 with the overclaim cells empty,
+coverage 16 % / 24 % / 61 %.

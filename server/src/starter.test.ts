@@ -220,6 +220,29 @@ describe('shipped starter set', () => {
   });
 
   /**
+   * The Wave 1 trades' anchor test, and it exists because a mutation caught
+   * the reach rows coasting (D-235's own mutation pass): stripping "reorder
+   * points" and "stock levels" out of the logistics role left its reach row
+   * passing anyway, on `supply` and `inventory` further up the file. A row
+   * that survives the removal of the words it is meant to be testing is
+   * measuring the wrong thing — the same lesson the clerk's two anchor tests
+   * were written for. Each trade must win its sentence on a word of its own.
+   */
+  it('each Wave 1 trade wins its sentence on its own vocabulary, not on the company it keeps', () => {
+    const anchors: [string, string, string][] = [
+      ['check these test results against the specification', 'operations', 'specification'],
+      ['work out our reorder points from the stock records', 'logistics', 'reorder'],
+      ['break this project into a work breakdown with milestones', 'planner', 'milestones'],
+      ['check the repo for committed secrets and weak permissions', 'security', 'secrets'],
+    ];
+    for (const [text, role, anchor] of anchors) {
+      const result = suggest(text);
+      expect(result.role, `"${text}"`).toBe(role);
+      expect(result.matchedTerms, `${role} must own "${anchor}"`).toContain(anchor);
+    }
+  });
+
+  /**
    * This used to be "design me a logo and pick brand colours", and that is
    * exactly what shipping a designer overturned — it now reaches `designer`,
    * correctly. The assertion is still worth keeping, so it moved to work the

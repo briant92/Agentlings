@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   describe as describeConnections,
   expandArgs,
+  mcpSecretValues,
   mcpToolNames,
   missingSecrets,
   resolveForJob,
@@ -154,19 +155,63 @@ describe('expandArgs', () => {
 });
 
 describe('toMcpServers', () => {
-  it('passes only the declared secrets through to the server', () => {
+  it('names only the declared secrets, as placeholders', () => {
     const servers = toMcpServers([TRACKER], { TRACKER_TOKEN: 'abc', UNRELATED: 'leak-me' });
     expect(servers.tracker).toMatchObject({
       type: 'stdio',
       command: 'npx',
       args: ['-y', 'some-mcp-server'],
-      env: { TRACKER_TOKEN: 'abc' },
+      env: { TRACKER_TOKEN: '${TRACKER_TOKEN}' },
     });
     expect(servers.tracker.env).not.toHaveProperty('UNRELATED');
   });
 
+  it('omits a secret with no value, rather than naming one the runner cannot resolve', () => {
+    expect(toMcpServers([TRACKER], {}).tracker.env).toEqual({});
+  });
+
   it('does not try to spawn the builtin', () => {
     expect(toMcpServers([WEB], {})).toEqual({});
+  });
+
+  /**
+   * The seam the security trade found (D-240) and the reason this function
+   * stopped filling values in: what it returns is serialized into
+   * `.session.json` **inside the sandbox the agentling reads all job long**.
+   * It leaked nothing at the time — `browser` is the only stdio connection in
+   * the catalog and it declares no secrets — but that was a fact about the
+   * catalog, not about the code, and Wave 2 is what changes the catalog.
+   *
+   * Written against the serialized string rather than the object, because that
+   * is what actually lands on disk, and it covers `args` too — so a future
+   * connection that puts a token in an argument fails here rather than
+   * shipping quiet.
+   */
+  it('never lets a secret VALUE reach the config that lands in the sandbox', () => {
+    const env = { TRACKER_TOKEN: 'sk-live-must-not-appear', UNRELATED: 'leak-me' };
+    const onDisk = JSON.stringify(toMcpServers([TRACKER, WEB], env));
+    expect(onDisk).not.toContain('sk-live-must-not-appear');
+    expect(onDisk).not.toContain('leak-me');
+  });
+});
+
+describe('mcpSecretValues — the half that never touches the sandbox', () => {
+  it('carries the real values for the granted stdio connections', () => {
+    expect(mcpSecretValues([TRACKER], { TRACKER_TOKEN: 'abc', UNRELATED: 'leak-me' })).toEqual({
+      TRACKER_TOKEN: 'abc',
+    });
+  });
+
+  it('is empty for a builtin, and for a job that grants no stdio connection at all', () => {
+    expect(mcpSecretValues([WEB], { TRACKER_TOKEN: 'abc' })).toEqual({});
+    expect(mcpSecretValues([], { TRACKER_TOKEN: 'abc' })).toEqual({});
+  });
+
+  it('names exactly what the placeholders ask for, so neither half can drift', () => {
+    const env = { TRACKER_TOKEN: 'abc' };
+    const placeholders = Object.values(toMcpServers([TRACKER], env).tracker.env);
+    const values = mcpSecretValues([TRACKER], env);
+    expect(placeholders).toEqual(Object.keys(values).map((n) => `\${${n}}`));
   });
 });
 

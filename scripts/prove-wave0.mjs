@@ -19,7 +19,11 @@ import { WebSocket } from 'ws';
 
 const BASE = 'http://127.0.0.1:4600';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LEVEL = process.argv[2] ?? 'training-ground';
+const args = process.argv.slice(2);
+// Proving the lockout necessarily LOCKS THE DOOR for five minutes, so it is
+// opt-in rather than part of the routine run. A restart clears it.
+const WANT_LOCKOUT = args.includes('--lockout');
+const LEVEL = args.find((a) => !a.startsWith('--')) ?? 'training-ground';
 
 let failures = 0;
 const check = (label, ok, detail) => {
@@ -155,6 +159,30 @@ check('a .ts.net /ws handshake is served', tailnetSocket.bytes > 0, `${tailnetSo
 // ── 9. logging out ──────────────────────────────────────────────────────────
 const out = await fetch(`${BASE}/api/session`, { method: 'DELETE', headers: { cookie } });
 check('DELETE /api/session clears the cookie', /Max-Age=0/i.test(out.headers.get('set-cookie') ?? ''));
+
+// ── 10. the lockout, last and opt-in, because proving it locks the door ─────
+if (WANT_LOCKOUT) {
+  const tries = [];
+  for (let i = 0; i < 8; i++) {
+    const r = await fetch(`${BASE}/api/session`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password: `wrong-${i}` }),
+    });
+    tries.push(r.status);
+    if (r.status === 429) break;
+  }
+  check('repeated wrong passwords stop being answered 401', tries.includes(429), tries.join(','));
+  // The right password must ALSO be refused while locked, or the lockout is
+  // theatre: an attacker who guesses correctly on try seven still gets in.
+  const locked = await fetch(`${BASE}/api/session`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  check('and the RIGHT password is refused too while locked', locked.status === 429, `${locked.status}`);
+  console.log('\nNOTE: the door is now locked for 5 minutes. Restart the server to clear it.');
+}
 
 console.log(failures === 0 ? '\nPROVEN' : `\nNOT PROVEN — ${failures} check(s) failed`);
 process.exit(failures === 0 ? 0 : 1);

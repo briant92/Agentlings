@@ -138,6 +138,35 @@ describe('the runner protocol, wired', () => {
  * the brief the run reads names it — none of which a unit on the module
  * could see, and all of which mutation 4 proved unpinned.
  */
+/**
+ * The stdio connections' secrets travel on stdin rather than in the config
+ * file, because that file lives in the sandbox the agentling reads all job
+ * long (D-240's seam). The unit tests pin what the config no longer carries;
+ * what only a wired test can see is that the channel is **written and ended**
+ * — the runner reads stdin to EOF, so a caller that opened the pipe and never
+ * closed it would leave every job hanging forever with no error to read.
+ */
+describe('the secrets channel, wired', () => {
+  it('hands the runner a JSON object on stdin and closes it, even with nothing to send', async () => {
+    const { exec, sandbox } = setUp(`
+      const chunks = [];
+      for await (const c of process.stdin) chunks.push(c);
+      const raw = Buffer.concat(chunks).toString('utf8').trim();
+      writeFileSync(config.cwd + '/RESULT.md', 'did it');
+      emit({ type: 'result', summary: 'stdin:' + raw, meter: { costUsd: 0.01, turns: 1 } });
+    `);
+    const result = await exec.run(job('j-secrets'), sandbox);
+
+    // It finished at all, which is the hang check: this await would time out
+    // rather than fail if stdin were left open.
+    expect(result.summary).toBe('stdin:{}');
+
+    // And the config beside it names no secret, because there is none to name.
+    const config = JSON.parse(readFileSync(path.join(sandbox, '.session.json'), 'utf8'));
+    expect(config.mcpServers).toEqual({});
+  });
+});
+
 describe('the roll-forward, wired', () => {
   const prior: ReconciliationRollForward = {
     jobId: 'prior001',

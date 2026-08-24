@@ -251,6 +251,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-239 — 2026-08-24 — The cross-origin hole the crew found in us, closed on both surfaces: an Origin check on the socket and on every request whose effect is the point](#d-239--2026-08-24--the-cross-origin-hole-the-crew-found-in-us-closed-on-both-surfaces-an-origin-check-on-the-socket-and-on-every-request-whose-effect-is-the-point)
 - [D-240 — 2026-08-24 — D-239 proven live and the security trade re-run: the wall fix works, the advisories are unreachable, and the seam that is one commit away from a high-severity leak](#d-240--2026-08-24--d-239-proven-live-and-the-security-trade-re-run-the-wall-fix-works-the-advisories-are-unreachable-and-the-seam-that-is-one-commit-away-from-a-high-severity-leak)
 - [D-241 — 2026-08-24 — Wave 0's credential: a password for an HttpOnly cookie, chosen by the socket, off until `.env` arms it — and the seam that would have handed it to every session](#d-241--2026-08-24--wave-0s-credential-a-password-for-an-httponly-cookie-chosen-by-the-socket-off-until-env-arms-it--and-the-seam-that-would-have-handed-it-to-every-session)
+- [D-242 — 2026-08-24 — Closing the security ledger: the sandbox stops holding secrets, the login door stops answering forever, and the board loses an item that was never a task](#d-242--2026-08-24--closing-the-security-ledger-the-sandbox-stops-holding-secrets-the-login-door-stops-answering-forever-and-the-board-loses-an-item-that-was-never-a-task)
 
 ## By theme
 
@@ -551,7 +552,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18478,3 +18479,82 @@ rather than glossed.
 passphrase in use is 42.5 bits and the loopback bind bounds who can reach the
 port at all, so it is not urgent — but it is a real gap this entry introduced
 and it is named here rather than left for someone to find.
+
+## D-242 — 2026-08-24 — Closing the security ledger: the sandbox stops holding secrets, the login door stops answering forever, and the board loses an item that was never a task
+
+**Decision.** The three things D-240 and D-241 left owed are closed together,
+because they are one shape: small, security, and blocking something.
+
+### 1. The `.session.json` seam — secrets leave the sandbox
+
+`toMcpServers` filled real secret values into `mcpServers[].env`, and that
+object is serialized into `.session.json` **inside the sandbox the agentling
+reads all job long** with `Read` and `Bash`.
+
+It leaked nothing while it stood, and that was verified rather than assumed:
+`browser` is the only `stdio` connection in the catalog, it declares no
+secrets, so the map was empty, and the security trade opened its own job's file
+and found it so (D-240). But that is a fact about **today's catalog, not about
+the function** — Wave 2 adds business-system doors, and the first one declaring
+a secret would have made this high severity with no code change at all.
+
+**The board's prescribed fix does not work, and finding that out was the
+useful part.** It said: write `${NAME}` placeholders and resolve them in the
+runner *from the env it was handed*. But `launderedEnv` strips every connection
+secret from the child on purpose (D-217), so the runner is not handed them —
+and putting them back would trade a file the session can read for an
+environment it can also read. Worse, actually: a `Bash` child inherits the
+runner's environment directly, and on Linux `/proc/<pid>/environ` exposes even
+the parent's.
+
+So the values travel on **stdin**, written once at spawn and held in a variable
+no tool reaches. `toMcpServers` now emits placeholders; `mcpSecretValues` is the
+other half and never touches disk. Three properties made it safe to land:
+
+- **stdin was free** — the spawn was `['ignore', 'pipe', 'pipe']`.
+- **An `ignore`d stdin reads as immediate EOF**, so `refine.ts`, which spawns
+  the same runner and sends nothing, needed no change at all.
+- **It is always written and always ended.** A pipe opened and left open would
+  hang every job forever with no error to read — which is why the wired test
+  below exists rather than only the unit tests.
+
+The regression test is deliberately written against the **serialized string**
+rather than the object, because that string is what lands on disk — so it also
+covers `args`, and a future connection that puts a token in an argument fails
+there rather than shipping quiet.
+
+### 2. `POST /api/session` stops answering forever
+
+D-241 introduced a login endpoint with unlimited guesses and said so rather
+than leaving it to be found. Six wrong passwords now lock the door for five
+minutes.
+
+- **Not per-IP, and the reason is the same measurement that killed Wave 0's
+  option C:** every request arrives on loopback, the runner's and the browser's
+  and a phone's through `tailscale serve`, which proxies into the same
+  `127.0.0.1`. An address here would be one bucket wearing a disguise. One
+  counter, honestly named — the cost being that a wrong guess from anywhere
+  locks the door for everyone, which for a one-user app on a private tailnet is
+  five minutes of waiting against an unbounded guessing rate.
+- **The lockout is checked before the password is read**, so a locked door
+  costs a request and reveals nothing about the guess.
+- **The right password is refused while locked too.** Otherwise the lockout is
+  theatre: an attacker guessing correctly on try seven still gets in.
+- **A correct password clears the count**, so a typo before it costs nothing.
+- **In memory, so a restart clears it.** A real limit, written down rather than
+  defended: an attacker who can restart the server has already won by a shorter
+  route.
+
+### 3. The cost-shape re-read is struck from the board
+
+It asked for a re-read of the four trades' cost shape, on the observation that
+`logistics` finished in 4 turns for 49c and might belong on the cheap model.
+The ledger still holds **one run each** — operations 14t/$0.74, logistics
+4t/$0.49, planner 17t/$1.42, security 24t/$1.58 plus the cut $0 run. One run is
+not a measurement and no amount of scheduling makes it one: that data arrives
+by *using* the app. It was never a task, and a board item that cannot be worked
+is worse than no item, because it reads as debt.
+
+### Evidence
+
+Typecheck clean. Server **2,129** across 88 files (from 2,117), web **333**.

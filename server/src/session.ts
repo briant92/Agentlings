@@ -245,3 +245,65 @@ export function requestIsSecure(
 
 export const loginRefusal = 'That password was not accepted.';
 export const gateRefusal = 'Sign in to reach this.';
+
+/**
+ * How many wrong passwords before the door stops answering, and for how long.
+ *
+ * Small numbers on purpose. There is one user and they know their own
+ * password, so a handful of tries is the whole legitimate need — while an
+ * attacker's whole method is volume. Six is generous for a typo and useless
+ * for a guess.
+ */
+export const LOGIN_ATTEMPTS = 6;
+export const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+
+/**
+ * A fixed-window counter of failed logins.
+ *
+ * **Not per-IP.** Every request arrives on loopback — the runner's, the
+ * browser's, and a phone's through `tailscale serve`, which proxies into the
+ * same 127.0.0.1 (the measurement that killed Wave 0's option C). So an
+ * address here would be one bucket wearing a disguise, and per-IP would read
+ * as a stronger claim than the code can keep. One counter, honestly named.
+ *
+ * The cost of that: a wrong guess from anywhere locks the door for everyone,
+ * which for a one-user app on a private tailnet is the right trade — five
+ * minutes of waiting versus an unbounded guessing rate.
+ *
+ * In memory, so a restart clears it. That is a real limit and is written down
+ * rather than defended: an attacker who can restart the server has already won
+ * by a shorter route.
+ */
+export interface LoginGate {
+  failures: number;
+  until: number;
+}
+
+export function newLoginGate(): LoginGate {
+  return { failures: 0, until: 0 };
+}
+
+/** Seconds left on a lockout, or 0 when the door is open. */
+export function lockoutRemaining(gate: LoginGate, now: number): number {
+  return gate.until > now ? Math.ceil((gate.until - now) / 1000) : 0;
+}
+
+/** Records a wrong password, locking the door once the allowance is spent. */
+export function noteLoginFailure(gate: LoginGate, now: number): void {
+  gate.failures += 1;
+  if (gate.failures >= LOGIN_ATTEMPTS) {
+    gate.until = now + LOGIN_LOCKOUT_MS;
+    gate.failures = 0;
+  }
+}
+
+/** A correct password clears the count — a typo before it must not still cost. */
+export function noteLoginSuccess(gate: LoginGate): void {
+  gate.failures = 0;
+  gate.until = 0;
+}
+
+export const lockoutRefusal = (seconds: number): string =>
+  `Too many wrong passwords. Try again in ${Math.ceil(seconds / 60)} minute${
+    Math.ceil(seconds / 60) === 1 ? '' : 's'
+  }.`;

@@ -9,11 +9,53 @@ function emit(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
 }
 
+/**
+ * The stdio connections' secrets, handed over on stdin as one JSON object and
+ * held only here.
+ *
+ * Read before the SDK is even imported, so there is no window in which a tool
+ * could exist and the values could still be somewhere it reaches. They are
+ * deliberately NOT in the config file — that file lives in the sandbox the
+ * agentling reads all job long — and deliberately NOT in the environment,
+ * which `launderedEnv` strips for the same reason and which a `Bash` child
+ * inherits anyway.
+ *
+ * An `ignore`d stdin reads as immediate EOF, so a caller that sends nothing
+ * (the close-out pass, `refine.ts`) gets `{}` rather than hanging.
+ */
+async function readSecrets() {
+  const chunks = [];
+  for await (const chunk of process.stdin) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+/** Fill `${NAME}` from the secrets read off stdin; leave anything unknown alone. */
+function resolveSecrets(servers, secrets) {
+  const out = {};
+  for (const [name, server] of Object.entries(servers)) {
+    const env = {};
+    for (const [key, value] of Object.entries(server.env ?? {})) {
+      const match = /^\$\{(\w+)\}$/.exec(String(value));
+      const resolved = match ? secrets[match[1]] : value;
+      if (resolved) env[key] = resolved;
+    }
+    out[name] = { ...server, env };
+  }
+  return out;
+}
+
 try {
   const config = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+  const secrets = await readSecrets();
   const { query, createSdkMcpServer, tool } = await import('@anthropic-ai/claude-agent-sdk');
 
-  const mcpServers = { ...(config.mcpServers ?? {}) };
+  const mcpServers = resolveSecrets(config.mcpServers ?? {}, secrets);
   const allowedTools = [...(config.allowedTools ?? [])];
 
   // The 'web' connection is ours and runs in-process: it returns readable

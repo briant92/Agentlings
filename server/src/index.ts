@@ -51,8 +51,13 @@ import {
   clearedCookie,
   gateEnabled,
   gateRefusal,
+  lockoutRefusal,
+  lockoutRemaining,
   loginRefusal,
   mintToken,
+  newLoginGate,
+  noteLoginFailure,
+  noteLoginSuccess,
   passwordAccepted,
   requestAllowed,
   requestIsSecure,
@@ -725,10 +730,21 @@ app.get('/api/session', (c) =>
  * one is set, because a drawer inside the app is behind the very gate it
  * would be configuring.
  */
+/** Failed-login count for the whole server. Why not per-IP: see `session.ts`. */
+const loginGate = newLoginGate();
+
 app.post('/api/session', async (c) => {
   const body = await c.req.json<{ password?: unknown }>().catch(() => ({}) as { password?: unknown });
   if (!gateEnabled()) return c.json({ required: false, authed: true });
-  if (!passwordAccepted(body.password)) return c.json({ error: loginRefusal }, 401);
+  const waiting = lockoutRemaining(loginGate, Date.now());
+  // Checked before the password is even looked at, so a locked door costs an
+  // attacker a request and tells them nothing about the guess they made.
+  if (waiting > 0) return c.json({ error: lockoutRefusal(waiting) }, 429);
+  if (!passwordAccepted(body.password)) {
+    noteLoginFailure(loginGate, Date.now());
+    return c.json({ error: loginRefusal }, 401);
+  }
+  noteLoginSuccess(loginGate);
   const secure = requestIsSecure(c.req.header('x-forwarded-proto'), c.req.url);
   c.header('set-cookie', sessionCookie(mintToken(sessionPassword()!, Date.now()), secure));
   return c.json({ required: true, authed: true });

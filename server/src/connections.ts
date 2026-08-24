@@ -248,7 +248,27 @@ export function expandArgs(args: string[], env: Record<string, string | undefine
   return out;
 }
 
-/** MCP server config for the granted stdio connections, secrets filled in. */
+/**
+ * MCP server config for the granted stdio connections, with each secret named
+ * as a `${NAME}` placeholder rather than filled in.
+ *
+ * **This object is serialized into `.session.json` inside the sandbox**, which
+ * the agentling reads all job long with `Read` and `Bash`. Filling real values
+ * in here put every stdio connection's credentials on disk beside the work.
+ * It leaked nothing while it stood — the only stdio connection in the catalog
+ * (`browser`) declares no secrets, so the map was empty, and the security
+ * audit opened its own job's file and confirmed it (D-240) — but that is a
+ * fact about today's catalog, not about this function. Wave 2 adds
+ * business-system doors, and the first one that declares a secret would have
+ * made this high severity with no code change at all.
+ *
+ * The values travel to the runner over **stdin** instead (`mcpSecretValues`).
+ * Not the environment: `launderedEnv` strips connection secrets from the child
+ * on purpose (D-217), and putting them back would trade a file the session can
+ * read for an environment it can also read — on Linux through
+ * `/proc/<pid>/environ`, the parent's included. Stdin is read once at startup
+ * and held in a variable no tool reaches.
+ */
 export function toMcpServers(
   granted: Connection[],
   env: Record<string, string | undefined>,
@@ -261,8 +281,10 @@ export function toMcpServers(
     if (connection.transport !== 'stdio' || !connection.command) continue;
     const secrets: Record<string, string> = {};
     for (const name of Object.keys(connection.secrets ?? {})) {
-      const value = env[name];
-      if (value) secrets[name] = value;
+      // Named only where the value actually exists, so an unset secret stays
+      // absent rather than becoming a placeholder the runner cannot resolve —
+      // the same "optional means absent" rule `expandArgs` follows.
+      if (env[name]) secrets[name] = `\${${name}}`;
     }
     servers[connection.name] = {
       type: 'stdio',
@@ -272,4 +294,28 @@ export function toMcpServers(
     };
   }
   return servers;
+}
+
+/**
+ * The real values behind `toMcpServers`'s placeholders — the half that never
+ * touches the sandbox.
+ *
+ * Only the granted stdio connections' own declared secrets, so the runner is
+ * handed the smallest set that lets it start the servers it was told to start,
+ * and never the whole `.env`. Empty for every job that grants no stdio
+ * connection, which today is every job.
+ */
+export function mcpSecretValues(
+  granted: Connection[],
+  env: Record<string, string | undefined>,
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const connection of granted) {
+    if (connection.transport !== 'stdio' || !connection.command) continue;
+    for (const name of Object.keys(connection.secrets ?? {})) {
+      const value = env[name];
+      if (value) values[name] = value;
+    }
+  }
+  return values;
 }

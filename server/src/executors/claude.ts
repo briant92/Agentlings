@@ -26,6 +26,7 @@ import { folderInventory, organizeBrief } from '../organize';
 import { PRIOR_RECONCILIATION_FILE, reconciliationBrief, wantsReconciliation } from '../reconciliation';
 import { inputShapeOf } from '../inputshape';
 import {
+  mcpSecretValues,
   mcpToolNames,
   resolveForJob,
   secretNames,
@@ -1295,7 +1296,13 @@ export class ClaudeAgentExecutor implements Executor {
     let summary: string;
     let meter: JobMeter;
     try {
-      ({ summary, meter } = await this.runSession(configPath, job.id, onProgress, timeoutMsFor(role)));
+      ({ summary, meter } = await this.runSession(
+        configPath,
+        job.id,
+        onProgress,
+        timeoutMsFor(role),
+        mcpSecretValues(granted, process.env),
+      ));
     } catch (err) {
       // The session died, but the turns before it may have finished the work.
       // Harvest first, then rethrow carrying everything the run did earn.
@@ -1492,12 +1499,19 @@ export class ClaudeAgentExecutor implements Executor {
     jobId: string,
     onProgress?: (detail: string) => void,
     timeoutMs = SESSION_TIMEOUT_MS,
+    secrets: Record<string, string> = {},
   ): Promise<{ summary: string; meter: JobMeter }> {
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [this.runner, configPath], {
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe'],
         env: launderedEnv(secretNames(this.connections())),
       });
+      // The stdio connections' secrets, over the one channel the session
+      // cannot reach: not the config file, which lives in the sandbox it
+      // reads, and not the environment, which its `Bash` children inherit.
+      // Always written and always ended — the runner reads to EOF, so a job
+      // with no stdio connection sends `{}` rather than leaving it waiting.
+      child.stdin?.end(`${JSON.stringify(secrets)}\n`);
       this.running.set(jobId, child);
       // The trail lands beside the config that started the child — the
       // sandbox — and the write-up's lines are tagged as its own pass, so a

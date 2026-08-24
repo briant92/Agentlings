@@ -3,13 +3,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  LOGIN_ATTEMPTS,
+  LOGIN_LOCKOUT_MS,
   PASSWORD_VAR,
   SESSION_COOKIE,
   SESSION_TTL_MS,
   clearedCookie,
   gateEnabled,
   isExempt,
+  lockoutRefusal,
+  lockoutRemaining,
   mintToken,
+  newLoginGate,
+  noteLoginFailure,
+  noteLoginSuccess,
   passwordAccepted,
   readCookie,
   requestAllowed,
@@ -233,6 +240,51 @@ describe('deciding https', () => {
   it('falls back to the URL when nothing fronts the server', () => {
     expect(requestIsSecure(null, 'https://x/api')).toBe(true);
     expect(requestIsSecure(undefined, 'http://127.0.0.1:4600/api')).toBe(false);
+  });
+});
+
+describe('the login rate limit', () => {
+  it('opens with the door unlocked', () => {
+    expect(lockoutRemaining(newLoginGate(), NOW)).toBe(0);
+  });
+
+  it('tolerates typos right up to the allowance, then locks', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS - 1; i++) noteLoginFailure(gate, NOW);
+    expect(lockoutRemaining(gate, NOW)).toBe(0);
+    noteLoginFailure(gate, NOW);
+    expect(lockoutRemaining(gate, NOW)).toBe(LOGIN_LOCKOUT_MS / 1000);
+  });
+
+  it('opens again once the lockout expires', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS; i++) noteLoginFailure(gate, NOW);
+    expect(lockoutRemaining(gate, NOW + LOGIN_LOCKOUT_MS - 1)).toBe(1);
+    expect(lockoutRemaining(gate, NOW + LOGIN_LOCKOUT_MS + 1)).toBe(0);
+  });
+
+  it('does not stack: a locked door re-locks from the same allowance, not sooner', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS; i++) noteLoginFailure(gate, NOW);
+    // The counter resets when it fires, so the next lockout costs the full
+    // allowance again rather than one wrong guess locking it forever.
+    noteLoginFailure(gate, NOW);
+    expect(gate.failures).toBe(1);
+  });
+
+  it('forgives the count on a correct password, so a typo before it costs nothing', () => {
+    const gate = newLoginGate();
+    noteLoginFailure(gate, NOW);
+    noteLoginFailure(gate, NOW);
+    noteLoginSuccess(gate);
+    expect(gate.failures).toBe(0);
+    expect(lockoutRemaining(gate, NOW)).toBe(0);
+  });
+
+  it('says how long in whole minutes, and gets the plural right', () => {
+    expect(lockoutRefusal(300)).toContain('5 minutes');
+    expect(lockoutRefusal(60)).toContain('1 minute.');
+    expect(lockoutRefusal(1)).toContain('1 minute.');
   });
 });
 

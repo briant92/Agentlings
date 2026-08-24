@@ -30,9 +30,14 @@ files, and there is no MCP server for a spreadsheet. The real blocker was a
 seam: a schedule carried a prompt and a channel and nothing else, so recurring
 work could only reach what was ambient. Schedules can now carry files. **The
 headline is still 5–10 of 922**, because that counts duty coverage and plumbing
-adds no duties — a different trade, recorded as a different trade. What is
-still owed for *"I need an accountant"*: a UI to set a standing input, and a
-bookkeeper trade, since the ask routes to `clerk` or `analyst` today.
+adds no duties — a different trade, recorded as a different trade. The UI landed and is proven
+too (16/16). **A bookkeeper trade was then declined on measurement — D-247:**
+all 16 real reconciliation runs already routed to `analyst`, which already
+covers 13 of the 15 duties it takes on that occupation, and 9 of the 13 gaps
+are policy boundaries and closed doors no role file touches. The method went
+into `analyst` instead. What is still owed for *"I need an accountant"* is the
+part no plumbing reaches: **the money duties are a deliberate boundary, Wave 4,
+not a gap** — and whether that method actually improves a run is unmeasured.
 
 Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
 D-235 → D-245; the plan it
@@ -269,7 +274,8 @@ node scripts/prove-http-mcp.mjs          #  6/6  — the http transport, real MC
 node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports
 node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form
 node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
-node scripts/prove-standing.mjs          # 22/22 — a schedule carrying files (D-246)
+node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
+node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads

@@ -19186,9 +19186,24 @@ executing at all — read the ledger, not the label.
 
 The re-run added **zero ledger rows**, which is how the free claim is now made.
 
-Also not built: any UI for setting
-a standing input, so today it is reachable only through
-`POST /api/levels/:lid/schedules`; and there is no bookkeeper trade, so
+**The UI landed the same day and is proven too — `scripts/prove-standing-ui.mjs`,
+16/16 in headless Edge.** A `reads each time:` row appears with a cadence and
+not before; the button really calls `/api/pick-folder`; the landing name
+prefills from the newest file rather than a blank; and the row reports its
+live match — green `now matches estado-cuenta-2026-08.xlsx`, amber
+`nothing matches this yet` on a filter that finds nothing, and green again when
+it is narrowed back. The native folder dialog is the one thing left: it is
+mocked at the **network** boundary (`page.route`), never in the app, so
+everything downstream of it is the real component against the real route.
+`pickFolder` itself is unchanged since D-102.
+
+An earlier version of that script ended with a **vacuous check** — it set a
+`data-seeded` attribute and then asserted the attribute existed. Caught and
+replaced before committing, which is the third guard-that-proves-nothing in one
+day; see the note above about the crew guard that billed $0.38.
+
+Also not built: there is no bookkeeper trade (**declined on measurement,
+D-247**), so
 "I need an accountant" still routes to `clerk` or `analyst`. The acting half of
 the 08-18 ask — *sending wires, reviewing bills* — is Wave 4 behind the acts
 ledger and is deliberately untouched.

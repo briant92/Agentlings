@@ -3,12 +3,17 @@
 The open board for the coverage-and-capability line. Opened on demand, never
 imported — the same shape as `SPATIAL.md` and `RECONCILE.md` before it.
 
-**Wave 0 is complete and nothing is owed. Wave 2 is open and two of its four
-parts are done** — the `http` transport (D-243) and business-system doors,
+**Wave 0 is complete and nothing is owed. Wave 2 is open and three of its four
+parts are done** — the `http` transport (D-243), business-system doors,
 answered by letting users add any MCP server themselves (D-244) with four
-verified starting points (D-245). **§4 is the pick-up point.** What remains
-there is **event triggers**, and then browser acting tools, which are last
-deliberately and for a reason worth reading before starting them.
+verified starting points (D-245), and **event triggers, built as D-248**
+together with the one-reply half of Wave 3 it pulled forward: mail arriving
+fires a schedule, and the job may answer one threaded reply through the
+ordinary outbox, always reviewed. **§4 is the pick-up point.** What remains
+there is browser acting tools, which are last deliberately and for a reason
+worth reading before starting them — and D-248's own owed items: a restart
+and its live proof, the trigger-creation UI (mockup first), and the first
+real rule on real mail.
 
 **Picking this up cold:** read §1 for where the line stands, §4 for the
 decision that opens the next piece, and **§4b for how the machine was left and
@@ -223,17 +228,27 @@ plan's order, with what each reverses:
 
 | Wave | What it opens | Supersedes |
 |---|---|---|
-| 2 | Event triggers; ~~HTTP MCP transport~~ **done, D-243**; business-system doors (mostly catalog now); browser acting tools **(ranked last — see below)** | extends D-103; D-053/D-035 for the browser half |
-| 3 | Two-way conversation — the mail loop first | D-075's *not-a-chat* clause only |
+| 2 | ~~Event triggers~~ **done, D-248**; ~~HTTP MCP transport~~ **done, D-243**; business-system doors (mostly catalog now); browser acting tools **(ranked last — see below)** | extends D-103; D-053/D-035 for the browser half |
+| 3 | Two-way conversation — **the one-reply half built in D-248** (a mail-triggered job may answer one threaded reply, reviewed, never auto-sent); anything past that is still open | D-075's *not-a-chat* clause only |
 | 4 | Deploy / publish / file; e-signature; then money in three steps | D-075's *not-an-actor*; D-229's signing half; **D-219 by its own reopen clause** |
 | 5 | Media, voice, CAD out | **D-204 when its own demand test passes** |
 | 6 | Coordination — a manager trade | nothing: **D-197's bar is re-run on its named triggers** |
 
 **Wave 2's remaining three, in the order they should be taken (D-243):**
 
-1. **Event triggers** — extends D-103 from calendar cadences to something
-   happening. Mail arriving is the obvious first, since `mail` already reads.
-   Note it pulls Wave 3's decision forward.
+1. **Event triggers — BUILT, D-248** (2026-08-24, commit `9e103bd` and the
+   record commit after it). A schedule row carries a Gmail query instead of a
+   cadence; the server polls with no LLM in the loop; the mail lands as
+   `input/mail.txt`; three unconditional loop guards (`-from:me`, a
+   once-per-message seen ring, a daily cap of 10 whose overflow never fires
+   late). The Wave 3 pull-forward was decided WITH it, not backed into:
+   `reply: true` threads one answer into the triggering conversation, the
+   server supplying the thread from the job's own stamp, and `autoBlocker`
+   excludes every mail-triggered job from standing approval. **Owed:** a
+   restart, then `node scripts/prove-mail-trigger.mjs`; the creation UI is a
+   mockup conversation first; and nothing has seen a real mailbox yet — the
+   first real rule (the bank's statement mail is the measured candidate) is
+   the end-to-end proof no fixture stands in for.
 2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
    add any MCP server themselves rather than waiting for us to curate one, and
    D-245 seeds four verified starting points that fill the form. Still:
@@ -276,6 +291,7 @@ node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the rea
 node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
+node scripts/prove-mail-trigger.mjs      # NOT YET RUN — the trigger routes + the sweep hazard (D-248); needs the post-D-248 restart
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
@@ -293,7 +309,9 @@ executing — it now fails closed and adds zero ledger rows.
   removed again; nothing a user added is waiting to be found.
 - The server was **restarted at ~15:44 on 2026-08-24**, so it carries the
   standing-input route *and* the sharpened `analyst` role. A role file reaches
-  nothing until a restart, and that one has happened.
+  nothing until a restart, and that one has happened. **That restart predates
+  D-248**: the trigger routes, the mail sweep and the reply path are on disk
+  and in no running process — restart again, then run `prove-mail-trigger.mjs`.
 - **Two ledger rows on a level called `d-246-standing-proof` are real spend
   ($0.38)** from a proof whose crew guard passed by never executing. The level
   is gone; the rows stay, because the ledger is not edited. They are not work.

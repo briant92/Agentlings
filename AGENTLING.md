@@ -1974,6 +1974,22 @@ list per channel (D-077; SPEC M5.11 has the slices):
       guards, and an input that could never resolve is refused when the
       schedule is made. Today reachable only through
       `POST /api/levels/:lid/schedules` (D-246)
+- [~] **Mail-triggered schedules, and one threaded reply** — *Partial: built
+      and mutation-proven (8/8), but the code has not been in a running server
+      yet and nothing has fired off a real mailbox.* A schedule row may carry a
+      Gmail query instead of a cadence; the server polls every two minutes with
+      no LLM in the loop, and an arriving match queues the row's sentence
+      through the same quoted glue, the mail itself landing as
+      `input/mail.txt` rendered exactly as `mail_read` renders one. Three loop
+      guards are unconditional: `-from:me` rides every poll (the app's own
+      sends can never fire a rule), a message id fires once, and a daily cap
+      of 10 per rule whose overflow never fires later. The job may answer
+      `"reply": true` on its gmail message and the server threads it into the
+      triggering conversation from the job's own stamp — a session never holds
+      a thread id, a reply cannot carry files, and a mail-triggered job never
+      auto-sends: every reply waits for review. Reachable only through
+      `POST /api/levels/:lid/schedules` and previewed at
+      `GET /api/trigger/preview` (D-248)
 - [ ] **Format-preserving edits to .docx / .pptx** — producing them works;
       editing without destroying formatting does not, because Node has no good
       round-tripper. *Blocked on: a second runtime. Python would do it and was

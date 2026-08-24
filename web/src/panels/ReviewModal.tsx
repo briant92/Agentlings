@@ -666,6 +666,15 @@ export function ReviewModal({
                           {failure && <span className="rv-msg-failed">{failure.reason}</span>}
                         </div>
                         {m.subject && <div className="rv-msg-subject">{m.subject}</div>}
+                        {m.reply && (
+                          // A threaded reply (D-248): approving sends it INTO
+                          // the conversation whose mail queued this job — the
+                          // behaviour has to be on the card, not only in the
+                          // send.
+                          <div className="rv-msg-event">
+                            ↩ replies into the mail's own conversation
+                          </div>
+                        )}
                         {m.event && (
                           // The event as it will land (D-104): the when, and
                           // who gets an invitation — approving creates it.

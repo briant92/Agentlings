@@ -257,6 +257,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-245 — 2026-08-24 — Suggestions, not connections: the app ships the shape and the server supplies the truth](#d-245--2026-08-24--suggestions-not-connections-the-app-ships-the-shape-and-the-server-supplies-the-truth)
 - [D-246 — 2026-08-24 — A schedule can carry files: a folder and a rule, read fresh at every firing, because next month's statement is a new file](#d-246--2026-08-24--a-schedule-can-carry-files-a-folder-and-a-rule-read-fresh-at-every-firing-because-next-months-statement-is-a-new-file)
 - [D-247 — 2026-08-24 — No bookkeeper trade: the measurement said `analyst` already has the job, so the method went to the role that was already doing it](#d-247--2026-08-24--no-bookkeeper-trade-the-measurement-said-analyst-already-has-the-job-so-the-method-went-to-the-role-that-was-already-doing-it)
+- [D-248 — 2026-08-24 — Event triggers: mail arriving fires a schedule, and its job may answer into the thread — one reply, reviewed, never a chat](#d-248--2026-08-24--event-triggers-mail-arriving-fires-a-schedule-and-its-job-may-answer-into-the-thread--one-reply-reviewed-never-a-chat)
 
 ## By theme
 
@@ -837,7 +838,16 @@ entry updates one file rather than two.
   as finished; intake held at 53/54 and the headline did not move, but
   `drafter` lost a covered duty to the reshuffle, which is reported rather
   than netted away.
-- **Recurrence** — and D-246, where a schedule learned to carry *files*: a
+- **Recurrence** — and D-248, where a schedule learned to fire on **mail
+  arriving** instead of a calendar: a Gmail query polled by the server with no
+  LLM in the loop, the mail landing as `input/mail.txt` through `mail_read`'s
+  own renderer, three unconditional loop guards (`-from:me` on every poll, a
+  once-per-message seen ring, a daily cap whose overflow never fires late) —
+  and the half of Wave 3 it pulled forward, decided with it: the job may
+  answer **one threaded reply** through the ordinary outbox, the server
+  supplying the thread from the job's own stamp so no run ever holds a thread
+  id, always reviewed because a mail-triggered job never rides a standing
+  approval. And D-246, where a schedule learned to carry *files*: a
   standing input naming a folder and a rule rather than a path, resolved
   afresh at every firing, because the bank writes next month's statement
   beside last month's instead of overwriting it — built after the job history
@@ -19287,3 +19297,100 @@ and not yet in any session.
 **What this does not do.** It does not move the headline; it was never going
 to. And it does not make *"I need an accountant"* served — the money duties are
 a deliberate boundary, not a gap.
+
+## D-248 — 2026-08-24 — Event triggers: mail arriving fires a schedule, and its job may answer into the thread — one reply, reviewed, never a chat
+
+Wave 2's last open item, taken together with the half of Wave 3 it pulls
+forward, because a job a mail queues will want to answer that mail — deciding
+the trigger alone would have made the reply decision implicitly. Brian settled
+all three questions the same session: the trigger extends the schedule row
+(not a new subsystem, not deferred), the reply opens exactly one threaded
+answer (not notify-only, not a conversation), and mail-triggered jobs are
+excluded from standing approval for now.
+
+### The trigger: D-103's shape, extended from "a time came due" to "a mail came in"
+
+A schedule row now carries **either** a cadence **or** `trigger: { mail:
+<Gmail query> }` — the language `mail_search` already speaks, so the rule and
+the crew's own reading tool can never disagree about what a query means. The
+server polls every two minutes (`mailtrigger.ts`), **no LLM anywhere in the
+loop**; a firing goes through the same `queueSentence` glue as every way in —
+quoted, channel-settled, specced — with the mail rendered **by `mail_read`'s
+own renderer** into `input/mail.txt` (one function, D-030's rule: two
+renderings of "the mail" would drift into two documents). A Gmail push
+webhook was refused without discussion: it needs a public endpoint, and
+D-169/D-174/D-127 all forbid one.
+
+Three loop guards are unconditional, because the failure they close is a loop
+that spends money on its own echo:
+
+- **`-from:me` rides every poll query** — the user's own sends, including
+  every reply this app's outbox ever sends, can never fire a rule, whatever
+  the query says. The guard is in `triggerQuery()`, not in anyone's
+  discipline.
+- **A message id fires once.** Gmail's `after:` is second-granular, so the
+  watermark alone is not the boundary; a seen ring (capped 200) is. Capped
+  and fired ids both enter it.
+- **A daily cap per rule (10).** Mail past the cap never fires later either —
+  a backlog firing at midnight is the surprise the cap exists to prevent —
+  and the row says how many were skipped rather than skipping silently.
+
+A new rule watches **from creation, never the mailbox's past**; resume from
+pause moves the watermark, so mail during a pause stays unfired — the same
+no-backlog rule as D-103's markFired. The sweep's discipline is
+advance-then-attempt exactly as the cadence sweep's: ring and watermark are
+written before the queueing is tried. Standing inputs (D-246) ride the same
+firing, resolved inside the same try. `GET /api/trigger/preview` answers what
+a query reaches over the last week — with `-from:me` already applied — for
+D-246's reason: a rule's reach is shown while someone can still fix it.
+
+### The reply: D-075's not-a-chat clause superseded, and nothing else
+
+A session on a mail-triggered gmail job may set `"reply": true` on a message.
+**The server supplies `threadId` and `In-Reply-To`/`References` from the
+job's own `mailTrigger` stamp** — no run ever holds or invents a thread id,
+so the one thread reachable is the one whose mail queued the job. Everything
+else in D-075 stands: the session composes, the file waits in review,
+**Approve is the send**. One reply, not a correspondence — the counterpart's
+next mail is simply the next firing. `reply` off gmail is refused at parse
+(a flag that parses and does nothing puts two truths on the review card),
+and reply+files is refused because the threaded send and the media upload
+are different Gmail endpoints and only one can thread.
+
+**Standing approval never covers a mail-triggered job** — the refusal lives
+in `autoBlocker` beside the compile and gather rules, so however clean the
+run, a human is in the moment. Mail in → reply out → their auto-reply back
+in is the loop; the human breaks it.
+
+### The stamp, and the seam this project keeps re-learning
+
+`job.mailTrigger` (id, threadId, Message-ID, from, subject) rides the full
+builder chain — `queueSentence` → `queuedJobSpec` → `queue.add` → persist —
+because the field a builder does not name does not exist (D-097, D-030), and
+each link is pinned by its own test, including one that reopens the queue
+from disk: the stamp is read at Approve, possibly days and one restart after
+the firing.
+
+### Evidence
+
+Suites: server **2,250 across 94 files** (34 new), web 333, typecheck clean
+(`provenance.bench` flaked once under concurrent load, passes isolated at
+744 ms — its known behaviour, D-246). Mutations: **8 aimed, 8 killed**, each
+by the test written for it — the dueNow cadence guard (without it a trigger
+row reads as due since 1970 and fires every thirty seconds), `-from:me`, the
+daily cap, the seen ring, the autoBlocker exclusion, the gmail-only parse
+gate, the threadId on the send, and the builder spread. Judged by exit code,
+hashes checked, mutated lines printed (D-224, D-243's lessons).
+
+### Owed
+
+- **Live proof after a restart** — the route, the sweep and the brief block
+  reach nothing until the server restarts; `scripts/prove-mail-trigger.mjs`
+  refuses an older server, and the end-to-end (a real mail firing a real
+  rule, a threaded reply arriving in the right conversation) needs a real
+  mailbox, which no fixture stands in for.
+- **The creation UI** — a trigger row renders everywhere (the label rides
+  `cadenceLabel`), but nothing in the work bar creates one yet; that control
+  is a mockup conversation first (Brian's rule), not a guess.
+- **The first real rule** is Brian's to name — the measured demand (D-246's
+  read of 446 prompts) points at the bank's statement mail.

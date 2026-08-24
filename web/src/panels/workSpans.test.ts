@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorkSpan } from '@agentlings/shared';
 import {
   acceptGhost,
+  chipChannel,
   gapClass,
   ghostFor,
   paintClass,
@@ -68,6 +69,38 @@ describe('paintPieces', () => {
   });
 });
 
+describe('chipChannel — the brand a channel word wears', () => {
+  it('maps the branded vocabulary, case- and spacing-blind', () => {
+    expect(chipChannel('Telegram')).toBe('telegram');
+    expect(chipChannel('e-mail')).toBe('gmail');
+    expect(chipChannel('mail')).toBe('gmail');
+    expect(chipChannel('WhatsApp Business')).toBe('whatsapp');
+    expect(chipChannel('whats app business')).toBe('whatsapp');
+    expect(chipChannel('github')).toBe('github');
+  });
+
+  it('a channel word without a drawn brand gets no chip', () => {
+    // The server detects these, but the app draws no mark for them — the
+    // word keeps the plain channel underline rather than a guessed colour.
+    expect(chipChannel('imessage')).toBeNull();
+    expect(chipChannel('on signal')).toBeNull();
+    expect(chipChannel('linkedin')).toBeNull();
+  });
+});
+
+describe('paintClass — the brand chip on a channel word', () => {
+  it('a branded channel word adds the chip class on top of its category', () => {
+    expect(paintClass('channel-word', 'Telegram')).toBe('wi-channel-word chan-telegram');
+    expect(paintClass('channel-word', 'gmail')).toBe('wi-channel-word chan-gmail');
+  });
+
+  it('an unbranded channel word, or any other category, stays bare', () => {
+    expect(paintClass('channel-word', 'imessage')).toBe('wi-channel-word');
+    expect(paintClass('channel-word')).toBe('wi-channel-word');
+    expect(paintClass('domain', 'telegram')).toBe('wi-domain');
+  });
+});
+
 describe('ghostFor', () => {
   const spans = [span(0, 7, 'sumarry', 'gap-suggestion'), span(8, 12, 'code', 'domain')];
   const suggestions = [{ word: 'sumarry', suggestion: 'summary', distance: 2 }];
@@ -125,5 +158,10 @@ describe('gapClass', () => {
     // reading, and the line must not contradict them.
     const spans = [span(0, 4, 'send', 'channel-verb')];
     expect(gapClass('send', spans, suggestions)).toBe('wi-channel-verb');
+  });
+
+  it('a channel-claimed word wears the same brand chip as the box above it', () => {
+    const spans = [span(0, 8, 'telegram', 'channel-word')];
+    expect(gapClass('telegram', spans, undefined)).toBe('wi-channel-word chan-telegram');
   });
 });

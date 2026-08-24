@@ -55,9 +55,47 @@ export function paintPieces(text: string, spans: WorkSpan[]): PaintPiece[] {
   return pieces;
 }
 
-/** The overlay class for a piece — one per span category, plain runs bare. */
-export function paintClass(category: WorkSpan['category'] | undefined): string | undefined {
-  return category ? `wi-${category}` : undefined;
+/**
+ * The brand a channel word wears — the chip's colour class, keyed by the
+ * word itself because a WorkSpan carries no channel. Covers only the channels
+ * the app already draws a mark for (ChannelLogo's set); any other channel
+ * word keeps the plain channel underline. If the server's tables learn a new
+ * word before this legend does, the fallback shows — cosmetic only, never a
+ * routing claim.
+ */
+const WORD_BRAND: Record<string, string> = {
+  telegram: 'telegram',
+  whatsapp: 'whatsapp',
+  whatsappbusiness: 'whatsapp',
+  mail: 'gmail',
+  email: 'gmail',
+  gmail: 'gmail',
+  slack: 'slack',
+  sms: 'sms',
+  discord: 'discord',
+  calendar: 'calendar',
+  github: 'github',
+};
+
+export function chipChannel(word: string): string | null {
+  return WORD_BRAND[word.toLowerCase().replace(/[\s-]+/g, '')] ?? null;
+}
+
+/**
+ * The overlay class for a piece — one per span category, plain runs bare. A
+ * channel word with a known brand adds the brand chip class on top of its
+ * category class.
+ */
+export function paintClass(
+  category: WorkSpan['category'] | undefined,
+  word?: string,
+): string | undefined {
+  if (!category) return undefined;
+  if (category === 'channel-word' && word) {
+    const brand = chipChannel(word);
+    if (brand) return `wi-channel-word chan-${brand}`;
+  }
+  return `wi-${category}`;
 }
 
 /**
@@ -102,7 +140,7 @@ export function gapClass(
 ): string {
   const span = spans?.find((s) => s.word.toLowerCase() === word);
   if (span && span.category !== 'gap' && span.category !== 'gap-suggestion') {
-    return `wi-${span.category}`;
+    return paintClass(span.category, span.word)!;
   }
   return suggestions?.some((s) => s.word === word) ? 'wi-gap-suggestion' : 'wi-gap';
 }

@@ -29,6 +29,7 @@ import {
 } from './askFacts';
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
+import { ChannelLogo } from './ChannelLogo';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import {
@@ -612,7 +613,7 @@ export function WorkBar({
               let at = 0;
               return paintPieces(text, spans).flatMap((piece, i) => {
                 const nodes = [
-                  <span key={i} className={paintClass(piece.category)}>
+                  <span key={i} className={paintClass(piece.category, piece.text)}>
                     {piece.text}
                   </span>,
                 ];
@@ -887,6 +888,11 @@ export function WorkBar({
         plan.channelAsk.state === 'ready' &&
         !plan.channelAsk.also?.length && (
           <p className="work-gaps work-channel-ready">
+            {plan.channelAsk.channel && (
+              <span className="work-sends-mark" aria-hidden="true">
+                <ChannelLogo channel={plan.channelAsk.channel} />
+              </span>
+            )}
             sends via {plan.channelAsk.askedLabel} · every message waits for your review
           </p>
         )}
@@ -987,6 +993,9 @@ export function WorkBar({
       )}
       {mentionPicked && !askingRepo && plan?.channelMention && (
         <p className="work-gaps work-channel-ready">
+          <span className="work-sends-mark" aria-hidden="true">
+            <ChannelLogo channel={plan.channelMention.channel} />
+          </span>
           sends via {plan.channelMention.label} · every message waits for your review
           {' · '}
           <button className="work-link" onClick={() => setChannel(null)}>

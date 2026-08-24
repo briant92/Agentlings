@@ -243,6 +243,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-231 — 2026-08-23 — The four D-230 follow-ups: the grader calibrated against the hand grades (76 % → 90 %, the overclaim cells emptied), three compliance jobs run live through the crew as routed, the overlaps left alone with their trigger named, the screen question sequenced behind the calibration](#d-231--2026-08-23--the-four-d-230-follow-ups-the-grader-calibrated-against-the-hand-grades-76--90--the-overclaim-cells-emptied-three-compliance-jobs-run-live-through-the-crew-as-routed-the-overlaps-left-alone-with-their-trigger-named-the-screen-question-sequenced-behind-the-calibration)
 - [D-232 — 2026-08-23 — The job board: the O*NET database behind the positions board, one download, searched by the hand board's rule and graded by the benchmark's grader, measured never vouched](#d-232--2026-08-23--the-job-board-the-onet-database-behind-the-positions-board-one-download-searched-by-the-hand-boards-rule-and-graded-by-the-benchmarks-grader-measured-never-vouched)
 - [D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged](#d-233--2026-08-23--one-prompt-one-review-a-step-chain-surfaces-as-one-card-one-door-and-one-panel-settled-from-its-end--execution-unchanged)
+- [D-234 — 2026-08-23 — Brand chips in the work box: a channel word wears its service's colour, a matched word gains a wash, and the routing line carries the mark](#d-234--2026-08-23--brand-chips-in-the-work-box-a-channel-word-wears-its-services-colour-a-matched-word-gains-a-wash-and-the-routing-line-carries-the-mark)
 
 ## By theme
 
@@ -530,7 +531,12 @@ entry updates one file rather than two.
   the coverage benchmark — O*NET's 1,016 occupations graded duty by duty
   through the same matcher, with matcher, capability, door, policy and
   roster gaps kept apart, 14 % covered / 22 % partial / 64 % uncovered on
-  the shipped doors, no role created
+  the shipped doors, no role created; and D-234, brand chips in the work
+  box — a channel word wearing its service's colour where the app already
+  draws that brand, a matched word gaining a wash over its underline, the
+  routing line carrying the channel's mark, and the atomic ChatGPT-style
+  pill rejected because anything with width shifts the twin against the
+  input
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -17545,3 +17551,58 @@ restart already owed since the D-232 session; the first real two-step ask
 after it is the live proof. Jobs from before the field group as before —
 their steps have no link and stand alone, which is degradation, not
 breakage.
+
+## D-234 — 2026-08-23 — Brand chips in the work box: a channel word wears its service's colour, a matched word gains a wash, and the routing line carries the mark
+
+### Decision
+
+The desk's live highlight (30a1bb2) gains a third layer of dress, prompted
+by ChatGPT's composer turning a typed trigger into a branded tag: a
+channel word whose brand the app already draws wears a capsule in that
+brand's colour (background, ring and underline — `chan-telegram`,
+`chan-gmail`, and the rest of ChannelLogo's set), a word the matcher
+recognised (intent, domain, suggestion, send verb) gains a faint wash of
+its category colour on top of its underline, and the "sends via X" line
+carries the channel's hand-drawn mark, because that line — not the
+sentence — is where the routing is actually asserted. Gaps stay
+underline-only: a wash is for a word something matched, not for one
+nothing covers.
+
+The pill itself — an atomic token with an inline icon, the thing the
+reference GIF actually shows — was considered and rejected. It needs a
+contenteditable; the box is a plain input with a character-aligned twin
+behind it, and anything with width (an inline icon, bolding, padding)
+shifts every later character of the twin against the input's own glyphs.
+Backgrounds, rings and underlines change no metrics, which is the entire
+selection rule for what this entry ships. The glyphs' ink also stays the
+sentence's own — the input paints its letters over the twin, so the chip
+colours the ground, never the text. And an atomic token would overstate
+what the plan knows: the highlight is debounced evidence that dissolves
+on the next keystroke, not a committed invocation.
+
+The brand is derived client-side from the span's word (`WORD_BRAND` in
+`workSpans.ts`), because a `WorkSpan` carries no channel and the point
+was to change nothing the server sends. That legend covers only the
+channels ChannelLogo draws; a channel word outside it — imessage,
+signal, linkedin — keeps the plain orange underline rather than a
+guessed colour, and if the server's tables learn a word before the
+legend does, the same fallback shows: cosmetic drift only, never a
+routing claim. `gapClass` routes through the same `paintClass`, so the
+"nothing your crew covers" line and the box can never dress one word
+differently (D-030's rule).
+
+### Evidence
+
+Typecheck clean; web 34 files / 333 (five new: the word→brand legend
+case- and spacing-blind, the unbranded fallback, the chip stacking on
+`channel-word` alone, the gaps line wearing the same chip). Live in
+headless Edge at 1280×700 against the running server's real plan route:
+the D-192 sentence with "telegram" in the Telegram-blue capsule, washes
+on research/analyze/send, gaps grey, the Telegram mark on the routing
+line, zero page errors and the twin's chip span sitting exactly over the
+input's word; "send the weekly summary to my accountant via gmail" the
+same in Gmail red. One pre-existing seam observed, not fixed here: each
+of the server's channel-word regexes takes only its first hit, so in
+"email … via gmail" the word evidence lands on "email", the verb wins
+that merge, and "gmail" goes unpainted — a `channelSpans` matter, out of
+this entry's scope.

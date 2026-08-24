@@ -259,23 +259,86 @@ button.ghost {
   color: transparent;
   pointer-events: none;
 }
+/* Backgrounds and box-shadow rings change no character metrics, so the twin
+   stays aligned with the box; only the glyphs' own ink is out of reach (the
+   input paints those on top). Gaps stay underline-only: a wash is for a word
+   something matched, not for one nothing covers. */
 .wi-intent {
   border-bottom: 2px solid var(--hl-intent);
+  background: rgba(99, 155, 255, 0.13);
+  border-radius: 3px 3px 0 0;
 }
 .wi-domain {
   border-bottom: 2px solid var(--hl-domain);
+  background: rgba(106, 190, 48, 0.13);
+  border-radius: 3px 3px 0 0;
 }
 .wi-gap {
   border-bottom: 2px solid var(--hl-gap);
 }
 .wi-gap-suggestion {
   border-bottom: 2px solid var(--hl-gap-suggestion);
+  background: rgba(251, 242, 54, 0.1);
+  border-radius: 3px 3px 0 0;
 }
 .wi-channel-word {
   border-bottom: 2px solid var(--hl-channel-word);
 }
 .wi-channel-verb {
   border-bottom: 2px solid var(--hl-channel-verb);
+  background: rgba(153, 229, 80, 0.12);
+  border-radius: 3px 3px 0 0;
+}
+/* The brand chip: a channel word whose brand the app already draws wears a
+   capsule in that brand's colour instead of the generic orange. The set
+   mirrors WORD_BRAND in workSpans.ts. */
+.chan-telegram {
+  background: rgba(42, 171, 238, 0.2);
+  border-bottom-color: #2aabee;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(42, 171, 238, 0.28);
+}
+.chan-whatsapp {
+  background: rgba(37, 211, 102, 0.18);
+  border-bottom-color: #25d366;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(37, 211, 102, 0.26);
+}
+.chan-gmail {
+  background: rgba(234, 67, 53, 0.18);
+  border-bottom-color: #ea4335;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(234, 67, 53, 0.26);
+}
+.chan-slack {
+  background: rgba(224, 30, 90, 0.18);
+  border-bottom-color: #e01e5a;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(224, 30, 90, 0.26);
+}
+.chan-sms {
+  background: rgba(200, 16, 46, 0.18);
+  border-bottom-color: #c8102e;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.26);
+}
+.chan-discord {
+  background: rgba(88, 101, 242, 0.2);
+  border-bottom-color: #5865f2;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(88, 101, 242, 0.28);
+}
+.chan-calendar {
+  background: rgba(66, 133, 244, 0.2);
+  border-bottom-color: #4285f4;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(66, 133, 244, 0.28);
+}
+.chan-github {
+  background: rgba(155, 173, 183, 0.16);
+  border-bottom-color: var(--db-steel);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(155, 173, 183, 0.24);
 }
 /* Absolute keeps the twin's later characters aligned with the box: the ghost
    floats after its word instead of pushing the rest of the line sideways. */
@@ -303,6 +366,17 @@ button.ghost {
 /* The ask-card: this sentence wants to send on a channel (D-079). */
 .work-channel-ready {
   color: #6daa2c;
+}
+/* The channel's mark on the routing line — where the send is actually
+   asserted, so the brand sits beside the words that commit to it. */
+.work-sends-mark {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 3px;
+}
+.work-sends-mark .ask-logo {
+  width: 15px;
+  height: 15px;
 }
 
 /* The ask, floating over the agentling who would take the job (D-084) —

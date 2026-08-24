@@ -350,3 +350,17 @@ why is D-226; this is the checklist's record that they landed.
       server 86/2,062, web 34/328, typecheck clean; five mutations, five
       kills by their own tests. Live proof waits on the owed server
       restart and the next real two-step ask.
+- [x] **28. Brand chips in the work box** — landed 2026-08-23 (D-234).
+      (`web/src/panels/workSpans.ts` + 5 tests, `WorkBar.tsx`,
+      `styles.css` highlight block) — a channel word whose brand the app
+      draws wears a capsule in that brand's colour (ChannelLogo's set,
+      derived client-side from the word; unknown words keep the orange
+      underline), matched intent/domain/suggestion/verb words gain a
+      faint wash over their underlines, gaps stay underline-only, and
+      the "sends via X" line carries the channel's hand-drawn mark. The
+      atomic pill with an inline icon was rejected: width shifts the
+      twin against the input (D-093's box stays a plain input).
+      Evidence: web 34/333, typecheck clean; live in headless Edge on
+      the real plan route — the Telegram capsule and mark on the D-192
+      sentence, the Gmail red on a send-via-gmail ask, the chip span
+      aligned over the input's own word, no page errors.

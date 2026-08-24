@@ -119,6 +119,20 @@ export function WorkBar({
   const [repeatDow, setRepeatDow] = useState(1);
   const [repeatDay, setRepeatDay] = useState(1);
   const [repeatTime, setRepeatTime] = useState('09:00');
+  /**
+   * Files a firing reads afresh (D-246). Not attachments: attachments ride one
+   * run, and these are re-read from the folder every time the schedule fires,
+   * which is what lets "reconcile the books monthly" reach next month's
+   * statement without anyone attaching anything again.
+   *
+   * `matched` is what the rule finds *right now*, asked of the server as the
+   * rule is typed — a filter matching nothing has to look different at the
+   * desk from one matching correctly, or the difference only shows at 08:10
+   * on the first of the month.
+   */
+  const [standing, setStanding] = useState<
+    { dir: string; match: string; as: string; matched?: string | null }[]
+  >([]);
   const [dragging, setDragging] = useState(false);
   const [askingRepo, setAskingRepo] = useState(false);
   const [repoPath, setRepoPath] = useState('');
@@ -436,6 +450,7 @@ export function WorkBar({
           cadence: repeat,
           ...(channel ? { channel } : {}),
           ...(Object.keys(answers).length > 0 ? { answers } : {}),
+          ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
         }),
       );
       setScheduled(made);
@@ -444,6 +459,7 @@ export function WorkBar({
       setChannel(null);
       setAnswers({});
       setRepeatKind('off');
+      setStanding([]);
       setSingle(false);
       setOrganizeRoot(null);
     } catch (err) {
@@ -468,6 +484,68 @@ export function WorkBar({
       setError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  /**
+   * Add a folder for a firing to read. The native dialog is the only source of
+   * an absolute path (D-102/D-132), the same door the organize pick uses.
+   * The landing name is prefilled from whatever is newest in the folder right
+   * now, so the row starts with a real filename rather than a blank the user
+   * has to invent — they will usually shorten it, which is the point: the
+   * source name changes month to month and the prompt's must not.
+   */
+  const addStandingFolder = async () => {
+    setError(null);
+    try {
+      const picked = await api<{ path?: string; cancelled?: boolean; error?: string }>(
+        '/api/pick-folder',
+        { method: 'POST' },
+      );
+      if (picked.error) return setError(picked.error);
+      if (!picked.path) return;
+      const dir = picked.path;
+      const seen = await api<{ name: string | null }>(
+        `/api/standing/match?dir=${encodeURIComponent(dir)}`,
+      ).catch(() => ({ name: null }));
+      setStanding((rows) => [
+        ...rows,
+        { dir, match: '', as: seen.name ?? '', matched: seen.name },
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  /**
+   * Re-ask what each rule matches when a rule changes. Debounced, because this
+   * fires on every keystroke in the filter box and the answer is a disk read.
+   */
+  const standingKey = JSON.stringify(standing.map((r) => [r.dir, r.match]));
+  useEffect(() => {
+    if (standing.length === 0) return;
+    const timer = setTimeout(() => {
+      void Promise.all(
+        standing.map((r) =>
+          api<{ name: string | null }>(
+            `/api/standing/match?dir=${encodeURIComponent(r.dir)}&match=${encodeURIComponent(r.match)}`,
+          )
+            .then((a) => a.name)
+            .catch(() => null),
+        ),
+      ).then((names) => {
+        setStanding((rows) =>
+          rows.map((r, i) => (i < names.length ? { ...r, matched: names[i] } : r)),
+        );
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standingKey]);
+
+  /** What rides the schedule, dropping any row still missing a landing name. */
+  const standingInputs = () =>
+    standing
+      .filter((r) => r.dir && r.as.trim())
+      .map((r) => ({ dir: r.dir, ...(r.match.trim() ? { match: r.match.trim() } : {}), as: r.as.trim() }));
 
   const queue = async (folder?: string, planned = false) => {
     setBusy(true);
@@ -494,7 +572,10 @@ export function WorkBar({
       );
       // The schedule stores what Start carried — the sentence verbatim (the
       // recipe key is the prompt, D-072), the pick and the card's answers —
-      // and never the files: attachments ride one run only (D-103).
+      // and never the attached files, which ride one run only (D-103). What it
+      // may carry instead is a standing input: a folder and a rule, re-read at
+      // every firing (D-246). The two are exclusive by construction — the
+      // repeat row is hidden while files are attached.
       const repeat = files.length === 0 ? cadence() : null;
       if (repeat) {
         await api(
@@ -504,6 +585,7 @@ export function WorkBar({
             cadence: repeat,
             ...(channel ? { channel } : {}),
             ...(Object.keys(answers).length > 0 ? { answers } : {}),
+            ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
           }),
         );
       }
@@ -514,6 +596,7 @@ export function WorkBar({
       setOrganizeRoot(null);
       setFiles([]);
       setRepeatKind('off');
+      setStanding([]);
       setSingle(false);
       setScheduled(null);
       setAskingRepo(false);
@@ -793,7 +876,10 @@ export function WorkBar({
       {plan && !askingRepo && (
         <p className="work-gaps work-repeat">
           {files.length > 0 ? (
-            <span className="dim">runs once — attached files ride one run only</span>
+            <span className="dim">
+              runs once — attached files ride one run only. For a repeat that
+              reads the newest file each time, start without attachments.
+            </span>
           ) : (
             <>
               <span className="dim">repeats:</span>
@@ -871,6 +957,77 @@ export function WorkBar({
                       schedule only — no run today
                     </button>
                   )}
+                  {/* Standing inputs (D-246): a folder and a rule the firing
+                      re-reads, so a monthly job reaches next month's file.
+                      Each row says what it matches RIGHT NOW, because a filter
+                      that finds nothing must not look like one that works. */}
+                  <span className="work-standing">
+                    <span className="dim">reads each time:</span>
+                    {standing.map((row, i) => (
+                      <span className="work-standing-row" key={`${row.dir}-${i}`}>
+                        <span className="work-standing-dir" title={row.dir}>
+                          {row.dir}
+                        </span>
+                        <label className="dim">
+                          newest matching{' '}
+                          <input
+                            className="work-q-text work-standing-match"
+                            value={row.match}
+                            placeholder="anything"
+                            onChange={(e) =>
+                              setStanding((rows) =>
+                                rows.map((r, j) => (j === i ? { ...r, match: e.target.value } : r)),
+                              )
+                            }
+                            aria-label="Part of the filename to match"
+                          />
+                        </label>
+                        <label className="dim">
+                          as{' '}
+                          <input
+                            className="work-q-text work-standing-as"
+                            value={row.as}
+                            placeholder="statement.xlsx"
+                            onChange={(e) =>
+                              setStanding((rows) =>
+                                rows.map((r, j) => (j === i ? { ...r, as: e.target.value } : r)),
+                              )
+                            }
+                            aria-label="The name it lands under"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          className="work-link"
+                          onClick={() => setStanding((rows) => rows.filter((_, j) => j !== i))}
+                          aria-label="Remove this folder"
+                        >
+                          ×
+                        </button>
+                        <span
+                          className={row.matched ? 'work-standing-hit' : 'work-standing-miss'}
+                        >
+                          {row.matched
+                            ? `now matches ${row.matched}`
+                            : 'nothing matches this yet'}
+                        </span>
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      className="work-link"
+                      disabled={busy}
+                      onClick={() => void addStandingFolder()}
+                    >
+                      + add a folder
+                    </button>
+                    {standing.length > 0 && (
+                      <span className="dim">
+                        · read fresh every firing — name it in your sentence as{' '}
+                        <code>input/{standing[0].as || 'statement.xlsx'}</code>
+                      </span>
+                    )}
+                  </span>
                 </>
               )}
             </>

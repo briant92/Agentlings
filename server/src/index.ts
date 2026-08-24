@@ -71,7 +71,7 @@ import {
   setPaused,
   validCadence,
 } from './schedules';
-import { resolveStanding, validateStanding, type StandingInput } from './standing';
+import { newestMatch, resolveStanding, validateStanding, type StandingInput } from './standing';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
 import {
@@ -3815,6 +3815,23 @@ app.post('/api/pick-folder', async (c) => {
   const picked = await pickFolder();
   if ('error' in picked) return c.json(picked, 400);
   return c.json(picked);
+});
+
+/**
+ * What a standing input's rule matches *right now* (D-246).
+ *
+ * The desk shows this while the rule is being typed, so a filter that matches
+ * nothing is caught at the desk rather than at 08:10 on the first of the
+ * month — the same discipline as making a tool prove its own output. It
+ * answers a filename, never contents and never a listing: a folder the user
+ * has not picked yet cannot be enumerated through this.
+ */
+app.get('/api/standing/match', (c) => {
+  const dir = c.req.query('dir') ?? '';
+  const match = c.req.query('match') || undefined;
+  if (!dir) return c.json({ error: 'a folder is required' }, 400);
+  if (!path.isAbsolute(dir)) return c.json({ error: 'that is not an absolute folder' }, 400);
+  return c.json({ name: newestMatch(dir, match) });
 });
 
 /** Re-read the folders. The crew reads the index, so nothing changes until this runs. */

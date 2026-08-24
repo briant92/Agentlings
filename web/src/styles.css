@@ -3388,6 +3388,54 @@ button.danger:hover {
 .work-repeat-day {
   width: 3.6em;
 }
+/* Standing inputs (D-246): what a firing re-reads. One row per folder, each
+   wrapping to its own line because an absolute Windows path is long and the
+   repeat row is already busy. */
+.work-standing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+.work-standing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding-left: 10px;
+  border-left: 2px solid var(--hl-gap);
+}
+/* The path is the row's identity but not its point — legible, not loud, and
+   never wide enough to push the controls off the line. */
+.work-standing-dir {
+  max-width: 26em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8a8172;
+  font-size: 11px;
+}
+.work-standing-match {
+  width: 9em;
+}
+.work-standing-as {
+  width: 11em;
+}
+/* The whole reason this control exists: a rule that matches nothing must not
+   look like one that works. Green states a fact the server just checked;
+   amber is the same near-miss colour the cadence reading uses, because it is
+   a warning about what you typed rather than an error. */
+.work-standing-hit {
+  color: #6daa2c;
+  font-size: 11px;
+}
+.work-standing-miss {
+  color: #e8b478;
+  font-size: 11px;
+}
 .back-row {
   display: flex;
   align-items: center;

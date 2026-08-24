@@ -154,6 +154,32 @@ const makeSchedule = (text, inputs, cadence) =>
     body: JSON.stringify({ text, cadence, inputs }),
   });
 
+// ── the desk's live match (D-246) ───────────────────────────────────────────
+// The control shows what a rule matches while it is being typed, so a filter
+// that finds nothing is caught at the desk. That claim is only as good as this
+// route, and the route has to agree with what a firing will actually read.
+const askMatch = (dir, match) =>
+  call(`/api/standing/match?dir=${encodeURIComponent(dir)}${match === undefined ? '' : `&match=${encodeURIComponent(match)}`}`);
+
+const mAll = await askMatch(books);
+if (mAll.status === 404) {
+  console.error('the running server predates the live-match route — restart it first');
+  await cleanup();
+  process.exit(1);
+}
+check('the live match answers the newest file with no filter', mAll.body.name === '~$estado-cuenta-2026-08.xlsx' ? false : !!mAll.body.name, mAll.body.name);
+check(
+  'and it agrees with what a firing would read',
+  (await askMatch(books, 'estado')).body.name === 'estado-cuenta-2026-08.xlsx',
+  (await askMatch(books, 'estado')).body.name,
+);
+check(
+  'a filter that finds nothing answers null, not an error',
+  (await askMatch(books, 'nosuchthing')).status === 200 &&
+    (await askMatch(books, 'nosuchthing')).body.name === null,
+);
+check('a relative folder is refused by the route too', (await askMatch('books')).status === 400);
+
 // ── refused at creation, not at 08:10 on the first of the month ─────────────
 const relative = await makeSchedule('reconcile', [{ dir: 'books', as: 'a.xlsx' }], cadenceIn(30));
 check('a relative folder is refused at creation', relative.status === 400, relative.body.error);

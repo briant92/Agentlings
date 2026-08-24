@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ConnectionInfo } from '@agentlings/shared';
 import { api } from '../api';
 
@@ -21,6 +21,24 @@ interface SecretRow {
   value: string;
 }
 
+/**
+ * A shape the app ships, read from a vendor's own docs — never a connection.
+ * Choosing one fills this form; the probe is still what makes it real.
+ */
+interface Suggestion {
+  name: string;
+  label: string;
+  description?: string;
+  transport: 'stdio' | 'http';
+  command?: string;
+  args?: string[];
+  url?: string;
+  headers?: Record<string, string>;
+  secrets?: Record<string, string>;
+  docs?: string;
+  source?: string;
+}
+
 const blankSecret = (): SecretRow => ({ name: '', why: '', value: '' });
 
 export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionInfo[]) => void }) {
@@ -36,6 +54,40 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [found, setFound] = useState<string[] | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [chosen, setChosen] = useState<Suggestion | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // Fetched when the form opens rather than at mount: it is one small list
+    // and nobody should pay for it on every Settings visit.
+    void api<{ suggestions: Suggestion[] }>('/api/connections/suggestions')
+      .then((r) => setSuggestions(r.suggestions))
+      .catch(() => setSuggestions([]));
+  }, [open]);
+
+  /** Fill the form from a shipped shape. Nothing is submitted by choosing one. */
+  const choose = (s: Suggestion) => {
+    setChosen(s);
+    setError(null);
+    setFound(null);
+    setName(s.name);
+    setLabel(s.label);
+    setTransport(s.transport);
+    if (s.transport === 'stdio') {
+      setCommand(s.command ?? 'npx');
+      setArgs((s.args ?? []).join('\n'));
+    } else {
+      setUrl(s.url ?? '');
+      setHeaders(
+        Object.entries(s.headers ?? {})
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n'),
+      );
+    }
+    const declared = Object.entries(s.secrets ?? {});
+    setSecrets(declared.length ? declared.map(([n, why]) => ({ name: n, why, value: '' })) : [blankSecret()]);
+  };
 
   const draft = () => {
     const declared: Record<string, string> = {};
@@ -107,6 +159,7 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
     setSecrets([blankSecret()]);
     setFound(null);
     setError(null);
+    setChosen(null);
   };
 
   if (!open) {
@@ -124,6 +177,46 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
         web address to reach. It is checked before it is kept, and what it can do is read from the
         server rather than typed.
       </p>
+
+      {suggestions.length > 0 && (
+        <div className="addc-suggest">
+          <div className="addc-suggest-head">start from one of these</div>
+          <div className="minis">
+            {suggestions.map((s) => (
+              <button
+                key={s.name}
+                type="button"
+                className={`mini addc-chip${chosen?.name === s.name ? ' on' : ''}`}
+                title={s.description}
+                onClick={() => choose(s)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {/* Said plainly, because it is the difference between a suggestion
+              and a claim: these shapes come from each vendor's own page and
+              have not been connected to from here. The user's own check is
+              what makes any of it true. */}
+          {chosen ? (
+            <p className="addc-note">
+              Shape from {chosen.source ?? 'the vendor'}.{' '}
+              {chosen.docs && (
+                <a href={chosen.docs} target="_blank" rel="noreferrer">
+                  their instructions
+                </a>
+              )}{' '}
+              — check it against theirs. Nothing here has been tried from this machine; pressing
+              check is what tries it.
+            </p>
+          ) : (
+            <p className="addc-note">
+              Filled in from each vendor&rsquo;s own instructions, never tried from here. They only
+              fill the form — your check is what makes one real.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="addc-grid">
         <label>

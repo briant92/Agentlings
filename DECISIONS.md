@@ -254,6 +254,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-242 — 2026-08-24 — Closing the security ledger: the sandbox stops holding secrets, the login door stops answering forever, and the board loses an item that was never a task](#d-242--2026-08-24--closing-the-security-ledger-the-sandbox-stops-holding-secrets-the-login-door-stops-answering-forever-and-the-board-loses-an-item-that-was-never-a-task)
 - [D-243 — 2026-08-24 — Wave 2 opens with the HTTP MCP transport, and a live run caught the design flaw three unit tests had agreed to miss](#d-243--2026-08-24--wave-2-opens-with-the-http-mcp-transport-and-a-live-run-caught-the-design-flaw-three-unit-tests-had-agreed-to-miss)
 - [D-244 — 2026-08-24 — Any MCP server, added by the user: the catalog stops being the ceiling, and the tool list is read from the server rather than typed](#d-244--2026-08-24--any-mcp-server-added-by-the-user-the-catalog-stops-being-the-ceiling-and-the-tool-list-is-read-from-the-server-rather-than-typed)
+- [D-245 — 2026-08-24 — Suggestions, not connections: the app ships the shape and the server supplies the truth](#d-245--2026-08-24--suggestions-not-connections-the-app-ships-the-shape-and-the-server-supplies-the-truth)
 
 ## By theme
 
@@ -554,7 +555,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses; and D-244, the catalog stopping being the ceiling — Settings can add **any MCP server**, `stdio` or `http`, on Brian's reframe that this is not about one user's stack but about any user reaching the system they need; the tool list is **read from the server** rather than typed, because D-044 requires a connection to name what it grants and for a server nobody curated the only honest source is the server itself — which also means the config is proven before it is stored and a connection that never worked leaves nothing behind; a user entry may never take a shipped name, since a second `github` would inherit every grant and recipe that already names one; and the twenty-eighth read site was `secretNames`, so a user connection's secrets are stripped from a spawned runner exactly like a shipped one's — the same shape as the seam D-242 closed
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses; and D-244, the catalog stopping being the ceiling — Settings can add **any MCP server**, `stdio` or `http`, on Brian's reframe that this is not about one user's stack but about any user reaching the system they need; the tool list is **read from the server** rather than typed, because D-044 requires a connection to name what it grants and for a server nobody curated the only honest source is the server itself — which also means the config is proven before it is stored and a connection that never worked leaves nothing behind; a user entry may never take a shipped name, since a second `github` would inherit every grant and recipe that already names one; and the twenty-eighth read site was `secretNames`, so a user connection's secrets are stripped from a spawned runner exactly like a shipped one's — the same shape as the seam D-242 closed; and D-245, suggestions rather than catalog entries — four starting points (Xero, Notion, Sentry, Stripe) that **fill the form** and become connections only when the user's own probe gets an answer, because shipping them ready-made would be vouching for servers this machine has never authenticated to; every shape read from a **primary** source with the source and date recorded and the vendor's page linked, which is why the list is short; **OAuth-only servers excluded** since our transports carry a static credential and a suggestion that cannot work is worse than none; and three of the four turned out to be `stdio`, which continues D-243's correction rather than softening it
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18917,3 +18918,75 @@ left `ui-proof` in the store and printed that too — which it had, and which wa
 then removed through the route it was proving.
 
 Typecheck clean. Server **2,185** across 91 files, web **333**.
+
+## D-245 — 2026-08-24 — Suggestions, not connections: the app ships the shape and the server supplies the truth
+
+**Decision.** The add-connection form offers a short list of starting points —
+Xero, Notion, Sentry, Stripe. Choosing one **fills the form**. It becomes a
+connection only when the user's own probe reaches the server and it answers.
+
+### Why a suggestion and not a catalog entry
+
+The obvious move after D-244 was to ship these as ready-made connections. That
+would be **vouching for servers this machine has never authenticated to** —
+every one needs a credential only the user has, so "we shipped it" would mean
+nothing more than "we typed it correctly". D-229 refuses exactly that kind of
+claim, and D-244's whole design is that tools come from the server.
+
+A suggestion claims only *this is what their documentation says*, and says
+where it read it. So no suggestion carries `tools`; the probe still supplies
+those, and the form's own validator still has the last word.
+
+### The two rules that keep the list honest
+
+- **Every shape was read from a primary source** — the vendor's own repository
+  or docs — never from a search summary or somebody else's list. Each entry
+  records that source and the date, and links the page so a user can check what
+  we say against what they say. **The list is short because of this**, not
+  despite it.
+- **OAuth-only servers are excluded.** Our transports carry a static credential
+  (D-243); an OAuth 2.1 server would be a suggestion that cannot work, which is
+  worse than no suggestion at all. That is a real cut: most *remote* MCP servers
+  authenticate that way.
+
+### What the four turned out to be, which was not what I expected
+
+| | transport | credential |
+|---|---|---|
+| Xero | **stdio** | `XERO_CLIENT_ID` + `XERO_CLIENT_SECRET` in `env` |
+| Notion | **stdio** | `NOTION_TOKEN` in `env` |
+| Sentry | **stdio** | `SENTRY_ACCESS_TOKEN` in `env` |
+| Stripe | **http** | `Authorization: Bearer ${STRIPE_API_KEY}` |
+
+Three of four are `stdio`, which continues D-243's correction rather than
+softening it: the vendor-official servers mostly run locally, and the transport
+D-243 added is the minority case among the things people actually want. Stripe
+is the exception and an instructive one — it **prefers OAuth**, and the
+restricted-key header is its own documented alternative for clients that cannot
+do OAuth. That alternative is the only reason it fits here, and the entry says
+so rather than presenting it as the normal path.
+
+Stripe's key is specified as a **restricted** one (`rk_…`), because the tools
+that server exposes include `stripe_api_write` — writes, refunds, invoices. A
+suggestion that told someone to paste a live secret key would be handing a
+session the ability to move money, which is Wave 4's business and behind the
+acts ledger that is deliberately not built.
+
+### Evidence
+
+The shipped file is held to the form's own rules by its own tests: **every
+suggestion must pass `draftProblem` unchanged**, because one that cannot be
+submitted is worse than none — the user picks it, fetches a key, and is refused
+by a validator we could have run ourselves. Also pinned: none names `tools`,
+every one carries a `source` and a `docs` link, http entries are https, an http
+entry's declared secrets are actually referenced by its headers (a key nothing
+uses is a key the user is asked for and never needed), and the file contains no
+value resembling a live key.
+
+Taken names are dropped from the offer, since a suggestion whose name collides
+would fail the moment it was submitted.
+
+Typecheck clean. Server **2,198** across 92 files (from 2,187), web **333**.
+
+**Not yet proven live** — the route and the chips exist and have not been used
+against a running server.

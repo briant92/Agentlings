@@ -8,8 +8,8 @@ transport landed in D-243. §4 is the pick-up point — the remaining parts are
 listed there in the order they should be taken, and the next one needs a
 decision that is Brian's.**
 
-Written 2026-08-24, at `ddbd218`; updated through D-244. The line so far is
-D-235 → D-244; the plan it
+Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
+D-235 → D-245; the plan it
 implements is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
@@ -25,7 +25,7 @@ the measurement behind it in *How Far Can the Horde Go*
 | Coverage | 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties |
 | Calibration | 52/58 (90 %) against the hand grades, both overclaim cells empty |
 | Intake | 53/54, 0 misses |
-| Suites | server 2,185 across 91 files · web 333 · typecheck clean |
+| Suites | server 2,198 across 92 files · web 333 · typecheck clean |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed and pushed. Nothing is in flight.
@@ -60,6 +60,11 @@ Everything below is committed and pushed. Nothing is in flight.
   than typed. Not the vendor question I was asking — the reframe was that ANY
   user should reach the system they need. Proven live, 24 checks: 17 through
   the API against two real MCP servers, 7 through the real Settings form.
+- **D-245** — **suggestions, not catalog entries**: four starting points (Xero,
+  Notion, Sentry, Stripe) that *fill the form* rather than ship as connections,
+  because we have never authenticated to any of them. Every shape read from a
+  primary source and dated; OAuth-only servers excluded because our transports
+  carry a static credential; **three of the four are `stdio`**.
 
 ---
 
@@ -197,11 +202,11 @@ plan's order, with what each reverses:
 1. **Event triggers** — extends D-103 from calendar cadences to something
    happening. Mail arriving is the obvious first, since `mail` already reads.
    Note it pulls Wave 3's decision forward.
-2. **Business-system doors — LARGELY ANSWERED by D-244**, which lets a user
-   add any MCP server themselves rather than waiting for us to curate one.
-   What remains is seeding a few good defaults. Still: **check the transport
-   before assuming it is `http`** **check the transport
-   before assuming it is `http`** (D-243's correction). Xero's official MCP
+2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
+   add any MCP server themselves rather than waiting for us to curate one, and
+   D-245 seeds four verified starting points that fill the form. Still:
+   **check the transport before assuming it is `http`** (D-243's correction,
+   reinforced by D-245 — three of its four are `stdio`). Xero's official MCP
    server is **`stdio`** (`npx -y @xeroapi/xero-mcp-server@latest`, secrets in
    `env`), so the accounting side needs nothing D-243 added and works today.
    Remote `http` endpoints exist for Atlassian, HubSpot, Linear, Slack,

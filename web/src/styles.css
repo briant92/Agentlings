@@ -6350,3 +6350,17 @@ button.rv-step:hover {
 @media (max-width: 640px) {
   .addc-grid { grid-template-columns: 1fr; }
 }
+
+/* suggestions inside the add form (D-245) */
+.addc-suggest { margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px dashed #3a3a4e; }
+.addc-suggest-head { font-size: 12px; color: #9aa3b8; margin-bottom: 6px; }
+.addc-chip {
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #4a4a5e;
+  color: #9aa3b8;
+}
+.addc-chip:hover { border-color: var(--db-lime-light); color: var(--db-lime-light); }
+.addc-chip.on { border-color: var(--db-lime-light); color: var(--db-ink); background: var(--db-lime-light); }
+.addc-suggest .addc-note a { color: inherit; }

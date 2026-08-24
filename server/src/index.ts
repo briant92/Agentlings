@@ -108,6 +108,7 @@ import {
   type Connection,
 } from './connections';
 import { probeConnection } from './mcpprobe';
+import { offerable, readSuggestions } from './suggestions';
 import {
   connectionFromDraft,
   draftProblem,
@@ -322,6 +323,7 @@ const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
 const USER_CONNECTIONS_FILE = userConnectionsFile(SANDBOX_ROOT);
+const SUGGESTIONS_FILE = path.join(ROOT, 'catalog', 'suggestions.json');
 
 /**
  * Every connection this machine has: the shipped catalog, then the user's own
@@ -4197,6 +4199,15 @@ async function probeDraft(
     values,
   };
 }
+
+/**
+ * Starting points for the form (D-245) — shapes read from vendors' own docs,
+ * with the ones already installed dropped, since offering a taken name is
+ * offering a dead end. They are not connections and carry no tools.
+ */
+app.get('/api/connections/suggestions', (c) =>
+  c.json({ suggestions: offerable(readSuggestions(SUGGESTIONS_FILE), allConnections()) }),
+);
 
 /** Try a draft and report what the server offers, without keeping anything. */
 app.post('/api/connections/probe', async (c) => {

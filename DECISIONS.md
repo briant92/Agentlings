@@ -17849,4 +17849,33 @@ same subject still refused: the budget covered but the spending policy-gapped,
 the permit application covered but filing still `act`, evaluating software
 covered but installing it still `act`, making the deck covered but delivering
 the speech still policy) and web **333** green. Calibration and intake both
-byte-identical to D-235's. Mutation pass below.
+byte-identical to D-235's.
+
+**The mutation pass, and a lesson about mutation passes.** The first four
+mutations all *survived*, and the fault was the pass, not the suite: they
+removed `'operating budget*'`, `'permit application*'`,
+`'create presentation*'` and `'existing software'` — and three of those four
+**never fire on the duty the test uses**. `\boperating budget` does not match
+*"operational budgets"*; `\bcreate presentation` does not match *"Create
+project status presentations"*. Removing a term the test does not exercise
+proves nothing about the test, and the hashes confirmed the file changed each
+time, so this was not D-224's silent-no-op — it was four honest mutations
+aimed at the wrong words.
+
+Re-aimed at the phrases that actually vouch, the picture is clean:
+
+| Mutation | Result |
+|---|---|
+| `'operational budget*'` removed | killed — *covers a budget document* |
+| `'status presentation*'` removed | killed — *covers making the presentation* |
+| `'software or hardware'` removed | killed — *covers evaluating software* |
+| `'permit application*'` alone | survived |
+| `'compliance report*'` alone | survived |
+| **both removed together** | killed — *covers a regulatory document* |
+
+The permit pair is the interesting row: that duty names two of the new
+phrases, so neither is load-bearing alone and the pair is. Recorded rather
+than engineered away — it is the same redundancy D-235 found, now measured
+deliberately instead of stumbled into. **A mutation is a claim about the
+mutation first** (D-224's rule, in a second form): before reading a survivor
+as a weak test, check that the thing you removed was ever on the path.

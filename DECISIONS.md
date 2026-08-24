@@ -17974,3 +17974,29 @@ exclusion) and web **333** green; `bench:intake` 53/54 unchanged; calibration
 deterministic test still passes with the new field, which is what proves the
 count is order-independent. The eleven-then-ten list is in the run output
 above, audited by hand.
+
+**The mutation pass, and the same lesson a third time.** Three mutations; the
+one that mattered survived:
+
+| Mutation | First pass | After |
+|---|---|---|
+| `vouchedFor` widened to let **lexical** partials count | **survived** | killed |
+| profiles with no core duties added to the denominator | killed | killed |
+| `hireableTitles.sort()` removed | **survived** | killed |
+
+Both survivors were weak *fixtures*, not weak assertions. The negative
+examples were the cellar jobs and the sommelier — and those grade
+**uncovered**, so they stay out of the count under any definition and never
+exercised the lexical rule at all. The sort assertion passed because the
+fixture titles happened to already be in order. Two fixtures fix both, and
+they are the useful artefact of this pass: `WORD_MATCH_ONLY`, whose every
+core duty grades `partial` on `lexical` evidence — asserted in the test, so
+the fixture cannot rot into something else — and would clear 70 % if a word
+match counted; and two covered positions whose ids sort opposite to their
+titles, so an unsorted list fails instead of coasting.
+
+That is three passes in a row where the mutation exposed the *test's choice
+of example* rather than its logic (D-235's reach row, D-236's aimed-wrong
+phrases, this). The habit worth keeping: **a negative example only tests a
+rule if it would pass without it** — a fixture excluded for two reasons
+proves neither.

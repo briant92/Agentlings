@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { WorkProfile } from '@agentlings/shared';
-import { type CoverageContext } from './coverage';
+import { coverage, type CoverageContext } from './coverage';
 import { benchmark } from './coveragebench';
 import { MatchIndex } from './match';
 import { RoleRegistry, listSkills } from './roles';
@@ -38,6 +38,43 @@ const CELLAR = [
   cellar(3, 'Note tannin and acidity per vintage for the cellar book.'),
 ];
 
+/**
+ * A position whose every core duty is a *confident word match nobody
+ * vouches for* — `partial` on `lexical` evidence, which is the one thing the
+ * hireable count must never treat as capability (D-237). The cellar jobs
+ * cannot test this: they grade `uncovered`, so they would stay out of the
+ * count under any definition. This one is only excluded by the rule itself.
+ */
+const WORD_MATCH_ONLY: WorkProfile = {
+  id: 'fixture:word-match-only',
+  source: 'fixture',
+  title: 'Word match only',
+  aliases: [],
+  skills: [],
+  tools: [],
+  tasks: [
+    { id: 'fixture:word-match-only:1', text: 'Receive, record, and bank cash, checks, and vouchers.', required: true },
+    { id: 'fixture:word-match-only:2', text: 'Receive, record, and bank cash, checks, and vouchers.', required: true },
+  ],
+};
+
+/**
+ * Two positions the crew genuinely covers, with ids that sort the opposite
+ * way from their titles — so the report's title list is only in order
+ * because it was sorted, and a dropped `sort()` fails rather than passing on
+ * a fixture set that happened to be alphabetical already.
+ */
+const sortProbe = (id: string, title: string): WorkProfile => ({
+  id: `fixture:sort-${id}`,
+  source: 'fixture',
+  title,
+  aliases: [],
+  skills: [],
+  tools: [],
+  tasks: [{ id: `fixture:sort-${id}:1`, text: 'Write and maintain the user guide and the readme.', required: true }],
+});
+const SORT_PROBES = [sortProbe('a', 'Zulu technical author'), sortProbe('z', 'Alpha technical author')];
+
 describe('benchmark', () => {
   const report = benchmark(ctx, [...fixtures, ...onet, ...CELLAR]);
 
@@ -61,19 +98,44 @@ describe('benchmark', () => {
    * pure matcher gaps and must not, however confidently their words matched.
    */
   it('counts a position hireable only on evidence, never on an unverified word match', () => {
-    expect(report.hireable.share).toBe(0.7);
-    expect(report.hireable.titles).toContain('Technical writer');
+    const r = benchmark(ctx, [...fixtures, ...onet, ...CELLAR, WORD_MATCH_ONLY]);
+    expect(r.hireable.share).toBe(0.7);
+    expect(r.hireable.titles).toContain('Technical writer');
     for (const cellarJob of ['Cellar job 1', 'Cellar job 2', 'Cellar job 3']) {
-      expect(report.hireable.titles).not.toContain(cellarJob);
+      expect(r.hireable.titles).not.toContain(cellarJob);
     }
-    expect(report.hireable.titles).not.toContain('Sommelier');
+    expect(r.hireable.titles).not.toContain('Sommelier');
+
+    // The load-bearing one. Every core duty here grades `partial` on
+    // `lexical` evidence — the matcher reaching a role with nothing
+    // vouching — so it is in the denominator, would clear 70 % if a word
+    // match counted, and must not appear.
+    const graded = coverage(ctx, WORD_MATCH_ONLY).tasks;
+    expect(graded.every((t) => t.grade === 'partial' && t.evidence === 'lexical')).toBe(true);
+    expect(r.hireable.titles).not.toContain('Word match only');
+
     // The strict count can never exceed the evidence-backed one: covered is a
     // subset of vouched, so a report where the low end outran the high end
     // would mean the two were measuring different populations.
-    expect(report.hireable.onCoveredAlone).toBeLessThanOrEqual(report.hireable.positions);
-    // Sorted and complete, so the list is the count rather than a sample.
-    expect(report.hireable.titles).toEqual([...report.hireable.titles].sort());
-    expect(report.hireable.titles.length).toBe(report.hireable.positions);
+    expect(r.hireable.onCoveredAlone).toBeLessThanOrEqual(r.hireable.positions);
+    // Complete, so the list is the count rather than a sample.
+    expect(r.hireable.titles.length).toBe(r.hireable.positions);
+  });
+
+  /**
+   * The titles are sorted rather than merely arriving in order: these two
+   * probes are covered work whose ids sort the opposite way from their
+   * titles, so a report built without the sort fails here instead of coasting
+   * on a fixture set that was alphabetical by accident.
+   */
+  it('sorts the title list, so the count can always be read back as names', () => {
+    const r = benchmark(ctx, [...fixtures, ...onet, ...CELLAR, ...SORT_PROBES]);
+    expect(r.hireable.titles).toContain('Alpha technical author');
+    expect(r.hireable.titles).toContain('Zulu technical author');
+    expect(r.hireable.titles.indexOf('Alpha technical author')).toBeLessThan(
+      r.hireable.titles.indexOf('Zulu technical author'),
+    );
+    expect(r.hireable.titles).toEqual([...r.hireable.titles].sort());
   });
 
   /**

@@ -7,6 +7,7 @@ import {
   type ChannelAsk,
   type ChannelOption,
   type ChannelShelf,
+  type WorkSpan,
 } from '@agentlings/shared';
 import { CHANNELS } from './channels';
 import { missingSecrets, type Connection } from './connections';
@@ -218,6 +219,69 @@ export function mentionsChannel(
   }
   if (!found) return null;
   return { channel: found, label: LABELS[found] ?? found, wired: !!CHANNELS[found] };
+}
+
+/**
+ * Where the detectors' evidence sits in the sentence, for the desk to
+ * underline — read from the same tables the ask and the mention read, so the
+ * highlight can never disagree with them. Lowercasing preserves offsets, so
+ * an index found on the lowered text slices the original.
+ */
+export function channelSpans(text: string): WorkSpan[] {
+  const p = text.toLowerCase();
+  const spans: WorkSpan[] = [];
+  const push = (start: number, length: number, category: 'channel-word' | 'channel-verb') =>
+    spans.push({ start, end: start + length, word: text.slice(start, start + length), category });
+  // Verbs pushed first: on an exact overlap ("email" satisfies both lists)
+  // mergeSpans keeps the first-listed, and the verb is the reading that
+  // claimed the send.
+  const verbs = new RegExp(SEND_VERBS.source, 'g');
+  let verb: RegExpExecArray | null;
+  while ((verb = verbs.exec(p))) push(verb.index, verb[0].length, 'channel-verb');
+  for (const [word, re] of Object.entries(CHANNEL_AS_VERB)) {
+    const hit = re.exec(p);
+    // The match carries its lead and trailing word; only the name is the verb.
+    const at = hit ? hit[0].indexOf(word) : -1;
+    if (hit && at >= 0) push(hit.index + at, word.length, 'channel-verb');
+  }
+  for (const [channel, re] of Object.entries(SCOPED_CLAIMS)) {
+    // A scoped verb is only evidence beside its own channel's word (D-104).
+    if (!CHANNEL_WORDS.some(([w, c]) => c === channel && w.test(p))) continue;
+    const hit = re.exec(p);
+    if (hit) push(hit.index, hit[0].length, 'channel-verb');
+  }
+  for (const [re] of CHANNEL_WORDS) {
+    const hit = re.exec(p);
+    if (hit) push(hit.index, hit[0].length, 'channel-word');
+  }
+  return mergeSpans(spans);
+}
+
+/**
+ * One flat list, sorted by start. Where spans overlap, the earlier-starting
+ * one is kept, and of the same start the longer one; a surviving exact tie
+ * keeps whichever was listed first — which is why callers list the more
+ * specific evidence ahead of the less.
+ */
+export function mergeSpans(...groups: WorkSpan[][]): WorkSpan[] {
+  const all = groups.flat().sort((a, b) => a.start - b.start || b.end - a.end);
+  const kept: WorkSpan[] = [];
+  for (const span of all) {
+    const last = kept[kept.length - 1];
+    if (last && span.start < last.end) continue;
+    kept.push(span);
+  }
+  return kept;
+}
+
+/**
+ * Everything the desk underlines for one sentence: the channel detectors'
+ * evidence merged over the matcher's words — channel spans listed first, so
+ * an exact tie ("telegram" as a channel word and a catalog gap) keeps the
+ * channel reading.
+ */
+export function sentenceSpans(text: string, matcher: WorkSpan[]): WorkSpan[] {
+  return mergeSpans(channelSpans(text), matcher);
 }
 
 /**

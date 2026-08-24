@@ -98,6 +98,8 @@ export function planWork(
     repoPath: levelRepoPath ?? '',
     quote,
     gaps: match.gaps,
+    suggestions: match.suggestions,
+    spans: match.spans,
     // Priced first, then asked: whether a question is worth the user's time
     // depends on whether the run costs anything, which only the quote knows.
     questions: questionsFor(text, { hasRepo: !!levelRepoPath, tier: quote.tier }),

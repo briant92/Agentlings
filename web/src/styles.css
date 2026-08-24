@@ -14,6 +14,14 @@
   --db-indigo: #3f3f74;
   --db-green: #4b692f;
   --db-steel: #9badb7;
+  /* Work-box highlight underlines, one per span category, on the DB32 slots
+     above; the gap grey is .work-gaps' own dim. */
+  --hl-intent: var(--db-sky);
+  --hl-domain: var(--db-lime);
+  --hl-gap: #5a6172;
+  --hl-gap-suggestion: var(--db-yellow);
+  --hl-channel-word: var(--db-orange);
+  --hl-channel-verb: var(--db-lime-light);
 }
 body {
   margin: 0;
@@ -221,6 +229,60 @@ button.ghost {
 .work-input {
   flex: 1;
   min-width: 0;
+}
+/* The live highlight behind the box: a decorative, character-aligned twin of
+   the input's text — font, padding and border mirrored from `.work input` —
+   showing muted underlines only. Its own glyphs stay transparent, and the
+   real input on top stays the single control. */
+.work-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: #171a21;
+  border-radius: 4px;
+}
+.work-input-wrap .work-input {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+.work-input-paint {
+  position: absolute;
+  inset: 0;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  white-space: pre;
+  overflow: hidden;
+  color: transparent;
+  pointer-events: none;
+}
+.wi-intent {
+  border-bottom: 2px solid var(--hl-intent);
+}
+.wi-domain {
+  border-bottom: 2px solid var(--hl-domain);
+}
+.wi-gap {
+  border-bottom: 2px solid var(--hl-gap);
+}
+.wi-gap-suggestion {
+  border-bottom: 2px solid var(--hl-gap-suggestion);
+}
+.wi-channel-word {
+  border-bottom: 2px solid var(--hl-channel-word);
+}
+.wi-channel-verb {
+  border-bottom: 2px solid var(--hl-channel-verb);
+}
+/* Absolute keeps the twin's later characters aligned with the box: the ghost
+   floats after its word instead of pushing the rest of the line sideways. */
+.wi-ghost {
+  position: absolute;
+  color: #8a91a3;
+  opacity: 0.65;
 }
 .work-plan {
   font-size: 12px;

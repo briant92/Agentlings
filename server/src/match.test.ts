@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RoleInfo, SkillInfo } from '@agentlings/shared';
+import { claimedChannel, mentionsChannel } from './channel';
 import { MatchIndex, MIN_CONFIDENCE, searchEntries, suggestSetup } from './match';
 
 /** The shipped catalog, so the tests track what a real user actually gets. */
@@ -208,6 +209,98 @@ describe('the ranked answer behind the suggestion', () => {
     const repeated = index.search('documentation documentation documentation zzzz zzzz');
     expect(new Set(repeated.matchedTerms).size).toBe(repeated.matchedTerms.length);
     expect(new Set(repeated.gaps).size).toBe(repeated.gaps.length);
+  });
+});
+
+describe('typo suggestions — informational only, never a re-match (D-093, D-192)', () => {
+  // D-192's sentence verbatim. Everything except `suggestions` is pinned to
+  // the values this catalog produced before suggestions existed — the
+  // correction is informational, so a typo'd sentence must not route any
+  // differently than it already did.
+  const d192 = 'Research thr boutiquen hotel industry and produce a PDF sumarry';
+
+  it("routes D-192's typo'd sentence exactly as it did without suggestions", () => {
+    const found = index.search(d192);
+    expect(found.confidence).toBe(0.26);
+    expect(found.roles.map((r) => r.name)).toEqual(['scout']);
+    expect(found.matchedTerms).toEqual(['research']);
+    expect(found.gaps).toEqual(['thr', 'boutiquen', 'hotel', 'industry', 'produce', 'pdf']);
+    // Below MIN_CONFIDENCE, so no role is claimed — same as today.
+    expect(suggest(d192).role).toBeNull();
+    expect(suggest(d192).confidence).toBe(0.26);
+  });
+
+  it("suggests summary for sumarry, and nothing for thr or boutiquen", () => {
+    // "thr" is under the four-letter floor, measured, not assumed: 8 shipped
+    // vocabulary words sit within distance 2 of it. "boutique" is genuinely
+    // not in this catalog's vocabulary, so "boutiquen" rightly gets nothing —
+    // the vocabulary is never inflated to make an example fire.
+    expect(index.search(d192).suggestions).toEqual([
+      { word: 'sumarry', suggestion: 'summary', distance: 2 },
+    ]);
+  });
+
+  it("resolves nothing for D-093's Sen, and the channel reading is unchanged", () => {
+    const sentence = 'Sen me a Telegram with the latest Warzone meta';
+    const found = index.search(sentence);
+    expect(found.suggestions).toEqual([]);
+    expect(found).toMatchObject({ roles: [], skills: [], confidence: 0, matchedTerms: [] });
+    expect(found.gaps).toEqual(['sen', 'telegram', 'latest', 'warzone', 'meta']);
+    // The regex detectors in channel.ts, untouched by this feature: still no
+    // send verb claimed, still the D-093 mention question and nothing more.
+    expect(claimedChannel(sentence)).toBeNull();
+    expect(mentionsChannel(sentence)).toEqual({ channel: 'telegram', label: 'Telegram', wired: true });
+  });
+
+  // Real-shaped typos of INTENT words. Each fires at the right distance, and
+  // the sentence routes exactly as it did before suggestions existed (role
+  // and confidence pinned pre-change). Deliberately NOT asserted: equality
+  // with the hand-fixed sentence — D-192 measured typo damage as score
+  // dilution ("reasearch the payment code…" scores mason 0.44 where
+  // "research…" scores scout 0.61), and the suggestion must not close that
+  // difference; only the user acting on it may.
+  const typos: [string, { word: string; suggestion: string; distance: number }, string | null, number][] = [
+    ['reasearch the payment code and report back', { word: 'reasearch', suggestion: 'research', distance: 1 }, 'mason', 0.44],
+    ['sumarize what changed this week', { word: 'sumarize', suggestion: 'summarize', distance: 1 }, null, 0],
+    ['refacter this mess into something clean', { word: 'refacter', suggestion: 'refactor', distance: 1 }, 'mason', 0.39],
+  ];
+  for (const [sentence, expected, role, confidence] of typos) {
+    it(`"${expected.word}" suggests ${expected.suggestion} and routes as today`, () => {
+      expect(index.search(sentence).suggestions).toContainEqual(expected);
+      const result = suggest(sentence);
+      expect(result.role).toBe(role);
+      expect(result.confidence).toBe(confidence);
+    });
+  }
+
+  it('never corrects a word the catalog understood', () => {
+    const found = index.search('write the documentation for my project');
+    expect(found.suggestions).toEqual([]);
+  });
+});
+
+describe('spans — each classified word located in the original sentence', () => {
+  it('offsets slice back exactly, case and punctuation kept', () => {
+    const sentence = 'Reasearch the Payment-Code, then fix the BUGS!';
+    const { spans } = index.search(sentence);
+    for (const span of spans) expect(sentence.slice(span.start, span.end)).toBe(span.word);
+    const by = Object.fromEntries(spans.map((s) => [s.word, s.category]));
+    expect(by).toEqual({
+      Reasearch: 'gap-suggestion',
+      Payment: 'gap',
+      Code: 'domain',
+      fix: 'intent',
+      BUGS: 'domain',
+    });
+  });
+
+  it('a plain fully-understood sentence carries only its map words', () => {
+    const { spans } = index.search('write the documentation for my project');
+    expect(spans.map((s) => [s.word, s.category])).toEqual([
+      ['write', 'intent'],
+      ['documentation', 'domain'],
+      ['project', 'domain'],
+    ]);
   });
 });
 

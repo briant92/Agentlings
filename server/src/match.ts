@@ -1,4 +1,4 @@
-import type { MatchSuggestion, RoleInfo, SkillInfo } from '@agentlings/shared';
+import type { MatchSuggestion, RoleInfo, SkillInfo, WorkSpan } from '@agentlings/shared';
 
 /**
  * Concept matcher: turns a sentence a non-expert would write ("keep an eye on
@@ -195,6 +195,39 @@ export function tokenize(text: string): string[] {
   return words(text).map(stem);
 }
 
+/**
+ * A gap word may be one slip away from a word the catalog does know, and the
+ * desk can say so — as a suggestion only, never a re-match: edit distance 1
+ * makes "test" match "text", which is what D-093 refused. The cutoffs were
+ * measured against the shipped vocabulary before being picked: three-letter
+ * words drown (18 words sit within distance 2 of "sen"), and distance 2 under
+ * seven letters "corrects" real words the catalog merely lacks ("hotel" →
+ * note, "latest" → test) — so 4–6 letters allow one edit, seven and up two.
+ */
+const SUGGEST_MIN_LENGTH = 4;
+const MAX_SUGGESTIONS = 3;
+
+function suggestionCap(word: string): number {
+  return word.length >= 7 ? 2 : 1;
+}
+
+/** Plain Levenshtein, abandoned once a whole row exceeds `cap`. */
+function editDistance(a: string, b: string, cap: number): number {
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    let least = i;
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (row[j] < least) least = row[j];
+    }
+    if (least > cap) return cap + 1;
+    prev = row;
+  }
+  return prev[b.length];
+}
+
 const K1 = 1.2;
 const B = 0.75;
 /** Below this, say so instead of guessing — a confident wrong answer is worse. */
@@ -237,6 +270,13 @@ export class MatchIndex {
   private docs: Doc[] = [];
   private df = new Map<string, number>();
   private avgLength = 1;
+  /**
+   * The closed set a typo can be corrected toward: the concept maps' own keys
+   * plus every term the installed catalog uses — never general English, which
+   * is how "sen" would reach "send" (D-093). Keys go in first so a distance
+   * tie lands on a readable word rather than a stemmed catalog artifact.
+   */
+  private vocabulary = new Set<string>();
 
   constructor(roles: (RoleInfo & { prompt?: string })[], skills: SkillInfo[]) {
     for (const role of roles) {
@@ -253,6 +293,10 @@ export class MatchIndex {
       for (const term of doc.terms.keys()) this.df.set(term, (this.df.get(term) ?? 0) + 1);
     }
     this.avgLength = this.docs.length > 0 ? total / this.docs.length : 1;
+
+    for (const key of Object.keys(INTENT)) this.vocabulary.add(key);
+    for (const key of Object.keys(DOMAIN)) this.vocabulary.add(key);
+    for (const term of this.df.keys()) this.vocabulary.add(term);
   }
 
   get size(): number {
@@ -283,6 +327,23 @@ export class MatchIndex {
   /** The catalog terms a word reaches, itself first. */
   private reach(word: string): string[] {
     return [stem(word), ...expansionsFor(word).terms.map(stem)];
+  }
+
+  /** The nearest vocabulary word within the measured caps, or null. */
+  private closest(word: string): { suggestion: string; distance: number } | null {
+    if (word.length < SUGGEST_MIN_LENGTH) return null;
+    const cap = suggestionCap(word);
+    let best: { suggestion: string; distance: number } | null = null;
+    for (const candidate of this.vocabulary) {
+      // A gap word can still sit in the vocabulary as a concept-map key whose
+      // expansions the catalog lacks — it is not a correction of itself.
+      if (candidate === word) continue;
+      const distance = editDistance(word, candidate, cap);
+      if (distance <= cap && (!best || distance < best.distance)) {
+        best = { suggestion: candidate, distance };
+      }
+    }
+    return best;
   }
 
   private idf(term: string): number {
@@ -332,6 +393,8 @@ export class MatchIndex {
     confidence: number;
     matchedTerms: string[];
     gaps: string[];
+    suggestions: { word: string; suggestion: string; distance: number }[];
+    spans: WorkSpan[];
   } {
     const query = this.queryTerms(text);
     const ranked = this.docs
@@ -371,12 +434,49 @@ export class MatchIndex {
     if (coverage < 0.3) score = Math.min(score, MIN_CONFIDENCE - 0.05);
     const confidence = Math.round(score * 100) / 100;
 
+    // Suggested from every gap word, not just the six shown: each entry
+    // carries its own word, so it does not depend on the display cap.
+    const suggestions: { word: string; suggestion: string; distance: number }[] = [];
+    for (const word of new Set(gaps)) {
+      if (suggestions.length >= MAX_SUGGESTIONS) break;
+      const near = this.closest(word);
+      if (near) suggestions.push({ word, ...near });
+    }
+
+    // The same words located in the original sentence, for the desk to
+    // underline: tokenized the way words() tokenizes but over the unlowered
+    // text, so offsets slice back exactly. Categories restate what is already
+    // decided above — a key of the maps, a gap, a gap with a fix — never a
+    // second opinion.
+    const gapSet = new Set(gaps);
+    const suggested = new Set(suggestions.map((s) => s.word));
+    const spans: WorkSpan[] = [];
+    const wordRe = /[a-zA-Z0-9]+/g;
+    let hit: RegExpExecArray | null;
+    while ((hit = wordRe.exec(text))) {
+      const word = hit[0].toLowerCase();
+      const category = Object.hasOwn(INTENT, word)
+        ? ('intent' as const)
+        : Object.hasOwn(DOMAIN, word)
+          ? ('domain' as const)
+          : suggested.has(word)
+            ? ('gap-suggestion' as const)
+            : gapSet.has(word)
+              ? ('gap' as const)
+              : null;
+      if (category) {
+        spans.push({ start: hit.index, end: hit.index + hit[0].length, word: hit[0], category });
+      }
+    }
+
     return {
       roles,
       skills,
       confidence,
       matchedTerms: [...new Set(matchedTerms)].slice(0, 6),
       gaps: [...new Set(gaps)].slice(0, 6),
+      suggestions,
+      spans,
     };
   }
 }
@@ -433,6 +533,8 @@ export function suggestSetup(
     confidence: found.confidence,
     matchedTerms: found.matchedTerms,
     gaps: found.gaps,
+    suggestions: found.suggestions,
+    spans: found.spans,
     alternatives: found.roles
       .filter((r) => r.name !== role?.name)
       .map(({ name, description }) => ({ name, description })),

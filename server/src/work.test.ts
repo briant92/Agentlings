@@ -138,6 +138,20 @@ describe('planWork', () => {
     expect(plan.agentling).not.toBeNull();
     expect(plan.gaps).toContain('pdfs');
   });
+
+  it('carries the matcher’s spans onto the plan', () => {
+    const plan = planWork(index, ROLES, team, '/repo', 'write the documentation');
+    expect(plan.spans.some((s) => s.word === 'write' && s.category === 'intent')).toBe(true);
+  });
+
+  it('carries the matcher’s typo suggestions onto the plan, beside the gaps', () => {
+    const plan = planWork(index, ROLES, team, '/repo', 'write the documentaton for my project');
+    expect(plan.suggestions).toContainEqual({
+      word: 'documentaton',
+      suggestion: 'documentation',
+      distance: 1,
+    });
+  });
 });
 
 describe('forceRole', () => {

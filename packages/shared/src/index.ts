@@ -1491,6 +1491,20 @@ export interface Refinement {
   confidence: number;
 }
 
+/**
+ * One classified word of the sentence, located — what drove which outcome,
+ * for the desk to underline. Offsets index the trimmed sentence the plan was
+ * made from, `end` exclusive, so `text.slice(start, end) === word` always
+ * holds and the client can verify a span before painting it.
+ */
+export interface WorkSpan {
+  start: number;
+  end: number;
+  /** The exact substring, original case. */
+  word: string;
+  category: 'intent' | 'domain' | 'gap' | 'gap-suggestion' | 'channel-word' | 'channel-verb';
+}
+
 /** What the concept matcher proposes for a sentence the user typed. */
 export interface MatchSuggestion {
   /** Best-matching role, or null when nothing was confident enough. */
@@ -1503,6 +1517,13 @@ export interface MatchSuggestion {
   matchedTerms: string[];
   /** Words nothing in the library covers; later these drive library search. */
   gaps: string[];
+  /**
+   * A gap word beside the nearest word the catalog itself uses — informational
+   * only, never applied to the match (D-093): acting on it is the user's move.
+   */
+  suggestions: { word: string; suggestion: string; distance: number }[];
+  /** The matcher's own words located in the sentence (intent/domain/gap kinds). */
+  spans: WorkSpan[];
   alternatives: { name: string; description: string }[];
 }
 
@@ -2031,6 +2052,14 @@ export interface WorkPlan {
   /** What this will cost, before it runs. */
   quote: Quote;
   gaps: string[];
+  /** Near-misses for the gaps, suggestion-only (D-093) — see MatchSuggestion. */
+  suggestions: { word: string; suggestion: string; distance: number }[];
+  /**
+   * Every located word for the desk's underlines. The plan route merges the
+   * channel detectors' evidence into the matcher's; other planWork callers
+   * carry the matcher's alone, since nothing renders spans off the desk.
+   */
+  spans: WorkSpan[];
   /** Worth settling before it runs; always optional to answer. */
   questions: ClarifyQuestion[];
   /** Present when the sentence wants to send on a channel (D-079). */

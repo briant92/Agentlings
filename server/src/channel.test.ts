@@ -3,6 +3,7 @@ import {
   briefForJob,
   channelBrief,
   channelShelf,
+  channelSpans,
   claimedChannel,
   detectChannelAsk,
   LEGEND_CAP,
@@ -10,7 +11,9 @@ import {
   droppedChannels,
   filelessChannels,
   mentionsChannel,
+  mergeSpans,
   RESEND_WORDS,
+  sentenceSpans,
 } from './channel';
 import type { Connection } from './connections';
 
@@ -784,5 +787,60 @@ describe('the three new briefs (D-104)', () => {
     expect(brief).toContain('owner/repo#number');
     expect(brief).toContain('Never invent a number');
     expect(brief).toContain('their voice');
+  });
+});
+
+describe('channelSpans — where the detectors’ evidence sits', () => {
+  it('locates the verb and the channel word over the original case', () => {
+    const s = 'Send Ana the summary and telegram Brian the total';
+    const spans = channelSpans(s);
+    for (const span of spans) expect(s.slice(span.start, span.end)).toBe(span.word);
+    expect(spans).toContainEqual({ start: 0, end: 4, word: 'Send', category: 'channel-verb' });
+    expect(spans.find((x) => x.word === 'telegram')?.category).toBe('channel-word');
+  });
+
+  it('an email verb doubles as the channel word — the verb reading keeps the tie', () => {
+    expect(channelSpans('Email Ana the summary')).toEqual([
+      { start: 0, end: 5, word: 'Email', category: 'channel-verb' },
+    ]);
+  });
+
+  it('a channel name standing as the verb is marked as one, name only', () => {
+    const s = 'Recompute the totals, then telegram me the headline';
+    const spans = channelSpans(s);
+    const verb = spans.find((x) => x.category === 'channel-verb');
+    expect(verb).toEqual({ start: 27, end: 35, word: 'telegram', category: 'channel-verb' });
+  });
+
+  it('a plain sentence has no channel spans at all', () => {
+    expect(channelSpans('write the documentation for my project')).toEqual([]);
+  });
+});
+
+describe('mergeSpans — one flat list, overlaps resolved', () => {
+  it('keeps the earlier-starting span, and of the same start the longer one', () => {
+    const merged = mergeSpans(
+      [{ start: 0, end: 4, word: 'aaaa', category: 'channel-verb' as const }],
+      [
+        { start: 0, end: 6, word: 'aaaaaa', category: 'channel-word' as const },
+        { start: 2, end: 8, word: 'bbbbbb', category: 'gap' as const },
+        { start: 9, end: 12, word: 'ccc', category: 'intent' as const },
+      ],
+    );
+    expect(merged).toEqual([
+      { start: 0, end: 6, word: 'aaaaaa', category: 'channel-word' },
+      { start: 9, end: 12, word: 'ccc', category: 'intent' },
+    ]);
+  });
+});
+
+describe('sentenceSpans — the desk’s one list', () => {
+  it('a channel word the catalog does not know keeps the channel reading', () => {
+    // "telegram" is a matcher gap and a channel word at the same offsets; the
+    // channel evidence is listed first, so the tie keeps 'channel-word'.
+    const s = 'Sen me a Telegram with the latest Warzone meta';
+    const matcher = [{ start: 9, end: 17, word: 'Telegram', category: 'gap' as const }];
+    const merged = sentenceSpans(s, matcher);
+    expect(merged.find((x) => x.word === 'Telegram')?.category).toBe('channel-word');
   });
 });

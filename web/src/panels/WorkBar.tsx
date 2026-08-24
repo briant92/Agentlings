@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
 import type {
   AudiencePerson,
   AudienceReply,
@@ -24,6 +31,14 @@ import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
+import {
+  acceptGhost,
+  gapClass,
+  ghostFor,
+  paintClass,
+  paintPieces,
+  usableSpans,
+} from './workSpans';
 
 const DEBOUNCE_MS = 250;
 
@@ -203,6 +218,50 @@ export function WorkBar({
       `${String(read.cadence.hour).padStart(2, '0')}:${String(read.cadence.minute).padStart(2, '0')}`,
     );
   }, [plan, text]);
+
+  /**
+   * The live highlight: the plan's spans painted behind the box by a
+   * decorative, aria-hidden twin. The input stays the only control — the twin
+   * renders what the server already computed and nothing else, and a ghost is
+   * taken solely by Tab, whose edit then re-plans like any typed one (D-093:
+   * correction is the user's move, never the matcher's).
+   */
+  const inputRef = useRef<HTMLInputElement>(null);
+  const paintRef = useRef<HTMLDivElement>(null);
+  const [caret, setCaret] = useState(0);
+  /** Escape, or any keystroke but Tab, dismisses the ghost until the next re-plan. */
+  const [ghostDropped, setGhostDropped] = useState(false);
+  useEffect(() => setGhostDropped(false), [plan]);
+  const spans = usableSpans(text, plannedFor.current, plan?.spans);
+  const ghost = ghostDropped ? null : ghostFor(caret, spans, plan?.suggestions);
+  /** The twin scrolls exactly with the box, or the underlines drift. */
+  const syncPaint = () => {
+    if (paintRef.current && inputRef.current) {
+      paintRef.current.scrollLeft = inputRef.current.scrollLeft;
+    }
+  };
+  useEffect(() => {
+    syncPaint();
+    window.addEventListener('resize', syncPaint);
+    return () => window.removeEventListener('resize', syncPaint);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+  const onInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // No ghost showing: Tab stays ordinary focus navigation, untouched.
+    if (!ghost) return;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const took = acceptGhost(text, ghost);
+      setText(took.next);
+      setGhostDropped(true);
+      const box = e.currentTarget;
+      requestAnimationFrame(() => box.setSelectionRange(took.caret, took.caret));
+    } else if (e.key === 'Escape') {
+      setGhostDropped(true);
+    } else if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+      setGhostDropped(true);
+    }
+  };
 
   /** The send facts live on the ask card whenever one is up (D-087). */
   const sendQuestions = plan?.questions.filter((q) => q.id.startsWith('send-')) ?? [];
@@ -547,17 +606,45 @@ export function WorkBar({
       }}
     >
       <form className="work-bar" onSubmit={submit}>
-        <input
-          className="work-input"
-          data-tour="work"
-          placeholder="What do you need done?"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            // A new sentence retires the last schedule-only confirmation.
-            if (scheduled) setScheduled(null);
-          }}
-        />
+        <div className="work-input-wrap">
+          <div className="work-input-paint" aria-hidden="true" ref={paintRef}>
+            {(() => {
+              let at = 0;
+              return paintPieces(text, spans).flatMap((piece, i) => {
+                const nodes = [
+                  <span key={i} className={paintClass(piece.category)}>
+                    {piece.text}
+                  </span>,
+                ];
+                at += piece.text.length;
+                if (ghost && at === ghost.end) {
+                  nodes.push(
+                    <span key="ghost" className="wi-ghost">
+                      {ghost.suggestion}
+                    </span>,
+                  );
+                }
+                return nodes;
+              });
+            })()}
+          </div>
+          <input
+            ref={inputRef}
+            className="work-input"
+            data-tour="work"
+            placeholder="What do you need done?"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              setCaret(e.target.selectionStart ?? 0);
+              // A new sentence retires the last schedule-only confirmation.
+              if (scheduled) setScheduled(null);
+            }}
+            onScroll={syncPaint}
+            onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
+            onKeyDown={onInputKeyDown}
+          />
+        </div>
         <label className="work-clip" title="Attach a document">
           <input
             type="file"
@@ -1008,7 +1095,13 @@ export function WorkBar({
 
       {plan && !askingRepo && plan.gaps.length > 0 && (
         <p className="work-gaps">
-          nothing your crew has covers: {plan.gaps.join(' · ')}
+          nothing your crew has covers:{' '}
+          {plan.gaps.map((g, i) => (
+            <span key={g}>
+              {i > 0 && ' · '}
+              <span className={gapClass(g, plan.spans, plan.suggestions)}>{g}</span>
+            </span>
+          ))}
           {' · '}
           <button className="work-link" onClick={() => onFindAbility(text.trim())}>
             find one

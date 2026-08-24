@@ -113,6 +113,7 @@ import {
   droppedChannels,
   filelessChannels,
   mentionsChannel,
+  sentenceSpans,
 } from './channel';
 import {
   closeBlocker,
@@ -1322,6 +1323,9 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   return c.json({
     ...draft,
     quote,
+    // The desk's underlines: the channel detectors' evidence merged over the
+    // matcher's words, replacing the matcher-only list the draft carries.
+    spans: sentenceSpans(text, draft.spans),
     ...(stepPlans ? { steps: stepPlans } : {}),
     ...(partyPlans ? { party: partyPlans } : {}),
     // A blocked party carries the planner offer, priced (TEAMWORK T3): the

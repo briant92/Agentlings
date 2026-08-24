@@ -221,6 +221,59 @@ describe('the Wave 1 powers', () => {
   });
 });
 
+/**
+ * Phrases added to four powers that already existed (D-236), against duties
+ * the release actually holds. Every one was unverified before — a single
+ * generic term (`budget*`, `reports`, `software`) firing alone, which
+ * `thin()` rightly refuses to call covered — and a phrase is what makes the
+ * evidence more than one word. The pairs matter as much as the hits: the
+ * phrase must not drag in the doing of the same subject.
+ */
+describe('the phrase widening', () => {
+  const graded = (text: string) => gradeTask(fullHouse, { id: 'w', text, required: true });
+
+  it('covers a budget document, and still refuses the spending', () => {
+    const doc = graded('Prepare wind field operational budgets.');
+    expect(doc.grade).toBe('covered');
+    expect(doc.powers).toContain('numbers');
+
+    const spend = graded('Approve expenditures and purchase equipment for the department.');
+    expect(spend.grade).toBe('uncovered');
+    expect(spend.gap).toBe('policy');
+  });
+
+  it('covers a regulatory document, and still refuses the filing', () => {
+    const doc = graded('Prepare environmental permit applications or compliance reports.');
+    expect(doc.grade).toBe('covered');
+    expect(doc.powers).toContain('write');
+
+    // Submitting it is the act boundary, whatever the document is.
+    const file = graded('File tax returns and issue permits to applicants.');
+    expect(file.grade).toBe('uncovered');
+    expect(file.boundaries).toContain('act');
+  });
+
+  it('covers evaluating software, and still refuses installing it', () => {
+    const evaluate = graded('Prepare evaluations of software or hardware, and recommend improvements or upgrades.');
+    expect(evaluate.grade).toBe('covered');
+    expect(evaluate.powers).toContain('build-code');
+
+    const install = graded('Install and configure server software in production.');
+    expect(install.grade).toBe('uncovered');
+    expect(install.boundaries).toContain('act');
+  });
+
+  it('covers making the presentation, and still refuses delivering it to the room', () => {
+    const make = graded('Create project status presentations for the programme board.');
+    expect(make.grade).toBe('covered');
+    expect(make.powers).toContain('documents');
+
+    const deliver = graded('Deliver speeches or present information at meetings or conventions.');
+    expect(deliver.grade).toBe('uncovered');
+    expect(deliver.gap).toBe('policy');
+  });
+});
+
 describe('roster', () => {
   const tw = profile('fixture:technical-writer');
 

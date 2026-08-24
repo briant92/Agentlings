@@ -245,6 +245,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged](#d-233--2026-08-23--one-prompt-one-review-a-step-chain-surfaces-as-one-card-one-door-and-one-panel-settled-from-its-end--execution-unchanged)
 - [D-234 — 2026-08-23 — Brand chips in the work box: a channel word wears its service's colour, a matched word gains a wash, and the routing line carries the mark](#d-234--2026-08-23--brand-chips-in-the-work-box-a-channel-word-wears-its-services-colour-a-matched-word-gains-a-wash-and-the-routing-line-carries-the-mark)
 - [D-235 — 2026-08-24 — Wave 1 of the coverage programme: four trades hired off a measurement, vouched by their own powers, and nothing on the shelf of never touched](#d-235--2026-08-24--wave-1-of-the-coverage-programme-four-trades-hired-off-a-measurement-vouched-by-their-own-powers-and-nothing-on-the-shelf-of-never-touched)
+- [D-236 — 2026-08-24 — The phrase widening, and where naming stops paying: four existing powers given phrases, +53 duties, and the structural blocker named rather than loosened](#d-236--2026-08-24--the-phrase-widening-and-where-naming-stops-paying-four-existing-powers-given-phrases-53-duties-and-the-structural-blocker-named-rather-than-loosened)
 
 ## By theme
 
@@ -541,7 +542,11 @@ entry updates one file rather than two.
   logistics, planner and security, each named for a cluster the benchmark
   counted, each with a POWERS entry so what they reach is vouched rather
   than matched, and the three instruments read before and after to prove
-  the routing was not reshuffled and the grader did not start overclaiming
+  the routing was not reshuffled and the grader did not start overclaiming;
+  and D-236, the phrase widening — four powers that already existed given
+  phrases against duties the release actually holds, +53 covered for a page
+  of terms, and the structural blocker (`thin()`'s top-one role check) named
+  and deliberately left alone rather than loosened for the gain
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -17755,3 +17760,93 @@ before and after and prints both, which is the only reason that was visible
 Final state after the pass: typecheck clean, server **2,067** and web **333**
 green, intake 53/54, calibration 52/58 with the overclaim cells empty,
 coverage 16 % / 24 % / 61 %.
+
+## D-236 — 2026-08-24 — The phrase widening, and where naming stops paying: four existing powers given phrases, +53 duties, and the structural blocker named rather than loosened
+
+**Decision:** four powers that already existed — `numbers`, `write`,
+`documents`, `build-code` — gain phrase terms for document and computation
+families the release actually holds, and **nothing else changes**. No new
+role, no new power, no boundary moved, and — the decision inside the
+decision — **`thin()` is left exactly as D-230 wrote it**, though loosening
+it is what the remaining bucket is really blocked on.
+
+### What was measured before writing a term
+
+D-235 left 3,348 duties in the "unverified word match" bucket, and the
+programme's next reversal-free step was to work it. Grouped by the trade
+their words reach, 2,996 of them carry no boundary at all, and nine
+representative duties were put through the real `gradeTask` to ask *why*
+each fell short rather than guessing from the text:
+
+| Duty | Why it was not covered |
+|---|---|
+| *Prepare wind field operational budgets.* | `numbers: budget*` — one term |
+| *Prepare environmental permit applications or compliance reports.* | `write: reports` — one term |
+| *Create project status presentations…* | `documents: presentations` — one term |
+| *Modify existing software to correct errors…* | `build-code: software` — one term |
+
+The answer was the same in eight of the nine: **exactly one generic term
+fired**, and `thin()` refuses to vouch on one bare word unless the matcher
+independently names a trade the power carries. That guard is right — it is
+what stops `projection` covering *"clean the projection booth"* — and the
+honest way past it is not to weaken it but to give the ledger the phrase the
+duty actually uses. So: `operating budget*`, `permit application*`,
+`compliance report*`, `create presentation*`, `existing software`,
+`software or hardware`, and their neighbours.
+
+Every phrase names a **deliverable that is a document or a computation**.
+Three families were considered and dropped for failing that test — marketing,
+content and campaign *strategy*, where "develop a strategy" more plausibly
+means deciding than drafting, and the crew drafts. Leaving them unverified is
+the correct outcome: D-229's whole point is that unverified is not uncovered.
+
+### What it bought, and the honest ceiling on this method
+
+| | D-235 | after |
+|---|---|---|
+| covered | 2,926 | **2,979** (+53) |
+| unverified word match | 3,348 | 3,298 (−50) |
+| calibration | 52/58, overclaim 0 | **52/58, overclaim 0** |
+| `bench:intake` | 53/54 | 53/54 |
+
+**+53 duties for a page of terms is the finding, not the disappointment.**
+D-235 bought 194 for four trades and four powers; this bought a quarter of
+that for comparable effort, and the next page would buy less again, because
+each phrase only catches duties whose exact wording somebody anticipated.
+Naming is a rung with a top, and this entry is where it was measured rather
+than assumed. The plan's ≈3,500 estimate for the whole name-and-prove line
+should be read against these two data points: 247 duties in two commits, so
+the estimate is a ceiling for a long programme, not a forecast for a week.
+
+### The structural blocker, named and left alone
+
+The bucket's real floor is `thin()`'s **top-one** role check: it asks whether
+the matcher's single best trade carries the firing power, and a duty whose
+sentence merely *mentions* another trade's subject fails it. Measured on
+*"Develop budgets for security operations"* — `numbers` fires, the analyst
+would cover it, and the matcher's top role is now **`security`**, so the
+guard reads the duty as thin.
+
+Which is a Wave 1 side effect worth recording plainly: **adding a trade can
+demote a duty whose sentence merely names that trade's subject.** D-235's
+covered count rose by 194 net, so this is a small counter-current inside a
+larger gain — but it is real, and it is the kind of thing that would be
+invisible to anyone reading only the headline.
+
+Widening the check to the matcher's ranked alternatives would recover some of
+this. It was **not done**, on the rule the programme runs on: the guard was
+calibrated by D-231 against the only labelled set nobody wrote by reading the
+grader's output, the gain on offer is tens of duties, and the loss on offer
+is the projection-booth class of false positive that the guard exists to
+stop. A grader change earns its own entry with its own before-and-after, not
+a paragraph inside a term commit.
+
+### Evidence
+
+Typecheck clean; server **2,071** tests (four new pairs in `coverage.test.ts`,
+each pinning a phrase against a duty from the release *and* the doing of the
+same subject still refused: the budget covered but the spending policy-gapped,
+the permit application covered but filing still `act`, evaluating software
+covered but installing it still `act`, making the deck covered but delivering
+the speech still policy) and web **333** green. Calibration and intake both
+byte-identical to D-235's. Mutation pass below.

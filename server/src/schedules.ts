@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Cadence, ScheduleInfo } from '@agentlings/shared';
+import type { StandingInput } from './standing';
 
 /**
  * The recurrence timer (D-103). A schedule is a sentence queued again on a
@@ -31,6 +32,13 @@ export interface Schedule {
   channel?: string;
   /** The send facts as the desk collected them (D-097's answers). */
   answers?: Record<string, string>;
+  /**
+   * Files the firing reads afresh, resolved at fire time (D-246). A schedule
+   * could carry a prompt and nothing else, so recurring work could only reach
+   * what was ambient — this is how a monthly reconciliation gets the month's
+   * own statement without anyone attaching it again.
+   */
+  inputs?: StandingInput[];
   createdAt: number;
   /** The next occurrence. Advanced *before* the firing is attempted. */
   nextDueAt: number;
@@ -278,6 +286,7 @@ export function createSchedule(
     cadence: Cadence;
     channel?: string;
     answers?: Record<string, string>;
+    inputs?: StandingInput[];
   },
   now: number,
 ): Schedule {
@@ -287,6 +296,7 @@ export function createSchedule(
     cadence: args.cadence,
     ...(args.channel ? { channel: args.channel } : {}),
     ...(args.answers && Object.keys(args.answers).length ? { answers: args.answers } : {}),
+    ...(args.inputs?.length ? { inputs: args.inputs } : {}),
     createdAt: now,
     nextDueAt: computeNextDue(args.cadence, now),
   };

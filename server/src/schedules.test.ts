@@ -298,3 +298,33 @@ describe('cadenceFrom', () => {
     expect(describeCadence(read.cadence)).toBe('every Monday at 09:00');
   });
 });
+
+
+describe('standing inputs on a schedule (D-246)', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'sched-standing-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const cadence: Cadence = { kind: 'monthly', day: 1, hour: 8, minute: 10 };
+  const inputs = [{ dir: path.resolve('/books'), match: 'estado', as: 'statement.xlsx' }];
+
+  /**
+   * The seam this project keeps re-learning: a field complete in the type and
+   * the route, dropped by the one function that builds the object. Read back
+   * off disk rather than off the return value, because that is the path a
+   * firing actually takes.
+   */
+  it('survives the round trip to disk', () => {
+    createSchedule(dir, { prompt: 'reconcile the books', cadence, inputs }, 1000);
+    expect(readSchedules(dir)[0].inputs).toEqual(inputs);
+  });
+
+  it('stays absent when none were given, rather than becoming an empty list', () => {
+    createSchedule(dir, { prompt: 'say hi', cadence }, 1000);
+    expect(readSchedules(dir)[0]).not.toHaveProperty('inputs');
+  });
+});

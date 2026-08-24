@@ -71,6 +71,7 @@ import {
   setPaused,
   validCadence,
 } from './schedules';
+import { resolveStanding, validateStanding, type StandingInput } from './standing';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
 import {
@@ -2517,6 +2518,7 @@ app.post('/api/levels/:lid/schedules', async (c) => {
     cadence?: Cadence;
     channel?: string;
     answers?: Record<string, string>;
+    inputs?: StandingInput[];
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -2529,7 +2531,19 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   const channel =
     typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
   const answers = body.answers && Object.keys(body.answers).length ? body.answers : undefined;
-  const schedule = createSchedule(rt.dir, { prompt: text, cadence, channel, answers }, Date.now());
+  // Refused here rather than at 08:10 on the first of the month: a standing
+  // input that could never resolve is a mistake someone is making now, and
+  // now is when they can still fix it (D-246).
+  const inputs = body.inputs?.length ? body.inputs : undefined;
+  if (inputs) {
+    const badInput = validateStanding(inputs);
+    if (badInput) return c.json({ error: badInput }, 400);
+  }
+  const schedule = createSchedule(
+    rt.dir,
+    { prompt: text, cadence, channel, answers, inputs },
+    Date.now(),
+  );
   return c.json(describeSchedule(schedule), 201);
 });
 
@@ -4830,9 +4844,15 @@ function sweepSchedules(now = Date.now()): void {
     for (const schedule of dueNow(readSchedules(rt.dir), now)) {
       markFired(rt.dir, schedule.id, now);
       try {
+        // Read inside the try, so a folder that moved or a month whose file
+        // never arrived lands on the row as an error and queues nothing. A
+        // reconciliation missing one of its two inputs would otherwise run,
+        // match nothing, and report a clean result (D-246).
+        const attachments = schedule.inputs?.length ? resolveStanding(schedule.inputs) : undefined;
         queueSentence(rt, schedule.prompt, {
           channel: schedule.channel,
           answers: schedule.answers,
+          ...(attachments ? { attachments } : {}),
           note: `queued by its schedule — ${describeCadence(schedule.cadence)}`,
         });
       } catch (err) {

@@ -19148,12 +19148,34 @@ and plumbing adds no duties. What it does instead is serve a demand stated four
 times in a week. That is a different trade than `HORDE.md` §4 proposed, and it
 is recorded as a different trade rather than relabelled as the same one.
 
-**Owed.** The sweep lives inside `index.ts` behind a timer and is not exported,
-so `scripts/prove-standing.mjs` proves that half live — on its own crewless
-level, so nothing it queues can be picked up and no session ever starts, with a
-final check that no job left `queued`. **It has not been run: the server
-predates this code and only Brian restarts it (a session-started server dies
-with the session and can kill a paid run).** Also not built: any UI for setting
+**Proven live, 22/22, on the restarted server** — `scripts/prove-standing.mjs`.
+The sweep is inside `index.ts` behind a timer and not exported, so this is the
+only way to know a standing input actually rides a firing. It runs on its own
+level with every agentling rested, waits out two real cadences, and reads the
+queued job's sandbox: the newest statement arrived under the name the prompt
+uses, the lock file did not, the ledger came too, nothing else did, the broken
+schedule failed loudly with `no folder at …` and queued nothing, and a
+September file dropped into the folder was picked up by an unchanged schedule.
+
+**The first run of that script cost $0.38, and the reason is the finding.** Its
+crew guard read the agentling ids from the create response — which carries
+`crew: 2` and no `agentlings` array. The loop therefore ran **zero times**,
+rested nobody, and its `restedAll` flag stayed `true`, so the check reported
+PASS by never executing. Two jobs were picked up and one billed. This is the
+same shape as the scripted check that once passed by matching a string that
+already existed, and as D-244's twenty-eighth read site: *a guard that passes
+because its body never ran is indistinguishable from a guard that passed.* The
+only thing that caught it was the final assertion that no job had left
+`queued` — a check written to be redundant, which was not. The guard now reads
+the roster off disk, verifies `resting` off disk after the calls, and **exits
+before creating a single schedule** if anyone is still awake: it fails closed.
+A second finding from the same run: `jobsRunning` in `levelInfo` counts
+`queued || running`, so a level showing two "running" jobs may have nothing
+executing at all — read the ledger, not the label.
+
+The re-run added **zero ledger rows**, which is how the free claim is now made.
+
+Also not built: any UI for setting
 a standing input, so today it is reachable only through
 `POST /api/levels/:lid/schedules`; and there is no bookkeeper trade, so
 "I need an accountant" still routes to `clerk` or `analyst`. The acting half of

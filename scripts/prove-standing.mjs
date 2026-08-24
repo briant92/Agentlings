@@ -7,11 +7,18 @@
 // actually rides a firing is to let a real schedule come due on a real server
 // and then look in the sandbox it queued.
 //
-// Costs nothing. The proof makes its own level and rests every agentling on it
-// before firing, so the jobs it queues can never be picked up and no session
-// ever starts — the attachment is written by queue.add, long before anyone
-// would run it. The last check confirms the job never left `queued`, so a
-// failure of that guard is reported rather than quietly billed.
+// Costs nothing, and the first run of this script proves why that has to be
+// checked rather than asserted. It makes its own level and rests every
+// agentling on it, so the jobs it queues cannot be picked up and no session
+// starts — the attachment is written by queue.add, long before anyone would
+// run it.
+//
+// The first version rested nobody. It read the ids from the create response,
+// which carries `crew: 2` and no `agentlings` array, so the loop ran zero
+// times and its guard passed by never executing. Two jobs ran and one cost
+// $0.38. The ids now come off the roster on disk, resting is verified on disk
+// after the fact, and the script EXITS before creating a single schedule if
+// anyone is still awake — a guard that fails closed rather than open.
 //
 // Takes about three minutes of wall clock, nearly all of it waiting for two
 // cadences to come round. The second wait is what proves the actual point:
@@ -89,16 +96,43 @@ if (made.status !== 201) {
 const lid = made.body.id;
 const levelDir = path.join(ROOT, '.agentlings', 'levels', lid);
 const cleanup = async () => {
-  await call(`/api/levels/${lid}`, { method: 'DELETE' }).catch(() => {});
+  // Queued jobs block a close, and this proof exists to leave some queued —
+  // so cancel them first. The first version did not, and left its level on the
+  // closed shelf twice over.
+  try {
+    const file = path.join(ROOT, '.agentlings', 'levels', lid, 'jobs.json');
+    if (existsSync(file)) {
+      for (const j of JSON.parse(readFileSync(file, 'utf8'))) {
+        await call(`/api/levels/${lid}/jobs/${j.id}/cancel`, { method: 'POST' });
+      }
+    }
+  } catch {
+    // Best effort: a level that will not close is reported below, not thrown.
+  }
+  const closed = await call(`/api/levels/${lid}`, { method: 'DELETE' });
+  if (closed.status !== 200) {
+    console.error(`could not close the proof level ${lid} (${closed.status}) — close it by hand`);
+  }
   rmSync(books, { recursive: true, force: true });
 };
 
-let restedAll = true;
-for (const a of made.body.agentlings ?? []) {
-  const r = await call(`/api/levels/${lid}/agentlings/${a.id}/rest`, { method: 'POST' });
-  if (r.status !== 200) restedAll = false;
+// The roster on disk, because the create response does not carry one.
+const rosterFile = path.join(ROOT, '.agentlings', 'levels', lid, 'roster.json');
+const roster = JSON.parse(readFileSync(rosterFile, 'utf8'));
+check('the proof level has a crew to rest', roster.length > 0, `${roster.length} hired`);
+for (const a of roster) {
+  await call(`/api/levels/${lid}/agentlings/${a.id}/rest`, { method: 'POST' });
 }
-check('every agentling on the proof level is resting', restedAll);
+// Verified off disk, not off the responses — the whole reason the first run
+// billed anything is that a 200 was read as proof of an effect.
+const afterRest = JSON.parse(readFileSync(rosterFile, 'utf8'));
+const awake = afterRest.filter((a) => !a.resting);
+check('every agentling on the proof level is resting', awake.length === 0, awake.map((a) => a.name).join(' '));
+if (awake.length > 0 || afterRest.length === 0) {
+  console.error('refusing to queue anything while someone could pick it up — this would cost money');
+  await cleanup();
+  process.exit(1);
+}
 
 const readJobs = () =>
   existsSync(path.join(levelDir, 'jobs.json'))

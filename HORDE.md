@@ -57,8 +57,9 @@ Everything below is committed and pushed. Nothing is in flight.
   attached: it does **not** subsume accounting, which is `stdio`.
 - **D-244** — **the catalog stops being the ceiling**: Settings can add **any**
   MCP server, stdio or http, with its tool list read from the server rather
-  than typed. Not the vendor question I was asking — Brian's reframe was that
-  ANY user should reach the system they need.
+  than typed. Not the vendor question I was asking — the reframe was that ANY
+  user should reach the system they need. Proven live, 24 checks: 17 through
+  the API against two real MCP servers, 7 through the real Settings form.
 
 ---
 

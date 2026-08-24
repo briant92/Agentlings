@@ -18885,6 +18885,35 @@ not the code, was what a red test was actually reporting.
 
 Typecheck clean. Server **2,185** across 91 files (from 2,155), web **333**.
 
-**Not yet proven live.** The routes and the form exist and nothing has been
-added through them on a running server; that needs a restart, and the bar is a
-real MCP server added through the UI with its tools appearing on the row.
+### Proven live on the restarted server — 24 checks
+
+`scripts/prove-user-connections.mjs` — **17/17**, against **two** real MCP
+servers chosen so the lifecycle is covered without leaving anything in `.env`:
+a `stdio` one that refuses to start without its declared secret (probed only,
+which is the secret proving itself), and an `http` one needing no credential
+(probed, saved, listed, removed).
+
+- a stdio server is spawned and lists both its tools; **withholding the secret
+  fails**, so the credential is shown to reach the far end rather than assumed
+- the refusals happen **before anything runs**: a shipped name (`github`), a
+  name a tool id could not carry, and plain http off this machine
+- saving reports what the server offered, and the stored entry carries **the
+  tools the server named** — `["desk_echo","desk_ping"]` — not the form's
+- it lands in `.agentlings/connections.json`, is marked `added`, and is **off**
+- a shipped connection refuses removal with the sentence pointing at the switch
+- nothing was written to `.env`, because the saved connection declared no secret
+
+`scripts/prove-user-connections-ui.mjs` — **7/7** in headless Edge, and this is
+the one that decides the claim: *"any user can request a connection"* is false
+if it only works from `curl`. It signs in, opens Settings → *reads*, fills the
+form the way a person would, presses **check** — *"answered with 1 tool:
+desk_echo"* — then **check and add**, and the connection appears in Settings.
+
+**Two things the UI probe reported rather than hid.** Removal was **not**
+exercised through the UI: the remove button lives in the row's body, behind an
+expander the probe never opened, so it said so and left the claim to the API
+proof rather than passing on a button it never found. And it noticed it had
+left `ui-proof` in the store and printed that too — which it had, and which was
+then removed through the route it was proving.
+
+Typecheck clean. Server **2,185** across 91 files, web **333**.

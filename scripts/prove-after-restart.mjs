@@ -18,11 +18,41 @@ const ENV_FILE = path.join(ROOT, '.env');
 const LEVEL = 'training-ground';
 const mode = process.argv[2];
 
-const json = async (url, init) => {
-  const res = await fetch(`${BASE}${url}`, init);
+/**
+ * The session cookie, once signed in. Wave 0 gates `/api/*`, and this script
+ * is a non-browser caller: the origin check (D-239) waves it through on a
+ * missing `Origin`, but the gate asks who it is and nothing but the password
+ * answers. Empty when no password is configured — then the gate is off and
+ * every call below works exactly as it did.
+ */
+let cookie = '';
+
+const json = async (url, init = {}) => {
+  const res = await fetch(`${BASE}${url}`, {
+    ...init,
+    headers: { ...(init.headers ?? {}), ...(cookie ? { cookie } : {}) },
+  });
   const body = await res.json().catch(() => ({}));
   return { status: res.status, body };
 };
+
+/** Sign in with the password in `.env`, if there is one. */
+async function signIn() {
+  const line = /^\s*AGENTLINGS_PASSWORD\s*=\s*(.+)$/m.exec(readFileSync(ENV_FILE, 'utf8'));
+  const password = line?.[1].trim();
+  if (!password) return; // gate off, or a password this script cannot know
+  const res = await fetch(`${BASE}/api/session`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    console.error(`the password in .env was refused (${res.status}) — check it`);
+    process.exit(1);
+  }
+  const set = res.headers.get('set-cookie');
+  cookie = set ? set.split(';')[0] : '';
+}
 
 async function assertNewServer() {
   const { status } = await json('/api/settings/connections/web/secrets', { method: 'DELETE' });
@@ -61,7 +91,10 @@ async function probe() {
     if (!job) continue;
     if (['done', 'partial', 'failed'].includes(job.status)) {
       console.log('status', job.status, 'cost', job.meter?.costUsd, 'turns', job.meter?.turns);
-      const out = await fetch(`${BASE}/api/levels/${LEVEL}/jobs/${id}/output/RESULT.md`);
+      const out = await fetch(
+        `${BASE}/api/levels/${LEVEL}/jobs/${id}/output/RESULT.md`,
+        cookie ? { headers: { cookie } } : undefined,
+      );
       const text = out.ok ? await out.text() : '(no RESULT.md)';
       const block = /```\n([\s\S]*?)```/.exec(text);
       const names = block ? block[1].trim().split(/\r?\n/).filter(Boolean) : [];
@@ -136,6 +169,7 @@ async function disconnect() {
   );
 }
 
+if (mode === 'probe' || mode === 'disconnect') await signIn();
 if (mode === 'probe') await probe();
 else if (mode === 'disconnect') await disconnect();
 else {

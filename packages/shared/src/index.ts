@@ -2184,5 +2184,13 @@ export const SOCKET_LEVEL_GONE = 4004;
  * one: a level that vanished may come back, and a forbidden origin will not.
  */
 export const SOCKET_FORBIDDEN_ORIGIN = 4403;
+/**
+ * The handshake carried no valid session cookie (Wave 0). Its own code, and
+ * distinct from `SOCKET_FORBIDDEN_ORIGIN` for the opposite reason that one is
+ * distinct from `SOCKET_LEVEL_GONE`: a forbidden origin is never coming back,
+ * but this one is fixed by signing in — so the client must stop retrying *and*
+ * show the login screen rather than an error.
+ */
+export const SOCKET_UNAUTHENTICATED = 4401;
 /** Localhost API port; the spawned runner calls back here for web fetches. */
 export const SERVER_PORT = 4600;

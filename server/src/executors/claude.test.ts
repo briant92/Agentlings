@@ -1045,4 +1045,14 @@ describe('launderedEnv (D-217)', () => {
       ANTHROPIC_API_KEY: 'key',
     });
   });
+
+  // R-01, in the seam the catalog list could never have covered: the session
+  // password is nobody's connection secret, so `secretNames` will never name
+  // it, so it would have ridden into every sandbox. The occupant is an LLM
+  // holding `Bash`, and the credential opens `POST /jobs/:id/resolve`.
+  it('drops the session password even when the catalog list is empty', () => {
+    const out = launderedEnv([], { PATH: 'bin', AGENTLINGS_PASSWORD: 'correct horse' });
+    expect(out).not.toHaveProperty('AGENTLINGS_PASSWORD');
+    expect(out.PATH).toBe('bin');
+  });
 });

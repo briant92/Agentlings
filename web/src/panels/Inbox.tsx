@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Delivery, Job } from '@agentlings/shared';
-import { lvl } from '../api';
+import { api, lvl } from '../api';
 import { groupDeliveries, runningNextStep } from './chain';
 import { fileUrl, orderFiles, PAPERWORK, size } from './files';
 import { money } from './Productivity';
@@ -67,8 +67,10 @@ export function Inbox({
 
   useEffect(() => {
     let alive = true;
-    void fetch(lvl(levelId, '/deliveries'))
-      .then((res) => (res.ok ? (res.json() as Promise<Delivery[]>) : Promise.reject(res.statusText)))
+    // Through `api()` rather than a bare `fetch` (Wave 0): it is the one place
+    // that recognises the gate's 401 and tells the app, and this was the only
+    // call site in the client that went around it.
+    void api<Delivery[]>(lvl(levelId, '/deliveries'))
       .then((data) => alive && setRows(data))
       .catch((err: unknown) => alive && setError(err instanceof Error ? err.message : String(err)));
     return () => {

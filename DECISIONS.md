@@ -250,6 +250,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-238 — 2026-08-24 — The four trades proven live: three delivered, the security audit was cut by a wall nobody had set, and two of them found the same hole in this app](#d-238--2026-08-24--the-four-trades-proven-live-three-delivered-the-security-audit-was-cut-by-a-wall-nobody-had-set-and-two-of-them-found-the-same-hole-in-this-app)
 - [D-239 — 2026-08-24 — The cross-origin hole the crew found in us, closed on both surfaces: an Origin check on the socket and on every request whose effect is the point](#d-239--2026-08-24--the-cross-origin-hole-the-crew-found-in-us-closed-on-both-surfaces-an-origin-check-on-the-socket-and-on-every-request-whose-effect-is-the-point)
 - [D-240 — 2026-08-24 — D-239 proven live and the security trade re-run: the wall fix works, the advisories are unreachable, and the seam that is one commit away from a high-severity leak](#d-240--2026-08-24--d-239-proven-live-and-the-security-trade-re-run-the-wall-fix-works-the-advisories-are-unreachable-and-the-seam-that-is-one-commit-away-from-a-high-severity-leak)
+- [D-241 — 2026-08-24 — Wave 0's credential: a password for an HttpOnly cookie, chosen by the socket, off until `.env` arms it — and the seam that would have handed it to every session](#d-241--2026-08-24--wave-0s-credential-a-password-for-an-httponly-cookie-chosen-by-the-socket-off-until-env-arms-it--and-the-seam-that-would-have-handed-it-to-every-session)
 
 ## By theme
 
@@ -550,7 +551,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18294,3 +18295,139 @@ The seven probes above against the running server; both ledger rows; the
 re-run's `RESULT.md` (17,480 bytes) and its `audit.json`. Typecheck clean,
 server **2,080** across 87 files and web **333** green after all three bumps —
 the lockfile moved nine lines and no source file moved at all.
+
+## D-241 — 2026-08-24 — Wave 0's credential: a password for an HttpOnly cookie, chosen by the socket, off until `.env` arms it — and the seam that would have handed it to every session
+
+**Decision.** The API and the WebSocket are authenticated by one credential: a
+password typed once, exchanged for an `HttpOnly` session cookie. It is off
+until `AGENTLINGS_PASSWORD` is set in `.env`. `/internal/*` stays
+uncredentialed.
+
+### Why a cookie, and why the socket decided it
+
+Three options were costed against this codebase, not in the abstract:
+
+| | `/api/*` | `/ws` |
+|---|---|---|
+| **A** — shared secret, `Authorization: Bearer` | trivial | needs a **second scheme** |
+| **B** — password → `HttpOnly` cookie | one middleware | **free** |
+| **C** — loopback-exempt, token off-loopback | conditional | conditional |
+
+`web/src/useWorld.ts` opens a bare `new WebSocket(...)`, and the browser gives
+page script no way to put a header on a handshake. So under A the socket needs
+a different mechanism from everything else — and R-02 says the special case is
+the one that gets deferred, which is how a gate ships with the surface that
+mattered still open. **A cookie rides the upgrade with no special case at all.**
+That is the whole ground for B, and it is a fact about the code rather than a
+preference: D-240 measured the ungated socket handing 946,402 bytes of level
+state to any origin that asked.
+
+**C was refused on a measurement, not a worry.** The server binds `127.0.0.1`
+(D-127) and `tailscale serve` proxies *into* that loopback, so every request —
+the runner's, the browser's, a phone's on the tailnet — arrives on loopback.
+"Is this loopback" does not distinguish anything here. The option's premise is
+false in this codebase.
+
+Unlike D-239's origin check, **this gates reads too**. It has to: the finding
+behind Wave 0 is that a level's state is every job and every prompt in it, and
+reading it *is* the disclosure. The two stack and neither replaces the other —
+D-239 asks *which site sent this*, which a browser answers honestly and a
+non-browser client lies about freely; this asks *who are you*, and only the
+password answers.
+
+### Unset means off, and that is the decision not the default
+
+A gate that defaulted to closed would lock the user out of a server already
+running, possibly with paid jobs in flight — the incident class R-07 exists to
+avoid. So the commit ships **inert**, and one line in `.env` arms it. This also
+makes the live proof a two-state proof rather than one.
+
+### `/internal/*` keeps exactly today's protection — R-01 dissolved
+
+R-01 warned that a server-wide token handed to the runner re-opens what
+`/internal/*` exists to close, because the session is an LLM that can read its
+own environment. Under B the warning has nothing to bite on: **the credential
+is a cookie a browser earns by typing a password, and the runner has no
+browser**, so no session is ever handed anything. The doors are read-shaped and
+already gated per connection by `connection.tools` (D-158), D-239 already
+refuses a hostile page's POST to them, and what protects them is the network
+boundary — unchanged.
+
+Per-session tokens scoped to the prefix were the alternative and were refused:
+they put a credential *inside* the sandbox, which is the thing R-01 warns
+about wearing a smaller coat, and they would land in `.session.json` — the seam
+already owed before Wave 2.
+
+### The seam nobody was looking at
+
+`launderedEnv` drops every name a **catalog connection** declares (D-217).
+`AGENTLINGS_PASSWORD` is nobody's connection secret and no catalog entry would
+ever name it — so the D-217 list, being built from the catalog, **would have
+handed the password straight into every sandbox**, to an occupant holding
+`Bash`, one `curl` from queueing and approving its own paid work. It is now
+dropped unconditionally rather than by declaration.
+
+This is the sibling-seam shape again: a rule landed at one seam and its sibling
+never learned it. The lesson generalises past this entry — **a laundering list
+built from a registry protects only what that registry can name.**
+
+### The judgements inside it
+
+- **`SameSite=Lax`, not `Strict`.** Strict withholds the cookie on any
+  cross-site *navigation*, so opening the tailnet URL from a link in a chat app
+  — how the phone is actually reached (D-175) — would land on the login screen
+  every time. Lax still withholds it from every cross-site `fetch`, form POST
+  and iframe, which is the CSRF case, and D-239's origin check is the second
+  lock on that door (R-03).
+- **`Secure` is decided per request, not hardcoded.** Three origins reach this
+  app and only one is https: Vite dev on `:5173`, the API direct on `:4600`,
+  and the `.ts.net` name where `tailscale serve` terminates TLS and forwards
+  plain http. A hardcoded `Secure` is dropped by the browser on the two http
+  origins, and the user types a password into a form that never logs them in
+  (R-04).
+- **The token is signed, not stored.** `exp.sig`, HMAC'd with a key derived
+  from the password. Nothing is held server-side, so a restart — which this
+  project does often, because roles are read once at boot — does not sign
+  anyone out; and **changing the password invalidates every outstanding cookie**
+  with nowhere needing to record that it did.
+- **One cookie parser, not two.** The HTTP gate has a Hono context and the
+  socket gate has a bare `IncomingMessage`. Two parsers is how the socket ends
+  up disagreeing with the API about who is signed in.
+- **`SOCKET_UNAUTHENTICATED` (4401) is its own close code**, distinct from
+  `SOCKET_FORBIDDEN_ORIGIN` for the opposite reason that one is distinct from
+  `SOCKET_LEVEL_GONE`: a forbidden origin is never coming back, but this one is
+  fixed by signing in — so the client must stop retrying *and* show the login
+  screen rather than an error.
+- **The login screen is deliberately plain.** Its art would come from
+  `/api/packs`, which is behind the gate it exists to pass.
+- **This is not permission to relax the tailnet rule (R-09).** The loopback
+  bind and `serve`-never-`funnel` (D-127, D-175) are exactly as they were. Wave
+  0 adds a lock to a door that is still inside the house.
+
+### What the gate broke that tests would not have caught
+
+Two in-tree liveness checks asked `res.ok` of `/api/levels` to mean "a server
+is up". Under the gate that answer is 401, so both would have read a **gated
+server as a dead one** — and `scripts/backfill-ledger-cut.ts` uses that answer
+to decide it is safe to rewrite the ledger whole. The check exists to prevent
+exactly the loss it would then have caused. Any answer now counts as up.
+`scripts/record-demo.ts` refuses outright when the gate is on rather than
+recording a video of a login screen, and `scripts/prove-after-restart.mjs`
+signs in with the password from `.env`.
+
+### Evidence
+
+`server/src/session.ts` is a pure module with no listener in it, because
+`index.ts` calls `serve()` at import and a test that reached the gate through
+the app would start a second server on :4600. 36 tests pin it, including
+R-05's route enumeration — read from `index.ts`'s source text, asserting every
+registration falls under `/api/*` or `/internal/*` and that exactly two `/api/`
+paths are exempt, so a route added *later* outside a gated prefix fails a test
+rather than shipping quiet.
+
+Typecheck clean. Server **2,117** across 88 files (from 2,080/87), web **333**
+unchanged.
+
+**Not yet proven live.** W0.9 (dev, direct `:4600` and tailnet origins) and
+W0.10 (a restarted server, both gate states) are owed and are the bar; the
+restart is the user's, with the queue empty (R-07).

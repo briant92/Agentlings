@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { onSessionEnded } from './api';
 import { CrewModal } from './panels/CrewModal';
 import { RolesModal } from './panels/RolesModal';
 import { LevelView } from './screens/LevelView';
+import { LoginScreen } from './screens/LoginScreen';
 import { SelectScreen, type LevelEntry } from './screens/SelectScreen';
 import { SettingsModal } from './screens/SettingsModal';
 import { TitleScreen } from './screens/TitleScreen';
 import type { HireFor } from './screens/hire';
+import { readSession } from './session';
 
 type Screen = { name: 'title' } | { name: 'select' } | { name: 'level'; level: LevelEntry };
 
@@ -31,10 +34,34 @@ export default function App() {
   const [crewOpen, setCrewOpen] = useState(false);
   /** A hire started from a position (D-229): carried through the level picker into the level. */
   const [hireFor, setHireFor] = useState<HireFor | null>(null);
+  /**
+   * Whether this browser is signed in (Wave 0). `null` while the answer is
+   * still in flight: rendering the app for that moment would fire every
+   * panel's fetch against a gate that is about to refuse them, and rendering
+   * the login screen would flash a password box at a user who does not have a
+   * password set. So neither, briefly.
+   */
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const timers = useRef<number[]>([]);
   const last = loadLast();
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  useEffect(() => {
+    // A server that is down answers nothing; treat that as signed in rather
+    // than locked out, because the login screen cannot help with it and the
+    // panels already say what a dead server looks like.
+    readSession()
+      .then((s) => setSignedIn(!s.required || s.authed))
+      .catch(() => setSignedIn(true));
+    // Both discoveries — a 401 on any call, and the socket's own close code,
+    // which routes through here too — land on one screen change.
+    onSessionEnded(() => setSignedIn(false));
+    return () => onSessionEnded(null);
+  }, []);
+
+  if (signedIn === null) return null;
+  if (!signedIn) return <LoginScreen onIn={() => setSignedIn(true)} />;
 
   /** Every screen change goes through the iris so the boot flow feels staged. */
   const go = (next: Screen) => {

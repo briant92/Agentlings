@@ -34,6 +34,7 @@ import {
   slugProblem,
   SOCKET_FORBIDDEN_ORIGIN,
   SOCKET_LEVEL_GONE,
+  SOCKET_UNAUTHENTICATED,
   TICK_MS,
 } from '@agentlings/shared';
 import {
@@ -46,6 +47,18 @@ import {
   setAuto,
 } from './approvals';
 import { UNSAFE_METHODS, originAllowed, originRefusal } from './origin';
+import {
+  clearedCookie,
+  gateEnabled,
+  gateRefusal,
+  loginRefusal,
+  mintToken,
+  passwordAccepted,
+  requestAllowed,
+  requestIsSecure,
+  sessionCookie,
+  sessionPassword,
+} from './session';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import {
   cadenceFrom,
@@ -676,6 +689,57 @@ app.use('*', async (c, next) => {
     return c.json({ error: originRefusal }, 403);
   }
   return next();
+});
+
+/**
+ * The second thing every request meets: Wave 0's gate. It runs after the
+ * origin check on purpose — *which site sent this* is cheaper to answer and
+ * refuses a hostile page before any cookie is parsed.
+ *
+ * Unlike the check above, this one gates **reads too**. It has to: the whole
+ * finding behind Wave 0 is that a level's state is every job and every prompt
+ * in it, and reading that is the disclosure. Off entirely until `.env` names a
+ * password, which is what makes this commit safe to land on a running server.
+ */
+app.use('*', async (c, next) => {
+  if (requestAllowed(new URL(c.req.url).pathname, c.req.header('cookie'), Date.now())) {
+    return next();
+  }
+  return c.json({ error: gateRefusal }, 401);
+});
+
+/**
+ * Whether a password is even required, and whether this browser has met it.
+ * Exempt, so the login screen can ask before it can answer.
+ */
+app.get('/api/session', (c) =>
+  c.json({
+    required: gateEnabled(),
+    authed: requestAllowed('/api/levels', c.req.header('cookie'), Date.now()),
+  }),
+);
+
+/**
+ * Log in. The password lives in `.env` like every other credential here
+ * (D-076, D-078) — there is no second store, and Settings is not where this
+ * one is set, because a drawer inside the app is behind the very gate it
+ * would be configuring.
+ */
+app.post('/api/session', async (c) => {
+  const body = await c.req.json<{ password?: unknown }>().catch(() => ({}) as { password?: unknown });
+  if (!gateEnabled()) return c.json({ required: false, authed: true });
+  if (!passwordAccepted(body.password)) return c.json({ error: loginRefusal }, 401);
+  const secure = requestIsSecure(c.req.header('x-forwarded-proto'), c.req.url);
+  c.header('set-cookie', sessionCookie(mintToken(sessionPassword()!, Date.now()), secure));
+  return c.json({ required: true, authed: true });
+});
+
+app.delete('/api/session', (c) => {
+  c.header(
+    'set-cookie',
+    clearedCookie(requestIsSecure(c.req.header('x-forwarded-proto'), c.req.url)),
+  );
+  return c.json({ required: gateEnabled(), authed: false });
 });
 
 /**
@@ -4547,6 +4611,15 @@ wss.on('connection', (socket, req) => {
   // exempt from the same-origin policy (D-239).
   if (!originAllowed(req.headers.origin)) {
     socket.close(SOCKET_FORBIDDEN_ORIGIN, 'origin not allowed');
+    return;
+  }
+  // And the same gate the API is behind, read off the same cookie by the same
+  // parser. This is the surface the cookie was chosen for: a browser cannot
+  // put a header on a handshake, so a bearer scheme would have had to leave
+  // this open or invent a second mechanism for it alone — and an open socket
+  // is the 946 KB (D-240), not the API.
+  if (!requestAllowed('/ws', req.headers.cookie, Date.now())) {
+    socket.close(SOCKET_UNAUTHENTICATED, 'sign in first');
     return;
   }
   const url = new URL(req.url ?? '/ws', 'http://localhost');

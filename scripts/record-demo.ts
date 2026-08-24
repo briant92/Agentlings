@@ -31,8 +31,19 @@ const beat = (page: { waitForTimeout(ms: number): Promise<void> }, ms = 1400) =>
   page.waitForTimeout(ms);
 
 async function main(): Promise<void> {
+  // Any answer means a server is up — Wave 0's 401 included, which `.ok`
+  // would have read as a dead server.
   const health = await fetch(`${API}/api/levels`).catch(() => null);
-  if (!health?.ok) throw new Error(`no server at ${API} — run "npm run serve" first`);
+  if (!health) throw new Error(`no server at ${API} — run "npm run serve" first`);
+  // But a gated server cannot be recorded: this drives the real UI in a real
+  // browser, and the first thing that browser would meet is the login screen.
+  // Said plainly rather than worked around — a demo recorder that typed a
+  // password would be putting one in a video.
+  if (health.status === 401) {
+    throw new Error(
+      'the server is gated (AGENTLINGS_PASSWORD is set) — comment it out and restart to record a demo',
+    );
+  }
 
   mkdirSync(OUT, { recursive: true });
 

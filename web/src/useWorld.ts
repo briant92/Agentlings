@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { SOCKET_LEVEL_GONE } from '@agentlings/shared';
+import { SOCKET_LEVEL_GONE, SOCKET_UNAUTHENTICATED } from '@agentlings/shared';
 import type { JobEvent, ServerMessage, WorldState } from '@agentlings/shared';
+import { sessionEnded } from './api';
 
 const CLIENT_EVENT_CAP = 300;
 
@@ -60,6 +61,14 @@ export function useWorld(levelId: string): {
         setConnected(false);
         if (ev.code === SOCKET_LEVEL_GONE) {
           setGone(true);
+          return;
+        }
+        // Not retried either, and for a different reason: the retry would
+        // succeed the moment the user signs in, but until then it is a
+        // once-a-second handshake that will be refused every time. Hand it to
+        // the app instead, which shows the login screen and remounts this.
+        if (ev.code === SOCKET_UNAUTHENTICATED) {
+          sessionEnded();
           return;
         }
         if (!closed) retry = setTimeout(connect, 1000);

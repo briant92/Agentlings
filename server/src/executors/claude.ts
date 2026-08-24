@@ -39,6 +39,7 @@ import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { CarryManifest } from '@agentlings/shared';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
+import { PASSWORD_VAR } from '../session';
 import { endLine, logTrajectory, trajectoryLine, type Pass } from '../trajectory';
 import { BLS_TOOLS } from '../bls';
 import { CALENDAR_TOOLS } from '../calendar';
@@ -162,12 +163,20 @@ export const RUNNER = fileURLToPath(new URL('./agent-runner.mjs', import.meta.ur
  * same list since `routed.ts` learned to; this was the sibling seam that
  * never did. `env` is a parameter so the rule can be pinned by a test
  * without touching the process.
+ *
+ * The session password is dropped unconditionally rather than by declaration,
+ * because it is not a connection's secret and no catalog entry would ever name
+ * it — so the D-217 list, which is built from the catalog, would have handed
+ * it straight through. That is R-01 in a seam nobody was looking at: a
+ * server-wide credential inside a sandbox whose occupant is an LLM that can
+ * read its own environment, and one `curl` from being able to queue and
+ * approve its own paid work.
  */
 export function launderedEnv(
   secrets: readonly string[] = [],
   env: NodeJS.ProcessEnv = process.env,
 ): Record<string, string | undefined> {
-  const dropped = new Set(secrets);
+  const dropped = new Set([...secrets, PASSWORD_VAR]);
   return Object.fromEntries(
     Object.entries(env).filter(
       ([key]) =>

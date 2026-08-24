@@ -63,7 +63,20 @@ Everything below is committed and pushed. Nothing is in flight.
 
 ---
 
-## 3. Wave 0 — API authentication · **WAITING ON ONE DECISION**
+## 3. Wave 0 — API authentication · **BUILT, AWAITING ITS LIVE PROOF**
+
+**M0 was answered on 2026-08-24: option B, the password → `HttpOnly` cookie,
+and W0.5 is "leave `/internal/*` uncredentialed". Recorded as D-241.** W0.1–
+W0.8 and W0.11 are done and committed; the gate is **off until
+`AGENTLINGS_PASSWORD` is set in `.env`**, so the commit changes nothing until
+it is armed.
+
+**What is owed: W0.9 and W0.10** — a restart with the queue empty (R-07), then
+the probe across all three origins in both gate states. Until that runs, D-241
+is a build and not a proof. §3.1–§3.3 below are kept as written, because the
+reasoning is what a later session will want to re-read, not the status.
+
+---
 
 Planned by the crew's own `planner` on 2026-08-24 (job `95f4f5eb`, Training
 Ground) and condensed here because **that sandbox is gitignored and will not

@@ -86,8 +86,12 @@ if (!write) {
 // The ledger is rewritten whole below, and a row a run finished mid-write
 // would be lost — with no trace in the backup either — so refuse while a
 // server is up (review of 2026-08-22).
+// *Any* answer means a server is up, including Wave 0's 401. Reading `r.ok`
+// here would have taken a gated server for a dead one and rewritten the ledger
+// underneath it — the exact loss this check exists to prevent, arriving
+// through the gate rather than around it.
 const up = await fetch('http://localhost:4600/api/levels', { signal: AbortSignal.timeout(1500) })
-  .then((r) => r.ok)
+  .then(() => true)
   .catch(() => false);
 if (up) {
   console.error(

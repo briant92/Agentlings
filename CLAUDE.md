@@ -87,5 +87,10 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - `AGENTLING.md` — what one agentling can do, tagged Live / Partial / Not built.
 - `DECISIONS.md` — why each choice was made and what proved it. Opened on
   demand, never imported.
+- `HORDE.md` — the open board for the expansion line (D-235 → D-240): what is
+  measured, what is owed, and the one decision Wave 0 waits on. Opened on
+  demand. It exists because job deliverables live under the gitignored
+  `.agentlings/`, so a plan nobody condensed into the repo is a plan one sweep
+  from gone.
 
 @PROJECT.md

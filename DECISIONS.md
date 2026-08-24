@@ -255,6 +255,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-243 — 2026-08-24 — Wave 2 opens with the HTTP MCP transport, and a live run caught the design flaw three unit tests had agreed to miss](#d-243--2026-08-24--wave-2-opens-with-the-http-mcp-transport-and-a-live-run-caught-the-design-flaw-three-unit-tests-had-agreed-to-miss)
 - [D-244 — 2026-08-24 — Any MCP server, added by the user: the catalog stops being the ceiling, and the tool list is read from the server rather than typed](#d-244--2026-08-24--any-mcp-server-added-by-the-user-the-catalog-stops-being-the-ceiling-and-the-tool-list-is-read-from-the-server-rather-than-typed)
 - [D-245 — 2026-08-24 — Suggestions, not connections: the app ships the shape and the server supplies the truth](#d-245--2026-08-24--suggestions-not-connections-the-app-ships-the-shape-and-the-server-supplies-the-truth)
+- [D-246 — 2026-08-24 — A schedule can carry files: a folder and a rule, read fresh at every firing, because next month's statement is a new file](#d-246--2026-08-24--a-schedule-can-carry-files-a-folder-and-a-rule-read-fresh-at-every-firing-because-next-months-statement-is-a-new-file)
 
 ## By theme
 
@@ -825,7 +826,15 @@ entry updates one file rather than two.
   D-213's profile half — memory listing a discard's note tagged as what it is,
   the record line, the true cut tile off D-214's flag, and
   spent-the-whole-quote moved onto the bottom line
-- **Recurrence** — and D-184, where the *sentence* learned to carry the
+- **Recurrence** — and D-246, where a schedule learned to carry *files*: a
+  standing input naming a folder and a rule rather than a path, resolved
+  afresh at every firing, because the bank writes next month's statement
+  beside last month's instead of overwriting it — built after the job history
+  was read backwards and said *accountant* four times in a week, and after the
+  connection it was supposed to need turned out not to exist, the books being
+  spreadsheets; a firing that cannot see all of its inputs refuses rather than
+  reconciling half-blind, and Excel's lock file is skipped by prefix because
+  it is newer than the workbook it guards. And D-184, where the *sentence* learned to carry the
   cadence: read off the words, quoted back so the reading can be checked, the
   repeat row filled in once per sentence and never acted on — because Start
   with a repeat set creates a job that spends money on a timer, and "on
@@ -19013,3 +19022,140 @@ rather than the code, which is what makes them worth reporting. Deleting a
 `docs` link, renaming an entry to something the form would refuse, and planting
 a live-looking `rk_live_…` key all fail the suite. The shipped file is guarded
 as data, not merely surrounded by guarded code.
+
+---
+
+## D-246 — 2026-08-24 — A schedule can carry files: a folder and a rule, read fresh at every firing, because next month's statement is a new file
+
+**The line this came off was going somewhere else.** `HORDE.md` §4 named the
+cheapest next step as *add one real connection and give the horde a real job
+through it* — D-244 built the door and nobody had walked through it. The
+question that opens that work is which system, and the board says it depends on
+what Brian actually runs the business on. He did not have one in mind, so the
+question was flipped: instead of picking a system, read what the horde has
+actually been asked to do and work backwards to the connection that would have
+made those jobs cheaper or possible.
+
+**446 job prompts, and the answer is not ambiguous.** Filtering out test
+scaffolding, accounting is asked for four times in seven days and served none
+of them:
+
+| Date | The ask |
+|---|---|
+| 08-17 | *"I need to understand the new Banco de Chile API modules… how we could use them for our platform"* |
+| 08-18 | *"a plan on how Agentlings could take care of my personal finances: budgets, income, expenses analysis, recurring reporting, sending wires, reviewing bills"* |
+| 08-22 | **"I need an accountant."** — the entire prompt |
+| 08-23 | *"I need an Agentling to be my bookkeeper, accountant and tax advisor. Propose how you would carry out these tasks…"* |
+| 08-23 | *"Reconcile the **attached** bank statement against the **attached** records"* — sixteen runs |
+
+Every other loud recurring ask is already served: Chile/US indicators became a
+compiled tool (D-188), calendar and mail briefs run daily on the `google` door,
+telegram sends work, GitHub is a connection, research is `web` + `search`.
+Accounting is the one repeated, unserved demand. And every one of those asks
+was answered with a *proposal* rather than the work — "I need an accountant"
+got a plan for how an accountant might work. The only job that did real
+accounting worked from **attachments**, because there was nowhere else to get
+the data.
+
+**Then the connection line died on a fact.** The books are Excel files on this
+machine. There is no MCP server for a spreadsheet, so "add one real connection"
+was the wrong shape for the demand it was supposed to serve. Rather than pick a
+different first connection to keep the board's plan intact, the board's plan
+lost.
+
+**What the re-pick found is a seam, not a vendor.** Three things were already
+built and needed nothing: `documents.ts` reads `.xlsx` through exceljs
+(formulas resolved to their computed value, `totalRows`/`totalCols` so a caller
+can say what it cut); attachments already land in a job's sandbox `input/` at
+`queue.add` time and are listed in the brief as `input/<name>`; and D-221
+already makes the attached files part of a job's identity — its own doc comment
+records that the reconciliation trial is what forced that decision.
+
+The blocker is one line of `schedules.ts`: **a schedule is a prompt, a cadence,
+a channel and some answers.** There is no attachment field and no place to put
+one. So recurring work can only reach what is ambient, and a bank statement is
+not. *"Every month, reconcile the books"* was unbuildable at any amount of
+prompting — the sixteen reconciliation runs worked only because the files were
+hand-attached each time.
+
+**A standing input is a folder and a rule, not a path.** That is the design
+decision, and it was Brian's answer to the one question that could not be
+derived from disk: when next month's statement arrives, the bank writes
+`estado-cuenta-2026-09.xlsx` **beside** last month's rather than overwriting
+it. A fixed path would therefore reconcile August forever and never say it was
+doing so. Newest match wins, by mtime rather than by name, because a filename's
+date format is the bank's choice and its ordering is not ours to assume.
+
+The landing name is required rather than defaulted to the source name, for the
+reason the whole feature exists: the source name changes. The prompt rides
+verbatim (D-072), so it must be able to say `input/statement.xlsx` in September
+as well as in August; landing the file under its real name would make the
+sentence wrong one month after it was written.
+
+**Nothing about D-132 is reversed.** That rule — nothing but a filename leaves
+a folder the user merely pointed at — governs bulk implicit reach over a folder
+picked from a dialog. A standing input names specific files as deliberately as
+attaching them does, the server reads them exactly as it reads an attachment,
+and no session gets a tool that reaches the disk. This widens what a schedule
+can carry without widening what a run can touch.
+
+**Two refusals are deliberate, and both are the same lesson.**
+
+- **A firing that cannot see all of its inputs does not happen.**
+  `resolveStanding` throws rather than skipping. A reconciliation whose
+  statement is missing but whose ledger is present would otherwise run, match
+  nothing, and report a clean result — the quietest possible failure, and the
+  one this log keeps re-recording. The schedule row carries the reason instead.
+- **Excel's `~$` lock file is skipped by prefix.** Office writes
+  `~$movimientos.xlsx` beside a workbook the moment it is opened, and it is
+  *newer* than the workbook it guards — so newest-wins would pick a couple of
+  hundred bytes of owner name over the real data every single time the user
+  happened to have the sheet open, and the xlsx reader would refuse it.
+
+**And it is refused at creation, not at 08:10 on the first of the month.**
+`validateStanding` runs on the POST: a relative folder, a landing name that is
+a path, two inputs colliding on one name, or more than `MAX_ATTACHMENTS` are
+all 400s while the person is still there to fix them.
+
+**What proved it.** 16 unit tests on the module and 2 more on the persistence
+round-trip — read back off disk rather than off the return value, because that
+is the path a firing actually takes, and a field complete in the type and the
+route but dropped by the one function that builds the object is this log's
+oldest recurring bug. Suite: server 2,216 across 93 files, web 333, typecheck
+clean.
+
+**Eleven mutations, eleven killed — but the eleventh only after it exposed a
+gap.** Deleting the `MAX_ATTACHMENT_BYTES` check changed nothing any test could
+see, so the cap was real code making a promise nothing held it to; a test was
+written and the mutation then died. The other ten: dropping the lock-file skip,
+oldest-instead-of-newest, ignoring the match filter, landing the file under its
+real name, skipping a missing input instead of throwing, removing the basename
+guard, allowing duplicate landing names, allowing relative folders, counting
+directories as candidates, and collapsing the two "nothing found" messages into
+one.
+
+**Two instrument notes, both worth more than the mutations.** The first pass
+reported three survivors that were nothing of the kind: the checker grepped
+vitest's output for `Tests N failed`, and vitest writes ANSI colour codes
+between those words, so the pattern could never match and every mutation looked
+alive. *A negative result from an instrument you just built is a claim about
+the instrument first.* And a multi-line mutation matched zero times on a CRLF
+file — D-224's third sighting, in the tooling this time rather than in source.
+
+**What this does not do, said plainly.** It does not move the headline. Hireable
+positions stay at 5–10 of 922, because that number counts O\*NET duty coverage
+and plumbing adds no duties. What it does instead is serve a demand stated four
+times in a week. That is a different trade than `HORDE.md` §4 proposed, and it
+is recorded as a different trade rather than relabelled as the same one.
+
+**Owed.** The sweep lives inside `index.ts` behind a timer and is not exported,
+so `scripts/prove-standing.mjs` proves that half live — on its own crewless
+level, so nothing it queues can be picked up and no session ever starts, with a
+final check that no job left `queued`. **It has not been run: the server
+predates this code and only Brian restarts it (a session-started server dies
+with the session and can kill a paid run).** Also not built: any UI for setting
+a standing input, so today it is reachable only through
+`POST /api/levels/:lid/schedules`; and there is no bookkeeper trade, so
+"I need an accountant" still routes to `clerk` or `analyst`. The acting half of
+the 08-18 ask — *sending wires, reviewing bills* — is Wave 4 behind the acts
+ledger and is deliberately untouched.

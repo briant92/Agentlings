@@ -149,6 +149,14 @@ check('a well-formed standing schedule is accepted', good.status === 201, good.b
 const broken = await makeSchedule(BAD, [{ dir: path.join(books, 'nowhere'), as: 'statement.xlsx' }], round1);
 check('a folder that is missing today is still accepted', broken.status === 201, broken.body.error);
 
+// The staleness refusal every proof on this line carries: a server started
+// before D-246 accepts the POST and silently drops the field, which would read
+// as a failure of the feature rather than of the server.
+if (readRows().find((s) => s.id === good.body.id)?.inputs === undefined) {
+  console.error('the running server predates D-246 — restart it first');
+  await cleanup();
+  process.exit(1);
+}
 check(
   'the standing inputs survived the round trip to disk',
   readRows().find((s) => s.id === good.body.id)?.inputs?.length === 2,

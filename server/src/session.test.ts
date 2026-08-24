@@ -8,6 +8,7 @@ import {
   PASSWORD_VAR,
   SESSION_COOKIE,
   SESSION_TTL_MS,
+  attemptLogin,
   clearedCookie,
   gateEnabled,
   isExempt,
@@ -281,10 +282,77 @@ describe('the login rate limit', () => {
     expect(lockoutRemaining(gate, NOW)).toBe(0);
   });
 
+  it('refuses the RIGHT password while locked, or the lockout is theatre', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS; i++) attemptLogin(gate, 'wrong', NOW, ON);
+    const right = attemptLogin(gate, 'correct horse', NOW, ON);
+    expect(right).toEqual({ ok: false, status: 429, error: lockoutRefusal(LOGIN_LOCKOUT_MS / 1000) });
+  });
+
   it('says how long in whole minutes, and gets the plural right', () => {
     expect(lockoutRefusal(300)).toContain('5 minutes');
     expect(lockoutRefusal(60)).toContain('1 minute.');
     expect(lockoutRefusal(1)).toContain('1 minute.');
+  });
+});
+
+/**
+ * The whole login decision, which lives here rather than in the route so that
+ * a test can reach it at all. A mutation pass is what forced this: deleting
+ * the lockout check from `index.ts` survived every test, because `serve()`
+ * runs at import and no test can mount that route. A source-text assertion was
+ * tried first and was worse than nothing — the mutation left both identifiers
+ * in place, so it passed while the check did nothing.
+ */
+describe('attemptLogin — the decision the route only adapts', () => {
+  it('lets anyone in with no token when the gate is off', () => {
+    expect(attemptLogin(newLoginGate(), undefined, NOW, OFF)).toEqual({ ok: true, token: null });
+  });
+
+  it('refuses a wrong password 401 and counts it', () => {
+    const gate = newLoginGate();
+    expect(attemptLogin(gate, 'nope', NOW, ON)).toEqual({
+      ok: false,
+      status: 401,
+      error: 'That password was not accepted.',
+    });
+    expect(gate.failures).toBe(1);
+  });
+
+  it('mints a token for the right one and clears the count', () => {
+    const gate = newLoginGate();
+    attemptLogin(gate, 'nope', NOW, ON);
+    const result = attemptLogin(gate, 'correct horse', NOW, ON);
+    expect(result.ok).toBe(true);
+    expect(result.ok && tokenValid(result.token, 'correct horse', NOW)).toBe(true);
+    expect(gate.failures).toBe(0);
+  });
+
+  it('locks out after the allowance, with 429 and not 401', () => {
+    const gate = newLoginGate();
+    const codes = Array.from(
+      { length: LOGIN_ATTEMPTS + 1 },
+      () => (attemptLogin(gate, 'nope', NOW, ON) as { status: number }).status,
+    );
+    expect(codes.slice(0, LOGIN_ATTEMPTS)).toEqual(Array(LOGIN_ATTEMPTS).fill(401));
+    expect(codes[LOGIN_ATTEMPTS]).toBe(429);
+  });
+
+  it('checks the lockout BEFORE the password, so a locked door reveals nothing', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS; i++) attemptLogin(gate, 'nope', NOW, ON);
+    // Both answers are the same 429 with the same text: a locked door cannot
+    // be used as an oracle for whether the guess was right.
+    const wrong = attemptLogin(gate, 'nope', NOW, ON);
+    const right = attemptLogin(gate, 'correct horse', NOW, ON);
+    expect(wrong).toEqual(right);
+    expect(right).toMatchObject({ status: 429 });
+  });
+
+  it('opens again once the lockout expires', () => {
+    const gate = newLoginGate();
+    for (let i = 0; i < LOGIN_ATTEMPTS; i++) attemptLogin(gate, 'nope', NOW, ON);
+    expect(attemptLogin(gate, 'correct horse', NOW + LOGIN_LOCKOUT_MS + 1, ON).ok).toBe(true);
   });
 });
 

@@ -48,21 +48,14 @@ import {
 } from './approvals';
 import { UNSAFE_METHODS, originAllowed, originRefusal } from './origin';
 import {
+  attemptLogin,
   clearedCookie,
   gateEnabled,
   gateRefusal,
-  lockoutRefusal,
-  lockoutRemaining,
-  loginRefusal,
-  mintToken,
   newLoginGate,
-  noteLoginFailure,
-  noteLoginSuccess,
-  passwordAccepted,
   requestAllowed,
   requestIsSecure,
   sessionCookie,
-  sessionPassword,
 } from './session';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import {
@@ -733,21 +726,20 @@ app.get('/api/session', (c) =>
 /** Failed-login count for the whole server. Why not per-IP: see `session.ts`. */
 const loginGate = newLoginGate();
 
+/**
+ * An adapter and nothing more: every decision — gate off, locked out, wrong
+ * password, right one — is `attemptLogin`'s, so all of it is reachable by a
+ * test. This route cannot be, because `serve()` runs at import.
+ */
 app.post('/api/session', async (c) => {
   const body = await c.req.json<{ password?: unknown }>().catch(() => ({}) as { password?: unknown });
-  if (!gateEnabled()) return c.json({ required: false, authed: true });
-  const waiting = lockoutRemaining(loginGate, Date.now());
-  // Checked before the password is even looked at, so a locked door costs an
-  // attacker a request and tells them nothing about the guess they made.
-  if (waiting > 0) return c.json({ error: lockoutRefusal(waiting) }, 429);
-  if (!passwordAccepted(body.password)) {
-    noteLoginFailure(loginGate, Date.now());
-    return c.json({ error: loginRefusal }, 401);
+  const outcome = attemptLogin(loginGate, body.password, Date.now());
+  if (!outcome.ok) return c.json({ error: outcome.error }, outcome.status);
+  if (outcome.token) {
+    const secure = requestIsSecure(c.req.header('x-forwarded-proto'), c.req.url);
+    c.header('set-cookie', sessionCookie(outcome.token, secure));
   }
-  noteLoginSuccess(loginGate);
-  const secure = requestIsSecure(c.req.header('x-forwarded-proto'), c.req.url);
-  c.header('set-cookie', sessionCookie(mintToken(sessionPassword()!, Date.now()), secure));
-  return c.json({ required: true, authed: true });
+  return c.json({ required: gateEnabled(), authed: true });
 });
 
 app.delete('/api/session', (c) => {

@@ -303,6 +303,43 @@ export function noteLoginSuccess(gate: LoginGate): void {
   gate.until = 0;
 }
 
+/**
+ * The whole login decision, so that the route is an adapter and nothing more.
+ *
+ * It lives here because `index.ts` cannot be imported by a test without
+ * starting a listener — and a mutation pass proved that is not a theoretical
+ * cost: deleting the lockout check from the route survived every test, because
+ * no test could see the route. Logic in a testable module and a route that
+ * only translates it is the answer; a source-text assertion was tried first
+ * and was worse than useless, since the mutation left both identifiers in
+ * place and it passed.
+ */
+export type LoginResult =
+  | { ok: true; token: string | null }
+  | { ok: false; status: 401 | 429; error: string };
+
+export function attemptLogin(
+  gate: LoginGate,
+  supplied: unknown,
+  now: number,
+  env: NodeJS.ProcessEnv = process.env,
+): LoginResult {
+  const password = sessionPassword(env);
+  // No gate, nothing to log in to — and no cookie either, so an unarmed
+  // server never hands out a credential it would not later check.
+  if (password === null) return { ok: true, token: null };
+  // Before the password is even looked at, so a locked door costs a request
+  // and tells an attacker nothing about the guess they just made.
+  const waiting = lockoutRemaining(gate, now);
+  if (waiting > 0) return { ok: false, status: 429, error: lockoutRefusal(waiting) };
+  if (!passwordAccepted(supplied, env)) {
+    noteLoginFailure(gate, now);
+    return { ok: false, status: 401, error: loginRefusal };
+  }
+  noteLoginSuccess(gate);
+  return { ok: true, token: mintToken(password, now) };
+}
+
 export const lockoutRefusal = (seconds: number): string =>
   `Too many wrong passwords. Try again in ${Math.ceil(seconds / 60)} minute${
     Math.ceil(seconds / 60) === 1 ? '' : 's'

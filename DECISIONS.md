@@ -247,6 +247,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-235 — 2026-08-24 — Wave 1 of the coverage programme: four trades hired off a measurement, vouched by their own powers, and nothing on the shelf of never touched](#d-235--2026-08-24--wave-1-of-the-coverage-programme-four-trades-hired-off-a-measurement-vouched-by-their-own-powers-and-nothing-on-the-shelf-of-never-touched)
 - [D-236 — 2026-08-24 — The phrase widening, and where naming stops paying: four existing powers given phrases, +53 duties, and the structural blocker named rather than loosened](#d-236--2026-08-24--the-phrase-widening-and-where-naming-stops-paying-four-existing-powers-given-phrases-53-duties-and-the-structural-blocker-named-rather-than-loosened)
 - [D-237 — 2026-08-24 — The scoreboard: hireable positions counted on evidence rather than on word matches, and the first thing it found was a false positive of its own](#d-237--2026-08-24--the-scoreboard-hireable-positions-counted-on-evidence-rather-than-on-word-matches-and-the-first-thing-it-found-was-a-false-positive-of-its-own)
+- [D-238 — 2026-08-24 — The four trades proven live: three delivered, the security audit was cut by a wall nobody had set, and two of them found the same hole in this app](#d-238--2026-08-24--the-four-trades-proven-live-three-delivered-the-security-audit-was-cut-by-a-wall-nobody-had-set-and-two-of-them-found-the-same-hole-in-this-app)
 
 ## By theme
 
@@ -547,7 +548,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18000,3 +18001,95 @@ of example* rather than its logic (D-235's reach row, D-236's aimed-wrong
 phrases, this). The habit worth keeping: **a negative example only tests a
 rule if it would pass without it** — a fixture excluded for two reasons
 proves neither.
+
+## D-238 — 2026-08-24 — The four trades proven live: three delivered, the security audit was cut by a wall nobody had set, and two of them found the same hole in this app
+
+**Decision:** the proof D-235 said it owed is paid. Four real jobs on Training
+Ground, one per new trade, through the ordinary desk on the restarted server.
+Three delivered; the fourth was cut by the clock and is re-run after the fix
+recorded below. **`security` gains `timeoutMinutes: 25`** and a line telling it
+it has no Edit tool — and, on the evidence, **nothing else changes**.
+
+### What ran, and what it cost
+
+| Trade | Job | Outcome | Turns | Charged | Tool calls |
+|---|---|---|---|---|---|
+| `security` — Lux | `f73a5e6b` | **failed, timed out** | –/15 | **$0** (absorbed) | – |
+| `operations` — Tam | `99898724` | done | 14/12 | $0.738 | 13 |
+| `planner` — Ash | `95f4f5eb` | done | 17/12 | $1.415 | 16 |
+| `logistics` — Rue | `7788efaf` | done | 4/12 | $0.494 | 3 |
+
+$2.647 charged plus $0.237 of close-outs. The security run's true cost is
+`costUnknown` — a killed session never reaches the message the SDK reports cost
+on (D-199) — and it was charged nothing, because failed work is absorbed.
+
+**Routing was proven before any money moved.** All four sentences were put
+through `/work/plan` first: `operations→Tam 0.86`, `logistics→Rue 0.82`,
+`planner→Ash 0.79`, `security→Lux 0.91`, every one held by its own trade with
+`noOneHasRole: false`. The bench had said the trades were reachable; this says
+the desk agrees.
+
+### The defect the proof existed to find
+
+`security` was written with `maxTurns: 15` and **no `timeoutMinutes`**, so it
+inherited the ten-minute default (`timeoutMsFor`, `executors/claude.ts:310`).
+A job that clones this repo and audits 555 packages does not fit in ten
+minutes. It was cut at ~10.5 minutes with four surfaces unfinished, and its
+`PENDING.md` names them.
+
+The wall was not the whole story. The trail shows the run reaching for **Edit**
+on its own `RESULT.md` and being refused — *"Permission to use Edit has been
+denied"* — at message 42, again at 43, again at 44. `security` holds
+`[read, write, grep, bash]`, and no Edit is the point: it is what makes *"you
+do not apply the fixes"* a fact enforced at the session rather than a promise
+in a prompt (AGENTLING §2's rule). So the fix is **not** to grant Edit. It is
+to say so in the role, and let it write the report whole with Write. Refused
+retries inside a wall are the expensive kind of ignorance — D-031's rule
+inverted: a tool it does *not* have has to be named too, or it spends turns
+discovering that.
+
+Three defaults, three different right answers, and only running it could tell
+them apart: `operations` finished at 14 turns and `planner` at 17, neither near
+a wall, so **their files were left alone**. Widening all four on one run's
+evidence would have been the guess this entry exists to avoid.
+
+### The finding that outranks the defect
+
+**The two trades that read this repo independently landed on the same hole,
+and it is a real one.** Lux ranked, first of five, *"any website you visit can
+read this app's state over the WebSocket"* — `/ws` validates no `Origin`,
+and WebSockets are exempt from the same-origin policy — with the missing API
+authentication second. Ash, planning Wave 0 without seeing Lux's report,
+identified the same surface as the plan's highest-leverage line for a
+different reason: **a bearer header cannot authenticate `/ws` at all**, because
+the browser gives no way to set a header on a WebSocket handshake
+(`web/src/useWorld.ts:36` opens a bare `new WebSocket`). A cookie rides that
+handshake; a header does not. So the credential decision is gated by the
+socket, and a Wave 0 that gates HTTP and leaves the socket open would be
+worse than none — the world view is socket-fed.
+
+That is the first time work this crew produced has changed what the next
+decision is. Wave 0 was going to start with a bearer token.
+
+### That the refusals held, which no test could check
+
+Every one of the four wrote its boundary into its own deliverable, unprompted
+by the sentence:
+
+- Lux: *"Nothing running was scanned, probed or signed in to; no fix was applied."*
+- Tam: *"a procedure written from the records, not a certification… A qualified maintainer signs it"*, with every step marked **[recorded]** or **[inferred]**.
+- Ash: *"A plan on paper. Nothing is scheduled, nobody is assigned, no date is committed on anyone's behalf."*
+- Rue: recommended a supplier and placed no order, naming the criteria before the verdict, scoring the loser, and stating the one input it had to assume (*demand CV = 0.25 — "this number is not in the records"*) — then the break-even that would overturn its own answer, *"a number you have and I don't"*.
+
+Rue also did the thing its prompt asks and nothing enforces: it computed in a
+kept script, `reorder.mjs` beside `reorder-output.json`, so the method can be
+replayed. Four turns, 49c.
+
+### Evidence
+
+The four jobs above, their ledger rows, their deliverables and Lux's trajectory
+trail, all on the running server. After the role edit: `bench:intake` **53/54**
+unchanged and the anchor canary green (the prompt body is indexed, so the edit
+owed a replay), calibration **52/58** with the overclaim cells empty, typecheck
+clean, server **2,074** and web **333**. `security`'s re-run rides the next
+restart, since a role file is read once at boot.

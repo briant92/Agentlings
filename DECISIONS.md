@@ -18738,3 +18738,40 @@ in the file. Both were re-aimed and both died.
 it yet, because *which* remote MCP server to adopt first depends on what Brian
 actually runs his business on — that is a decision, and this line does not
 start those in code.
+
+### Correction, same day: "largely subsumes business-system doors" was overstated
+
+Written above and checked afterwards, which is the wrong order and the reason
+this paragraph exists. The claim holds for one category and fails for the one
+that matters most here.
+
+- **Accounting is `stdio`, not `http`.** Xero's *official* MCP server
+  (`XeroAPI/xero-mcp-server`) is a local process — `npx -y
+  @xeroapi/xero-mcp-server@latest`, credentialed by `XERO_CLIENT_ID` and
+  `XERO_CLIENT_SECRET` in its `env`. That maps onto the `stdio` transport this
+  repo has had since `browser`, so **the book side of RECONCILE.md needed no
+  part of D-243 at all**. Read from the repository rather than from a search
+  summary.
+- **Remote MCP is real, but it is a different category.** Atlassian, HubSpot,
+  Linear, Slack, Sentry, Salesforce, Asana, Monday, Box, Figma, Canva, Neon and
+  Vercel publish remote endpoints. Those are dev, CRM and project tools — a
+  genuine population for `transport: 'http'`, and none of them is the ledger.
+- **A limit not noticed while building it:** most remote servers authenticate
+  with **OAuth 2.1**, not a static bearer from `.env`. D-243 supports
+  static-credential remote servers, which is a real subset and not the whole
+  field. An OAuth flow is its own piece of work and is **not** built.
+
+So the honest ordering of the transport's value: it opens the SaaS category,
+it does **not** open accounting, and within its own category it covers the
+static-credential half. That is narrower than the entry claimed above.
+
+**What the check validated instead was D-242.** A Xero connection would be the
+**first stdio connection in the catalog that declares real secrets** — the
+exact case the `.session.json` seam fix was made for, and the one the security
+audit called "one stdio connection away from high severity". Built this
+morning, it would have kept `XERO_CLIENT_SECRET` out of the sandbox on the day
+the connection landed rather than after someone noticed. The pre-emptive fix
+was worth more than the transport it was cleared for.
+
+Sources for the two facts: the Xero server's own repository, and the remote-MCP
+directories listing the endpoints above.

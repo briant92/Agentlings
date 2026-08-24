@@ -193,10 +193,16 @@ plan's order, with what each reverses:
 1. **Event triggers** — extends D-103 from calendar cadences to something
    happening. Mail arriving is the obvious first, since `mail` already reads.
    Note it pulls Wave 3's decision forward.
-2. **Business-system doors** — now mostly *catalog* work, because a vendor
-   publishing an MCP server is a `transport: 'http'` entry with no code. **The
-   open question is which one**, and that depends on what Brian actually runs
-   his business on.
+2. **Business-system doors** — mostly *catalog* work, but **check the transport
+   before assuming it is `http`** (D-243's correction). Xero's official MCP
+   server is **`stdio`** (`npx -y @xeroapi/xero-mcp-server@latest`, secrets in
+   `env`), so the accounting side needs nothing D-243 added and works today.
+   Remote `http` endpoints exist for Atlassian, HubSpot, Linear, Slack,
+   Salesforce, Asana, Monday and similar — a real population, but dev/CRM
+   rather than the ledger — and **most of them want OAuth 2.1, which is not
+   built**; D-243 covers static credentials from `.env`. **The open question is
+   which system**, and that depends on what Brian actually runs his business
+   on.
 3. **Browser acting tools — last, and deliberately.** `click`/`type`/`submit`
    is a session changing someone else's state with **no outbox and no
    approval**, which supersedes D-075's *not-an-actor* clause through a side

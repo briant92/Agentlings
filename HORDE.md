@@ -291,7 +291,15 @@ executing — it now fails closed and adds zero ledger rows.
   server was last restarted on it. Comment the line out and restart to disarm.
 - `.agentlings/connections.json` is **empty**. Everything the proofs added was
   removed again; nothing a user added is waiting to be found.
+- The server was **restarted at ~15:44 on 2026-08-24**, so it carries the
+  standing-input route *and* the sharpened `analyst` role. A role file reaches
+  nothing until a restart, and that one has happened.
+- **Two ledger rows on a level called `d-246-standing-proof` are real spend
+  ($0.38)** from a proof whose crew guard passed by never executing. The level
+  is gone; the rows stay, because the ledger is not edited. They are not work.
 - Nothing is in flight, and **nothing on this board is owed**.
+- The one thing nobody has done: **give the horde a real job on real data
+  through any of it.** Everything from D-241 on is proven against fixtures.
 
 ---
 

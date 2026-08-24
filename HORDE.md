@@ -10,6 +10,18 @@ verified starting points (D-245). **§4 is the pick-up point.** What remains
 there is **event triggers**, and then browser acting tools, which are last
 deliberately and for a reason worth reading before starting them.
 
+**Picking this up cold:** read §1 for where the line stands, §4 for the
+decision that opens the next piece, and **§4b for how the machine was left and
+how to re-check any claim on this board**. Everything through D-245 is
+committed and pushed; the last commit was `14a894f`.
+
+**One thing the numbers here do not say.** Everything from D-241 onward is
+*capability* — a gate, three seams closed, a transport, a way to add
+connections. None of it has been exercised on real work, and the headline is
+unmoved at 5–10 of 922 because reach, not machinery, is what moves it. The
+cheapest next step that changes that is not on this board: add one real
+connection and give the horde a real job through it.
+
 Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
 D-235 → D-245; the plan it
 implements is the artifact *The Hireable Horde*
@@ -228,6 +240,36 @@ The generalization the acting waves rest on — the **acts ledger** (D-075's
 outbox made typed: compose → validate → review → replay → audit) and the
 **authority matrix L0–L4** (D-082 generalized) — is designed in the plan
 artifact and **not built**. Build it when a wave needs it, not before.
+
+---
+
+## 4b. The proof instruments, and the state of the machine
+
+Every one of these is a **live** check against a running server, not a test.
+They exist because this line's bar is "run it and see", and a later session
+should re-run rather than trust the numbers written above.
+
+```
+node scripts/prove-wave0.mjs             # 16/16 — the gate, HTTP + socket
+node scripts/prove-wave0.mjs --lockout   # + the login lockout (LOCKS THE DOOR 5 min)
+node scripts/prove-wave0-ui.mjs          # 17/17 — the login screen, headless Edge
+node scripts/prove-http-mcp.mjs          #  6/6  — the http transport, real MCP server
+node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports
+node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form
+node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
+```
+
+Each refuses a server older than the thing it proves, so a stale server reads
+as *"restart it first"* rather than as a failure. `prove-http-mcp` runs one
+cheap model turn (~$0.15); the rest cost nothing.
+
+**How the machine was left on 2026-08-24:**
+
+- The **gate is armed** — `AGENTLINGS_PASSWORD` is set in `.env`, and the
+  server was last restarted on it. Comment the line out and restart to disarm.
+- `.agentlings/connections.json` is **empty**. Everything the proofs added was
+  removed again; nothing a user added is waiting to be found.
+- Nothing is in flight, and **nothing on this board is owed**.
 
 ---
 

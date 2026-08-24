@@ -32,6 +32,7 @@ import {
   opKey,
   opLabel,
   slugProblem,
+  SOCKET_FORBIDDEN_ORIGIN,
   SOCKET_LEVEL_GONE,
   TICK_MS,
 } from '@agentlings/shared';
@@ -44,6 +45,7 @@ import {
   recordApproval,
   setAuto,
 } from './approvals';
+import { UNSAFE_METHODS, originAllowed, originRefusal } from './origin';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import {
   cadenceFrom,
@@ -659,6 +661,22 @@ function levelInfo(rt: LevelRuntime): LevelInfo {
 }
 
 const app = new Hono();
+
+/**
+ * The first thing every request meets (D-239). A cross-origin *simple* request
+ * — `text/plain`, so the browser sends no preflight — was measured reaching
+ * these routes and being acted on; the page cannot read the reply, but the
+ * effect lands, and `POST /jobs/:id/resolve` is Approve, which is the send
+ * (D-075). Reads are left alone: a cross-origin GET is already contained,
+ * because nothing here answers with CORS headers, so the page cannot see what
+ * came back.
+ */
+app.use('*', async (c, next) => {
+  if (UNSAFE_METHODS.has(c.req.method) && !originAllowed(c.req.header('origin'))) {
+    return c.json({ error: originRefusal }, 403);
+  }
+  return next();
+});
 
 /**
  * Libraries a sandbox can resolve, read once. A sandbox lives inside the
@@ -4524,6 +4542,13 @@ function watching(levelId: string): boolean {
 }
 
 wss.on('connection', (socket, req) => {
+  // Before the level is even read: this socket is sent every job in the level
+  // and the whole event log the moment it opens, and a WebSocket handshake is
+  // exempt from the same-origin policy (D-239).
+  if (!originAllowed(req.headers.origin)) {
+    socket.close(SOCKET_FORBIDDEN_ORIGIN, 'origin not allowed');
+    return;
+  }
   const url = new URL(req.url ?? '/ws', 'http://localhost');
   const levelId = url.searchParams.get('level') ?? '';
   const rt = levels.get(levelId);

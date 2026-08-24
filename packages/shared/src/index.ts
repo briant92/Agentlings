@@ -2178,5 +2178,11 @@ export const TICK_MS = 100;
  * for another is the same hang with more steps.
  */
 export const SOCKET_LEVEL_GONE = 4004;
+/**
+ * The handshake came from another site and was refused (D-239). Its own code
+ * rather than `SOCKET_LEVEL_GONE`, because the client must never retry this
+ * one: a level that vanished may come back, and a forbidden origin will not.
+ */
+export const SOCKET_FORBIDDEN_ORIGIN = 4403;
 /** Localhost API port; the spawned runner calls back here for web fetches. */
 export const SERVER_PORT = 4600;

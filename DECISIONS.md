@@ -248,6 +248,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-236 — 2026-08-24 — The phrase widening, and where naming stops paying: four existing powers given phrases, +53 duties, and the structural blocker named rather than loosened](#d-236--2026-08-24--the-phrase-widening-and-where-naming-stops-paying-four-existing-powers-given-phrases-53-duties-and-the-structural-blocker-named-rather-than-loosened)
 - [D-237 — 2026-08-24 — The scoreboard: hireable positions counted on evidence rather than on word matches, and the first thing it found was a false positive of its own](#d-237--2026-08-24--the-scoreboard-hireable-positions-counted-on-evidence-rather-than-on-word-matches-and-the-first-thing-it-found-was-a-false-positive-of-its-own)
 - [D-238 — 2026-08-24 — The four trades proven live: three delivered, the security audit was cut by a wall nobody had set, and two of them found the same hole in this app](#d-238--2026-08-24--the-four-trades-proven-live-three-delivered-the-security-audit-was-cut-by-a-wall-nobody-had-set-and-two-of-them-found-the-same-hole-in-this-app)
+- [D-239 — 2026-08-24 — The cross-origin hole the crew found in us, closed on both surfaces: an Origin check on the socket and on every request whose effect is the point](#d-239--2026-08-24--the-cross-origin-hole-the-crew-found-in-us-closed-on-both-surfaces-an-origin-check-on-the-socket-and-on-every-request-whose-effect-is-the-point)
 
 ## By theme
 
@@ -548,7 +549,7 @@ entry updates one file rather than two.
   and D-236, the phrase widening — four powers that already existed given
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
-  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket
+  and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve
 - **The project's own notes** — D-002, D-038
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
@@ -18093,3 +18094,84 @@ unchanged and the anchor canary green (the prompt body is indexed, so the edit
 owed a replay), calibration **52/58** with the overclaim cells empty, typecheck
 clean, server **2,074** and web **333**. `security`'s re-run rides the next
 restart, since a role file is read once at boot.
+
+## D-239 — 2026-08-24 — The cross-origin hole the crew found in us, closed on both surfaces: an Origin check on the socket and on every request whose effect is the point
+
+**Decision:** `originAllowed()` gates the `/ws` handshake and every
+`POST`/`PUT`/`PATCH`/`DELETE`. Reads are left alone. **This is not
+authentication**, and it ships *ahead* of Wave 0 rather than inside it,
+because it needs no credential decided and the hole is live now.
+
+### Found by the crew, verified by hand
+
+Lux — the `security` trade, on the first job it ever ran (D-238) — ranked this
+first of five findings: *"any website you visit can read this app's state over
+the WebSocket."* An agentling's report is a claim, not a fact, so it was read
+back against the source before anything was built. It was right.
+`wss.on('connection')` took the level from the query string, checked the level
+existed, and never looked at `req.headers.origin` — then immediately sent
+`sim.state()`, which the file's own comment describes as every job in the
+level, and the whole `eventLog.history()`. Level ids are guessable: `hq`,
+`training-ground`, `home-chores`.
+
+**Then the probe found the half nobody had reported, and it is worse.** A
+*simple* cross-origin request — `content-type: text/plain`, so the browser
+sends no preflight — was fired at the running server with
+`Origin: https://evil.example` on a free read-only route, and was parsed and
+answered. Hono reads the body as JSON whatever the content type. The page
+cannot read the reply, but **the effect lands**, and the effects on offer
+include `POST /api/levels/:lid/work` (queues a paid job) and
+`POST /api/levels/:lid/jobs/:id/resolve` — Approve, which **is the send**
+(D-075). So the socket was disclosure; the API was action.
+
+Bounded honestly in the other direction too: `/ws` has no `message` handler, so
+nothing could be *driven* through it, and none of this is reachable from the
+public internet — `serve`, never `funnel`, on a loopback bind (D-175).
+
+### Why an Origin check, and why now rather than in Wave 0
+
+`Origin` is set by the browser and cannot be forged by page script, which is
+exactly the attacker here: a site the user did not open. A non-browser client
+can put anything it likes in that header — and for that caller the network
+boundary is still the whole answer, as it was before. So this is the cheap half
+that stands on its own: **no credential, no login screen, no client change, and
+no dependency on the M0 decision Wave 0 turns on.** Leaving it until Wave 0
+would have left a live hole standing behind a multi-milestone build.
+
+Three judgements inside it, each one a place this could have been wrong:
+
+- **A missing `Origin` is allowed.** Browsers always send one on a WebSocket
+  handshake and on a cross-origin unsafe request, so absence means a
+  non-browser caller: curl, the suite, and the spawned runner calling back into
+  `/internal/*`. Refusing those breaks the app to stop nobody.
+- **Reads are not gated.** A cross-origin `GET` is already contained, because
+  nothing here answers with CORS headers, so the page cannot see what came
+  back. The socket is the exception precisely because a handshake is exempt
+  from that rule — which is why it, and not `GET`, is what needed the check.
+- **The suffix is matched at a label boundary.** `evilts.net` and
+  `ts.net.evil.example` are somebody else's domains, and `localhost.evil.example`
+  is not this machine. Tested, because a naive `endsWith('ts.net')` is the
+  classic form of this bug.
+
+The allowlist is `localhost`, `127.0.0.1`, `::1` on any port — the dev server
+and the API pick their own — and `*.ts.net`, which is the boundary D-175 drew
+and the same suffix the Vite config already allows.
+
+`SOCKET_FORBIDDEN_ORIGIN = 4403` is its own close code rather than reusing
+`SOCKET_LEVEL_GONE`: a level that vanished may come back and the client retries
+it, and a forbidden origin never will.
+
+**AGENTLING.md is deliberately not touched.** No agentling can do anything it
+could not do before; this is a property of the server, and that file is the
+capability surface.
+
+### Evidence
+
+Typecheck clean; server **2,080** tests across 87 files (six new in
+`origin.test.ts`: the app's own origins on any port, the tailnet by MagicDNS
+name, another site refused, the three lookalike hosts refused, the opaque
+`"null"` origin a sandboxed iframe sends refused, the no-Origin caller allowed
+on purpose, and the method split) and web **333** green. The live proof — the
+same probe refused, a bad-Origin handshake closed, and the app itself still
+working from `localhost` — rides the next restart, since the server reads this
+code at boot.

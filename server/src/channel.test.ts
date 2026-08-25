@@ -441,6 +441,10 @@ describe('briefForJob', () => {
       expect(brief).toContain('"reply": true');
       expect(brief).toContain('cartola@banco.cl');
       expect(brief).toContain("waits for the user's review");
+      // The gap a dry run found: the gmail brief forbids invented addresses,
+      // and a reply's address is in the mail, not in the sentence — so the
+      // block has to say where "to" comes from or the session may refuse.
+      expect(brief).toContain('"to" is the address the mail came from');
     });
 
     it('stays out of an untriggered job, and out of a triggered one with no gmail', () => {

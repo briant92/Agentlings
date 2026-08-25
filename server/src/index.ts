@@ -97,6 +97,7 @@ import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
+import { recordRefusals } from './refusals';
 import {
   latestRollForward,
   reconciliationRefusal,
@@ -2458,6 +2459,10 @@ app.post('/api/levels/:lid/work', async (c) => {
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
+  // The desk counts what it refuses (D-249, D-259): once per Start, off the
+  // whole sentence, before any of the ways in — a refusal queued anyway is
+  // still one refusal. Never at /work/plan, which re-runs on every keystroke.
+  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
 
   const organizeRoot = body.organizeRoot?.trim();
   if (organizeRoot && !existsSync(organizeRoot)) {

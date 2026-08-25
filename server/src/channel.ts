@@ -197,6 +197,9 @@ const NEVER: Record<string, string> = {
     'Initiating a payment or transfer is never done here — a wrong message is embarrassing, a wrong wire is gone, and no review can reverse it',
 };
 
+/** The shelf-of-never rows by name, for the refusals file (D-259): a claimed send on one is a refusal counted as demand. */
+export const NEVER_CHANNELS: readonly string[] = Object.keys(NEVER);
+
 /**
  * A channel word in the sentence with no send verb beside it (D-093): the
  * near-miss the ask deliberately stays quiet on, surfaced as a question

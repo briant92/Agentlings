@@ -268,6 +268,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-256 — 2026-08-25 — The catalog gets wide: a registry browse that fills the form, a verified-here shelf with source and date, and the D-245 chips retire](#d-256--2026-08-25--the-catalog-gets-wide-a-registry-browse-that-fills-the-form-a-verified-here-shelf-with-source-and-date-and-the-d-245-chips-retire)
 - [D-257 — 2026-08-25 — The team is Brian and his standing instructions: no manager trade, D-197 stands, and a planner-only manager is the reopen shape](#d-257--2026-08-25--the-team-is-brian-and-his-standing-instructions-no-manager-trade-d-197-stands-and-a-planner-only-manager-is-the-reopen-shape)
 - [D-258 — 2026-08-25 — Built: a rule's firing holds only the doors it names — the row carries `tools`, both sweeps pass it bare, legacy rows say so, the seven rows are backfilled by identification, and the monthly indicators row was already off its tool for a reason that is not doors](#d-258--2026-08-25--built-a-rules-firing-holds-only-the-doors-it-names--the-row-carries-tools-both-sweeps-pass-it-bare-legacy-rows-say-so-the-seven-rows-are-backfilled-by-identification-and-the-monthly-indicators-row-was-already-off-its-tool-for-a-reason-that-is-not-doors)
+- [D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal](#d-259--2026-08-25--built-the-desk-counts-what-it-refuses--one-line-per-never-row-or-not-built-capability-beside-the-ledger-keyed-as-the-board-keys-its-rows-but-worded-for-a-sentence-because-the-boards-duty-lists-fired-99-times-on-250-real-sentences-and-never-on-a-refusal)
 
 ## By theme
 
@@ -1033,7 +1034,12 @@ entry updates one file rather than two.
   through both sweeps bare, legacy rows labelled, the seven rows backfilled
   as read (the monthly row needs `web search bls`, not `bls`, and has been
   off its tool since the level took a repository), the live proof owed on
-  the next restart; D-255, supervised live acting as a second browser
+  the next restart; and D-259, the desk counting what it refuses (#11) —
+  one line per never-row or not-built capability beside the ledger, the
+  board's row keys with the desk's own verb-and-object words, because the
+  board's duty lists fired 99 times on 250 real sentences and never on a
+  refusal, the live line owed on the next restart; D-255, supervised live
+  acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
   retiring; and D-257, Brian as the manager, D-197 standing, a planner-only
@@ -20014,3 +20020,84 @@ session does not re-derive it from the row's doors.
   arms a rule ticking `web` and reads `["web"]` back through the API before
   deleting it. The two daily briefs are no longer legacy — they
   carry `calendar` and `mail` — so nothing running changes for them.
+
+## D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal
+
+**Decision.** D-249's refusals file, as built (#11). `POST /api/levels/:lid/work`
+— the desk's Start, and only it — runs the whole sentence past `refusalKeys`
+before any of the ways in and appends one line per row claimed to
+`.agentlings/refusals.jsonl`, beside the ledger: `{at, level, key}` and
+nothing of the sentence. The keys are the job board's hard row ids —
+`money`, `sign`, `act`, `people`, `not-built` — and, for a send claimed on a
+channel the shelf refuses by decision (D-077: personal WhatsApp, Signal,
+iMessage, LinkedIn, WeChat, Messenger), the channel's name, read through
+`claimedChannel`, the ask card's own gate, so a mention with no send verb is
+D-093's question and never a refusal. Soft rows never count: a send on a
+wired channel, a watch, a login are partial work. `physical` and `system`
+never count either — no reopen trigger waits on a body, and demand for a
+door is #14/#15's meter, not this one. Counted once per Start and never at
+`/work/plan`, which re-runs on every keystroke; a refusal queued anyway —
+the desk warns, it does not block — is still one refusal. Torn lines are
+skipped on read as the ledger's are, and an append after a torn last line
+starts a fresh line first, which the ledger does not do (noted below, not
+changed).
+
+### Why the words are the desk's own and not the board's
+
+The board's `BOUNDARIES` are "the shelf of never and the not-builts, as
+words a duty would use" (D-229, D-230), and the plan was to reuse them
+verbatim. Measured first, per the rule: every `jobs.json` on this machine —
+**461 prompts, 250 distinct** — run through the hard rows as the board reads
+them:
+
+| Row | Distinct sentences hit | The words that fired |
+|---|---|---|
+| `physical` | 70 | pack 21 (*a level pack*), machinery 7, crop 4, walk 3, guard(s) 5, wiring 2, crane, parcel, drive(s), climb |
+| `act` | 14 | publish* 8 (*published as of today*, *INE publishes it*), install* 5 (*once installed*), launch*, enforce* |
+| `sign` | 7 | stamp* 4 (*stamps capabilities*), approval* 3 (*without my approval*) |
+| `people` | 4 | teach* 2 (*teaching agents*), relationship*, audience* (`audience.ts`) |
+| `not-built` | 2 | voice* (*the naming voice already in those files*) |
+| `money` | 1 | sell (*we need to sell that*) |
+
+**Ninety-nine lines, and not one a refusal** — Brian has never asked the
+desk to pay, sign or film anything. Wired as planned, the meter would have
+read all noise, and the two triggers that wait on it (D-253's media
+generation, D-257's planner-only manager) would have fired on "teaching
+agents" and "the naming voice". A duty statement and an ask are two notions
+that only sound alike (the D-030 trap in its other direction: collapsing
+two that sound alike is the same mistake as duplicating one). So the desk
+keeps the board's **keys** and carries its own **words**: a claim is a verb
+with its object — *pay the*, *sign it*, *deploy to*, *plan the crew's week*,
+*a video* — held to **0 hits on the 250**, with the ten shapes that fired
+kept in the test as negatives. Its recall is unmeasured, because the
+population holds no positive: the first real refusal is its test, and a
+missed one is findable, since the sentence stays in the job record.
+
+### Proof
+
+- Unit: `refusals.test.ts`, 17 — every claim key is a hard board row; a
+  payment, a licensed act, an act on the world, a manager, a not-built
+  capability (once, however many of its words), a never-channel, two rows in
+  board order with the channel last, ordinary work, a soft row, a mention,
+  the ten measured phantom shapes; one line per row with time, level and key
+  and none of the sentence's words; nothing for nothing, not even the file;
+  append-only; the file beside the ledger; a torn line skipped and the next
+  append whole.
+- Mutation: the `appendFileSync` dropped — 3 of 17 fail (the one-line test,
+  the append-only test, the torn-line test); restored, 17 pass.
+- Server 2,284 across 95 files, web 343, typecheck clean.
+- Measurement: `refusalKeys` over the same 461 prompts, after the rewrite:
+  **0**.
+- Live: the running server predates the route change, so the line the
+  route writes is owed on the next restart — `node scripts/prove-refusals.mjs`
+  queues one refusing sentence on a rested proof level, reads the line back
+  from `refusals.jsonl`, and this entry gets its line then.
+
+### Noted, not changed
+
+- The ledger's own append after a torn last line would glue the new row
+  onto the torn one and lose both; `readRows` skips them. Same shape as the
+  guard added here; left for a ticket of its own.
+- The channel shelf's `payments` row and the board's `money` row are one
+  refusal; the desk keys it `money`, and `payments` is never a channel word,
+  so no sentence can count it twice.

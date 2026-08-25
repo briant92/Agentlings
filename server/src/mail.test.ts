@@ -161,6 +161,21 @@ describe('callMail', () => {
     expect(calls).toHaveLength(1);
   });
 
+  // The real API's zero-match shape, measured 2026-08-24 (D-248's proof found
+  // it): a 204 with a ZERO-BYTE body when the fields mask leaves nothing to
+  // say. Live since mail-read shipped and never seen, because the desk's
+  // queries always matched something — a quiet trigger rule matches nothing
+  // every two minutes forever, so nothing must read as an answer.
+  it('a 204 with an empty body is "no matches", not "unreadable"', async () => {
+    const http = async () => ({ ok: true, status: 204, text: async () => '' });
+    const got = await callMail(
+      'mail_search',
+      { query: 'from:banco' },
+      { http, env: ENV, mint: fakeMint().mint },
+    );
+    expect(got).toEqual({ text: 'No mail matches "from:banco".' });
+  });
+
   it('says when the mailbox holds more matches than the page', async () => {
     const { http } = fake({ ...INBOX, list: { ...INBOX.list, nextPageToken: 'tok' } });
     const got = await callMail('mail_search', {}, { http, env: ENV, mint: fakeMint().mint });

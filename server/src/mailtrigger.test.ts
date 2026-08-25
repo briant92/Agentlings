@@ -171,6 +171,17 @@ describe('pollTrigger', () => {
     expect(got.day).toBe(localDay(NOW));
   });
 
+  // The quiet rule's steady state: Gmail answers a zero-match list as a 204
+  // with a zero-byte body (measured 2026-08-24). A poll finding nothing must
+  // be a clean empty poll, not an error landing on the row every two minutes.
+  it('a quiet mailbox is a clean empty poll, not an error', async () => {
+    const http = async () => ({ ok: true, status: 204, text: async () => '' });
+    const got = await pollTrigger(schedule(), NOW, { http, env: ENV, mint });
+    if ('error' in got) throw new Error(got.error);
+    expect(got.fired).toEqual([]);
+    expect(got.skippedByCap).toBe(0);
+  });
+
   it('a message Gmail answers without a thread id aborts the poll whole', async () => {
     const { http } = fake({
       list: { messages: [{ id: 'a' }] },

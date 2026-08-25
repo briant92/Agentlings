@@ -212,7 +212,14 @@ async function fetchJson(
   }
   let payload: Record<string, unknown> & { error?: { message?: string } };
   try {
-    payload = JSON.parse(await res.text()) as typeof payload;
+    // A zero-match list is a 204 with a zero-byte body when the fields mask
+    // leaves nothing to say (measured against the real API, 2026-08-24 —
+    // found by D-248's proof, live since mail-read shipped, never seen
+    // because the desk's queries always matched something). Nothing is a
+    // valid answer, not something unreadable — and it is the steady state
+    // of every quiet trigger rule.
+    const raw = await res.text();
+    payload = raw.trim() === '' ? {} : (JSON.parse(raw) as typeof payload);
   } catch {
     return { error: 'Gmail sent something unreadable' };
   }

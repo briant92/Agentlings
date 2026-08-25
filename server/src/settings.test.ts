@@ -82,6 +82,16 @@ describe('grantedTools', () => {
     expect(grantedTools(['tracker'], all, both, env)).toEqual(['tracker']);
   });
 
+  // A list means exactly the doors in it, so an empty one means none. This
+  // once read `[]` as omitted — the same as asking for everything — so a
+  // caller had no way to say "no doors": the reading D-254 found inverted,
+  // and the one #9 builds on (a rule that names no door holds none).
+  it('an empty list means none — nothing, not everything', () => {
+    const both = { connections: { tracker: true } };
+    expect(grantedTools([], all, both, env)).toEqual([]);
+    expect(grantedTools([], all, {}, env)).toEqual([]);
+  });
+
   /**
    * A sending channel is not a tool (D-097). Sends happen at approval,
    * replayed by the server (D-075), so a session gets no door here at all —

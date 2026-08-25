@@ -1871,6 +1871,9 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
   }
   try {
     queueSentence(rt, job.steps[0], {
+      // The step holds the doors the delivered step held — the job's own
+      // grant, where absent means none (#8), never re-granted as everything.
+      tools: job.tools ?? [],
       attachments,
       steps: job.steps.slice(1),
       step: { n, of },
@@ -1958,7 +1961,7 @@ function queueCheck(rt: LevelRuntime, job: Job): void {
     queueSentence(rt, CHECK_SENTENCE, {
       noSplit: true,
       ...(role && registry.get(role) ? { role } : {}),
-      ...(job.tools?.length ? { tools: job.tools } : {}),
+      tools: job.tools ?? [],
       attachments,
       check: { of: job.id, ...(job.assignedTo ? { avoid: job.assignedTo } : {}) },
       ...(job.withholding ? { withholding: true } : {}),
@@ -2166,7 +2169,7 @@ function queuePartyPlan(
     noSplit: true,
     ...(repo ? {} : { noRepo: true }),
     ...(registry.get('architect') ? { role: 'architect' } : {}),
-    ...(opts.tools?.length ? { tools: opts.tools } : {}),
+    tools: opts.tools,
     ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
     channelsOverride: [],
     ...(wantsWithholding(text) ? { withholding: true } : {}),
@@ -2326,7 +2329,7 @@ function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
       // every other gather stays sandbox-only.
       ...(p.repo ? {} : { noRepo: true }),
       ...(matched.role && registry.get(matched.role) ? { role: matched.role } : {}),
-      ...(job.tools?.length ? { tools: job.tools } : {}),
+      tools: job.tools ?? [],
       attachments,
       channelsOverride: p.channels ?? [],
       ...(job.withholding ? { withholding: true } : {}),
@@ -2697,7 +2700,7 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
 
   // The reply keeps the role that asked the question — the answer is to them,
   // and handing it to a different specialist loses what they had in mind.
-  const tools = granted(previous.tools);
+  const tools = granted(previous.tools ?? []);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
   // The carry hands the parent's report over as PREVIOUS-RESULT.md; the
   // brief points at it exactly when it will be there to read (D-146).
@@ -2845,7 +2848,7 @@ function continuationSpec(
   // the job it continues rather than banking recipes under a compound key
   // nobody will ever match (D-074).
   const prompt = previous.prompt;
-  const tools = granted(previous.tools);
+  const tools = granted(previous.tools ?? []);
   const plan = planWork(matcher(), registry.list(), rt.sim.agentlings, previous.repoPath, prompt);
   // Whoever actually ran it, and only then what the matcher says. A
   // continuation is the same job, so re-matching it is asking the wrong
@@ -3262,7 +3265,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         asked: { n: draft.hands.length, words: 'a planned party' },
       },
       {
-        ...(pending.tools?.length ? { tools: pending.tools } : {}),
+        tools: pending.tools ?? [],
         ...(spec.channels?.length ? { channels: spec.channels } : {}),
         ...(spec.answers ? { answers: spec.answers } : {}),
         ...(loadBearing.length ? { loadBearing } : {}),
@@ -3659,8 +3662,14 @@ function compileQuote(rt: LevelRuntime, role: string): Quote {
  * job at the level's empty path would price it as work of a different kind.
  */
 /**
- * What a job may reach outside its sandbox: the connections that are on, plus
- * anything the caller named. Resolved once per request and handed to both the
+ * What a job may reach outside its sandbox: the connections that are on when
+ * the caller named nothing, exactly the named ones when it passed a list (an
+ * empty list is none). A job's own record reads the same way — `tools`
+ * absent is sandbox only — so a caller forwarding a job's grant through
+ * here passes `job.tools ?? []`, never the bare field, or an absent list
+ * would come back as everything. (A redo copies the stored field verbatim
+ * without re-granting, so the bare field is right there.) Resolved once per
+ * request and handed to both the
  * quote and the queued job, never recomputed downstream — web access decides
  * whether the router can use its free `fetch` tier, so a quote that answered
  * this differently from the run would be pricing a different job.

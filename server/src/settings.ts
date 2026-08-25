@@ -95,8 +95,9 @@ export function enabledNames(
 }
 
 /**
- * What a job may reach: the connections that are on, narrowed to those the
- * caller named if it named any.
+ * What a job may reach: every connection that is on when the caller named
+ * nothing, and exactly the named ones that are on when it passed a list —
+ * so an empty list means none.
  *
  * Naming one can only ever *narrow*. That is a correction: this once let a
  * caller add any ready connection the user had not explicitly switched off,
@@ -109,6 +110,14 @@ export function enabledNames(
  * Narrowing is still worth having, and is the honest reading of per-job
  * opt-in: a job that does not need the browser should not carry its tool
  * definitions, since every visible tool is overhead in every request.
+ *
+ * An omitted list and an empty one are different answers. Omitted is a
+ * caller that chose nothing — a person at the work bar — and gets what is
+ * on; a list is a choice, and `[]` is the choice of no doors. This once
+ * read the two the same (`!requested?.length`), so *none* could not be said
+ * at all: D-254 found both schedule sweeps passing nothing and every rule
+ * firing holding all eight doors, and the field #9 puts on a rule needs
+ * an empty list to mean what it says.
  */
 export function grantedTools(
   requested: string[] | undefined,
@@ -126,6 +135,6 @@ export function grantedTools(
   // place, which is the whole point of this function.
   const sending = new Set(connections.filter((c) => c.sendsOnly).map((c) => c.name));
   const on = enabledNames(connections, settings, env).filter((name) => !sending.has(name));
-  if (!requested?.length) return on;
+  if (requested === undefined) return on;
   return on.filter((name) => requested.includes(name));
 }

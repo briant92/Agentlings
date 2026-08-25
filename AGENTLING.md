@@ -297,9 +297,9 @@ picks up where that run stopped instead of paying to redo it (D-033).
 ### The rule
 
 Nothing is ambient. A job gets what the platform has switched on, narrowed to
-what it named, and nothing else. This is both the security boundary and the
-cost one: every visible tool is definition overhead in every request of the
-session.
+what it named, and nothing else — and a job that passed an empty list gets
+none (D-254, #8). This is both the security boundary and the cost one: every
+visible tool is definition overhead in every request of the session.
 
 ```mermaid
 flowchart LR
@@ -307,9 +307,9 @@ flowchart LR
   B[".agentlings/settings.json<br/>records departures only"] --> C
   S["secret present in .env?"] --> C
   C -->|on| D["enabledNames"]
-  D --> E{"job named any?"}
-  E -->|no| F["all that are on"]
-  E -->|yes| G["intersection only<br/>naming can only narrow"]
+  D --> E{"job passed a list?"}
+  E -->|omitted| F["all that are on"]
+  E -->|"a list (even [])"| G["intersection only<br/>naming can only narrow"]
   F --> H["granted"]
   G --> H
   H --> I["allowedTools = role tools ∩ granted"]
@@ -321,7 +321,9 @@ Four properties worth stating plainly:
    turned off. Never switched on is not the same as not switched off.
 2. **Naming a connection can only narrow.** Per-job opt-in is about not
    carrying tool definitions you do not need, not about a job granting itself
-   something.
+   something. A list means exactly the doors in it, so `[]` means none;
+   only an omitted list means everything that is on (#8 — before it, the
+   empty list read as omitted and *none* could not be said).
 3. **A connection that cannot work is not a preference.** Missing secret means
    never live, whatever its default says.
 4. **One resolver, three readers** — the quote, the router and the executor all
@@ -2011,7 +2013,9 @@ list per channel (D-077; SPEC M5.11 has the slices):
       enabled door — eight today, on a third party's mail — because
       `grantedTools` reads an omitted list as everything that is on; the UF
       run's own record carries all eight. A rule will hold only the doors it
-      names, none by default (#8, #9, #10 — not built yet).* A schedule row may carry a
+      names, none by default: #8 is built — an empty list now means none, and
+      every caller forwarding a job's own grant reads an absent list as none —
+      while #9 and #10 are not.* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

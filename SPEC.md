@@ -620,7 +620,9 @@ tried, measured and rejected is in `DECISIONS.md`:
   connections defined in server config (tokens in `.env`), jobs opt in
   through a `tools: string[]` field, and the executor passes only those MCP
   servers into the agentling's Agent SDK session. Credentialed connections
-  stay opt-in; reading the web does not (D-032).
+  stay opt-in; reading the web does not (D-032). The field is read one way
+  (D-254, #8): omitted means every enabled non-sending door, a list means
+  exactly the doors in it, so `[]` means none.
 - **M3 — say what you need (built).** The app is for a non-expert:
   every setup step becomes a sentence in plain language.
   - **M3.1 (built).** Concept matcher, `server/src/match.ts`: BM25 over the

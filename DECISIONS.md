@@ -258,6 +258,15 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-246 — 2026-08-24 — A schedule can carry files: a folder and a rule, read fresh at every firing, because next month's statement is a new file](#d-246--2026-08-24--a-schedule-can-carry-files-a-folder-and-a-rule-read-fresh-at-every-firing-because-next-months-statement-is-a-new-file)
 - [D-247 — 2026-08-24 — No bookkeeper trade: the measurement said `analyst` already has the job, so the method went to the role that was already doing it](#d-247--2026-08-24--no-bookkeeper-trade-the-measurement-said-analyst-already-has-the-job-so-the-method-went-to-the-role-that-was-already-doing-it)
 - [D-248 — 2026-08-24 — Event triggers: mail arriving fires a schedule, and its job may answer into the thread — one reply, reviewed, never a chat](#d-248--2026-08-24--event-triggers-mail-arriving-fires-a-schedule-and-its-job-may-answer-into-the-thread--one-reply-reviewed-never-a-chat)
+- [D-249 — 2026-08-25 — The score is real work under supervision: the hireable count is a map, it recorded zero for eight decisions, and the flywheel in the plan was never built](#d-249--2026-08-25--the-score-is-real-work-under-supervision-the-hireable-count-is-a-map-it-recorded-zero-for-eight-decisions-and-the-flywheel-in-the-plan-was-never-built)
+- [D-250 — 2026-08-25 — Sensitive means irreversible: reversibility is the ceiling, target allowlists and caps are the mechanism, and standing authority is earned inside them](#d-250--2026-08-25--sensitive-means-irreversible-reversibility-is-the-ceiling-target-allowlists-and-caps-are-the-mechanism-and-standing-authority-is-earned-inside-them)
+- [D-251 — 2026-08-25 — The wire file: a transfer batch composed here as a deliverable, authorised at the bank by hand — D-219 stands](#d-251--2026-08-25--the-wire-file-a-transfer-batch-composed-here-as-a-deliverable-authorised-at-the-bank-by-hand--d-219-stands)
+- [D-252 — 2026-08-25 — Credentials are tokens and certificate files, never a portal password or a second factor, and D-078 gains a rotating-store clause](#d-252--2026-08-25--credentials-are-tokens-and-certificate-files-never-a-portal-password-or-a-second-factor-and-d-078-gains-a-rotating-store-clause)
+- [D-253 — 2026-08-25 — Channels are polled, never delivered: Telegram, Gmail and SMS in, WhatsApp declined on the endpoint rule, and no correspondent yet for outreach](#d-253--2026-08-25--channels-are-polled-never-delivered-telegram-gmail-and-sms-in-whatsapp-declined-on-the-endpoint-rule-and-no-correspondent-yet-for-outreach)
+- [D-254 — 2026-08-25 — A rule holds only the doors it names: the board had the trigger grant inverted, every firing holds eight doors today, and the fix backfills by identification](#d-254--2026-08-25--a-rule-holds-only-the-doors-it-names-the-board-had-the-trigger-grant-inverted-every-firing-holds-eight-doors-today-and-the-fix-backfills-by-identification)
+- [D-255 — 2026-08-25 — Supervised live acting: the twelve browser tools as a second connection, headed, allowlisted, hand-queued and watched, never standing](#d-255--2026-08-25--supervised-live-acting-the-twelve-browser-tools-as-a-second-connection-headed-allowlisted-hand-queued-and-watched-never-standing)
+- [D-256 — 2026-08-25 — The catalog gets wide: a registry browse that fills the form, a verified-here shelf with source and date, and the D-245 chips retire](#d-256--2026-08-25--the-catalog-gets-wide-a-registry-browse-that-fills-the-form-a-verified-here-shelf-with-source-and-date-and-the-d-245-chips-retire)
+- [D-257 — 2026-08-25 — The team is Brian and his standing instructions: no manager trade, D-197 stands, and a planner-only manager is the reopen shape](#d-257--2026-08-25--the-team-is-brian-and-his-standing-instructions-no-manager-trade-d-197-stands-and-a-planner-only-manager-is-the-reopen-shape)
 
 ## By theme
 
@@ -847,7 +856,8 @@ entry updates one file rather than two.
   answer **one threaded reply** through the ordinary outbox, the server
   supplying the thread from the job's own stamp so no run ever holds a thread
   id, always reviewed because a mail-triggered job never rides a standing
-  approval. And D-246, where a schedule learned to carry *files*: a
+  approval — its own line *a rule carries no tools* corrected by D-254,
+  below. And D-246, where a schedule learned to carry *files*: a
   standing input naming a folder and a rule rather than a path, resolved
   afresh at every firing, because the bank writes next month's statement
   beside last month's instead of overwriting it — built after the job history
@@ -1002,6 +1012,28 @@ entry updates one file rather than two.
   content in briefs and cross-level traversal rejected on the measurements,
   FTS5 gated on the cap fixture; the title stamp found not to be an
   identifier; `storeLines` and `relevantLines` memoised for the caps
+- **The Hireable Horde, re-grounded** — D-249–D-257, the record of the
+  2026-08-25 grilling, nineteen answers in nine entries: D-249, the score is
+  **real work under supervision** — promoted or auto-sent on a real level,
+  refusals counted as demand, an unreviewed done *awaiting review* — because
+  the hireable count scored D-241–D-248 at zero, Wave 1 delivered +247
+  against ≈3,500, and the plan's weekly flywheel was never built; D-250,
+  sensitive means irreversible, approve-each forever, with target allowlists
+  and caps checked by code as the mechanism of standing authority, and the
+  acts ledger waiting for the first act beyond send; D-251, the wire file
+  composed here and authorised at the bank by hand, D-219 standing because
+  upload is not execute; D-252, credentials as tokens and certificate files,
+  never a portal password, with D-078's writer taking a rotated token back
+  into the one store; D-253, channels polled never delivered, WhatsApp
+  inbound declined on the endpoint rule, outreach unbuilt because no
+  correspondent exists; D-254, a rule holds only the doors it names — the
+  board's line inverted, eight doors on every firing today, backfill by
+  identification; D-255, supervised live acting as a second browser
+  connection, headed, allowlisted, hand-queued, never standing; D-256, the
+  catalog as a registry browse plus a verified-here shelf, the D-245 chips
+  retiring; and D-257, Brian as the manager, D-197 standing, a planner-only
+  manager the reopen shape. The order of the fourteen tickets is
+  `HORDE.md` §4
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -19475,7 +19507,8 @@ Two things the real run found that no fixture had:
   door — a schedule row has never carried `tools` (D-103's cadence rows do
   not either), so `clerk` correctly refused to invent a figure and pointed
   at the source. A small open decision, not built: whether a rule (cadence
-  or trigger) may name the doors its firings get.
+  or trigger) may name the doors its firings get. *Annotated 2026-08-25:
+  inverted — the job's own record carries all eight doors; see D-254.*
 
 ### The correction the proof earned, same day (D-243's shape: attached, not hidden)
 
@@ -19504,3 +19537,370 @@ answer — read the actual error before accepting the branch; and the live
 run's first find was again something no unit test was pointed at, because
 the fixture-maker and the code-writer shared the same blind spot about what
 an empty mailbox answer looks like.
+
+## D-249 — 2026-08-25 — The score is real work under supervision: the hireable count is a map, it recorded zero for eight decisions, and the flywheel in the plan was never built
+
+**Decision.** The Hireable Horde is measured by **real work under
+supervision**: a job on a real level that Brian would otherwise have done by
+hand, **promoted or auto-sent**, with every refusal and failure counted as
+demand. Counted weekly from the ledger and the job records, per level, and
+sent to Brian. A `done` nobody reviewed is *awaiting review*, not real work;
+a job counts in the week of its verdict, not the week it ran; a **real
+level** is any level not named for a proof or a check — HQ, home-chores and
+training-ground alike, because D-238's trades did their real paid work on
+training-ground and the verdict, not the level's name, decides. The
+hireable count (D-237) stays, as what it is: **a map of where the crew cannot
+go**, never the score. `npm run bench:coverage` keeps leading with it; the
+board and this file stop calling it the headline.
+
+Taken in the 2026-08-25 grilling — nineteen questions, one at a time, every
+recommendation accepted — of which this entry and the eight after it are the
+record. The glossary those nineteen answers use is `CONTEXT.md`, committed
+with this entry.
+
+### What proved it
+
+Three measurements, all already in this file, none of them read together
+until now:
+
+- **The count scored the last eight decisions at zero.** D-241 through D-248
+  built the gate, closed three seams, added the `http` transport, let a user
+  add any MCP server, seeded four suggestions, taught a schedule to carry
+  files and to fire on mail, and threaded one real reply — and D-246 recorded
+  the headline as *"5–10 of 922, unchanged, same ten names"*, D-247 the same.
+  Two of those eight are the **only real work through anything built since
+  D-241**: two rules armed on HQ against real senders, and a reply that landed
+  in the sender's own Gmail thread. The count cannot see either, because it
+  counts what a role file can claim, not what got done.
+- **Wave 1 missed its estimate fourteen times over.** The plan priced
+  *Name & prove* at ≈ +3,500 duties. It delivered +194 covered (D-235 — with +402 partial beside it, which
+  that entry itself discounted as unverified word matches) and +53 (D-236):
+  **+247 covered in two commits**, and D-236 already said the estimate was
+  *"a ceiling for a long programme, not a forecast for a week."* The number
+  the programme was steering by was wrong by an order of magnitude on its
+  first wave, and the correction was recorded as a footnote rather than as
+  a reason to change the instrument.
+- **The plan's flywheel — §8, *perpetually live and in sync* — was never
+  built.** It scheduled `bench:coverage` and `ledger:report` weekly, with the
+  hireable KPI *"re-read weekly by the flywheel"*. The seven schedule rows on
+  disk (D-254's table) run neither instrument.
+  And had it turned, it would have re-read a number that scores reach at
+  zero.
+
+Against that, what Brian actually does: **235 jobs and $200 in the
+fourteen days to 2026-08-25** — HQ 86 jobs / $71.60, training-ground 107 /
+$67.70, home-chores 38 / $60.67, re-read from `ledger.jsonl` for this entry
+(the grill read 241 and $208 a day earlier) — and no number anywhere says
+whether that was his work. The
+ledger cannot even distinguish a job he approved from one a standing
+approval sent.
+
+### What is not built, said plainly
+
+Nothing counts the score today. A job carries no record of *when* and *by
+whom* its verdict was written; nothing records a refusal; nothing sends
+anything on Monday. Those are three tickets — the refusals file (#11), the
+resolved-by stamp and the real-work block as **one pure function with two
+callers**, `ledger:report` and the weekly send (#12, D-030's rule), and the
+Monday Telegram at **$0 with no model in the loop** (#13) — and the slice is
+specified as issue #21. The order of everything after them is `HORDE.md` §4.
+
+## D-250 — 2026-08-25 — Sensitive means irreversible: reversibility is the ceiling, target allowlists and caps are the mechanism, and standing authority is earned inside them
+
+**Decision.** An act is **sensitive** when a second act cannot undo it —
+money moved, a document signed, a payroll period closed, a first message to a
+stranger, a public post. Sensitive acts are approved **one by one by Brian,
+always**; nothing earns standing above them. Every other act may earn
+**standing authority**: permission to run without Brian, inside an
+**allowlist of targets** and under **per-act and per-day caps** that plain
+code checks *before* review is offered — outside the list or above a cap, the
+act drops back to approve-each. A schedule or trigger rule is standing
+authority to *run*, which is D-254.
+
+### What proved it
+
+The plan proposed an authority matrix, L0–L4, generalising D-082. Read
+against what D-082 actually built, the levels were labels and the mechanism
+was already there: a recipient allowlist a human approved once, **subset as
+the rule** (fewer is fine, one stranger blocks the whole send), the count
+reset and the grant revoked by *any* signature change. The grill kept the
+mechanism and replaced the ladder with the one property a check can read
+off an act: **can it be undone.** D-219 is the same argument from the other
+end — *Approve is the last reversible moment; a wrong message is
+embarrassing, a wrong wire is gone* — and it is why a payment is on the
+shelf of never rather than at a high level number.
+
+Why caps are checked by code before review rather than promised in a brief:
+D-101 is the record of the first standing approval firing — 906 ms after the
+run finished, no reviewer in the loop — which is exactly the moment a cap
+has to already have been applied.
+
+### The acts ledger waits for the first act beyond send
+
+One act type exists: the send, an outbox replayed at Approve (D-075). The
+plan's typed acts ledger — compose → validate → review → replay → audit —
+stands as the shape and is **not built**, because the first act type beyond
+send has not arrived. When it does it will be **SII's accept/claim of a
+received DTE**, which is why #19 exposes the register's *reads* and excludes
+accept/claim by name: the ledger is built for that act, not ahead of it.
+
+## D-251 — 2026-08-25 — The wire file: a transfer batch composed here as a deliverable, authorised at the bank by hand — D-219 stands
+
+**Decision.** A transfer batch — a bank *nómina* for payroll or suppliers —
+is **composed here** from a sheet, as a deliverable file in the bank's
+upload format, and **authorised at the bank** by Brian with the bank's own
+token. At review the app checks every payee against a **payee allowlist**
+kept in Settings and refuses the file whole if one payee is outside it —
+the recipient rule of D-082 applied to a file. The app never calls a payment
+endpoint, so **D-219 stands by its own words**: composing a file initiates
+nothing. Built when a batch is actually due (#20), and its acceptance is one
+real batch composed, uploaded and authorised by hand.
+
+### What proved it
+
+D-219 already noted that Brian's own personal-finance prompt lists sending
+wires among the chores. The grill asked what he actually *does*: he uploads a
+nómina at Santander Office Banking and presses the token. **Verified in the
+grill that upload is not execute** — the file is staged, and the
+authorisation is the token press, which the app cannot make and must not.
+That is the line: everything up to the token is ordinary work, the token is
+the act.
+
+Why a file and not an API: the research kept from the same day found
+Santander Chile publishes no API at all, and Banco de Chile's API store
+(October 2025, self-serve sandbox) has its *Pagos* semantics unverified.
+And even were one there, a batch call is the irreversible act D-250 keeps
+at approve-each forever — an API would move the token press into the app,
+which is the one thing this entry exists to refuse.
+
+## D-252 — 2026-08-25 — Credentials are tokens and certificate files, never a portal password or a second factor, and D-078 gains a rotating-store clause
+
+**Decision.** What a door may hold to reach a system: an **API key**, an
+**OAuth token**, or a **certificate file** — the SII's `.p12`, with its own
+password in `.env` like every other credential. A portal username and
+password, or a 2FA device, is **never** one: the app does not log into a
+portal as Brian, and a system reachable only that way is either out of reach
+or reached through a certificate. Where a provider **rotates** a token on
+use, the door's own store writes the rotated value back through D-078's
+writer, so `.env` stays the one store and nothing else ever holds the token.
+
+### What proved it
+
+D-076 settled *passwords never* for the sending channels; D-078 settled one
+store, `.env`, with a writer that replaces one `NAME=` line and leaves the
+file byte-identical otherwise. The grill extended both to the doors the
+next tickets open, from what each system actually offers (research of
+2026-08-25, primary pages read):
+
+- **QuickBooks** — Intuit's official stdio MCP server, 145 tools, flags to
+  disable writes, and a refresh token that **rotates roughly daily** with a
+  five-year ceiling. That is the case the clause is for: a token that
+  changes on every use would grow a second store the first time somebody
+  built the door without the clause, which is D-032's two-answers shape.
+  **Not in use** — the books are spreadsheets (D-246) — so the clause is
+  recorded, not built.
+- **Buk** — a per-tenant REST API with a **static `auth_token`**,
+  admin-issued as read-only or read-and-modify, no sandbox, no MCP server.
+  So #18 is a small stdio adapter exposing reads only, **whatever the key's
+  scope** — a modify-scoped key still cannot reach a write.
+- **SII** — no public API for the purchases-and-sales register; the portal's
+  JSON endpoints answer after a certificate or *clave* login, and an
+  open-source client for the certificate path exists (`emisso-sii`, TS,
+  `.p12`). So #19 uses the certificate, holds nothing else about the login,
+  and names the portal-endpoint fragility in its own entry.
+
+The one place a logged-in session exists is the browser profile of D-255,
+and that is Brian's own profile, logged in by him: the app writes no
+credential into it, the same shape as D-034's storage-state file, made by
+Brian and never read.
+
+## D-253 — 2026-08-25 — Channels are polled, never delivered: Telegram, Gmail and SMS in, WhatsApp declined on the endpoint rule, and no correspondent yet for outreach
+
+**Decision.** An inbound channel is one the **server polls** — Telegram's
+`getUpdates`, Gmail's list (D-248, every two minutes), SMS through Twilio's
+`GET /Messages` when it is wanted. Nothing is ever delivered *to* this app
+at a public endpoint. **WhatsApp Business inbound is declined**: Meta
+delivers inbound messages only to a webhook, and a public endpoint is what
+D-169, D-174 (no hosting), D-127 (loopback bind) and D-175 (`serve`, never
+`funnel`) all forbid — D-248 refused Gmail push on the same rule, without
+discussion. D-081's WhatsApp *sending* stands. A **voice note** is a file on
+a channel, transcribed on this machine with no API and no per-call cost
+into the sentence the desk takes, quoted back like any typed one (#17).
+**Media generation waits** on the refusal block (#11) showing demand for it —
+D-204's test, unchanged.
+
+### Outreach: Wave 3's runtime is not built, and the reason is a population fact
+
+*Outreach* is the horde holding a thread with a named counterparty across
+several exchanges under a **commitments policy** — what it may promise,
+when it must escalate. The plan's Wave 3 built a runtime for it. Read
+against the record: **every standing approval ever earned is to Brian's own
+Telegram**, and the externals ever reached are two people, Pepo and Andy,
+one reviewed send each. There is **no correspondent**, so a commitments
+policy would govern nobody. D-248's one threaded reply is a send, not
+outreach, and the entry said so. Reopen when a real counterparty needs a
+second exchange — the refusal block will show it before a design does.
+
+## D-254 — 2026-08-25 — A rule holds only the doors it names: the board had the trigger grant inverted, every firing holds eight doors today, and the fix backfills by identification
+
+**Decision.** A schedule or mail-trigger rule is **standing authority to
+run**, and its firing holds **exactly the doors the rule names — none by
+default**. A row carries `tools`; both sweeps pass them through; a row that
+names none holds none. Rows written before the field existed are **legacy**:
+they keep today's grant and their own description says so (*holds every
+door — created before doors were per-rule*) until edited. The seven rows on
+disk are then backfilled **by identification, never by guess**. The work bar
+shows a row of door chips while a schedule or rule is being created, **none
+ticked**, and the sentence reading says what the firing will hold; a
+hand-queued job's controls are untouched.
+
+### The inversion, read off the code and one job record
+
+D-248 wrote, and `HORDE.md` and `AGENTLING.md` repeated: *"a rule carries no
+tools, so a firing that needs a door has none"* — an open small decision.
+The line is wrong in the direction that matters. What decides a job's doors
+is one function, `grantedTools` (`server/src/settings.ts`), and its reading
+is: **omitted → every enabled non-sending door**; named → narrowed to those
+named; and an empty list is treated as omitted (`!requested?.length`), so
+*none* cannot be said at all. Neither sweep passes `tools` — not the cadence
+firing (`index.ts`, `dueNow` loop) nor the mail firing (`pollTrigger`'s
+`queueSentence`). So a rule carries no tools and its firing holds **all of
+them**.
+
+Re-read on 2026-08-25 from the catalog, `settings.json` and the names in
+`.env`: eight doors are enabled and non-sending — `web`, `render`, `github`,
+`search`, `bls`, `calendar`, `mail`, `browser`. And the UF job D-248 cited as
+having *"no web door"* (`aa1d5324` on HQ) carries in its own record
+`tools: ["web","render","github","search","bls","calendar","mail","browser"]`.
+The clerk refused to invent a figure **with web and search granted**; the
+refusal was the model's, and the diagnosis written from it was backwards. The
+two real rules armed on HQ (`c9bc102f`, `c4a97302`) therefore fire jobs that
+hold the web, GitHub, search, the calendar, Brian's mailbox and a browser,
+**with a third party's mail as the brief.** That is what the fix closes.
+
+The hard-won rule it lands on is already on the list: a claim about what a
+job reaches is answered by the one function that builds the grant, not by
+what a run said about itself.
+
+### The backfill, by identification
+
+| Row | Level | What it is | Doors it will name |
+|---|---|---|---|
+| `c639d84a` | training-ground | Monthly indicators, the 12th at 09:00 — routes to the compiled tool `summary-table-month-main-4` (D-188), which reaches BLS through `bls` | **`bls`** — the router refuses a compiled tool whose doors are no longer granted to the job (D-188's `compileDoors`), so a blind *none* would knock the one free tool-tier schedule into a paid session |
+| `919a5247` | HQ | Weekly, Monday 08:30 — last week's training expenses by email | what its prompt actually reaches, read at backfill; the send is the channel, not a door |
+| `bd651cfd` | HQ | Daily 08:00 — the calendar brief to Telegram | `calendar` |
+| `1e21feb3` | HQ | Daily 08:10 — the mail brief to Telegram | `mail` |
+| `c9bc102f` | HQ | Santander payment receipt arriving (D-248) | **none** — the mail is in `input/mail.txt` |
+| `c4a97302` | HQ | Insigneo statement notice arriving (D-248) | **none** |
+| `e4ad0624` | HQ | The reply proof, paused (D-248) | **none** |
+
+The sequence is three tickets because the first is a prefactor: **#8** makes
+an empty list mean *none* in `grantedTools`, with every caller that forwards
+a job's own tools checked so none of them passes an empty list where it
+meant everything; **#9** puts the field on the row, through both sweeps,
+with the legacy reading, the backfill row by row, and a live proof on a
+rested level (a due-now row naming no doors fires a job whose list is empty,
+$0, zero ledger rows; a second naming one door fires with exactly that door);
+**#10** is the chips. A rule may never name `browser-act` (D-255), which is
+why #16 waits on #9.
+
+## D-255 — 2026-08-25 — Supervised live acting: the twelve browser tools as a second connection, headed, allowlisted, hand-queued and watched, never standing
+
+**Decision.** The twelve Playwright acting tools ship as a **second
+connection, `browser-act`**, off by default, and usable only under
+supervision: grantable to a job **a person queues by hand** — a schedule or
+rule naming it is refused at creation (D-254); on a **domain allowlist**
+edited in Settings, navigation outside it refused in the run and named in the
+trajectory; in a **headed** browser using a **persistent profile Brian
+logged into himself** (D-252: the app writes no credential into it); every
+step in the trajectory (D-211); **closing the window ends the run**. It never
+earns standing authority, and a payment page's final submit stays the
+bank's token in Brian's hand (D-251). The read-only `browser` connection is
+unchanged. Ticket #16, after #9.
+
+### What proved it
+
+The browser has the longest measured record in this file, all of it
+negative for *reading*: D-034 built it read-only; D-035 measured its value
+lower than the case made for it; D-053 caught a run burning ten browser
+calls and asking for `browser_evaluate`; D-168 found the twelve held-back
+tools reachable from `Bash` anyway, so the grant bounds what is *offered*,
+not what a sandbox can *reach*; D-172 recorded the first demand for an
+acting tool. D-243 then ranked acting last on the board, because
+`click`/`submit` is D-075's *not-an-actor* clause superseded through a side
+door — a session changing someone else's state with no outbox and no
+approval.
+
+Brian pushed back on *"off the plan"*, and the grill's answer is a shape
+that keeps D-075's argument instead of waiving it. D-075 refuses acting
+mid-session because there is **no promote step** between the model's
+decision and the world; supervision substitutes the one thing that can
+stand in for promote — a person watching the window, able to close it.
+Everything else in the shape follows from D-250: an allowlist of targets,
+no standing, and the irreversible act (the payment) never inside it.
+
+## D-256 — 2026-08-25 — The catalog gets wide: a registry browse that fills the form, a verified-here shelf with source and date, and the D-245 chips retire
+
+**Decision.** Settings → add a connection gains a **browse over the public
+MCP registry**: search by name or description, pick an entry, and the form
+fills from it — transport, command or URL, the env-variable names its
+credential needs — **saving nothing**. Verification stays what D-244 made
+it: the app connects and reads the server's own tool list. Above the browse
+sits a **verified-here shelf**: the doors *this install* has completed a
+tool-list read on, each with its source and date. The four D-245 chips
+(Xero, Notion, Sentry, Stripe) **retire**, their tests with a note; D-245's
+provenance rule — a primary source and a date per entry — now applies to the
+shelf. The registry being unreachable is a **named state** in the form,
+never an empty list that reads as *no such server*. Add-a-connection by hand
+is unchanged. Ticket #15; Buk (#18) and the SII register (#19) go on the
+shelf once it exists.
+
+### What proved it
+
+D-244's reframe — *any user should reach the system they need* — was the
+grill's **platform** answer restated: one operator per install, on that
+operator's machine, never hosted (D-169, D-174 unchanged; *any user* means
+any operator on their own install, never a second person on this one), and
+therefore a catalog **written for any business, not for the operator at
+hand**. A hand-curated list cannot be that; D-245 already measured why —
+four entries, each read from a primary source, was a day's work and is
+short *because* it is honest. The registry
+(`registry.modelcontextprotocol.io/v0/servers`, cursor-paginated; research
+of 2026-08-25) is the population a browse can search, and D-244's
+verification is what keeps the browse from vouching for anything: a picked
+entry becomes a connection only when this machine's own probe gets an
+answer.
+
+The first real door does **not** wait for the browse. #14 adds one
+market-data server — Alpha Vantage, FMP or EODHD, all with an official MCP
+server and an API-key credential — **through the existing form**, then one
+real HQ research job uses it and is promoted. If the form cannot take the
+server as it is, that gap is the deliverable. This is the first door since
+D-241 to do real work, and it is sequenced before the catalog widens because
+the score (D-249) counts the job, not the shelf.
+
+## D-257 — 2026-08-25 — The team is Brian and his standing instructions: no manager trade, D-197 stands, and a planner-only manager is the reopen shape
+
+**Decision.** The **team** is the set of standing instructions Brian wrote —
+schedules, trigger rules, chains — plus the sentences he queues. **Brian is
+the manager; nothing dispatches work but him.** The plan's Wave 6, a
+manager trade that coordinates the crew, is not built. D-197 stands as
+written: repo parties stay machinery, not a capability, until its named
+triggers fire. The reopen shape, when demand shows, is a **planner-only
+manager** — proposing the week's standing instructions for Approve, never
+dispatching — and *when demand shows* means the refusal block (#11), the
+same gate media generation waits on (D-253).
+
+### What proved it
+
+D-197's trial is the only measurement of coordination this project has:
+fences 9-for-9, merges 3-for-3, wall-deaths 1–0 to the party — **and
+2.8–3.2× the spend** at +39–94 % wall against healthy solos. The mechanics
+were flawless and the economics failed; a manager trade sitting above that
+machinery would inherit the economics. What already exists at the seam a
+manager would occupy is the planner (D-196): it *proposes* PARTY.json and
+**Approve is what queues the hands** — the promote grammar answering M6's
+trust question. A planner-only manager is that seam widened from one job to
+a week's instructions, with the same rule that a person's Approve is the
+dispatch. Nothing measured says anyone needs it yet, and D-249's score is
+the instrument that will say so.

@@ -429,7 +429,7 @@ The summaries below are the shape of each milestone; the account of what was
 tried, measured and rejected is in `DECISIONS.md`:
 
 - M1 executor → D-007 · M3 non-expert setup → D-011 · levels → D-013
-- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005 · M5.3 router → D-015
+- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005, D-244–D-245, D-255–D-256 · M5.3 router → D-015
 - M5.4 recipes → D-019, D-020, D-023, D-064
 - M5.5 billing → D-012, D-016–D-018, D-026–D-027, D-029
 - M5.6 compiled tools → D-021, D-024, D-025
@@ -437,7 +437,8 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.9 reading the crew record → D-056, D-057
 - M5.10 reading what you keep → D-058–D-062
 - M5.11 connections that send → D-075–D-077, D-097
-- M5.12 the recurrence timer → D-103
+- M5.12 the recurrence timer → D-103 · mail triggers and one reply → D-248 ·
+  a rule holds only the doors it names → D-254
 - M5.13 the acting surface finished → D-104
 - M5.14 composite work → D-105
 - M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
@@ -744,7 +745,14 @@ tried, measured and rejected is in `DECISIONS.md`:
   - **M5.1 (built).** Connection registry, `catalog/connections.json`.
     A job gets what the platform has on plus what it names (`Job.tools`) and
     nothing else, which is the security boundary and the cost one — every
-    visible tool is definition overhead in every request of the session.
+    visible tool is definition overhead in every request of the session. Since
+    D-254 a schedule or trigger rule's firing holds **only the doors the row
+    names**, none by default — a row from before the field keeps the old
+    grant and says so (#8–#10, not built yet). Two more are decided and not
+    built: a browse over the public MCP registry that fills the
+    add-a-connection form, with a *verified here* shelf replacing the D-245
+    chips (D-256, #15); and the twelve browser acting tools as a second
+    connection, `browser-act`, under supervision only (D-255, #16).
     Secrets are referenced by env-var name, never stored or returned; a
     connection whose secret is missing is listed as not ready and can never
     be switched on.

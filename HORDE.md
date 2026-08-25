@@ -3,53 +3,30 @@
 The open board for the coverage-and-capability line. Opened on demand, never
 imported — the same shape as `SPATIAL.md` and `RECONCILE.md` before it.
 
-**Wave 0 is complete and nothing is owed. Wave 2 is open and three of its four
-parts are done** — the `http` transport (D-243), business-system doors,
-answered by letting users add any MCP server themselves (D-244) with four
-verified starting points (D-245), and **event triggers, built as D-248**
-together with the one-reply half of Wave 3 it pulled forward: mail arriving
-fires a schedule, and the job may answer one threaded reply through the
-ordinary outbox, always reviewed. **§4 is the pick-up point.** What remains
-there is browser acting tools, which are last deliberately and for a reason
-worth reading before starting them — and D-248's own owed items: a restart
-and its live proof, the trigger-creation UI (mockup first), and the first
-real rule on real mail.
+**Re-grounded on 2026-08-25 (D-249–D-257).** The line is no longer a list of
+waves scored by the hireable count; it is **fourteen GitHub issues, #7–#20,
+in the order of §4**, scored by **real work under supervision** — a job on a
+real level, promoted or auto-sent, with every refusal counted as demand. The
+hireable count (5–10 of 922) stays as a *map* of where the crew cannot go; it
+is not the score, because it recorded zero for the eight most useful things
+built in the week before the re-grounding. **§4 is the pick-up point** — each
+ticket is taken with `/implement #N` in a fresh session, and the ticket says
+what it is blocked by.
 
-**Picking this up cold:** read §1 for where the line stands, §4 for the
-decision that opens the next piece, and **§4b for how the machine was left and
-how to re-check any claim on this board**. Everything through D-245 is
-committed and pushed; the last commit was `14a894f`.
+**Picking this up cold:** read §1 for where the line stands, **§2 for the
+three premises this board had wrong** (written where the wrong ones were),
+§4 for the order and what is deliberately not built, and **§4b for how the
+machine was left and how to re-check any claim here**. Everything through
+D-257 is committed; the record commit is the one that carried this rewrite.
 
-**One thing the numbers here do not say.** Everything from D-241 onward is
-*capability* — a gate, three seams closed, a transport, a way to add
-connections. None of it has been exercised on real work, and the headline is
-unmoved at 5–10 of 922 because reach, not machinery, is what moves it. This
-board said the cheapest next step was to add one real connection and give the
-horde a real job through it.
-
-**That step was taken and it went somewhere else — see D-246.** Asked which
-system, Brian had none in mind, so the job history was read backwards instead:
-446 prompts, and *accounting* is asked for four times in seven days and served
-none of them. Then the connection premise died on a fact — the books are Excel
-files, and there is no MCP server for a spreadsheet. The real blocker was a
-seam: a schedule carried a prompt and a channel and nothing else, so recurring
-work could only reach what was ambient. Schedules can now carry files. **The
-headline is still 5–10 of 922**, because that counts duty coverage and plumbing
-adds no duties — a different trade, recorded as a different trade. The UI landed and is proven
-too (16/16). **A bookkeeper trade was then declined on measurement — D-247:**
-all 16 real reconciliation runs already routed to `analyst`, which already
-covers 13 of the 15 duties it takes on that occupation, and 9 of the 13 gaps
-are policy boundaries and closed doors no role file touches. The method went
-into `analyst` instead. What is still owed for *"I need an accountant"* is the
-part no plumbing reaches: **the money duties are a deliberate boundary, Wave 4,
-not a gap** — and whether that method actually improves a run is unmeasured.
-
-Written 2026-08-24, at `ddbd218`; updated through D-245. The line so far is
-D-235 → D-245; the plan it
-implements is the artifact *The Hireable Horde*
+Written 2026-08-24 at `ddbd218`; rewritten 2026-08-25 for D-249. The plan it
+began from is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
-(https://claude.ai/code/artifact/66dc4321-39d6-4018-b097-336fad285a76).
+(https://claude.ai/code/artifact/66dc4321-39d6-4018-b097-336fad285a76). The
+vocabulary is `CONTEXT.md`'s — *score*, *real level*, *standing authority*,
+*act*, *door*, *channel*, *trigger rule* — and where this board and the
+glossary disagree, the glossary is right.
 
 ---
 
@@ -57,241 +34,157 @@ the measurement behind it in *How Far Can the Horde Go*
 
 | | |
 |---|---|
-| **Headline** | **Hireable positions: 5–10 of 922** — `npm run bench:coverage` leads with it |
-| Coverage | 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties |
-| Calibration | 52/58 (90 %) against the hand grades, both overclaim cells empty |
-| Intake | 53/54, 0 misses |
-| Suites | server 2,198 across 92 files · web 333 · typecheck clean |
+| **Score** | **Not yet counted.** Nothing records a job's verdict time or who wrote it, nothing records a refusal, nothing sends on Monday — #11, #12, #13 (spec #21) |
+| Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
+| Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
+| Suites | server 2,258 across 94 files · web 338 · typecheck clean (full run 2026-08-25, with #7) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
-Everything below is committed and pushed. Nothing is in flight.
+Everything below is committed. Nothing is in flight.
 
-- **D-235** — four trades hired off the benchmark's own clusters: `operations`,
-  `logistics`, `planner`, `security`, one POWERS entry each. No boundary moved.
-- **D-236** — phrases on four existing powers. **+53 duties**, against D-235's
-  +194 for comparable effort: *naming is a rung with a top*, now measured. The
-  structural floor (`thin()`'s top-one role check) is named and **deliberately
-  left alone** — it earns its own entry with its own before-and-after.
-- **D-237** — the scoreboard. Counts only duties whose grade rests on recorded
-  evidence; **partial-on-`lexical` never counts**, which corrected the plan's
-  own definition. Its first run caught a false positive in itself.
-- **D-238** — the four trades **proven on real paid work**. Every refusal held.
-  `security` was cut by a ten-minute wall its role file never overrode.
-- **D-239** — the cross-origin hole **the crew found in us**, closed on both
-  surfaces. Not authentication; shipped ahead of Wave 0 because it needed no
-  credential decided.
-- **D-240** — D-239 proven live (946 KB of level state to any website → zero);
-  the `security` re-run completing at 24 turns; 7 advisories → 4.
-- **D-241** — **Wave 0's credential**: a password for an `HttpOnly` cookie,
-  chosen by the socket rather than by taste. Off until `.env` arms it. Proven
-  live across two restarts. With D-242, 41 live checks in all.
-- **D-242** — **the security ledger closed**: the `.session.json` seam fixed
-  over **stdin**, a six-try login lockout, and one board item struck as
-  something that was never a task. Wave 2 unblocked.
-- **D-243** — **Wave 2 opens**: `transport: http`, a remote MCP server over
-  streamable HTTP. Proven 6/6 against a real MCP server. Its own correction is
-  attached: it does **not** subsume accounting, which is `stdio`.
-- **D-244** — **the catalog stops being the ceiling**: Settings can add **any**
-  MCP server, stdio or http, with its tool list read from the server rather
-  than typed. Not the vendor question I was asking — the reframe was that ANY
-  user should reach the system they need. Proven live, 24 checks: 17 through
-  the API against two real MCP servers, 7 through the real Settings form.
-- **D-245** — **suggestions, not catalog entries**: four starting points (Xero,
-  Notion, Sentry, Stripe) that *fill the form* rather than ship as connections,
-  because we have never authenticated to any of them. Every shape read from a
-  primary source and dated; OAuth-only servers excluded because our transports
-  carry a static credential; **three of the four are `stdio`**. Proven live
-  15/15 — including that choosing a chip saves nothing.
+- **D-235 – D-238** — four trades hired off the benchmark (`operations`,
+  `logistics`, `planner`, `security`), phrases on four powers (+53 — naming
+  is a rung with a top), the scoreboard, the four trades proven on real paid
+  work. **+247 duties in two commits against the plan's ≈3,500** — see §2.
+- **D-239 – D-242** — the cross-origin hole the crew found in us, closed on
+  both surfaces and proven live; **Wave 0's credential** (password →
+  `HttpOnly` cookie, chosen by the socket), armed; the `.session.json` seam
+  fixed over stdin; the login lockout. 41 live checks in all.
+- **D-243 – D-245** — the `http` transport; **any MCP server added by the
+  user** with its tool list read from the server; four suggestions that only
+  fill the form (Xero, Notion, Sentry, Stripe — retiring under D-256).
+- **D-246 – D-248** — a schedule carries **files** (folder + rule, read
+  fresh each firing); no bookkeeper trade, on measurement; **mail arriving
+  fires a schedule**, and the job may answer **one threaded reply** — proven
+  end to end on real mail 2026-08-25.
+- **D-249 – D-257** — the re-grounding: the score, the sensitive line, the
+  wire file, credentials, channels, the trigger grant, supervised live
+  acting, the catalog, the team. Decisions only; every one names its ticket.
 
 ---
 
-## 2. Owed before anything else in its wave — **NOTHING**
+## 2. The three premises this board had wrong
 
-Both items that stood here are closed.
+Written here because this board carried them — the inverted line in its own
+§4, the other two condensed from the plan it implements. Each is the
+record's own correction, not a reinterpretation.
 
-- ~~The `.session.json` seam~~ — **fixed in D-242.** `toMcpServers` emits
-  `${NAME}` placeholders and the values reach the runner on **stdin**. Note for
-  anyone reading the old plan: its prescribed fix — *resolve them in the runner
-  from the env it was handed* — **does not work**, because `launderedEnv`
-  strips exactly those names (D-217) and a `Bash` child inherits the runner's
-  environment anyway. **Wave 2 is unblocked.**
-- ~~A re-read of the four trades' cost shape~~ — **struck, it was never a
-  task.** The ledger holds one run each (operations 14t/$0.74, logistics
-  4t/$0.49, planner 17t/$1.42, security 24t/$1.58 plus the cut $0 run). One run
-  is not a measurement and no scheduling makes it one: that data arrives by
-  *using* the app. A board item that cannot be worked reads as debt.
+**"A rule carries no tools, so a firing that needs a door has none."** —
+Inverted (D-254). What decides a job's doors is `grantedTools`, and its
+reading of an *omitted* list is **every enabled non-sending door**; neither
+sweep passes `tools`. So every firing of every schedule and mail rule holds
+**eight doors today** — `web`, `render`, `github`, `search`, `bls`,
+`calendar`, `mail`, `browser` — and the UF job D-248 cited as having *"no web
+door"* carries all eight in its own record (`aa1d5324`). The two rules armed
+on HQ fire jobs that reach the web, GitHub, the calendar, Brian's mailbox and
+a browser **with a third party's mail as the brief**. An empty list cannot
+even say *none*. Fix: #8, #9, #10.
+
+**The flywheel.** The plan's §8 — *perpetually live and in sync* — scheduled
+`bench:coverage` and `ledger:report` weekly and had the hireable KPI *"re-read
+weekly by the flywheel"*. **It was never built**: the seven schedule rows on
+disk run neither instrument. And it would have turned on a number that scores
+reach at zero. What replaces it is the weekly real-work block (#13), at $0
+with no model in the loop.
+
+**Wave 1's estimate.** ≈ +3,500 duties was the plan's figure; D-235 and D-236
+delivered **+194 and +53 covered** (D-235's +402 partial beside it, discounted
+by the entry itself as unverified word matches), and D-236 already called the estimate *"a ceiling
+for a long programme, not a forecast for a week."* Fourteen times short on
+the first wave, and this board kept steering by the same count until D-249.
 
 ---
 
-## 3. Wave 0 — API authentication · **DONE AND PROVEN LIVE**
+## 3. Wave 0 — API authentication · DONE AND PROVEN LIVE
 
-**M0 was answered on 2026-08-24: option B, the password → `HttpOnly` cookie,
-and W0.5 is "leave `/internal/*` uncredentialed". Recorded as D-241.** All
-eleven tasks are done, and **the gate is ARMED** — `AGENTLINGS_PASSWORD` is set
-in `.env` and the server has been restarted on it. §3.1–§3.3 below are kept as
-written, because the reasoning is what a later session will want to re-read.
-
-Proven on the restarted server with the queue empty (R-07):
+Option B (password → `HttpOnly` cookie) and *leave `/internal/*`
+uncredentialed*, recorded as D-241; the ledger closed in D-242. The gate is
+**armed**. Proven on the restarted server with the queue empty:
 
 ```
 node scripts/prove-wave0.mjs        # 16/16 — the HTTP and socket surfaces
 node scripts/prove-wave0-ui.mjs     # 17/17 — the real app, headless Edge
 ```
 
-The headline as one number: **an ungated `/ws` handshake is closed 4401 with 0
-bytes where the signed-in one is handed 580,561.** D-239 was re-checked rather
-than assumed — a hostile origin still gets 4403 on the socket and **403, not
-401**, on a POST, which also proves the order.
+The headline as one number: **an ungated `/ws` handshake is closed 4401 with
+0 bytes where the signed-in one is handed 580,561.** A hostile origin still
+gets 4403 on the socket and **403, not 401**, on a POST, which proves the
+order. The gate-OFF run happened (5/5), the lockout is proven
+(`401×6, 429`, reopening at ~301 s) and is opt-in (`--lockout`) because it
+locks the door for five minutes.
 
-**Both of Wave 0's debts are now closed (D-242), and nothing is owed:**
-
-- **The gate-OFF live run happened** — 5/5, on its own restart. With the
-  password commented out every probe answers exactly as it did before Wave 0,
-  and D-239 still fires 4403, which shows the origin check is independent of
-  the gate rather than riding on it.
-- **`POST /api/session` is rate limited** — six tries, five minutes, proven
-  live as `401,401,401,401,401,401,429`. The right password is refused 429 too,
-  so a locked door is not an oracle — **and it reopens on its own at ~301 s**
-  against a 300,000 ms window, which is the half a unit test cannot reach.
-- **The lockout probe is opt-in** (`--lockout`) because proving it locks the
-  door for five minutes. A restart clears it.
+Two things a later session should not relearn from the planner's full plan
+(`.agentlings/levels/training-ground/jobs/95f4f5eb/RESULT.md`, on disk only):
+**B was the only option under which the socket needed no special case**
+(`useWorld.ts` opens a bare `new WebSocket`, and a gate that left `/ws` open
+would be worse than none); and **the loopback bind and `serve`-never-`funnel`
+(D-127, D-175) are unchanged by Wave 0** — it is not permission to relax the
+tailnet rule.
 
 ---
 
-Planned by the crew's own `planner` on 2026-08-24 (job `95f4f5eb`, Training
-Ground) and condensed here because **that sandbox is gitignored and will not
-survive a sweep**. Five milestones, eleven tasks; the full 19.8 KB plan,
-including estimates with their basis and §7's open questions, is at
-`.agentlings/levels/training-ground/jobs/95f4f5eb/RESULT.md` while it lasts.
+## 4. The fourteen tickets, in order
 
-### 3.1 The decision that gates everything (M0) — Brian's
+Every ticket is on github.com/briant92/Agentlings, labelled `ready-for-agent`,
+with its blocked-by edges native. The order is the order to take them; a
+ticket with no blocker can be taken any time after #7.
 
-| Option | `/api/*` | `/ws` | Note |
+| # | Ticket | Decision | Blocked by |
 |---|---|---|---|
-| **A** — shared secret, `Authorization: Bearer` | trivial | **needs a second scheme** — a browser cannot set a header on a handshake | the secret reaches the browser anyway, so it lands in localStorage |
-| **B** — password → `HttpOnly` session cookie **(planner's recommendation)** | one middleware | **free** — cookies ride the upgrade | adds a login screen; brings CSRF (R-03) and cookie-flag friction across three origins (R-04) |
-| **C** — loopback-exempt, token only off-loopback | conditional | conditional | leaves `/internal/*` untouched, but "is this loopback" is a property a proxy can lie about |
+| **#7** | **Record the re-grounding** — the nine entries, this board, the glossary and `docs/agents/` committed | D-249–D-257 | — |
+| #8 | **Prefactor: a named grant means exactly that** — an empty list means *none* in `grantedTools`; every forwarding caller checked | D-254 | — |
+| #9 | **A rule's firing holds only the doors it names** — rows carry `tools`, both sweeps pass them, legacy rows say so, the seven rows backfilled by identification, live proof on a rested level | D-254 | #8 |
+| #10 | **Door chips on the work bar** for schedules and rules — none ticked, the reading says what the firing holds | D-254 | #9 |
+| #11 | **The desk counts what it refuses** — one line per never-row or not-built capability, beside the ledger | D-249 | — |
+| #12 | **The real-work block** — the resolved-by stamp; one pure function over ledger, jobs and refusals; `ledger:report` prints it | D-249 | #11 |
+| #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ | D-249 | #9, #12 |
+| #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable | D-256 | — |
+| #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired | D-256 | — |
+| #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing | D-255 | #9 |
+| #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence | D-253 | — |
+| #18 | **Buk, read-only** — a stdio adapter over the reads, whatever the key's scope; on the shelf | D-252 | #15 |
+| #19 | **SII purchases and sales register, read-only** — certificate login, reads only; accept/claim excluded by name | D-252, D-250 | #15 |
+| #20 | **The wire file** — a *nómina* composed here, payees checked against a Settings allowlist, authorised at the bank by hand; build when a batch is due | D-251 | — |
 
-**Why this is not a free choice:** `web/src/useWorld.ts:36` opens a bare
-`new WebSocket(...)`, and the world view is socket-fed — so a Wave 0 that gates
-HTTP and leaves the socket open is *worse than none*. **B is the only option
-under which the socket needs no special case.** Recommendation, not a decision.
+**Slice one is #21** — the spec *"the score arrives on Monday, and a rule
+holds only the doors it names"* — with #8, #9, #11, #12, #13 as its
+sub-issues. Later slices (the catalog #15/#18/#19, the browser #16) get their
+own spec when reached.
 
-### 3.2 The work, once M0 is answered
+### What the waves became
 
-| | Task | Depends on |
-|---|---|---|
-| W0.1 | Resolve the `auth.ts` name collision (it is the executor's auth) | — |
-| W0.2 | **Pure gate module + tests** — `server/src/session.ts`; must be separate because `index.ts` calls `serve()` at import, so importing it in a test starts a listener | M0, W0.1 |
-| W0.3 | Mount on `/api/*` with an exemption list (OAuth callback, login) | W0.2 |
-| W0.4 | Login/logout routes; the secret in `.env` like every other credential (D-076/D-078) | W0.2 |
-| W0.5 | **`/internal/*` policy** — the wide one, because it is a design call (R-01) | M0 |
-| W0.6 | **Gate the WebSocket**, distinct close code, reconnect handled | W0.3 |
-| W0.7 | Web client: login screen, 401 handling; one non-`api()` call site (`Inbox.tsx:70`) | W0.3, W0.4 |
-| W0.8 | Fix in-tree non-browser callers (two reconcile fixtures) | W0.3 |
-| W0.9 | Prove dev **and** tailnet origins | W0.7 |
-| W0.10 | Live run on a restarted server | W0.6–W0.8 |
-| W0.11 | Record it — entry, `.env.example`, `AGENTLING.md` port table | W0.10 |
+The plan's Waves 2–6 are not a list any more; here is where each went, so
+nobody rebuilds one from the artifact.
 
-**Critical path:** M0 → W0.2 → W0.3 → W0.6 → W0.10 → W0.11.
+- **Wave 2** (transport, doors, triggers, browser acting) — done through
+  D-248 except the browser, which is #16 as *supervised* acting rather than a
+  session acting alone.
+- **Wave 3** (two-way conversation) — the one-reply half is built (D-248);
+  the runtime is **not built**, see below.
+- **Wave 4** (deploy / sign / money) — the wire file is #20 as a
+  *deliverable*, D-219 standing; nothing else is opened.
+- **Wave 5** (media) — transcription in, #17; generation waits, see below.
+- **Wave 6** (a manager) — not built, D-257.
 
-### 3.3 The risks that change what gets built
+### Deliberately not built, and why
 
-- **R-01 (M/H) — a server-wide token handed to the runner re-opens what
-  `/internal/*` exists to close.** The session is an LLM in a sandbox; anything
-  in its environment it can read. Never give it the shared secret: exempt
-  `/internal/*` on loopback with a comment saying why, or mint per-session
-  tokens scoped to the prefix and expiring with the job.
-- **R-02 (H/H) — the socket gets forgotten**, because header auth makes it a
-  special case and special cases get deferred. Choosing B removes the trigger.
-- **R-03 (M/H) — CSRF arrives with the cookie.** `SameSite=Strict` +
-  `HttpOnly`, plus the same-origin check **already shipped in D-239**.
-- **R-04 (H/M) — cookie flags break one of three origins**: Vite dev, direct
-  `:4600`, and the `.ts.net` name. Set `Secure` from the request's own
-  protocol; W0.9 exists to catch exactly this.
-- **R-05 (M/M) — a route is missed** among ~90 registrations. Mount by prefix,
-  and add a test that enumerates routes so a *future* one is caught too.
-- **R-06 (M/M) — locking yourself out of the Google OAuth loop.** The callback
-  carries no credential; exempt it. Its `state` check is already in place.
-- **R-07 (M/H) — editing server source while jobs run kills sessions.** Land
-  the gate with the queue empty; "restarted, then proven" is the bar.
-- **R-09 (L/H) — Wave 0 read as permission to relax the tailnet rule.** It is
-  not. **The loopback bind and `serve`-never-`funnel` (D-127, D-175) are
-  unchanged by Wave 0**, and the entry must say so.
-
----
-
-## 4. Waves 2–6 — each starts with a decision, not a commit
-
-Every one supersedes something recorded, so none of them begins in code. In the
-plan's order, with what each reverses:
-
-| Wave | What it opens | Supersedes |
-|---|---|---|
-| 2 | ~~Event triggers~~ **done, D-248**; ~~HTTP MCP transport~~ **done, D-243**; business-system doors (mostly catalog now); browser acting tools **(ranked last — see below)** | extends D-103; D-053/D-035 for the browser half |
-| 3 | Two-way conversation — **the one-reply half built in D-248** (a mail-triggered job may answer one threaded reply, reviewed, never auto-sent); anything past that is still open | D-075's *not-a-chat* clause only |
-| 4 | Deploy / publish / file; e-signature; then money in three steps | D-075's *not-an-actor*; D-229's signing half; **D-219 by its own reopen clause** |
-| 5 | Media, voice, CAD out | **D-204 when its own demand test passes** |
-| 6 | Coordination — a manager trade | nothing: **D-197's bar is re-run on its named triggers** |
-
-**Wave 2's remaining three, in the order they should be taken (D-243):**
-
-1. **Event triggers — BUILT, D-248** (2026-08-24, commit `9e103bd` and the
-   record commit after it). A schedule row carries a Gmail query instead of a
-   cadence; the server polls with no LLM in the loop; the mail lands as
-   `input/mail.txt`; three unconditional loop guards (`-from:me`, a
-   once-per-message seen ring, a daily cap of 10 whose overflow never fires
-   late). The Wave 3 pull-forward was decided WITH it, not backed into:
-   `reply: true` threads one answer into the triggering conversation, the
-   server supplying the thread from the job's own stamp, and `autoBlocker`
-   excludes every mail-triggered job from standing approval. **Proven live
-   the same evening** — 18/18 on both restarts, plus a quiet rule through a
-   full mail-sweep interval; the first run's one ambiguous branch led to the
-   zero-match 204 fix (the entry's attached correction). **The creation
-   control is built** (commit `34a85d3`, after a mockup round Brian picked
-   from): a fifth chip *when mail arrives* on the repeat row, the raw Gmail
-   query, the sentence reading, D-246's live match line moved to mail, Start
-   reading *Arm* — **proven live 19/19** in headless Edge on 2026-08-25
-   (`prove-trigger-ui.mjs`: the sentence turns the chip on and is quoted
-   back, the field stays empty, the live line answers amber for a rule
-   matching nobody, Arm creates a real row and it is removed again).
-   **The first real rules are ARMED on HQ (2026-08-25)** — and the
-   mailbox corrected the premise first: no bank mails a statement (Banco de
-   Chile's is a download, which is what D-246 exists for). What arrives is
-   Santander's *Comprobante de Pago* when a client pays (~quarterly, next
-   expected late September) and Insigneo's monthly statement notification
-   (~1st–2nd, next in about a week). Both watch from now:
-   `c9bc102f` → `from:mensajeria@santander.cl`, `c4a97302` →
-   `from:edelivery@netxinvestor.com`. **And the reply half is proven on a
-   real thread** (2026-08-25): a third rule on Brian's Hotmail fired 105 s
-   after his mail, the job drafted `"reply": true`, he approved, and the
-   sent message carries the trigger's own Gmail thread id
-   (`verify-reply-thread.mts`). **D-248 is complete end to end.** Open
-   small decision it surfaced: a rule carries no `tools`, so a firing that
-   needs a door has none. Owed: nothing but the two real senders' next mail.
-2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
-   add any MCP server themselves rather than waiting for us to curate one, and
-   D-245 seeds four verified starting points that fill the form. Still:
-   **check the transport before assuming it is `http`** (D-243's correction,
-   reinforced by D-245 — three of its four are `stdio`). Xero's official MCP
-   server is **`stdio`** (`npx -y @xeroapi/xero-mcp-server@latest`, secrets in
-   `env`), so the accounting side needs nothing D-243 added and works today.
-   Remote `http` endpoints exist for Atlassian, HubSpot, Linear, Slack,
-   Salesforce, Asana, Monday and similar — a real population, but dev/CRM
-   rather than the ledger — and **most of them want OAuth 2.1, which is not
-   built**; D-243 covers static credentials from `.env`. **The open question is
-   which system**, and that depends on what Brian actually runs his business
-   on.
-3. **Browser acting tools — last, and deliberately.** `click`/`type`/`submit`
-   is a session changing someone else's state with **no outbox and no
-   approval**, which supersedes D-075's *not-an-actor* clause through a side
-   door when Wave 4 is where acting belongs, behind the acts ledger. D-035 also
-   *measured* the browser's value as lower than the case made for it.
-
-The generalization the acting waves rest on — the **acts ledger** (D-075's
-outbox made typed: compose → validate → review → replay → audit) and the
-**authority matrix L0–L4** (D-082 generalized) — is designed in the plan
-artifact and **not built**. Build it when a wave needs it, not before.
+- **A conversation runtime (outreach).** No correspondent exists: every
+  standing approval ever earned is to Brian's own Telegram, and two externals
+  have ever been reached, one reviewed send each. A commitments policy would
+  govern nobody. Reopen when a real counterparty needs a second exchange
+  (D-253).
+- **WhatsApp Business inbound.** Meta delivers inbound only to a webhook — a
+  public endpoint, which D-127, D-169, D-174 and D-175 forbid; D-248 refused
+  Gmail push on the same rule. Sending (D-081) stands (D-253).
+- **Media generation.** Waits on the refusal block (#11) showing demand;
+  D-204's test unchanged (D-253).
+- **A manager trade.** D-197's economics failed at 2.8–3.2× spend; Brian is
+  the manager. The reopen shape is a planner-only manager — proposes the
+  week's standing instructions, never dispatches — and it too waits on the
+  refusal block (D-257).
+- **The acts ledger and the authority matrix.** The shape stands in the
+  plan; built for the first act beyond send, which will be the SII's
+  accept/claim of a DTE — the reason #19 exposes reads only (D-250).
 
 ---
 
@@ -308,12 +201,12 @@ node scripts/prove-wave0-ui.mjs          # 17/17 — the login screen, headless 
 node scripts/prove-http-mcp.mjs          #  6/6  — the http transport, real MCP server
 node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports
 node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form
-node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
+node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips (retire with #15)
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
-node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248); ran clean on BOTH 2026-08-24 evening restarts
-node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248 control), headless Edge; arms a rule matching nobody and deletes it
-npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248, real mail, 2026-08-25)
+node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248)
+node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248), headless Edge; arms a rule matching nobody and deletes it
+npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
@@ -321,34 +214,38 @@ as *"restart it first"* rather than as a failure. `prove-http-mcp` runs one
 cheap model turn (~$0.15); the rest cost nothing. `prove-standing` takes about
 three minutes of wall clock, nearly all of it waiting out two real cadences,
 and its first version cost $0.38 because a crew guard passed by never
-executing — it now fails closed and adds zero ledger rows.
+executing — it now fails closed and adds zero ledger rows. **The UI
+instruments click past the first-run tour** (`Tour.tsx` sits over the work
+bar in a fresh headless profile and swallows the pointer); a new instrument
+must do the same or its first real click is lost.
 
-**How the machine was left on 2026-08-24:**
+**How the machine was left on 2026-08-25:**
 
 - The **gate is armed** — `AGENTLINGS_PASSWORD` is set in `.env`, and the
-  server was last restarted on it. Comment the line out and restart to disarm.
-- `.agentlings/connections.json` is **empty**. Everything the proofs added was
-  removed again; nothing a user added is waiting to be found.
-- The server was **restarted twice on the evening of 2026-08-24** and now
-  carries all of D-248 **plus the zero-match mail fix** (`5c9a736` — Gmail
-  answers a zero-match list as a 204 with an empty body; without the fix
-  every quiet trigger rule errored within two minutes, see D-248's attached
-  correction). `prove-mail-trigger.mjs` ran 18/18 on both restarts — the
-  second with the preview answering 200 — and a quiet rule then survived a
-  full 130 s mail-sweep interval live: no error, nothing queued, level
-  closed again.
+  server was last restarted on it (the evening of 2026-08-24, twice; it
+  carries all of D-248 plus the zero-match mail fix `5c9a736`). Comment the
+  line out and restart to disarm.
+- `.agentlings/connections.json` is **empty**. Nothing a user added is
+  waiting to be found.
+- **Seven schedule rows exist** — six on HQ (`919a5247` weekly expenses mail,
+  `bd651cfd` and `1e21feb3` the daily calendar and mail briefs, `c9bc102f`
+  and `c4a97302` the two armed mail rules, `e4ad0624` the paused reply
+  proof) and one on training-ground (`c639d84a`, the monthly indicators, the
+  free tool-tier schedule that needs `bls`). **Every one of them fires with
+  all eight doors until #9 lands**; the backfill table is in D-254.
+- **The two real mail rules are the proof, not leftovers.** `c9bc102f` fires
+  on `from:mensajeria@santander.cl` (a client's payment receipt, ~quarterly,
+  next expected late September); `c4a97302` on
+  `from:edelivery@netxinvestor.com` (Insigneo's monthly notice, ~1st–2nd).
+  Each firing is a paid HQ job (~$0.25–0.40); neither sends. **Do not delete
+  them.**
 - **Two ledger rows on a level called `d-246-standing-proof` are real spend
   ($0.38)** from a proof whose crew guard passed by never executing. The level
   is gone; the rows stay, because the ledger is not edited. They are not work.
-- **Two real mail-trigger rules are armed on HQ** (2026-08-25, D-248):
-  `c9bc102f` fires on `from:mensajeria@santander.cl` (a client's payment
-  receipt, ~quarterly) and `c4a97302` on `from:edelivery@netxinvestor.com`
-  (Insigneo's monthly statement notice). Each firing is a paid HQ job
-  (~$0.25–0.40) with the mail in `input/mail.txt`; neither sends. They are
-  the first real work through anything built since D-241. **Do not delete
-  them as proof leftovers — they are the proof.**
-- Otherwise nothing is in flight and nothing on this board is owed but
-  those firings.
+- The three Starbase title-screen files (`TitleScreen.tsx`, `styles.css`,
+  `starbase-scene.jpg`) sit **unstaged** in the working tree by decision —
+  the backdrop mockups were declined 2026-08-23 — and #7 left them so.
+- Otherwise nothing is in flight.
 
 ---
 
@@ -363,7 +260,10 @@ executing — it now fails closed and adds zero ledger rows.
 - **A negative example only tests a rule if it would pass without it.** Three
   mutation passes in a row exposed the choice of fixture rather than the logic.
   And hash the file before and after: a `\n`-anchored replace on a CRLF file is
-  a silent no-op (D-224, three sightings).
+  a silent no-op (D-224, **four sightings** — `DECISIONS.md` is CRLF on every
+  line and a `grep -q $'\r'` probe reported it LF; count with `tr -cd '\r'`).
+- **What a job reaches is answered by `grantedTools`, not by what a run said
+  about itself** (D-254).
 - **`.agentlings/` is gitignored.** Every job deliverable — including the plans
   and audits this board condenses — exists on disk only.
 - The four trades are hired on **Training Ground**: Tam (operations), Rue

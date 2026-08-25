@@ -87,10 +87,24 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - `AGENTLING.md` — what one agentling can do, tagged Live / Partial / Not built.
 - `DECISIONS.md` — why each choice was made and what proved it. Opened on
   demand, never imported.
-- `HORDE.md` — the open board for the expansion line (D-235 → D-240): what is
-  measured, what is owed, and the one decision Wave 0 waits on. Opened on
-  demand. It exists because job deliverables live under the gitignored
+- `HORDE.md` — the open board for the expansion line (D-235 → D-257): the
+  fourteen tickets in order, the three premises it had wrong, and how the
+  machine was left. Opened on demand. It exists because job deliverables live under the gitignored
   `.agentlings/`, so a plan nobody condensed into the repo is a plan one sweep
   from gone.
 
 @PROJECT.md
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `briant92/Agentlings`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels, each named as its role (`needs-triage` … `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the root is the glossary; decisions are `D-` entries in `DECISIONS.md`, never a `docs/adr/`. See `docs/agents/domain.md`.

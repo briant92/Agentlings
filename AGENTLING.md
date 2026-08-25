@@ -27,7 +27,11 @@ the document brief's scan line repaired; §§6, 11 and 12 re-read against
 `abc0263` the same day where the UI unclogging landed (D-213–D-215): the
 trail read back in the review, the ledger row carrying the cut, the job
 carrying what it left; §2 gains the four Wave 1 trades on 2026-08-24 (D-235),
-read from the four role files rather than from the plan that proposed them. Since 2026-08-23 (D-228) the app shows this file's
+read from the four role files rather than from the plan that proposed them;
+§§0, 4, 5, 11 and 15 re-read 2026-08-25 where the re-grounding landed (D-249,
+D-254–D-256): the headline demoted to a map, the trigger grant corrected,
+the supervised browser and the registry browse recorded as decided, not
+built. Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
@@ -38,10 +42,13 @@ those grades a re-read too — as it owes the power and boundary ledgers in
 `server/src/coverage.ts` (D-230), which grade a real occupation's duties
 against §§4, 5, 10, 11 and 14 by the same evidence; `npm run
 bench:coverage` measures the result over a downloaded O*NET or ESCO
-release, and since D-237 it leads with the one number this file is really
-about — **hireable positions, 5–10 of 922**, how many real occupations the
+release, and since D-237 it leads with
+**hireable positions, 5–10 of 922**, how many real occupations the
 crew could hold down, counted only off duties whose grade rests on recorded
-evidence and never off a word match. §8's figures
+evidence and never off a word match — and since D-249 that number is a
+**map** of where the crew cannot go, not the score: the score is real work
+under supervision, counted weekly from the ledger and the job records (#12,
+#13, not built yet), and the map recorded zero for D-241–D-248. §8's figures
 regenerate with `npm run ledger:report`, and §15 is the list of what is not
 here yet.
 
@@ -258,6 +265,13 @@ Twelve that act are deliberately absent — `click`, `type`, `fill_form`,
 those names against the shipped catalog, so the boundary is a test rather than
 a description of one. Why, in full, is §11.
 
+**Not built — decided in D-255 (#16):** the twelve will ship as a *second*
+connection, `browser-act`, off by default and usable only under supervision —
+a headed browser on a domain allowlist edited in Settings, in a profile you
+logged into yourself, for one job you queued by hand and are watching. A
+schedule or rule can never name it, it never earns standing approval, and
+closing the window ends the run. This connection stays read-only.
+
 **Measured again in production, and the case is still weak** (D-053). A run
 sent looking for a fact it could not search for spent ten tool calls in the
 browser and exhausted its turns; its last act was to ask for `browser_evaluate`
@@ -344,6 +358,13 @@ those are what the connection grants, so a connection cannot exist without
 someone knowing what it can do. Added ones live under `.agentlings/`, ship
 **off**, take their keys from `.env` like every other credential, and can never
 take a shipped connection's name. Live.
+
+**Not built — decided in D-256 (#15):** the form gains a browse over the public
+MCP registry that fills it — transport, command or URL, the credential's
+variable names — and saves nothing; verification stays the tool-list read.
+Above it, a *verified here* shelf of the doors this install has actually
+connected to, each with its source and date, replaces the four D-245
+suggestion chips.
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -1254,7 +1275,10 @@ movement.
 
 An agentling is **not offered any tool that acts** from inside a run. The
 twelve Playwright acting tools stay held back, `catalog.test.ts` asserts their
-absence, and nothing about the outbox changed that.
+absence, and nothing about the outbox changed that. D-255 decided the one
+exception, not yet built: the twelve as a separate `browser-act` connection
+under supervision, where a person watching a headed window stands in for the
+promote step (#16).
 
 **That is a statement about the tool surface, not about reachable capability,
 and the difference was measured on 2026-08-12 (D-168).** `playwright-core` is a
@@ -1982,9 +2006,12 @@ list per channel (D-077; SPEC M5.11 has the slices):
       fifth repeat chip, *when mail arrives*, with the raw Gmail query, the
       sentence reading and a live reach line, Start reading Arm — 19/19 in
       the real app. Two real rules stand armed on HQ (a client's Santander
-      payment receipt, Insigneo's monthly statement notice). *Known edge: a
-      rule carries no `tools`, so a firing that needs a door (the UF) has
-      none — an open small decision.* A schedule row may carry a
+      payment receipt, Insigneo's monthly statement notice). *Corrected by D-254: a
+      rule carries no `tools`, and its firing therefore holds **every**
+      enabled door — eight today, on a third party's mail — because
+      `grantedTools` reads an omitted list as everything that is on; the UF
+      run's own record carries all eight. A rule will hold only the doors it
+      names, none by default (#8, #9, #10 — not built yet).* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

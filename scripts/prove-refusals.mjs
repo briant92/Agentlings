@@ -12,12 +12,17 @@
 // proof billed $0.38 through a guard that passed by never executing). Costs
 // nothing, adds zero ledger rows, and says so at the end by counting them.
 //
-// Three Starts and one plan:
+// Two Starts, a plan, a rule and a reply — every way the desk hands a
+// sentence over (D-259):
 //   two rows   — a sentence that pays and signs: two lines, money then sign,
 //                stamped with this level, and not one word of the sentence
 //   ordinary   — a sentence that claims nothing: no new line
 //   plan       — the refusing sentence at /work/plan: no new line, because the
 //                plan re-runs on every keystroke and is never the count
+//   rule       — the refusing sentence armed as a schedule hours from now:
+//                counted once, at arming (the level closes before it fires)
+//   reply      — a refusing reply to the queued job: its own words counted,
+//                the prompt it continues not counted again
 //   torn       — nothing here; the torn-line reading is unit-tested, and a
 //                proof must not damage the real file to show it
 
@@ -148,7 +153,23 @@ if (made.status !== 201) {
     // ── plan ─────────────────────────────────────────────────────────────────
     const planned = await post(`/api/levels/${lid}/work/plan`, { text: REFUSING, single: true });
     check('the plan answered', planned.status === 200, `${planned.status}`);
-    check('the plan counted nothing — only Start counts', mine().length === 2, `${mine().length} lines`);
+    check('the plan counted nothing — the plan is never the count', mine().length === 2, `${mine().length} lines`);
+
+    // ── rule ─────────────────────────────────────────────────────────────────
+    const later = new Date(Date.now() + 6 * 60 * 60_000);
+    const armed = await post(`/api/levels/${lid}/schedules`, {
+      text: REFUSING,
+      cadence: { kind: 'daily', hour: later.getHours(), minute: later.getMinutes() },
+    });
+    check('the rule was armed', armed.status === 201, `${armed.status}`);
+    check('arming a rule counted its sentence once', JSON.stringify(mine().slice(2).map((r) => r.key)) === '["money","sign"]', mine().slice(2).map((r) => r.key).join(' '));
+
+    // ── reply ────────────────────────────────────────────────────────────────
+    const replied = await post(`/api/levels/${lid}/jobs/${started.body.id}/reply`, {
+      text: 'Also wire the deposit to the landlord today',
+    });
+    check('the reply queued', replied.status === 201, `${replied.status}`);
+    check("a reply counts its own words only — one line, not the prompt's two again", JSON.stringify(mine().slice(4).map((r) => r.key)) === '["money"]', mine().slice(4).map((r) => r.key).join(' '));
 
     // ── and nothing ran, so nothing was billed ───────────────────────────────
     const jobs = existsSync(path.join(levelDir, 'jobs.json'))
@@ -179,7 +200,7 @@ if (made.status !== 201) {
   await cleanup();
   console.log(
     bad === 0
-      ? `\nall PASS — nothing owed. The two lines for ${lid} stay in refusals.jsonl: the file is append-only, and a proof level's demand is a proof, not demand (#12 counts real levels only).`
+      ? `\nall PASS — nothing owed. The five lines for ${lid} stay in refusals.jsonl: the file is append-only, and a proof level's demand is a proof, not demand (#12 counts real levels only).`
       : `\n${bad} FAILED`,
   );
   process.exitCode = bad === 0 ? 0 : 1;

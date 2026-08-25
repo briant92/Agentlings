@@ -2459,10 +2459,6 @@ app.post('/api/levels/:lid/work', async (c) => {
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  // The desk counts what it refuses (D-249, D-259): once per Start, off the
-  // whole sentence, before any of the ways in — a refusal queued anyway is
-  // still one refusal. Never at /work/plan, which re-runs on every keystroke.
-  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
 
   const organizeRoot = body.organizeRoot?.trim();
   if (organizeRoot && !existsSync(organizeRoot)) {
@@ -2484,6 +2480,12 @@ app.post('/api/levels/:lid/work', async (c) => {
     rt.meta = { ...rt.meta, repoPath };
     writeMeta(rt.dir, rt.meta);
   }
+
+  // The desk counts what it refuses (D-249, D-259): once per Start that
+  // happened — after every refusal of the request, before any of the ways
+  // in — off the whole sentence; a refusal queued anyway is still one
+  // refusal. Never at /work/plan, which re-runs on every keystroke.
+  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
 
   // The planner path (TEAMWORK T3): the user pressed the offer, so the
   // split is proposed by an architect-class run and reviewed before any
@@ -2588,6 +2590,9 @@ app.post('/api/levels/:lid/schedules', async (c) => {
       .map((conn) => conn.name),
   );
   if (badDoor) return c.json({ error: badDoor }, 400);
+  // A rule's sentence was typed at the desk once (D-259): counted here, when
+  // it is armed, and never again on its firings — a firing is not an ask.
+  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
   const schedule = createSchedule(
     rt.dir,
     {
@@ -2705,6 +2710,9 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
   const body = await c.req.json<{ text?: string }>();
   const reply = body.text?.trim();
   if (!reply) return c.json({ error: 'text is required' }, 400);
+  // A reply is a sentence at the desk too (D-259); the prompt it continues
+  // was counted when it was first handed over, so only the new words count.
+  recordRefusals(SANDBOX_ROOT, rt.meta.id, reply, Date.now());
 
   const carried = previous.repoPath
     ? 'the clone already carries the changes you made, so continue from them'

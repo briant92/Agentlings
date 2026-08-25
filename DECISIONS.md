@@ -20023,24 +20023,28 @@ session does not re-derive it from the row's doors.
 
 ## D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal
 
-**Decision.** D-249's refusals file, as built (#11). `POST /api/levels/:lid/work`
-— the desk's Start, and only it — runs the whole sentence past `refusalKeys`
-before any of the ways in and appends one line per row claimed to
-`.agentlings/refusals.jsonl`, beside the ledger: `{at, level, key}` and
-nothing of the sentence. The keys are the job board's hard row ids —
-`money`, `sign`, `act`, `people`, `not-built` — and, for a send claimed on a
+**Decision.** D-249's refusals file, as built (#11). Wherever the desk hands
+a sentence over — Start (`POST /api/levels/:lid/work`), a rule armed
+(`POST …/schedules`), a reply sent (`POST …/jobs/:id/reply`, its own words
+only) — the server runs the whole sentence past `refusalKeys` after every
+refusal of the request and before any of the ways in, and appends one line
+per row claimed to `.agentlings/refusals.jsonl`, beside the ledger:
+`{at, level, key}` and nothing of the sentence. A rule counts once, when it
+is armed, never on a firing — a firing is not an ask. The keys are the job
+board's hard row ids — `money`, `sign`, `act`, `people` — the not-built
+row's capabilities by name — `video`, `audio`, `image`, `design-tool`,
+because the trigger that waits on this file is *media generation* and a
+Figma ask must not read as demand for it — and, for a send claimed on a
 channel the shelf refuses by decision (D-077: personal WhatsApp, Signal,
 iMessage, LinkedIn, WeChat, Messenger), the channel's name, read through
-`claimedChannel`, the ask card's own gate, so a mention with no send verb is
-D-093's question and never a refusal. Soft rows never count: a send on a
-wired channel, a watch, a login are partial work. `physical` and `system`
-never count either — no reopen trigger waits on a body, and demand for a
-door is #14/#15's meter, not this one. Counted once per Start and never at
-`/work/plan`, which re-runs on every keystroke; a refusal queued anyway —
-the desk warns, it does not block — is still one refusal. Torn lines are
-skipped on read as the ledger's are, and an append after a torn last line
-starts a fresh line first, which the ledger does not do (noted below, not
-changed).
+`claimedChannel`, the ask card's own gate, so a mention with no send verb
+is D-093's question and never a refusal. Soft rows never count: a send on
+a wired channel, a watch, a login are partial work. `physical` and
+`system` never count either — no reopen trigger waits on a body, and demand
+for a door is #14/#15's meter, not this one. Never at `/work/plan`, which
+re-runs on every keystroke; a refusal queued anyway — the desk warns, it
+does not block — is still one refusal. The file appends and reads exactly
+as the ledger's does: torn lines skipped on read, nothing more.
 
 ### Why the words are the desk's own and not the board's
 
@@ -20068,36 +20072,52 @@ that only sound alike (the D-030 trap in its other direction: collapsing
 two that sound alike is the same mistake as duplicating one). So the desk
 keeps the board's **keys** and carries its own **words**: a claim is a verb
 with its object — *pay the*, *sign it*, *deploy to*, *plan the crew's week*,
-*a video* — held to **0 hits on the 250**, with the ten shapes that fired
-kept in the test as negatives. Its recall is unmeasured, because the
-population holds no positive: the first real refusal is its test, and a
-missed one is findable, since the sentence stays in the job record.
+*make a video*, *in Figma* — held to **0 hits on the 250**, with the ten
+shapes that fired kept in the test as negatives, and a medium that is only
+read (*summarise the video transcript*) deliberately not a claim, because
+reading is built. Its recall is unmeasured, because the population holds no
+positive: the first real refusal is its test, and a missed one is
+findable, since the sentence stays in the job record.
 
 ### Proof
 
-- Unit: `refusals.test.ts`, 17 — every claim key is a hard board row; a
-  payment, a licensed act, an act on the world, a manager, a not-built
-  capability (once, however many of its words), a never-channel, two rows in
-  board order with the channel last, ordinary work, a soft row, a mention,
-  the ten measured phantom shapes; one line per row with time, level and key
-  and none of the sentence's words; nothing for nothing, not even the file;
-  append-only; the file beside the ledger; a torn line skipped and the next
-  append whole.
-- Mutation: the `appendFileSync` dropped — 3 of 17 fail (the one-line test,
-  the append-only test, the torn-line test); restored, 17 pass.
-- Server 2,284 across 95 files, web 343, typecheck clean.
-- Measurement: `refusalKeys` over the same 461 prompts, after the rewrite:
-  **0**.
-- Live: the running server predates the route change, so the line the
-  route writes is owed on the next restart — `node scripts/prove-refusals.mjs`
-  queues one refusing sentence on a rested proof level, reads the line back
-  from `refusals.jsonl`, and this entry gets its line then.
+- Unit: `refusals.test.ts`, 18 — every claim key is a hard board row, a
+  named not-built capability or a never-channel; a payment, a licensed act,
+  an act on the world, a manager, each not-built capability by its own key
+  (once, however many of its words), a never-channel, two rows in board
+  order with the channel last, ordinary work, a soft row, a mention, a
+  medium only read, the ten measured phantom shapes; one line per row with
+  time, level and key and none of the sentence's words; nothing for
+  nothing, not even the file; append-only; the file beside the ledger; a
+  torn line skipped.
+- Mutation: the `appendFileSync` dropped — 3 of 18 fail (the one-line test,
+  the append-only test, the torn-line test); restored, 18 pass.
+- Server 2,285 across 95 files, web 343, typecheck clean.
+- Measurement: `refusalKeys` over the same prompts, after the rewrite:
+  **0** on the real levels (the proof level's own sentence is the only hit).
+- Review (`/code-review` since `f32f675`, both axes): a torn-line append
+  guard the ledger does not have was dropped rather than kept as a second
+  discipline for one file shape; the not-built row's bare nouns became
+  making verbs with their medium, one key per capability; the count moved
+  after the route's own refusals so a rejected Start cannot count; the
+  rule and reply seams were added, since a sentence typed at the desk
+  reaches the server three ways. Left as they are: `readRefusals` mirrors
+  the ledger's private `readRows` line for line (a shared jsonl reader
+  would touch `ledger.ts`, beyond this ticket), and `key` stays a string
+  because the never-channel names are the shelf's, not a closed union.
+- Live: the running server predates the route change, so the lines the
+  routes write are owed on the next restart — `node scripts/prove-refusals.mjs`
+  rests a proof level's crew, presses Start twice, plans once, arms a rule
+  and sends a reply, reads five lines back from `refusals.jsonl` at $0, and
+  this entry gets its line then. Its dry run against the old server stops
+  at the restart guard with the crew rested and the level closed.
 
 ### Noted, not changed
 
 - The ledger's own append after a torn last line would glue the new row
-  onto the torn one and lose both; `readRows` skips them. Same shape as the
-  guard added here; left for a ticket of its own.
+  onto the torn one and lose both; `readRows` skips them. The refusals file
+  now shares that exact discipline on purpose (the ticket says *as the
+  ledger's are*); if it is ever fixed, fix both through one function.
 - The channel shelf's `payments` row and the board's `money` row are one
   refusal; the desk keys it `money`, and `payments` is never a channel word,
   so no sentence can count it twice.

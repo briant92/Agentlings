@@ -114,10 +114,8 @@ crew cannot go, never the score.
 _Avoid_: progress, headline
 
 **Refusal**:
-A sentence at the desk that claims a shelf-of-never row — a payment, a licensed
-act, an act on the world, a send on a channel refused by decision — or names a
-capability graded not built. Counted once at Start as one line per row in the
-refusals file beside the ledger (when, level, row key; never the sentence),
-whether or not the job is queued anyway. It is the demand meter the reopen
-triggers wait on; ordinary work is never one.
-_Avoid_: rejection, error, blocked job, phantom (for a counted line)
+A sentence the desk was handed that claims a shelf-of-never row — a payment,
+a licensed act, an act on the world, a send on a channel refused by decision
+— or names a capability graded not built, whether or not it is queued anyway.
+Ordinary work is never one.
+_Avoid_: rejection, error, blocked job

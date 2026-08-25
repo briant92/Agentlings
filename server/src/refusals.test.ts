@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NEVER_CHANNELS } from './channel';
 import { BOUNDARIES } from './coverage';
-import { CLAIMS, readRefusals, recordRefusals, refusalKeys, refusalsFile } from './refusals';
+import { CLAIMS, NOT_BUILT, readRefusals, recordRefusals, refusalKeys, refusalsFile } from './refusals';
 
 let root: string;
 beforeEach(() => {
@@ -21,9 +21,10 @@ const VIDEO = 'Make a two-minute video walkthrough of the new onboarding flow';
 const ORDINARY = "Summarise last quarter's numbers into a one-page PDF";
 
 describe('refusalKeys', () => {
-  it('keys every row as the job board does, or as the channel shelf names it', () => {
+  it('keys every row as the job board does, a not-built capability by its own name, a channel as the shelf names it', () => {
     const hard = new Set(BOUNDARIES.filter((b) => b.hard).map((b) => b.id));
-    for (const c of CLAIMS) expect(hard.has(c.key), c.key).toBe(true);
+    expect(hard.has('not-built')).toBe(true);
+    for (const c of CLAIMS) expect(hard.has(c.key) || NOT_BUILT.includes(c.key), c.key).toBe(true);
     expect(NEVER_CHANNELS).toContain('whatsapp');
     expect(NEVER_CHANNELS).not.toContain('telegram');
   });
@@ -53,11 +54,20 @@ describe('refusalKeys', () => {
     expect(refusalKeys('Join the standup at 9 and take notes')).toEqual(['people']);
   });
 
-  it('names a not-built capability once, however many of its words the sentence uses', () => {
-    expect(refusalKeys(VIDEO)).toEqual(['not-built']);
+  it('names a not-built capability by its own key, once, however many of its words the sentence uses', () => {
+    expect(refusalKeys(VIDEO)).toEqual(['video']);
+    expect(refusalKeys('Produce a short animation and a screencast of the flow')).toEqual(['video']);
     expect(refusalKeys('Record a voice-over for the podcast intro and generate a photoreal cover image')).toEqual([
-      'not-built',
+      'audio',
+      'image',
     ]);
+    expect(refusalKeys('Design the landing page in Figma')).toEqual(['design-tool']);
+  });
+
+  it('never counts a medium that is only read, or a making verb with no medium — reading is built', () => {
+    expect(refusalKeys('Summarise the video transcript attached to this mail')).toEqual([]);
+    expect(refusalKeys('Animate the transition on the title screen')).toEqual([]);
+    expect(refusalKeys('Export the Figma file names from the attached list')).toEqual([]);
   });
 
   it('names a channel refused by decision, when the sentence claims a send on it', () => {
@@ -136,11 +146,13 @@ describe('recordRefusals', () => {
 });
 
 describe('readRefusals', () => {
-  it('skips a torn line and keeps the rest, as the ledger does — and the next append is not torn with it', () => {
+  it('skips a torn line and keeps the rest, as the ledger does', () => {
     recordRefusals(root, 'hq', SIGN, 1);
-    appendFileSync(refusalsFile(root), '{"at":2,"level":"hq","ke');
-    expect(readRefusals(root)).toEqual([{ at: 1, level: 'hq', key: 'sign' }]);
-    recordRefusals(root, 'hq', VIDEO, 3);
-    expect(readRefusals(root).map((r) => r.key)).toEqual(['sign', 'not-built']);
+    recordRefusals(root, 'hq', VIDEO, 2);
+    appendFileSync(refusalsFile(root), '{"at":3,"level":"hq","ke');
+    expect(readRefusals(root)).toEqual([
+      { at: 1, level: 'hq', key: 'sign' },
+      { at: 2, level: 'hq', key: 'video' },
+    ]);
   });
 });

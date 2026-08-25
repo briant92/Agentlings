@@ -1,4 +1,4 @@
-import { appendFileSync, closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { NEVER_CHANNELS, claimedChannel } from './channel';
 
@@ -25,16 +25,24 @@ import { NEVER_CHANNELS, claimedChannel } from './channel';
  *
  * Soft rows (a send, a watch, a login) are partial work, never refused, and
  * never counted; a wired channel is a send. Ordinary work appends nothing —
- * not even the file. Counted once per sentence, at Start: the plan re-runs
- * on every keystroke, so a line there would be a keystroke meter. A refusal
+ * not even the file. Counted once per sentence, where the desk hands it
+ * over — Start, a rule armed, a reply sent — and never at the plan, which
+ * re-runs on every keystroke and would make a keystroke meter. A refusal
  * that is queued anyway — the desk warns, it does not block — is still one.
  */
 export interface Refusal {
   at: number;
   level: string;
-  /** A `BOUNDARIES` id (`money`, `sign`, `act`, `people`, `not-built`) or a never-channel's name. */
+  /** A `BOUNDARIES` id (`money`, `sign`, `act`, `people`), a not-built capability's name (`NOT_BUILT`) or a never-channel's name. */
   key: string;
 }
+
+/**
+ * The not-built row (D-204, D-229, D-253), one key per capability, because
+ * the trigger that waits on this file is *media generation* and a Figma ask
+ * must not read as demand for it.
+ */
+export const NOT_BUILT: readonly string[] = ['video', 'audio', 'image', 'design-tool'];
 
 /** The thing a verb acts on — what turns "pay attention" into no claim and "pay the invoice" into one. */
 const OBJ = String.raw`(?:the|this|that|it|them|him|her|my|our|his|their|a|an|some|any|each|every|all|\$|[0-9])`;
@@ -96,17 +104,26 @@ export const CLAIMS: Claim[] = [
       /\bplan\s+(?:the\s+)?(?:crew's|team's|horde's)\s+week\b/i,
     ],
   },
+  // Decided or measured not-built (D-204, D-229, D-253): no media is made, no
+  // design tool driven. A making verb with the medium as its object — a video
+  // *summarised* is a file read, and reading is built.
   {
-    // Decided or measured not-built: no media is read or made, no design tool driven (D-204, D-229, D-253).
-    key: 'not-built',
+    key: 'video',
+    patterns: [/\b(?:make|create|produce|generate|record|edit|render|film|shoot)\s+(?:[\w-]+\s+){0,3}?(?:videos?|animations?|screencasts?)\b/i],
+  },
+  {
+    key: 'audio',
     patterns: [
-      /\b(?:videos?|animations?|animate|podcasts?|voice-?overs?|jingles?|soundtracks?|screencasts?)\b/i,
-      /\b(?:audio|sound|music)\s+(?:files?|clips?|tracks?|recordings?)\b/i,
-      /\brecord\s+(?:an?\s+|the\s+|my\s+)?(?:audio|voice|sound|narration)\b/i,
-      /\b(?:generate|render)\s+(?:an?\s+|the\s+|some\s+)?(?:photoreal\w*|images?|pictures?|photos?)\b/i,
-      /\bphotoreal\w*|\b3d[- ]?print\w*/i,
-      /\b(?:figma|photoshop|illustrator|autocad|revit|solidworks|sketchup|premiere|after\s+effects)\b/i,
+      /\b(?:make|create|produce|generate|record|edit|render|mix)\s+(?:[\w-]+\s+){0,3}?(?:audio|podcasts?|voice-?overs?|jingles?|soundtracks?|narration|songs?|music)\b/i,
     ],
+  },
+  {
+    key: 'image',
+    patterns: [/\b(?:make|create|produce|generate|render|take)\s+(?:[\w-]+\s+){0,3}?(?:photoreal\w*|photos?|photographs?)\b/i],
+  },
+  {
+    key: 'design-tool',
+    patterns: [/\b(?:in|with|using)\s+(?:figma|photoshop|illustrator|autocad|revit|solidworks|sketchup|premiere|after\s+effects)\b/i],
   },
 ];
 
@@ -124,33 +141,13 @@ export function refusalKeys(text: string): string[] {
   return keys;
 }
 
-/**
- * Does the file end where a line ends? A torn last line does not, and a
- * record appended straight after it would be torn with it — the reader
- * skips the torn line, so the meter would silently lose a refusal.
- */
-function endsAtLineEnd(file: string): boolean {
-  const fd = openSync(file, 'r');
-  try {
-    const { size } = fstatSync(fd);
-    if (size === 0) return true;
-    const last = Buffer.alloc(1);
-    readSync(fd, last, 0, 1, size - 1);
-    return last[0] === 0x0a;
-  } finally {
-    closeSync(fd);
-  }
-}
-
-/** One line per row the sentence claims; nothing at all when it claims none. */
+/** One line per row the sentence claims; nothing at all when it claims none. Appends as the ledger does (D-259). */
 export function recordRefusals(sandboxRoot: string, level: string, text: string, at: number): void {
   const keys = refusalKeys(text);
   if (keys.length === 0) return;
   mkdirSync(sandboxRoot, { recursive: true });
-  const file = refusalsFile(sandboxRoot);
-  const lead = existsSync(file) && !endsAtLineEnd(file) ? '\n' : '';
   const lines = keys.map((key) => `${JSON.stringify({ at, level, key } satisfies Refusal)}\n`);
-  appendFileSync(file, lead + lines.join(''));
+  appendFileSync(refusalsFile(sandboxRoot), lines.join(''));
 }
 
 /** Every refusal on disk; a torn line is skipped, never allowed to lose the rest (as the ledger's are). */

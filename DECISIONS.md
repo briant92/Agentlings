@@ -1049,7 +1049,8 @@ entry updates one file rather than two.
   (#13) — `report: realwork` on a schedule row, the block composed into
   an outbox through the session contract, landed in review at $0 with no
   model, no door and no ledger row, climbing the ordinary standing
-  approval; live proof and the HQ row owed on the next restart; D-255, supervised live
+  approval; proven live 31/31 on the restart and the HQ row armed for
+  Mondays 08:05, first firing 2026-08-31; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20359,17 +20360,22 @@ instead; the card's own facts say what it was.
   D-260 printed.
 - typecheck clean; server and web suites green (counts in HORDE.md).
 
-**Owed on the next restart** (the running server predates the route; the
-proof stops at *restart it first*):
-- `node scripts/prove-realwork.mjs` — a rested proof level, six refused
-  shapes, one accepted row due in a minute, one sweep, the job read off
-  `jobs.json` (done, one telegram message to the recipient, the block as
-  body, under the cap, $0 and zero turns, no door, no agentling, nothing
-  sent), the row deleted, zero ledger rows, the level closed.
-- `node scripts/arm-realwork.mjs hq telegram 8633678680` — the HQ row,
-  Mondays at 08:05 (between the 08:00 calendar brief and the 08:10 mail
-  brief). Its first firing is 2026-08-31; Brian approves it by hand, and
-  the third unchanged approval (2026-09-14) is when the offer appears.
+**Proven live on the 2026-08-25 restart** — `node scripts/prove-realwork.mjs`
+**31/31**: a rested proof level, six refused shapes each in its own words,
+one accepted row due in a minute, one sweep, the job read off `jobs.json`
+— done, one telegram message to `proof — 0` split as the desk splits it,
+the block as body (822 characters, the same 87 / 48-26-13 as
+`ledger:report`), no `outboxError`, meter `$0 · 0 turns · 26 ms`, no
+door, no agentling, nothing sent — the row deleted, zero ledger rows, the
+level closed. (Its dry run on the pre-restart server had stopped at
+*restart it first* as designed.)
+
+**The HQ row is armed**: `15548352`, Mondays at 08:05 (between the 08:00
+calendar brief and the 08:10 mail brief), telegram `8633678680`, `tools:
+[]`, first firing **2026-08-31**. Brian approves that one by hand; the
+third unchanged approval (2026-09-14) is when the standing offer appears.
+Still not proven: the standing approval sending a Monday report on its
+own — three hand approvals first, by D-082's own rule.
 
 **The review's catch — the score was about to count itself.** The report
 lands as a job on a real level and is promoted like any send, and

@@ -34,6 +34,9 @@ describe('refusalKeys', () => {
     expect(refusalKeys('Wire $2,500 to the landlord before Friday')).toEqual(['money']);
     expect(refusalKeys('Transfer the funds to the savings account and reimburse Ana')).toEqual(['money']);
     expect(refusalKeys('Run the payroll for August')).toEqual(['money']);
+    // The live proof's reply sentence, which the first lexicon missed (D-259).
+    expect(refusalKeys('Also wire the deposit to the landlord today')).toEqual(['money']);
+    expect(refusalKeys('Transfer the balance to my savings')).toEqual(['money']);
   });
 
   it('names the row a licensed act claims', () => {

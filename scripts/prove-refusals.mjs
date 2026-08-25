@@ -158,23 +158,34 @@ if (made.status !== 201) {
     check('the plan answered', planned.status === 200, `${planned.status}`);
     check('the plan counted nothing — the plan is never the count', mine().length === 2, `${mine().length} lines`);
 
+    // Each step is read against the lines it added, never an absolute offset —
+    // the first live run failed a passing step because an earlier one had
+    // added fewer lines than assumed.
+    const added = (from) => mine().slice(from).map((r) => r.key).join(' ');
+
     // ── rule ─────────────────────────────────────────────────────────────────
     const later = new Date(Date.now() + 6 * 60 * 60_000);
+    const beforeRule = mine().length;
     const armed = await post(`/api/levels/${lid}/schedules`, {
       text: REFUSING,
       cadence: { kind: 'daily', hour: later.getHours(), minute: later.getMinutes() },
     });
     check('the rule was armed', armed.status === 201, `${armed.status}`);
-    check('arming a rule counted its sentence once', JSON.stringify(mine().slice(2).map((r) => r.key)) === '["money","sign"]', mine().slice(2).map((r) => r.key).join(' '));
+    check('arming a rule counted its sentence once', added(beforeRule) === 'money sign', added(beforeRule));
 
     // ── reply ────────────────────────────────────────────────────────────────
+    // "pay the" rather than "wire the deposit": the first live run found that
+    // the lexicon missed the latter, which is fixed in the code but not on a
+    // server that predates the fix. The seam is what this step proves.
+    const beforeReply = mine().length;
     const replied = await post(`/api/levels/${lid}/jobs/${started.body.id}/reply`, {
-      text: 'Also wire the deposit to the landlord today',
+      text: 'Also pay the landlord the deposit today',
     });
     check('the reply queued', replied.status === 201, `${replied.status}`);
-    check("a reply counts its own words only — one line, not the prompt's two again", JSON.stringify(mine().slice(4).map((r) => r.key)) === '["money"]', mine().slice(4).map((r) => r.key).join(' '));
+    check("a reply counts its own words only — one line, not the prompt's two again", added(beforeReply) === 'money', added(beforeReply));
 
     // ── repeat ───────────────────────────────────────────────────────────────
+    const beforeRepeat = mine().length;
     const again = await post(`/api/levels/${lid}/work`, { text: REFUSING, single: true });
     const armedToo = await post(`/api/levels/${lid}/schedules`, {
       text: REFUSING,
@@ -182,7 +193,7 @@ if (made.status !== 201) {
       queued: true,
     });
     check('Start with a repeat set queued and armed', again.status === 201 && armedToo.status === 201, `${again.status} ${armedToo.status}`);
-    check('…and counted its sentence once, at the Start', JSON.stringify(mine().slice(5).map((r) => r.key)) === '["money","sign"]', mine().slice(5).map((r) => r.key).join(' '));
+    check('…and counted its sentence once, at the Start', added(beforeRepeat) === 'money sign', added(beforeRepeat));
 
     // ── and nothing ran, so nothing was billed ───────────────────────────────
     const jobs = existsSync(path.join(levelDir, 'jobs.json'))

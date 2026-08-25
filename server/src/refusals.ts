@@ -63,6 +63,8 @@ export const CLAIMS: Claim[] = [
       /\bmake\s+(?:a|an|the)\s+(?:payment|transfer|wire|deposit|purchase)\b/i,
       /\b(?:transfer|wire|send|move)\s+(?:the\s+|some\s+)?(?:money|funds|cash|\$\s?[0-9]|[0-9][0-9,.]*\s?(?:usd|clp|eur|gbp|dollars|pesos|euros))/i,
       /\b(?:wire|bank)\s+transfer\b/i,
+      // Found by the live proof (D-259): "wire the deposit" claimed nothing.
+      /\b(?:wire|transfer|remit)\s+(?:the|a|an|my|our|this|that|him|her|them)\s+(?:deposit|rent|fees?|balance|amount|sum|payment|money|funds)\b/i,
       new RegExp(String.raw`\b(?:remits?|reimburses?|refunds?)\s+${OBJ}\b`, 'i'),
       /\b(?:run|process|do)\s+(?:the\s+)?payroll\b/i,
       new RegExp(String.raw`\b(?:buy|purchase)\s+${OBJ}\b`, 'i'),

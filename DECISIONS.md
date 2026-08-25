@@ -1038,7 +1038,7 @@ entry updates one file rather than two.
   one line per never-row or not-built capability beside the ledger, the
   board's row keys with the desk's own verb-and-object words, because the
   board's duty lists fired 99 times on 250 real sentences and never on a
-  refusal, the live line owed on the next restart; D-255, supervised live
+  refusal, proven live 19/19 on the restart; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20111,13 +20111,20 @@ findable, since the sentence stays in the job record.
   the ledger's private `readRows` line for line (a shared jsonl reader
   would touch `ledger.ts`, beyond this ticket), and `key` stays a string
   because the never-channel names are the shelf's, not a closed union.
-- Live: the running server predates the route change, so the lines the
-  routes write are owed on the next restart — `node scripts/prove-refusals.mjs`
-  rests a proof level's crew, presses Start twice, plans once, arms a rule,
-  sends a reply and presses Start with a repeat set, reads seven lines back
-  from `refusals.jsonl` at $0, and
-  this entry gets its line then. Its dry run against the old server stops
-  at the restart guard with the crew rested and the level closed.
+- Live, on the 2026-08-25 restart: `node scripts/prove-refusals.mjs` **19/19** —
+  a fresh proof level with its crew rested, Start ×2, a plan, a rule armed,
+  a reply, Start with a repeat set: **seven lines** read back from
+  `refusals.jsonl`, every one stamped with the level and the time, not one
+  word of the sentence on file, no job left the queue, zero ledger rows,
+  $0. The first run was 17/19 and both fails were instructive: the reply
+  sentence *wire the deposit to the landlord* claimed nothing — `deposit`
+  lived only under *make a deposit* — a recall gap the unit population
+  could not show, now a `money` pattern with its test (0 hits on the 447
+  real-level prompts); and a passing step read as failed because the
+  script sliced the file at an absolute offset that assumed the missing
+  line — every step now reads the lines it added. The seam was proven on
+  the same restart with *pay the landlord*; the widened row goes live on
+  the next one, like any code.
 
 ### Noted, not changed
 

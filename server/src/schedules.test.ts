@@ -23,6 +23,7 @@ import {
   TRIGGER_SEEN_CAP,
   triggerFrom,
   validCadence,
+  validReport,
   validTools,
   validTrigger,
 } from './schedules';
@@ -562,6 +563,63 @@ describe('the doors a row names', () => {
     it('refuses a list that is not a list of strings', () => {
       expect(validTools('bls' as unknown as string[], doors)).not.toBeNull();
       expect(validTools([1] as unknown as string[], doors)).not.toBeNull();
+    });
+  });
+
+  // The score arrives on Monday (D-261): a row that sends the week's real
+  // work, composed by the app — a channel and a recipient, and no doors.
+  describe('a report row', () => {
+    const cadence = weekly(1, 8, 5);
+
+    it('is written with its report and read back with it', () => {
+      const made = createSchedule(
+        dir,
+        { prompt: 'the score', cadence, channel: 'telegram', answers: { 'send-to:telegram': '1' }, report: 'realwork' },
+        now,
+      );
+      expect(made.report).toBe('realwork');
+      expect(made.tools).toEqual([]);
+      const [row] = readSchedules(dir);
+      expect(row.report).toBe('realwork');
+      expect(row.channel).toBe('telegram');
+      expect(row.answers).toEqual({ 'send-to:telegram': '1' });
+    });
+
+    it('describes itself as the score at $0 with no model, and carries the field', () => {
+      const made = createSchedule(
+        dir,
+        { prompt: 'the score', cadence, channel: 'telegram', report: 'realwork' },
+        now,
+      );
+      const info = describeSchedule(made);
+      expect(info.report).toBe('realwork');
+      expect(info.cadenceLabel).toBe('every Monday at 08:05 — the score, $0, no model');
+      expect(describeSchedule(createSchedule(dir, { prompt: 'x', cadence }, now)).report).toBeUndefined();
+    });
+
+    describe('validReport', () => {
+      const good = { report: 'realwork', channel: 'telegram', to: '8633678680' };
+
+      it('accepts realwork with a channel and a recipient', () => {
+        expect(validReport(good)).toBeNull();
+        expect(validReport({ ...good, tools: [] })).toBeNull();
+      });
+
+      it('refuses a report it does not know', () => {
+        expect(validReport({ ...good, report: 'weather' })).toMatch(/weather/);
+        expect(validReport({ ...good, report: 1 })).not.toBeNull();
+      });
+
+      it('refuses a report without a channel or without a recipient', () => {
+        expect(validReport({ report: 'realwork', to: '1' })).toMatch(/channel/);
+        expect(validReport({ report: 'realwork', channel: 'telegram' })).toMatch(/recipient/);
+        expect(validReport({ report: 'realwork', channel: 'telegram', to: '  ' })).toMatch(/recipient/);
+      });
+
+      it('refuses doors and a mail trigger — the block is read off disk, on a calendar', () => {
+        expect(validReport({ ...good, tools: ['mail'] })).toMatch(/door/);
+        expect(validReport({ ...good, trigger: { mail: 'from:a' } })).toMatch(/calendar/);
+      });
     });
   });
 });

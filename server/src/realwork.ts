@@ -121,6 +121,21 @@ export function lastFullWeek(now: number): Window {
 
 const inWindow = (w: Window, at: number) => at >= w.start && at < w.end;
 
+/**
+ * The Monday send's own sentence (D-261) — one fixed prompt for every
+ * report row, because the standing approval keys on it (D-072, D-082). It
+ * lives here rather than in `report.ts` because the score must know it: the
+ * report lands as a job on a real level and is promoted like any send, and
+ * counting it would have the instrument reading its own needle — +1
+ * promoted every Monday, +1 awaiting until reviewed, forever.
+ */
+export const REALWORK_PROMPT = "Send me last week's real work — the score, per level.";
+
+/** The one number the score is: promoted or auto-sent, over the real levels. */
+export function realCount(block: RealWorkBlock): number {
+  return block.levels.reduce((s, l) => s + l.promoted + l.autoSent, 0);
+}
+
 export function realWork(
   window: Window,
   levels: LevelJobs[],
@@ -155,6 +170,8 @@ export function realWork(
     const w = work.get(level.id);
     if (!w) continue;
     for (const job of level.jobs) {
+      // The score's own send is not work anyone would otherwise have done.
+      if (job.prompt === REALWORK_PROMPT) continue;
       if (failedRun(job)) {
         if (job.finishedAt !== undefined && inWindow(window, job.finishedAt)) w.failed++;
         continue;
@@ -227,7 +244,7 @@ export function formatRealWork(block: RealWorkBlock): string {
   }
   if (!block.levels.length) lines.push('(no real level had anything in this window)');
   if (block.excluded.length) lines.push(`excluded by name: ${block.excluded.join(', ')} (proof/check levels)`);
-  const real = block.levels.reduce((s, l) => s + l.promoted + l.autoSent, 0);
+  const real = realCount(block);
   const awaiting = block.levels.reduce((s, l) => s + l.awaiting, 0);
   lines.push(
     `real work: ${real} job${real === 1 ? '' : 's'} promoted or auto-sent` +

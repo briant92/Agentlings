@@ -49,7 +49,8 @@ evidence and never off a word match — and since D-249 that number is a
 **map** of where the crew cannot go, not the score: the score is real work
 under supervision, counted weekly from the ledger and the job records —
 `npm run ledger:report` now leads with it, per real level, last full week
-(D-260; the Monday send is #13, not built yet) — and the map recorded zero
+(D-260), and a `report: realwork` schedule row sends the same block on
+Monday at $0 with no model (D-261) — and the map recorded zero
 for D-241–D-248. §8's figures regenerate with the same command, and §15 is
 the list of what is not here yet.
 

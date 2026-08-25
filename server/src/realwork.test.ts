@@ -7,6 +7,8 @@ import {
   formatRealWork,
   isProofLevel,
   lastFullWeek,
+  realCount,
+  REALWORK_PROMPT,
   realWork,
   resolution,
   type LevelJobs,
@@ -225,6 +227,32 @@ describe('realWork', () => {
     expect(one({ resolvedAt: AFTER, resolvedBy: 'you' })).toMatchObject({ failed: 1, discarded: 0 });
     // Run before the window, cleared away inside it: nothing this week.
     expect(realWork(WINDOW, [{ id: 'hq', name: 'HQ', jobs: [job({ status: 'discarded', finishedAt: BEFORE, resolvedAt: IN, error: 'x', delivered: EMPTY })] }], [], []).levels).toEqual([]);
+  });
+
+  it("the score's own Monday send counts nowhere — promoted, auto-sent or awaiting (D-261)", () => {
+    const own = (extra: Partial<Job>) => job({ prompt: REALWORK_PROMPT, finishedAt: IN, ...extra });
+    const levels = realWork(
+      WINDOW,
+      [
+        {
+          id: 'hq',
+          name: 'HQ',
+          jobs: [
+            own({ status: 'promoted', resolvedAt: IN, resolvedBy: 'you' }),
+            own({ status: 'promoted', resolvedAt: IN, resolvedBy: 'app', outboxSent: [{ at: IN, channel: 'telegram', sentTo: ['1'], failed: [] }] }),
+            own({ status: 'done' }),
+          ],
+        },
+      ],
+      [],
+      [],
+    ).levels;
+    expect(levels).toEqual([]);
+  });
+
+  it("realCount is the last line's number", () => {
+    expect(realCount(block)).toBe(3);
+    expect(formatRealWork(block)).toContain('real work: 3 jobs promoted or auto-sent');
   });
 
   it('a done nobody reviewed is awaiting review, never real work', () => {

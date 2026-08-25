@@ -73,6 +73,14 @@ export interface Schedule {
    * bare — `?? []` there would silently turn every legacy row into none.
    */
   tools?: string[];
+  /**
+   * A row the app composes itself (D-261): its firing sends last week's
+   * real-work block to `answers`' recipient on `channel`, at $0 with no
+   * model and no door. The prompt is the app's fixed sentence, so every
+   * such row climbs one standing approval. Only on a cadence — the block
+   * is read off disk, and a calendar is the only thing that fires it.
+   */
+  report?: 'realwork';
   createdAt: number;
   /** The next occurrence. Advanced *before* the firing is attempted. */
   nextDueAt: number;
@@ -162,6 +170,32 @@ export function validTools(tools: string[] | undefined, doors: string[]): string
   }
   const unknown = tools.find((t) => !doors.includes(t));
   return unknown === undefined ? null : `"${unknown}" is not a door a rule can hold`;
+}
+
+/**
+ * The reason a report row cannot be one, or null when it can (D-261). A
+ * report needs somewhere to go — a channel and a recipient — and holds no
+ * door, because the block is read off disk and a rule that names a door it
+ * never uses looks like it holds something it does not (D-254's argument).
+ * Whether the channel exists is the route's question, as for every row.
+ */
+export function validReport(body: {
+  report?: unknown;
+  channel?: unknown;
+  to?: unknown;
+  tools?: unknown;
+  trigger?: unknown;
+}): string | null {
+  if (body.report !== 'realwork') {
+    return `"${String(body.report)}" is not a report the app can send — only realwork`;
+  }
+  if (typeof body.channel !== 'string' || !body.channel.trim()) {
+    return 'a report needs a channel to send on';
+  }
+  if (typeof body.to !== 'string' || !body.to.trim()) return 'a report needs a recipient';
+  if (Array.isArray(body.tools) && body.tools.length > 0) return 'a report holds no doors';
+  if (body.trigger !== undefined) return 'a report fires on a calendar, not on mail';
+  return null;
 }
 
 /**
@@ -394,12 +428,15 @@ export function createSchedule(
     inputs?: StandingInput[];
     /** The doors the firing holds; omitted is none (D-254). */
     tools?: string[];
+    /** A row the app composes itself (D-261). */
+    report?: 'realwork';
   },
   now: number,
 ): Schedule {
   const schedule: Schedule = {
     id: randomUUID().slice(0, 8),
     prompt: args.prompt,
+    ...(args.report ? { report: args.report } : {}),
     ...(args.cadence ? { cadence: args.cadence } : {}),
     ...(args.trigger
       ? {
@@ -552,6 +589,9 @@ export function describeTrigger(trigger: { mail: string }): string {
  */
 export const LEGACY_DOORS_NOTE = 'holds every door (created before doors were per-rule)';
 
+/** What a report row's label says (D-261): what fires, and that nothing runs. */
+export const REPORT_NOTE = 'the score, $0, no model';
+
 export function describeSchedule(schedule: Schedule): ScheduleInfo {
   const firing = schedule.cadence
     ? describeCadence(schedule.cadence)
@@ -559,9 +599,14 @@ export function describeSchedule(schedule: Schedule): ScheduleInfo {
   return {
     id: schedule.id,
     prompt: schedule.prompt,
+    ...(schedule.report ? { report: schedule.report } : {}),
     ...(schedule.cadence ? { cadence: schedule.cadence } : {}),
     ...(schedule.trigger ? { trigger: { mail: schedule.trigger.mail } } : {}),
-    cadenceLabel: schedule.tools ? firing : `${firing} — ${LEGACY_DOORS_NOTE}`,
+    cadenceLabel: schedule.report
+      ? `${firing} — ${REPORT_NOTE}`
+      : schedule.tools
+        ? firing
+        : `${firing} — ${LEGACY_DOORS_NOTE}`,
     ...(schedule.tools ? { tools: schedule.tools } : {}),
     ...(schedule.channel ? { channel: schedule.channel } : {}),
     createdAt: schedule.createdAt,

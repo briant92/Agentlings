@@ -860,6 +860,11 @@ export interface ScheduleInfo {
    * the old grant, every enabled door, and its label says so.
    */
   tools?: string[];
+  /**
+   * A row the app composes itself (D-261): its firing sends last week's
+   * real-work block at $0, no model, no door. The label says so.
+   */
+  report?: 'realwork';
   channel?: string;
   createdAt: number;
   /** Absent on a trigger row: mail has no next occurrence to name. */

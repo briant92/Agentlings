@@ -71,10 +71,13 @@ import {
   SCHEDULE_SWEEP_MS,
   setPaused,
   triggerFrom,
+  REPORT_NOTE,
   validCadence,
+  validReport,
   validTools,
   validTrigger,
 } from './schedules';
+import { fireRealWork, REALWORK_PROMPT, scoreBlock } from './report';
 import { MAIL_TRIGGER_SWEEP_MS, MAX_TRIGGER_FIRES_PER_DAY, pollTrigger } from './mailtrigger';
 import { newestMatch, resolveStanding, validateStanding, type StandingInput } from './standing';
 import { pickForwards, splitSteps, stepBrief } from './steps';
@@ -134,7 +137,7 @@ import {
   setIdentity,
   writeSettings,
 } from './settings';
-import { clarificationLines, questionsFor, sendFacts } from './clarify';
+import { clarificationLines, questionsFor, sendFacts, sendToId } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { coverage as gradeCoverage, coverageLine, type CoverageContext } from './coverage';
 import { boardStatus, loadBoard, searchBoard, syncOnet, titleMatch } from './jobboard';
@@ -2555,8 +2558,20 @@ app.post('/api/levels/:lid/schedules', async (c) => {
      * count them again (D-259). A rule armed on its own leaves it unset.
      */
     queued?: boolean;
+    /**
+     * A row the app composes itself (D-261): the week's real-work block,
+     * sent to `to` on `channel` at $0 with no model. Its sentence is the
+     * app's fixed one, so `text` is not read.
+     */
+    report?: 'realwork';
+    to?: string;
   }>();
-  const text = body.text?.trim();
+  const report = body.report !== undefined;
+  if (report) {
+    const badReport = validReport(body);
+    if (badReport) return c.json({ error: badReport }, 400);
+  }
+  const text = report ? REALWORK_PROMPT : body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
   // Exactly one way to fire: a calendar cadence (D-103) or mail arriving
   // (D-248). Both at once would be two rules wearing one row.
@@ -2578,7 +2593,18 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   // than re-detecting (D-079's shape, frozen at creation).
   const channel =
     typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
-  const answers = body.answers && Object.keys(body.answers).length ? body.answers : undefined;
+  // A report has nowhere to go without a real channel — refused, where every
+  // other row would quietly drop the name and fire as a draft.
+  if (report && !channel) {
+    return c.json({ error: `"${body.channel}" is not a channel this app can send on` }, 400);
+  }
+  // A report's recipient lives where every row keeps one — the desk's own
+  // key (D-180) — so the firing reads it back through the one reader.
+  const answers = report
+    ? { [sendToId(channel!)]: body.to!.trim() }
+    : body.answers && Object.keys(body.answers).length
+      ? body.answers
+      : undefined;
   // Refused here rather than at 08:10 on the first of the month: a standing
   // input that could never resolve is a mistake someone is making now, and
   // now is when they can still fix it (D-246).
@@ -2598,12 +2624,14 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   if (badDoor) return c.json({ error: badDoor }, 400);
   // A rule's sentence was typed at the desk once (D-259): counted here when
   // it is armed on its own, at Start when Start queued it too, and never on
-  // its firings — a firing is not an ask.
-  if (body.queued !== true) recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
+  // its firings — a firing is not an ask. A report's sentence is the app's
+  // own, and the app asking itself is not an ask either.
+  if (!report && body.queued !== true) recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
   const schedule = createSchedule(
     rt.dir,
     {
       prompt: text,
+      ...(report ? { report: 'realwork' as const } : {}),
       ...(cadence ? { cadence } : {}),
       ...(trigger ? { trigger: { mail: trigger.mail!.trim() } } : {}),
       channel,
@@ -4972,6 +5000,23 @@ function sweepSchedules(now = Date.now()): void {
     for (const schedule of dueNow(readSchedules(rt.dir), now)) {
       markFired(rt.dir, schedule.id, now);
       try {
+        // A report row (D-261) never reaches the glue: nothing is quoted,
+        // routed or granted, because nothing runs. The app composes the
+        // block into an outbox and lands it finished, then hands the job to
+        // the same seam a run's completion does — the standing approval
+        // gate — so a Monday send earns and spends trust like any other.
+        if (schedule.report) {
+          const job = fireRealWork(rt.queue, schedule, scoreBlock(SANDBOX_ROOT, now), now);
+          rt.eventLog.emit({
+            type: 'queued',
+            jobId: job.id,
+            title: job.title,
+            detail: `queued by its schedule — ${describeCadence(schedule.cadence)} · ${REPORT_NOTE}`,
+          });
+          rt.eventLog.emit({ type: 'done', jobId: job.id, title: job.title, detail: job.summary });
+          void autoSendIfApproved(rt.dir, rt.queue, rt.eventLog, rt.meta.id, job);
+          continue;
+        }
         // Read inside the try, so a folder that moved or a month whose file
         // never arrived lands on the row as an error and queues nothing. A
         // reconciliation missing one of its two inputs would otherwise run,

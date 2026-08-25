@@ -270,6 +270,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-258 — 2026-08-25 — Built: a rule's firing holds only the doors it names — the row carries `tools`, both sweeps pass it bare, legacy rows say so, the seven rows are backfilled by identification, and the monthly indicators row was already off its tool for a reason that is not doors](#d-258--2026-08-25--built-a-rules-firing-holds-only-the-doors-it-names--the-row-carries-tools-both-sweeps-pass-it-bare-legacy-rows-say-so-the-seven-rows-are-backfilled-by-identification-and-the-monthly-indicators-row-was-already-off-its-tool-for-a-reason-that-is-not-doors)
 - [D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal](#d-259--2026-08-25--built-the-desk-counts-what-it-refuses--one-line-per-never-row-or-not-built-capability-beside-the-ledger-keyed-as-the-board-keys-its-rows-but-worded-for-a-sentence-because-the-boards-duty-lists-fired-99-times-on-250-real-sentences-and-never-on-a-refusal)
 - [D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent](#d-260--2026-08-25--built-the-real-work-block--every-verdict-stamped-with-when-and-by-whom-one-pure-function-over-the-ledger-the-job-records-and-the-refusals-and-ledgerreport-leads-with-it-87-jobs-promoted-on-three-real-levels-last-week-none-of-them-auto-sent)
+- [D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one](#d-261--2026-08-25--built-the-score-arrives-on-monday--a-schedule-row-may-carry-report-realwork-its-firing-composes-last-weeks-block-into-an-outbox-through-the-contract-a-sessions-outboxjson-meets-and-lands-it-in-review-at-0-with-no-model-no-door-and-no-ledger-row-and-the-standing-approval-it-earns-is-the-ordinary-one)
 
 ## By theme
 
@@ -1044,7 +1045,11 @@ entry updates one file rather than two.
   place a verdict is written, `realWork` the one pure function over the
   ledger, the job records and the refusals, `ledger:report` leading with
   it, 87 promoted on three real levels last week and the app's stamp owed
-  its live proof on the next restart; D-255, supervised live
+  its live proof on the next restart; D-261, the score arriving on Monday
+  (#13) — `report: realwork` on a schedule row, the block composed into
+  an outbox through the session contract, landed in review at $0 with no
+  model, no door and no ledger row, climbing the ordinary standing
+  approval; live proof and the HQ row owed on the next restart; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20285,3 +20290,113 @@ number's meaning starts on the first full week the stamp is live.
 - A discard whose `delivered` summary is gone with its sandbox cannot be
   told from a discarded delivery and stays a discard: two such jobs on
   disk, both from before the summary existed.
+
+## D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one
+
+**Decision.** The weekly send D-249 named (#13) is a *schedule row*, not a
+new sender: `POST /api/levels/:lid/schedules` accepts
+`{ report: "realwork", cadence, channel, to }` and refuses the row without
+a channel, without a recipient, on a channel the app cannot send on, with
+a door, or on a mail trigger. The row's prompt is the app's fixed sentence
+(`REALWORK_PROMPT`), so every report row on a level climbs one standing
+approval (D-082 keys on the normalised prompt, D-072). Its firing never
+reaches the `/work` glue — nothing is quoted, routed or granted, because
+nothing runs. `fireRealWork` builds the block with `scoreBlock` (every
+level on disk, the ledger, the refusals — the same files `ledger:report`
+reads, through the same `realWork`, D-260's one function), composes it
+with `composeOutbox` (the desk's own composer, so the channel's cap and
+the recipient split are the contract's, D-193/D-097), and lands it
+`add → start → write OUTBOX.json → complete` in one synchronous stretch
+with a meter of $0 and zero turns, then hands the finished job to
+`autoSendIfApproved` exactly as a run's completion does. Review shows one
+send card; Approve is the send; after three unchanged approvals the
+existing offer appears and, granted, the next Monday's report goes on its
+own. `ledger:report` now prints the block through `scoreBlock` too, so the
+printed score and the sent one are one computation.
+
+**Why not the glue.** A report is not a sentence anyone typed: the desk's
+refusal count would be counting the app's own words (`recordRefusals` is
+skipped for it), a quote would price a run that does not happen, and a
+door list would be a rule holding something it never uses (D-254's
+argument, applied to a row that reads only disk). And why no ledger row:
+the ledger is what a run cost, and the D-246 proof discipline — *zero
+ledger rows for the proof level* — is the check that nothing ran.
+
+**Why the meter is not `routed`.** The terminal's *answered without an
+agentling · free* would be true, but `meter.routed` also puts *Do it
+properly* on the review card (D-116), which would queue a paid session
+with a sentence no session can answer. The meter is `$0 · 0 turns`
+instead; the card's own facts say what it was.
+
+**Evidence.**
+- `server/src/report.test.ts` 7/7: a done job whose outbox is one message
+  to the recipient with the block as its body, `channels: ['telegram']`,
+  meter `{costUsd: 0, turns: 0, turnsAllowed: 0}`, no `routed`, no
+  `tools`, no `assignedTo`; OUTBOX.json in the sandbox is what a session
+  would have written and parses back through `stampOutbox`; a
+  picker-shaped recipient splits as the desk's does; a body over
+  telegram's 4096 is refused in the contract's words (*"body" is N
+  characters — telegram's limit is 4096*) and queues nothing; no channel /
+  no recipient refused, nothing queued. `scoreBlock` read off a temp root
+  with one level, one ledger row and one refusal gives the expected row; an
+  empty root gives the empty block. (A "touches no ledger" test was
+  written and dropped at review: `JobQueue` cannot write the ledger, so it
+  passed against anything — the proof script's row count is the check.)
+- `server/src/realwork.test.ts` +2: the score's own send — promoted,
+  auto-sent or unreviewed — makes no row; `realCount` is the last line's
+  number.
+- `server/src/schedules.test.ts` +8: the row written and read back with
+  `report`, `tools: []` and its recipient under `send-to:<channel>`;
+  `describeSchedule` carries `report` and labels *every Monday at 08:05 —
+  the score, $0, no model*; `validReport` accepts realwork with channel
+  and recipient and refuses an unknown report, a missing channel or
+  recipient (blank counts as missing), doors, and a trigger.
+- **Mutations killed**: the firing passing `tools: ['mail']` fails *holding
+  no door*; the cap refusal skipped fails *refuses a body over the
+  channel's own cap*; the self-exclusion line dropped fails *the score's
+  own Monday send counts nowhere*.
+- `npm run ledger:report` through `scoreBlock`: the same 87 / 48-26-13
+  D-260 printed.
+- typecheck clean; server and web suites green (counts in HORDE.md).
+
+**Owed on the next restart** (the running server predates the route; the
+proof stops at *restart it first*):
+- `node scripts/prove-realwork.mjs` — a rested proof level, six refused
+  shapes, one accepted row due in a minute, one sweep, the job read off
+  `jobs.json` (done, one telegram message to the recipient, the block as
+  body, under the cap, $0 and zero turns, no door, no agentling, nothing
+  sent), the row deleted, zero ledger rows, the level closed.
+- `node scripts/arm-realwork.mjs hq telegram 8633678680` — the HQ row,
+  Mondays at 08:05 (between the 08:00 calendar brief and the 08:10 mail
+  brief). Its first firing is 2026-08-31; Brian approves it by hand, and
+  the third unchanged approval (2026-09-14) is when the offer appears.
+
+**The review's catch — the score was about to count itself.** The report
+lands as a job on a real level and is promoted like any send, and
+`realWork` had no exclusion: +1 promoted on HQ every Monday (+1 auto-sent
+once standing), +1 awaiting until reviewed — the instrument reading its
+own needle, forever. Fixed by identification (D-033's rule): `realWork`
+skips a job whose prompt is `REALWORK_PROMPT`, which now lives in
+`realwork.ts` beside the score and is re-exported for the route; the test
+puts a promoted, an auto-sent and an unreviewed one on HQ and expects no
+row. The same review folded the summary's own "N jobs promoted" arithmetic
+into `realCount(block)`, the one place the last line's number is computed.
+
+**Noted, not changed.**
+- Telegram renders plain text in a proportional face, and the channel's
+  sender posts `text` with no `parse_mode` — so the block's padded table
+  will not align on the phone; the week line and the `real work: N` line
+  read fine. Whether the Monday shape should be one line per level rather
+  than a table is a question for Brian after the first hand-approved firing
+  (2026-08-31), since it changes `ledger:report`'s section too — one
+  formatter (D-260), so one decision.
+- The sweep emits `queued` then `done` for a job that was never queued in
+  the sim's sense; the queued line is where every job says how it came to
+  exist (D-192), and this one says *the score, $0, no model*.
+
+**Not built.** No work-bar control: the row is armed by the script or the
+route. A chip would be a fifth shape on a bar D-248 already widened, for a
+row one person arms once per level; reopen if a second report kind
+arrives. No re-send on a failed firing: a refusal (the block over the cap)
+lands on the row's `lastError` like any firing's and the next Monday tries
+again.

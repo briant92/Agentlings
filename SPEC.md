@@ -259,7 +259,7 @@ the app's memory is not the repository's.
     level.json              name, project, theme, repo path
     roster.json             everyone hired here, resting crew included
     jobs.json               the queue, so a restart resumes; each verdict stamped when and by whom (D-260)
-    schedules.json          sentences queued again on a cadence (D-103)
+    schedules.json          sentences queued again on a cadence (D-103); a `report: realwork` row sends the week's score (D-261)
     KNOWLEDGE.md            what this level's crew has learned
     recipes.json            approaches worth reusing, and how often they land
     store-index.json        your own notes, indexed — source and date per entry
@@ -287,7 +287,7 @@ catalog, settings and spend are global because they are.
 | `POST /api/levels/:lid/jobs/:id/redo` | "Do it properly" — re-queue with the router's shortcut switched off |
 | `POST /api/levels/:lid/jobs/:id/reply` | Answer an agentling. A new job that carries the old sandbox forward, quoted and billed like the session it is |
 | `POST /api/levels/:lid/jobs/:id/resolve` | `{action: "promote" \| "discard" \| "clear"}` |
-| `GET` · `POST /api/levels/:lid/schedules` | The recurrence timer (D-103): list the sentences this level queues again on a cadence, and create one — made beside Start, so the first run is now and the next is on the calendar |
+| `GET` · `POST /api/levels/:lid/schedules` | The recurrence timer (D-103): list the sentences this level queues again on a cadence, and create one — made beside Start, so the first run is now and the next is on the calendar. `{report: "realwork", cadence, channel, to}` makes a row the app composes itself (D-261): its firing lands last week's real-work block as a send in review at $0, no model, no door; refused without a channel or recipient |
 | `POST .../schedules/:sid/pause` · `DELETE .../schedules/:sid` | Pause (resume recomputes from now, never a backlog) and stop repeating |
 
 **What came back.**

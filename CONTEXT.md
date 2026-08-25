@@ -14,6 +14,13 @@ counted weekly from the ledger and the job records. A `done` nobody reviewed
 is not yet real work.
 _Avoid_: hireable count, coverage percentage, KPI
 
+**Report row**:
+A schedule row the app composes itself (`report: realwork`): its firing
+sends last week's score as an ordinary send in review, at $0 with no model
+and no door, and earns standing approval like any other. The score never
+counts it.
+_Avoid_: report job, flywheel, digest
+
 **Real level**:
 Any level not named for a proof or a check — HQ, home-chores and
 training-ground alike. Whether a job there was real work is decided by its

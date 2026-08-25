@@ -34,10 +34,10 @@ glossary disagree, the glossary is right.
 
 | | |
 |---|---|
-| **Score** | **Counted, not yet sent.** Last full week (2026-08-17 to 23): **87 promoted, 0 auto-sent** on three real levels — hq 48, training-ground 26, home-chores 13 — 32 discarded, 3 failed, 0 awaiting, $146 spent, no refusal on a real level; `npm run ledger:report` leads with it (#12, D-260). Every verdict is stamped when and by whom from the next restart; the refusals file counts (#11, D-259); nothing sends on Monday yet — #13 (spec #21) |
+| **Score** | **Counted, and built to send.** Last full week (2026-08-17 to 23): **87 promoted, 0 auto-sent** on three real levels — hq 48, training-ground 26, home-chores 13 — 32 discarded, 3 failed, 0 awaiting, $146 spent, no refusal on a real level; `npm run ledger:report` leads with it (#12, D-260). Every verdict is stamped when and by whom from the next restart; the refusals file counts (#11, D-259); **the Monday send is built (#13, D-261)** — a `report: realwork` schedule row, $0, no model — and on the next restart it owes its live proof (`prove-realwork.mjs`) and the HQ row (`arm-realwork.mjs hq telegram <chat id>`, Mondays 08:05, first firing 2026-08-31 approved by hand). Slice #21 is then closed |
 | Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
 | Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
-| Suites | server 2,371 across 96 files · web 343 · typecheck clean (full run 2026-08-25, with #12) |
+| Suites | server 2,386 across 97 files · web 343 · typecheck clean (full run 2026-08-25, with #13) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed. Nothing is in flight.
@@ -137,7 +137,7 @@ ticket with no blocker can be taken any time after #7.
 | #10 | **Door chips on the work bar** for schedules and rules — none ticked, the reading says what the firing holds | D-254 | #9 |
 | #11 | **The desk counts what it refuses** — one line per never-row or not-built capability, beside the ledger | D-249 | — |
 | #12 | **The real-work block** — the resolved-by stamp; one pure function over ledger, jobs and refusals; `ledger:report` prints it | D-249 | #11 |
-| #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ | D-249 | #9, #12 |
+| #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ. Built, D-261; live proof and the HQ row on the next restart | D-249 | #9, #12 |
 | #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable | D-256 | — |
 | #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired | D-256 | — |
 | #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing | D-255 | #9 |
@@ -210,7 +210,9 @@ npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approve
 node scripts/prove-rule-doors.mjs        # 25/25 — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258)
 npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)
 node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, plan, rule armed, reply, Start-with-repeat, seven lines at $0 (#11, D-259)
-npm run ledger:report                    # leads with the score: real work per real level, last full week, from the one function #13 will send (#12, D-260) — the app's own stamp (`resolvedBy: 'app'`) is proven only by a standing approval sending on a restarted server
+npm run ledger:report                    # leads with the score: real work per real level, last full week, the block the Monday send composes (#12, D-260; #13, D-261) — the app's own stamp (`resolvedBy: 'app'`) is proven only by a standing approval sending on a restarted server
+node scripts/prove-realwork.mjs          # OWED on the next restart — a report row on a rested level: six refused shapes, one firing, the job read off disk (done, one telegram message, the block as body, $0, no door, nothing sent), the row deleted, zero ledger rows (#13, D-261)
+node scripts/arm-realwork.mjs hq telegram <chat id>   # OWED on the next restart — the HQ row, Mondays at 08:05; its first firing (2026-08-31) is approved by hand
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads

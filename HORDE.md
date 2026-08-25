@@ -247,10 +247,14 @@ plan's order, with what each reverses:
    excludes every mail-triggered job from standing approval. **Proven live
    the same evening** — 18/18 on both restarts, plus a quiet rule through a
    full mail-sweep interval; the first run's one ambiguous branch led to the
-   zero-match 204 fix (the entry's attached correction). **Owed:** the
-   creation UI is a mockup conversation first; and no rule has fired off a
-   real mailbox yet — the first real rule (the bank's statement mail is the
-   measured candidate) is the end-to-end proof no fixture stands in for.
+   zero-match 204 fix (the entry's attached correction). **The creation
+   control is built** (commit `34a85d3`, after a mockup round Brian picked
+   from): a fifth chip *when mail arrives* on the repeat row, the raw Gmail
+   query, the sentence reading, D-246's live match line moved to mail, Start
+   reading *Arm*. **Owed:** its live proof, `prove-trigger-ui.mjs`, after a
+   restart; and no rule has fired off a real mailbox yet — the first real
+   rule (the bank's statement mail is the measured candidate) is the
+   end-to-end proof no fixture stands in for.
 2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
    add any MCP server themselves rather than waiting for us to curate one, and
    D-245 seeds four verified starting points that fill the form. Still:
@@ -294,6 +298,7 @@ node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and ch
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248); ran clean on BOTH 2026-08-24 evening restarts
+node scripts/prove-trigger-ui.mjs        # NOT YET RUN — the fifth chip in the real work bar (D-248 control, 34a85d3); needs a restart after it
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads

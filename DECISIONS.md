@@ -19390,9 +19390,37 @@ hashes checked, mutated lines printed (D-224, D-243's lessons).
   trigger row), and a quiet rule then survived a full **mail**-sweep interval
   (130 s) on the live server with Google connected: no error on the row,
   nothing queued. See the correction below for what the first run found.
-- **The creation UI** — a trigger row renders everywhere (the label rides
-  `cadenceLabel`), but nothing in the work bar creates one yet; that control
-  is a mockup conversation first (Brian's rule), not a guess.
+- ~~The creation UI~~ — **BUILT the same evening, after a mockup round.**
+  Three shapes were drawn in the work bar's own dress (a fifth chip with the
+  raw query; two fields composing the query; sentence-only with no control)
+  and Brian picked the first. The chip *when mail arrives* sits beside daily
+  / weekly / monthly; one field takes the Gmail query — the words that
+  actually reach the poll, in `mail_search`'s own language — with a hint of
+  the four words that matter; the sentence can turn the chip on the way it
+  fills a cadence (D-184: `triggerFrom()` reads "when mail from … arrives",
+  "whenever an email comes in", "when the bank mails me", quoted back in
+  amber with *not a trigger* one click away) and **never fills the query**,
+  because "the bank" is not an address and a guessed rule spends money on a
+  timer nobody set; D-246's live match line moves to mail — green with the
+  count and the newest match, amber when nothing matched or when the rule is
+  as broad as the daily cap, or the Google wall verbatim — through
+  `previewMail()`, `mail_search`'s own body split out so the desk and a
+  session run one search, with the preview max set to the cap so "matched
+  this many" and "would spend the whole cap" are one number. Start reads
+  **Arm — watch for mail** and creates the rule alone; time controls and
+  "schedule only" leave while the chip is on, standing inputs stay, and the
+  cost line (lands as `input/mail.txt`, at most 10 firings a day, each a
+  quoted reviewed job, plus the one-reply line when the sentence sends via
+  gmail) is on the card before Arm. The two-fields shape was declined
+  because three boxes cannot say OR, negation, a label or a date and break
+  the sentence reading; sentence-only was drawn to close it — it cannot be
+  built without guessing. Mutations 5/5 (the send guard in `triggerFrom`,
+  the nothing-matched and as-broad-as-the-cap branches, the preview's
+  `-from:me`, the id strip). The from-clause test caught a real miss before
+  commit: `from cartola@banco.cl arrives` did not read because the clause
+  excluded dots. **Owed: the live UI proof** — `scripts/prove-trigger-ui.mjs`
+  (headless Edge; arms a rule matching nobody and deletes it) after a
+  restart.
 - **The first real rule** is Brian's to name — the measured demand (D-246's
   read of 446 prompts) points at the bank's statement mail. It is also the
   end-to-end no fixture stands in for: a real mail firing a rule, and the

@@ -19418,9 +19418,20 @@ hashes checked, mutated lines printed (D-224, D-243's lessons).
   the nothing-matched and as-broad-as-the-cap branches, the preview's
   `-from:me`, the id strip). The from-clause test caught a real miss before
   commit: `from cartola@banco.cl arrives` did not read because the clause
-  excluded dots. **Owed: the live UI proof** — `scripts/prove-trigger-ui.mjs`
-  (headless Edge; arms a rule matching nobody and deletes it) after a
-  restart.
+  excluded dots. **Proven live 19/19 on 2026-08-25** after the restart —
+  `scripts/prove-trigger-ui.mjs`, headless Edge in the real app: the
+  sentence turns the chip on with the words quoted back and the field
+  empty, no time control and no "schedule only", Start reads Arm and is
+  disabled until a query is typed, the live line answers amber for a rule
+  matching nobody, "not a trigger" turns it off, Arm creates a real row on
+  Training Ground and confirms it in words with no first run named, and the
+  row is removed again. The first run stopped at the Arm click: the
+  first-run tour (`Tour.tsx`) sat over the work bar in the fresh headless
+  profile and intercepted the pointer — every earlier step had gone through
+  `evaluate()` and sailed past it. The instrument now dismisses it through
+  its own Skip, the way a person would; the finding is the D-241 lesson
+  again — a negative result from a new instrument is a claim about the
+  instrument first.
 - **The first real rule** is Brian's to name — the measured demand (D-246's
   read of 446 prompts) points at the bank's statement mail. It is also the
   end-to-end no fixture stands in for: a real mail firing a rule, and the

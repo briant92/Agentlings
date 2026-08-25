@@ -80,6 +80,20 @@ const levelId = await page.evaluate(() => {
 void levelId;
 await page.waitForTimeout(3000);
 
+// A fresh browser profile gets the first-run tour, which sits over the work
+// bar and intercepts real clicks (the first run of this script found it at
+// the Arm click, after every evaluate()-driven step had sailed past it).
+// Dismissed the way a person would — its own Skip — never by deleting it.
+if (await page.locator('.tour').count()) {
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.tour-foot button')]
+      .find((b) => b.textContent?.trim() === 'Skip')
+      ?.click();
+  });
+  await page.waitForTimeout(500);
+}
+check('the first-run tour is out of the way', (await page.locator('.tour').count()) === 0);
+
 const box = page.locator('.work-input').first();
 check('the work bar is there', (await box.count()) === 1);
 

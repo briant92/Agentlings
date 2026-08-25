@@ -29,6 +29,9 @@ const schedule = (id: string, paused?: boolean): Schedule => ({
   id,
   prompt: `run ${id}`,
   cadence: { kind: 'daily', hour: 9, minute: 0 },
+  // A row written today carries the field; without it this would be a legacy
+  // row and its label would say so (D-254).
+  tools: [],
   createdAt: 1,
   nextDueAt: 2,
   ...(paused ? { paused } : {}),

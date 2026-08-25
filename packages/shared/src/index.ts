@@ -851,6 +851,12 @@ export interface ScheduleInfo {
   trigger?: { mail: string };
   /** The firing in words, whichever shape it is — the one label the UI shows. */
   cadenceLabel: string;
+  /**
+   * The doors the firing holds (D-254): exactly these, none when empty.
+   * Absent on a legacy row written before doors were per-rule — it keeps
+   * the old grant, every enabled door, and its label says so.
+   */
+  tools?: string[];
   channel?: string;
   createdAt: number;
   /** Absent on a trigger row: mail has no next occurrence to name. */

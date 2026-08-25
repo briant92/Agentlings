@@ -37,7 +37,7 @@ glossary disagree, the glossary is right.
 | **Score** | **Not yet counted.** Nothing records a job's verdict time or who wrote it, nothing records a refusal, nothing sends on Monday — #11, #12, #13 (spec #21) |
 | Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
 | Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
-| Suites | server 2,258 across 94 files · web 338 · typecheck clean (full run 2026-08-25, with #7) |
+| Suites | server 2,267 across 94 files · web 338 · typecheck clean (full run 2026-08-25, with #9) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed. Nothing is in flight.
@@ -207,6 +207,8 @@ node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-2
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248)
 node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248), headless Edge; arms a rule matching nobody and deletes it
 npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
+node scripts/prove-rule-doors.mjs        # 25 checks — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258); OWED on the first restart after #9
+npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
@@ -231,8 +233,16 @@ must do the same or its first real click is lost.
   `bd651cfd` and `1e21feb3` the daily calendar and mail briefs, `c9bc102f`
   and `c4a97302` the two armed mail rules, `e4ad0624` the paused reply
   proof) and one on training-ground (`c639d84a`, the monthly indicators, the
-  free tool-tier schedule that needs `bls`). **Every one of them fires with
-  all eight doors until #9 lands**; the backfill table is in D-254.
+  monthly indicators). **All seven are backfilled on disk (#9, D-258)** —
+  `c639d84a` `web search bls`, `919a5247` `render`, `bd651cfd` `calendar`,
+  `1e21feb3` `mail`, the three mail rules none — and hold exactly that from
+  the first restart after `#9`'s commit; the running server (started
+  2026-08-24) still fires every one with all eight until then. The
+  training-ground row is **not** on the free tool tier and has not been
+  since 2026-08-17: the level carries a repository, a firing takes it, and
+  the compiled tool is `hasRepo: false`, so the router filters it out before
+  doors are read (D-258) — its 2026-09-12 firing is a paid session whatever
+  its doors, until that repo is detached or the tool recompiled.
 - **The two real mail rules are the proof, not leftovers.** `c9bc102f` fires
   on `from:mensajeria@santander.cl` (a client's payment receipt, ~quarterly,
   next expected late September); `c4a97302` on
@@ -245,6 +255,10 @@ must do the same or its first real click is lost.
 - The three Starbase title-screen files (`TitleScreen.tsx`, `styles.css`,
   `starbase-scene.jpg`) sit **unstaged** in the working tree by decision —
   the backdrop mockups were declined 2026-08-23 — and #7 left them so.
+- **Owed: the #9 live proof.** `node scripts/prove-rule-doors.mjs` refuses
+  the 2026-08-24 server as stale (run twice, $0, its level closed each
+  time). Run it on the first restart after #9; #9 stays open until it
+  passes, and D-258 gets its line.
 - Otherwise nothing is in flight.
 
 ---

@@ -267,6 +267,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-255 — 2026-08-25 — Supervised live acting: the twelve browser tools as a second connection, headed, allowlisted, hand-queued and watched, never standing](#d-255--2026-08-25--supervised-live-acting-the-twelve-browser-tools-as-a-second-connection-headed-allowlisted-hand-queued-and-watched-never-standing)
 - [D-256 — 2026-08-25 — The catalog gets wide: a registry browse that fills the form, a verified-here shelf with source and date, and the D-245 chips retire](#d-256--2026-08-25--the-catalog-gets-wide-a-registry-browse-that-fills-the-form-a-verified-here-shelf-with-source-and-date-and-the-d-245-chips-retire)
 - [D-257 — 2026-08-25 — The team is Brian and his standing instructions: no manager trade, D-197 stands, and a planner-only manager is the reopen shape](#d-257--2026-08-25--the-team-is-brian-and-his-standing-instructions-no-manager-trade-d-197-stands-and-a-planner-only-manager-is-the-reopen-shape)
+- [D-258 — 2026-08-25 — Built: a rule's firing holds only the doors it names — the row carries `tools`, both sweeps pass it bare, legacy rows say so, the seven rows are backfilled by identification, and the monthly indicators row was already off its tool for a reason that is not doors](#d-258--2026-08-25--built-a-rules-firing-holds-only-the-doors-it-names--the-row-carries-tools-both-sweeps-pass-it-bare-legacy-rows-say-so-the-seven-rows-are-backfilled-by-identification-and-the-monthly-indicators-row-was-already-off-its-tool-for-a-reason-that-is-not-doors)
 
 ## By theme
 
@@ -1028,7 +1029,11 @@ entry updates one file rather than two.
   inbound declined on the endpoint rule, outreach unbuilt because no
   correspondent exists; D-254, a rule holds only the doors it names — the
   board's line inverted, eight doors on every firing today, backfill by
-  identification; D-255, supervised live acting as a second browser
+  identification — and D-258, that rule built (#9): the row's `tools`
+  through both sweeps bare, legacy rows labelled, the seven rows backfilled
+  as read (the monthly row needs `web search bls`, not `bls`, and has been
+  off its tool since the level took a repository), the live proof owed on
+  the next restart; D-255, supervised live acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
   retiring; and D-257, Brian as the manager, D-197 standing, a planner-only
@@ -19904,3 +19909,78 @@ trust question. A planner-only manager is that seam widened from one job to
 a week's instructions, with the same rule that a person's Approve is the
 dispatch. Nothing measured says anyone needs it yet, and D-249's score is
 the instrument that will say so.
+
+## D-258 — 2026-08-25 — Built: a rule's firing holds only the doors it names — the row carries `tools`, both sweeps pass it bare, legacy rows say so, the seven rows are backfilled by identification, and the monthly indicators row was already off its tool for a reason that is not doors
+
+**Decision.** D-254 as built (#9). A schedule row carries `tools`; the
+create route stores an omitted list as `[]` and refuses a name that is not
+a door (a connection that is not sends-only — `telegram` is a channel and
+is refused by name); both sweeps pass the field **bare** to `queueSentence`,
+so a list is exactly those doors, `[]` is none, and *absent* — a row written
+before the field existed — is `grantedTools(undefined)`, the old grant,
+every enabled door. Such a row is **legacy**: `describeSchedule` appends
+*holds every door (created before doors were per-rule)* to its label, the
+one label every surface shows, and reports no `tools`; a row with the field
+carries it on `ScheduleInfo.tools` for #10's chips. The seven rows on disk
+are backfilled; the live proof is owed on the next restart, and this entry
+gets its line then.
+
+### The backfill, as done
+
+By identification, each with the evidence it was read from. Written straight
+into the two `schedules.json` files on 2026-08-25 (`.agentlings/` is
+gitignored, so the record is here), re-read after the write. The running
+server predates the change and ignores the field, so nothing changes until
+its first restart; from then on each row holds exactly this.
+
+| Row | Level | Doors | Read from |
+|---|---|---|---|
+| `c639d84a` | training-ground | **`web`, `search`, `bls`** | D-254's table said `bls` alone. The compiled tool's manifest (`tools/summary-table-month-main-4/tool.json`) says `connections: ["web","search","bls"]`, and `findTool` requires **every** door a tool was compiled against — `scripts/verify-tool-doors.mts training-ground c639d84a`, through the router's own function over the real manifest: the row's three doors → the tool; `bls` alone → a session; none → a session. A blind `bls` would have knocked it off the tool exactly as a blind *none* would |
+| `919a5247` | HQ | **`render`** | The 2026-08-24 run's trail (`jobs/161ceb07/.trajectory.jsonl`, 30 calls): the only door call is `mcp__render__render_pdf`, one `ToolSearch` for it and one call; no web, search, GitHub, mail, calendar or browser call. The 08-17 run's `build.mjs` names `render_pdf` too. The figures come from the repo clone and the sandbox; the send is the channel, not a door |
+| `bd651cfd` | HQ | `calendar` | The prompt's own noun — *a brief of my calendar today* |
+| `1e21feb3` | HQ | `mail` | *A brief of today's mail* |
+| `c9bc102f` | HQ | none | The mail is in `input/mail.txt` (D-248) |
+| `c4a97302` | HQ | none | Same |
+| `e4ad0624` | HQ | none | Same; paused |
+
+### The finding: the monthly row has not reached its tool since 2026-08-17
+
+The ticket asked for *the monthly indicators run proven still routing to its
+compiled tool*. It cannot be, and not because of doors. Training Ground
+carries `repoPath` (this repository — first job with it `b768a6e7`,
+2026-08-17); a firing takes the level's repo (`queueSentence`:
+`opts.noRepo ? '' : rt.meta.repoPath`); the tool is `hasRepo: false`; and
+`findTool` filters on the repo flag before it reads a door. The same script
+shows it: with a repo, the row's own three doors → a session. The ledger
+agrees on every date: 23 rows for this prompt on training-ground,
+2026-08-04 → 08-15, **all `session`, none `tool`** — D-188's tool-tier
+answer was measured on a level that had no repository then. The 2026-09-12
+firing will be a paid session whatever its doors, until the repo is
+detached from that level or the tool is recompiled against a clone. That is
+a decision for Brian and not this ticket's; it is recorded so the next
+session does not re-derive it from the row's doors.
+
+### Proof
+
+- Unit: `schedules.test.ts` +8 — `[]` persisted as `[]` and never absent, a
+  list persisted verbatim, a mail rule the same, a hand-written legacy row
+  reads with `tools` absent and the legacy label, a row with the field
+  carries no note, `validTools` accepts omitted/empty/doors and refuses a
+  non-door by name and a non-list. `close.test.ts`'s fixture row gained
+  `tools: []` — without the field it was a legacy row by construction, and
+  the label said so, which is the mechanism working. Server 2,267 across 94
+  files, web 338, typecheck clean.
+- Live: `scripts/prove-rule-doors.mjs`, 25 checks on a rested level — the
+  three refusals, `[]` vs absent on disk, the legacy label on the GET, then
+  a legacy row written by hand, a none row and an omitted row coming due
+  together and a one-door row after them, each firing's `Job.tools` read off
+  `jobs.json`, zero jobs leaving the queue, zero ledger rows. The one door is
+  read off the legacy firing's own grant so the proof cannot pass by naming
+  a door that is off. Against the 2026-08-24 server it refused as stale
+  twice ($0, its level closed each time) — **owed on the first restart after
+  #9's commit.** A mail firing is not provable without real mail; the mail
+  sweep's line is the cadence sweep's, one field apart, and the script says
+  so on its last line rather than letting 0 failures read as both proven.
+- Not built, on purpose: the work bar sends no `tools`, so until #10 a row
+  it creates holds none. The two daily briefs are no longer legacy — they
+  carry `calendar` and `mail` — so nothing running changes for them.

@@ -12,6 +12,7 @@ import {
   describeSchedule,
   describeTrigger,
   dueNow,
+  LEGACY_DOORS_NOTE,
   markFired,
   MAX_TRIGGER_QUERY_CHARS,
   noteTriggerPoll,
@@ -22,6 +23,7 @@ import {
   TRIGGER_SEEN_CAP,
   triggerFrom,
   validCadence,
+  validTools,
   validTrigger,
 } from './schedules';
 
@@ -485,5 +487,81 @@ describe('mail triggers on a schedule (D-248)', () => {
     expect(info.cadence).toBeUndefined();
     expect(info.nextDueAt).toBeUndefined();
     expect(info.trigger?.mail).toBe('from:banco');
+  });
+});
+
+/**
+ * A rule's firing holds only the doors it names (D-254, #9). The row carries
+ * `tools`; a row that names none holds none; a row written before the field
+ * existed is legacy — it keeps the old grant (every door) and says so.
+ */
+describe('the doors a row names', () => {
+  let dir: string;
+  const now = at(2026, 7, 6, 8, 0);
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'sched-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('a row naming no doors persists an EMPTY list — none, not absent', () => {
+    createSchedule(dir, { prompt: 'x', cadence: daily(9, 0) }, now);
+    expect(readSchedules(dir)[0].tools).toEqual([]);
+  });
+
+  it('a row naming doors persists exactly those', () => {
+    createSchedule(dir, { prompt: 'x', cadence: daily(9, 0), tools: ['bls', 'web'] }, now);
+    expect(readSchedules(dir)[0].tools).toEqual(['bls', 'web']);
+  });
+
+  it('a mail rule persists its doors the same way', () => {
+    createSchedule(dir, { prompt: 'x', trigger: { mail: 'from:a@b.c' }, tools: [] }, now);
+    expect(readSchedules(dir)[0].tools).toEqual([]);
+  });
+
+  it('a legacy row — written before the field — reads with tools absent and says so', () => {
+    writeFileSync(
+      schedulesFile(dir),
+      JSON.stringify([
+        { id: 'old1', prompt: 'old', cadence: daily(9, 0), createdAt: 1, nextDueAt: 2 },
+      ]),
+      'utf8',
+    );
+    const [row] = readSchedules(dir);
+    expect(row.tools).toBeUndefined();
+    const info = describeSchedule(row);
+    expect(info.tools).toBeUndefined();
+    expect(info.cadenceLabel).toBe(`every day at 09:00 — ${LEGACY_DOORS_NOTE}`);
+  });
+
+  it('a row with the field describes its doors and carries no legacy note', () => {
+    const none = createSchedule(dir, { prompt: 'x', cadence: daily(9, 0) }, now);
+    const some = createSchedule(dir, { prompt: 'y', trigger: { mail: 'from:a' }, tools: ['mail'] }, now);
+    expect(describeSchedule(none).tools).toEqual([]);
+    expect(describeSchedule(none).cadenceLabel).toBe('every day at 09:00');
+    expect(describeSchedule(some).tools).toEqual(['mail']);
+    expect(describeSchedule(some).cadenceLabel).not.toContain(LEGACY_DOORS_NOTE);
+  });
+
+  describe('validTools', () => {
+    const doors = ['web', 'bls', 'calendar'];
+
+    it('accepts an omitted list, an empty list and door names', () => {
+      expect(validTools(undefined, doors)).toBeNull();
+      expect(validTools([], doors)).toBeNull();
+      expect(validTools(['bls', 'web'], doors)).toBeNull();
+    });
+
+    it('refuses a name that is not a door, naming it', () => {
+      expect(validTools(['bls', 'telegram'], doors)).toMatch(/telegram/);
+      expect(validTools(['nosuch'], doors)).toMatch(/nosuch/);
+    });
+
+    it('refuses a list that is not a list of strings', () => {
+      expect(validTools('bls' as unknown as string[], doors)).not.toBeNull();
+      expect(validTools([1] as unknown as string[], doors)).not.toBeNull();
+    });
   });
 });

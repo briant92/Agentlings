@@ -62,6 +62,16 @@ export interface Schedule {
    * own statement without anyone attaching it again.
    */
   inputs?: StandingInput[];
+  /**
+   * The doors the firing holds (D-254): exactly these, and an empty list is
+   * none. A rule is standing authority to run, not to reach — a mail rule
+   * fires on a third party's text, so nothing is held by default. Absent
+   * only on a LEGACY row written before the field existed: that row keeps
+   * the old grant (every enabled door, `grantedTools(undefined)`) and its
+   * description says so, until it is edited. The sweeps pass this field
+   * bare — `?? []` there would silently turn every legacy row into none.
+   */
+  tools?: string[];
   createdAt: number;
   /** The next occurrence. Advanced *before* the firing is attempted. */
   nextDueAt: number;
@@ -135,6 +145,22 @@ export function validTrigger(trigger: { mail?: unknown } | undefined): string | 
   // nobody can read back off one line is already wrong.
   if (/[\r\n]/.test(query)) return 'the query must be one line';
   return null;
+}
+
+/**
+ * The reason a door list cannot be one, or null when it can (D-254). `doors`
+ * is every connection that is not sends-only — a channel is not a door, and a
+ * name that is neither would be stored and never granted, a rule that looks
+ * like it holds something it does not. Omitted and empty both pass: the
+ * route turns omitted into none.
+ */
+export function validTools(tools: string[] | undefined, doors: string[]): string | null {
+  if (tools === undefined) return null;
+  if (!Array.isArray(tools) || !tools.every((t) => typeof t === 'string')) {
+    return 'tools must be a list of door names';
+  }
+  const unknown = tools.find((t) => !doors.includes(t));
+  return unknown === undefined ? null : `"${unknown}" is not a door a rule can hold`;
 }
 
 /**
@@ -365,6 +391,8 @@ export function createSchedule(
     channel?: string;
     answers?: Record<string, string>;
     inputs?: StandingInput[];
+    /** The doors the firing holds; omitted is none (D-254). */
+    tools?: string[];
   },
   now: number,
 ): Schedule {
@@ -383,6 +411,9 @@ export function createSchedule(
     ...(args.channel ? { channel: args.channel } : {}),
     ...(args.answers && Object.keys(args.answers).length ? { answers: args.answers } : {}),
     ...(args.inputs?.length ? { inputs: args.inputs } : {}),
+    // Always written, empty included: absent is what a LEGACY row looks like,
+    // and a new row must never be mistaken for one.
+    tools: args.tools ?? [],
     createdAt: now,
     // A trigger row has no next occurrence; 0 must never read as "due now",
     // which is why dueNow demands a cadence before it looks at the clock.
@@ -513,15 +544,24 @@ export function describeTrigger(trigger: { mail: string }): string {
   return `when mail matching "${trigger.mail}" arrives`;
 }
 
+/**
+ * What a legacy row's label says (D-254): the row predates per-rule doors, so
+ * its firing still holds every enabled door, and every surface that shows
+ * the row says so rather than letting it read like a row that named none.
+ */
+export const LEGACY_DOORS_NOTE = 'holds every door (created before doors were per-rule)';
+
 export function describeSchedule(schedule: Schedule): ScheduleInfo {
+  const firing = schedule.cadence
+    ? describeCadence(schedule.cadence)
+    : describeTrigger(schedule.trigger!);
   return {
     id: schedule.id,
     prompt: schedule.prompt,
     ...(schedule.cadence ? { cadence: schedule.cadence } : {}),
     ...(schedule.trigger ? { trigger: { mail: schedule.trigger.mail } } : {}),
-    cadenceLabel: schedule.cadence
-      ? describeCadence(schedule.cadence)
-      : describeTrigger(schedule.trigger!),
+    cadenceLabel: schedule.tools ? firing : `${firing} — ${LEGACY_DOORS_NOTE}`,
+    ...(schedule.tools ? { tools: schedule.tools } : {}),
     ...(schedule.channel ? { channel: schedule.channel } : {}),
     createdAt: schedule.createdAt,
     ...(schedule.cadence ? { nextDueAt: schedule.nextDueAt } : {}),

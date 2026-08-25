@@ -72,6 +72,7 @@ import {
   setPaused,
   triggerFrom,
   validCadence,
+  validTools,
   validTrigger,
 } from './schedules';
 import { MAIL_TRIGGER_SWEEP_MS, MAX_TRIGGER_FIRES_PER_DAY, pollTrigger } from './mailtrigger';
@@ -2539,6 +2540,8 @@ app.post('/api/levels/:lid/schedules', async (c) => {
     channel?: string;
     answers?: Record<string, string>;
     inputs?: StandingInput[];
+    /** The doors the firing holds (D-254); omitted is none. */
+    tools?: string[];
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -2571,6 +2574,15 @@ app.post('/api/levels/:lid/schedules', async (c) => {
     const badInput = validateStanding(inputs);
     if (badInput) return c.json({ error: badInput }, 400);
   }
+  // A door is a connection that is not sends-only (D-254): a channel rides on
+  // `channel`, and a name that is neither would be stored and never granted.
+  const badDoor = validTools(
+    body.tools,
+    allConnections()
+      .filter((conn) => !conn.sendsOnly)
+      .map((conn) => conn.name),
+  );
+  if (badDoor) return c.json({ error: badDoor }, 400);
   const schedule = createSchedule(
     rt.dir,
     {
@@ -2580,6 +2592,7 @@ app.post('/api/levels/:lid/schedules', async (c) => {
       channel,
       answers,
       inputs,
+      tools: body.tools,
     },
     Date.now(),
   );
@@ -4945,6 +4958,11 @@ function sweepSchedules(now = Date.now()): void {
         // match nothing, and report a clean result (D-246).
         const attachments = schedule.inputs?.length ? resolveStanding(schedule.inputs) : undefined;
         queueSentence(rt, schedule.prompt, {
+          // The row's own doors, passed BARE (D-254): a list is exactly those,
+          // empty is none, and absent — a legacy row from before the field —
+          // is the old grant, every enabled door. `?? []` here would turn
+          // every legacy row into none without a word.
+          tools: schedule.tools,
           channel: schedule.channel,
           answers: schedule.answers,
           ...(attachments ? { attachments } : {}),
@@ -5016,6 +5034,9 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
               { name: TRIGGER_MAIL_NAME, data: Buffer.from(`${mail.text}\n`, 'utf8') },
             ];
             queueSentence(rt, schedule.prompt, {
+              // Bare, for the cadence sweep's reason (D-254) — and this is the
+              // firing that carries a third party's mail as its brief.
+              tools: schedule.tools,
               channel: schedule.channel,
               answers: schedule.answers,
               attachments,

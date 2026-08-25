@@ -2012,10 +2012,15 @@ list per channel (D-077; SPEC M5.11 has the slices):
       rule carries no `tools`, and its firing therefore holds **every**
       enabled door — eight today, on a third party's mail — because
       `grantedTools` reads an omitted list as everything that is on; the UF
-      run's own record carries all eight. A rule will hold only the doors it
+      run's own record carries all eight. A rule holds only the doors it
       names, none by default: #8 is built — an empty list now means none, and
       every caller forwarding a job's own grant reads an absent list as none —
-      while #9 and #10 are not.* A schedule row may carry a
+      and #9 is built (D-258): a row carries `tools`, both sweeps pass it
+      bare, a row from before the field is labelled legacy and keeps the old
+      grant, the seven rows on disk are backfilled by identification. The
+      live proof (`scripts/prove-rule-doors.mjs`) is owed on the next server
+      restart; #10, the chips, is not built — until it lands the work bar
+      names no doors, so a row it creates holds none.* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

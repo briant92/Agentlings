@@ -37,7 +37,7 @@ glossary disagree, the glossary is right.
 | **Score** | **Not yet counted.** Nothing records a job's verdict time or who wrote it, nothing records a refusal, nothing sends on Monday — #11, #12, #13 (spec #21) |
 | Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
 | Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
-| Suites | server 2,267 across 94 files · web 338 · typecheck clean (full run 2026-08-25, with #9) |
+| Suites | server 2,267 across 94 files · web 343 · typecheck clean (full run 2026-08-25, with #10) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed. Nothing is in flight.
@@ -205,7 +205,7 @@ node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and ch
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248)
-node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248), headless Edge; arms a rule matching nobody and deletes it
+node scripts/prove-trigger-ui.mjs        # 28/28 — the fifth chip in the real work bar (D-248) and the door chips (#10, D-254), headless Edge; arms a rule matching nobody holding one door, reads it back, deletes it
 npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
 node scripts/prove-rule-doors.mjs        # 25/25 — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258)
 npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)

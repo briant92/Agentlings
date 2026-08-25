@@ -30,6 +30,7 @@ import {
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { ChannelLogo } from './ChannelLogo';
+import { doorChoices, holdsLine } from './doors';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
@@ -131,6 +132,13 @@ export function WorkBar({
   const [triggerQuery, setTriggerQuery] = useState('');
   /** What that query reaches right now, asked of the server as it is typed. */
   const [triggerPreview, setTriggerPreview] = useState<PreviewLine | null>(null);
+  /**
+   * The doors a schedule or rule's firing will hold (D-254): exactly the
+   * chips ticked, none by default. Only a repeat carries them — a hand-queued
+   * job gets its grant the ordinary way — so the picks are cleared whenever
+   * the repeat row turns off, and a chip nobody can see never names a door.
+   */
+  const [doors, setDoors] = useState<string[]>([]);
   /**
    * Files a firing reads afresh (D-246). Not attachments: attachments ride one
    * run, and these are re-read from the folder every time the schedule fires,
@@ -466,6 +474,10 @@ export function WorkBar({
     };
   }, [repeatKind, triggerQuery]);
 
+  useEffect(() => {
+    if (repeatKind === 'off') setDoors([]);
+  }, [repeatKind]);
+
   /**
    * Arm a mail trigger (D-248): the schedule alone, nothing run today — a
    * trigger has nothing to run until the mail comes, so this is the only
@@ -483,6 +495,7 @@ export function WorkBar({
         postJson({
           text: text.trim(),
           trigger: { mail: q },
+          tools: doors,
           ...(channel ? { channel } : {}),
           ...(Object.keys(answers).length > 0 ? { answers } : {}),
           ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
@@ -537,6 +550,7 @@ export function WorkBar({
         postJson({
           text: text.trim(),
           cadence: repeat,
+          tools: doors,
           ...(channel ? { channel } : {}),
           ...(Object.keys(answers).length > 0 ? { answers } : {}),
           ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
@@ -672,6 +686,7 @@ export function WorkBar({
           postJson({
             text: text.trim(),
             cadence: repeat,
+            tools: doors,
             ...(channel ? { channel } : {}),
             ...(Object.keys(answers).length > 0 ? { answers } : {}),
             ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
@@ -1111,6 +1126,32 @@ export function WorkBar({
               )}
               {repeatKind !== 'off' && (
                 <>
+                  {/* Door chips (D-254): the firing holds exactly the doors
+                      ticked here, none by default — a rule that reads the
+                      mailbox has to say so where it is armed. The reading
+                      beside them is the row's own words for it. */}
+                  <span className="work-doors">
+                    <span className="dim">doors:</span>
+                    {doorChoices(connections).map((c) => (
+                      <button
+                        key={c.name}
+                        type="button"
+                        className={doors.includes(c.name) ? 'work-chip on' : 'work-chip'}
+                        aria-pressed={doors.includes(c.name)}
+                        title={c.description}
+                        onClick={() =>
+                          setDoors((picked) =>
+                            picked.includes(c.name)
+                              ? picked.filter((d) => d !== c.name)
+                              : [...picked, c.name],
+                          )
+                        }
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                    <span className="work-doors-read dim">· {holdsLine(doors)}</span>
+                  </span>
                   {/* Standing inputs (D-246): a folder and a rule the firing
                       re-reads, so a monthly job reaches next month's file.
                       Each row says what it matches RIGHT NOW, because a filter
@@ -1479,6 +1520,7 @@ export function WorkBar({
               })}
             </>
           )}
+          {scheduled.tools && <> · {holdsLine(scheduled.tools)}</>}
           <span className="dim"> · it lands in review like any job · manage in crew → backoffice</span>
         </p>
       )}

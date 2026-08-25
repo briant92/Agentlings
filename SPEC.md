@@ -750,9 +750,10 @@ tried, measured and rejected is in `DECISIONS.md`:
     visible tool is definition overhead in every request of the session. Since
     D-254 a schedule or trigger rule's firing holds **only the doors the row
     names**, none by default — a row from before the field keeps the old
-    grant and says so (#8 and #9 built and proven live, D-258; #10's chips
-    not yet, so the work bar names no doors until then). Two more are
-    decided and not
+    grant and says so (#8–#10 built and proven live, D-258: the work bar
+    shows one chip per enabled non-sending door while a schedule or rule is
+    being created, none ticked, and the row carries exactly the ticked ones).
+    Two more are decided and not
     built: a browse over the public MCP registry that fills the
     add-a-connection form, with a *verified here* shelf replacing the D-245
     chips (D-256, #15); and the twelve browser acting tools as a second

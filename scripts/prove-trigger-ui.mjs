@@ -11,6 +11,12 @@
 // trigger" turns it off; and that Arm creates a real trigger row on the level
 // and says so, after which the row is removed again through the API.
 //
+// Extended for #10 (D-254): while a schedule or rule is being created the
+// work bar shows one chip per enabled non-sending door, none ticked, with a
+// reading that says what the firing will hold; a hand-queued job shows none;
+// and the row Arm creates carries exactly the doors ticked — read back
+// through the API before it is deleted.
+//
 // Costs nothing, queues nothing: an armed rule matching nobody fires nothing,
 // and it is deleted before the script ends.
 
@@ -137,6 +143,20 @@ check(
   (await page.locator('.work-repeat').innerText()).includes('at most 10 firings a day'),
 );
 
+// ── door chips (D-254, #10): none ticked, the reading says what the firing holds ──
+const doorChips = async () =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('.work-doors .work-chip')].map((b) => [
+      b.textContent?.trim(),
+      b.classList.contains('on'),
+    ]),
+  );
+const holds = async () => (await page.locator('.work-doors-read').innerText().catch(() => '')) ?? '';
+const chipsOnMail = await doorChips();
+check('door chips appear while the mail chip is on', chipsOnMail.length > 0, JSON.stringify(chipsOnMail));
+check('none is ticked', chipsOnMail.every(([, on]) => on === false));
+check('the reading says the firing holds no doors', /holds no doors/.test(await holds()), await holds());
+
 // ── the preview line, live ──────────────────────────────────────────────────
 await page.locator('.work-trigger-q').fill('from:proof-nobody@example.invalid');
 await page.waitForTimeout(2500);
@@ -171,6 +191,30 @@ check(
   (await page.locator('.work-trigger-q').count()) === 0 &&
     (await page.locator('.work-bar button[type=submit]').innerText()).trim() === 'Start',
 );
+check(
+  'and a hand-queued job shows no door chips — its controls are untouched',
+  (await page.locator('.work-doors').count()) === 0,
+);
+
+// A cadence shows the same chips, none ticked, then the row is turned off again.
+await page.evaluate(() => {
+  [...document.querySelectorAll('.work-repeat .work-chip')]
+    .find((b) => b.textContent?.trim() === 'daily')
+    ?.click();
+});
+await page.waitForTimeout(300);
+const chipsOnDaily = await doorChips();
+check(
+  'a cadence shows the door chips too, none ticked',
+  chipsOnDaily.length > 0 && chipsOnDaily.every(([, on]) => on === false),
+  JSON.stringify(chipsOnDaily),
+);
+await page.evaluate(() => {
+  [...document.querySelectorAll('.work-repeat .work-chip')]
+    .find((b) => b.textContent?.trim() === 'no')
+    ?.click();
+});
+await page.waitForTimeout(300);
 
 // ── Arm creates a real row, and says so ─────────────────────────────────────
 await page.evaluate(() => {
@@ -181,6 +225,21 @@ await page.evaluate(() => {
 await page.waitForTimeout(300);
 await page.locator('.work-trigger-q').fill('from:proof-nobody@example.invalid');
 await page.waitForTimeout(600);
+// Tick one door — whichever is first on this machine — and read the reading.
+const [door] = (await doorChips())[0] ?? [];
+check('a door is there to tick', typeof door === 'string' && door.length > 0, String(door));
+await page.evaluate((name) => {
+  [...document.querySelectorAll('.work-doors .work-chip')]
+    .find((b) => b.textContent?.trim() === name)
+    ?.click();
+}, door);
+await page.waitForTimeout(300);
+check(
+  'ticking it shows on the chip and in the reading',
+  (await doorChips()).filter(([, on]) => on).map(([t]) => t).join() === door &&
+    (await holds()).includes(`holds ${door}`),
+  await holds(),
+);
 await page.locator('.work-bar button[type=submit]').click();
 await page.waitForTimeout(2000);
 const confirm = (await page.locator('.work-scheduled').innerText().catch(() => '')) ?? '';
@@ -190,6 +249,7 @@ check(
   confirm,
 );
 check('the sentence box is cleared', (await box.inputValue()) === '');
+check('the confirmation names the door the row holds', confirm.includes(`holds ${door}`), confirm);
 
 // The row is real: read it through the API, then remove it.
 const lid = await page.evaluate(() => location.hash.replace(/^#\/?/, '').split('/').pop() ?? '');
@@ -199,12 +259,17 @@ const rows = await page.evaluate(async () => {
   for (const l of list) {
     const r = await (await fetch(`/api/levels/${l.id}/schedules`)).json();
     const mine = (r.schedules ?? []).filter((s) => s.trigger?.mail === 'from:proof-nobody@example.invalid');
-    if (mine.length) return { lid: l.id, ids: mine.map((s) => s.id) };
+    if (mine.length) return { lid: l.id, ids: mine.map((s) => s.id), tools: mine.map((s) => s.tools) };
   }
-  return { lid: null, ids: [] };
+  return { lid: null, ids: [], tools: [] };
 });
 void lid;
 check('the row exists on the level with its trigger', rows.ids.length === 1, JSON.stringify(rows));
+check(
+  'and carries exactly the one door ticked — read back through the API',
+  JSON.stringify(rows.tools[0]) === JSON.stringify([door]),
+  JSON.stringify(rows.tools),
+);
 if (rows.lid) {
   for (const id of rows.ids) {
     await page.evaluate(

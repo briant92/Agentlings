@@ -2019,8 +2019,11 @@ list per channel (D-077; SPEC M5.11 has the slices):
       bare, a row from before the field is labelled legacy and keeps the old
       grant, the seven rows on disk are backfilled by identification, and
       `scripts/prove-rule-doors.mjs` passed 25/25 at $0 on the restarted
-      server; #10, the chips, is not built — until it lands the work bar
-      names no doors, so a row it creates holds none.* A schedule row may carry a
+      server; and #10 is built — while a schedule or rule is being created
+      the work bar shows one chip per enabled non-sending door, none ticked,
+      with the reading *the firing holds no doors* until one is, and the row
+      carries exactly the ticked ones (28/28 in the real app, the row read
+      back through the API).* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

@@ -34,10 +34,10 @@ glossary disagree, the glossary is right.
 
 | | |
 |---|---|
-| **Score** | **Not yet counted.** Nothing records a job's verdict time or who wrote it, nothing records a refusal, nothing sends on Monday — #11, #12, #13 (spec #21) |
+| **Score** | **Counted, not yet sent.** Last full week (2026-08-17 to 23): **87 promoted, 0 auto-sent** on three real levels — hq 48, training-ground 26, home-chores 13 — 32 discarded, 3 failed, 0 awaiting, $146 spent, no refusal on a real level; `npm run ledger:report` leads with it (#12, D-260). Every verdict is stamped when and by whom from the next restart; the refusals file counts (#11, D-259); nothing sends on Monday yet — #13 (spec #21) |
 | Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
 | Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
-| Suites | server 2,267 across 94 files · web 343 · typecheck clean (full run 2026-08-25, with #10) |
+| Suites | server 2,371 across 96 files · web 343 · typecheck clean (full run 2026-08-25, with #12) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed. Nothing is in flight.
@@ -209,7 +209,8 @@ node scripts/prove-trigger-ui.mjs        # 28/28 — the fifth chip in the real 
 npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
 node scripts/prove-rule-doors.mjs        # 25/25 — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258)
 npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)
-node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, plan, rule armed, reply, Start-with-repeat, seven lines at $0 (#11, D-259); the meter itself is `.agentlings/refusals.jsonl` until #12 prints it
+node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, plan, rule armed, reply, Start-with-repeat, seven lines at $0 (#11, D-259)
+npm run ledger:report                    # leads with the score: real work per real level, last full week, from the one function #13 will send (#12, D-260) — the app's own stamp (`resolvedBy: 'app'`) is proven only by a standing approval sending on a restarted server
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
@@ -258,6 +259,11 @@ must do the same or its first real click is lost.
 - The server was restarted 2026-08-25 on `e70c730` (#8 + #9 live); the #9
   proof passed 25/25 on it. Not run: the two sweep-level mutations, each
   needing a restart of its own (D-258).
+- The resolved-by stamp (#12, D-260) reaches the running server only on
+  the next restart; until then every verdict written still reads as a
+  person's at its finish time. The one seam no unit test reaches is the
+  auto-send path naming `'app'` — proven only by a standing approval
+  sending on a restarted server, which is when to read `resolvedBy` back.
 - Otherwise nothing is in flight.
 
 ---

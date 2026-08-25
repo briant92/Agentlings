@@ -140,6 +140,9 @@ export type JobStatus =
 /** What a review can say about a delivery: keep it, refuse it, or let it go. */
 export type Verdict = 'promote' | 'discard' | 'clear';
 
+/** Who wrote a verdict: a person at the desk, or the app on its own authority. */
+export type ResolvedBy = 'you' | 'app';
+
 /**
  * What one session actually cost. Recorded per job from the first run, so
  * which workflows are expensive is a fact rather than a guess.
@@ -1310,6 +1313,17 @@ export interface Job {
   createdAt: number;
   startedAt?: number;
   finishedAt?: number;
+  /**
+   * When the verdict was written and by whom (D-260): `you` at the desk,
+   * `app` for a standing approval's send, a check filed or a hand folded
+   * into its gather — the two words the event feed already keeps apart
+   * (D-114). Stamped in the one place a verdict lands, `JobQueue.resolve`.
+   * A job resolved before the stamp existed carries neither and reads as
+   * resolved by a person at its finish time; the score (D-249) counts a job
+   * in the week of this stamp, not the week it ran.
+   */
+  resolvedAt?: number;
+  resolvedBy?: ResolvedBy;
   /** Agentling id once picked up. */
   assignedTo?: string;
   /** One-line result summary once done. */
@@ -1353,6 +1367,11 @@ export function outcomeOf(status: JobStatus): Outcome | null {
  */
 export function awaitingVerdict(job: { status: JobStatus; continuedBy?: string }): boolean {
   return outcomeOf(job.status) === 'to review' && !job.continuedBy;
+}
+
+/** Whether a verdict has been written — the statuses only `JobQueue.resolve` sets. */
+export function hasVerdict(status: JobStatus): boolean {
+  return status === 'promoted' || status === 'discarded' || status === 'cleared';
 }
 
 /** Whether a run left something for the user, whatever its ledger outcome. */

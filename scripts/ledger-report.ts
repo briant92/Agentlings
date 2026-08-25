@@ -16,7 +16,12 @@ import { compileBlockers } from '../server/src/capability';
 import { readConnections } from '../server/src/connections';
 import { usableTools } from '../server/src/tools';
 import { TRAJECTORY_FILE } from '../server/src/trajectory';
+import { listLevelDirs, readMeta } from '../server/src/levels';
+import { readStoredJobs } from '../server/src/queue';
+import { readRefusals } from '../server/src/refusals';
+import { formatRealWork, lastFullWeek, realWork } from '../server/src/realwork';
 
+const ROOT = path.join(process.cwd(), '.agentlings');
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
 // Recomputed like LEDGER and LEVELS above: the server's own constant lives in
@@ -107,6 +112,28 @@ if (!rows.length) {
 
 const span = [rows[0], rows.at(-1)].map((r) => new Date(r.at).toISOString().slice(0, 10));
 console.log(`# Ledger report — ${rows.length} jobs, ${span[0]} to ${span[1]}\n`);
+
+/**
+ * The score first (D-249, D-260): real work under supervision, last full
+ * week, per real level — from the one function the Monday send (#13) will
+ * also call, so this section and that message cannot disagree. Everything
+ * below it is the map and the money; this is what the horde actually did.
+ */
+console.log('## Real work — the score, last full week\n');
+console.log(
+  formatRealWork(
+    realWork(
+      lastFullWeek(Date.now()),
+      listLevelDirs(ROOT).map((dir) => {
+        const meta = readMeta(dir);
+        return { id: meta.id, name: meta.name, jobs: readStoredJobs(dir) };
+      }),
+      rows,
+      readRefusals(ROOT),
+    ),
+  ),
+);
+console.log('\nA job counts in the week of its verdict, not the week it ran; a done nobody reviewed is awaiting, not real work.\n');
 
 console.log('## By tier\n');
 console.log(`${pad('tier', 9)}${num('n', 4)}${num('paid', 6)}${num('mean', 9)}${num('max', 9)}  per turn (repo / no repo)`);

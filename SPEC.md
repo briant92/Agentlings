@@ -252,12 +252,13 @@ the app's memory is not the repository's.
 ```
 .agentlings/
   ledger.jsonl              every job: what it cost, what it may be charged, who did it
+  refusals.jsonl            every sentence the desk refused a row of: when, which level, which row (D-259)
   settings.json             where you depart from a connection's shipped default
   catalog/                  the role/skill library index and what is installed
   levels/<level>/
     level.json              name, project, theme, repo path
     roster.json             everyone hired here, resting crew included
-    jobs.json               the queue, so a restart resumes
+    jobs.json               the queue, so a restart resumes; each verdict stamped when and by whom (D-260)
     schedules.json          sentences queued again on a cadence (D-103)
     KNOWLEDGE.md            what this level's crew has learned
     recipes.json            approaches worth reusing, and how often they land

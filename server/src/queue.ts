@@ -16,6 +16,7 @@ import type {
   MoveOp,
   Outbox,
   OutboxSent,
+  ResolvedBy,
 } from '@agentlings/shared';
 import { MAX_STATIONS, opKey } from '@agentlings/shared';
 import type { Verdict } from '@agentlings/shared';
@@ -525,12 +526,20 @@ export class JobQueue {
     this.finish(job);
   }
 
-  resolve(jobId: string, action: Verdict): Job {
+  /**
+   * The one place a verdict is written, so the one place it is stamped with
+   * when and by whom (D-260): every caller says which it is, because an
+   * auto-send is precisely the case nobody looked at and the score counts
+   * the two apart.
+   */
+  resolve(jobId: string, action: Verdict, by: ResolvedBy): Job {
     const job = this.mustGet(jobId);
     if (job.status !== 'done' && job.status !== 'failed' && job.status !== 'partial') {
       throw new Error(`job ${jobId} is ${job.status}, not resolvable`);
     }
     job.status = action === 'promote' ? 'promoted' : action === 'discard' ? 'discarded' : 'cleared';
+    job.resolvedAt = Date.now();
+    job.resolvedBy = by;
     this.persist();
     return job;
   }

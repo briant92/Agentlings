@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { awaitingVerdict, isDelivery, outcomeOf, type MoveOp } from '@agentlings/shared';
+import { awaitingVerdict, isDelivery, outcomeOf, type Job, type MoveOp } from '@agentlings/shared';
 import { SimulatedExecutor } from './executors/simulated';
 import { OUTBOX_FILE } from './outbox';
 import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
@@ -170,7 +170,7 @@ describe('JobQueue', () => {
     expect(existsSync(path.join(dir, 'RESULT.md'))).toBe(true);
     expect(readFileSync(path.join(dir, 'RESULT.md'), 'utf8')).toContain('Test job');
 
-    expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+    expect(queue.resolve(job.id, 'promote', 'you').status).toBe('promoted');
   });
 
   // The first smooth chain delivered its pack as an installable FOLDER —
@@ -423,7 +423,7 @@ describe('JobQueue', () => {
     queue.fail(jobs[0].id, 'boom');
 
     expect(queue.get(jobs[5].id)!.slot).toBe(0);
-    expect(queue.resolve(jobs[0].id, 'discard').status).toBe('discarded');
+    expect(queue.resolve(jobs[0].id, 'discard', 'you').status).toBe('discarded');
   });
 
   // D-216: the third way out of a review. Closed in the record and still a
@@ -433,11 +433,37 @@ describe('JobQueue', () => {
     queue.assign(job.id, 'a1');
     queue.start(job.id);
     queue.complete(job.id, 'done it');
-    const cleared = queue.resolve(job.id, 'clear');
+    const cleared = queue.resolve(job.id, 'clear', 'you');
     expect(cleared.status).toBe('cleared');
     expect(outcomeOf(cleared.status)).toBe('closed');
     expect(isDelivery(cleared.status)).toBe(true);
     expect(awaitingVerdict(cleared)).toBe(false);
+  });
+
+  // D-260: the one place a verdict is written stamps when and by whom, and
+  // the caller must say which — an auto-send is the case nobody looked at.
+  it('stamps every verdict with the time and who wrote it, as the caller says', () => {
+    const before = Date.now();
+    const mine = queue.add({ title: 'Mine', prompt: 'x' });
+    queue.assign(mine.id, 'a1');
+    queue.start(mine.id);
+    queue.complete(mine.id, 'done it');
+    const promoted = queue.resolve(mine.id, 'promote', 'you');
+    expect(promoted.resolvedBy).toBe('you');
+    expect(promoted.resolvedAt).toBeGreaterThanOrEqual(before);
+    expect(promoted.resolvedAt).toBeLessThanOrEqual(Date.now());
+
+    const auto = queue.add({ title: 'Sent for me', prompt: 'x' });
+    queue.assign(auto.id, 'a2');
+    queue.start(auto.id);
+    queue.complete(auto.id, 'sent');
+    expect(queue.resolve(auto.id, 'promote', 'app').resolvedBy).toBe('app');
+
+    // On disk, so the report reads it back the same way.
+    const stored = JSON.parse(readFileSync(path.join(root, 'jobs.json'), 'utf8')) as Job[];
+    expect(stored.find((j) => j.id === mine.id)?.resolvedBy).toBe('you');
+    expect(stored.find((j) => j.id === auto.id)?.resolvedBy).toBe('app');
+    expect(stored.find((j) => j.id === mine.id)?.resolvedAt).toBe(promoted.resolvedAt);
   });
 
   it('reads the patch into change counts when the job completes', () => {
@@ -471,7 +497,7 @@ describe('JobQueue', () => {
 
   it('rejects resolving a job that is still queued', () => {
     const job = queue.add({ title: 'Too soon', prompt: 'x' });
-    expect(() => queue.resolve(job.id, 'promote')).toThrow(/not resolvable/);
+    expect(() => queue.resolve(job.id, 'promote', 'you')).toThrow(/not resolvable/);
   });
 
   // Flags the ledger later reads off the job. Nothing derives them by sniffing
@@ -587,7 +613,7 @@ describe('JobQueue', () => {
       seen.push(queue.revision());
       queue.complete(job.id, 'done');
       seen.push(queue.revision());
-      queue.resolve(job.id, 'promote');
+      queue.resolve(job.id, 'promote', 'you');
       seen.push(queue.revision());
       // Strictly increasing: every step is something a watcher must be told.
       expect(seen).toEqual([...seen].sort((a, b) => a - b));
@@ -912,7 +938,7 @@ describe('JobQueue', () => {
       expect(partial.status).toBe('partial');
       expect(partial.changes).toBeDefined();
       // …and is reviewable exactly like finished work.
-      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+      expect(queue.resolve(job.id, 'promote', 'you').status).toBe('promoted');
     });
 
     // A compile's deliverable is never a diff — its output is the two scripts,
@@ -928,7 +954,7 @@ describe('JobQueue', () => {
 
       const partial = queue.get(job.id)!;
       expect(partial.status).toBe('partial');
-      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+      expect(queue.resolve(job.id, 'promote', 'you').status).toBe('promoted');
     });
 
     // Found live on job 2ff16bf2: "Produce a PDF" on a level with no
@@ -976,7 +1002,7 @@ describe('JobQueue', () => {
 
       const partial = queue.get(job.id)!;
       expect(partial.status).toBe('partial');
-      expect(queue.resolve(job.id, 'promote').status).toBe('promoted');
+      expect(queue.resolve(job.id, 'promote', 'you').status).toBe('promoted');
     });
 
     it('ignores the session config a run always leaves behind', () => {

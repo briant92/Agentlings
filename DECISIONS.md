@@ -269,6 +269,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-257 — 2026-08-25 — The team is Brian and his standing instructions: no manager trade, D-197 stands, and a planner-only manager is the reopen shape](#d-257--2026-08-25--the-team-is-brian-and-his-standing-instructions-no-manager-trade-d-197-stands-and-a-planner-only-manager-is-the-reopen-shape)
 - [D-258 — 2026-08-25 — Built: a rule's firing holds only the doors it names — the row carries `tools`, both sweeps pass it bare, legacy rows say so, the seven rows are backfilled by identification, and the monthly indicators row was already off its tool for a reason that is not doors](#d-258--2026-08-25--built-a-rules-firing-holds-only-the-doors-it-names--the-row-carries-tools-both-sweeps-pass-it-bare-legacy-rows-say-so-the-seven-rows-are-backfilled-by-identification-and-the-monthly-indicators-row-was-already-off-its-tool-for-a-reason-that-is-not-doors)
 - [D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal](#d-259--2026-08-25--built-the-desk-counts-what-it-refuses--one-line-per-never-row-or-not-built-capability-beside-the-ledger-keyed-as-the-board-keys-its-rows-but-worded-for-a-sentence-because-the-boards-duty-lists-fired-99-times-on-250-real-sentences-and-never-on-a-refusal)
+- [D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent](#d-260--2026-08-25--built-the-real-work-block--every-verdict-stamped-with-when-and-by-whom-one-pure-function-over-the-ledger-the-job-records-and-the-refusals-and-ledgerreport-leads-with-it-87-jobs-promoted-on-three-real-levels-last-week-none-of-them-auto-sent)
 
 ## By theme
 
@@ -1038,7 +1039,12 @@ entry updates one file rather than two.
   one line per never-row or not-built capability beside the ledger, the
   board's row keys with the desk's own verb-and-object words, because the
   board's duty lists fired 99 times on 250 real sentences and never on a
-  refusal, proven live 19/19 on the restart; D-255, supervised live
+  refusal, proven live 19/19 on the restart; D-260, the real-work block
+  built (#12) — every verdict stamped `resolvedAt`/`resolvedBy` in the one
+  place a verdict is written, `realWork` the one pure function over the
+  ledger, the job records and the refusals, `ledger:report` leading with
+  it, 87 promoted on three real levels last week and the app's stamp owed
+  its live proof on the next restart; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20161,3 +20167,121 @@ sentence stays in the job record.
 - The channel shelf's `payments` row and the board's `money` row are one
   refusal; the desk keys it `money`, and `payments` is never a channel word,
   so no sentence can count it twice.
+
+## D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent
+
+**Decision.** D-249's score, as built (#12). Three pieces:
+
+- **The stamp.** `JobQueue.resolve(jobId, action, by)` — the one place a
+  verdict is written — now writes `resolvedAt` (the clock) and `resolvedBy`
+  (`'you'` or `'app'`, the two words D-114 gave the event feed) onto the
+  job record. The argument is required, not defaulted, so every caller
+  says which it is and a new caller cannot forget: the resolve route says
+  `'you'`; the standing-approval send, a check filed and a hand folded
+  into its gather say `'app'`. A job resolved before today carries neither
+  and **reads as resolved by a person at its finish time** — the ticket's
+  rule for legacy records, applied by the reader (`resolution(job)`), so
+  nothing on disk is rewritten.
+- **The function.** `realWork(window, levels, ledger, refusals)` in
+  `server/src/realwork.ts` is pure over what is already on disk and
+  answers per **real level** — any level whose id or name is not a word
+  `proof` or `check` (`isProofLevel`) — with promoted, auto-sent,
+  discarded, failed, awaiting-review, spent and refusals-by-key. A job
+  counts **in the week of its verdict**, never the week it ran; a `done`
+  nobody reviewed is *awaiting*, never real work; a job carried on (more
+  turns, a reply) is decided, not waiting. `promoted` is a person's
+  verdict; `auto-sent` is the app's with something actually sent; the
+  app's other promotes — a check filed, a hand folded into its gather —
+  are neither, because the checked job or the gather carries the verdict
+  and a hand counted beside its gather would score a party by its size
+  (a sixth bucket for them was built and dropped at review: the ticket
+  names five). `failed` is a run that failed, counted when it ended —
+  **including one discarded since**, because Brian clears failures by
+  discarding them (44 on disk) and a discard of a run that never delivered
+  is not a delivery turned down, as the resolve route itself says. The
+  record tells the two apart on its own fields — a discard carrying an
+  error with nothing delivered and no patch was a failure; a discarded
+  partial shows its files — so nothing is stamped and nothing joined
+  (`failedRun`). `spent` is the window's own ledger rows. A level with
+  nothing in the window is absent, not a row of zeros; the excluded
+  levels are listed by id so the reader sees what was left out.
+  `lastFullWeek(now)` is the Monday-to-Monday week, local time, that
+  closed most recently, rebuilt from date parts because Chile changes its
+  clocks at midnight and `setHours(0)` on that Sunday lands on 01:00.
+- **The caller.** `npm run ledger:report` prints the block first, before
+  the tiers and the money, through `formatRealWork` — the same text the
+  Monday send (#13) will carry, so the two cannot disagree (D-030's rule,
+  which is why the ticket said *one function, two callers*).
+
+### What proved it
+
+- `server/src/realwork.test.ts`, 15 tests over one fixture level holding
+  every shape the block must keep apart: a job run the week before and
+  approved this week (counts this week), a standing approval's send
+  (auto-sent), an app promote with nothing sent (neither), a discard, a
+  failure, a failure discarded the week after (failed in its own week,
+  never a discard), a discarded partial (a discard), an unreviewed `done`
+  (awaiting), a continued `done` (not awaiting), a legacy promote at its
+  finish time, one resolved after the window closed, a `cleared` (D-216,
+  not counted), a running job; two proof-named levels with a promote
+  each; refusals on a real level in and out of the window and on a proof
+  level. `queue.test.ts` gains the stamp test, on the record and on disk.
+- **Nine mutations, every one killed** by the named tests, sources
+  restored byte-identical after: the proof exclusion dropped (3 fail);
+  an unreviewed `done` counted as promoted (4); a legacy job read as the
+  app's (5); the window read by run week instead of verdict week (1); an
+  app promote with nothing sent counted as auto-sent (4); a discarded
+  failure counted as a discard (4); a discarded partial counted as a
+  failure (3); `resolve` dropping `resolvedBy` (1) and `resolvedAt` (1).
+- **Reconciled against the raw files.** The report's week of 2026-08-17
+  was recounted by a separate one-off over each `jobs.json` and
+  `ledger.jsonl` with no code shared: hq 45 + 3 continued promoted = 48,
+  11 + 1 discarded = 12, no failure and every delivered job continued (0
+  awaiting), $45.55; training-ground 26 / 14 / 1 failed / $42.59;
+  home-chores 10 + 3 = 13 / 4 + 2 = 6 / 1 + 1 failed = 2 / $58.07. Every
+  figure matched.
+- **The review found the under-count.** The first cut took `failed` off
+  the job's status alone, and the spec review counted 44 failed runs
+  sitting on disk as `discarded`; its proposed source — the ledger row's
+  `outcome` — would have over-counted the other way, because the ledger
+  writes `failed` for a partial delivery too (hq's three "failed rows"
+  last week were its three continued partials). Profiling every discarded
+  job on disk by ledger outcome, error, delivery summary and cut marker
+  gave the rule above: 12 discards with an error and nothing delivered,
+  32 with an error and files or a patch, 78 with no error.
+- Suites: server 2,371 across 96 files, web 343, typecheck clean.
+
+### What it says, read once
+
+**87 jobs promoted on three real levels in the week of 2026-08-17, none
+auto-sent, $146 spent, no refusal on a real level.** Two readings before
+anyone trusts the 87: every one of those verdicts predates the stamp, so
+they read as a person's at finish time by the legacy rule — the standing
+approvals that sent last week (D-082's path has been live for weeks) are
+inside the 87 as *promoted*, not *auto-sent*, and cannot be told apart
+until the stamp has run for a week. And "promoted on training-ground" is
+mostly proofs of mechanisms Brian approved to close them, which D-249
+knowingly accepted (the verdict decides, not the level's name); the
+number's meaning starts on the first full week the stamp is live.
+
+### Noted, not changed
+
+- **The auto-send path's `'app'` is the one seam no unit test reaches:**
+  `autoSendIfApproved` lives in `index.ts`, which boots a server on
+  import. The compiler forces the argument; only a standing approval
+  sending on a restarted server proves the word. Owed on the next
+  restart, read back from `jobs.json`.
+- Sixteen `cleared` jobs on training-ground last week appear nowhere in
+  the block, by D-216's definition — seen and let go is not a verdict. If
+  a reader ever wants them, they are one bucket away; not added now
+  because the ticket names five and cleared is none of them.
+- `awaiting` is the delivered pile as it stands, everything unreviewed up
+  to the window's end — not as it stood at that instant. For the last
+  full week those are the same thing on Monday, which is when #13 reads it.
+- "Has a verdict" is now `hasVerdict(status)` in `packages/shared`,
+  beside `outcomeOf` and `awaitingVerdict` (D-030's rule, raised by the
+  standards review); the resolve route's own inline triple at
+  `index.ts` still stands — not touched, since it was not this change's.
+- A discard whose `delivered` summary is gone with its sandbox cannot be
+  told from a discarded delivery and stays a discard: two such jobs on
+  disk, both from before the summary existed.

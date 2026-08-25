@@ -624,7 +624,7 @@ async function autoSendIfApproved(
       });
       return;
     }
-    queue.resolve(job.id, 'promote');
+    queue.resolve(job.id, 'promote', 'app');
     recordApproval(dir, queue.rootPrompt(job.id) ?? job.prompt, outboxes, at);
     eventLog.emit({
       type: 'resolved',
@@ -2043,7 +2043,7 @@ function settleCheck(rt: LevelRuntime, checkJob: Job): void {
   // check is worth looking at.
   if (parsed) {
     try {
-      rt.queue.resolve(checkJob.id, 'promote');
+      rt.queue.resolve(checkJob.id, 'promote', 'app');
       rt.eventLog.emit({
         type: 'resolved',
         jobId: checkJob.id,
@@ -2358,7 +2358,7 @@ function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
   // Fold the delivered hands in only once the gather actually exists.
   for (const hand of delivered) {
     try {
-      rt.queue.resolve(hand.id, 'promote');
+      rt.queue.resolve(hand.id, 'promote', 'app');
       rt.eventLog.emit({
         type: 'resolved',
         jobId: hand.id,
@@ -3403,7 +3403,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   }
 
   try {
-    const job = rt.queue.resolve(pending.id, body.action);
+    const job = rt.queue.resolve(pending.id, body.action, 'you');
     // The approved statement becomes the level's roll-forward state (D-223),
     // banked only after the stamp landed and only for a promote: a clear
     // writes nothing (D-216), a discard is a verdict on the run. Synchronous,

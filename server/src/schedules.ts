@@ -315,6 +315,37 @@ export function cadenceFrom(text: string): ReadCadence | null {
   return null;
 }
 
+/**
+ * A mail trigger written into the sentence (D-248, on D-184's doctrine):
+ * "when mail from the bank arrives", "whenever an email comes in", "when the
+ * bank mails me", "on receiving a message". Read and quoted back, NEVER turned
+ * into a query — "the bank" is not an address, and a guessed rule is a rule
+ * that spends money on a timer nobody set. The reading only turns the chip
+ * on; the words that reach Gmail are the ones typed into the field.
+ *
+ * Deliberately narrow: "mail the report every Monday" is a send, not a
+ * trigger, so a mail word alone claims nothing — it takes an arrival verb or
+ * "mails me" / "get an email" beside a "when".
+ */
+const TRIGGER_PATTERNS: RegExp[] = [
+  // when [a|an|the] [up to four words] mail|email|message [from …] arrives|comes in|lands|is received
+  /\bwhen(?:ever)?\s+(?:(?:a|an|the|any|new)\s+)?(?:[\p{L}\p{N}'’-]+\s+){0,4}?(?:e-?mails?|mails?|messages?)\s+(?:from\s+[^,;]+?\s+)?(?:arrives?|comes?\s+in|lands?|is\s+received|hits?\s+(?:my|the)\s+inbox)\b/iu,
+  // when [the bank] mails|emails me
+  /\bwhen(?:ever)?\s+(?:[\p{L}\p{N}'’-]+\s+){1,4}?(?:e-?mails?|mails?)\s+me\b/iu,
+  // when I get|receive [a|an|the] mail|email|message
+  /\bwhen(?:ever)?\s+(?:I\s+)?(?:get|receive)\s+(?:(?:a|an|the|any|new)\s+)?(?:e-?mail|mail|message)s?\b/iu,
+  // on|upon receiving|getting [a|an] mail|email|message
+  /\b(?:on|upon)\s+(?:receiving|getting)\s+(?:(?:a|an|the|any|new)\s+)?(?:e-?mail|mail|message)s?\b/iu,
+];
+
+export function triggerFrom(text: string): { phrase: string } | null {
+  for (const re of TRIGGER_PATTERNS) {
+    const hit = re.exec(text);
+    if (hit) return { phrase: hit[0].trim() };
+  }
+  return null;
+}
+
 /** The cadence in words — one wording, used by the panel and the terminal alike. */
 export function describeCadence(cadence: Cadence): string {
   const pad = (n: number) => String(n).padStart(2, '0');

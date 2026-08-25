@@ -264,15 +264,18 @@ export async function callMail(
     : read(str(args.id), options.http, access.token);
 }
 
-async function search(
-  args: Record<string, unknown>,
+/**
+ * The hits for a query as compact lines, newest first, plus whether the
+ * mailbox held more than were listed. The body of `mail_search`, split out so
+ * the trigger preview (D-248) can count and quote the newest match through
+ * exactly the search a session would run — one search, two callers.
+ */
+export async function searchLines(
   http: Http,
   token: string,
-): Promise<MailResult> {
-  const query = str(args.query) || DEFAULT_QUERY;
-  const wanted = typeof args.max === 'number' ? Math.trunc(args.max) : DEFAULT_MAX;
-  const max = Math.max(1, Math.min(MAX_MAX, wanted || DEFAULT_MAX));
-
+  query: string,
+  max: number,
+): Promise<{ lines: string[]; more: boolean } | { error: string }> {
   const listUrl = new URL(MESSAGES);
   listUrl.searchParams.set('q', query);
   listUrl.searchParams.set('maxResults', String(max));
@@ -283,7 +286,7 @@ async function search(
   const ids = (Array.isArray(listed.payload.messages) ? (listed.payload.messages as { id?: unknown }[]) : [])
     .map((m) => str(m.id))
     .filter((id) => id !== '');
-  if (ids.length === 0) return { text: `No mail matches "${query}".` };
+  if (ids.length === 0) return { lines: [], more: false };
 
   // One metadata call per hit, in parallel — Gmail's list answers ids alone.
   // Asked for only the fields a line renders (the calendar's rule), so a
@@ -301,12 +304,69 @@ async function search(
   const failed = fetched.find((f) => 'error' in f);
   if (failed && 'error' in failed) return failed;
 
-  const lines = fetched.map((f) => line(('payload' in f ? f.payload : {}) as RawMessage));
-  const head = `${lines.length} message${lines.length === 1 ? '' : 's'} for "${query}", newest first, times local to this machine:`;
-  const tail = str(listed.payload.nextPageToken)
-    ? [`…the mailbox holds more matches than these ${lines.length} — narrow the query or raise max`]
+  return {
+    lines: fetched.map((f) => line(('payload' in f ? f.payload : {}) as RawMessage)),
+    more: str(listed.payload.nextPageToken) !== '',
+  };
+}
+
+async function search(
+  args: Record<string, unknown>,
+  http: Http,
+  token: string,
+): Promise<MailResult> {
+  const query = str(args.query) || DEFAULT_QUERY;
+  const wanted = typeof args.max === 'number' ? Math.trunc(args.max) : DEFAULT_MAX;
+  const max = Math.max(1, Math.min(MAX_MAX, wanted || DEFAULT_MAX));
+
+  const got = await searchLines(http, token, query, max);
+  if ('error' in got) return got;
+  if (got.lines.length === 0) return { text: `No mail matches "${query}".` };
+  const head = `${got.lines.length} message${got.lines.length === 1 ? '' : 's'} for "${query}", newest first, times local to this machine:`;
+  const tail = got.more
+    ? [`…the mailbox holds more matches than these ${got.lines.length} — narrow the query or raise max`]
     : [];
-  return { text: [head, ...lines, ...tail].join('\n') };
+  return { text: [head, ...got.lines, ...tail].join('\n') };
+}
+
+/**
+ * What a trigger query would reach (D-248): how many of the last week's
+ * mails match — with the poll's own `-from:me` already applied, so the
+ * preview and the poll can never disagree about what counts — and the newest
+ * one in words. `count` is capped at `max`; `more` says the mailbox held
+ * beyond it, which for a rule that fires a paid job is the fact that matters.
+ */
+export async function previewMail(
+  query: string,
+  max: number,
+  options: { http: Http; env: Record<string, string | undefined>; mint?: Mint },
+): Promise<{ count: number; more: boolean; newest?: string } | { error: string }> {
+  const clientId = options.env[GOOGLE_SECRETS.clientId];
+  const clientSecret = options.env[GOOGLE_SECRETS.clientSecret];
+  const refreshToken = options.env[GOOGLE_SECRETS.refreshToken];
+  if (!clientId || !clientSecret || !refreshToken) {
+    return {
+      error:
+        'Google is not connected, so mail cannot fire this — open Settings and press Connect on the Google connection.',
+    };
+  }
+  const mint: Mint = options.mint ?? accessTokenFromRefresh;
+  const access = await mint({ clientId, clientSecret, refreshToken });
+  if ('error' in access) return { error: access.error };
+  const got = await searchLines(
+    options.http,
+    access.token,
+    `${query} -from:me newer_than:7d`,
+    max,
+  );
+  if ('error' in got) return got;
+  // The line ends in the id mail_read takes; the desk has no use for it.
+  const newest = got.lines[0]?.replace(/\s*\(id [^)]*\)\s*$/, '');
+  return {
+    count: got.lines.length,
+    more: got.more,
+    ...(newest ? { newest } : {}),
+  };
 }
 
 async function read(id: string, http: Http, token: string): Promise<MailResult> {

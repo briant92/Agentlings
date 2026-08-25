@@ -32,6 +32,7 @@ import { ChannelAskCard } from './ChannelAskCard';
 import { ChannelLogo } from './ChannelLogo';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
+import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
 import {
   acceptGhost,
   gapClass,
@@ -114,11 +115,22 @@ export function WorkBar({
   const [organizeRoot, setOrganizeRoot] = useState<string | null>(null);
   /** The schedule just made without a run, so its first firing is visible (D-106). */
   const [scheduled, setScheduled] = useState<ScheduleInfo | null>(null);
-  /** Repeat this sentence on a cadence (D-103). 'off' queues once, as ever. */
-  const [repeatKind, setRepeatKind] = useState<'off' | 'daily' | 'weekly' | 'monthly'>('off');
+  /**
+   * Repeat this sentence on a cadence (D-103), or fire it when mail arrives
+   * (D-248) — 'mail' is the fifth chip on the same row, because it is the
+   * same idea: a sentence queued again by something other than you. 'off'
+   * queues once, as ever.
+   */
+  const [repeatKind, setRepeatKind] = useState<'off' | 'daily' | 'weekly' | 'monthly' | 'mail'>(
+    'off',
+  );
   const [repeatDow, setRepeatDow] = useState(1);
   const [repeatDay, setRepeatDay] = useState(1);
   const [repeatTime, setRepeatTime] = useState('09:00');
+  /** The Gmail query a mail trigger polls — typed, never read off the sentence. */
+  const [triggerQuery, setTriggerQuery] = useState('');
+  /** What that query reaches right now, asked of the server as it is typed. */
+  const [triggerPreview, setTriggerPreview] = useState<PreviewLine | null>(null);
   /**
    * Files a firing reads afresh (D-246). Not attachments: attachments ride one
    * run, and these are re-read from the folder every time the schedule fires,
@@ -201,6 +213,9 @@ export function WorkBar({
    */
   const cadenceFor = useRef('');
   useEffect(() => {
+    // A mail trigger in the words (D-248) takes the chip the same way a
+    // cadence does, and only the chip: the query is never guessed.
+    const readTrigger = plan?.trigger;
     const read = plan?.cadence;
     const sentence = text.trim();
     if (!sentence) return;
@@ -212,7 +227,7 @@ export function WorkBar({
     // the clearing branch below could not fire because the ref already
     // matched.
     if (plannedFor.current !== sentence) return;
-    if (!read) {
+    if (!read && !readTrigger) {
       // The sentence no longer reads as a repeat, so a repeat *this effect*
       // set no longer applies — seen live: reading "every Monday at 9", then
       // typing "telegram me the UF on Monday" over it, left the weekly chip
@@ -226,6 +241,10 @@ export function WorkBar({
     }
     if (cadenceFor.current === sentence) return;
     cadenceFor.current = sentence;
+    if (readTrigger || !read) {
+      setRepeatKind('mail');
+      return;
+    }
     setRepeatKind(read.cadence.kind);
     if (read.cadence.dow !== undefined) setRepeatDow(read.cadence.dow);
     if (read.cadence.day !== undefined) setRepeatDay(read.cadence.day);
@@ -417,9 +436,79 @@ export function WorkBar({
     return parts.length ? parts.join(' · ') : null;
   })();
 
-  /** The cadence the controls describe, or null when this runs once. */
+  /**
+   * The rule's reach, asked as it is typed (D-248) — D-246's live match, for
+   * mail. Debounced so a query being typed is not ten Gmail calls, and read
+   * through the same route the poll's guard rides, so the line and the firing
+   * agree about what counts. `fetch` rather than `api()` on purpose: the 502
+   * wall is an answer here, not a failure.
+   */
+  useEffect(() => {
+    if (repeatKind !== 'mail') return;
+    const q = triggerQuery.trim();
+    if (!q) {
+      setTriggerPreview(null);
+      return;
+    }
+    let stale = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/trigger/preview?q=${encodeURIComponent(q)}`);
+        const body = (await res.json().catch(() => ({}))) as TriggerPreviewReply['body'];
+        if (!stale) setTriggerPreview(previewLine({ status: res.status, body }));
+      } catch {
+        if (!stale) setTriggerPreview({ tone: 'miss', text: 'the preview could not be read' });
+      }
+    }, 300);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [repeatKind, triggerQuery]);
+
+  /**
+   * Arm a mail trigger (D-248): the schedule alone, nothing run today — a
+   * trigger has nothing to run until the mail comes, so this is the only
+   * thing Start can mean while the mail chip is on. The confirmation line
+   * says what the rule waits for; the row is in the backoffice from here.
+   */
+  const armTrigger = async () => {
+    const q = triggerQuery.trim();
+    if (!q || !text.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const made = await api<ScheduleInfo>(
+        lvl(levelId, '/schedules'),
+        postJson({
+          text: text.trim(),
+          trigger: { mail: q },
+          ...(channel ? { channel } : {}),
+          ...(Object.keys(answers).length > 0 ? { answers } : {}),
+          ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),
+        }),
+      );
+      setScheduled(made);
+      setText('');
+      setPlan(null);
+      setChannel(null);
+      setAnswers({});
+      setRepeatKind('off');
+      setTriggerQuery('');
+      setTriggerPreview(null);
+      setStanding([]);
+      setSingle(false);
+      setOrganizeRoot(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** The cadence the controls describe, or null when this runs once — or waits for mail. */
   const cadence = (): Cadence | null => {
-    if (repeatKind === 'off') return null;
+    if (repeatKind === 'off' || repeatKind === 'mail') return null;
     const [h, m] = repeatTime.split(':').map(Number);
     return {
       kind: repeatKind,
@@ -611,6 +700,11 @@ export function WorkBar({
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
+    // With the mail chip on, Start is Arm: there is nothing to run today.
+    if (repeatKind === 'mail') {
+      void armTrigger();
+      return;
+    }
     // Ask for the project folder once, then never again for this level.
     if (plan?.needsRepo) {
       setAskingRepo(true);
@@ -740,8 +834,15 @@ export function WorkBar({
           />
           📎
         </label>
-        <button type="submit" disabled={!text.trim() || busy}>
-          {armed && arrest ? `Queue anyway — ${arrest}` : 'Start'}
+        <button
+          type="submit"
+          disabled={!text.trim() || busy || (repeatKind === 'mail' && !triggerQuery.trim())}
+        >
+          {repeatKind === 'mail'
+            ? 'Arm — watch for mail'
+            : armed && arrest
+              ? `Queue anyway — ${arrest}`
+              : 'Start'}
         </button>
       </form>
 
@@ -883,14 +984,14 @@ export function WorkBar({
           ) : (
             <>
               <span className="dim">repeats:</span>
-              {(['off', 'daily', 'weekly', 'monthly'] as const).map((k) => (
+              {(['off', 'daily', 'weekly', 'monthly', 'mail'] as const).map((k) => (
                 <button
                   key={k}
                   type="button"
                   className={repeatKind === k ? 'work-chip on' : 'work-chip'}
                   onClick={() => setRepeatKind(k)}
                 >
-                  {k === 'off' ? 'no' : k}
+                  {k === 'off' ? 'no' : k === 'mail' ? 'when mail arrives' : k}
                 </button>
               ))}
               {repeatKind === 'weekly' && (
@@ -923,7 +1024,7 @@ export function WorkBar({
                   />
                 </label>
               )}
-              {repeatKind !== 'off' && (
+              {repeatKind !== 'off' && repeatKind !== 'mail' && (
                 <>
                   <label className="dim">
                     at{' '}
@@ -957,6 +1058,59 @@ export function WorkBar({
                       schedule only — no run today
                     </button>
                   )}
+                </>
+              )}
+              {/* The mail trigger (D-248): the raw Gmail query — the words
+                  that actually reach the poll, in the language the crew's own
+                  mail_search speaks — and, beneath it, what those words reach
+                  right now. The sentence can turn the chip on (D-184's
+                  doctrine) but never fills this field: "the bank" is not an
+                  address, and a guessed rule spends money on a timer nobody
+                  set. Start reads Arm while this is on. */}
+              {repeatKind === 'mail' && (
+                <>
+                  <span className="dim">matching</span>
+                  <input
+                    className="work-q-text work-trigger-q"
+                    value={triggerQuery}
+                    placeholder="from:cartola@banco.cl subject:estado"
+                    onChange={(e) => setTriggerQuery(e.target.value)}
+                    aria-label="The Gmail query a mail must match"
+                    autoFocus
+                  />
+                  <span className="dim">
+                    · Gmail's own search words: from:, subject:, has:attachment, newer_than:
+                  </span>
+                  {plan?.trigger && (
+                    <span className="work-cadence-read">
+                      {'· '}read “{plan.trigger.phrase}” as a mail trigger
+                      {' · '}
+                      <button className="work-link" onClick={() => setRepeatKind('off')}>
+                        not a trigger
+                      </button>
+                    </span>
+                  )}
+                  {triggerPreview && triggerPreview.tone !== 'idle' && (
+                    <span
+                      className={
+                        triggerPreview.tone === 'hit'
+                          ? 'work-trigger-line work-standing-hit'
+                          : 'work-trigger-line work-standing-miss'
+                      }
+                    >
+                      {triggerPreview.text}
+                    </span>
+                  )}
+                  <span className="work-trigger-line dim">
+                    the mail lands as <code>input/mail.txt</code> · at most 10 firings a day · each
+                    one is a job, quoted and reviewed like any other
+                    {channel === 'gmail' &&
+                      ' · the job may draft one reply into that mail’s thread — it waits for your review'}
+                  </span>
+                </>
+              )}
+              {repeatKind !== 'off' && (
+                <>
                   {/* Standing inputs (D-246): a folder and a rule the firing
                       re-reads, so a monthly job reaches next month's file.
                       Each row says what it matches RIGHT NOW, because a filter

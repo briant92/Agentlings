@@ -3436,6 +3436,25 @@ button.danger:hover {
   color: #e8b478;
   font-size: 11px;
 }
+/* The mail trigger (D-248): the query is a Gmail search, wider than a
+   filename box; the lines beneath it — what the rule reaches, what a firing
+   costs — each take their own line like a standing-input row does. */
+.work-trigger-q {
+  width: 24em;
+}
+.work-trigger-line {
+  display: block;
+  width: 100%;
+  padding-left: 10px;
+  border-left: 2px solid var(--hl-gap);
+  font-size: 11px;
+}
+.work-trigger-line.work-standing-hit {
+  border-left-color: #6daa2c;
+}
+.work-trigger-line.work-standing-miss {
+  border-left-color: #e8b478;
+}
 .back-row {
   display: flex;
   align-items: center;

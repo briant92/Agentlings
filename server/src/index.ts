@@ -70,6 +70,7 @@ import {
   removeSchedule,
   SCHEDULE_SWEEP_MS,
   setPaused,
+  triggerFrom,
   validCadence,
   validTrigger,
 } from './schedules';
@@ -298,7 +299,7 @@ import { callGithub } from './github';
 import { callRender } from './render';
 import { callBls } from './bls';
 import { callCalendar } from './calendar';
-import { callMail } from './mail';
+import { callMail, previewMail } from './mail';
 import { logDoor, readDoorUsage } from './doorlog';
 import { readTrajectory } from './trajectory';
 import { callSearch } from './search';
@@ -1502,6 +1503,12 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
         ? { cadence: { ...read, label: describeCadence(read.cadence) } }
         : {};
     })(),
+    // A mail trigger written into the sentence (D-248): the chip goes on and
+    // the words are quoted back; the query itself is never guessed.
+    ...(() => {
+      const read = triggerFrom(text);
+      return read ? { trigger: read } : {};
+    })(),
     // A file asked to ride on a channel that cannot carry one. Said here
     // because the outbox contract only refuses it at the end, once the run is
     // written and paid for. Read against the channels Start would actually
@@ -2587,17 +2594,16 @@ app.get('/api/trigger/preview', async (c) => {
   const query = (c.req.query('q') ?? '').trim();
   const bad = validTrigger({ mail: query });
   if (bad) return c.json({ error: bad }, 400);
-  const result = await callMail(
-    'mail_search',
-    { query: `${query} -from:me newer_than:7d`, max: TRIGGER_PREVIEW_MAX },
-    { http, env: process.env },
-  );
-  if (result.error) return c.json({ error: result.error }, 502);
-  return c.json({ text: result.text, capPerDay: MAX_TRIGGER_FIRES_PER_DAY });
+  const result = await previewMail(query, TRIGGER_PREVIEW_MAX, { http, env: process.env });
+  if ('error' in result) return c.json({ error: result.error }, 502);
+  return c.json({ ...result, capPerDay: MAX_TRIGGER_FIRES_PER_DAY });
 });
 
-/** Matches the preview lists — enough to judge a rule's reach, not the mailbox. */
-const TRIGGER_PREVIEW_MAX = 10;
+/**
+ * Matches the preview lists — the daily cap exactly, so "matched this many"
+ * and "this rule would spend the whole cap" are the same number.
+ */
+const TRIGGER_PREVIEW_MAX = MAX_TRIGGER_FIRES_PER_DAY;
 
 app.post('/api/levels/:lid/schedules/:sid/pause', async (c) => {
   const rt = getLevel(c.req.param('lid'));

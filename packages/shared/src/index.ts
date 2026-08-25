@@ -2142,6 +2142,12 @@ export interface WorkPlan {
    */
   cadence?: { cadence: Cadence; phrase: string; label: string };
   /**
+   * A mail trigger the sentence itself carries (D-248) — "when mail from the
+   * bank arrives". Turns the trigger chip on and is quoted back; it never
+   * becomes a query, because the words name no address. The query is typed.
+   */
+  trigger?: { phrase: string };
+  /**
    * Channels this send asks a file to ride on that cannot carry one.
    *
    * The outbox contract refuses a file on these channels anyway, but only once

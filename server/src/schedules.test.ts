@@ -20,6 +20,7 @@ import {
   schedulesFile,
   setPaused,
   TRIGGER_SEEN_CAP,
+  triggerFrom,
   validCadence,
   validTrigger,
 } from './schedules';
@@ -431,6 +432,49 @@ describe('mail triggers on a schedule (D-248)', () => {
       );
       expect(noteTriggerPoll(dir, s.id, { error: 'nope' })).toBeUndefined();
       expect(readSchedules(dir)[0].lastError).toBeUndefined();
+    });
+  });
+
+  /**
+   * A trigger written into the sentence (D-248, on D-184's doctrine): read
+   * and quoted back, never turned into a query. Both halves are pinned —
+   * what it reads, and the send sentences it must leave alone, because a
+   * chip that comes on by itself makes Start arm a rule that spends money.
+   */
+  describe('triggerFrom', () => {
+    it('reads the arrival shapes and quotes the words', () => {
+      expect(triggerFrom('When mail from the bank arrives, summarise input/mail.txt')).toEqual({
+        phrase: 'When mail from the bank arrives',
+      });
+      expect(triggerFrom('whenever an email comes in, read it')?.phrase).toBe(
+        'whenever an email comes in',
+      );
+      expect(triggerFrom('when the bank mails me, reconcile the books')?.phrase).toBe(
+        'when the bank mails me',
+      );
+      expect(triggerFrom('when I get a message about the invoice, file it')?.phrase).toBe(
+        'when I get a message',
+      );
+      expect(triggerFrom('on receiving an e-mail, summarise it')?.phrase).toBe(
+        'on receiving an e-mail',
+      );
+    });
+
+    it('never reads a send as a trigger', () => {
+      for (const sentence of [
+        'mail the report to Ana every Monday',
+        'email me the open PR list every morning',
+        'send a mail to the bank asking for the statement',
+        'read my mail and summarise it',
+        'when you are done, mail Ana the summary',
+      ]) {
+        expect(triggerFrom(sentence)).toBeNull();
+      }
+    });
+
+    it('never produces a query — the words name no address', () => {
+      const read = triggerFrom('when mail from cartola@banco.cl arrives, read it')!;
+      expect(Object.keys(read)).toEqual(['phrase']);
     });
   });
 

@@ -3388,7 +3388,6 @@ button.danger:hover {
 .work-repeat-day {
   width: 3.6em;
 }
-/* Standing inputs (D-246): what a firing re-reads. One row per folder, each
 /* Door chips (D-254): what a schedule or rule's firing will hold — none
    ticked by default, on their own line with the reading beside them. */
 .work-doors {
@@ -3399,6 +3398,7 @@ button.danger:hover {
   width: 100%;
   margin-top: 4px;
 }
+/* Standing inputs (D-246): what a firing re-reads. One row per folder, each
    wrapping to its own line because an absolute Windows path is long and the
    repeat row is already busy. */
 .work-standing {

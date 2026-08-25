@@ -20008,8 +20008,7 @@ session does not re-derive it from the row's doors.
   the one place the bare field is right.
 - A legacy row leaves legacy only by being deleted and made again — there
   is no edit route; D-254's *until edited* means that.
-- The work bar sends no `tools` yet, so until #10 a row it creates holds
-  none — built the same day as #10: one chip per enabled non-sending door
+- #10, the chips, built the same day: one chip per enabled non-sending door
   while a schedule or rule is being created, none ticked, the reading *the
   firing holds no doors* until one is, and `prove-trigger-ui.mjs` (28/28)
   arms a rule ticking `web` and reads `["web"]` back through the API before

@@ -21,6 +21,9 @@
 //                plan re-runs on every keystroke and is never the count
 //   rule       — the refusing sentence armed as a schedule hours from now:
 //                counted once, at arming (the level closes before it fires)
+//   repeat     — Start with a repeat set is the bar's /work then /schedules
+//                with `queued: true`: two lines from the Start, none from
+//                the arming
 //   reply      — a refusing reply to the queued job: its own words counted,
 //                the prompt it continues not counted again
 //   torn       — nothing here; the torn-line reading is unit-tested, and a
@@ -124,7 +127,7 @@ if (made.status !== 201) {
       stop('refusing to queue anything while someone could pick it up — this would cost money');
     }
 
-    const mine = () => readRefusals().filter((r) => r.level === lid);
+    const mine = () => readRefusals().filter((r) => r.levelId === lid);
     check('the level starts with no refusal on file', mine().length === 0, `${mine().length}`);
 
     // ── two rows ────────────────────────────────────────────────────────────
@@ -137,7 +140,7 @@ if (made.status !== 201) {
       stop('no line for this level — the running server predates #11 (D-259); restart it first');
     }
     check('one line per row, in board order', JSON.stringify(lines.map((r) => r.key)) === '["money","sign"]', lines.map((r) => r.key).join(' '));
-    check('each line carries the time and this level', lines.every((r) => r.level === lid && r.at >= before && r.at <= Date.now()), JSON.stringify(lines));
+    check('each line carries the time and this level', lines.every((r) => r.levelId === lid && r.at >= before && r.at <= Date.now()), JSON.stringify(lines));
     const raw = readFileSync(FILE, 'utf8');
     check(
       'not one word of the sentence is on file',
@@ -171,6 +174,16 @@ if (made.status !== 201) {
     check('the reply queued', replied.status === 201, `${replied.status}`);
     check("a reply counts its own words only — one line, not the prompt's two again", JSON.stringify(mine().slice(4).map((r) => r.key)) === '["money"]', mine().slice(4).map((r) => r.key).join(' '));
 
+    // ── repeat ───────────────────────────────────────────────────────────────
+    const again = await post(`/api/levels/${lid}/work`, { text: REFUSING, single: true });
+    const armedToo = await post(`/api/levels/${lid}/schedules`, {
+      text: REFUSING,
+      cadence: { kind: 'daily', hour: later.getHours(), minute: later.getMinutes() },
+      queued: true,
+    });
+    check('Start with a repeat set queued and armed', again.status === 201 && armedToo.status === 201, `${again.status} ${armedToo.status}`);
+    check('…and counted its sentence once, at the Start', JSON.stringify(mine().slice(5).map((r) => r.key)) === '["money","sign"]', mine().slice(5).map((r) => r.key).join(' '));
+
     // ── and nothing ran, so nothing was billed ───────────────────────────────
     const jobs = existsSync(path.join(levelDir, 'jobs.json'))
       ? JSON.parse(readFileSync(path.join(levelDir, 'jobs.json'), 'utf8'))
@@ -200,7 +213,7 @@ if (made.status !== 201) {
   await cleanup();
   console.log(
     bad === 0
-      ? `\nall PASS — nothing owed. The five lines for ${lid} stay in refusals.jsonl: the file is append-only, and a proof level's demand is a proof, not demand (#12 counts real levels only).`
+      ? `\nall PASS — nothing owed. The seven lines for ${lid} stay in refusals.jsonl: the file is append-only, and a proof level's demand is a proof, not demand (#12 counts real levels only).`
       : `\n${bad} FAILED`,
   );
   process.exitCode = bad === 0 ? 0 : 1;

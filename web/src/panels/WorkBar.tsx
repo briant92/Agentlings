@@ -687,6 +687,8 @@ export function WorkBar({
             text: text.trim(),
             cadence: repeat,
             tools: doors,
+            // Start just queued this sentence: its refusals were counted there (D-259).
+            queued: true,
             ...(channel ? { channel } : {}),
             ...(Object.keys(answers).length > 0 ? { answers } : {}),
             ...(standingInputs().length > 0 ? { inputs: standingInputs() } : {}),

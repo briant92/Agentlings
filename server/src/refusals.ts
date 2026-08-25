@@ -32,7 +32,8 @@ import { NEVER_CHANNELS, claimedChannel } from './channel';
  */
 export interface Refusal {
   at: number;
-  level: string;
+  /** The level's id, as the ledger's `levelId` — #12 joins the two files on it. */
+  levelId: string;
   /** A `BOUNDARIES` id (`money`, `sign`, `act`, `people`), a not-built capability's name (`NOT_BUILT`) or a never-channel's name. */
   key: string;
 }
@@ -142,11 +143,11 @@ export function refusalKeys(text: string): string[] {
 }
 
 /** One line per row the sentence claims; nothing at all when it claims none. Appends as the ledger does (D-259). */
-export function recordRefusals(sandboxRoot: string, level: string, text: string, at: number): void {
+export function recordRefusals(sandboxRoot: string, levelId: string, text: string, at: number): void {
   const keys = refusalKeys(text);
   if (keys.length === 0) return;
   mkdirSync(sandboxRoot, { recursive: true });
-  const lines = keys.map((key) => `${JSON.stringify({ at, level, key } satisfies Refusal)}\n`);
+  const lines = keys.map((key) => `${JSON.stringify({ at, levelId, key } satisfies Refusal)}\n`);
   appendFileSync(refusalsFile(sandboxRoot), lines.join(''));
 }
 

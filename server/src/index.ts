@@ -2549,6 +2549,12 @@ app.post('/api/levels/:lid/schedules', async (c) => {
     inputs?: StandingInput[];
     /** The doors the firing holds (D-254); omitted is none. */
     tools?: string[];
+    /**
+     * Start with a repeat set: the bar has just queued this same sentence
+     * through /work, which counted its refusals — so this arming must not
+     * count them again (D-259). A rule armed on its own leaves it unset.
+     */
+    queued?: boolean;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -2590,9 +2596,10 @@ app.post('/api/levels/:lid/schedules', async (c) => {
       .map((conn) => conn.name),
   );
   if (badDoor) return c.json({ error: badDoor }, 400);
-  // A rule's sentence was typed at the desk once (D-259): counted here, when
-  // it is armed, and never again on its firings — a firing is not an ask.
-  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
+  // A rule's sentence was typed at the desk once (D-259): counted here when
+  // it is armed on its own, at Start when Start queued it too, and never on
+  // its firings — a firing is not an ask.
+  if (body.queued !== true) recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
   const schedule = createSchedule(
     rt.dir,
     {

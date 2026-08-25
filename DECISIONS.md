@@ -1034,7 +1034,7 @@ entry updates one file rather than two.
   through both sweeps bare, legacy rows labelled, the seven rows backfilled
   as read (the monthly row needs `web search bls`, not `bls`, and has been
   off its tool since the level took a repository), the live proof owed on
-  the next restart; and D-259, the desk counting what it refuses (#11) —
+  the next restart; D-259, the desk counting what it refuses (#11) —
   one line per never-row or not-built capability beside the ledger, the
   board's row keys with the desk's own verb-and-object words, because the
   board's duty lists fired 99 times on 250 real sentences and never on a
@@ -20029,8 +20029,11 @@ a sentence over — Start (`POST /api/levels/:lid/work`), a rule armed
 only) — the server runs the whole sentence past `refusalKeys` after every
 refusal of the request and before any of the ways in, and appends one line
 per row claimed to `.agentlings/refusals.jsonl`, beside the ledger:
-`{at, level, key}` and nothing of the sentence. A rule counts once, when it
-is armed, never on a firing — a firing is not an ask. The keys are the job
+`{at, levelId, key}` — `levelId` as the ledger names it, since #12 joins the
+two files on it — and nothing of the sentence. A rule counts once: when
+it is armed on its own, or at the Start that queued it (the bar arms a
+repeat with `queued: true` and the arming skips the count), never on a
+firing — a firing is not an ask. The keys are the job
 board's hard row ids — `money`, `sign`, `act`, `people` — the not-built
 row's capabilities by name — `video`, `audio`, `image`, `design-tool`,
 because the trigger that waits on this file is *media generation* and a
@@ -20101,14 +20104,18 @@ findable, since the sentence stays in the job record.
   making verbs with their medium, one key per capability; the count moved
   after the route's own refusals so a rejected Start cannot count; the
   rule and reply seams were added, since a sentence typed at the desk
-  reaches the server three ways. Left as they are: `readRefusals` mirrors
+  reaches the server three ways. A second pass caught that Start with a
+  repeat set is two of those ways for one sentence — the bar posts `/work`
+  then `/schedules` — so the arming carries `queued: true` and skips the
+  count; and `level` became `levelId` while the file was still empty. Left as they are: `readRefusals` mirrors
   the ledger's private `readRows` line for line (a shared jsonl reader
   would touch `ledger.ts`, beyond this ticket), and `key` stays a string
   because the never-channel names are the shelf's, not a closed union.
 - Live: the running server predates the route change, so the lines the
   routes write are owed on the next restart — `node scripts/prove-refusals.mjs`
-  rests a proof level's crew, presses Start twice, plans once, arms a rule
-  and sends a reply, reads five lines back from `refusals.jsonl` at $0, and
+  rests a proof level's crew, presses Start twice, plans once, arms a rule,
+  sends a reply and presses Start with a repeat set, reads seven lines back
+  from `refusals.jsonl` at $0, and
   this entry gets its line then. Its dry run against the old server stops
   at the restart guard with the crew rested and the level closed.
 

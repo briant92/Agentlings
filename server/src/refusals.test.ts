@@ -116,11 +116,11 @@ describe('refusalKeys', () => {
 });
 
 describe('recordRefusals', () => {
-  it('appends exactly one line per row hit, with time, level and key — and nothing of the sentence', () => {
+  it('appends exactly one line per row hit, with time, levelId (the ledger’s name for it) and key — and nothing of the sentence', () => {
     recordRefusals(root, 'hq', PAY, 1_700_000_000_000);
     const raw = readFileSync(refusalsFile(root), 'utf8');
     expect(raw.split('\n').filter(Boolean)).toHaveLength(1);
-    expect(JSON.parse(raw.trim())).toEqual({ at: 1_700_000_000_000, level: 'hq', key: 'money' });
+    expect(JSON.parse(raw.trim())).toEqual({ at: 1_700_000_000_000, levelId: 'hq', key: 'money' });
     for (const word of ['supplier', 'invoice', 'March', 'Pay']) expect(raw).not.toContain(word);
   });
 
@@ -134,9 +134,9 @@ describe('recordRefusals', () => {
     recordRefusals(root, 'hq', SIGN, 1);
     recordRefusals(root, 'home', 'Pay the deposit and sign the contract', 2);
     expect(readRefusals(root)).toEqual([
-      { at: 1, level: 'hq', key: 'sign' },
-      { at: 2, level: 'home', key: 'money' },
-      { at: 2, level: 'home', key: 'sign' },
+      { at: 1, levelId: 'hq', key: 'sign' },
+      { at: 2, levelId: 'home', key: 'money' },
+      { at: 2, levelId: 'home', key: 'sign' },
     ]);
   });
 
@@ -149,10 +149,10 @@ describe('readRefusals', () => {
   it('skips a torn line and keeps the rest, as the ledger does', () => {
     recordRefusals(root, 'hq', SIGN, 1);
     recordRefusals(root, 'hq', VIDEO, 2);
-    appendFileSync(refusalsFile(root), '{"at":3,"level":"hq","ke');
+    appendFileSync(refusalsFile(root), '{"at":3,"levelId":"hq","ke');
     expect(readRefusals(root)).toEqual([
-      { at: 1, level: 'hq', key: 'sign' },
-      { at: 2, level: 'hq', key: 'video' },
+      { at: 1, levelId: 'hq', key: 'sign' },
+      { at: 2, levelId: 'hq', key: 'video' },
     ]);
   });
 });

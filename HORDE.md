@@ -255,9 +255,15 @@ plan's order, with what each reverses:
    (`prove-trigger-ui.mjs`: the sentence turns the chip on and is quoted
    back, the field stays empty, the live line answers amber for a rule
    matching nobody, Arm creates a real row and it is removed again).
-   **Owed:** only the thing no fixture reaches — no rule has fired off a
-   real mailbox yet; the first real rule (the bank's statement mail is the
-   measured candidate) is the end-to-end proof.
+   **The first real rules are ARMED on HQ (2026-08-25)** — and the
+   mailbox corrected the premise first: no bank mails a statement (Banco de
+   Chile's is a download, which is what D-246 exists for). What arrives is
+   Santander's *Comprobante de Pago* when a client pays (~quarterly, next
+   expected late September) and Insigneo's monthly statement notification
+   (~1st–2nd, next in about a week). Both watch from now:
+   `c9bc102f` → `from:mensajeria@santander.cl`, `c4a97302` →
+   `from:edelivery@netxinvestor.com`. **Owed:** the firing itself — nothing
+   to do but wait for the mail, then read the job it queues.
 2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
    add any MCP server themselves rather than waiting for us to curate one, and
    D-245 seeds four verified starting points that fill the form. Still:
@@ -328,9 +334,15 @@ executing — it now fails closed and adds zero ledger rows.
 - **Two ledger rows on a level called `d-246-standing-proof` are real spend
   ($0.38)** from a proof whose crew guard passed by never executing. The level
   is gone; the rows stay, because the ledger is not edited. They are not work.
-- Nothing is in flight, and **nothing on this board is owed**.
-- The one thing nobody has done: **give the horde a real job on real data
-  through any of it.** Everything from D-241 on is proven against fixtures.
+- **Two real mail-trigger rules are armed on HQ** (2026-08-25, D-248):
+  `c9bc102f` fires on `from:mensajeria@santander.cl` (a client's payment
+  receipt, ~quarterly) and `c4a97302` on `from:edelivery@netxinvestor.com`
+  (Insigneo's monthly statement notice). Each firing is a paid HQ job
+  (~$0.25–0.40) with the mail in `input/mail.txt`; neither sends. They are
+  the first real work through anything built since D-241. **Do not delete
+  them as proof leftovers — they are the proof.**
+- Otherwise nothing is in flight and nothing on this board is owed but
+  those firings.
 
 ---
 

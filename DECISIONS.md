@@ -19432,10 +19432,22 @@ hashes checked, mutated lines printed (D-224, D-243's lessons).
   its own Skip, the way a person would; the finding is the D-241 lesson
   again — a negative result from a new instrument is a claim about the
   instrument first.
-- **The first real rule** is Brian's to name — the measured demand (D-246's
-  read of 446 prompts) points at the bank's statement mail. It is also the
-  end-to-end no fixture stands in for: a real mail firing a rule, and the
-  threaded reply arriving in the right conversation.
+- ~~The first real rule~~ — **ARMED, two of them, on HQ, 2026-08-25 — and
+  the mailbox corrected the premise before either was made.** The plan said
+  "the bank's statement mail"; 120 days of real mail hold no such thing —
+  Banco de Chile's statement is a download, which is exactly why D-246
+  built folder-and-rule inputs. What actually arrives on a schedule nobody
+  sets is Santander's *Comprobante de Pago / Abono en Cuenta* when a client
+  pays (five in a year: Sep, Dec, Mar, Jun — the event-shaped case a
+  cadence cannot catch, and the income-recognition half of the accountant
+  asks) and Insigneo's monthly statement notification (no figures in the
+  mail, but the next one lands in about a week). Brian chose both:
+  `c9bc102f` on `from:mensajeria@santander.cl` writes `payment.md` (payer,
+  amount, date, reference, what it settles); `c4a97302` on
+  `from:edelivery@netxinvestor.com` names the account and period. Both
+  previews read 0 in the last 7 days, correctly. What is owed is now only
+  the mail itself; the threaded-reply half stays unproven on a real thread
+  and wants a rule on an address Brian controls.
 
 ### The correction the proof earned, same day (D-243's shape: attached, not hidden)
 

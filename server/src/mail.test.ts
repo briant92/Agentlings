@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAIL_TOOL_NAMES, callMail } from './mail';
+import { MAIL_TOOL_NAMES, callMail, previewMail } from './mail';
 import type { Http } from './library';
 
 /**
@@ -316,5 +316,36 @@ describe('callMail', () => {
     const { http } = fake(INBOX);
     const got = await callMail('list_messages', {}, { http, env: ENV, mint: fakeMint().mint });
     expect(got.error).toContain('no such tool');
+  });
+});
+
+/**
+ * The trigger preview (D-248): the desk's reach line runs through the same
+ * search a session would, with the poll's own guard already applied — so the
+ * preview and the firing can never disagree about what counts.
+ */
+describe('previewMail — what a trigger rule reaches (D-248)', () => {
+  it('asks with the poll guard and the week window, and counts what came back', async () => {
+    const { http, calls } = fake(INBOX);
+    const got = await previewMail('from:banco', 10, { http, env: ENV, mint: fakeMint().mint });
+    if ('error' in got) throw new Error(got.error);
+    expect(new URL(calls[0].url).searchParams.get('q')).toBe('from:banco -from:me newer_than:7d');
+    expect(got.count).toBe(2);
+    expect(got.more).toBe(false);
+    expect(got.newest).toContain('Invoice August');
+    // The id is mail_read's business, not the desk's.
+    expect(got.newest).not.toContain('(id ');
+  });
+
+  it('a zero-match 204 is a count of zero, not an error', async () => {
+    const http: Http = async () => ({ ok: true, status: 204, text: async () => '' });
+    const got = await previewMail('from:nobody', 10, { http, env: ENV, mint: fakeMint().mint });
+    expect(got).toEqual({ count: 0, more: false });
+  });
+
+  it('refuses without Google, in the sentence the desk shows', async () => {
+    const { http } = fake(INBOX);
+    const got = await previewMail('from:banco', 10, { http, env: {}, mint: fakeMint().mint });
+    expect('error' in got && got.error).toContain('Google is not connected');
   });
 });

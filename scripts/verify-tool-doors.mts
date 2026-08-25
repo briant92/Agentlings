@@ -25,12 +25,18 @@ if (!row) {
   console.error(`no schedule ${id} on ${level}`);
   process.exit(1);
 }
-const doors = row.tools;
-console.log(`row ${id}: ${doors === undefined ? 'LEGACY (every door)' : JSON.stringify(doors)}`);
+const named = row.tools;
+if (named === undefined) {
+  // A legacy row names nothing: its firing holds grantedTools(undefined),
+  // every enabled door, and only the server can say which those are. There is
+  // no list here to check a tool against — backfill the row first.
+  console.log(`row ${id}: LEGACY — holds every enabled door; nothing named to check`);
+  process.exit(0);
+}
+console.log(`row ${id}: ${JSON.stringify(named)}`);
 const tools = readTools(dir);
 const pick = (granted: string[], hasRepo: boolean) =>
   findTool(tools, row.prompt, hasRepo, granted)?.name ?? '(no tool — a session)';
-const named = doors ?? ['web', 'render', 'github', 'search', 'bls', 'calendar', 'mail', 'browser'];
 for (const t of tools.filter((t) => !t.retiredReason)) {
   console.log(`  ${t.name}: needs ${JSON.stringify(t.connections ?? [])}, hasRepo ${t.hasRepo}`);
 }

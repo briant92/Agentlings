@@ -19981,6 +19981,22 @@ session does not re-derive it from the row's doors.
   #9's commit.** A mail firing is not provable without real mail; the mail
   sweep's line is the cadence sweep's, one field apart, and the script says
   so on its last line rather than letting 0 failures read as both proven.
+- Mutations, after the commit: three in `schedules.ts`, each killed by a
+  named test and the file restored to its committed hash — an empty list
+  written only when non-empty (5 fail, led by *persists an EMPTY list — none,
+  not absent*), the legacy note dropped (*a legacy row … says so*), a
+  non-door accepted (*refuses a name that is not a door*). The two the
+  ticket names live in the sweeps, out of a unit test's reach: dropping the
+  field turns the none row's firing into eight doors, and `?? []` turns the
+  legacy row's into none — `prove-rule-doors.mjs` reads both off `Job.tools`,
+  so **they are owed with the live run.**
+- Two readings of *absent* now stand side by side and must not be confused:
+  on a **Schedule** row, absent is legacy — every enabled door; on a stored
+  **Job**, absent is none, because `queue.add` drops an empty list (#8). The
+  sweep is where one becomes the other, through `grantedTools`, and it is
+  the one place the bare field is right.
+- A legacy row leaves legacy only by being deleted and made again — there
+  is no edit route; D-254's *until edited* means that.
 - Not built, on purpose: the work bar sends no `tools`, so until #10 a row
   it creates holds none. The two daily briefs are no longer legacy — they
   carry `calendar` and `mail` — so nothing running changes for them.

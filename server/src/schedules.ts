@@ -68,7 +68,8 @@ export interface Schedule {
    * fires on a third party's text, so nothing is held by default. Absent
    * only on a LEGACY row written before the field existed: that row keeps
    * the old grant (every enabled door, `grantedTools(undefined)`) and its
-   * description says so, until it is edited. The sweeps pass this field
+   * description says so, until it is deleted and made again (there is no
+   * edit route). The sweeps pass this field
    * bare — `?? []` there would silently turn every legacy row into none.
    */
   tools?: string[];

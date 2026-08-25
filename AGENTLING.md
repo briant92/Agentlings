@@ -1974,14 +1974,17 @@ list per channel (D-077; SPEC M5.11 has the slices):
       guards, and an input that could never resolve is refused when the
       schedule is made. Today reachable only through
       `POST /api/levels/:lid/schedules` (D-246)
-- [~] **Mail-triggered schedules, and one threaded reply** — *Partial: the
-      routes, the sweep hazard and a quiet rule are proven live (18/18 twice,
-      plus 130 s of real mail sweep with no error), and the work bar's
-      control — a fifth repeat chip, *when mail arrives*, with the raw Gmail
-      query, the sentence reading and a live reach line, Start reading Arm —
-      is proven live 19/19 in the real app; what remains unproven is the half
-      no fixture reaches: no rule has fired off a real mailbox and no reply
-      has landed in a real thread.* A schedule row may carry a
+- [x] **Mail-triggered schedules, and one threaded reply** — proven end to
+      end on real mail (2026-08-25): a rule on a real address fired 105 s
+      after the mail arrived, the job answered with `"reply": true`, the
+      approved reply landed in the sender's own Gmail conversation. Routes,
+      sweep hazard and a quiet rule 18/18 twice; the work bar's control — a
+      fifth repeat chip, *when mail arrives*, with the raw Gmail query, the
+      sentence reading and a live reach line, Start reading Arm — 19/19 in
+      the real app. Two real rules stand armed on HQ (a client's Santander
+      payment receipt, Insigneo's monthly statement notice). *Known edge: a
+      rule carries no `tools`, so a firing that needs a door (the UF) has
+      none — an open small decision.* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

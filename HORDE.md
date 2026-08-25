@@ -262,8 +262,13 @@ plan's order, with what each reverses:
    expected late September) and Insigneo's monthly statement notification
    (~1st–2nd, next in about a week). Both watch from now:
    `c9bc102f` → `from:mensajeria@santander.cl`, `c4a97302` →
-   `from:edelivery@netxinvestor.com`. **Owed:** the firing itself — nothing
-   to do but wait for the mail, then read the job it queues.
+   `from:edelivery@netxinvestor.com`. **And the reply half is proven on a
+   real thread** (2026-08-25): a third rule on Brian's Hotmail fired 105 s
+   after his mail, the job drafted `"reply": true`, he approved, and the
+   sent message carries the trigger's own Gmail thread id
+   (`verify-reply-thread.mts`). **D-248 is complete end to end.** Open
+   small decision it surfaced: a rule carries no `tools`, so a firing that
+   needs a door has none. Owed: nothing but the two real senders' next mail.
 2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
    add any MCP server themselves rather than waiting for us to curate one, and
    D-245 seeds four verified starting points that fill the form. Still:
@@ -308,6 +313,7 @@ node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248); ran clean on BOTH 2026-08-24 evening restarts
 node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248 control), headless Edge; arms a rule matching nobody and deletes it
+npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248, real mail, 2026-08-25)
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads

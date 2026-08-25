@@ -19446,8 +19446,36 @@ hashes checked, mutated lines printed (D-224, D-243's lessons).
   amount, date, reference, what it settles); `c4a97302` on
   `from:edelivery@netxinvestor.com` names the account and period. Both
   previews read 0 in the last 7 days, correctly. What is owed is now only
-  the mail itself; the threaded-reply half stays unproven on a real thread
-  and wants a rule on an address Brian controls.
+  the mail itself.
+
+### The reply, proven on a real conversation (2026-08-25, ~12:00 UTC)
+
+A third rule on HQ (`e4ad0624`, `from:brian.t92@hotmail.com`, channel
+gmail — a separate account, because `from:me` covers an account's aliases)
+and one mail from Brian's Hotmail: *"What's the UF worth today?"*. **It
+fired 105 s after arrival**: `input/mail.txt` rendered exactly as
+`mail_read` renders a mail, the row fired once with the id in its seen ring,
+the job (`aa1d5324`, clerk, quoted $0.20, cost $0.15, 6 turns) wrote an
+outbox with `"to"` = the sender, `"subject": "Re: (no subject)"` and
+`"reply": true`; the review card showed *↩ replies into the mail's own
+conversation*; Brian approved; **the sent message `1a038c9e6e523554`
+carries Gmail thread `1a038c369ec42034` — the trigger's own** — read back
+through the app's reader by `scripts/verify-reply-thread.mts`. Job
+promoted, send audited. The proof rule is paused, not deleted: it would
+otherwise draft a paid reply to every mail from that address.
+
+Two things the real run found that no fixture had:
+
+- **The reply brief never said where `"to"` comes from.** The gmail brief
+  forbids invented addresses, and a reply's address is in the mail, not in
+  the sentence — a dry walk-through caught it before arming (`954e93b`):
+  the block now names the From line as the address and says the rule does
+  not bind there. Without it the first real reply could have been refused.
+- **A rule carries no tools.** The session was asked the UF and had no web
+  door — a schedule row has never carried `tools` (D-103's cadence rows do
+  not either), so `clerk` correctly refused to invent a figure and pointed
+  at the source. A small open decision, not built: whether a rule (cadence
+  or trigger) may name the doors its firings get.
 
 ### The correction the proof earned, same day (D-243's shape: attached, not hidden)
 

@@ -19384,13 +19384,44 @@ hashes checked, mutated lines printed (D-224, D-243's lessons).
 
 ### Owed
 
-- **Live proof after a restart** — the route, the sweep and the brief block
-  reach nothing until the server restarts; `scripts/prove-mail-trigger.mjs`
-  refuses an older server, and the end-to-end (a real mail firing a real
-  rule, a threaded reply arriving in the right conversation) needs a real
-  mailbox, which no fixture stands in for.
+- ~~Live proof after a restart~~ — **DONE, same day, twice.**
+  `prove-mail-trigger.mjs` ran **18/18 on both restarts**, including the live
+  half of the dueNow hazard (35 s of real calendar sweep, zero jobs off the
+  trigger row), and a quiet rule then survived a full **mail**-sweep interval
+  (130 s) on the live server with Google connected: no error on the row,
+  nothing queued. See the correction below for what the first run found.
 - **The creation UI** — a trigger row renders everywhere (the label rides
   `cadenceLabel`), but nothing in the work bar creates one yet; that control
   is a mockup conversation first (Brian's rule), not a guess.
 - **The first real rule** is Brian's to name — the measured demand (D-246's
-  read of 446 prompts) points at the bank's statement mail.
+  read of 446 prompts) points at the bank's statement mail. It is also the
+  end-to-end no fixture stands in for: a real mail firing a rule, and the
+  threaded reply arriving in the right conversation.
+
+### The correction the proof earned, same day (D-243's shape: attached, not hidden)
+
+The first live run passed 18/18 — and its one both-ways branch ("the preview
+answers, **or** names the missing Google connection") took the error arm on a
+machine where Google is connected. Chasing that instead of accepting it found
+a bug **older than this entry**: `mail_search` failed with *"Gmail sent
+something unreadable"* on **any query matching zero messages**. Probing the
+real API measured the cause — a zero-match list with our `fields` mask comes
+back **HTTP 204 with a zero-byte body**, which `JSON.parse` refuses. Live
+since mail-read shipped (D-158), never seen, because the desk's real queries
+always matched something.
+
+It mattered most exactly here: **a quiet trigger rule matches nothing on
+every poll**, so without the fix every D-248 rule would have carried that
+error within two minutes of creation and re-landed it forever — the steady
+state was the untested case. Fixed at the one seam (`fetchJson`: a blank body
+is `{}`, so nothing reads as an answer), pinned at both callers
+(`mail_search` → "No mail matches"; `pollTrigger` → a clean empty poll), the
+reverting mutation killed. After the second restart the preview answers
+**200** on the same query that 502'd.
+
+Two lessons, both already in the hard-won list and both earned again: a
+both-ways check that cannot say *which* way it passed is a question, not an
+answer — read the actual error before accepting the branch; and the live
+run's first find was again something no unit test was pointed at, because
+the fixture-maker and the code-writer shared the same blind spot about what
+an empty mailbox answer looks like.

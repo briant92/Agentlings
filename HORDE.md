@@ -244,11 +244,13 @@ plan's order, with what each reverses:
    late). The Wave 3 pull-forward was decided WITH it, not backed into:
    `reply: true` threads one answer into the triggering conversation, the
    server supplying the thread from the job's own stamp, and `autoBlocker`
-   excludes every mail-triggered job from standing approval. **Owed:** a
-   restart, then `node scripts/prove-mail-trigger.mjs`; the creation UI is a
-   mockup conversation first; and nothing has seen a real mailbox yet — the
-   first real rule (the bank's statement mail is the measured candidate) is
-   the end-to-end proof no fixture stands in for.
+   excludes every mail-triggered job from standing approval. **Proven live
+   the same evening** — 18/18 on both restarts, plus a quiet rule through a
+   full mail-sweep interval; the first run's one ambiguous branch led to the
+   zero-match 204 fix (the entry's attached correction). **Owed:** the
+   creation UI is a mockup conversation first; and no rule has fired off a
+   real mailbox yet — the first real rule (the bank's statement mail is the
+   measured candidate) is the end-to-end proof no fixture stands in for.
 2. **Business-system doors — ANSWERED by D-244 and D-245.** D-244 lets a user
    add any MCP server themselves rather than waiting for us to curate one, and
    D-245 seeds four verified starting points that fill the form. Still:
@@ -291,7 +293,7 @@ node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the rea
 node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
-node scripts/prove-mail-trigger.mjs      # NOT YET RUN — the trigger routes + the sweep hazard (D-248); needs the post-D-248 restart
+node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248); ran clean on BOTH 2026-08-24 evening restarts
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads
@@ -307,11 +309,14 @@ executing — it now fails closed and adds zero ledger rows.
   server was last restarted on it. Comment the line out and restart to disarm.
 - `.agentlings/connections.json` is **empty**. Everything the proofs added was
   removed again; nothing a user added is waiting to be found.
-- The server was **restarted at ~15:44 on 2026-08-24**, so it carries the
-  standing-input route *and* the sharpened `analyst` role. A role file reaches
-  nothing until a restart, and that one has happened. **That restart predates
-  D-248**: the trigger routes, the mail sweep and the reply path are on disk
-  and in no running process — restart again, then run `prove-mail-trigger.mjs`.
+- The server was **restarted twice on the evening of 2026-08-24** and now
+  carries all of D-248 **plus the zero-match mail fix** (`5c9a736` — Gmail
+  answers a zero-match list as a 204 with an empty body; without the fix
+  every quiet trigger rule errored within two minutes, see D-248's attached
+  correction). `prove-mail-trigger.mjs` ran 18/18 on both restarts — the
+  second with the preview answering 200 — and a quiet rule then survived a
+  full 130 s mail-sweep interval live: no error, nothing queued, level
+  closed again.
 - **Two ledger rows on a level called `d-246-standing-proof` are real spend
   ($0.38)** from a proof whose crew guard passed by never executing. The level
   is gone; the rows stay, because the ledger is not edited. They are not work.

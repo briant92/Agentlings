@@ -1974,9 +1974,11 @@ list per channel (D-077; SPEC M5.11 has the slices):
       guards, and an input that could never resolve is refused when the
       schedule is made. Today reachable only through
       `POST /api/levels/:lid/schedules` (D-246)
-- [~] **Mail-triggered schedules, and one threaded reply** — *Partial: built
-      and mutation-proven (8/8), but the code has not been in a running server
-      yet and nothing has fired off a real mailbox.* A schedule row may carry a
+- [~] **Mail-triggered schedules, and one threaded reply** — *Partial: the
+      routes, the sweep hazard and a quiet rule are proven live (18/18 twice,
+      plus 130 s of real mail sweep with no error), but no rule has fired off
+      a real mailbox, no reply has landed in a real thread, and only the API
+      can create a rule.* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as

@@ -2017,9 +2017,9 @@ list per channel (D-077; SPEC M5.11 has the slices):
       every caller forwarding a job's own grant reads an absent list as none —
       and #9 is built (D-258): a row carries `tools`, both sweeps pass it
       bare, a row from before the field is labelled legacy and keeps the old
-      grant, the seven rows on disk are backfilled by identification. The
-      live proof (`scripts/prove-rule-doors.mjs`) is owed on the next server
-      restart; #10, the chips, is not built — until it lands the work bar
+      grant, the seven rows on disk are backfilled by identification, and
+      `scripts/prove-rule-doors.mjs` passed 25/25 at $0 on the restarted
+      server; #10, the chips, is not built — until it lands the work bar
       names no doors, so a row it creates holds none.* A schedule row may carry a
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence

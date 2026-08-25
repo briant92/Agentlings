@@ -207,7 +207,7 @@ node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-2
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248)
 node scripts/prove-trigger-ui.mjs        # 19/19 — the fifth chip in the real work bar (D-248), headless Edge; arms a rule matching nobody and deletes it
 npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
-node scripts/prove-rule-doors.mjs        # 25 checks — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258); OWED on the first restart after #9
+node scripts/prove-rule-doors.mjs        # 25/25 — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258)
 npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)
 ```
 
@@ -235,9 +235,8 @@ must do the same or its first real click is lost.
   proof) and one on training-ground (`c639d84a`, the monthly indicators, the
   monthly indicators). **All seven are backfilled on disk (#9, D-258)** —
   `c639d84a` `web search bls`, `919a5247` `render`, `bd651cfd` `calendar`,
-  `1e21feb3` `mail`, the three mail rules none — and hold exactly that from
-  the first restart after `#9`'s commit; the running server (started
-  2026-08-24) still fires every one with all eight until then. The
+  `1e21feb3` `mail`, the three mail rules none — and hold exactly that on the
+  server restarted 2026-08-25 (read back live, no legacy label). The
   training-ground row is **not** on the free tool tier and has not been
   since 2026-08-17: the level carries a repository, a firing takes it, and
   the compiled tool is `hasRepo: false`, so the router filters it out before
@@ -255,10 +254,9 @@ must do the same or its first real click is lost.
 - The three Starbase title-screen files (`TitleScreen.tsx`, `styles.css`,
   `starbase-scene.jpg`) sit **unstaged** in the working tree by decision —
   the backdrop mockups were declined 2026-08-23 — and #7 left them so.
-- **Owed: the #9 live proof.** `node scripts/prove-rule-doors.mjs` refuses
-  the 2026-08-24 server as stale (run twice, $0, its level closed each
-  time). Run it on the first restart after #9; #9 stays open until it
-  passes, and D-258 gets its line.
+- The server was restarted 2026-08-25 on `e70c730` (#8 + #9 live); the #9
+  proof passed 25/25 on it. Not run: the two sweep-level mutations, each
+  needing a restart of its own (D-258).
 - Otherwise nothing is in flight.
 
 ---

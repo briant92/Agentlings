@@ -19977,8 +19977,16 @@ session does not re-derive it from the row's doors.
   `jobs.json`, zero jobs leaving the queue, zero ledger rows. The one door is
   read off the legacy firing's own grant so the proof cannot pass by naming
   a door that is off. Against the 2026-08-24 server it refused as stale
-  twice ($0, its level closed each time) — **owed on the first restart after
-  #9's commit.** A mail firing is not provable without real mail; the mail
+  twice ($0, its level closed each time). **Run on the restarted server the
+  same day: 25/25, $0, zero ledger rows** — the legacy firing's `Job.tools`
+  is `web render github search bls calendar mail browser`, the none and
+  omitted firings' are `[]`, the one-door firing's is `["bls"]`. The first
+  run on that server was 24/25 and the red check was the fixture's: a legacy
+  row due *now* with a cadence slot still ahead is re-armed by `markFired`
+  and fired again a minute later beside the others (two legacy jobs); the
+  slot now lies in the past. The seven backfilled rows read back off the
+  live server with exactly their doors and no legacy label. A mail firing is
+  not provable without real mail; the mail
   sweep's line is the cadence sweep's, one field apart, and the script says
   so on its last line rather than letting 0 failures read as both proven.
 - Mutations, after the commit: three in `schedules.ts`, each killed by a
@@ -19988,8 +19996,11 @@ session does not re-derive it from the row's doors.
   non-door accepted (*refuses a name that is not a door*). The two the
   ticket names live in the sweeps, out of a unit test's reach: dropping the
   field turns the none row's firing into eight doors, and `?? []` turns the
-  legacy row's into none — `prove-rule-doors.mjs` reads both off `Job.tools`,
-  so **they are owed with the live run.**
+  legacy row's into none — `prove-rule-doors.mjs` reads both off `Job.tools`
+  (the *none holds EMPTY* and *legacy holds every door* checks are exactly
+  those two readings), but each mutation needs its own server restart to run
+  against, and restarts are Brian's; **those two are not run**, and this
+  entry says so rather than counting the design of the check as the kill.
 - Two readings of *absent* now stand side by side and must not be confused:
   on a **Schedule** row, absent is legacy — every enabled door; on a stored
   **Job**, absent is none, because `queue.add` drops an empty list (#8). The

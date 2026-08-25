@@ -163,7 +163,11 @@ if (made.status !== 201) {
     writeFileSync(
       rowsFile,
       `${JSON.stringify(
-        [{ id: 'legacy01', prompt: LEGACY, cadence: cadenceIn(1), createdAt: Date.now(), nextDueAt: Date.now() - 1 }],
+        // Due now, with a cadence whose slot for today has already passed:
+        // markFired re-arms from the cadence, so a slot still ahead would fire
+        // the row a second time a minute later beside the others. The first
+        // live run found exactly that — two legacy jobs, one check red.
+        [{ id: 'legacy01', prompt: LEGACY, cadence: cadenceIn(-2), createdAt: Date.now(), nextDueAt: Date.now() - 1 }],
         null,
         2,
       )}\n`,

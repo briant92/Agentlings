@@ -20078,13 +20078,28 @@ with its object — *pay the*, *sign it*, *deploy to*, *plan the crew's week*,
 *make a video*, *in Figma* — held to **0 hits on the 250**, with the ten
 shapes that fired kept in the test as negatives, and a medium that is only
 read (*summarise the video transcript*) deliberately not a claim, because
-reading is built. Its recall is unmeasured, because the population holds no
-positive: the first real refusal is its test, and a missed one is
-findable, since the sentence stays in the job record.
+reading is built.
+
+The real prompts could show only one kind of mistake. Three review passes
+and the live proof each found another by typing a sentence — a bare noun
+(*the video transcript*), *wire the deposit*, *generate an image*, and
+then the other direction, *transfer the balance column*, *move the money
+column*, *do the payroll reconciliation*: ordinary bookkeeping that the
+447 real prompts hold almost none of, so 0 hits there could not see it.
+Hand-tuning a lexicon against reviewers does not converge. So the bar is
+now a fixture,  — **39 asks with the
+rows they claim and 42 sentences that claim nothing** (bookkeeping,
+media only read, the ten coding shapes that fired on the board's lists,
+*pays for itself*, *sign in*, *buy vs rent*) — every one of them a mistake
+someone found by typing it, and the test runs each. A pattern changes
+only after the sentence that wants it is in the fixture; the fixture must
+hold more non-asks than asks. Recall against real asks stays unmeasured
+until real refusals arrive, and a missed one is findable, since the
+sentence stays in the job record.
 
 ### Proof
 
-- Unit: `refusals.test.ts`, 18 — every claim key is a hard board row, a
+- Unit: `refusals.test.ts` — every claim key is a hard board row, a
   named not-built capability or a never-channel; a payment, a licensed act,
   an act on the world, a manager, each not-built capability by its own key
   (once, however many of its words), a never-channel, two rows in board
@@ -20096,8 +20111,14 @@ findable, since the sentence stays in the job record.
 - Mutation: the `appendFileSync` dropped — 3 of 18 fail (the one-line test,
   the append-only test, the torn-line test); restored, 18 pass.
 - Server 2,285 across 95 files, web 343, typecheck clean.
-- Measurement: `refusalKeys` over the same prompts, after the rewrite:
-  **0** on the real levels (the proof level's own sentence is the only hit).
+- Measurement: `refusalKeys` over every `jobs.json` again, after each
+  rewrite: **0 on the 447 prompts of the levels not named for a proof or a
+  check** — the 461 above counted 14 rows on proof levels, which by then
+  included this ticket's own refusing sentence and are excluded here, as
+  #12 must exclude them.
+- Fixture: `refusals.test.ts` runs all 81 sentences of
+  `fixtures/refusals/desk-sentences.json` as one test each, plus the
+  invariants (every row claimed at least once; more non-asks than asks).
 - Review (`/code-review` since `f32f675`, both axes): a torn-line append
   guard the ledger does not have was dropped rather than kept as a second
   discipline for one file shape; the not-built row's bare nouns became
@@ -20132,6 +20153,11 @@ findable, since the sentence stays in the job record.
   onto the torn one and lose both; `readRows` skips them. The refusals file
   now shares that exact discipline on purpose (the ticket says *as the
   ledger's are*); if it is ever fixed, fix both through one function.
+- The live proofs leave their lines in the real `refusals.jsonl` — seven per
+  run, on levels named `d-259-refusals-proof*` — forever, because the file
+  is append-only. #12's real-work block reads real levels only (D-249:
+  any level not named for a proof or a check), which excludes them by the
+  rule already decided, not by a special case.
 - The channel shelf's `payments` row and the board's `money` row are one
   refusal; the desk keys it `money`, and `payments` is never a channel word,
   so no sentence can count it twice.

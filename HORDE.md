@@ -209,6 +209,7 @@ node scripts/prove-trigger-ui.mjs        # 28/28 — the fifth chip in the real 
 npx tsx scripts/verify-reply-thread.mts hq aa1d5324   # THREADED — the approved reply's Gmail thread == the trigger's (D-248)
 node scripts/prove-rule-doors.mjs        # 25/25 — a row's doors ride its firing: legacy/none/omitted/one door, $0 (#9, D-258)
 npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly row's doors against its compiled tool, through findTool, repo flag both ways (D-258)
+node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, plan, rule armed, reply, Start-with-repeat, seven lines at $0 (#11, D-259); the meter itself is `.agentlings/refusals.jsonl` until #12 prints it
 ```
 
 Each refuses a server older than the thing it proves, so a stale server reads

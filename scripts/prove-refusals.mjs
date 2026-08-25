@@ -128,6 +128,10 @@ if (made.status !== 201) {
     }
 
     const mine = () => readRefusals().filter((r) => r.levelId === lid);
+    // Each step is read against the lines it added, never an absolute offset —
+    // the first live run failed a passing step because an earlier one had
+    // added fewer lines than assumed.
+    const added = (since) => mine().slice(since).map((r) => r.key).join(' ');
     check('the level starts with no refusal on file', mine().length === 0, `${mine().length}`);
 
     // ── two rows ────────────────────────────────────────────────────────────
@@ -149,19 +153,16 @@ if (made.status !== 201) {
 
     // ── ordinary ─────────────────────────────────────────────────────────────
     const ORDINARY = "Summarise last quarter's numbers into a one-page PDF";
+    const beforePlain = mine().length;
     const plain = await post(`/api/levels/${lid}/work`, { text: ORDINARY, single: true });
     check('Start queued the ordinary sentence', plain.status === 201, `${plain.status}`);
-    check('ordinary work appended nothing', mine().length === 2, `${mine().length} lines`);
+    check('ordinary work appended nothing', added(beforePlain) === '', added(beforePlain));
 
     // ── plan ─────────────────────────────────────────────────────────────────
+    const beforePlan = mine().length;
     const planned = await post(`/api/levels/${lid}/work/plan`, { text: REFUSING, single: true });
     check('the plan answered', planned.status === 200, `${planned.status}`);
-    check('the plan counted nothing — the plan is never the count', mine().length === 2, `${mine().length} lines`);
-
-    // Each step is read against the lines it added, never an absolute offset —
-    // the first live run failed a passing step because an earlier one had
-    // added fewer lines than assumed.
-    const added = (from) => mine().slice(from).map((r) => r.key).join(' ');
+    check('the plan counted nothing — the plan is never the count', added(beforePlan) === '', added(beforePlan));
 
     // ── rule ─────────────────────────────────────────────────────────────────
     const later = new Date(Date.now() + 6 * 60 * 60_000);

@@ -51,8 +51,9 @@ Everything below is committed. Nothing is in flight.
   `HttpOnly` cookie, chosen by the socket), armed; the `.session.json` seam
   fixed over stdin; the login lockout. 41 live checks in all.
 - **D-243 – D-245** — the `http` transport; **any MCP server added by the
-  user** with its tool list read from the server; four suggestions that only
-  fill the form (Xero, Notion, Sentry, Stripe — retiring under D-256).
+  user** with its tool list read from the server; suggestions that only
+  fill the form (Xero, Notion, Sentry, Stripe — retiring under D-256; a
+  fifth, Alpha Vantage, arrived with D-262).
 - **D-246 – D-248** — a schedule carries **files** (folder + rule, read
   fresh each firing); no bookkeeper trade, on measurement; **mail arriving
   fires a schedule**, and the job may answer **one threaded reply** — proven
@@ -138,7 +139,7 @@ ticket with no blocker can be taken any time after #7.
 | #11 | **The desk counts what it refuses** — one line per never-row or not-built capability, beside the ledger | D-249 | — |
 | #12 | **The real-work block** — the resolved-by stamp; one pure function over ledger, jobs and refusals; `ledger:report` prints it | D-249 | #11 |
 | #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ. Built and proven live 31/31, D-261; HQ row `15548352` armed, first firing 2026-08-31 | D-249 | #9, #12 |
-| #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable. Path proven live 7/7 with no code, D-262: Alpha Vantage's hosted server as a fifth D-245 chip, the key in a Bearer header; the HQ job waits on a free key (`prove-market-door.mjs`, second half) | D-256, D-262 | — |
+| #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable. Path proven live 8/8 with no code, D-262: Alpha Vantage's hosted server as a fifth D-245 chip, the key in a Bearer header; the HQ job waits on a free key (`prove-market-door.mjs`, second half) | D-256, D-262 | — |
 | #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired | D-256 | — |
 | #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing | D-255 | #9 |
 | #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence | D-253 | — |
@@ -212,6 +213,7 @@ npx tsx scripts/verify-tool-doors.mts training-ground c639d84a   # the monthly r
 node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, plan, rule armed, reply, Start-with-repeat, seven lines at $0 (#11, D-259)
 npm run ledger:report                    # leads with the score: real work per real level, last full week, the block the Monday send composes (#12, D-260; #13, D-261) — the app's own stamp (`resolvedBy: 'app'`) is proven only by a standing approval sending on a restarted server
 node scripts/prove-realwork.mjs          # 31/31 — a report row on a rested level: six refused shapes, one firing, the job read off disk (done, one telegram message, the block as body, $0, no door, nothing sent), the row deleted, zero ledger rows (#13, D-261)
+node scripts/prove-market-door.mjs [<key>] #  8/8 keyless — the Alpha Vantage chip, the form's probe against the real server, nothing written; with a key: adds, switches on, one HQ job holding the door, its trail (#14, D-262)
 node scripts/arm-realwork.mjs <level> telegram <chat id>   # arms the Monday report on a level (HQ has `15548352`, Mondays 08:05 — do not arm a second one there); reads the row back and prints its label (#13, D-261)
 ```
 

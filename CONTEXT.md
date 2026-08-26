@@ -29,10 +29,30 @@ _Avoid_: production, live level, practice room
 
 **Platform**:
 Agentlings as extensible — any door, any act type, any MCP server a user adds
-— for one operator per install, on that operator's machine. Never
-multi-tenant, never hosted. The catalog is written for any business, not for
-the operator at hand.
+— for one operator per install, wherever that install runs. Never
+multi-tenant. The catalog is written for any business, not for the operator
+at hand.
 _Avoid_: product, service, "any user" (meaning a second person on one install)
+
+**Install**:
+One operator's copy of Agentlings: one secrets file, one data directory, one
+ledger, jobs running as that operator. A laptop and a container the operator
+owns are the same thing; what differs is only whether the operator's own disk
+is under it, which decides which doors the install can open.
+_Avoid_: instance, deployment, tenant
+
+**Reference install**:
+The hosted install the maintainer keeps with no real keys, so that the
+template others deploy from has something it is proven against. It does no
+real work and its score is never counted.
+_Avoid_: staging, demo, production
+
+**Hosted**:
+Said of an install with no operator disk under it. A capability tagged *Not
+available hosted* is one such an install refuses at its probe — repo work
+from a local path, the folder organizer, OCR, the knowledge store over
+folders, supervised live acting.
+_Avoid_: cloud, remote, online
 
 **Catalog**:
 What Settings offers to connect: a browse over the public MCP registry, which

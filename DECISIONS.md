@@ -20637,17 +20637,28 @@ filled as `npx -y @brave/brave-search-mcp-server@2.1.3` wanting
 carried both stamps; the registry's Alpha Vantage entry was passed over by
 name; an unreachable registry came back as the named state.
 
-**Owed on the restart**, and written to run then:
-`prove-user-connections.mjs` gains a fifth section (browse → the Brave
-fill → connected through the route with the `.env` key → on the shelf with
-source and date, on disk not only in the reply → removed; an empty search
-refused; `/api/connections/suggestions` gone) and
-`prove-user-connections-ui.mjs` drives the real form (no chips; the shelf
-row with *answered <date> · shape from …*; a real registry search listing
-transport and key names; a pick filling name, arguments and key and saving
-nothing; the browse's call answered 502 from the page and the form saying
-*could not be reached … not the same as no such server*). Until they run,
-the route and the form are typechecked and unit-tested, not proven.
+**Proven live on the restart, the same evening.**
+`prove-user-connections.mjs` **28/28** — the 17 of D-244 and a fifth
+section: the browse answered `brave` with 6 fills; Brave's official entry
+listed as a fill with its transport and the key's name; `alphavantage`
+searched and its SSE-only entry passed over with its reason; an empty
+search refused; **connected through the pick with the key `.env` already
+held, no value posted — 8 tools**; on the shelf as added, with the source
+and `verifiedAt: 2026-08-26T02:21:39.772Z`, the stamp on disk not only in
+the reply; removed again; every door on the shelf carrying its date and
+source (Alpha Vantage's backfill read back); `/api/connections/suggestions`
+answering 404. `prove-user-connections-ui.mjs` **16/16** in headless Edge
+— no chips; the shelf row *Alpha Vantage market data · answered 2026-08-26
+· shape from the Alpha Vantage chip (D-245, D-262)…*; a real registry
+search listing 6 servers with transport and key names; the Brave pick
+filling name, arguments and `BRAVE_API_KEY` and saving nothing; the
+browse's call answered 502 from the page and the form saying *could not be
+reached … not the same as no such server* with no hits shown; cancel and
+reopen leaving a clean form at the default transport; then D-244's by-hand
+add unchanged. The UI script still leaves its `ui-proof` row behind (the
+remove button is behind the row expander, its own standing note); it was
+removed through the API afterwards, and the connections file holds only
+`alphavantage`.
 
 **The review's catches, taken.** The shelf filtered on `added` alone —
 a hand-edited row with no stamp would have sat on it; it filters on

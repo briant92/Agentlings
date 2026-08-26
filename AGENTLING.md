@@ -373,9 +373,9 @@ the browse, a *verified here* shelf lists the doors this install has actually
 connected to, each with where its shape came from and when the server
 answered; it replaced the five D-245 suggestion chips (the fifth, Alpha
 Vantage's hosted market-data server, was the first real door taken through
-the form, and one HQ job read live quotes through it — D-262). Live in the
-code and unit-tested; the route and the form are owed their live proof on
-the next restart (`prove-user-connections.mjs`, `-ui.mjs`).
+the form, and one HQ job read live quotes through it — D-262). Live —
+proven on the running server (`prove-user-connections.mjs` 28/28,
+`-ui.mjs` 16/16, D-263).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.

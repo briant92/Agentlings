@@ -117,7 +117,7 @@ describe('refusalRows', () => {
         keys: ['money'],
         lead: 'this asks for a payment',
         why: why('money'),
-        does: 'It will draft the instruction for you to send.',
+        does: 'It will prepare the payment for you to make.',
       },
     ]);
   });
@@ -157,43 +157,92 @@ describe('refusalRows', () => {
     for (const c of CLAIMS) expect(withReading.has(c.key), c.key).toBe(true);
   });
 
-  it('names what the crew will do instead — the ticket’s second half, the desk’s own words', () => {
-    expect(refusalRows(PAY)[0]?.does).toBe('It will draft the instruction for you to send.');
-    expect(refusalRows(SIGN)[0]?.does).toBe('It will draft it for you to sign.');
-    for (const text of [PAY, SIGN, 'Deploy the fix to production', 'Supervise the team this week']) {
-      const does = refusalRows(text)[0]?.does ?? '';
-      expect(does, text).not.toBe('');
-      // The desk's alone: the board is written about a duty and names no other side.
-      expect(BOUNDARIES.map((b) => b.why).join(' '), text).not.toContain(does);
+  /**
+   * The offer is **one sentence per board row**, and every row is
+   * heterogeneous — `sign` reaches a lease and a prescription, `act` reaches a
+   * deploy and a tax return, `people` reaches a standup and a delegation. So
+   * an offer that fits the first sentence someone thinks of is false for the
+   * rest of the row, which is the bug this table exists to stop: two review
+   * rounds shipped a narrower wording each time, and each passed every test
+   * that only asked whether an offer was non-empty.
+   *
+   * Each row is pinned by value against the fixture sentences that rule out
+   * the narrower wording. Rewording one means coming here and reading what it
+   * has to survive.
+   */
+  const OFFERS: { row: string; does: string; mustFit: string[] }[] = [
+    {
+      row: 'money',
+      does: 'It will prepare the payment for you to make.',
+      // "draft the instruction for you to send" — the ticket's own phrase —
+      // is a transfer's shape and says nothing useful about a purchase.
+      mustFit: ['Wire $2,500 to the landlord before Friday', 'Buy the domain agentlings.cl', 'Run the payroll for August'],
+    },
+    {
+      row: 'sign',
+      does: 'It will draft it; putting a name to it stays with whoever is licensed to.',
+      // You cannot notarise your own PoA, and you cannot sign a prescription.
+      mustFit: ['Sign the lease renewal on my behalf', 'Notarise the power of attorney', 'Prescribe something for the cough'],
+    },
+    {
+      row: 'act',
+      does: 'It will produce the work and hand it over; carrying it out stays yours.',
+      // Nothing about a tax return "goes live".
+      mustFit: ['Deploy it to production once the tests pass', 'File my tax return for 2025', 'Publish the package to npm'],
+    },
+    {
+      row: 'people',
+      does: 'It will prepare the material and write up what you decide; dealing with people stays yours.',
+      // A delegation has no room to be in.
+      mustFit: ['Join the standup at 9 and take notes', 'Delegate the follow-ups to Ana', 'Supervise the contractors on Monday'],
+    },
+  ];
+
+  it('offers the same sentence to every ask on a row, and it is one the whole row can bear', () => {
+    for (const { row, does, mustFit } of OFFERS) {
+      for (const text of mustFit) {
+        const found = refusalRows(text).find((r) => r.row === row);
+        expect(found, `${row}: ${text}`).toBeDefined();
+        expect(found!.does, `${row}: ${text}`).toBe(does);
+      }
     }
   });
 
-  /**
-   * `act` said "it reaches the world when you approve it at review" until the
-   * spec axis caught it: Approve applies a patch or replays a send, and this
-   * row's own terms are deploy*, publish*, install*, issue permit*,
-   * file lawsuit* — none of which any verdict here performs. Pinned by value,
-   * because the reverted sentence passed every other assertion in this file.
-   */
-  it('never promises that a verdict here reaches the world', () => {
-    expect(refusalRows('Deploy the fix to production')[0]?.does).toBe(
-      'It will produce the change and hand it over; putting it live stays yours.',
-    );
-    const offers = [PAY, SIGN, 'Deploy the fix to production', 'Supervise the team this week']
-      .flatMap((t) => refusalRows(t).map((r) => r.does ?? ''))
-      .join(' ')
-      .toLowerCase();
-    for (const phrase of ['reaches the world', 'we deploy', 'we publish', 'we send it']) {
-      expect(offers, phrase).not.toContain(phrase);
+  it('every sentence the fixture puts on a row gets that row’s offer — no ask is left without one', () => {
+    const byRow = new Map(OFFERS.map((o) => [o.row, o.does]));
+    for (const s of FIXTURE) {
+      for (const r of refusalRows(s.text)) {
+        if (byRow.has(r.row)) expect(r.does, `${s.text} → ${r.row}`).toBe(byRow.get(r.row));
+        else expect(r.does, `${s.text} → ${r.row}`).toBeUndefined();
+      }
     }
+  });
+
+  it('the offer is the desk’s own — the board names no other side', () => {
+    const boardText = BOUNDARIES.map((b) => b.why).join(' ');
+    for (const { does } of OFFERS) expect(boardText).not.toContain(does);
   });
 
   /** The one-medium case: the list joiner's short branch, which no other test reaches. */
   it('names a single medium without a list', () => {
     expect(refusalRows(VIDEO)[0]?.lead).toBe('this asks for a video');
-    expect(refusalRows('Lay the poster out in Figma')[0]?.lead).toBe(
+    // The fixture's own design-tool sentence, not an invented one (D-259: the
+    // fixture is the bar). A design tool is not a medium, so it reads "work in".
+    expect(refusalRows('Design the landing page in Figma')[0]?.lead).toBe(
       'this asks for work in a design tool',
     );
+  });
+
+  /**
+   * A sentence can claim a board row *and* a never-channel at once — the
+   * fixture has one. The line and the ask card then both speak, which D-269's
+   * argument for leaving the channel to the card did not account for.
+   */
+  it('shows the board rows and leaves the channel to the card, even when one sentence claims both', () => {
+    const both = 'Pay the deposit, sign the contract and send the receipt on Signal';
+    expect(refusalKeys(both)).toContain('signal');
+    expect(refusalRows(both).map((r) => r.row)).toEqual(['money', 'sign']);
+    expect(refusalRows(both).every((r) => r.row !== 'signal')).toBe(true);
   });
 
   /**

@@ -2020,9 +2020,11 @@ refuses (WhatsApp, Signal, …) is deliberately *not* on this line — the ask c
 has stated that one since D-079, in the shelf's own words and with the channels
 that would carry it offered beside it. Nothing is counted from the desk's
 reading; the demand meter stays at Start, at a rule armed and at a reply sent
-(D-259), because the plan re-runs on every keystroke. **One live box is owed**,
-as #20's is: `scripts/prove-refusal-ui.mjs` has not run against a restarted
-server, so nothing has yet watched the route reach the screen.
+(D-259), because the plan re-runs on every keystroke. **Live** by this file's
+legend — built, running, and exercised by tests — and **one live box is owed**
+beside that, as #20's is: `scripts/prove-refusal-ui.mjs` has not run against a
+restarted server, so every part of this has been exercised except the last
+hop, and nothing has yet watched the route reach the screen.
 
 - **Not autonomous.** It takes one job, does it, and stops — it never
   grants itself future work. Two standing instructions exist, and a person

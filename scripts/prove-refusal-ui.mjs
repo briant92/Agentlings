@@ -16,8 +16,11 @@
 //                `BOUNDARIES.why` holds in server/src/coverage.ts, read off
 //                disk here rather than retyped, so a drift between the desk
 //                and the board fails this check
-//   does       — and the line says what the crew WILL do, which the board's
-//                sentence never names
+//   does       — the line goes on to say what the crew WILL do, after the
+//                board's reason and not before it. That the offer is the
+//                desk's own words and appears in no `BOUNDARIES.why` is a
+//                property of the tables, so `refusals.test.ts` owns it; what
+//                only a browser can show is the order on screen.
 //   two rows   — "pay … then deploy …" is two lines and still ONE tail
 //   Start      — enabled throughout, and the tail says so (D-259: the desk
 //                warns, it does not block)
@@ -180,7 +183,7 @@ check(
 // what was read, then why, then what you get — is what passes or fails.
 check(
   'and the line says what the crew WILL do, after the board’s reason',
-  d.lines[0]?.does === 'It will draft the instruction for you to send.' &&
+  d.lines[0]?.does === 'It will prepare the payment for you to make.' &&
     d.lines[0].text.indexOf(WHY_MONEY) > 0 &&
     d.lines[0].text.indexOf(d.lines[0].does) > d.lines[0].text.indexOf(WHY_MONEY),
   d.lines[0]?.text,
@@ -214,13 +217,19 @@ const routeRows = await page.evaluate(
   },
   { lid: probe.lid, text: 'pay the supplier, then deploy the fix to production' },
 );
+// Two separate questions, because one `&&` chain answered only the first: with
+// the screen already pinned to the two literals, a route/screen comparison
+// bolted onto the same condition can never be the thing that fails.
 check(
-  'two rows claimed, two lines, in the order the route sent them',
-  d.lines.length === 2 &&
-    d.lines[0].why === WHY_MONEY &&
-    d.lines[1].why === WHY_ACT &&
+  'two rows claimed, two lines, both the board’s own sentences',
+  d.lines.length === 2 && d.lines[0].why === WHY_MONEY && d.lines[1].why === WHY_ACT,
+  JSON.stringify(d.lines.map((l) => l.text.slice(0, 42))),
+);
+check(
+  'and the screen draws them in the order the route sent — the one thing no unit test can see',
+  routeRows.length === d.lines.length &&
     JSON.stringify(routeRows.map((r) => r.why)) === JSON.stringify(d.lines.map((l) => l.why)),
-  `route ${JSON.stringify(routeRows.map((r) => r.row))} vs screen ${JSON.stringify(d.lines.map((l) => l.text.slice(0, 24)))}`,
+  `route ${JSON.stringify(routeRows.map((r) => r.row))} vs screen ${JSON.stringify(d.lines.map((l) => l.why?.slice(0, 18)))}`,
 );
 check('and still exactly ONE tail', d.tails.length === 1, JSON.stringify(d.tails));
 check('Start still not disabled with two rows showing', d.startDisabled === false);

@@ -31,8 +31,13 @@ describe('the plan line says its fallbacks out loud', () => {
 
 /**
  * The refusal lines (#22): what the bar shows under the plan for a sentence
- * the crew will refuse. In the JSX this is a `.map` and a conditional, which
- * the web suite cannot reach — same extraction, same reason as `whoSuffix`.
+ * the crew will refuse.
+ *
+ * `refusalDesk` is only half of that — the rows to draw from and one tail
+ * string. The `.map` that draws them and the single `<p>` that draws the tail
+ * are still in `WorkBar.tsx` and unreachable from here (D-177, D-178), so
+ * "one tail, however many rows" is counted in the real DOM by
+ * `scripts/prove-refusal-ui.mjs` and not below.
  */
 describe('the desk says what it refuses', () => {
   /**

@@ -171,26 +171,32 @@ const READING: Record<string, { row: string; lead: string; does?: string }> = {
   money: {
     row: 'money',
     lead: 'this asks for a payment',
-    does: 'It will draft the instruction for you to send.',
+    does: 'It will prepare the payment for you to make.',
   },
   sign: {
     row: 'sign',
     lead: 'this asks the crew to sign or approve',
-    does: 'It will draft it for you to sign.',
+    // Not "for you to sign": this row also matches *Notarise the power of
+    // attorney* and *Prescribe something for the cough*, which you cannot
+    // sign either — the board's own reason on this line is that nothing here
+    // is a licensed professional, so the offer names the licence, not you.
+    does: 'It will draft it; putting a name to it stays with whoever is licensed to.',
   },
   act: {
     row: 'act',
     lead: 'this asks the crew to act on the world',
-    // Not "it reaches the world when you approve": Approve applies a patch or
-    // replays a send, and this row's own terms are deploy, publish, install,
-    // `issue permit*`, `file lawsuit*` — none of which any verdict here
-    // performs. Same shape as `money` above, which is the honest one.
-    does: 'It will produce the change and hand it over; putting it live stays yours.',
+    // Not "putting it live": *File my tax return for 2025* is on this row and
+    // nothing about it goes live. And not "it reaches the world when you
+    // approve", which was the first wording — Approve applies a patch or
+    // replays a send, and deploys, publishes and files nothing.
+    does: 'It will produce the work and hand it over; carrying it out stays yours.',
   },
   people: {
     row: 'people',
     lead: 'this asks the crew to meet or manage people',
-    does: 'It will prepare the material and write up what you bring back; the room is yours.',
+    // Not "the room is yours": *Delegate the follow-ups to Ana* and
+    // *Supervise the contractors on Monday* have no room in them.
+    does: 'It will prepare the material and write up what you decide; dealing with people stays yours.',
   },
   video: { row: 'not-built', lead: 'a video' },
   audio: { row: 'not-built', lead: 'audio' },

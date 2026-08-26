@@ -21876,9 +21876,10 @@ domain word for nothing — it passes the rows through untouched now.
 ### A second review round, and what it says about the first
 
 The change was reviewed again after it was committed, so the *fixes* above
-were themselves under review. Five of the eight first-round fixes were clean;
-three were not, and the pattern in all three is the same — **a correction
-applied where it was found and not where else it lived**:
+were themselves under review. Four of the eight first-round fixes were clean;
+four were not (the fourth is `act`'s offer, found a round later and counted
+in the section below), and the pattern in three of them is the same — **a
+correction applied where it was found and not where else it lived**:
 
 - The phrase *"in the board's order"* was removed from `refusals.ts` and left
   standing in `scripts/prove-refusal-ui.mjs`, on the money/act pair the unit
@@ -21927,12 +21928,60 @@ it does not — `T` infers as `RefusalReading` and `tsc` rejects an unknown
 field on `line`. It is typed concretely anyway, because the generic bought
 nothing the concrete type does not.
 
+### A third round, and the thing two rounds of rewording had missed
+
+**The offer's defect was structural, and rewording it twice was the wrong
+fix both times.** There is one `does` per board row, and every row is
+heterogeneous: `sign` reaches *Sign the lease renewal* **and** *Notarise the
+power of attorney* **and** *Prescribe something for the cough*; `act` reaches
+*Deploy it to production* **and** *File my tax return for 2025*; `people`
+reaches *Join the standup* **and** *Delegate the follow-ups to Ana*. An offer
+written for the first sentence anyone thinks of is false for the rest of the
+row — so *"It will draft it for you to sign"* was false for a prescription,
+*"putting it live stays yours"* was false for a tax return, and *"the room is
+yours"* was false for a delegation. Round two fixed `act` by narrowing it and
+never looked at the other two.
+
+All four now say something the whole row can bear, each carrying the fixture
+sentence that rules out the narrower wording; and `money`'s changed too, since
+the ticket's own *"draft the instruction for you to send"* is a transfer's
+shape and says nothing useful about *Buy the domain agentlings.cl*. The guard
+is a table in the test naming, per row, the sentences the offer has to
+survive — so rewording one means reading what it must still fit, which is the
+step both earlier rounds skipped. A second test walks the whole fixture and
+requires every ask on a row to carry that row's offer, and every not-built ask
+to carry none.
+
+**This entry over-counted the second round** and is corrected: it said *"five
+of the eight first-round fixes were clean; three were not"*, but the `does`
+field was itself first-round fix number two and was not clean — the entry
+documents that two paragraphs further down without counting it. **Four of
+eight**, and the fourth is the one this round had to reopen.
+
+Three more comments claimed more than the code, the same shape a third time —
+a correction made where it was found and not where else the words lived. The
+*"extracted from the JSX … a `.map` and a conditional"* claim was deleted from
+`planLine.ts` and left standing in `planLine.test.ts`; the proof script's
+header still advertised a `does`-versus-board check whose only conjunct that
+round had deleted; and the new route-order check was bolted onto the same
+`&&` chain that already pinned the screen to two literals, so it could never
+be the thing that failed. It is two checks now, and the header says what is
+actually asked.
+
+One argument in this entry was incomplete. The never-channel is left to the
+ask card partly because a tail would contradict the card's own *"Start queues
+this as a draft job that sends nothing"* — but that collision still happens
+whenever one sentence claims a board row **and** a never-channel, and the
+fixture has exactly such a sentence (*Pay the deposit, sign the contract and
+send the receipt on Signal*). Nothing exercised the two together; a test does
+now, and the collision is named here rather than argued away.
+
 ### Mutation, and the one guard that had passed by never executing
 
-20 mutations across `refusals.ts` and `planLine.ts` — the lead-ins, the
+22 mutations across `refusals.ts` and `planLine.ts` — the lead-ins, the
 offers, a row pointed at the wrong board row, the not-built collapse and both
 branches of its list joiner, the never-channel skip, the board lookup, and the
-tail rule in both directions. **19 caught.** The twentieth is an equivalent
+tail rule in both directions. **21 caught.** The twenty-second is an equivalent
 mutant (`boundary?.why ?? ''` sitting after the `throw`, where `boundary` is
 already non-null).
 
@@ -21952,4 +22001,4 @@ executing. So the resolution is `boardWhy(row)`, exported for the single
 reason that the refusal can then be *reached*, and a test calls it with a row
 that is not the board's. The mutation is caught now.
 
-Suites: server 2,625 passed (2,625), web 363 passed (363), typecheck clean.
+Suites: server 2,627 passed (2,627), web 363 passed (363), typecheck clean.

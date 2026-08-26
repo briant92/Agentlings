@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NEVER_CHANNELS } from './channel';
 import { BOUNDARIES } from './coverage';
-import { CLAIMS, NOT_BUILT, readRefusals, recordRefusals, refusalKeys, refusalRows, refusalsFile } from './refusals';
+import { boardWhy, CLAIMS, NOT_BUILT, readRefusals, recordRefusals, refusalKeys, refusalRows, refusalsFile } from './refusals';
 
 /**
  * The bar (D-259): asks with the rows they claim, and the bookkeeping,
@@ -166,6 +166,23 @@ describe('refusalRows', () => {
       expect(does, text).not.toBe('');
       // The desk's alone: the board is written about a duty and names no other side.
       expect(BOUNDARIES.map((b) => b.why).join(' '), text).not.toContain(does);
+    }
+  });
+
+  /**
+   * With the real tables this refusal is dead code, which is how a guard ends
+   * up passing by never executing (D-246). Reached here on purpose: the
+   * mutation that deletes the throw survived the whole suite until this ran.
+   */
+  it('refuses a reading that points off the board, rather than painting a blank reason', () => {
+    expect(boardWhy('money')).toBe(why('money'));
+    expect(() => boardWhy('physical')).not.toThrow(); // a board row, just not one the desk reads
+    expect(() => boardWhy('not-a-board-row')).toThrow(/not a job board row/);
+  });
+
+  it('resolves every row a reading names, so the load-time map cannot miss', () => {
+    for (const r of refusalRows('Pay it, sign it, deploy it, supervise them, make a video')) {
+      expect(r.why, r.row).toBe(boardWhy(r.row));
     }
   });
 

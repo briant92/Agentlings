@@ -195,22 +195,31 @@ const READING: Record<string, { row: string; lead: string; does?: string }> = {
 };
 
 /**
- * Every row a reading names, with the board's sentence for it — resolved once,
- * at load, and **throwing** if a row is not on the board.
+ * The board's sentence for a row, **throwing** if the row is not on the board.
  *
  * The alternative was a lookup that fell back to an empty string, which would
  * have painted a lead-in with nothing after it: exactly the desk-and-board
- * drift the design above claims is impossible, arriving silently at the one
+ * drift `refusalRows` below claims is impossible, arriving silently at the one
  * moment it matters. Refusing to start names the problem; a blank line hides
- * it. Because this map is built from `READING`'s own rows, the lookup below
- * cannot miss.
+ * it.
+ *
+ * Exported so that refusal can be *reached*: with the real tables the throw is
+ * dead code, and this repo has been bitten by guards that passed by never
+ * executing (D-246). A test calls it with a row that is not the board's.
+ */
+export function boardWhy(row: string): string {
+  const boundary = BOUNDARIES.find((b) => b.id === row);
+  if (!boundary) throw new Error(`refusalRows: '${row}' is not a job board row`);
+  return boundary.why;
+}
+
+/**
+ * Every row a reading names, with its sentence — resolved once, at load, so a
+ * reading pointing off the board stops the server rather than reaching a
+ * person. Built from `READING`'s own rows, so the lookup below cannot miss.
  */
 const ROW_WHY = new Map(
-  [...new Set(Object.values(READING).map((r) => r.row))].map((row) => {
-    const boundary = BOUNDARIES.find((b) => b.id === row);
-    if (!boundary) throw new Error(`refusalRows: '${row}' is not a job board row`);
-    return [row, boundary.why] as const;
-  }),
+  [...new Set(Object.values(READING).map((r) => r.row))].map((row) => [row, boardWhy(row)] as const),
 );
 
 const listWords = (words: string[]): string =>

@@ -21872,4 +21872,20 @@ instead of composing with it, as the tail beside it already did; and
 `refusalDesk` was renaming `row` to `key` on the way through, losing the
 domain word for nothing — it passes the rows through untouched now.
 
-Suites: server 2,621 passed (2,621), web 363 passed (363), typecheck clean.
+### Mutation, and the one guard that had passed by never executing
+
+18 mutations across `refusals.ts` and `planLine.ts` — the lead-ins, the offer,
+a row pointed at the wrong board row, the not-built collapse and its list
+joiner, the never-channel skip, the board lookup, and the tail rule in both
+directions. **17 caught.** The eighteenth is an equivalent mutant
+(`boundary?.why ?? ''` sitting after the `throw`, where `boundary` is already
+non-null).
+
+An earlier round of 16 had a real survivor: deleting `if (!boundary) throw`
+changed nothing, because with the real tables that branch is unreachable and
+no test could call it — D-246's shape exactly, a guard that passes by never
+executing. So the resolution is `boardWhy(row)`, exported for the single
+reason that the refusal can then be *reached*, and a test calls it with a row
+that is not the board's. The mutation is caught now.
+
+Suites: server 2,623 passed (2,623), web 363 passed (363), typecheck clean.

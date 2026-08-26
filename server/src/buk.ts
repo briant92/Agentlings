@@ -33,6 +33,8 @@
  * never in case.
  */
 
+import { clip, trimToCeiling } from './doorreply';
+
 /** Buk is per country in its own path; this adapter is the Chilean one. */
 export const BUK_COUNTRY = 'chile';
 
@@ -360,10 +362,6 @@ function valueFor(
 }
 
 /** As much of Buk's own words as a person would read, and no more. */
-function clip(body: string): string {
-  const trimmed = body.trim();
-  return trimmed.length > 300 ? `${trimmed.slice(0, 300)}…` : trimmed;
-}
 
 /**
  * A Buk refusal as a sentence.
@@ -399,38 +397,22 @@ export function refusalMessage(status: number, body: string): string {
  * Records are dropped whole and the loss is *stated*: a reply cut mid-record
  * is invalid JSON, and a reply quietly shortened is the worst of both — the
  * reader believes it has the set. `data` is Buk's own envelope key, beside
- * `pagination`; a reply without one is passed through whatever its length,
- * because there is nothing to drop that would not be a lie.
+ * `pagination`.
+ *
+ * The mechanism moved to `doorreply.ts` when the SII door (D-267) needed the
+ * same one — D-030's rule, taken at the second copy rather than the third.
+ * What stays here is what is Buk's: its key, its ceiling and its words.
  */
 export function trimReply(body: unknown): string {
-  const whole = JSON.stringify(body, null, 2);
-  if (whole.length <= BUK_REPLY_CEILING) return whole;
-
-  const envelope = body as { data?: unknown[] };
-  if (!Array.isArray(envelope.data)) return whole;
-
-  const total = envelope.data.length;
-  const build = (keep: number) =>
-    JSON.stringify(
-      {
-        ...envelope,
-        data: envelope.data!.slice(0, keep),
-        trimmed: `kept ${keep} of ${total} records — the reply passed this connection's ${BUK_REPLY_CEILING}-character ceiling; ask again with a smaller page_size or a filter`,
-      },
-      null,
-      2,
-    );
-
-  // The largest prefix that fits. Binary search rather than a loop because
-  // `data` may hold hundreds of records and each candidate is a stringify.
-  let low = 0;
-  let high = total;
-  while (low < high) {
-    const mid = Math.ceil((low + high) / 2);
-    if (build(mid).length <= BUK_REPLY_CEILING) low = mid;
-    else high = mid - 1;
-  }
-  return build(low);
+  return trimToCeiling(body, {
+    ceiling: BUK_REPLY_CEILING,
+    path: ['data'],
+    note: (kept, total) =>
+      `kept ${kept} of ${total} records — the reply passed this connection's ${BUK_REPLY_CEILING}-character ceiling; ask again with a smaller page_size or a filter`,
+    // No `untrimmable`: a reply with no `data` list goes back exactly as it
+    // came, which is what this door has always done (#18) and what its test
+    // asserts by value. The extraction changes no behaviour here.
+  });
 }
 
 export interface BukConfig {

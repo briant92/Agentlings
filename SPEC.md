@@ -430,7 +430,7 @@ The summaries below are the shape of each milestone; the account of what was
 tried, measured and rejected is in `DECISIONS.md`:
 
 - M1 executor → D-007 · M3 non-expert setup → D-011 · levels → D-013
-- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005, D-244–D-245, D-255–D-256, D-266 · M5.3 router → D-015
+- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005, D-244–D-245, D-255–D-256, D-266–D-267 · M5.3 router → D-015
 - M5.4 recipes → D-019, D-020, D-023, D-064
 - M5.5 billing → D-012, D-016–D-018, D-026–D-027, D-029
 - M5.6 compiled tools → D-021, D-024, D-025
@@ -781,6 +781,24 @@ tried, measured and rejected is in `DECISIONS.md`:
     can never be switched on — and a stdio server that refuses to start now
     says **why** in the form, because the probe reads back the stderr it had
     piped since D-244 and listened to from nobody (D-266).
+    A system that publishes **no API at all** gets one too (D-267, built for
+    #19): the SII purchases and sales register, whose only way in is the tax
+    portal's own single-page app, as three reads — a month's totals by
+    document type, the documents received, the documents issued — each asked
+    of one of the register's four sections, which is what their *state* is.
+    Its credential is a **certificate file**, D-252's third kind and the first
+    one built: the login is mutual TLS with the `.p12` against SII's own
+    certificate gateway, one request, after which cookies carry every read;
+    the RUT is an argument on the row, `SII_CERT_PATH` and
+    `SII_CERT_PASSWORD` are the secrets, and no portal password exists
+    anywhere in it. Accept and claim of a received DTE are excluded by name —
+    that is the first act beyond the send, and D-250 keeps it for the acts
+    ledger. Read-only cannot be argued from the method here, since SII's
+    facade answers reads over `POST`, so it is held by the table and measured
+    on the wire instead. These addresses came out of the SPA's own JavaScript
+    and are versioned by nobody, so a reply that is not the register's JSON is
+    reported as *the address may have moved* rather than read as an empty
+    month.
 
     **A connection declares its own default** with `defaultOn`, and the user's
     departures live in `.agentlings/settings.json` — never in the catalog, so a

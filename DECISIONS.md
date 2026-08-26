@@ -276,6 +276,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-264 — 2026-08-25 — Supervised live acting, built: `browser-act` carries the twelve as a supervised second connection — hand-queued only, on a Settings allowlist, in a headed window the run itself owns and the person can close — proven live 19/19 through the real runner, the routes owed on the restart](#d-264--2026-08-25--supervised-live-acting-built-browser-act-carries-the-twelve-as-a-supervised-second-connection--hand-queued-only-on-a-settings-allowlist-in-a-headed-window-the-run-itself-owns-and-the-person-can-close--proven-live-1919-through-the-real-runner-the-routes-owed-on-the-restart)
 - [D-265 — 2026-08-25 — A voice note is a sentence, built: Telegram audio polled off the bot and read on this machine by whisper-small through transformers.js, the language asked of the model first and silence gated by energy, quoted back above the work bar and confirmed by the ordinary Start with the audio riding the job — the install one step proven 4/4, the routes and a real note owed on the restart](#d-265--2026-08-25--a-voice-note-is-a-sentence-built-telegram-audio-polled-off-the-bot-and-read-on-this-machine-by-whisper-small-through-transformersjs-the-language-asked-of-the-model-first-and-silence-gated-by-energy-quoted-back-above-the-work-bar-and-confirmed-by-the-ordinary-start-with-the-audio-riding-the-job--the-install-one-step-proven-44-the-routes-and-a-real-note-owed-on-the-restart)
 - [D-266 — 2026-08-26 — Buk, read-only, built: five reads taken off Buk's own published contract behind a stdio adapter that can issue nothing but `GET`, the tenant configuration and the key a secret — proven 30/30 against the real adapter, the real contract and the real Buk with no key; the door not installed here and one real payroll owed](#d-266--2026-08-26--buk-read-only-built-five-reads-taken-off-buks-own-published-contract-behind-a-stdio-adapter-that-can-issue-nothing-but-get-the-tenant-configuration-and-the-key-a-secret--proven-3030-against-the-real-adapter-the-real-contract-and-the-real-buk-with-no-key-the-door-not-installed-here-and-one-real-payroll-owed)
+- [D-267 — 2026-08-26 — The SII register, read-only, built: the ticket's own premise was false, so the certificate login is ours — three reads behind a stdio adapter whose credential is a `.p12` and which holds no portal password, proven 33/33 against the real adapter and the real SII with no certificate; the door not installed here and one real month owed](#d-267--2026-08-26--the-sii-register-read-only-built-the-tickets-own-premise-was-false-so-the-certificate-login-is-ours--three-reads-behind-a-stdio-adapter-whose-credential-is-a-p12-and-which-holds-no-portal-password-proven-3333-against-the-real-adapter-and-the-real-sii-with-no-certificate-the-door-not-installed-here-and-one-real-month-owed)
 
 ## By theme
 
@@ -1095,7 +1096,20 @@ entry updates one file rather than two.
   built URL rather than trusting the string; proven 30/30 against the real
   adapter, the real contract and the real Buk with no key, the door not
   installed on this machine and both live boxes owed on a tenant and a
-  key; and D-257, Brian as the manager, D-197 standing, a planner-only
+  key; D-267, the SII register read-only built (#19) — the ticket's own
+  premise falsified before a line was written, since the client D-252
+  named logs into the portal with the *clave tributaria* D-252 forbids and
+  its certificate half is all `Not implemented` stubs, so the certificate
+  login is this repo's own: mutual TLS with the `.p12` against SII's own
+  gateway, one request, cookies after; three reads over the register's
+  four sections, the RUT an argument on the row and the certificate's path
+  and password the two secrets; read-only held by the table and measured
+  on the wire rather than argued from the method, because SII answers its
+  reads over `POST`; accept and claim excluded by name for D-250's acts
+  ledger; the two SII refusals — no certificate at all, and one it does
+  not accredit — measured live and each said as itself; proven 32/32 with
+  no certificate, the door not installed and both live boxes owed on a
+  `.p12`; and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -21181,3 +21195,259 @@ Both wait on the same thing: a tenant and a read-only key in `.env`, which this
 machine does not have. So the adapter, its tool list, the shelf's stamps and
 the read-only guarantee are proven; the door is **not installed**. Nothing is
 armed, nothing is stored, `.env` is untouched.
+
+## D-267 — 2026-08-26 — The SII register, read-only, built: the ticket's own premise was false, so the certificate login is ours — three reads behind a stdio adapter whose credential is a `.p12` and which holds no portal password, proven 33/33 against the real adapter and the real SII with no certificate; the door not installed here and one real month owed
+
+**Decision.** The SII's *Registro de Compras y Ventas* is reached through a
+**stdio adapter this repo owns** — `scripts/sii-mcp.mts`, its whole mind in
+`server/src/sii.ts` — added through the D-244 form like any other stdio
+server: `npx tsx <adapter> --rut <the company's RUT>`, with two secrets,
+`SII_CERT_PATH` and `SII_CERT_PASSWORD`. It offers **three reads and no
+fourth**: a month's totals by document type, the documents *received*
+(compras), and the documents *issued* (ventas), each asked of one of the
+register's four sections. **The credential is the certificate file** — D-252's
+third kind, and the first one actually built — and the login is **this repo's
+own**, mutual TLS with the `.p12`, because the client D-252 named logs in with
+a portal password D-252 forbids. **Accept and claim of a received DTE are
+excluded by name**, as D-250 requires: that is the first act beyond the send,
+and the acts ledger is built for it rather than ahead of it.
+
+### The ticket's premise was false, and finding that out was most of the work
+
+D-252 recorded, from research of 2026-08-25, that *an open-source client for
+the certificate path exists (`emisso-sii`, TS, `.p12`)*, and #19 was written on
+it. Read against the code on 2026-08-26, three of those words were wrong:
+
+- The package is `@emisso/sii` (`0.1.1`, MIT). `emisso-sii` is not on npm at
+  all — the first thing checked, and a 404.
+- Its RCV reads need a `PortalSession`, and its **only** login is
+  `portalLogin({ rut, claveTributaria })`, which fills `#rutcntr` and `#clave`
+  in a headless Playwright browser. That is a **portal username and password**,
+  the one credential D-252 says is *never* one.
+- Its certificate function, `authenticate`, reaches the SOAP token services and
+  never the register — and every one of those services (`queryDteStatus`,
+  `queryEnvioStatus`, `queryUploadStatus`, `checkFolioAvailability`) is a
+  `throw new Error("Not implemented")` stub, so the "expose only what the
+  certificate reaches" fallback would have shipped nothing at all.
+
+So the choice went to Brian as an architectural one (PROJECT.md), the
+alternative being to overrule D-252 and hold a clave. He chose the certificate.
+
+**What made that possible is a measurement, not an argument.** SII's own login
+page offers *Ingresar con Certificado Digital*, whose form posts to
+`https://herculesr.sii.cl/cgi_AUT2000/CAutInicio.cgi`, and that host **asks for
+a TLS client certificate in the handshake** — `openssl s_client` prints
+*Acceptable client certificate CA names*. Node can answer that with
+`https.Agent({ pfx, passphrase })`. So the login is one request carrying the
+`.p12`, and everything after it is an ordinary HTTPS request carrying the
+cookies it returned. The private key is used **once per session and never
+again**, and nothing else about the login is held: no clave, no browser, no
+profile, no storage-state file.
+
+### Read-only is held by the table here, not by the method
+
+D-266 could say *one request function, `GET` hard-coded, no body to give*.
+That argument is unavailable here: **SII's facade answers its reads over
+`POST`**, so the method proves nothing. The guarantee is instead that the
+module names **three addresses** and imports no write, and `sii.test.ts` holds
+it the only way a table can be held — by driving every tool through the real
+request path at a client that **writes down every address it was asked for**,
+then asserting the whole set rather than only the intended one. Two of the
+three tools once passed that check while never reaching the wire at all,
+because the test handed them an argument they refuse; mutation testing found it
+(12 mutations, 2 survived, both from that one bug), and the check now asserts
+each read succeeded before it reads the addresses.
+
+Measured about the dependency, and now asserted by a test: **every write
+`@emisso/sii@0.1.1` exports is a `throw new Error("Not implemented")` stub** —
+`uploadDte`, `requestFolios`, `sendAcuseRecibo`, `sendReciboMercaderias`,
+`sendResultadoDte`, `signDte`, `buildDteXml`, `applyTimbre`. So the package
+cannot write to the SII today whatever anyone imports, which makes the
+exclusion cheap rather than load-bearing — and is exactly why it is not the
+guarantee. The test asserts those names still throw, so the version that
+implements one arrives as a failing test and somebody re-reads this door
+instead of finding out afterwards.
+
+### Two refusals at the real SII, and they are not the same refusal
+
+Both measured on 2026-08-26, and each is now said as itself:
+
+- **No certificate at all** reaches HTTP and answers `302 →
+  homer.sii.cl/errorp.html`. Read by `loginOutcome`, a pure function of the
+  status and the `location` precisely so every case can be held without a
+  certificate.
+- **A certificate SII does not accredit** never reaches HTTP: the handshake
+  ends in `tlsv1 alert unknown ca`. Before that was measured the reader would
+  have got an OpenSSL string where the one actionable sentence belongs, so
+  `reachProblem` now says *SII will not accept the authority that issued this
+  certificate* and keeps OpenSSL's words beside it.
+
+The refusal table for the **register's own** statuses (401/403/404/429/5xx) is
+**not** measured, and this entry says so rather than implying D-266's standard:
+SII's facade only answers a session a certificate opened, and this machine has
+no certificate. It is a claim to check on the first real run.
+
+### The portal-endpoint fragility, which cannot be checked against anything
+
+D-266's Buk paths came off a published Swagger contract its proof re-reads live
+on every run. **There is no contract here.** These addresses were read out of
+the SII SPA's own JavaScript bundle, they are versioned by nobody, documented
+by nobody, and the SII may change them in any release. Nothing can make that
+safe, so the one thing available is done: a reply that is **not** the
+register's JSON — a login page where rows should be — is reported as *the
+address may have moved*, by name, rather than parsed into a confident empty
+month. A 404 says the same thing in its own sentence.
+
+### Other things measured while building, each of which changed the code
+
+- **`validateRut` answers `true` for `761234560`**, and the package's own
+  `splitRut` then throws on that same string. `rutProblem` requires the dash.
+- **`loadCertFromFile` is broken in the package's ESM build** —
+  `import * as forge from "node-forge"` against a CJS module leaves
+  `forge.util` undefined, so anything certificate-shaped in it throws *Cannot
+  read properties of undefined*. Not used: Node's own `createSecureContext`
+  opens the `.p12`, and OpenSSL's messages are measured — a wrong password is
+  `mac verify failure`, a file that is not a PKCS#12 is `not enough data`.
+- **`listInvoices` stamps every row `confirmationStatus: "REGISTRO"`**
+  regardless of the section asked for. Asking for PENDIENTE and being told
+  everything is in the register is a silent wrong answer, so this door returns
+  SII's own rows and states the section it asked for, rather than the package's
+  mapped objects.
+- **A month that has not happened** answers an empty register, which a model
+  reports as *no documents*. Refused before the wire — the same
+  guess-returns-a-wrong-answer shape as D-266's two date formats.
+- The one new advisory the dependency brings is `fast-xml-parser`'s XMLBuilder
+  comment/CDATA injection. XMLBuilder builds DTE XML, which this door never
+  does.
+
+### Left out by name
+
+- **Accept, claim and reject** (`sendResultadoDte`, `sendAcuseRecibo`,
+  `sendReciboMercaderias`) — D-250's first act beyond send, waiting on the acts
+  ledger. This is the entry that pins that ticket to a real system.
+- **The CSV exports** (`getResumenExport`, `getDetalleCompraExport`,
+  `getDetalleVentaExport`). The JSON rows carry the same fields and need no
+  parser; a fourth and fifth address is added when something needs one.
+- **`getDatosInicio` as a tool.** The session setup calls it already; exposing
+  it would be a fourth read for a question the summary answers.
+- **The certification environment.** One address family, like D-266's one base
+  — a flag with one caller is a branch nobody has run, and D-266's own
+  `BUK_COUNTRY` (exported, imported by nobody) is the example.
+
+### Owed
+
+The ticket's live half — **two boxes, as in D-266**, and `prove-sii-door.mts`
+says so in its own last line: *not proven end to end until one real HQ job
+lists a period's received DTEs through this connection and is promoted.*
+
+- **"One real HQ job lists a period's received DTEs and is promoted"** —
+  nothing has run.
+- **"The connection is added through the form"** — the tool list *is* read off
+  the adapter by the same `probeConnection` the route calls, but the route and
+  the form themselves were never walked: `.agentlings/connections.json` is
+  empty and no `sii` row exists. It could not be otherwise here, because the
+  add flow probes before it writes (D-244) and the adapter refuses to start
+  without a certificate that opens — deliberately.
+
+Both wait on the same thing: Brian's own SII `.p12` and its password in
+`.env`, which this machine does not have. So the adapter, its tool list, its
+startup refusals, the shelf's stamps, the two SII refusals and the read-only
+guarantee are proven; the door is **not installed**. Nothing is armed, nothing
+is stored, `.env` is untouched.
+
+### What review caught, and what it changed
+
+Both axes ran against the finished work, and both independently found the same
+hole, which is the one worth recording first.
+
+- **The redirect was refused on the login and then followed on the next
+  request.** `maxRedirects: 0` kept the connection holding the private key from
+  being sent anywhere, and the doc comment said so — but the very next line
+  fetched whatever `Location` had named. The cookie jar scopes the session to
+  `sii.cl`, so no credential could have left; what remained was this process
+  fetching an address a redirect chose, which is D-266's `redirect: 'error'`
+  discipline one step later. `loginOutcome` now refuses a hop that is not an
+  SII host, and the check is a suffix match rather than a substring one —
+  `sii.cl.evil.example.com` is in the test for that reason.
+- **The shelf entry did not name the fragility.** The ticket asks for it *in
+  the entry*, and it was in this entry, in `AGENTLING.md` and in the adapter's
+  MCP instructions — but not on the connection row a person actually reads
+  before trusting the door. It is in the row's own description now, and §5
+  asserts it.
+- **The ceiling could go silently inert.** `sii.data` is where the client's own
+  code reads the rows, but no live reply has ever been seen here, so the case
+  where that key is wrong is the case that happens. It now hands the reply back
+  whole *and says why it could not trim*, rather than passing quietly over the
+  ceiling. Buk keeps the opposite default deliberately — byte-for-byte what it
+  always returned, which its own test asserts by value.
+- **The retry went round its own seam.** The door re-logged in through
+  `session.refresh()`, which on a real session calls `certificateLogin`
+  directly — so the retry was the one path no test could reach, and the test
+  that looked like it covered it was asserting a double it had wired itself.
+  The retry goes through `login` now, and the test counts logins through the
+  seam and makes `refresh` throw.
+- **`clip` and `trimReply` had been written twice**, down to the same binary
+  search and the same comment above it. D-030 is exactly this rule, so the
+  mechanism moved to `doorreply.ts` and both doors call it. Buk's behaviour is
+  unchanged — asserted by its own suite, which caught the one place the
+  extraction had altered it.
+- The throwaway `.p12` was also written twice, in the test and in the proof;
+  it is `siicert.fixture.ts` now. A dead helper in the test file and a
+  `name === 'register_summary'` literal in the dispatch went at the same time —
+  the row carries its own fetcher, so the address it names and the function it
+  calls cannot drift.
+- Two comments claimed more than the code did: *the only place the private key
+  is ever used* (`certProblem` opens it too, locally) and *nothing at the far
+  end decides where the connection goes next* (true of the key, not of the
+  session). Both corrected.
+
+### Limits this door has, recorded rather than discovered later
+
+- **The "state" is a section, not a field on a row.** One read answers one of
+  the four sections, so *the month's received DTEs* in full is four calls. The
+  envelope states which section was asked for, since the facade echoes nothing.
+  Whether SII's rows also carry their own state is **unmeasured** — no
+  certificate here.
+- **A large month can put one document out of reach.** The only narrowing is
+  `document_type` and `state`, the facade has no per-document address, and past
+  the ceiling whole rows are dropped. *A document's detail* is a row of the
+  detail read, which is where the register keeps it; there is no fourth tool
+  that would fetch one document by folio, because there is no address for one.
+- The refusal table for the register's own statuses is a claim, not a
+  measurement (above), and so is the `sii.data` row key.
+
+### What proved it
+
+`npx tsx scripts/prove-sii-door.mts` — **33/33**, no server, no SII account and
+no certificate, nothing written anywhere. A throwaway `.p12` is generated in
+the system temp folder so the adapter has something to start with; SII has
+never seen it, which is what §3 measures.
+
+- §1 the real probe spawns the real adapter and reads its three tools off it;
+  not one is named for an act.
+- §2 five startup refusals by name — no RUT, a RUT whose check digit is wrong,
+  no `SII_CERT_PATH`, no `SII_CERT_PASSWORD`, and a password that does not open
+  the file — each arriving in the form through the stderr D-266 taught the
+  probe to read.
+- §3 against the **real SII**: the certificate login still answers at
+  `herculesr.sii.cl`, no certificate is sent to `errorp.html`, and a
+  certificate SII does not accredit is refused at the handshake and said as the
+  certificate authority rather than as OpenSSL.
+- §4 through the real adapter over MCP: all three reads reach the real SII's
+  certificate login and are refused there, an invented `sendResultadoDte` and a
+  `claim_document` are each refused as *it reads only*, and a future month, a
+  period in prose, a document type by name and a side in Spanish are each
+  refused before anything leaves.
+- §5 the shelf's two stamps by value, the two secrets, the RUT on the row in
+  plain sight, nothing about a portal login anywhere on it, and the
+  portal-endpoint fragility named in the row's own description.
+
+`server/src/sii.test.ts` — 65 tests, in the ordinary suite, including the wire
+measurement above; `doorreply.test.ts` — 10 more for the shared mechanism.
+**18 mutations, 18 caught**, across `sii.ts` and `doorreply.ts` and including
+every guard review added — the redirect host check twice over, once removed and
+once weakened to a substring match. An earlier round of 12 had two survivors,
+and both turned out to be a bug in the tests rather than a gap in them: two of
+the three tools were handed an argument they refuse, so they passed the wire
+check without ever reaching the wire. Whole suite **2548 server, 353 web**;
+typecheck clean.

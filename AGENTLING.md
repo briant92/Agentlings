@@ -35,7 +35,9 @@ built; §§4, 5, 11 re-read 2026-08-25 where the supervised browser landed
 (D-264, #16); §5 re-read 2026-08-26 where Buk landed (D-266, #18) — the
 written-here adapter added, and two sentences the code had already falsified
 corrected: the external socket is no longer "nothing but the browser", and
-`transport` has carried `http` since D-243. Since 2026-08-23 (D-228) the app shows this file's
+`transport` has carried `http` since D-243; §5 re-read 2026-08-26 again where
+the SII register landed (D-267, #19) — a second written-here adapter, and the
+first door whose credential is a certificate rather than a key. Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
@@ -479,6 +481,54 @@ person's. **Built and proven, and not installed here** — `prove-buk-door.mts`
 key, but this machine has no Buk tenant, so no `buk` connection exists and no
 job has used one. Both remaining halves — adding it through the form, and one
 real job promoted — wait on a tenant and a read key in `.env`.
+
+**The SII register, read-only (D-267, built for #19).** The *Registro de
+Compras y Ventas* is where every electronic tax document a Chilean company
+issued or received lands, and the SII publishes **no API** for it: the register
+is a single-page app talking to its own JSON facade behind a portal login. So
+this is a second adapter this repo owns, `scripts/sii-mcp.mts`, added through
+the same form: command `npx`, arguments `tsx <that file> --rut <the company's
+RUT>`, two secrets `SII_CERT_PATH` and `SII_CERT_PASSWORD`. It offers **three
+reads and no fourth** — a month's totals by document type, the documents
+received (*compras*), and the documents issued (*ventas*) — each asked of one
+of the register's four sections (REGISTRO, PENDIENTE, NO_INCLUIR, RECLAMADO),
+which is what "with their state" means here. **The state is the section, not a
+field on a row**, so the whole of a month's received documents is four calls;
+the reply says which section it answered, because the facade echoes nothing.
+A document's detail is a *row* of the detail read — the register keeps it
+nowhere else, and the facade has no address that fetches one document by
+folio, so a large month trimmed at the ceiling can put a particular document
+out of reach.
+
+**The credential is the certificate, and nothing else about the login is
+held.** D-252 forbids a portal password, and the open-source client it named
+turned out to log in with exactly one (a *clave tributaria* typed into a
+headless browser), so the login here is this repo's: **mutual TLS with the
+`.p12`** against SII's own certificate gateway, in a single request, after
+which session cookies carry every read and the private key is never used
+again. No clave, no browser, no profile.
+
+**Accept and claim are excluded by name.** Accepting or claiming a received
+DTE is the first act beyond the send, and D-250 keeps it for the acts ledger,
+which is built for that act rather than ahead of it. Read-only cannot be argued
+from the method here — SII's facade answers reads over `POST` — so it is held
+by the table instead: three addresses, and a test that drives every tool
+through the real request path at a client which writes down every address it
+was asked for.
+
+**The portal-endpoint fragility is the standing risk**, and unlike Buk's it
+cannot be checked against anything: these addresses came out of the SPA's own
+JavaScript, are versioned by nobody, and the SII may change them in any release.
+What is done about it is that a reply which is not the register's JSON is
+reported as *the address may have moved*, rather than parsed into a confident
+empty answer — and the connection's own row says so in its description, so it
+is in front of whoever decides to trust the door. **Built and proven, and not
+installed here** —
+`prove-sii-door.mts` 33/33 against the real adapter and the real SII (no
+certificate is refused one way, an unaccredited one another, and each is said
+as itself), but this machine has no SII certificate, so no `sii` connection
+exists and no job has used one. Both remaining halves — adding it through the
+form, and one real job promoted — wait on a `.p12` and its password in `.env`.
 
 **A voice note is a sentence (D-265, built for #17).** While the telegram
 connection is on, the server polls the bot's own `getUpdates` every fifteen
@@ -1840,6 +1890,11 @@ the headers (D-221 declined the vocabulary).
 | `BUK_PAGE_SIZE` | 25–100 | `buk.ts` | Buk's own documented range; a bigger ask is clamped, not refused |
 | `BUK_REPLY_CEILING` | 40,000 | `buk.ts` | One Buk reply; past it whole records are dropped and the count kept is stated — never a cut record |
 | Buk request timeout | 30 s | `buk.ts` | One read |
+| SII register reads offered | 3 | `sii.ts` | The whole adapter — the month's summary, the compras, the ventas; accept and claim excluded by name (D-267) |
+| SII register sections | 4 | `sii.ts` | REGISTRO, PENDIENTE, NO_INCLUIR, RECLAMADO — SII's own spelling; the "state" a read is asked of |
+| SII document types | 11 | `sii.ts` | SII's own codes, each named in the tool schema so the model does not guess one |
+| `SII_REPLY_CEILING` | 40,000 | `sii.ts` | One register reply; past it whole rows are dropped and the count kept is stated — never a cut row |
+| SII request timeout | 60 s | `sii.ts` | One read; the portal is slower than an API, and one read is several requests |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | Messages in one outbox — one outbox per channel (D-179) |
 | `MAX_OUTBOX_CHANNELS` | 3 | `outbox.ts` | Outboxes one job may write, one per channel (D-179) |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |

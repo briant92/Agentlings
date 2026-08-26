@@ -14,6 +14,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import type {
   Agentling,
   AudiencePerson,
+  BrowserActSettings,
   Job,
   JobAttachment,
   JobMeter,
@@ -621,6 +622,27 @@ export function sessionPrompt(job: Job): string {
   return parts.join('\n\n');
 }
 
+/**
+ * The supervised browser's contract, in the session's own words (D-255):
+ * what the window is, what it may reach, what ends the run, and the two
+ * things it never does — type a credential, or press a payment's final
+ * submit. Said because measured silence costs turns (D-031), and because
+ * the profile is signed in *by the person*: a run that tried to log in
+ * would be typing a password the app must never hold (D-252).
+ */
+export function browserActBrief(allow: string[]): string {
+  const sites = allow.length ? allow.join(', ') : 'no site yet — the allowlist in Settings is empty, so every navigation will be refused';
+  return [
+    '## The browser you are acting in (browser-act)',
+    'Your `mcp__browser-act__*` tools drive a VISIBLE browser window on the user’s screen. The user is watching every step, and every call and its result is written to the job’s trail.',
+    `- Allowed sites: ${sites}. Navigation anywhere else is refused by name; a page’s own requests off the list are blocked. Do not try to work around a refusal — report it in RESULT.md.`,
+    '- The profile is already signed in by the user where a sign-in is needed. NEVER type a password, a one-time code or any credential, even if a page asks; say in RESULT.md that the page wanted a sign-in and stop there.',
+    '- Fill and submit ordinary forms as the job asks. NEVER press the final confirm/pay/transfer button of a payment or a bank transfer — leave that step to the user and say so.',
+    '- If the user closes the window, this session ends at once. Keep RESULT.md current as you go.',
+    '- Snapshot before you act, and read the result of every action before the next one.',
+  ].join('\n');
+}
+
 export function buildAppend(
   role: LoadedRole | undefined,
   lessons: string[],
@@ -653,6 +675,13 @@ export function buildAppend(
    * report with a raw difference and no statement, because nothing had asked.
    */
   reconciliationText?: string,
+  /**
+   * The supervised browser's contract, when this job holds `browser-act`
+   * (D-255). Told for D-031's reason: a run that does not know the window is
+   * watched, the list is closed and a password is never its to type will
+   * spend turns finding out, or worse, try.
+   */
+  browserActText?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -700,6 +729,7 @@ export function buildAppend(
   if (outboxBrief) parts.push(outboxBrief);
   if (organizeText) parts.push(organizeText);
   if (reconciliationText) parts.push(reconciliationText);
+  if (browserActText) parts.push(browserActText);
   if (attachments.length > 0) {
     parts.push(
       [
@@ -1058,6 +1088,8 @@ export class ClaudeAgentExecutor implements Executor {
     /** The level's newest approved reconciliation of a shape (D-223), for the roll-forward. */
     private rollForward: (shapes?: string[]) => ReconciliationRollForward | undefined = () =>
       undefined,
+    /** The supervised browser's allowlist and profile folder (D-255), read at the run. */
+    private browserAct: () => BrowserActSettings = () => ({ allow: [], profileDir: '' }),
   ) {}
 
   /** Live sessions by job id, so one can be stopped on request. */
@@ -1099,6 +1131,11 @@ export class ClaudeAgentExecutor implements Executor {
     const blsConn = granted.find((c) => c.name === 'bls');
     const calendarConn = granted.find((c) => c.name === 'calendar');
     const mailConn = granted.find((c) => c.name === 'mail');
+    // The supervised browser (D-255): the runner launches the headed window
+    // and attaches its MCP server to it, so the config carries the allowlist
+    // and the profile folder rather than the server assembling any argument.
+    const supervised = granted.find((c) => c.supervised && c.transport === 'stdio');
+    const act = supervised ? this.browserAct() : undefined;
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -1209,6 +1246,7 @@ export class ClaudeAgentExecutor implements Executor {
           // cannot disagree about how long the run has.
           timeoutMsFor(role) / 60_000,
           wantsReconciliation(job.prompt) ? reconciliationBrief(prior) : undefined,
+          act ? browserActBrief(act.allow) : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection
@@ -1218,6 +1256,12 @@ export class ClaudeAgentExecutor implements Executor {
         skills,
         model: role?.model ?? process.env.AGENTLINGS_MODEL,
         mcpServers: toMcpServers(granted, process.env),
+        // The supervised browser's window (D-255): which server to attach,
+        // where its profile lives, and what it may reach. The runner launches
+        // the window before the SDK starts and ends the run when it closes.
+        ...(supervised && act
+          ? { browserAct: { server: supervised.name, profileDir: act.profileDir, allow: act.allow } }
+          : {}),
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
           : {}),

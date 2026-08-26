@@ -115,6 +115,19 @@ export interface SettingsInfo {
   auth: AuthStatus;
   /** What the crew can reach outside the sandbox, and whether it is on. */
   connections: ConnectionInfo[];
+  /**
+   * The supervised browser's settings (D-255): the hosts a run may reach and
+   * the profile folder the person signed into — the effective one, so the
+   * form shows the default before anyone chose.
+   */
+  browserAct: BrowserActSettings;
+}
+
+export interface BrowserActSettings {
+  /** Bare lowercase hosts; a run may reach these and their subdomains, nothing else. */
+  allow: string[];
+  /** Where the headed browser keeps its profile — the app writes no credential into it. */
+  profileDir: string;
 }
 
 export type JobStatus =
@@ -367,6 +380,12 @@ export interface ConnectionInfo {
    * forget it (D-218). `web` and `render` are ready and hold nothing.
    */
   credentialed: boolean;
+  /**
+   * A door a person watches (D-255): usable only by a job queued by hand, in
+   * a visible window on an allowlist edited in Settings. The chips never
+   * offer it and a rule naming it is refused, so the row can say why.
+   */
+  supervised?: boolean;
   /**
    * The other connections declaring a secret this one declares — the Google
    * trio share one sign-in — so a Disconnect can say who else it takes down

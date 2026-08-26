@@ -17,9 +17,30 @@ import type { ConnectionInfo } from '@agentlings/shared';
  * population `grantedTools` narrows a request to, so a chip is never a door
  * the firing could not actually hold. A sending channel is not a door: it
  * rides on the row as its channel (D-097), and the server refuses it by name.
+ * A supervised door (D-255) is never a chip either: a firing has nobody at
+ * the window, and the server refuses a rule naming it by name.
  */
 export function doorChoices(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
-  return connections.filter((c) => c.kind === 'read' && c.enabled && c.ready);
+  return connections.filter((c) => c.kind === 'read' && c.enabled && c.ready && !c.supervised);
+}
+
+/**
+ * The supervised doors a hand-queued job may ask to hold (D-255): on and
+ * ready, and never in the default grant — a job holds one only by naming it,
+ * which is what the work bar's "watch" choice does. Empty when none is on,
+ * so the choice is not offered at all.
+ */
+export function watchChoices(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
+  return connections.filter((c) => c.kind === 'read' && c.enabled && c.ready && c.supervised === true);
+}
+
+/**
+ * The list Start posts when the person ticked "watch": every door the job
+ * would have held anyway, plus the supervised ones — a list is exactly
+ * those, so naming the one door must not silently drop the others.
+ */
+export function watchedTools(connections: readonly ConnectionInfo[]): string[] {
+  return [...doorChoices(connections), ...watchChoices(connections)].map((c) => c.name);
 }
 
 /** What the firing will hold, in words: the ticked doors as named, or none. */

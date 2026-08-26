@@ -175,6 +175,37 @@ export function SettingsModal({
   const [values, setValues] = useState<Record<string, string>>({});
   const [checking, setChecking] = useState(false);
   const [drawerError, setDrawerError] = useState<string | null>(null);
+  /**
+   * The supervised browser's form (D-255): the hosts as typed and the profile
+   * folder, seeded from what the server holds and saved as one — nothing
+   * here switches the door on. `actNote` is the last save's answer.
+   */
+  const [actHosts, setActHosts] = useState('');
+  const [actProfile, setActProfile] = useState('');
+  const [actNote, setActNote] = useState<{ text: string; error?: boolean } | null>(null);
+  useEffect(() => {
+    if (!settings) return;
+    setActHosts(settings.browserAct.allow.join(', '));
+    setActProfile(settings.browserAct.profileDir);
+  }, [settings?.browserAct.allow.join(','), settings?.browserAct.profileDir]);
+  const saveBrowserAct = async () => {
+    setActNote(null);
+    try {
+      const saved = await api<SettingsInfo['browserAct']>('/api/settings/browser-act', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ allow: actHosts, profileDir: actProfile }),
+      });
+      setSettings((prev) => (prev ? { ...prev, browserAct: saved } : prev));
+      setActNote({
+        text: saved.allow.length
+          ? `saved — a run may reach ${saved.allow.join(', ')} and nothing else`
+          : 'saved — the list is empty, so every navigation will be refused until you add a site',
+      });
+    } catch (err) {
+      setActNote({ text: err instanceof Error ? err.message : 'could not save', error: true });
+    }
+  };
   /** A Google sign-in tab is open; the server flips ready when it comes back. */
   const [googlePending, setGooglePending] = useState(false);
   /** The connected row's re-approve (D-123): sent, or why it could not be. */
@@ -530,6 +561,42 @@ export function SettingsModal({
           </button>{' '}
           — you added this one. Its keys stay in <code>.env</code>; use Disconnect to forget those.
         </p>
+      )}
+      {/* The supervised browser's two settings (D-255), on its own row: the
+          sites a run may reach, and the profile folder the person signs into
+          through the window. Saving switches nothing on. */}
+      {connection.supervised && (
+        <div className="secret-drawer">
+          <div className="secret-row">
+            <input
+              type="text"
+              placeholder="sites a run may reach — example.com, portal.bank.cl"
+              aria-label="browser-act allowlist"
+              value={actHosts}
+              spellCheck={false}
+              onChange={(e) => setActHosts(e.target.value)}
+            />
+          </div>
+          <div className="secret-row">
+            <input
+              type="text"
+              placeholder="profile folder"
+              aria-label="browser-act profile folder"
+              value={actProfile}
+              spellCheck={false}
+              onChange={(e) => setActProfile(e.target.value)}
+            />
+          </div>
+          <div className="secret-row">
+            <button onClick={() => void saveBrowserAct()}>Save</button>
+          </div>
+          {actNote && <p className={actNote.error ? 'error' : 'dim'}>{actNote.text}</p>}
+          <p className="dim secret-note">
+            Hosts and their subdomains, nothing else; a rule or schedule can never hold this door.
+            The window opens on this screen, signed in however you left that profile — sign in
+            there yourself once, the app never types a password. Close the window to end a run.
+          </p>
+        </div>
       )}
       {connection.name === 'google' && connection.ready && (
         <p>

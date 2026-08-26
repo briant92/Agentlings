@@ -3,12 +3,27 @@
 // Plain JS on purpose: spawned with plain `node`, never through tsx.
 // Usage: node agent-runner.mjs <config.json>
 // Emits JSONL on stdout: {type: 'progress'|'observation'|'said'|'compact'|'result'|'error', ...}
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
+import { hostAllowed, originsArg, refusal } from './browser-act.mjs';
 import { readSecrets, resolveSecrets } from './runner-secrets.mjs';
 
 function emit(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
 }
+
+// The supervised browser's state (D-255), outside the try so the catch can
+// tell a closed window from any other failure.
+const abort = new AbortController();
+let windowClosed = false;
+let browserContext = null;
+// Set before this process closes the window itself at the end of a run, so
+// the context's `close` event — the same event a person's close fires — is
+// not read as the person's. The first proof run caught this: the run's own
+// close wrote "the window was closed" as an error line ahead of the result,
+// and the server keeps the last error it reads, so a job that had done the
+// work would have been filed as failed.
+let closingOurselves = false;
 
 try {
   const config = JSON.parse(readFileSync(process.argv[2], 'utf8'));
@@ -23,6 +38,90 @@ try {
 
   const mcpServers = resolveSecrets(config.mcpServers ?? {}, secrets);
   const allowedTools = [...(config.allowedTools ?? [])];
+
+  // The supervised browser (D-255). This process launches the headed window
+  // itself — a persistent Edge profile the user signed into, never the app —
+  // and Playwright MCP attaches to it over CDP rather than launching its own.
+  // Owning the window is what makes "closing it ends the run" a fact this
+  // process observes: the context's `close` event fires when the last tab
+  // goes (measured 2026-08-25), the run is told and aborted, and the MCP's
+  // next call fails on a closed endpoint anyway — two stops, independent.
+  // A browser Playwright MCP launched for itself is one this process has no
+  // handle on: its close is not an event here, and whether the MCP would
+  // relaunch it on the next call was not measured — owning the window makes
+  // the question moot.
+  const hooks = {};
+  if (config.browserAct && mcpServers[config.browserAct.server]) {
+    const { server, profileDir, allow } = config.browserAct;
+    const { chromium } = await import('playwright-core');
+    mkdirSync(profileDir, { recursive: true });
+    const port = await new Promise((resolve, reject) => {
+      const probe = createServer();
+      probe.on('error', reject);
+      probe.listen(0, '127.0.0.1', () => {
+        const { port } = probe.address();
+        probe.close(() => resolve(port));
+      });
+    });
+    browserContext = await chromium.launchPersistentContext(profileDir, {
+      channel: 'msedge',
+      headless: false,
+      args: [`--remote-debugging-port=${port}`],
+    });
+    browserContext.on('close', () => {
+      if (windowClosed || closingOurselves) return;
+      windowClosed = true;
+      emit({ type: 'error', message: 'the browser window was closed — the run ended there' });
+      abort.abort();
+      // The SDK's own abort surfaces as an uncaught error from its child
+      // listener; the line above has already said what happened, so nothing
+      // that follows may replace it. Exit either way, soon.
+      process.on('uncaughtException', () => process.exit(1));
+      process.on('unhandledRejection', () => process.exit(1));
+      setTimeout(() => process.exit(1), 3000).unref();
+    });
+    // Attach the MCP server to this window, on this list: the second layer.
+    // `--allowed-origins` aborts any request the page makes off the list —
+    // a link, a redirect, a form posting elsewhere — where the hook below
+    // only sees the navigate call itself.
+    mcpServers[server] = {
+      ...mcpServers[server],
+      args: [
+        ...(mcpServers[server].args ?? []),
+        '--cdp-endpoint',
+        `http://127.0.0.1:${port}`,
+        '--allowed-origins',
+        originsArg(allow),
+        // Snapshots and screenshots into the sandbox, where the session's
+        // Read can reach them: left to its default the server writes them
+        // under its own cwd, and the first proof run spent a turn on a
+        // path that was not there.
+        '--output-dir',
+        `${config.cwd}/.playwright-mcp`,
+      ],
+    };
+    // The first layer: a navigate off the list is refused before it is made,
+    // by name and with the list, and that reason is what the tool result
+    // carries — so the trajectory's `result` line names the host (D-255).
+    hooks.PreToolUse = [
+      {
+        matcher: `mcp__${server}__browser_navigate`,
+        hooks: [
+          async (input) => {
+            const url = input?.tool_input?.url;
+            if (hostAllowed(url, allow)) return {};
+            return {
+              hookSpecificOutput: {
+                hookEventName: 'PreToolUse',
+                permissionDecision: 'deny',
+                permissionDecisionReason: refusal(url, allow),
+              },
+            };
+          },
+        ],
+      },
+    ];
+  }
 
   // The 'web' connection is ours and runs in-process: it returns readable
   // text trimmed to a budget, never a whole page. Lever 5 — a tool that
@@ -242,6 +341,8 @@ try {
       ...(config.skills?.length ? { skills: config.skills } : {}),
       ...(config.model ? { model: config.model } : {}),
       systemPrompt: { type: 'preset', preset: 'claude_code', append: config.append },
+      ...(Object.keys(hooks).length ? { hooks } : {}),
+      abortController: abort,
     },
   })) {
     if (message.type === 'assistant') {
@@ -331,9 +432,19 @@ try {
       summary = String(message.result ?? '');
     }
   }
+  // The run is over; the window it opened goes with it. Its profile stays —
+  // that is what makes the sign-in the person did survive to the next job.
+  if (browserContext && !windowClosed) {
+    closingOurselves = true;
+    await browserContext.close().catch(() => {});
+  }
   emit({ type: 'result', summary, meter });
   process.exit(0);
 } catch (err) {
+  // A closed window already said so above, and the server keeps the LAST
+  // error line it reads — so the SDK's own "Operation aborted" must not be
+  // written over the sentence that names what actually happened.
+  if (windowClosed) process.exit(1);
   emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });
   process.exit(1);
 }

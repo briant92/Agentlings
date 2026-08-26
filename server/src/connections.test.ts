@@ -65,6 +65,15 @@ describe('describe', () => {
     const off = describeConnections([web], {})[0];
     expect(off).toMatchObject({ defaultOn: true, enabled: false });
   });
+
+  // D-255: the one flag the chips, the rule route and the sweeps all read,
+  // carried to the UI as a fact — so the row can say a rule cannot hold it.
+  it('carries the supervised flag, and only where the catalog set it', () => {
+    const act = { ...TRACKER, name: 'browser-act', secrets: undefined, supervised: true };
+    const listed = describeConnections([WEB, act], {});
+    expect(listed[0].supervised).toBeUndefined();
+    expect(listed[1].supervised).toBe(true);
+  });
 });
 
 describe('resolveForJob', () => {

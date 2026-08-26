@@ -31,7 +31,8 @@ read from the four role files rather than from the plan that proposed them;
 §§0, 4, 5, 11 and 15 re-read 2026-08-25 where the re-grounding landed (D-249,
 D-254–D-256): the headline demoted to a map, the trigger grant corrected,
 the supervised browser and the registry browse recorded as decided, not
-built. Since 2026-08-23 (D-228) the app shows this file's
+built; §§4, 5, 11 re-read 2026-08-25 where the supervised browser landed
+(D-264, #16). Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
@@ -267,12 +268,85 @@ Twelve that act are deliberately absent — `click`, `type`, `fill_form`,
 those names against the shipped catalog, so the boundary is a test rather than
 a description of one. Why, in full, is §11.
 
-**Not built — decided in D-255 (#16):** the twelve will ship as a *second*
-connection, `browser-act`, off by default and usable only under supervision —
-a headed browser on a domain allowlist edited in Settings, in a profile you
-logged into yourself, for one job you queued by hand and are watching. A
-schedule or rule can never name it, it never earns standing approval, and
-closing the window ends the run. This connection stays read-only.
+### Acting in a browser you can watch — Live, under supervision (D-255, D-264)
+
+The twelve ship as a **second** connection, `browser-act` — `supervised` in
+the catalog, off by default, no secret — holding the twelve acts **and** the
+eight reads above (a job with only this door still has to navigate and
+look; `browser_close`, `resize`, `hover` and `tabs` are on neither, D-168's
+four). What the twelve may do, one line each, from the server's own
+descriptions: `click` clicks an element · `type` types into an editable one
+· `fill_form` fills several fields at once · `press_key` presses a key ·
+`select_option` picks from a dropdown · `drag` drags one element onto
+another · `drop` drops files or data onto an element · `file_upload` puts
+files into a file input · `handle_dialog` accepts or dismisses a page
+dialog · `evaluate` runs a JavaScript expression on the page ·
+`run_code_unsafe` runs a Playwright snippet *in the MCP server process*
+(its own description: RCE-equivalent) · `network_request` returns the
+headers and body of a captured request — a **read**, but of the signed-in
+session's own traffic, which is why it was held back with the acts. Five
+things make the connection supervised, each a fact in the code rather than
+a request:
+
+- **Named per job, by hand.** A supervised door is never in the default
+  grant: `grantedTools` leaves it out of the omitted-list answer, so the
+  switch in Settings makes it *holdable*, not held — an ordinary job opens
+  no window, and a legacy schedule row (no list, the old grant of
+  everything) never gets it. A job holds it only when its list **names**
+  it: the work bar's **watch** tick posts every door the job would have held
+  anyway plus this one (`watchedTools`), or an API caller names it. A
+  schedule or mail rule naming it is refused at creation, by name and with
+  the reason (`validTools`'s `supervised` list), and the door chips never
+  offer it (`doorChoices`).
+- **Allowlisted.** Settings → the row holds the hosts a run may reach (bare,
+  lowercase, subdomains included) and the profile folder;
+  `PUT /api/settings/browser-act`. In the run, two layers: a `PreToolUse`
+  hook refuses `browser_navigate` off the list before it is made — the
+  reason (`refused: <host> is not on the browser-act allowlist (<list>)`) is
+  the tool result, so it is the trail's own `result ok:false` line — and
+  Playwright MCP's `--allowed-origins`, built from the same list, aborts
+  page requests elsewhere (a link, a form posting off-list) as
+  `ERR_BLOCKED_BY_CLIENT`: refused, but named by the browser's error rather
+  than by host and list. An empty list allows nothing. **What the layers do
+  not cover, said plainly:** the MCP's own help says `--allowed-origins`
+  *does not affect redirects*, so an allowlisted page that redirects
+  off-list lands there — in the window the person is watching; and
+  `run_code_unsafe` can issue requests from the server process past the
+  page's routes. Those are the ticket's twelve as asked; the boundary for
+  them is the person at the window (D-255's argument), not the list.
+- **Headed, in a profile you signed into.** The runner launches a visible
+  persistent Edge context itself (`playwright-core`, the render door's
+  channel) on `--remote-debugging-port`, and Playwright MCP attaches over
+  `--cdp-endpoint` rather than launching its own. The app writes no
+  credential into that folder; you sign in through the window once, and the
+  brief tells the run it must never type a password or a code (D-252).
+- **Closing the window ends the run.** Owning the context is what makes that
+  observable: its `close` event fires when the last tab goes (measured
+  2026-08-25), the runner writes one error line — *the browser window was
+  closed — the run ended there* — aborts the SDK and exits; the MCP's next
+  call fails on the dead endpoint anyway. A browser Playwright MCP launched
+  for itself would be one the run has no handle on — its close is not an
+  event the runner sees, and whether the MCP would relaunch it was not
+  measured; owning the window makes the question moot.
+- **Never standing, never the payment.** It earns no standing approval, and
+  the brief says a payment's or transfer's final confirm is left to you
+  (D-251).
+
+Every call and every result lands in the trajectory (D-211) like any other
+tool's. The read-only `browser` connection is unchanged, and
+`catalog.test.ts` now pins both: the twelve on `browser-act` and nowhere
+else, the eight on both.
+
+**Proven live 2026-08-25 through the real runner, no server**
+(`node scripts/prove-browser-act-runner.mjs`, 19/19): a login-free form on
+the allowlist navigated, filled and submitted through `browser_fill_form`
+and `browser_click`, the confirmation page read back into RESULT.md (11
+calls, $0.60); a navigate to a domain off the list refused before it was
+made, the reason on the observation line, the run ending with its own
+result ($0.31); the window ended mid-run, the runner's one sentence the
+last line, no result and no RESULT.md. The routes — the Settings form, the
+rule refusal, two hand-queued HQ jobs — are `prove-browser-act.mjs`, owed
+on the next restart.
 
 **Measured again in production, and the case is still weak** (D-053). A run
 sent looking for a fact it could not search for spent ten tool calls in the
@@ -349,6 +423,7 @@ off, so the app's fetch was gated and this second door was not.
 | `calendar` — read the user's own Google Calendar | builtin | off; ready the moment `google` is connected | Live, read-only; the first reading sibling on the Google consent (D-158), reusing the Connect flow's stored secrets behind its own switch. One tool returns compact event lines — times as the calendar states them, replies still owed, who is invited. Deliberately no compiled-tool door: desk work never compiles |
 | `mail` — search and read the user's own Gmail | builtin | off; ready the moment `google` is connected | Live, read-only; the second reading sibling (D-158, D-191) — two tools on the find/read split (D-053): Gmail's own query language in, compact lines out, one message's text on request, attachments named and never fetched. The stored consent predates `gmail.readonly`, so reads answer with the fresh-sign-in sentence until Connect is walked once more. Same deliberate absence from the compiled-tool doors |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
+| `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed Edge the runner launches) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run |
 | `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
@@ -1284,12 +1359,15 @@ movement.
 
 ### Acting on your behalf — at approval only, never in a session (D-075)
 
-An agentling is **not offered any tool that acts** from inside a run. The
-twelve Playwright acting tools stay held back, `catalog.test.ts` asserts their
-absence, and nothing about the outbox changed that. D-255 decided the one
-exception, not yet built: the twelve as a separate `browser-act` connection
-under supervision, where a person watching a headed window stands in for the
-promote step (#16).
+An agentling is **not offered any tool that acts** from inside a run, with
+one built exception. The twelve Playwright acting tools stay off the
+read-only `browser` connection, `catalog.test.ts` asserts their absence
+there, and nothing about the outbox changed that. D-255 decided and D-264
+built the exception: the twelve on a separate `browser-act` connection under
+supervision (§4), where a person watching a headed window — able to close
+it, which ends the run — stands in for the promote step. It is granted only
+to a job that person queued by hand, on an allowlist they edited, and never
+to a rule.
 
 **That is a statement about the tool surface, not about reachable capability,
 and the difference was measured on 2026-08-12 (D-168).** `playwright-core` is a
@@ -1703,6 +1781,7 @@ the headers (D-221 declined the vocabulary).
 | `PLATE_OVERSCAN` | 60 | `shared/scene.ts` | Extra width that opts a plate into the pointer drift; half of it is the hard drift bound and the checker's clearance margin (D-148) |
 | `MAX_PLATES` | 3 | `shared/scene.ts` | Backdrop stack depth — three 2× plates ≈ 21 MB decoded (D-148) |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
+| browser-act tools granted | 20 of 24 | `catalog/connections.json` | The twelve acts + the eight reads; `close`, `resize`, `hover`, `tabs` on neither |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | Messages in one outbox — one outbox per channel (D-179) |
 | `MAX_OUTBOX_CHANNELS` | 3 | `outbox.ts` | Outboxes one job may write, one per channel (D-179) |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |
@@ -1815,6 +1894,7 @@ judgement — *which of its tools are reading, and which are acting*.
 
 - [x] **Read a web page** — built in, on by default, trimmed to 12k chars
 - [x] **Read a page in a real browser** — Playwright MCP, 8 reading tools, ships off
+- [x] **Act in a browser you can watch** — `browser-act`, the 12 acting tools + the 8 reads, ships off; hand-queued jobs only, Settings allowlist, a headed window on your own signed-in profile, closing it ends the run (D-255, D-264)
 - [x] **A code host** — 7 read tools over GitHub, builtin rather than MCP
       because the reference server is deprecated and a code host is where an
       unbounded reply hurts most: 38× smaller than raw API JSON (D-040). Needs

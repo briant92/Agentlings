@@ -564,6 +564,16 @@ describe('the doors a row names', () => {
       expect(validTools('bls' as unknown as string[], doors)).not.toBeNull();
       expect(validTools([1] as unknown as string[], doors)).not.toBeNull();
     });
+
+    // D-255: a supervised door is one a person watches — a firing has nobody
+    // at the window, so a rule naming it is refused at creation, by name and
+    // with the reason, even though it is otherwise a door a job may hold.
+    it('refuses a supervised door by name, saying only a hand-queued job may hold it', () => {
+      const reason = validTools(['web', 'browser-act'], [...doors, 'browser-act'], ['browser-act']);
+      expect(reason).toMatch(/browser-act/);
+      expect(reason).toMatch(/by hand/);
+      expect(validTools(['web'], [...doors, 'browser-act'], ['browser-act'])).toBeNull();
+    });
   });
 
   // The score arrives on Monday (D-261): a row that sends the week's real

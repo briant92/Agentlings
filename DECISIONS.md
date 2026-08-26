@@ -273,6 +273,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one](#d-261--2026-08-25--built-the-score-arrives-on-monday--a-schedule-row-may-carry-report-realwork-its-firing-composes-last-weeks-block-into-an-outbox-through-the-contract-a-sessions-outboxjson-meets-and-lands-it-in-review-at-0-with-no-model-no-door-and-no-ledger-row-and-the-standing-approval-it-earns-is-the-ordinary-one)
 - [D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and one HQ job read live quotes through it for $1.11](#d-262--2026-08-25--first-real-door-alpha-vantage-market-data-through-the-ordinary-form-with-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-the-far-end-checks-only-that-a-key-is-present-and-one-hq-job-read-live-quotes-through-it-for-111)
 - [D-263 — 2026-08-25 — The catalog gets wide, built: a browse over the public MCP registry fills the form and saves nothing, a verified-here shelf carries a source and a date per door, the D-245 chips retire — the mechanism proven live against the real registry and Brave’s real server with a key already in `.env`, the routes and the form owed on the restart](#d-263--2026-08-25--the-catalog-gets-wide-built-a-browse-over-the-public-mcp-registry-fills-the-form-and-saves-nothing-a-verified-here-shelf-carries-a-source-and-a-date-per-door-the-d-245-chips-retire--the-mechanism-proven-live-against-the-real-registry-and-braves-real-server-with-a-key-already-in-env-the-routes-and-the-form-owed-on-the-restart)
+- [D-264 — 2026-08-25 — Supervised live acting, built: `browser-act` carries the twelve as a supervised second connection — hand-queued only, on a Settings allowlist, in a headed window the run itself owns and the person can close — proven live 19/19 through the real runner, the routes owed on the restart](#d-264--2026-08-25--supervised-live-acting-built-browser-act-carries-the-twelve-as-a-supervised-second-connection--hand-queued-only-on-a-settings-allowlist-in-a-headed-window-the-run-itself-owns-and-the-person-can-close--proven-live-1919-through-the-real-runner-the-routes-owed-on-the-restart)
 
 ## By theme
 
@@ -1066,7 +1067,14 @@ entry updates one file rather than two.
   the form and saving nothing, the shelf stamped with source and date,
   the chips retired, the mechanism proven live 10/10 against the real
   registry and Brave’s real server, the routes and the form owed on the
-  restart; and D-257, Brian as the manager, D-197 standing, a planner-only
+  restart; D-264, supervised live acting built (#16) — `browser-act` a
+  `supervised` second connection carrying the twelve and the eight reads,
+  refused to any rule by name and to a legacy firing by `firingTools`,
+  the allowlist and profile folder in Settings, the runner owning a headed
+  Edge window that Playwright MCP attaches to over CDP, a navigate off the
+  list refused on the trail, the window's close ending the run, proven
+  live 19/19 through the real runner and the routes owed on the restart;
+  and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -20680,3 +20688,119 @@ before. No source on the Settings row itself; the shelf is inside the add
 form, above the browse, where D-256 put it. No `sse` transport — D-243's
 reason stands, and the registry's SSE-only entries are now counted rather
 than invisible, which is the measurement that would reopen it.
+
+## D-264 — 2026-08-25 — Supervised live acting, built: `browser-act` carries the twelve as a supervised second connection — hand-queued only, on a Settings allowlist, in a headed window the run itself owns and the person can close — proven live 19/19 through the real runner, the routes owed on the restart
+
+**Decision.** D-255's shape, built (#16). `browser-act` is a second stdio
+connection in the catalog with one new flag, **`supervised`**, off by
+default, no secret, holding the **twelve acting tools and the eight reads**
+(a job with only this door still has to navigate and look; `browser_close`
+is on neither). The flag is read by every seam that has to refuse, so the
+refusals cannot drift: **`grantedTools` leaves a supervised door out of the
+omitted-list answer**, so the switch makes it holdable, not held — an
+ordinary hand-queued job opens no window, and a legacy schedule row (no
+list, the old grant of everything) never gets it; a job holds it only when
+its list **names** it, which the work bar's **watch** tick does
+(`watchedTools`: every door the job would have held anyway, plus this one)
+and an API caller may; `validTools` refuses a schedule or mail rule naming
+it **at creation, by name and with the reason** (*only a job you queue by
+hand can hold it*); `doorChoices` never makes it a chip. (The first cut
+had the opposite reading — held by every hand-queued job while the switch
+was on, a `firingTools` carving it off the legacy path — and the review
+read the spec's *grantable to a job* against it: per-job asked,
+switch-wide built. Named-per-job is simpler and retires `firingTools`.)
+Settings holds the **allowlist** (bare lowercase hosts,
+subdomains included, `browserActHosts` off any pasted shape) and the
+**profile folder** (default under `.agentlings/`), `PUT
+/api/settings/browser-act`, read back on `GET /api/settings`. In the run,
+**the runner launches the window itself** — a headed persistent Edge
+context on the profile folder, `--remote-debugging-port` — and Playwright
+MCP attaches over `--cdp-endpoint` with `--allowed-origins` built from the
+same list; a `PreToolUse` hook refuses `browser_navigate` off the list
+before the call is made, the reason being the tool result and so the
+trajectory's own `result ok:false` line; the context's `close` event ends
+the run with one sentence. The brief tells the session the window is
+watched, the list is closed, a credential is never its to type (D-252) and
+a payment's final confirm is left to the person (D-251). The read-only
+`browser` connection is unchanged.
+
+### What proved it
+
+**Measured first, 2026-08-25, before a line was written.** Playwright MCP
+attached over CDP to a context launched here drives it (navigate,
+snapshot); **closing the only tab fires the context's `close`** and the
+MCP's next call answers `ECONNREFUSED` — two stops, independent;
+`--allowed-origins` refuses an off-list navigate as `net::ERR_BLOCKED_BY_CLIENT
+at <url>`; a `PreToolUse` deny reaches the stream as a `tool_result` with
+`is_error` and the reason as its text — which is exactly the line the
+runner already keeps as an observation — and an abort surfaces as
+"Operation aborted" thrown from the SDK's child listener, so the runner
+says what happened *before* aborting. Whether the MCP would relaunch a
+browser it had launched itself was **not** measured (that kill found no
+process); owning the window makes the question moot.
+
+**Proven live through the real runner, no server** —
+`node scripts/prove-browser-act-runner.mjs`, **19/19**, three real
+sessions, a window on this screen each: **A**, the login-free form on the
+allowlist navigated, filled (`browser_fill_form`) and submitted
+(`browser_click`), the confirmation page read back into RESULT.md, no
+error line, the meter carrying the cost (11 calls, $0.60); **B**, a
+navigate to `example.com` **refused before it was made** — `refused:
+example.com is not on the browser-act allowlist (www.selenium.dev)` on the
+observation line answering the call — no page off the list shown, the run
+ending with its own result and RESULT.md quoting the refusal ($0.31); **C**,
+the window ended after the first page, the runner's *the browser window was
+closed — the run ended there* the last error line, exit non-zero, no
+result, no RESULT.md.
+
+**Two catches the proof made.** The first run passed A on a check that only
+asked for *a* result: the runner's **own** window close at the end of a
+finished run fired the same `close` event, wrote the closed-window error
+line ahead of the result, and — since the server keeps the last error line
+it reads — would have filed a job that had done the work as failed
+(`closingOurselves`; the check now refuses any error line on a completed
+run). And the MCP wrote its snapshots under its own cwd, so the session
+spent a turn on a `Read` of a path that was not there — `--output-dir`
+now points into the sandbox. Two reruns saw the windows **closed within
+seconds of opening**, before the SDK's first turn; the runner reported each
+as closed and the proof read as failed, both correctly — the script now
+says on screen to leave the windows open.
+
+**Owed on the next restart** (not restarted from a session — a second
+instance shares `.agentlings/` and would double-fire the armed rows):
+`node scripts/prove-browser-act.mjs` — the door as Settings lists it, the
+allowlist saved and read back as bare hosts, a relative profile folder
+refused, a schedule and a mail rule naming the door refused by name, then
+two hand-queued HQ jobs holding exactly `browser-act`: the form filled and
+submitted with every step on its trail, and the off-list domain refused on
+its trail. The Settings form has no headless-Edge script of its own.
+
+**The review's catches, taken.** The server proof's *nothing was armed*
+read the bare body of `GET /schedules` (which answers `{schedules}`) and
+could never fail — the third proof in this file to ship an unfailable check
+(D-262, D-263); it reads the list now and refuses a shape that is not one.
+The same proof narrowed the allowlist to its own host and put back only
+the switch; it keeps and restores the person's list. AGENTLING said
+`browser_close` was the one tool on neither connection while its own table
+said four. And `browser_network_request` — on the ticket's twelve — is by
+the server's own description a **read** (the headers and body of a
+captured request), held back because it reads the signed-in session's
+traffic; the docs say so rather than calling it an act.
+
+**What the allowlist does not cover, said rather than claimed.**
+Playwright MCP's own help: `--allowed-origins` *does not affect redirects*
+— an allowlisted page that 302s off-list lands there, in the window the
+person is watching, unrefused and unnamed; a click or a page's own request
+off-list is aborted as `ERR_BLOCKED_BY_CLIENT`, refused but named by the
+browser's error rather than by host; `run_code_unsafe` runs in the MCP
+server process and can issue requests past the page's routes. These are
+the ticket's twelve as asked; D-255's boundary for them is the person at
+the window, not the list, and this entry does not pretend otherwise.
+
+**Not built, on purpose.** No readiness gate on the switch — an empty
+allowlist allows nothing and says so, which is safer than a switch that
+argues. `browser_close`, `resize`, `hover`, `tabs` on neither connection
+(D-168's four, still without demand). No wildcard hosts: a listed host
+covers its subdomains and nothing else; no IDN — `browserActHosts` keeps
+ASCII hosts only. No standing approval, no rule, no schedule — by
+construction, not by policy text.

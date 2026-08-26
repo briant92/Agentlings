@@ -22,6 +22,7 @@ import type {
   ServerMessage,
   ConnectionInfo,
   SettingsInfo,
+  BrowserActSettings,
   WorkPlan,
   WorkProfile,
 } from '@agentlings/shared';
@@ -129,10 +130,12 @@ import {
   type ConnectionDraft,
 } from './userconnections';
 import {
+  browserActHosts,
   clearIdentity,
   enabledNames,
   grantedTools,
   readSettings,
+  setBrowserAct,
   setConnection,
   setIdentity,
   writeSettings,
@@ -480,6 +483,9 @@ function makeLevel(dir: string): LevelRuntime {
               .at(-1)?.body,
           // The level's roll-forward state, keyed by attachment shape (D-223).
           (shapes) => latestRollForward(dir, shapes),
+          // The supervised browser's allowlist and profile, read at the run
+          // so an edit in Settings reaches the next job (D-255).
+          () => browserActSettings(),
         )
       : simulated,
     // Absent without a key, which is what makes the free tier refuse to claim
@@ -864,13 +870,51 @@ function connectionList(): ConnectionInfo[] {
   });
 }
 
+/**
+ * The supervised browser's settings as a run and the form both read them
+ * (D-255): the allowlist as stored, and the profile folder the person chose
+ * or the default under the sandbox root — effective, never absent, so the
+ * runner launches into one folder and the form shows that same one.
+ */
+function browserActSettings(): BrowserActSettings {
+  const stored = readSettings(SANDBOX_ROOT).browserAct;
+  return {
+    allow: stored?.allow ?? [],
+    profileDir: stored?.profileDir ?? path.join(SANDBOX_ROOT, 'browser-act-profile'),
+  };
+}
+
 app.get('/api/settings', (c) =>
   c.json({
     executor: useClaude ? 'claude-agent-sdk' : 'simulated',
     auth,
     connections: connectionList(),
+    browserAct: browserActSettings(),
   } satisfies SettingsInfo),
 );
+
+/**
+ * The supervised browser's allowlist and profile folder (D-255). Hosts arrive
+ * as typed — one string, any separator — and are kept as bare hosts; the
+ * folder is kept as given, or emptied to mean the default. Nothing here
+ * switches the door on: that stays the row's own switch.
+ */
+app.put('/api/settings/browser-act', async (c) => {
+  const body = await c.req.json<{ allow?: unknown; profileDir?: unknown }>();
+  if (typeof body.allow !== 'string' && !Array.isArray(body.allow)) {
+    return c.json({ error: 'allow must be the hosts, as text or a list' }, 400);
+  }
+  if (body.profileDir !== undefined && typeof body.profileDir !== 'string') {
+    return c.json({ error: 'profileDir must be a folder path' }, 400);
+  }
+  const allow = browserActHosts(Array.isArray(body.allow) ? body.allow.join(' ') : body.allow);
+  const profileDir = (body.profileDir ?? '').trim();
+  if (profileDir && !path.isAbsolute(profileDir)) {
+    return c.json({ error: 'profileDir must be an absolute path' }, 400);
+  }
+  writeSettings(SANDBOX_ROOT, setBrowserAct(readSettings(SANDBOX_ROOT), { allow, profileDir }));
+  return c.json(browserActSettings());
+});
 
 /**
  * The channel tiers beyond the wired connections (D-088): planned, and
@@ -2622,11 +2666,13 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   }
   // A door is a connection that is not sends-only (D-254): a channel rides on
   // `channel`, and a name that is neither would be stored and never granted.
+  // A supervised door (D-255) is refused by name: a firing has nobody at the
+  // window, so a rule may never hold it.
+  const catalogNow = allConnections();
   const badDoor = validTools(
     body.tools,
-    allConnections()
-      .filter((conn) => !conn.sendsOnly)
-      .map((conn) => conn.name),
+    catalogNow.filter((conn) => !conn.sendsOnly).map((conn) => conn.name),
+    catalogNow.filter((conn) => conn.supervised).map((conn) => conn.name),
   );
   if (badDoor) return c.json({ error: badDoor }, 400);
   // A rule's sentence was typed at the desk once (D-259): counted here when
@@ -5045,7 +5091,9 @@ function sweepSchedules(now = Date.now()): void {
           // The row's own doors, passed BARE (D-254): a list is exactly those,
           // empty is none, and absent — a legacy row from before the field —
           // is the old grant, every enabled door. `?? []` here would turn
-          // every legacy row into none without a word.
+          // every legacy row into none without a word. A supervised door
+          // (D-255) is never in that old grant: `grantedTools` leaves it out
+          // of the omitted-list answer, so no firing can hold it.
           tools: schedule.tools,
           channel: schedule.channel,
           answers: schedule.answers,
@@ -5119,7 +5167,9 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
             ];
             queueSentence(rt, schedule.prompt, {
               // Bare, for the cadence sweep's reason (D-254) — and this is the
-              // firing that carries a third party's mail as its brief.
+              // firing that carries a third party's mail as its brief; the
+              // supervised door is left out of the omitted-list grant by
+              // `grantedTools` itself (D-255).
               tools: schedule.tools,
               channel: schedule.channel,
               answers: schedule.answers,

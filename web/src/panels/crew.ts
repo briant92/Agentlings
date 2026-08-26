@@ -250,6 +250,10 @@ export const POWERS: { name: string; text: string; partial?: boolean }[] = [
     text: 'Eight read-only browser tools. It can navigate, look and screenshot. It cannot click, type or fill a form.',
     partial: true,
   },
+  {
+    name: 'Act in a browser you can watch',
+    text: 'The twelve held-back tools: click, type, fill a form, press a key, pick from a dropdown, drag, drop, upload a file, answer a dialog, run page script, run a Playwright snippet, and read a captured request’s headers and body — in a visible window on this screen, only on the sites you allowlisted, in a profile you signed into yourself. Only a job you tick “watch” on at Start holds it — never a rule; close the window and the run ends.',
+  },
   { name: 'Read a scanned PDF', text: 'OCR for a PDF with no text layer.' },
   {
     name: 'Read a technical drawing',
@@ -280,6 +284,7 @@ export const REACH: Record<string, string> = {
   calendar: 'Reads your events, clashes and invites awaiting a reply.',
   mail: 'Searches and reads your Gmail. Attachments are named, never fetched.',
   browser: 'A real headless browser, reading only.',
+  'browser-act': 'A visible browser that clicks, types and submits — on allowlisted sites, for a job you queued by hand and are watching. Never a rule, never standing.',
   telegram: 'Sends a message — at approval only.',
   google: 'Sends mail and creates events as you — at approval only.',
   'whatsapp-business': 'Sends pre-approved template messages — at approval only.',

@@ -30,7 +30,7 @@ import {
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { ChannelLogo } from './ChannelLogo';
-import { doorChoices, holdsLine } from './doors';
+import { doorChoices, holdsLine, watchChoices, watchedTools } from './doors';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
@@ -112,6 +112,13 @@ export function WorkBar({
   const [files, setFiles] = useState<Attached[]>([]);
   /** "Run as one job" — the escape from a split the user didn't mean (D-105). */
   const [single, setSingle] = useState(false);
+  /**
+   * The person chose to watch this job act in a browser (D-255): Start then
+   * NAMES the supervised door beside every door the job would have held
+   * anyway. Off by default and reset after every Start — a job holds it
+   * only when this was ticked for it, never because the switch is on.
+   */
+  const [watch, setWatch] = useState(false);
   /** The folder picked to reorganize, when the sentence wants one (D-132). */
   const [organizeRoot, setOrganizeRoot] = useState<string | null>(null);
   /** The schedule just made without a run, so its first firing is visible (D-106). */
@@ -511,6 +518,7 @@ export function WorkBar({
       setTriggerPreview(null);
       setStanding([]);
       setSingle(false);
+      setWatch(false);
       setOrganizeRoot(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -564,6 +572,7 @@ export function WorkBar({
       setRepeatKind('off');
       setStanding([]);
       setSingle(false);
+      setWatch(false);
       setOrganizeRoot(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -671,6 +680,11 @@ export function WorkBar({
           // The planner proposes the split, reviewed before any hand runs
           // (TEAMWORK T3) — asked by the button, never inferred.
           ...(planned ? { planParty: true } : {}),
+          // Watching (D-255): the supervised door is named beside every door
+          // the job would have held anyway — a list is exactly those, so
+          // naming one must not drop the rest. Otherwise no list at all, and
+          // the server's default grant leaves the supervised door out.
+          ...(watch && repeatKind === 'off' ? { tools: watchedTools(connections) } : {}),
         }),
       );
       // The schedule stores what Start carried — the sentence verbatim (the
@@ -991,6 +1005,31 @@ export function WorkBar({
       {/* Repeats (D-103): the same sentence queued again on a cadence. The
           schedule is created beside the job at Start, so the first run is
           now and the next is on the calendar. */}
+      {/* The watch choice (D-255): a supervised door is never in the default
+          grant, so the one way a hand-queued job holds it is this tick. Shown
+          only while such a door is on and ready, and only for a job that runs
+          now — a schedule or rule can never hold it, and the server refuses
+          one that tries. */}
+      {plan && !askingRepo && repeatKind === 'off' && watchChoices(connections).length > 0 && (
+        <p className="work-gaps work-repeat">
+          <span className="dim">watch:</span>
+          {watchChoices(connections).map((c) => (
+            <button
+              key={c.name}
+              type="button"
+              className={watch ? 'work-chip on' : 'work-chip'}
+              aria-pressed={watch}
+              title={c.description}
+              onClick={() => setWatch((v) => !v)}
+            >
+              {c.label.toLowerCase()}
+            </button>
+          ))}
+          <span className="work-doors-read dim">
+            · {watch ? 'a browser window opens on this screen; close it to end the run' : 'this job stays out of the browser'}
+          </span>
+        </p>
+      )}
       {plan && !askingRepo && (
         <p className="work-gaps work-repeat">
           {files.length > 0 ? (

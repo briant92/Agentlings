@@ -163,10 +163,23 @@ export function validTrigger(trigger: { mail?: unknown } | undefined): string | 
  * like it holds something it does not. Omitted and empty both pass: the
  * route turns omitted into none.
  */
-export function validTools(tools: string[] | undefined, doors: string[]): string | null {
+export function validTools(
+  tools: string[] | undefined,
+  doors: string[],
+  /**
+   * Doors a person watches (D-255): a firing has nobody at the window, so a
+   * rule naming one is refused here, at creation, by name and with the
+   * reason — not stored and quietly never granted.
+   */
+  supervised: string[] = [],
+): string | null {
   if (tools === undefined) return null;
   if (!Array.isArray(tools) || !tools.every((t) => typeof t === 'string')) {
     return 'tools must be a list of door names';
+  }
+  const watched = tools.find((t) => supervised.includes(t));
+  if (watched !== undefined) {
+    return `"${watched}" is supervised — only a job you queue by hand can hold it, never a rule or a schedule`;
   }
   const unknown = tools.find((t) => !doors.includes(t));
   return unknown === undefined ? null : `"${unknown}" is not a door a rule can hold`;

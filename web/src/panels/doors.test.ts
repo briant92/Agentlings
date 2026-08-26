@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConnectionInfo } from '@agentlings/shared';
-import { doorChoices, holdsLine } from './doors';
+import { doorChoices, holdsLine, watchChoices, watchedTools } from './doors';
 
 function connection(over: Partial<ConnectionInfo> = {}): ConnectionInfo {
   return {
@@ -56,5 +56,37 @@ describe('holdsLine — what the firing will hold, in words', () => {
   it('names exactly the ticked doors, in the order they were ticked', () => {
     expect(holdsLine(['mail', 'calendar'])).toBe('the firing holds mail, calendar');
     expect(holdsLine(['bls'])).toBe('the firing holds bls');
+  });
+});
+
+describe('doorChoices — a supervised door is never a chip (D-255)', () => {
+  it('leaves browser-act off the row even when it is on and ready — a rule cannot hold it', () => {
+    const got = doorChoices([
+      connection({ name: 'web' }),
+      connection({ name: 'browser-act', label: 'Act in a browser you can watch', supervised: true }),
+    ]);
+    expect(got.map((c) => c.name)).toEqual(['web']);
+  });
+});
+
+describe('the watch choice — how a hand-queued job names a supervised door (D-255)', () => {
+  const act = connection({ name: 'browser-act', label: 'Act in a browser you can watch', supervised: true });
+
+  it('is offered only for a supervised door that is on and ready', () => {
+    expect(watchChoices([connection({ name: 'web' }), act]).map((c) => c.name)).toEqual(['browser-act']);
+    expect(watchChoices([connection({ name: 'web' }), { ...act, enabled: false }])).toEqual([]);
+    expect(watchChoices([connection({ name: 'web' })])).toEqual([]);
+  });
+
+  it('posts every door the job would have held anyway, plus the supervised one — naming it must not drop the rest', () => {
+    expect(
+      watchedTools([
+        connection({ name: 'web' }),
+        connection({ name: 'mail', credentialed: true }),
+        connection({ name: 'telegram', kind: 'send' }),
+        connection({ name: 'github', enabled: false }),
+        act,
+      ]),
+    ).toEqual(['web', 'mail', 'browser-act']);
   });
 });

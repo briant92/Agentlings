@@ -5,11 +5,13 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Connection } from './connections';
 import {
+  browserActHosts,
   clearIdentity,
   connectionEnabled,
   enabledNames,
   grantedTools,
   readSettings,
+  setBrowserAct,
   setConnection,
   setIdentity,
   writeSettings,
@@ -30,6 +32,83 @@ const TRACKER: Connection = {
   command: 'npx',
   secrets: { TRACKER_TOKEN: 'API token' },
 };
+
+/**
+ * The supervised browser's two settings (D-255): the hosts a run may reach
+ * and the profile folder the person signed into. Hosts are typed as a list —
+ * commas, spaces or newlines — and kept as bare lowercase hosts, so a pasted
+ * `https://Portal.Example.com/login` and a typed `portal.example.com` are the
+ * same entry, and the run's matcher never sees a scheme or a path.
+ */
+describe('browserActHosts', () => {
+  it('reads bare hosts off any separator, lowercased, deduplicated, in order', () => {
+    expect(browserActHosts('Example.com, www.iana.org\nexample.com  selenium.dev')).toEqual([
+      'example.com',
+      'www.iana.org',
+      'selenium.dev',
+    ]);
+  });
+
+  it('strips a scheme, a path, a port and a leading dot — a pasted address is a host', () => {
+    expect(browserActHosts('https://Portal.Example.com/login?x=1 http://localhost:5173/ .bank.cl')).toEqual([
+      'portal.example.com',
+      'localhost',
+      'bank.cl',
+    ]);
+  });
+
+  it('drops what is not a host at all — a single label like localhost is one', () => {
+    expect(browserActHosts('host!! ,, ; ; * http:// -bad- bad-.com')).toEqual([]);
+    expect(browserActHosts('')).toEqual([]);
+    expect(browserActHosts('localhost')).toEqual(['localhost']);
+  });
+});
+
+describe('setBrowserAct', () => {
+  it('records the allowlist and the profile folder, leaving other settings alone', () => {
+    const before = setConnection({}, 'web', false);
+    const after = setBrowserAct(before, { allow: ['example.com'], profileDir: 'C:\\profiles\\act' });
+    expect(after.browserAct).toEqual({ allow: ['example.com'], profileDir: 'C:\\profiles\\act' });
+    expect(after.connections).toEqual({ web: false });
+  });
+
+  it('an empty profile folder means the default — nothing is stored for it', () => {
+    const after = setBrowserAct({}, { allow: [], profileDir: '' });
+    expect(after.browserAct).toEqual({ allow: [] });
+  });
+});
+
+/**
+ * A supervised door (D-255) is held only by a job whose list names it. The
+ * omitted list — a person at the work bar choosing nothing in particular, or
+ * a legacy schedule row from before doors were per-rule — never carries it:
+ * the switch makes it holdable, not held, so no ordinary job opens a window
+ * and no firing gets a door it may never hold.
+ */
+describe('grantedTools — a supervised door must be named', () => {
+  const ACT: Connection = {
+    name: 'browser-act',
+    label: 'Act in a browser you can watch',
+    transport: 'stdio',
+    command: 'npx',
+    supervised: true,
+  };
+  const on = { connections: { 'browser-act': true, tracker: true } };
+  const env = { TRACKER_TOKEN: 'abc' };
+
+  it('is left out of the omitted-list answer even when switched on', () => {
+    expect(grantedTools(undefined, [WEB, TRACKER, ACT], on, env)).toEqual(['web', 'tracker']);
+  });
+
+  it('is granted to a list that names it, and only when switched on', () => {
+    expect(grantedTools(['web', 'browser-act'], [WEB, TRACKER, ACT], on, env)).toEqual(['web', 'browser-act']);
+    expect(grantedTools(['browser-act'], [WEB, TRACKER, ACT], {}, env)).toEqual([]);
+  });
+
+  it('an empty list is still none', () => {
+    expect(grantedTools([], [WEB, TRACKER, ACT], on, env)).toEqual([]);
+  });
+});
 
 describe('connectionEnabled', () => {
   it('is on when the catalog says so and the user has not said otherwise', () => {

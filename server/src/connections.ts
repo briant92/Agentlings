@@ -56,6 +56,14 @@ export interface Connection {
    * `gmail` is the channel.
    */
   sendsOnly?: boolean;
+  /**
+   * A door a person watches (D-255): the acting browser. Granted only to a
+   * job someone queued by hand — a rule naming it is refused at creation and
+   * a legacy firing is not handed it — in a visible window on the Settings
+   * allowlist, and closing the window ends the run. One flag, read by every
+   * seam that has to refuse, so the refusals cannot drift apart.
+   */
+  supervised?: boolean;
   /** builtin 'web' only. */
   allow?: string[];
   maxChars?: number;
@@ -205,6 +213,7 @@ export function describe(
       kind: c.sendsOnly ? 'send' : 'read',
       credentialed: Object.keys(c.secrets ?? {}).length > 0,
       sharesSecretsWith: sharingSecrets(c, connections),
+      ...(c.supervised ? { supervised: true } : {}),
     };
   });
 }

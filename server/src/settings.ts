@@ -20,6 +20,14 @@ export interface StoredSettings {
    * when a connect flow learns it. Display only — never part of any gate.
    */
   identities?: Record<string, string>;
+  /**
+   * The supervised browser's two settings (D-255): bare hosts a run may
+   * reach (and their subdomains), and the profile folder the person signed
+   * into — absent means the default under the sandbox root. The app never
+   * writes a credential into that folder; the browser does, when the person
+   * logs in through the window.
+   */
+  browserAct?: { allow: string[]; profileDir?: string };
 }
 
 const FILE = 'settings.json';
@@ -63,6 +71,46 @@ export function clearIdentity(settings: StoredSettings, name: string): StoredSet
   const identities = { ...settings.identities };
   delete identities[name];
   return { ...settings, identities };
+}
+
+/** Records the supervised browser's allowlist and profile folder; an empty folder means the default. */
+export function setBrowserAct(
+  settings: StoredSettings,
+  value: { allow: string[]; profileDir: string },
+): StoredSettings {
+  const profileDir = value.profileDir.trim();
+  return {
+    ...settings,
+    browserAct: { allow: value.allow, ...(profileDir ? { profileDir } : {}) },
+  };
+}
+
+/**
+ * Bare lowercase hosts off a typed list — commas, spaces or newlines between
+ * them, a pasted address reduced to its host. What the run's matcher sees
+ * is only ever a host, so `https://Portal.Example.com/login` and
+ * `portal.example.com` are one entry, and nothing that is not a host at all
+ * gets in. Order kept, duplicates dropped.
+ */
+export function browserActHosts(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of text.split(/[\s,;]+/)) {
+    if (!raw) continue;
+    let host = raw.toLowerCase();
+    if (/^[a-z][a-z0-9+.-]*:\/\//.test(host)) {
+      try {
+        host = new URL(host).hostname;
+      } catch {
+        continue;
+      }
+    } else {
+      host = host.split('/')[0]!.split(':')[0]!;
+    }
+    host = host.replace(/^\.+/, '').replace(/\.+$/, '');
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(host)) continue;
+    if (!out.includes(host)) out.push(host);
+  }
+  return out;
 }
 
 /**
@@ -135,6 +183,14 @@ export function grantedTools(
   // place, which is the whole point of this function.
   const sending = new Set(connections.filter((c) => c.sendsOnly).map((c) => c.name));
   const on = enabledNames(connections, settings, env).filter((name) => !sending.has(name));
-  if (requested === undefined) return on;
+  // A supervised door (D-255) is never part of "whatever is on": a job holds
+  // it only when its list NAMES it. So the switch in Settings makes it
+  // holdable, not held — a person queuing an ordinary job does not get a
+  // browser window opening on their screen, and a legacy schedule row (no
+  // list, the old grant of everything) does not get a door no firing may
+  // hold. The one way in is the work bar's own "watch" choice, or an API
+  // caller naming it, both of which are a person choosing this job.
+  const supervised = new Set(connections.filter((c) => c.supervised).map((c) => c.name));
+  if (requested === undefined) return on.filter((name) => !supervised.has(name));
   return on.filter((name) => requested.includes(name));
 }

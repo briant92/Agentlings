@@ -363,3 +363,66 @@ describe('the slack connection sends only at approval', () => {
     expect(Object.keys(slack?.secrets ?? {})).toEqual(['SLACK_BOT_TOKEN']);
   });
 });
+
+/**
+ * The second browser connection (D-255, #16): the twelve acting tools exist
+ * here and nowhere else, beside the eight reads a job needs to act at all —
+ * a job holding only `browser-act` still has to navigate and look. It ships
+ * off, holds no secret (the profile is signed into by the person, never by
+ * the app), and is `supervised`: the one flag every refusal reads — a rule
+ * cannot hold it, a legacy firing is not granted it, the chips do not offer
+ * it, and the run launches a window a person can close.
+ */
+describe('the browser-act connection carries the acting tools, under supervision', () => {
+  const act = all.find((c) => c.name === 'browser-act');
+  const ACTS = [
+    'browser_click',
+    'browser_type',
+    'browser_fill_form',
+    'browser_press_key',
+    'browser_select_option',
+    'browser_drag',
+    'browser_drop',
+    'browser_file_upload',
+    'browser_handle_dialog',
+    'browser_evaluate',
+    'browser_run_code_unsafe',
+    'browser_network_request',
+  ];
+
+  it('is in the catalog, ships off, and is marked supervised', () => {
+    expect(act).toBeDefined();
+    expect(act?.defaultOn).not.toBe(true);
+    expect(act?.supervised).toBe(true);
+    expect(act?.transport).toBe('stdio');
+  });
+
+  it('holds all twelve acting tools, and they exist on no other connection', () => {
+    for (const name of ACTS) expect(act?.tools).toContain(name);
+    for (const other of all.filter((c) => c.name !== 'browser-act')) {
+      for (const name of ACTS) expect(other.tools ?? []).not.toContain(name);
+    }
+  });
+
+  it('holds the eight reads too, so a job with only this door can navigate and look', () => {
+    for (const name of browser?.tools ?? []) expect(act?.tools).toContain(name);
+  });
+
+  it('never closes the window itself — that gesture is the person watching', () => {
+    expect(act?.tools).not.toContain('browser_close');
+  });
+
+  it('needs no secret and carries no per-machine argument — the run adds the endpoint and the allowlist', () => {
+    expect(act?.secrets).toBeUndefined();
+    expect((act?.args ?? []).join(' ')).not.toMatch(/cdp-endpoint|allowed-origins|user-data-dir|headless/);
+  });
+
+  it('is granted to a hand-queued job that names it, only when switched on — never to one that names nothing', () => {
+    expect(grantedTools(['browser-act'], all, { connections: { 'browser-act': true } }, {})).toEqual(['browser-act']);
+    expect(grantedTools(['browser-act'], all, {}, {})).toEqual([]);
+    expect(grantedTools(undefined, all, { connections: { 'browser-act': true } }, {})).not.toContain('browser-act');
+    const tools = mcpToolNames(resolveForJob(['browser-act'], all, {}).granted);
+    expect(tools).toContain('mcp__browser-act__browser_click');
+    expect(tools).toContain('mcp__browser-act__browser_navigate');
+  });
+});

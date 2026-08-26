@@ -757,8 +757,16 @@ tried, measured and rejected is in `DECISIONS.md`:
     The add-a-connection form browses the public MCP registry and fills
     from an entry, saving nothing, with a *verified here* shelf — source and
     date per door — replacing the D-245 chips (D-256, built D-263, #15).
-    One more is decided and not built: the twelve browser acting tools as a
-    second connection, `browser-act`, under supervision only (D-255, #16).
+    The twelve browser acting tools are a second connection, `browser-act`,
+    under supervision only (D-255, built D-264, #16): `supervised` in the
+    catalog, off by default and never in the default grant — a job holds
+    it only by naming it, which the work bar's *watch* tick does; a
+    schedule or rule naming it is refused at creation; the run launches a
+    headed Edge window on a profile the user signed into (the app writes no
+    credential), Playwright MCP attaches over CDP, a navigate off the
+    Settings allowlist is refused by name on the trail, and closing the
+    window ends the run. The allowlist and profile folder are
+    `PUT /api/settings/browser-act`, read back on `GET /api/settings`.
     Secrets are referenced by env-var name, never stored or returned; a
     connection whose secret is missing is listed as not ready and can never
     be switched on.

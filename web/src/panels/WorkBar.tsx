@@ -32,7 +32,7 @@ import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { ChannelLogo } from './ChannelLogo';
 import { doorChoices, holdsLine, watchChoices, watchedTools } from './doors';
-import { whoSuffix } from './planLine';
+import { refusalDesk, whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
 import { voiceHead, voiceHold } from './voice';
@@ -313,6 +313,8 @@ export function WorkBar({
   useEffect(() => setGhostDropped(false), [plan]);
   const spans = usableSpans(text, plannedFor.current, plan?.spans);
   const ghost = ghostDropped ? null : ghostFor(caret, spans, plan?.suggestions);
+  /** What the crew will refuse in this sentence, said before Start (#22). */
+  const refusal = refusalDesk(plan?.refuses);
   /** The twin scrolls exactly with the box, or the underlines drift. */
   const syncPaint = () => {
     if (paintRef.current && inputRef.current) {
@@ -1013,6 +1015,25 @@ export function WorkBar({
             <span className="dim">Nobody works here yet — hire someone first.</span>
           )}
         </p>
+      )}
+
+      {/* What the crew will refuse (#22), said here rather than found inside a
+          run that spent turns discovering it. D-093's shape — a line, never a
+          block: Start stays enabled and the tail says so once, in the gap
+          line's grey, because a fact about the button is not a fourth warning.
+          Amber is the desk's own word for "read and said back, not refused"
+          (.work-mention, .work-nofiles). The reason is the job board's `why`,
+          verbatim; nothing here is counted (D-259). */}
+      {plan &&
+        !askingRepo &&
+        refusal.lines.map((line) => (
+          <p key={line.row} className="work-gaps work-refuses">
+            {line.lead} — <span className="work-refuses-why">{line.why}</span>
+            {line.does && <span className="work-refuses-does"> {line.does}</span>}
+          </p>
+        ))}
+      {plan && !askingRepo && refusal.tail && (
+        <p className="work-gaps work-refuses-tail">{refusal.tail}</p>
       )}
 
       {/* Steps (D-105): the split Start will queue, shown before anything

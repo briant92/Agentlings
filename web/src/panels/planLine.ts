@@ -27,3 +27,32 @@ export function whoSuffix(plan: {
   }
   return '';
 }
+
+/**
+ * What the desk shows under the plan for a sentence the crew will refuse
+ * (#22): one amber line per shelf-of-never row it claims, then one grey
+ * tail saying what happens to Start.
+ *
+ * The tail is said **once**, however many rows: it is a fact about the
+ * button, not a fourth warning, and repeating it per row is the reader's
+ * cue that neither copy matters. Its words are the UI's own, and D-259 is
+ * what makes them true — the desk warns, it does not block, and Start is
+ * never disabled. So no word here may read as one (the test holds it to
+ * that), and nothing is counted from this reading.
+ *
+ * No row's own words are written here: the lead-in, the board's `why` and
+ * what the crew will do instead all arrive on the row from the server, so
+ * the desk and the board cannot drift apart. The rows are passed through
+ * untouched — `row` keeps its name, and is what the `.map` keys on, since
+ * `refusalRows` emits each row once.
+ *
+ * Extracted from the JSX for the reason `whoSuffix` above it was — a `.map`
+ * and a conditional inside a component are unreachable to the web suite
+ * (D-177, D-178).
+ */
+export const REFUSE_TAIL = 'Start still works — the crew does the rest and says what it left to you.';
+
+export function refusalDesk<T>(refuses: readonly T[] | undefined): { lines: readonly T[]; tail: string | null } {
+  const lines = refuses ?? [];
+  return { lines, tail: lines.length > 0 ? REFUSE_TAIL : null };
+}

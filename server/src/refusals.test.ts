@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NEVER_CHANNELS } from './channel';
 import { BOUNDARIES } from './coverage';
-import { CLAIMS, NOT_BUILT, readRefusals, recordRefusals, refusalKeys, refusalsFile } from './refusals';
+import { CLAIMS, NOT_BUILT, readRefusals, recordRefusals, refusalKeys, refusalRows, refusalsFile } from './refusals';
 
 /**
  * The bar (D-259): asks with the rows they claim, and the bookkeeping,
@@ -94,5 +94,114 @@ describe('readRefusals', () => {
       { at: 1, levelId: 'hq', key: 'sign' },
       { at: 2, levelId: 'hq', key: 'video' },
     ]);
+  });
+});
+
+/**
+ * The desk's reading (#22): the same keys, turned into what the bar says
+ * before Start. The reason is the job board's own, verbatim — the point of
+ * the test below is that no second copy of it exists to drift.
+ */
+describe('refusalRows', () => {
+  const why = (id: string) => BOUNDARIES.find((b) => b.id === id)!.why;
+
+  it('says nothing for ordinary work', () => {
+    expect(refusalRows(ORDINARY)).toEqual([]);
+    expect(refusalRows('Reconcile the two statements and chart the difference')).toEqual([]);
+  });
+
+  it('names the row, the keys under it, the desk’s lead-in and the board’s own reason', () => {
+    expect(refusalRows(PAY)).toEqual([
+      {
+        row: 'money',
+        keys: ['money'],
+        lead: 'this asks for a payment',
+        why: why('money'),
+        does: 'It will draft the instruction for you to send.',
+      },
+    ]);
+  });
+
+  it('carries the board’s sentence verbatim — cite and all — for every row it can show', () => {
+    for (const text of [PAY, SIGN, 'Deploy the fix to production', 'Supervise the team this week', VIDEO]) {
+      for (const r of refusalRows(text)) expect(r.why).toBe(why(r.row));
+    }
+  });
+
+  it('reads one line per row when a sentence claims two', () => {
+    const rows = refusalRows('Pay the supplier, then deploy the fix to production');
+    expect(rows.map((r) => r.row)).toEqual(['money', 'act']);
+    expect(rows.map((r) => r.lead)).toEqual([
+      'this asks for a payment',
+      'this asks the crew to act on the world',
+    ]);
+  });
+
+  /**
+   * The order is the METER's, not the board's, and the two really do differ:
+   * `CLAIMS` runs money, sign, act, people; `BOUNDARIES` runs money, people,
+   * act, sign. `sign` + `people` is the pair that can tell them apart — the
+   * money/act pair above cannot, which is how the first version of this
+   * carried "in the board's order" in its own doc while doing something else.
+   */
+  it('orders rows as the meter counts them, which is NOT the board’s order', () => {
+    const boardOrder = BOUNDARIES.map((b) => b.id).filter((id) => ['sign', 'people'].includes(id));
+    expect(boardOrder).toEqual(['people', 'sign']);
+    const rows = refusalRows('Sign the lease on my behalf and supervise the crew');
+    expect(rows.map((r) => r.row)).toEqual(['sign', 'people']);
+    expect(rows.map((r) => r.row)).toEqual(refusalKeys('Sign the lease on my behalf and supervise the crew'));
+  });
+
+  it('every claim key has a reading, so the skip in the loop can only ever be a never-channel', () => {
+    for (const c of CLAIMS) expect(refusalRows(`__${c.key}__`), c.key).toBeDefined();
+    const withReading = new Set(refusalRows('Pay it, sign it, deploy it, supervise them, make a video, record audio, generate an image, lay it out in Figma').flatMap((r) => r.keys));
+    for (const c of CLAIMS) expect(withReading.has(c.key), c.key).toBe(true);
+  });
+
+  it('names what the crew will do instead — the ticket’s second half, the desk’s own words', () => {
+    expect(refusalRows(PAY)[0]?.does).toBe('It will draft the instruction for you to send.');
+    expect(refusalRows(SIGN)[0]?.does).toBe('It will draft it for you to sign.');
+    for (const text of [PAY, SIGN, 'Deploy the fix to production', 'Supervise the team this week']) {
+      const does = refusalRows(text)[0]?.does ?? '';
+      expect(does, text).not.toBe('');
+      // The desk's alone: the board is written about a duty and names no other side.
+      expect(BOUNDARIES.map((b) => b.why).join(' '), text).not.toContain(does);
+    }
+  });
+
+  it('offers no other side for the not-built row, because there is none', () => {
+    expect(refusalRows(VIDEO)[0]?.row).toBe('not-built');
+    expect(refusalRows(VIDEO)[0]?.does).toBeUndefined();
+  });
+
+  it('collapses the not-built capabilities onto their one board row, naming each medium once', () => {
+    const rows = refusalRows('Make a video of the launch and generate an image for the thumbnail');
+    expect(rows).toEqual([
+      {
+        row: 'not-built',
+        keys: ['video', 'image'],
+        lead: 'this asks for a video and an image',
+        why: why('not-built'),
+      },
+    ]);
+  });
+
+  it('names three mediums with commas and a final “and”', () => {
+    expect(refusalRows('Make a video, record a voiceover and generate an image')[0]?.lead).toBe(
+      'this asks for a video, audio and an image',
+    );
+  });
+
+  it('leaves a never-channel to the ask card, which already states it and offers the channels that can', () => {
+    expect(refusalKeys('Send the invoice to Ana on WhatsApp')).toEqual(['whatsapp']);
+    expect(refusalRows('Send the invoice to Ana on WhatsApp')).toEqual([]);
+  });
+
+  it('reads exactly the rows the meter would count, for every sentence in the fixture', () => {
+    for (const s of FIXTURE) {
+      const shown = new Set(refusalRows(s.text).flatMap((r) => r.keys));
+      const counted = s.keys.filter((k) => !NEVER_CHANNELS.includes(k));
+      expect([...shown], s.text).toEqual(counted);
+    }
   });
 });

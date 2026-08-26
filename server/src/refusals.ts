@@ -1,6 +1,8 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { RefusalReading } from '@agentlings/shared';
 import { NEVER_CHANNELS, claimedChannel } from './channel';
+import { BOUNDARIES } from './coverage';
 
 /**
  * The refusals file (D-249, D-259): the demand meter. When a sentence at
@@ -65,7 +67,7 @@ interface Claim {
   patterns: RegExp[];
 }
 
-/** What a sentence at the desk claims, row by row, in the board's order. Each cites the decision that refuses it. */
+/** What a sentence at the desk claims, row by row. Each cites the decision that refuses it. */
 export const CLAIMS: Claim[] = [
   {
     // Never moves money or takes it (D-219).
@@ -147,7 +149,138 @@ export function refusalsFile(sandboxRoot: string): string {
   return path.join(sandboxRoot, 'refusals.jsonl');
 }
 
-/** The rows a sentence claims, each once, in the board's order, a never-channel last; `[]` for ordinary work. */
+/**
+ * Each key's board row, how the desk names the claim, and what it says the
+ * crew will do instead — the second half #22 asked for, because *this asks
+ * for a payment* plus the board's *never moves money* tells you only what you
+ * will not get. `does` is the desk's alone: `BOUNDARIES.why` is written about
+ * a duty on a job posting and has no other side to name, and the board must
+ * not learn one here.
+ *
+ * It is deliberately absent on the not-built row. There is no other side to
+ * that line: D-259's own words are that no media is *read* or made, so a
+ * consolation sentence there would be the first thing on this line that is
+ * not true.
+ *
+ * The four not-built capabilities share the board's one `not-built` row, so
+ * they are named by their medium and the row's reason is said once (a
+ * sentence asking for a video and an image would otherwise print the same
+ * 160 characters twice).
+ */
+const READING: Record<string, { row: string; lead: string; does?: string }> = {
+  money: {
+    row: 'money',
+    lead: 'this asks for a payment',
+    does: 'It will draft the instruction for you to send.',
+  },
+  sign: {
+    row: 'sign',
+    lead: 'this asks the crew to sign or approve',
+    does: 'It will draft it for you to sign.',
+  },
+  act: {
+    row: 'act',
+    lead: 'this asks the crew to act on the world',
+    does: 'It will produce the change; it reaches the world when you approve it at review.',
+  },
+  people: {
+    row: 'people',
+    lead: 'this asks the crew to meet or manage people',
+    does: 'It will prepare the material and write up what you bring back; the room is yours.',
+  },
+  video: { row: 'not-built', lead: 'a video' },
+  audio: { row: 'not-built', lead: 'audio' },
+  image: { row: 'not-built', lead: 'an image' },
+  'design-tool': { row: 'not-built', lead: 'work in a design tool' },
+};
+
+/**
+ * Every row a reading names, with the board's sentence for it — resolved once,
+ * at load, and **throwing** if a row is not on the board.
+ *
+ * The alternative was a lookup that fell back to an empty string, which would
+ * have painted a lead-in with nothing after it: exactly the desk-and-board
+ * drift the design above claims is impossible, arriving silently at the one
+ * moment it matters. Refusing to start names the problem; a blank line hides
+ * it. Because this map is built from `READING`'s own rows, the lookup below
+ * cannot miss.
+ */
+const ROW_WHY = new Map(
+  [...new Set(Object.values(READING).map((r) => r.row))].map((row) => {
+    const boundary = BOUNDARIES.find((b) => b.id === row);
+    if (!boundary) throw new Error(`refusalRows: '${row}' is not a job board row`);
+    return [row, boundary.why] as const;
+  }),
+);
+
+const listWords = (words: string[]): string =>
+  words.length < 2 ? (words[0] ?? '') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+
+/**
+ * What the desk says about a sentence, one line per board row it claims;
+ * `[]` for ordinary work.
+ *
+ * **The order is `refusalKeys`'s**, which is `CLAIMS`'s — `money, sign, act,
+ * people`, then the not-built row where its first medium fell. That is *not*
+ * the board's order (`BOUNDARIES` runs `money, people, act, sign`), and the
+ * difference is visible: a sentence claiming `sign` and `people` prints them
+ * the other way round from the positions board. The order that matters here
+ * is the meter's, because the desk's promise is to show what Start would
+ * count — so it is stated as the meter's rather than borrowed from the board,
+ * and a test pins the one pair that can tell them apart.
+ *
+ * The reason is `BOUNDARIES.why` **verbatim** — the same string the positions
+ * board prints under a red duty, decision cite and all — because the desk and
+ * the board saying the same thing has to be a property of one string, not an
+ * agreement between two copies free to drift (D-030).
+ *
+ * A never-channel is deliberately not here, though `refusalKeys` counts one:
+ * the ask card has stated that refusal since D-079, in the channel shelf's own
+ * words and with the channels that *would* carry it offered beside it — which
+ * a line cannot do. A second sentence saying the same thing in another voice
+ * is the duplication D-030 warns about, so the rule is written down: a
+ * never-channel is refused on the ask card, never on this line.
+ *
+ * Reading only. Nothing is counted here — the meter stays at Start, at a rule
+ * armed and at a reply sent (D-259), because the plan re-runs on every
+ * keystroke.
+ */
+export function refusalRows(text: string): RefusalReading[] {
+  const rows: { row: string; keys: string[] }[] = [];
+  for (const key of refusalKeys(text)) {
+    // A key with no reading. Today that is a never-channel and nothing else —
+    // held to it by a test over `CLAIMS`, since this `continue` on its own
+    // would swallow a new claim key whose reading somebody forgot.
+    const reading = READING[key];
+    if (!reading) continue;
+    const found = rows.find((r) => r.row === reading.row);
+    if (found) found.keys.push(key);
+    else rows.push({ row: reading.row, keys: [key] });
+  }
+  return rows.map(({ row, keys }) => {
+    const first = READING[keys[0]!]!;
+    return {
+      row,
+      keys,
+      lead:
+        row === 'not-built'
+          ? `this asks for ${listWords(keys.map((k) => READING[k]!.lead))}`
+          : first.lead,
+      why: ROW_WHY.get(row)!,
+      ...(first.does ? { does: first.does } : {}),
+    };
+  });
+}
+
+/**
+ * The rows a sentence claims, each once, in `CLAIMS`'s order below, a
+ * never-channel last; `[]` for ordinary work.
+ *
+ * Said as `CLAIMS`'s and not "the board's", which is what this line claimed
+ * from D-259 until #22: `BOUNDARIES` runs `money, people, act, sign` and
+ * `CLAIMS` runs `money, sign, act, people`, so the two disagree the moment a
+ * sentence claims both `sign` and `people`.
+ */
 export function refusalKeys(text: string): string[] {
   const keys = CLAIMS.filter((c) => c.patterns.some((p) => p.test(text))).map((c) => c.key);
   // The channel shelf's own gate (D-182): a channel word beside a send verb.

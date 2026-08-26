@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { whoSuffix } from './planLine';
+import { refusalDesk, whoSuffix } from './planLine';
 
 describe('the plan line says its fallbacks out loud', () => {
   it('says nothing when a trade matched and someone holds it', () => {
@@ -26,5 +26,46 @@ describe('the plan line says its fallbacks out loud', () => {
 
   it('stays quiet with no crew at all — the hire line owns that case', () => {
     expect(whoSuffix({ role: null, agentling: null })).toBe('');
+  });
+});
+
+/**
+ * The refusal lines (#22): what the bar shows under the plan for a sentence
+ * the crew will refuse. In the JSX this is a `.map` and a conditional, which
+ * the web suite cannot reach — same extraction, same reason as `whoSuffix`.
+ */
+describe('the desk says what it refuses', () => {
+  /**
+   * Placeholders, deliberately: every word on the row is the server's, and
+   * this function never reads one. Copying the board's real sentences in here
+   * would add somewhere for them to drift without testing anything —
+   * `refusals.test.ts` imports `BOUNDARIES` and holds them to the real thing.
+   */
+  const MONEY = { row: 'money', keys: ['money'], lead: '<lead>', why: '<why>', does: '<does>' };
+  const ACT = { row: 'act', keys: ['act'], lead: '<lead 2>', why: '<why 2>', does: '<does 2>' };
+
+  it('shows nothing at all for ordinary work', () => {
+    expect(refusalDesk(undefined)).toEqual({ lines: [], tail: null });
+    expect(refusalDesk([])).toEqual({ lines: [], tail: null });
+  });
+
+  it('passes each row through untouched — every word on the line is the server’s', () => {
+    expect(refusalDesk([MONEY]).lines).toEqual([MONEY]);
+  });
+
+  /** D-259 settled the behaviour; this is the UI saying it in its own words. */
+  it('says Start still works — once, however many rows', () => {
+    const one = refusalDesk([MONEY]);
+    const two = refusalDesk([MONEY, ACT]);
+    expect(two.lines).toHaveLength(2);
+    expect(one.tail).toBe(two.tail);
+    expect(two.tail).toContain('Start still works');
+  });
+
+  it('never says a word that would read as a block', () => {
+    const { tail } = refusalDesk([MONEY]);
+    for (const word of ['cannot', "can't", 'blocked', 'disabled', 'remove']) {
+      expect(tail?.toLowerCase()).not.toContain(word);
+    }
   });
 });

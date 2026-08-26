@@ -1761,6 +1761,33 @@ export interface WorkSpan {
   category: 'intent' | 'domain' | 'gap' | 'gap-suggestion' | 'channel-word' | 'channel-verb';
 }
 
+/**
+ * The desk's reading of one shelf-of-never row a sentence claims (#22): said
+ * before Start, in D-093's shape — a line, never a block. The reason is the
+ * job board's own `BOUNDARIES.why`, verbatim, so the desk and the board
+ * cannot drift apart.
+ */
+export interface RefusalReading {
+  /** The job board's row id — `money`, `sign`, `act`, `people`, `not-built`. */
+  row: string;
+  /**
+   * The keys the demand meter would count under this row, in the meter's own
+   * order. **Nothing renders these** — they are the join back to the meter,
+   * and what lets one test prove the desk shows exactly the rows Start would
+   * count, including that the not-built collapse drops no medium.
+   */
+  keys: string[];
+  /** The desk's own lead-in, naming what was asked for: "this asks for a payment". */
+  lead: string;
+  /** The board's sentence, verbatim, decision cite and all. */
+  why: string;
+  /**
+   * What the crew will do instead, the desk's own words — absent on the
+   * not-built row, which has no other side.
+   */
+  does?: string;
+}
+
 /** What the concept matcher proposes for a sentence the user typed. */
 export interface MatchSuggestion {
   /** Best-matching role, or null when nothing was confident enough. */
@@ -2312,6 +2339,13 @@ export interface WorkPlan {
   /** What this will cost, before it runs. */
   quote: Quote;
   gaps: string[];
+  /**
+   * The shelf-of-never rows this sentence claims (#22), said at the desk
+   * before Start. Absent for ordinary work, and set by the plan route alone —
+   * no other `planWork` caller carries it, because nothing else renders the
+   * desk. Nothing is counted from here (D-259).
+   */
+  refuses?: RefusalReading[];
   /** Near-misses for the gaps, suggestion-only (D-093) — see MatchSuggestion. */
   suggestions: { word: string; suggestion: string; distance: number }[];
   /**

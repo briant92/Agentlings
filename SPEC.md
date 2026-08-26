@@ -592,6 +592,24 @@ tried, measured and rejected is in `DECISIONS.md`:
   before and after on the three instruments that could show a regression
   (intake 52/54 → 53/54, calibration 90% unchanged with the overclaim
   cells still empty, coverage 15%/21%/64% → 16%/24%/61%) → D-235
+- M5.41 the desk says what it refuses: the shelf-of-never rows a sentence
+  claims, read as it is typed and shown under the plan — one amber line
+  per row carrying three things, the desk's own lead-in naming what was
+  asked for, the job board's `BOUNDARIES.why` rendered **verbatim** so the
+  two cannot drift, and what the crew will do instead, which is the desk's
+  alone because the board is written about a duty and names no other side;
+  the four not-built capabilities collapse onto the board's one
+  `not-built` row, name their mediums once, and carry no offer, since no
+  media is read or made either. D-093's shape — a line, never a block:
+  Start stays enabled and one grey tail says so once, however many rows. A
+  send claimed on a channel the shelf refuses stays the ask card's, which
+  has said it since D-079 and offers the channels that would carry it.
+  Read from the whole sentence, exactly as the meter reads it at Start, so
+  a split into steps cannot make the desk and the count disagree; the row
+  order is the meter's and not the board's, which is stated rather than
+  assumed because the two really do differ; and nothing is counted here —
+  the meter stays at Start, at a rule armed and at a reply sent, because
+  the plan re-runs on every keystroke → D-259, D-269
 
 - **M0 — walking skeleton (this scaffold).** Marching horde, job queue,
   simulated executor, sandbox output, review panel. Evidence: `npm test`

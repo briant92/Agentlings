@@ -2002,6 +2002,25 @@ without an API key.
 
 ## 14. What an agentling is not
 
+**Said at the desk, before Start — Partial (#22, D-269): built and unit-proven,
+the route-to-screen path not yet proven live.** Four of the rows below — the
+payer, the signer, the actor, the chat-and-manager — plus the not-built media,
+are read off the sentence as you type and shown under the plan, one amber line
+each: the desk's own lead-in naming what it read, then the *job board's own
+words* (`BOUNDARIES.why` in `server/src/coverage.ts`, rendered verbatim so the
+desk and the positions board cannot drift), then what the crew **will** do
+instead. Type *pay the deposit to the landlord* and the bar says so about a
+quarter of a second later — the plan is debounced 250 ms and answered by the
+server — instead of the job queueing, spending turns and refusing inside the
+run. It is D-093's shape — a line, never a block: **Start stays enabled**, and
+one grey tail under the lot says so. A send claimed on a channel the shelf
+refuses (WhatsApp, Signal, …) is deliberately *not* on this line — the ask card
+has stated that one since D-079, in the shelf's own words and with the channels
+that would carry it offered beside it. Nothing is counted from the desk's
+reading; the demand meter stays at Start, at a rule armed and at a reply sent
+(D-259), because the plan re-runs on every keystroke. The tag moves to Live
+when `scripts/prove-refusal-ui.mjs` has run against a restarted server.
+
 - **Not autonomous.** It takes one job, does it, and stops — it never
   grants itself future work. Two standing instructions exist, and a person
   wrote both: a **schedule** (D-103) re-queues a sentence on the cadence

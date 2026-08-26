@@ -612,6 +612,26 @@ button.ghost {
 .work-nofiles {
   color: #e8b478;
 }
+/* What the crew will refuse (#22), said at the desk before Start. A `.work-gaps`
+   line that takes the near-miss amber above and nothing else, for the sentence
+   written over it: something was read and is being said back, not refused —
+   which is exactly D-093's shape, a line and never a block. Deliberately not
+   `.work-channel.arrested`'s bordered dress, because that dress means a press
+   was stopped. The board's reason and what the crew will do instead drop back
+   to the gap grey: the lead-in is what there is to read, and those two are the
+   citation and the offer under it. */
+.work-refuses {
+  color: #e8b478;
+}
+.work-refuses-why,
+.work-refuses-does {
+  color: #5a6172;
+}
+/* Said once, however many rows — a fact about the button, not a fourth
+   warning, so it keeps the gap grey and sits under the lot. */
+.work-refuses-tail {
+  padding-top: 1px;
+}
 .rv-mention-guard {
   margin: 0;
   font-size: 12px;

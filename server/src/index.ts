@@ -121,7 +121,7 @@ import { capabilityTokens, compileBlockers, compileDoors } from './capability';
 import { CHANNELS, outboxRefusal } from './channels';
 import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
-import { recordRefusals } from './refusals';
+import { recordRefusals, refusalRows } from './refusals';
 import {
   column,
   columnProblem,
@@ -1597,6 +1597,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   ];
   const names = rosterNames(askChannel);
   const send = sendFacts(text, { channel: askChannel, names }, body.answers);
+  const refuses = refusalRows(text);
   // The quote decides whether asking is worth it at all, and the quote needs
   // the role the draft settles — so the questions are filled in last.
   const quote = quoteFor_(
@@ -1617,6 +1618,13 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     // The desk's underlines: the channel detectors' evidence merged over the
     // matcher's words, replacing the matcher-only list the draft carries.
     spans: sentenceSpans(text, draft.spans),
+    // What the crew will refuse, said before Start (#22) rather than found
+    // inside a run that spent turns discovering it. Read from the *whole*
+    // sentence, exactly as the meter reads it at Start — so a split into
+    // steps cannot make the desk and the count disagree about what was
+    // claimed. Read only: `recordRefusals` is not called here and must never
+    // be, because this route re-runs on every keystroke (D-259).
+    ...(refuses.length > 0 ? { refuses } : {}),
     ...(stepPlans ? { steps: stepPlans } : {}),
     ...(partyPlans ? { party: partyPlans } : {}),
     // A blocked party carries the planner offer, priced (TEAMWORK T3): the

@@ -278,6 +278,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-266 — 2026-08-26 — Buk, read-only, built: five reads taken off Buk's own published contract behind a stdio adapter that can issue nothing but `GET`, the tenant configuration and the key a secret — proven 30/30 against the real adapter, the real contract and the real Buk with no key; the door not installed here and one real payroll owed](#d-266--2026-08-26--buk-read-only-built-five-reads-taken-off-buks-own-published-contract-behind-a-stdio-adapter-that-can-issue-nothing-but-get-the-tenant-configuration-and-the-key-a-secret--proven-3030-against-the-real-adapter-the-real-contract-and-the-real-buk-with-no-key-the-door-not-installed-here-and-one-real-payroll-owed)
 - [D-267 — 2026-08-26 — The SII register, read-only, built: the ticket's own premise was false, so the certificate login is ours — three reads behind a stdio adapter whose credential is a `.p12` and which holds no portal password, proven 33/33 against the real adapter and the real SII with no certificate; the door not installed here and one real month owed](#d-267--2026-08-26--the-sii-register-read-only-built-the-tickets-own-premise-was-false-so-the-certificate-login-is-ours--three-reads-behind-a-stdio-adapter-whose-credential-is-a-p12-and-which-holds-no-portal-password-proven-3333-against-the-real-adapter-and-the-real-sii-with-no-certificate-the-door-not-installed-here-and-one-real-month-owed)
 - [D-268 — 2026-08-26 — The wire file, built: the run says who and how much, the allowlist says where, and BCI's is the only specification anybody publishes](#d-268--2026-08-26--the-wire-file-built-the-run-says-who-and-how-much-the-allowlist-says-where-and-bcis-is-the-only-specification-anybody-publishes)
+- [D-269 — 2026-08-26 — The desk says what it refuses: the rows a sentence claims, read as it is typed and shown under the plan in the job board's own words, verbatim — a line and never a block, with the never-channel left to the ask card that already says it better](#d-269--2026-08-26--the-desk-says-what-it-refuses-the-rows-a-sentence-claims-read-as-it-is-typed-and-shown-under-the-plan-in-the-job-boards-own-words-verbatim--a-line-and-never-a-block-with-the-never-channel-left-to-the-ask-card-that-already-says-it-better)
 
 ## By theme
 
@@ -1119,7 +1120,13 @@ entry updates one file rather than two.
   written at Approve and nowhere else; Santander publishes no layout at
   all, so the format is BCI's own published specification and Santander
   joins the column table when its Office Banking template arrives; D-219
-  measured by grep rather than asserted; proven 37/37, one real batch owed
+  measured by grep rather than asserted; proven 37/37, one real batch owed;
+  and D-269, the desk *saying* what it refuses (#22) — the keys D-259
+  already counts read back at the bar before Start, one amber line per
+  board row with the board's own `BOUNDARIES.why` rendered verbatim, D-093's
+  shape with Start never disabled and one tail saying so once, a
+  never-channel left to the ask card that has stated it since D-079, and
+  nothing counted from a route that re-runs on every keystroke
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -21661,3 +21668,208 @@ token. The proof's last line says NOT proven end to end until then, and the
 issue stays open.
 
 Whole suite **2609 server, 359 web**; typecheck clean.
+
+## D-269 — 2026-08-26 — The desk says what it refuses: the rows a sentence claims, read as it is typed and shown under the plan in the job board's own words, verbatim — a line and never a block, with the never-channel left to the ask card that already says it better
+
+**Decision.** #22, as built. `refusalRows(text)` in `server/src/refusals.ts`
+turns the keys `refusalKeys` already names into what the bar says:
+`{ row, keys, lead, why, does? }`, one entry per **job board row**, in the
+*meter's* order (see below — it is not the board's).
+`POST /api/levels/:lid/work/plan` carries them as `refuses` when there are any
+and omits the field otherwise; the work bar paints one amber line per row
+under the plan card — the desk's own lead-in naming what was asked for
+(*this asks for a payment*), then the board's `why`, then what the crew will
+do instead. Type *pay the deposit to the landlord on Friday* and the bar says
+so about a quarter of a second later — `DEBOUNCE_MS` is 250 and the plan is
+the server's answer — where before the job queued, spent turns and refused
+inside the run with the desk silent the whole way.
+
+### Both halves, because one of them is the useful one
+
+The ticket's example line was *"this asks for a payment — the crew never
+pays; **it will draft the instruction for you to send**"*, and the first
+build shipped only the refusal half: lead-in plus `BOUNDARIES.why`, which
+says what will not happen and never what you get. Caught on the spec axis at
+review, and it was a real loss — since D-268 the crew genuinely does compose
+a payment batch for you to upload, so the desk was saying less than the
+product does.
+
+So the row carries `does`, and it is **the desk's own words, never the
+board's**: `BOUNDARIES.why` is written about a duty on a job posting and has
+no other side to name, and teaching it one here would push desk copy into the
+positions board. The ticket's two clauses — its example wording, and
+*"wording from the board's `BOUNDARIES.why`"* — are reconciled rather than
+one being picked over the other: the citation is the board's verbatim, the
+offer beside it is the desk's.
+
+`does` is **absent on the not-built row**, deliberately. There is no other
+side to that line — D-259's own words are that no media is *read* or made —
+and a consolation sentence there would have been the first thing on this line
+that is not true.
+
+### The reason is one string, not two copies
+
+The line renders `BOUNDARIES.why` from `server/src/coverage.ts` **verbatim**,
+decision cite and all — the same string the positions board prints under a red
+duty through `shortReason`. The ticket asked for "wording from the board's
+`BOUNDARIES.why` so the desk and the job board say the same thing", and the
+only way that survives the next edit is for it to be a property of one string
+rather than an agreement between two. This is D-030's rule in its ordinary
+direction: a notion duplicated is a notion free to disagree. The live proof
+reads the sentence off `coverage.ts` on disk and compares byte for byte, so
+the day somebody rewords the board and not the desk, the check fails rather
+than the two quietly drifting.
+
+### The order is the meter's, and saying "the board's" was wrong
+
+The first build's own doc comment said `refusalRows` returns rows *"in the
+board's order"*, and **both review axes caught it first, independently.** It
+returns them in `refusalKeys`'s order, which is `CLAIMS`'s — `money, sign,
+act, people` — while `BOUNDARIES` runs `money, people, act, sign`. A sentence
+claiming `sign` and `people` prints them the other way round from the
+positions board. The only order test at the time used `money` + `act`, the
+one pair that cannot tell the two orderings apart, which is exactly how the
+claim survived being written down.
+
+The order stands as it was; the sentence about it is what changed, because
+the meter's order is the right one here — the desk's promise is to show what
+Start would count. A test now pins the `sign` + `people` pair and asserts the
+row order equals `refusalKeys`'s, so the two can never quietly diverge.
+`refusalKeys`'s own docstring carried the same wrong phrase since D-259 and
+is corrected with it.
+
+The **lead-in** is the desk's own, and deliberately: D-259 established that
+the board's words are written for O*NET duty statements and the desk's for
+a sentence somebody typed. `BOUNDARIES.why` opens *"Never moves money or
+takes it…"*, which is a fact about the crew; what the desk owes first is
+what it read in **your** sentence. So the lead-in names the claim and the
+board's sentence is the citation under it — which is also why the reason
+drops to the gap line's grey while the lead-in keeps the amber.
+
+### Amber, because the desk already has a word for this
+
+Three looks were mocked up before anything was written, per the rule for a
+UI change: grey like the gap line, amber, and a bordered block. Amber
+(`#e8b478`) was chosen because it is not a new colour but one the desk already
+uses for this exact meaning — `.work-mention` (a channel word with no send
+verb) and `.work-nofiles` (a file named for a channel that cannot carry one),
+whose own comment in `styles.css` reads *"something was read and is being said
+back, not refused."* That is exactly D-093's shape, so borrowing it costs one
+class and no new vocabulary. The line is a `.work-gaps` that changes the
+colour and nothing else, so its metrics stay the desk's rather than a second
+copy of them.
+
+The bordered block was rejected on the same reasoning that recommended the
+amber: it would have borrowed `.work-channel.arrested`'s dress, and **that
+dress means a press was stopped**. D-259 says the desk warns and does not
+block; a box that looks like the arrest box teaches the opposite on sight,
+before a word is read.
+
+### Start, said in the UI's words
+
+D-259 settled the behaviour — *a refusal that is queued anyway — the desk
+warns, it does not block — is still one refusal*. What #22 left open was
+whether the line **says** so, and it does, once: one grey tail under the
+lot, *Start still works — the crew does the rest and says what it left to
+you.* Once and not per row, because a fact about the button is not a fourth
+warning and the same sentence twice is the reader's cue that neither copy
+matters. `refusalDesk` in `web/src/panels/planLine.ts` is where that rule
+lives, extracted from the JSX for the reason `whoSuffix` beside it was: a
+`.map` and a conditional inside a component are unreachable to the web suite
+(D-177, D-178). Its test holds the tail to no word that reads as a block —
+*cannot*, *blocked*, *disabled*, *remove* — so the copy cannot drift into a
+gate while the behaviour stays a warning.
+
+### The never-channel is the ask card's, and that is written down
+
+`refusalKeys` returns a sixth kind of key the ticket did not anticipate: a
+send claimed on a channel the shelf refuses by decision (D-077 — WhatsApp,
+Signal, iMessage, LinkedIn, WeChat, Messenger, payments). Those have no
+`BOUNDARIES` row and so no `why` — but **the desk has spoken for them since
+D-079**. `detectChannelAsk` already raises a card in the shelf's own words
+(*"Personal WhatsApp has no API, and unofficial routes get numbers banned"*)
+**and offers the channels that would carry it**, which a line cannot do.
+Adding a second sentence saying the same thing in another voice, with a tail
+between them contradicting the card's own *"Start queues this as a draft job
+that sends nothing"*, is the duplication D-030 warns about. So the rule is
+recorded rather than left to be rediscovered: **a never-channel is refused on
+the ask card, never on the refusal line** — `refusalRows` skips any key with
+no reading, and a test asserts the WhatsApp sentence gets keys from the meter
+and no row for the desk.
+
+The cost of the choice, stated: the plan carries five key kinds and the meter
+counts six. That asymmetry is deliberate and is why it is written here.
+
+### Read from the whole sentence, and counted nowhere
+
+The reading runs on the **whole** text, exactly as `recordRefusals` reads it
+at Start — so a sentence that splits into steps (D-105) cannot make the desk
+and the count disagree about what was claimed. And the plan route calls
+`refusalRows` and never `recordRefusals`: D-259's rule stands unchanged, the
+meter lives at Start, at a rule armed and at a reply sent, because this route
+re-runs on every keystroke and would otherwise be a keystroke meter. The live
+proof holds the whole run to it by reading `refusals.jsonl` before and after
+and requiring the bytes to be identical.
+
+### One shape the board and the desk disagree about, resolved
+
+The board has a single `not-built` row; the meter has four keys under it
+(`video`, `audio`, `image`, `design-tool`, split in D-259 so a Figma ask does
+not read as demand for media generation). One line per *key* would print the
+same 160-character reason twice for *"make a video and generate an image"*.
+So the rows collapse onto the board row and the mediums are named once —
+*this asks for a video and an image* — which is what "one line per row
+claimed" means when the row and the key are not the same thing.
+
+### Proof
+
+- Unit, `server/src/refusals.test.ts`: ordinary work says nothing; the row,
+  its keys, the lead-in, the reason and the offer; `why` is byte-identical to
+  `BOUNDARIES.find(…).why` for every row the line can show; the row order
+  equals `refusalKeys`'s and is pinned on the `sign` + `people` pair that can
+  tell it from the board's; every `CLAIMS` key has a reading, so the loop's
+  `continue` can only ever be a never-channel; `does` present on all four
+  policy rows, absent on not-built, and appearing in no `BOUNDARIES.why`; the
+  not-built collapse, two mediums and three; the never-channel counted and not
+  shown; and every sentence in `fixtures/refusals/desk-sentences.json` showing
+  exactly the keys the meter would count, minus the never-channels.
+- Unit, `web/src/panels/planLine.test.ts`: nothing for ordinary work, each row
+  passed through untouched, the tail identical for one row and two, and no
+  word in it that reads as a block. Its fixtures are placeholders on purpose —
+  every word on the line is the server's, and copying the board's real
+  sentences here would only give them somewhere to drift.
+- Live, `node scripts/prove-refusal-ui.mjs` (headless Edge, Start never
+  pressed, nothing queued): the plan route's rows; the money line under the
+  plan with its reason compared byte for byte against `coverage.ts` read off
+  disk; the offer beside it, and that the board's sentence does not contain
+  it; two rows and still one tail; Start not disabled throughout; an ordinary
+  sentence with no line and no tail; a WhatsApp sentence with its ask card and
+  no line; and `refusals.jsonl` byte-identical before and after.
+
+**OWED.** The live proof has not run. The API was not listening when this was
+built (Vite was up on 5173, nothing on 4600), and a session must not start or
+restart the server: `npm run serve` does not watch, so the running server
+would be stale anyway, and starting one fires the armed rows — HQ's Monday
+report `15548352` and the two mail rules `c9bc102f` and `c4a97302` — which
+would spend money and send real mail. So the script is written and refuses a
+server older than #22 by name, and the ticket's fourth acceptance box stays
+unticked until Brian runs `npm run serve` and the script against it.
+
+### What review changed, on top of the two above
+
+Both axes ran on the finished change. Beyond the order claim and the missing
+half, five comments claimed more than the code did and were corrected rather
+than defended: the `why` lookup degraded to `''` where its neighbour asserted
+with `!` — a row off the board would have painted a lead-in with nothing after
+it, silently, at the one moment the doc four lines above says that cannot
+happen, so the rows are now resolved once at load and a row that is not the
+board's **throws**; the `continue` that skips a key with no reading claimed a
+guarantee it did not make, and is now held to it by a test over `CLAIMS`; the
+CSS called amber *"the third use"* when `#e8b478` had nine, one of them twelve
+lines below; and the proof script said *"nine refusing plans"* where three
+sentences are typed. The line also restated `.work-gaps`'s three metrics
+instead of composing with it, as the tail beside it already did; and
+`refusalDesk` was renaming `row` to `key` on the way through, losing the
+domain word for nothing — it passes the rows through untouched now.
+
+Suites: server 2,621 passed (2,621), web 363 passed (363), typecheck clean.

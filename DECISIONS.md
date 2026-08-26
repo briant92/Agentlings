@@ -271,7 +271,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal](#d-259--2026-08-25--built-the-desk-counts-what-it-refuses--one-line-per-never-row-or-not-built-capability-beside-the-ledger-keyed-as-the-board-keys-its-rows-but-worded-for-a-sentence-because-the-boards-duty-lists-fired-99-times-on-250-real-sentences-and-never-on-a-refusal)
 - [D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent](#d-260--2026-08-25--built-the-real-work-block--every-verdict-stamped-with-when-and-by-whom-one-pure-function-over-the-ledger-the-job-records-and-the-refusals-and-ledgerreport-leads-with-it-87-jobs-promoted-on-three-real-levels-last-week-none-of-them-auto-sent)
 - [D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one](#d-261--2026-08-25--built-the-score-arrives-on-monday--a-schedule-row-may-carry-report-realwork-its-firing-composes-last-weeks-block-into-an-outbox-through-the-contract-a-sessions-outboxjson-meets-and-lands-it-in-review-at-0-with-no-model-no-door-and-no-ledger-row-and-the-standing-approval-it-earns-is-the-ordinary-one)
-- [D-262 — 2026-08-25 — First real door, the path proven: Alpha Vantage market data fits the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and the HQ job is owed on a key](#d-262--2026-08-25--first-real-door-the-path-proven-alpha-vantage-market-data-fits-the-ordinary-form-with-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-the-far-end-checks-only-that-a-key-is-present-and-the-hq-job-is-owed-on-a-key)
+- [D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and one HQ job read live quotes through it for $1.11](#d-262--2026-08-25--first-real-door-alpha-vantage-market-data-through-the-ordinary-form-with-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-the-far-end-checks-only-that-a-key-is-present-and-one-hq-job-read-live-quotes-through-it-for-111)
 
 ## By theme
 
@@ -1055,8 +1055,9 @@ entry updates one file rather than two.
   (#14) — Alpha Vantage's hosted market-data server through the D-244 form
   with no code, a fifth D-245 chip carrying the key as a Bearer header the
   server honours but documents only as `?apikey=`, the far end measured to
-  check a key's presence and never its value, the path proven live 7/7
-  and the HQ job owed on a key; D-255, supervised live
+  check a key's presence and never its value, the path proven live 8/8
+  and one HQ job (`0b9886dc`) reading live quotes through the door for
+  $1.11, in review; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20413,15 +20414,17 @@ arrives. No re-send on a failed firing: a refusal (the block over the cap)
 lands on the row's `lastError` like any firing's and the next Monday tries
 again.
 
-## D-262 — 2026-08-25 — First real door, the path proven: Alpha Vantage market data fits the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and the HQ job is owed on a key
+## D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and one HQ job read live quotes through it for $1.11
 
 **Decision.** The first door since D-241 to do real work is **Alpha Vantage's
 hosted MCP server**, added through the D-244 form exactly as it stands — no
 server code. It ships as a fifth D-245 suggestion (`catalog/suggestions.json`,
 source and date recorded), carrying the key as
-`Authorization: Bearer ${ALPHAVANTAGE_API_KEY}`. The path is proven live
-**7/7** on the running server without any key of Brian's; the HQ job (#14's
-second criterion) waits on a free key and is owed, with its id and cost, below.
+`Authorization: Bearer ${ALPHAVANTAGE_API_KEY}`. The path was proven live
+**8/8** on the running server without any key of Brian's; then Brian added
+the door through Settings with a free key, and **one HQ job read live quotes
+through it** — `0b9886dc`, 11 door calls, 22 turns, **$1.1068**, done and in
+review (below).
 
 ### The three candidates, read from their own pages on 2026-08-25
 
@@ -20498,19 +20501,24 @@ byte-identical before and after. Unit: `suggestions.test.ts` 11/11 holds the
 shipped entry to `draftProblem`, to naming a source and a docs page, to the
 header naming its secret, and to https; `userconnections.test.ts` 21/21.
 
-**Owed — the HQ job.** With a key — `node scripts/prove-market-door.mjs
-<key>`, which lets the script prove the route's own write to `.env`; or the
-key pasted in Settings → reads → add a connection of your own → Alpha
-Vantage, in which case that write is the form's and the script says it is
-not proving it — the second half adds the connection through
-`POST /api/connections`, checks it is stored **off** with the server's tools
-and the key nowhere in the connections file, switches it on, queues **one**
-job on HQ holding `tools: ["alphavantage"]` (`single: true`, nine door
-calls: three symbols × quote, 50-day and 200-day SMA), reads the stored
-job's `tools` off disk (the record, not the reply — D-254), waits for it,
-and reads its trail for `mcp__alphavantage__*` calls and for the absence of
-any other door. It never resolves the job — promotion is Brian's hand. The
-job id and cost land here when it runs.
+**The HQ job — the same day, through the form.** Brian claimed a free key
+and took the chip through Settings → reads → add a connection of your own →
+*check and add* — the ordinary path, no script involved in the add. Read
+back off disk: the stored row is `http`, `Bearer ${ALPHAVANTAGE_API_KEY}` in
+its header, **off**, with the **133 tools the server named**; the key is in
+`.env` under its own name and in neither the connections file nor the job's
+`.session.json` (the placeholder is what sits beside the work — D-242 held
+on the first real door). Then the script's second half, **8/8**: the door
+switched on and listed as a ready read door; **one** job queued on HQ
+(`single: true`, `tools: ["alphavantage"]`) and the stored record holding
+exactly that door (the record, not the reply — D-254); picked up by `a1`
+five seconds later; **done, in review**; its trail shows **11 calls through
+the door — `GLOBAL_QUOTE` and `SMA` — and no other door** (no web, no
+search, no other MCP). `NOTE.md` carries quotes and 50/200-day SMAs for
+IBM, MSFT and SPY, every series `Last Refreshed: 2026-08-25`, each line
+saying which side of both averages the price sits — live data, nothing
+recalled. **Job `0b9886dc`, 22 turns, $1.1068.** The script never resolves a
+job; promotion is Brian's hand, and #14 closes when it is given.
 
 **Not built, on purpose.** No `.env.example` line — a user-added connection's
 key is written by the form (D-244), and the shipped example documents shipped

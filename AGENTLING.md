@@ -369,8 +369,8 @@ variable names — and saves nothing; verification stays the tool-list read.
 Above it, a *verified here* shelf of the doors this install has actually
 connected to, each with its source and date, replaces the five D-245
 suggestion chips (the fifth, Alpha Vantage's hosted market-data server, is
-the first real door whose path through the form as it stands is proven; its
-HQ job is owed on a key — D-262).
+the first real door taken through the form as it stands, and one HQ job has
+read live quotes through it — D-262).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.

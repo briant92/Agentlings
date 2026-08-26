@@ -7,12 +7,17 @@
 // probe failed with a module-not-found the assertion could not show.
 //
 // It exits 3 without FIXTURE_TOKEN, so the test proves the probe really passes
-// a declared secret through rather than that a happy path happens to work.
+// a declared secret through rather than that a happy path happens to work — and
+// it says why on stderr first, which is what the probe now reads back and puts
+// in front of whoever is filling in the form.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-if (!process.env.FIXTURE_TOKEN) process.exit(3);
+if (!process.env.FIXTURE_TOKEN) {
+  process.stderr.write('fixture: FIXTURE_TOKEN is not set\n');
+  process.exit(3);
+}
 
 const mcp = new McpServer({ name: 'fixture', version: '1.0.0' });
 mcp.registerTool(

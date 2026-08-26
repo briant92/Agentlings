@@ -35,6 +35,9 @@ const PROBE_TIMEOUT_MS = 60_000;
  */
 const NO_TOOLS = 'the server connected but offers no tools';
 
+/** How much of a spawned server's stderr is kept — enough for its reason. */
+const COMPLAINT_CAP = 2000;
+
 export interface ProbeResult {
   ok: boolean;
   tools: string[];
@@ -50,6 +53,8 @@ export async function probeConnection(
 ): Promise<ProbeResult> {
   const client = new Client({ name: 'agentlings', version: '1.0.0' });
   let transport: StdioClientTransport | StreamableHTTPClientTransport;
+  /** Whatever the spawned server said about itself before it gave up. */
+  let complaint = '';
 
   try {
     if (connection.transport === 'stdio') {
@@ -69,6 +74,16 @@ export async function probeConnection(
         // minimal safe set, which is a better default than ours would be.
         env: { ...defaultEnv(), ...declared },
         stderr: 'pipe',
+      });
+      // `stderr: 'pipe'` was set here from the beginning and read by nobody,
+      // so a server that refused to start said *why* into a stream nothing
+      // listened to and the person filling in the form saw "Connection
+      // closed". The SDK hands back a PassThrough before the child is spawned
+      // precisely so early output is not lost, so the listener goes on now.
+      // Bounded, because the reason is the first line or two and an adapter in
+      // a crash loop could otherwise write until this process is out of memory.
+      transport.stderr?.on('data', (chunk: Buffer) => {
+        if (complaint.length < COMPLAINT_CAP) complaint += chunk.toString('utf8');
       });
     } else if (connection.transport === 'http') {
       if (!connection.url) return fail('no URL to reach');
@@ -107,7 +122,7 @@ export async function probeConnection(
     // who just pasted an address. One that advertises tools and lists none
     // reaches the check above. Both say the same readable thing.
     if (/-32601|method not found/i.test(message)) return fail(NO_TOOLS);
-    return fail(message);
+    return fail(withComplaint(message, complaint));
   } finally {
     // Both halves, and neither may throw past the result: a probe that
     // reported success and then blew up on cleanup would look like a failure
@@ -118,6 +133,26 @@ export async function probeConnection(
 
 function fail(error: string): ProbeResult {
   return { ok: false, tools: [], error };
+}
+
+/**
+ * The transport's account of the failure, plus the server's own if it gave
+ * one.
+ *
+ * The transport's is kept rather than replaced: "Connection closed" is useless
+ * alone but it is what says the process died, and a server can write to stderr
+ * on a run that goes on to succeed. Only the first few lines are shown —
+ * `npx` writes progress there, and a wall of download noise would bury the one
+ * sentence that matters.
+ */
+export function withComplaint(message: string, complaint: string): string {
+  const said = complaint
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join('; ');
+  return said ? `${message} — the server said: ${said}` : message;
 }
 
 function defaultEnv(): Record<string, string> {

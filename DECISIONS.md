@@ -275,6 +275,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-263 — 2026-08-25 — The catalog gets wide, built: a browse over the public MCP registry fills the form and saves nothing, a verified-here shelf carries a source and a date per door, the D-245 chips retire — the mechanism proven live against the real registry and Brave’s real server with a key already in `.env`, the routes and the form owed on the restart](#d-263--2026-08-25--the-catalog-gets-wide-built-a-browse-over-the-public-mcp-registry-fills-the-form-and-saves-nothing-a-verified-here-shelf-carries-a-source-and-a-date-per-door-the-d-245-chips-retire--the-mechanism-proven-live-against-the-real-registry-and-braves-real-server-with-a-key-already-in-env-the-routes-and-the-form-owed-on-the-restart)
 - [D-264 — 2026-08-25 — Supervised live acting, built: `browser-act` carries the twelve as a supervised second connection — hand-queued only, on a Settings allowlist, in a headed window the run itself owns and the person can close — proven live 19/19 through the real runner, the routes owed on the restart](#d-264--2026-08-25--supervised-live-acting-built-browser-act-carries-the-twelve-as-a-supervised-second-connection--hand-queued-only-on-a-settings-allowlist-in-a-headed-window-the-run-itself-owns-and-the-person-can-close--proven-live-1919-through-the-real-runner-the-routes-owed-on-the-restart)
 - [D-265 — 2026-08-25 — A voice note is a sentence, built: Telegram audio polled off the bot and read on this machine by whisper-small through transformers.js, the language asked of the model first and silence gated by energy, quoted back above the work bar and confirmed by the ordinary Start with the audio riding the job — the install one step proven 4/4, the routes and a real note owed on the restart](#d-265--2026-08-25--a-voice-note-is-a-sentence-built-telegram-audio-polled-off-the-bot-and-read-on-this-machine-by-whisper-small-through-transformersjs-the-language-asked-of-the-model-first-and-silence-gated-by-energy-quoted-back-above-the-work-bar-and-confirmed-by-the-ordinary-start-with-the-audio-riding-the-job--the-install-one-step-proven-44-the-routes-and-a-real-note-owed-on-the-restart)
+- [D-266 — 2026-08-26 — Buk, read-only, built: five reads taken off Buk's own published contract behind a stdio adapter that can issue nothing but `GET`, the tenant configuration and the key a secret — proven 30/30 against the real adapter, the real contract and the real Buk with no key; the door not installed here and one real payroll owed](#d-266--2026-08-26--buk-read-only-built-five-reads-taken-off-buks-own-published-contract-behind-a-stdio-adapter-that-can-issue-nothing-but-get-the-tenant-configuration-and-the-key-a-secret--proven-3030-against-the-real-adapter-the-real-contract-and-the-real-buk-with-no-key-the-door-not-installed-here-and-one-real-payroll-owed)
 
 ## By theme
 
@@ -1081,7 +1082,20 @@ entry updates one file rather than two.
   through transformers.js, the language asked of the model first and
   silence gated by energy, quoted back above the work bar and confirmed by
   the ordinary Start with the audio riding `input/`, the install one step
-  proven 4/4, the routes and a real note owed on the restart; and D-257, Brian as the manager, D-197 standing, a planner-only
+  proven 4/4, the routes and a real note owed on the restart; D-266, Buk
+  read-only built (#18) — a stdio adapter this repo owns over five reads
+  taken off Buk's own unauthenticated Swagger contract, one request
+  function that hard-codes `GET` and has no body to give, so a
+  modify-scoped key still cannot reach the `POST` Buk offers at two of the
+  same five addresses; the tenant an argument on the row and the key
+  `BUK_API_KEY`; the stdio probe taught to read the stderr it had piped
+  since D-244 and never listened to, so a server refusing to start says why
+  in the form; review caught that `..` as an employee normalised out of the
+  five paths into the one family left out by name, closed by parsing the
+  built URL rather than trusting the string; proven 30/30 against the real
+  adapter, the real contract and the real Buk with no key, the door not
+  installed on this machine and both live boxes owed on a tenant and a
+  key; and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -20980,3 +20994,190 @@ hundred, the same window the roster poll has always read.
 - **No GPU, no model choice, no language setting** — DML measured broken;
   turbo is a constant to change with a measurement; the language is asked
   of the model, not of a form.
+
+## D-266 — 2026-08-26 — Buk, read-only, built: five reads taken off Buk's own published contract behind a stdio adapter that can issue nothing but `GET`, the tenant configuration and the key a secret — proven 30/30 against the real adapter, the real contract and the real Buk with no key; the door not installed here and one real payroll owed
+
+**Decision.** Buk — the Chilean HR and payroll system a company runs its
+people on — becomes a connection through a **stdio MCP adapter this repo
+owns**: `scripts/buk-mcp.mts`, whose whole mind is `server/src/buk.ts`. It
+has to be written rather than catalogued because Buk publishes a per-tenant
+REST API and **no MCP server** (D-252), so #14's answer — a vendor's own
+server through the existing form, no code — is not available here.
+
+It exposes **five reads and there is no sixth**: `employees`,
+`active_employees`, `employee_plans`, `vacations_available`, `pay_stubs`. The
+**tenant is configuration** — `--tenant <subdomain>` on the connection's own
+row, in plain sight in Settings — and the **key is a secret**, `BUK_API_KEY`,
+in `.env` under D-078's one store, declared by the connection and reaching
+only it (D-217). It is added through the D-244 form like anything else, its
+tool list read off the adapter rather than typed (D-044), and it lands on the
+verified-here shelf with the date this install's probe answered (D-256).
+
+**Read-only is a property here, not a promise.** Buk issues a token as
+*Lectura* or *Lectura y Modificación*, and an admin handing over the wrong one
+is a likely event rather than a hypothetical — so the guarantee could not be
+"we asked for a read key". There is **one request function**; it hard-codes
+`GET`; it takes no body and has no parameter that could carry one; and the
+only paths it can build come from one table of five. A write is not refused,
+it is unrepresentable. That is why the proof measures the wire rather than
+reading the table: a table says what it holds, not what the process does.
+
+### What proved it
+
+Buk serves an **unauthenticated Swagger 2.0 contract from every tenant** —
+`https://demo.buk.cl/api/chile/es/api_docs`, **151 paths**, read 2026-08-26.
+Every path, every query parameter and both date formats came off it rather
+than off support-centre prose, and the proof re-reads it live on every run, so
+a Buk that moves an endpoint fails a check here instead of failing inside
+somebody's paid job.
+
+The contract is also where the traps are. **The same API uses two date
+formats**: `/employees/active` wants `date` as `YYYY-MM-DD` and
+`/employees/{id}/vacations_available` wants it as `DD-MM-YYYY`. A caller that
+guesses does not get an error, it gets a wrong answer — so the format is per
+parameter in the table, said in the tool's own description, and checked before
+anything leaves.
+
+**Measured live, with no account and no key:** `demo.buk.cl` answers a missing
+token and a wrong token identically — **401**, body `"no_authorize"`. That is
+true and useless, so each status is sent at the thing the reader can change
+(401 → the key, 403 → the token's permissions, 404 → the id, since every path
+here is fixed) with Buk's own words kept beside ours rather than replacing
+them.
+
+And the claim is not free: **two of the five paths this adapter holds are also
+writes in Buk** — `POST /employees` and `POST /employees/{id}/plans`, at the
+very same address. A modify-scoped key reaches both with a one-word change to
+a `curl`. What stops it here is that no such word exists anywhere in the
+adapter, which `prove-buk-door.mts` §5 measures by driving all five reads at a
+server that writes down the method and the body it received.
+
+`npx tsx scripts/prove-buk-door.mts` — **30/30, no server, no account, no
+key, nothing written**: the form's own validator accepts the draft; the real
+probe spawns the real adapter and reads back exactly the five tool names, none
+of them named for a write; the shelf's date and source are stamped; the
+connection is off until Settings says otherwise; the tenant is on the row and
+not in a secret; a missing tenant, a whole URL as a tenant and a missing key
+are each refused **by name, at startup, in a sentence the form now shows**;
+each of the five paths is still a `GET` in Buk's live contract; then, through
+the real adapter over MCP at the real Buk, **all five reads reach Buk and are
+refused there** — so the tool list is a door rather than a decoration — with
+the first read back as *Buk refused the key (401) — BUK_API_KEY is not a token
+this tenant accepts. Buk said: "no_authorize"*, an invented `create_employee`
+refused as *this connection has no tool called … — it reads only*, a
+`YYYY-MM-DD` date on the read that wants `DD-MM-YYYY` refused before the wire,
+and `..` as an employee refused as a path. Seven mutations of `buk.ts` were
+each caught by `buk.test.ts`: `GET` → `POST`, the date check disabled, the
+ceiling ignored, the unknown-tool refusal broken, the page-size clamp removed,
+the path check disabled, and the redirect refusal removed.
+
+### Review's catches taken
+
+- **The five paths were four and a wildcard.** `encodeURIComponent` leaves a
+  dot unreserved, so an employee of `..` built `/employees/../payroll_detail`,
+  which every URL parser — `fetch` included — normalises to `/payroll_detail`:
+  a path this adapter does not hold, in the very family it leaves out by name.
+  Reproduced before it was closed. No write was ever reachable (only `GET`
+  leaves, and a slash is escaped, so it could walk one segment and never turn),
+  but *"five paths and no sixth"* was **not true**, and the 404 sentence's
+  *every path this connection uses is fixed* was a claim the code did not
+  enforce. It enforces it now, where the claim is made: the built URL is
+  parsed and its path compared against the literal one, so anything a parser
+  decides to do to a string we concatenated is caught rather than trusted. It
+  refuses precisely that and no more — `...` is an absurd id, not a segment,
+  and Buk is left to say there is no such employee.
+- **A redirect would have carried the payroll token.** `auth_token` is a header
+  of Buk's own invention, and only `Authorization` is stripped when a redirect
+  crosses origins, so a followed redirect hands a live payroll token to
+  whatever answered. `redirect: 'error'` now. The first version of that test
+  pointed the redirect at an unreachable host, which made it pass whether
+  redirects were followed or not; it points at somewhere that *would* answer
+  200, and asserts one request reached the server rather than two.
+- **Two unfalsifiable checks in the proof**, the shape #16 and #17 were each
+  caught by: `Boolean(stored.source)` could not fail, because
+  `connectionFromDraft` always falls back to `'typed by hand'`, and
+  `Boolean(stored.verifiedAt)` asserted the proof's own argument. Both assert
+  values now — and `'typed by hand'` is the honest answer for a form filled by
+  hand, since Buk is in no registry to have been filled from.
+- **The proof's §5 was a copy of a test.** It stood up its own recording Buk on
+  loopback and drove the five reads at it — the same server, the same reply,
+  the same assertions as `buk.test.ts`, and no live evidence the suite did not
+  already carry. Cut; §4 gained the five real reads against the real Buk
+  instead, which only the spawned adapter can show.
+- **`BUK_COUNTRY` was an export nobody imported**, while the proof wrote
+  `` `…/api/${'chile'}/es/api_docs` `` — a literal interpolated into a template,
+  duplicating the notion the export exists to hold. The proof imports it.
+- Smaller: `fetchImpl` and `trimReply`'s `ceiling` were parameters no caller
+  ever passed (both gone); `COMPLAINT_CAP` sat mid-file away from the other
+  constants.
+
+Left as it is, with the reason: `schemaFor` and `valueFor` both switch on
+`BukParamKind`, and collapsing them into one record of pairs was considered
+and declined — one builds JSON Schema for a model to read and the other checks
+and serialises a value, and a table of pairs would read worse than two
+switches that each do one thing.
+
+### The probe learned to say what the server said
+
+`stderr: 'pipe'` had been set on the stdio probe since D-244 and **read by
+nobody** — the field-written-and-never-read shape #17's review caught. So a
+server that refused to start said *why* into a stream nothing listened to, and
+the person filling in the form saw `MCP error -32000: Connection closed`. The
+SDK hands back a `PassThrough` before the child is spawned precisely so early
+output is not lost; the probe now listens on it, bounded to 2,000 characters
+and the first three lines, and a failed probe carries the transport's reason
+**and** the server's own. That is what makes this adapter's three startup
+refusals reach a form at all, and it is general — every stdio connection gets
+it. The fixture now writes its reason before exiting, so the existing "passes
+the declared secret through" test proves the path rather than merely proving
+that a failure happened.
+
+### Left out by name
+
+- **`GET /payroll_detail/month`** — every employee's *liquidación* for a
+  month, which Buk gates behind *Permitir ver información sensible*. The
+  ticket's pay-stub read is one employee's, which is what a payroll question
+  asks. D-249's sensitive line: a door is added when something needs it, never
+  in case.
+- **The other 146 paths**, including every `POST` and `PATCH` the contract
+  offers. #18 says reads; the acts ledger and the authority matrix are built
+  for the first act beyond send, which `HORDE.md` §4 still expects to be the
+  SII's accept/claim (D-250).
+- **Eight of the thirteen filters on `GET /employees`.** An argument the model
+  can see is an argument it can spend a turn getting wrong; the five kept are
+  the ones a payroll question asks.
+- **A country flag.** Buk's path carries the country and it has five; this
+  adapter is the Chilean one, in a constant, because #18 is a Chilean system
+  and a flag with one caller is a branch nobody has run.
+
+### The reply's own size
+
+Unlike a third-party stdio server, this one is ours, so it owns the size of
+what it says — the note D-244 had to leave open (`maxOutputTokens` was deleted
+from the registry because the SDK talks to a stdio server directly and there
+is no point of ours in between). `page_size` is clamped into Buk's own
+documented 25–100 rather than refused, and a reply over 40,000 characters
+drops **whole records** and says how many it kept of how many: a reply cut
+mid-record is invalid JSON, and one quietly shortened is worse than both,
+because the reader believes it has the set.
+
+### Owed
+
+The ticket's live half — **two boxes, not one**, which the first draft of this
+entry understated. `prove-buk-door.mts` says so in its own last line: *not
+proven end to end until one real HQ job reads a real Buk through this
+connection and is promoted.*
+
+- **"One real HQ job reads employees through it and is promoted"** — nothing
+  has run.
+- **"The connection is added through the form"** — the tool list *is* read from
+  the adapter, by the same `probeConnection` the route calls, but the route and
+  the form themselves were never walked: `.agentlings/connections.json` is
+  empty and no `buk` row exists. It could not be otherwise here, because the
+  add flow probes before it writes (D-244) and the adapter refuses to start
+  without a key — deliberately.
+
+Both wait on the same thing: a tenant and a read-only key in `.env`, which this
+machine does not have. So the adapter, its tool list, the shelf's stamps and
+the read-only guarantee are proven; the door is **not installed**. Nothing is
+armed, nothing is stored, `.env` is untouched.

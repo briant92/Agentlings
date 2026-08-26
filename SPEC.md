@@ -430,7 +430,7 @@ The summaries below are the shape of each milestone; the account of what was
 tried, measured and rejected is in `DECISIONS.md`:
 
 - M1 executor → D-007 · M3 non-expert setup → D-011 · levels → D-013
-- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005, D-244–D-245, D-255–D-256 · M5.3 router → D-015
+- M5.0 meter and cap → D-022, D-063 · M5.1 connections → D-005, D-244–D-245, D-255–D-256, D-266 · M5.3 router → D-015
 - M5.4 recipes → D-019, D-020, D-023, D-064
 - M5.5 billing → D-012, D-016–D-018, D-026–D-027, D-029
 - M5.6 compiled tools → D-021, D-024, D-025
@@ -767,9 +767,20 @@ tried, measured and rejected is in `DECISIONS.md`:
     Settings allowlist is refused by name on the trail, and closing the
     window ends the run. The allowlist and profile folder are
     `PUT /api/settings/browser-act`, read back on `GET /api/settings`.
-    Secrets are referenced by env-var name, never stored or returned; a
-    connection whose secret is missing is listed as not ready and can never
-    be switched on.
+    A system that publishes an API and **no MCP server** gets a small adapter
+    this repo owns, added through the same form (D-266, built for #18): Buk,
+    the Chilean HR and payroll system, as five reads — employees, who is
+    active on a date, one employee's plans, their vacation balance, their pay
+    stubs — taken off Buk's own unauthenticated Swagger contract. It cannot
+    write whatever the key's scope allows, because the adapter has one request
+    function that hard-codes `GET` and has no body to give; Buk offers `POST`
+    at two of the same five addresses, which is what makes that worth saying.
+    The tenant is an argument on the connection's row; the key is
+    `BUK_API_KEY`. Secrets are referenced by env-var name, never stored or
+    returned; a connection whose secret is missing is listed as not ready and
+    can never be switched on — and a stdio server that refuses to start now
+    says **why** in the form, because the probe reads back the stderr it had
+    piped since D-244 and listened to from nobody (D-266).
 
     **A connection declares its own default** with `defaultOn`, and the user's
     departures live in `.agentlings/settings.json` — never in the catalog, so a

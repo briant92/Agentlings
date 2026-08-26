@@ -7,7 +7,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import type { Connection } from './connections';
-import { probeConnection } from './mcpprobe';
+import { probeConnection, withComplaint } from './mcpprobe';
 
 /**
  * Against **real** MCP servers on both transports, because the whole point of
@@ -125,11 +125,15 @@ describe('probing a stdio server', () => {
   /**
    * The fixture exits 3 without its secret, so this proves the probe actually
    * passes the declared secret through — not that a happy path happens to work.
+   *
+   * It also proves the server's **own** account of the failure survives: the
+   * transport only ever says "Connection closed", which is true and tells the
+   * person filling in the form nothing they can act on.
    */
-  it('passes the declared secret through, and fails without it', async () => {
+  it('passes the declared secret through, and fails saying what the server said', async () => {
     const result = await probeConnection(base(), {});
     expect(result.ok).toBe(false);
-    expect(result.error).toBeTruthy();
+    expect(result.error).toContain('FIXTURE_TOKEN is not set');
   }, 30_000);
 
   it('fails with something to read when the command does not exist', async () => {
@@ -223,5 +227,25 @@ describe('what it refuses to probe', () => {
     expect((await probeConnection({ name: 'x', label: 'X', transport: 'http' })).error).toContain(
       'URL',
     );
+  });
+});
+
+describe('withComplaint', () => {
+  it('leaves the transport’s reason alone when the server said nothing', () => {
+    expect(withComplaint('Connection closed', '')).toBe('Connection closed');
+    expect(withComplaint('Connection closed', '  \n \n ')).toBe('Connection closed');
+  });
+
+  it('keeps the transport’s reason and adds the server’s own', () => {
+    expect(withComplaint('Connection closed', 'buk: BUK_API_KEY is not set\n')).toBe(
+      'Connection closed — the server said: buk: BUK_API_KEY is not set',
+    );
+  });
+
+  it('shows the first few lines only, so npx progress cannot bury the reason', () => {
+    const noisy = ['why it died', 'line two', 'line three', 'line four', 'line five'].join('\n');
+    const said = withComplaint('Connection closed', noisy);
+    expect(said).toContain('why it died');
+    expect(said).not.toContain('line four');
   });
 });

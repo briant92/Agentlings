@@ -32,7 +32,10 @@ read from the four role files rather than from the plan that proposed them;
 D-254–D-256): the headline demoted to a map, the trigger grant corrected,
 the supervised browser and the registry browse recorded as decided, not
 built; §§4, 5, 11 re-read 2026-08-25 where the supervised browser landed
-(D-264, #16). Since 2026-08-23 (D-228) the app shows this file's
+(D-264, #16); §5 re-read 2026-08-26 where Buk landed (D-266, #18) — the
+written-here adapter added, and two sentences the code had already falsified
+corrected: the external socket is no longer "nothing but the browser", and
+`transport` has carried `http` since D-243. Since 2026-08-23 (D-228) the app shows this file's
 substance itself — Settings → catalog → *Meet the crew* — with every number
 on a trade's card read from the role file and the ledger rather than from
 here, and the prose typed in `web/src/panels/crew.ts`; when a section here
@@ -455,6 +458,28 @@ the form, and one HQ job read live quotes through it — D-262). Live —
 proven on the running server (`prove-user-connections.mjs` 28/28,
 `-ui.mjs` 16/16, D-263).
 
+**Buk, read-only (D-266, built for #18).** Some systems publish an API and no
+MCP server, and Buk — the Chilean HR and payroll system — is one, so there is
+nothing for the form to browse to. The answer is a **small adapter this repo
+owns**, `scripts/buk-mcp.mts`, added through the same form as any other stdio
+server: command `npx`, arguments `tsx <that file> --tenant <your subdomain>`,
+one secret `BUK_API_KEY`. It offers **five reads and no sixth** — the employee
+list, who is active on a date, one employee's pension and health plans, one
+employee's vacation balance, and one employee's pay stubs — each a `GET` in
+Buk's own published contract, each with its query parameters and its date
+format checked before anything leaves. **It cannot write, whatever the key is
+allowed to do:** the adapter has one request function, it hard-codes `GET`, and
+it has no body to give — which matters because Buk offers `POST` at two of
+those same five addresses. The **tenant is configuration** and sits on the
+connection's row in plain sight; the key is a secret like every other. The
+company-wide monthly *liquidaciones* listing is deliberately absent — Buk gates
+it behind *see sensitive information*, and the pay-stub read here is one
+person's. **Built and proven, and not installed here** — `prove-buk-door.mts`
+30/30 against the real adapter, Buk's live contract and the real API with no
+key, but this machine has no Buk tenant, so no `buk` connection exists and no
+job has used one. Both remaining halves — adding it through the form, and one
+real job promoted — wait on a tenant and a read key in `.env`.
+
 **A voice note is a sentence (D-265, built for #17).** While the telegram
 connection is on, the server polls the bot's own `getUpdates` every fifteen
 seconds (D-253: polled, never delivered). A voice note from anyone on the
@@ -554,10 +579,14 @@ whose secret is missing is listed as not ready and can never be switched on.
 
 Nine credentialed connections are plugged in — five that read (the code
 host, the search box, the statistics service, the calendar, the mailbox) and
-four that send — every one builtin, so the *external* socket still carries
-nothing but the browser. An external MCP server is declared with
-`name`, `label`, `transport: "stdio"`, `command`, `args`, `tools` and
-optional `secrets: {ENV_NAME: "why it is needed"}`.
+four that send — every one builtin. The *external* socket carries the two
+browsers, and since D-243 whatever the user has added: `transport` is
+`builtin | stdio | http`, so a hosted MCP server reached over HTTP has a place
+to go (D-262 took the first one), and a system that publishes no MCP server at
+all gets a small adapter of ours added the same way (D-266, Buk). An external
+MCP server is declared with `name`, `label`, `transport`, `command` and `args`
+or `url` and `headers`, `tools`, and optional
+`secrets: {ENV_NAME: "why it is needed"}`.
 
 - **The tool list is the grant.** A server offering both reading and acting can
   be adopted for reading alone by naming only its reading tools; anything not
@@ -581,12 +610,11 @@ optional `secrets: {ENV_NAME: "why it is needed"}`.
 
 **Not built:** everything else credentialed. Not a ticket tracker, not
 a database — the batch, its order and its refusals are decided (D-076, D-077;
-SPEC M5.11), not yet wired. And one shape the registry
-cannot express at all: `transport` is `builtin | stdio`, so a **hosted MCP
-server reached over HTTP** — which is how most vendors now ship, GitHub's and
-Google's own included — has no place to go. Verified 2026-08-04 that this
-batch does not force it: Google's official Workspace MCP servers still need
-your own OAuth client and are in preview, so Tier 1 stays builtin (D-076).
+SPEC M5.11), not yet wired. The shape this paragraph used to call impossible —
+a **hosted MCP server reached over HTTP**, which is how most vendors now ship —
+was built as `transport: "http"` in D-243 and first used in D-262. Google's
+official Workspace MCP servers still need your own OAuth client and are in
+preview, so Tier 1 stays builtin (D-076, verified 2026-08-04).
 
 **Never:** borrowing claude.ai or Claude Code connector auth. The app owns its
 own external credentials or has none — a stated non-goal.
@@ -1808,6 +1836,10 @@ the headers (D-221 declined the vocabulary).
 | `MAX_PLATES` | 3 | `shared/scene.ts` | Backdrop stack depth — three 2× plates ≈ 21 MB decoded (D-148) |
 | browser tools granted | 8 of 24 | `catalog/connections.json` | All eight read |
 | browser-act tools granted | 20 of 24 | `catalog/connections.json` | The twelve acts + the eight reads; `close`, `resize`, `hover`, `tabs` on neither |
+| Buk tools offered | 5 of 151 paths | `buk.ts` | The whole adapter — every one a `GET` in Buk's contract; the other 146 include every write (D-266) |
+| `BUK_PAGE_SIZE` | 25–100 | `buk.ts` | Buk's own documented range; a bigger ask is clamped, not refused |
+| `BUK_REPLY_CEILING` | 40,000 | `buk.ts` | One Buk reply; past it whole records are dropped and the count kept is stated — never a cut record |
+| Buk request timeout | 30 s | `buk.ts` | One read |
 | `MAX_OUTBOX_MESSAGES` | 20 | `shared` | Messages in one outbox — one outbox per channel (D-179) |
 | `MAX_OUTBOX_CHANNELS` | 3 | `outbox.ts` | Outboxes one job may write, one per channel (D-179) |
 | `MAX_MOVES` | 200 | `shared` | Ops in one MOVES.json reorganization (D-132) |

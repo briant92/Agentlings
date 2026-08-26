@@ -153,7 +153,6 @@ describe('refusalRows', () => {
   });
 
   it('every claim key has a reading, so the skip in the loop can only ever be a never-channel', () => {
-    for (const c of CLAIMS) expect(refusalRows(`__${c.key}__`), c.key).toBeDefined();
     const withReading = new Set(refusalRows('Pay it, sign it, deploy it, supervise them, make a video, record audio, generate an image, lay it out in Figma').flatMap((r) => r.keys));
     for (const c of CLAIMS) expect(withReading.has(c.key), c.key).toBe(true);
   });
@@ -167,6 +166,34 @@ describe('refusalRows', () => {
       // The desk's alone: the board is written about a duty and names no other side.
       expect(BOUNDARIES.map((b) => b.why).join(' '), text).not.toContain(does);
     }
+  });
+
+  /**
+   * `act` said "it reaches the world when you approve it at review" until the
+   * spec axis caught it: Approve applies a patch or replays a send, and this
+   * row's own terms are deploy*, publish*, install*, issue permit*,
+   * file lawsuit* — none of which any verdict here performs. Pinned by value,
+   * because the reverted sentence passed every other assertion in this file.
+   */
+  it('never promises that a verdict here reaches the world', () => {
+    expect(refusalRows('Deploy the fix to production')[0]?.does).toBe(
+      'It will produce the change and hand it over; putting it live stays yours.',
+    );
+    const offers = [PAY, SIGN, 'Deploy the fix to production', 'Supervise the team this week']
+      .flatMap((t) => refusalRows(t).map((r) => r.does ?? ''))
+      .join(' ')
+      .toLowerCase();
+    for (const phrase of ['reaches the world', 'we deploy', 'we publish', 'we send it']) {
+      expect(offers, phrase).not.toContain(phrase);
+    }
+  });
+
+  /** The one-medium case: the list joiner's short branch, which no other test reaches. */
+  it('names a single medium without a list', () => {
+    expect(refusalRows(VIDEO)[0]?.lead).toBe('this asks for a video');
+    expect(refusalRows('Lay the poster out in Figma')[0]?.lead).toBe(
+      'this asks for work in a design tool',
+    );
   });
 
   /**

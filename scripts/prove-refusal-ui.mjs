@@ -175,12 +175,15 @@ check(
   `desk: ${d.lines[0]?.why}\n      board: ${WHY_MONEY}`,
 );
 // The ticket's own second half: the board's sentence says only what will not
-// happen, and a desk that stops there says less than the product does.
+// happen, and a desk that stops there says less than the product does. Asked
+// of the rendered line rather than the span alone, so the order on screen —
+// what was read, then why, then what you get — is what passes or fails.
 check(
-  'and the line says what the crew WILL do — words the board does not have',
+  'and the line says what the crew WILL do, after the board’s reason',
   d.lines[0]?.does === 'It will draft the instruction for you to send.' &&
-    !WHY_MONEY.includes(d.lines[0].does),
-  d.lines[0]?.does,
+    d.lines[0].text.indexOf(WHY_MONEY) > 0 &&
+    d.lines[0].text.indexOf(d.lines[0].does) > d.lines[0].text.indexOf(WHY_MONEY),
+  d.lines[0]?.text,
 );
 check('the tail is there, once', d.tails.length === 1, JSON.stringify(d.tails));
 check(
@@ -194,12 +197,30 @@ check('Start is NOT disabled — the desk warns, it does not block', d.startDisa
 await box.fill('pay the supplier, then deploy the fix to production');
 await page.waitForTimeout(2500);
 d = await desk();
+// NOT "the board's order" — that phrase was the review's first catch, and
+// money+act is precisely the pair that cannot tell the two orderings apart
+// (`CLAIMS` money/sign/act/people vs `BOUNDARIES` money/people/act/sign). The
+// discriminating pair is unit-tested; what only a live run can show is that
+// the screen draws the rows in the order the route sent them, so that is what
+// is asked here.
+const routeRows = await page.evaluate(
+  async ({ lid, text }) => {
+    const r = await fetch(`/api/levels/${lid}/work/plan`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    return (await r.json()).refuses ?? [];
+  },
+  { lid: probe.lid, text: 'pay the supplier, then deploy the fix to production' },
+);
 check(
-  'two rows claimed, two lines, in the board’s order',
+  'two rows claimed, two lines, in the order the route sent them',
   d.lines.length === 2 &&
     d.lines[0].why === WHY_MONEY &&
-    d.lines[1].why === WHY_ACT,
-  JSON.stringify(d.lines.map((l) => l.text.slice(0, 42))),
+    d.lines[1].why === WHY_ACT &&
+    JSON.stringify(routeRows.map((r) => r.why)) === JSON.stringify(d.lines.map((l) => l.why)),
+  `route ${JSON.stringify(routeRows.map((r) => r.row))} vs screen ${JSON.stringify(d.lines.map((l) => l.text.slice(0, 24)))}`,
 );
 check('and still exactly ONE tail', d.tails.length === 1, JSON.stringify(d.tails));
 check('Start still not disabled with two rows showing', d.startDisabled === false);
@@ -223,10 +244,12 @@ check(
 );
 
 // ── the meter never moved ──────────────────────────────────────────────────
-// Three refusing sentences were typed above (money; money+act; whatsapp),
-// each re-planned on every keystroke of `fill`, plus the probe's own plan.
-// D-259: the count lives at Start, at a rule armed and at a reply sent —
-// never here.
+// Three refusing sentences went into the box above (money; money+act;
+// whatsapp), plus two refusing plans asked of the route directly. Playwright's
+// `fill` sets the value and fires one `input`, so each is one debounced plan
+// rather than one per character — the count that matters is that it is more
+// than zero, and that this file did not move. D-259: the count lives at Start,
+// at a rule armed and at a reply sent, never here.
 const meterAfter = existsSync(METER) ? readFileSync(METER, 'utf8') : '';
 check(
   'nothing was counted: refusals.jsonl is byte-identical to before the run',

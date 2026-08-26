@@ -181,7 +181,11 @@ const READING: Record<string, { row: string; lead: string; does?: string }> = {
   act: {
     row: 'act',
     lead: 'this asks the crew to act on the world',
-    does: 'It will produce the change; it reaches the world when you approve it at review.',
+    // Not "it reaches the world when you approve": Approve applies a patch or
+    // replays a send, and this row's own terms are deploy, publish, install,
+    // `issue permit*`, `file lawsuit*` — none of which any verdict here
+    // performs. Same shape as `money` above, which is the honest one.
+    does: 'It will produce the change and hand it over; putting it live stays yours.',
   },
   people: {
     row: 'people',
@@ -209,7 +213,7 @@ const READING: Record<string, { row: string; lead: string; does?: string }> = {
  */
 export function boardWhy(row: string): string {
   const boundary = BOUNDARIES.find((b) => b.id === row);
-  if (!boundary) throw new Error(`refusalRows: '${row}' is not a job board row`);
+  if (!boundary) throw new Error(`boardWhy: '${row}' is not a job board row`);
   return boundary.why;
 }
 
@@ -223,7 +227,7 @@ const ROW_WHY = new Map(
 );
 
 const listWords = (words: string[]): string =>
-  words.length < 2 ? (words[0] ?? '') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+  words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
 
 /**
  * What the desk says about a sentence, one line per board row it claims;
@@ -282,7 +286,7 @@ export function refusalRows(text: string): RefusalReading[] {
 }
 
 /**
- * The rows a sentence claims, each once, in `CLAIMS`'s order below, a
+ * The rows a sentence claims, each once, in `CLAIMS`'s order above, a
  * never-channel last; `[]` for ordinary work.
  *
  * Said as `CLAIMS`'s and not "the board's", which is what this line claimed

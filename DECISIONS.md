@@ -21679,10 +21679,11 @@ turns the keys `refusalKeys` already names into what the bar says:
 and omits the field otherwise; the work bar paints one amber line per row
 under the plan card — the desk's own lead-in naming what was asked for
 (*this asks for a payment*), then the board's `why`, then what the crew will
-do instead. Type *pay the deposit to the landlord on Friday* and the bar says
-so about a quarter of a second later — `DEBOUNCE_MS` is 250 and the plan is
-the server's answer — where before the job queued, spent turns and refused
-inside the run with the desk silent the whole way.
+do instead. Type *pay the deposit to the landlord on Friday* and the bar
+answers a beat later rather than at the keystroke — `DEBOUNCE_MS` is 250 and
+the plan is the server's answer, both read off the code rather than watched —
+where before the job queued, spent turns and refused inside the run with the
+desk silent the whole way.
 
 ### Both halves, because one of them is the useful one
 
@@ -21872,14 +21873,77 @@ instead of composing with it, as the tail beside it already did; and
 `refusalDesk` was renaming `row` to `key` on the way through, losing the
 domain word for nothing — it passes the rows through untouched now.
 
+### A second review round, and what it says about the first
+
+The change was reviewed again after it was committed, so the *fixes* above
+were themselves under review. Five of the eight first-round fixes were clean;
+three were not, and the pattern in all three is the same — **a correction
+applied where it was found and not where else it lived**:
+
+- The phrase *"in the board's order"* was removed from `refusals.ts` and left
+  standing in `scripts/prove-refusal-ui.mjs`, on the money/act pair the unit
+  test right beside it calls out as unable to tell the orderings apart. Both
+  axes caught it, again independently. The check now asks the thing only a
+  live run can answer — that the screen's order is the order the route sent —
+  and says so instead.
+- The `?? ''` degrade was replaced in `boardWhy` and reintroduced one function
+  later in `listWords` (`words[0] ?? ''`, never reachable: `refusalRows` never
+  builds a row with no keys). `words.join('')` now, with no dead branch.
+- The test written to make the `continue` comment true opened with
+  `expect(refusalRows(…)).toBeDefined()` — **an array is always defined**. A
+  check that cannot fail, in the commit whose own message is about catching a
+  guard that never executes. Deleted; the half of that test that earns the
+  claim stays.
+
+Four more comments claimed more than the code: `planLine.ts`'s doc block sat
+on `REFUSE_TAIL` while describing `refusalDesk`, and said the `.map` had been
+extracted from the JSX when it is still in `WorkBar.tsx` (the doc is on the
+function now and says which half of "once" lives where); `refusals.ts` cited
+`CLAIMS` as *below* when it is above; `boardWhy`'s throw named `refusalRows`
+as the thrower; and the proof script said the sentences were *"re-planned on
+every keystroke"* when Playwright's `fill` fires one `input` and no keystrokes
+at all.
+
+**`act`'s offer overclaimed**, on the spec axis: *"it reaches the world when
+you approve it at review"* — but Approve applies a patch or replays a send,
+and this row's own terms are `deploy*`, `publish*`, `install*`,
+`issue permit*`, `file lawsuit*`, none of which any verdict here performs. It
+takes `money`'s shape now: *It will produce the change and hand it over;
+putting it live stays yours.*
+
+Two corrections to this entry and to `AGENTLING.md`. Both said the bar answers
+*"about a quarter of a second later"* as though someone had watched it; the
+figure is read off `DEBOUNCE_MS`, and nothing has observed this path at all —
+said as derived now. And §14's opener called these *"the rows below"* and
+named a signer and a manager, which are **job board** rows and not bullets in
+that section at all; it names the board's five and says which three line up.
+Its tag was **Partial**, which contradicts the file's own legend (*the
+mechanism exists; the thing it is for is not fully there*) — both exist here
+and only the live proof is missing, which is exactly #20's position, tagged
+Live. It reads Live with the owed box named, as #20's does.
+
+`refusalDesk`'s `<T>` was flagged as throwing away the row's type; measured,
+it does not — `T` infers as `RefusalReading` and `tsc` rejects an unknown
+field on `line`. It is typed concretely anyway, because the generic bought
+nothing the concrete type does not.
+
 ### Mutation, and the one guard that had passed by never executing
 
-18 mutations across `refusals.ts` and `planLine.ts` — the lead-ins, the offer,
-a row pointed at the wrong board row, the not-built collapse and its list
-joiner, the never-channel skip, the board lookup, and the tail rule in both
-directions. **17 caught.** The eighteenth is an equivalent mutant
-(`boundary?.why ?? ''` sitting after the `throw`, where `boundary` is already
-non-null).
+20 mutations across `refusals.ts` and `planLine.ts` — the lead-ins, the
+offers, a row pointed at the wrong board row, the not-built collapse and both
+branches of its list joiner, the never-channel skip, the board lookup, and the
+tail rule in both directions. **19 caught.** The twentieth is an equivalent
+mutant (`boundary?.why ?? ''` sitting after the `throw`, where `boundary` is
+already non-null).
+
+Run again after the second review round, it found two gaps that round had left
+open, which is the argument for re-running it rather than trusting the first
+score: **`act`'s corrected offer was not pinned** — reverting it to the
+overclaiming sentence passed every assertion in the file, because the only
+tests were "not empty" and "not inside a `BOUNDARIES.why`", and the wrong
+sentence satisfies both; and **the list joiner's one-medium branch was
+untested**, so `listWords(['a video'])` could return `''` and leave *this asks
+for* with nothing after it. Both are pinned by value now.
 
 An earlier round of 16 had a real survivor: deleting `if (!boundary) throw`
 changed nothing, because with the real tables that branch is unreachable and
@@ -21888,4 +21952,4 @@ executing. So the resolution is `boardWhy(row)`, exported for the single
 reason that the refusal can then be *reached*, and a test calls it with a row
 that is not the board's. The mutation is caught now.
 
-Suites: server 2,623 passed (2,623), web 363 passed (363), typecheck clean.
+Suites: server 2,625 passed (2,625), web 363 passed (363), typecheck clean.

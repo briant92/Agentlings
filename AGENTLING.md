@@ -2002,15 +2002,17 @@ without an API key.
 
 ## 14. What an agentling is not
 
-**Said at the desk, before Start — Partial (#22, D-269): built and unit-proven,
-the route-to-screen path not yet proven live.** Four of the rows below — the
-payer, the signer, the actor, the chat-and-manager — plus the not-built media,
-are read off the sentence as you type and shown under the plan, one amber line
-each: the desk's own lead-in naming what it read, then the *job board's own
-words* (`BOUNDARIES.why` in `server/src/coverage.ts`, rendered verbatim so the
-desk and the positions board cannot drift), then what the crew **will** do
-instead. Type *pay the deposit to the landlord* and the bar says so about a
-quarter of a second later — the plan is debounced 250 ms and answered by the
+**Said at the desk, before Start — Live (#22, D-269).** Five rows of the *job
+board* — `money`, `sign`, `act`, `people` and the one `not-built` row that
+covers video, audio, images and design tools — are read off the sentence as
+you type and shown under the plan, one amber line each: the desk's own lead-in
+naming what it read, then the *board's own words* (`BOUNDARIES.why` in
+`server/src/coverage.ts`, rendered verbatim so the desk and the positions board
+cannot drift), then what the crew **will** do instead. (Those are the board's
+rows, not the bullets below — three of them line up with *Not a payer*, *Not an
+actor* and *Not a chat*, and the other two have no bullet here.) Type *pay the
+deposit to the landlord* and the bar answers a beat later rather than at the
+keystroke — the plan is debounced (`DEBOUNCE_MS` is 250) and comes from the
 server — instead of the job queueing, spending turns and refusing inside the
 run. It is D-093's shape — a line, never a block: **Start stays enabled**, and
 one grey tail under the lot says so. A send claimed on a channel the shelf
@@ -2018,8 +2020,9 @@ refuses (WhatsApp, Signal, …) is deliberately *not* on this line — the ask c
 has stated that one since D-079, in the shelf's own words and with the channels
 that would carry it offered beside it. Nothing is counted from the desk's
 reading; the demand meter stays at Start, at a rule armed and at a reply sent
-(D-259), because the plan re-runs on every keystroke. The tag moves to Live
-when `scripts/prove-refusal-ui.mjs` has run against a restarted server.
+(D-259), because the plan re-runs on every keystroke. **One live box is owed**,
+as #20's is: `scripts/prove-refusal-ui.mjs` has not run against a restarted
+server, so nothing has yet watched the route reach the screen.
 
 - **Not autonomous.** It takes one job, does it, and stops — it never
   grants itself future work. Two standing instructions exist, and a person

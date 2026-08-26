@@ -29,10 +29,10 @@
 // beside it, and nothing in the execution path is touched.
 import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { benchmark, type Counted, type CoverageReport } from '../server/src/coveragebench';
 import type { CoverageContext, Door } from '../server/src/coverage';
 import { readConnections } from '../server/src/connections';
+import { installPaths, REPO_ROOT } from '../server/src/installpaths';
 import { readRoster, levelDir } from '../server/src/levels';
 import { loadIndex } from '../server/src/library';
 import { MatchIndex } from '../server/src/match';
@@ -40,8 +40,10 @@ import { RoleRegistry, listSkills } from '../server/src/roles';
 import { enabledNames, readSettings } from '../server/src/settings';
 import { readEsco, readOnet, readProfiles } from '../server/src/workprofile';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
+// The same install the server reads: one call for the store and the secrets
+// file, the repository for what ships with the code.
+const PATHS = installPaths();
+const SANDBOX_ROOT = PATHS.dataDir;
 
 const args = process.argv.slice(2);
 const flag = (name: string): string | undefined => {
@@ -50,15 +52,15 @@ const flag = (name: string): string | undefined => {
 };
 const has = (name: string) => args.includes(`--${name}`);
 
-const registry = new RoleRegistry(path.join(ROOT, 'roles'));
+const registry = new RoleRegistry(PATHS.rolesDir);
 registry.load();
 const roles = registry.list();
-const index = new MatchIndex(registry.loaded(), listSkills(path.join(ROOT, 'skills')));
+const index = new MatchIndex(registry.loaded(), listSkills(PATHS.skillsDir));
 
 // Doors: the catalog's connections, open when Settings and .env say so — or as named.
-const connections = readConnections(path.join(ROOT, 'catalog', 'connections.json'));
+const connections = readConnections(PATHS.connectionsFile);
 // The same secrets store the server boots from (D-078), read the same way.
-if (existsSync(path.join(ROOT, '.env'))) process.loadEnvFile(path.join(ROOT, '.env'));
+if (existsSync(PATHS.secretsFile)) process.loadEnvFile(PATHS.secretsFile);
 const env = process.env;
 const live = new Set(flag('open')?.split(',') ?? enabledNames(connections, readSettings(SANDBOX_ROOT), env));
 const doors: Door[] = connections.map((c) => ({ name: c.name, open: live.has(c.name) }));
@@ -88,7 +90,7 @@ const profiles = flag('onet')
       ? readProfiles(flag('profiles')!)
       : existsSync(path.join(boardDir, 'Occupation Data.txt'))
         ? readOnet(boardDir, only)
-        : [...readProfiles(path.join(ROOT, 'fixtures/workprofiles/profiles.json')), ...readOnet(path.join(ROOT, 'fixtures/workprofiles/onet'))];
+        : [...readProfiles(path.join(REPO_ROOT, 'fixtures/workprofiles/profiles.json')), ...readOnet(path.join(REPO_ROOT, 'fixtures/workprofiles/onet'))];
 
 const library = has('library') ? loadIndex(SANDBOX_ROOT)?.entries : undefined;
 const top = Number(flag('top') ?? 25);

@@ -28,7 +28,14 @@ import { spawn } from 'node:child_process';
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const serverDir = path.resolve(here, '..');
-const logDir = process.env.AGENTLINGS_LOG_DIR ?? path.resolve(serverDir, '..', '.agentlings');
+// The log belongs in the install's data directory, which `AGENTLINGS_HOME`
+// moves. This is plain node — it *launches* tsx, so it cannot import
+// `installpaths.ts` — so it reads the variable the same way, and the test
+// beside it spawns this file with a home set and requires the log to land
+// where `installPaths` says it should. That is what keeps the two agreeing.
+const home = (process.env.AGENTLINGS_HOME ?? '').trim();
+const dataDir = path.join(home === '' ? path.resolve(serverDir, '..') : path.resolve(home), '.agentlings');
+const logDir = process.env.AGENTLINGS_LOG_DIR ?? dataDir;
 const logFile = path.join(logDir, 'server.log');
 mkdirSync(logDir, { recursive: true });
 

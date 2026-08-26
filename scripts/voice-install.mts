@@ -13,7 +13,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { installPaths, REPO_ROOT } from '../server/src/installpaths';
 import {
   installTranscriber,
   modelDir,
@@ -24,9 +24,10 @@ import {
   WHISPER_RATE,
 } from '../server/src/transcribe';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
-const FIXTURE = path.join(ROOT, 'fixtures', 'voice', 'jfk-4s.wav');
+// The model is 241 MB of the operator's data, so it goes where the rest of it
+// goes — the same call the server makes, not a second answer.
+const SANDBOX_ROOT = installPaths().dataDir;
+const FIXTURE = path.join(REPO_ROOT, 'fixtures', 'voice', 'jfk-4s.wav');
 
 /** 16 kHz mono 16-bit PCM WAV → floats; the fixture's shape and nothing wider. */
 function pcmFromWav(file: string): Float32Array {

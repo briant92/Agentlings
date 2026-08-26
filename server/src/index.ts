@@ -2,7 +2,6 @@ import { serve } from '@hono/node-server';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
@@ -198,6 +197,7 @@ import {
 } from './close';
 import { sweepWorkingCopies, workingCopies } from './sweep';
 import { forgetSecret, secretValueProblem, storeSecret } from './env';
+import { installPaths, REPO_ROOT } from './installpaths';
 import {
   accessTokenFromRefresh,
   exchangeCode,
@@ -362,15 +362,27 @@ import {
 } from './work';
 
 const PORT = 4600;
-const ROOT = fileURLToPath(new URL('../..', import.meta.url)); // repo root
-const SANDBOX_ROOT = path.join(ROOT, '.agentlings');
-const ROLES_DIR = path.join(ROOT, 'roles');
+/**
+ * Where this install keeps things — one call, `installpaths.ts`, which is the
+ * only place any of these is derived. `AGENTLINGS_HOME` moves the operator's
+ * half; unset, every one of them is where it has always been.
+ *
+ * The data directory travels on as `sandboxRoot`, which is what the modules
+ * that write under it have always called it.
+ */
+const PATHS = installPaths();
+const SANDBOX_ROOT = PATHS.dataDir;
+const ROLES_DIR = PATHS.rolesDir;
 /** Source images dropped in by hand, and references uploaded here. Untracked. */
-const ARTWORK_DIR = path.join(ROOT, 'Artwork');
-const SKILLS_DIR = path.join(ROOT, 'skills');
-const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
-const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
+const ARTWORK_DIR = PATHS.artworkDir;
+const SKILLS_DIR = PATHS.skillsDir;
+const SOURCES_FILE = PATHS.sourcesFile;
+const CONNECTIONS_FILE = PATHS.connectionsFile;
 const USER_CONNECTIONS_FILE = userConnectionsFile(SANDBOX_ROOT);
+// A named home may be an empty volume on its first boot. Everything below
+// writes under it, and the first writer to find no directory is whichever
+// endpoint the operator happened to open first.
+mkdirSync(SANDBOX_ROOT, { recursive: true });
 
 /**
  * Every connection this machine has: the shipped catalog, then the user's own
@@ -392,8 +404,13 @@ function allConnections(): Connection[] {
     readUserConnections(USER_CONNECTIONS_FILE),
   );
 }
-const ENV_FILE = path.join(ROOT, '.env');
+const ENV_FILE = PATHS.secretsFile;
 
+// Measured on node v24.14.0: `loadEnvFile` does NOT overwrite a name already
+// in `process.env` — the environment wins over the file. So a variable set by
+// the host beats the same name in the secrets file, and a key pasted into
+// Settings (which writes the file *and* patches the live env) works at once
+// but loses to a host variable of that name at the next restart.
 try {
   process.loadEnvFile(ENV_FILE);
 } catch {
@@ -852,7 +869,7 @@ app.delete('/api/session', (c) => {
  */
 const LIBRARIES = (() => {
   try {
-    const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as {
+    const pkg = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
       dependencies?: Record<string, string>;
     };
     return Object.keys(pkg.dependencies ?? {}).sort();
@@ -1316,7 +1333,7 @@ app.get('/api/levels', (c) =>
  * whole install; there is no cache to invalidate and no restart to remember.
  */
 app.get('/api/packs', (c) => {
-  const scan = scanPacks(ROOT);
+  const scan = scanPacks(REPO_ROOT);
   return c.json({
     installed: scan.installed.map((p) => ({ slug: p.slug, pack: p.pack })),
     rejected: scan.rejected,
@@ -1328,7 +1345,7 @@ app.post('/api/levels', async (c) => {
   // A built-in, or a pack installed on disk — which is why this asks rather
   // than matching against a fixed list.
   const theme = body.theme?.trim();
-  if (!body.name?.trim() || !theme || !themeExists(ROOT, theme)) {
+  if (!body.name?.trim() || !theme || !themeExists(REPO_ROOT, theme)) {
     return c.json({ error: 'name and a valid theme are required' }, 400);
   }
   const meta = createLevelFiles(SANDBOX_ROOT, {
@@ -2581,7 +2598,7 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
   const job = queueSentence(rt, `Author a level pack: ${description}`, {
     // What is already installed, so the session is told what is taken
     // rather than finding out at Approve (M4, first real run).
-    brief: packBrief(scanPacks(ROOT).installed.map((p) => p.slug), reference, wantsPlate),
+    brief: packBrief(scanPacks(REPO_ROOT).installed.map((p) => p.slug), reference, wantsPlate),
     attachments,
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).
@@ -3517,12 +3534,12 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     const renamed = sent && sent !== pending.packDraft.slug ? sent : undefined;
     const draft = renamed ? { ...pending.packDraft, slug: renamed } : pending.packDraft;
     if (renamed) {
-      const says = slugProblem(renamed, scanPacks(ROOT).installed.map((p) => p.slug));
+      const says = slugProblem(renamed, scanPacks(REPO_ROOT).installed.map((p) => p.slug));
       if (says) return c.json({ error: `pack not installed — ${says}` }, 400);
     }
     // The sandbox is where a draft's plates live (D-143); the install copies
     // them from there, re-checking at the moment of writing.
-    const result = installPack(ROOT, draft, rt.queue.sandboxDir(pending.id));
+    const result = installPack(REPO_ROOT, draft, rt.queue.sandboxDir(pending.id));
     if ('error' in result) return c.json({ error: `pack not installed — ${result.error}` }, 400);
     if (!result.already) installedPack = draft.slug;
     // Remember the name it went in under, so the job's record matches the

@@ -279,6 +279,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-267 — 2026-08-26 — The SII register, read-only, built: the ticket's own premise was false, so the certificate login is ours — three reads behind a stdio adapter whose credential is a `.p12` and which holds no portal password, proven 33/33 against the real adapter and the real SII with no certificate; the door not installed here and one real month owed](#d-267--2026-08-26--the-sii-register-read-only-built-the-tickets-own-premise-was-false-so-the-certificate-login-is-ours--three-reads-behind-a-stdio-adapter-whose-credential-is-a-p12-and-which-holds-no-portal-password-proven-3333-against-the-real-adapter-and-the-real-sii-with-no-certificate-the-door-not-installed-here-and-one-real-month-owed)
 - [D-268 — 2026-08-26 — The wire file, built: the run says who and how much, the allowlist says where, and BCI's is the only specification anybody publishes](#d-268--2026-08-26--the-wire-file-built-the-run-says-who-and-how-much-the-allowlist-says-where-and-bcis-is-the-only-specification-anybody-publishes)
 - [D-269 — 2026-08-26 — The desk says what it refuses: the rows a sentence claims, read as it is typed and shown under the plan in the job board's own words, verbatim — a line and never a block, with the never-channel left to the ask card that already says it better](#d-269--2026-08-26--the-desk-says-what-it-refuses-the-rows-a-sentence-claims-read-as-it-is-typed-and-shown-under-the-plan-in-the-job-boards-own-words-verbatim--a-line-and-never-a-block-with-the-never-channel-left-to-the-ask-card-that-already-says-it-better)
+- [D-270 — 2026-08-26 — One module says where an install keeps things: `AGENTLINGS_HOME` moves the operator's half and never the product's, and the environment beats the secrets file](#d-270--2026-08-26--one-module-says-where-an-install-keeps-things-agentlings_home-moves-the-operators-half-and-never-the-products-and-the-environment-beats-the-secrets-file)
 
 ## By theme
 
@@ -983,7 +984,14 @@ entry updates one file rather than two.
   reopen condition finally arrived and was answered without hosting** — a
   private tailnet reaches the machine from Brian's phone, the app is unchanged
   and still local, and the boundary protecting an unauthenticated API moved
-  from the loopback interface to tailnet membership (`serve`, never `funnel`)
+  from the loopback interface to tailnet membership (`serve`, never
+  `funnel`); and **D-270, the prefactor for publishing** — the
+  eight constants at the top of `index.ts` collapsed into one module that says
+  where an install keeps things, `AGENTLINGS_HOME` moving the operator's half
+  (data directory, secrets file, uploads) and never the product's (roles,
+  skills, catalog), with the precedence measured rather than assumed: the
+  environment beats the same name in the secrets file, so a host variable
+  quietly outlives a key pasted into Settings. D-169 is untouched by it
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -22014,3 +22022,152 @@ reason that the refusal can then be *reached*, and a test calls it with a row
 that is not the board's. The mutation is caught now.
 
 Suites: server 2,627 passed (2,627), web 363 passed (363), typecheck clean.
+
+## D-270 — 2026-08-26 — One module says where an install keeps things: `AGENTLINGS_HOME` moves the operator's half and never the product's, and the environment beats the secrets file
+
+Slice 1 of the publish line (issue #23, spec #27). **It does not reopen
+D-169** — nothing is hosted by this entry and no account is touched. It is the
+prefactor the rest of that line stands on: the change made easy before the
+easy change is made.
+
+### What was wrong
+
+`server/src/index.ts` opened with eight constants, each joining a name onto
+the repository root: the sandbox root, the secrets file, roles, skills,
+Artwork, the two catalog files, and the root itself. On a laptop that is
+correct and invisible — the code and the operator's data *are* the same
+folder. Everywhere else it conflates two things with opposite lifetimes:
+
+- **product**, rebuilt from the image on every deploy — roles, skills, the
+  shipped catalog;
+- **the operator's**, which must outlive the deploy — the ledger, the levels,
+  settings, the audience, voice notes, the library, and the secrets file.
+
+The trap that makes this worth a slice of its own is quiet: on a host whose
+filesystem is rebuilt per deploy, a key pasted into Settings works for days
+and then vanishes at the next redeploy, with nothing to see.
+
+### What was built
+
+`server/src/installpaths.ts` — the environment in, the paths out, nothing
+read and nothing created. `AGENTLINGS_HOME` names the operator's directory;
+`dataDir`, `secretsFile` and `artworkDir` hang off it, and `rolesDir`,
+`skillsDir`, `sourcesFile` and `connectionsFile` hang off the repository root
+regardless. Unset, every one of them is exactly where it was, and the defaults
+are pinned literally in the test rather than composed from the same
+expressions the module uses — which would agree with any typo.
+
+A blank or whitespace value counts as unset, the same failure direction
+`sessionPassword` chose (D-235's gate) and for the same reason: an empty value
+resolves to the process's working directory, so a stray `AGENTLINGS_HOME=`
+would scatter the store wherever the server happened to be started from
+instead of leaving it alone. A relative value is resolved, so a script, a test
+and the server cannot each answer differently.
+
+**The data directory is the sandbox root.** They were never two things — job
+working copies live under `.agentlings/` beside the ledger — so the module has
+one field and `index.ts` keeps passing it on under the name every module that
+writes there already uses.
+
+**`Artwork/` was put on the operator's side**, and this is the entry's one
+judgment call rather than a reading of the ticket: it is untracked and the app
+*writes* into it (`/api/…` stores an uploaded reference there), so grouping it
+with roles and skills would have stated the opposite of what it is. Installed
+art *packs* were left alone — `installPack` writes into the repository, and
+what a container does about that belongs to the container slice, not here.
+
+The variable is read from the real environment and never from the secrets
+file, which is a consequence rather than a rule: the secrets file is the thing
+it locates, so a line inside one could only be read after the question had
+already been settled. `.env.example` says so at the top, because that file is
+exactly where somebody would try to put it.
+
+**One thing was added that #23 did not ask for:** `mkdirSync(dataDir)` at
+boot. A named home may be an empty volume on its first start, everything below
+writes under it, and without this the first writer to find no directory would
+be whichever endpoint the operator happened to open first. It is a new boot
+side effect on the maintainer's install too — a `mkdir` of a directory that
+has existed for months — and it is named here rather than left to be found.
+
+### The precedence, measured
+
+Node's `process.loadEnvFile` **does not overwrite a name already present in
+`process.env`** — measured on node v24.14.0, first standalone and then against
+the very file the server had just written, in the proof script's own check:
+
+> a name already in the environment beats the same name in the secrets file
+> — set-by-the-host (node v24.14.0)
+
+So: **the environment wins.** A variable set by the host beats the same name
+in the secrets file. `storeSecret` writes the file *and* patches the live
+`process.env` in one call, so a key pasted into Settings works immediately —
+but if a host variable of that name also exists, the paste loses at the next
+restart and the drawer will look as though it forgot. That is the sentence
+slice 7 owes the README (#31), stated here so it is not re-derived.
+
+### Evidence
+
+`node scripts/prove-install-paths.mjs` — **14/14 PASS, live**, on a server it
+starts itself. That is safe precisely because of what is being proven: a fresh
+`AGENTLINGS_HOME` has no levels, so no armed schedule row can double-fire, and
+an empty secrets file means no door opens and nothing costs money. It refuses
+to run if 4600 is already answering, and it hashes the maintainer's `.env` and
+`server.log` before and after to show they were not touched.
+
+The checks that matter: the store is built under the named home; a key pasted
+through the real add-a-connection route (D-244) lands in the relocated
+secrets file and not in the maintainer's; the connection reads `ready` while
+that server is up; and — the one this slice exists for — **after a full stop
+and restart the key is still read back**, which is the check that would have
+failed silently on a rebuilt filesystem.
+
+**Which route was used, and why it is not the obvious one.** The ticket says
+"a key pasted into Settings". The paste-into-an-existing-connection route,
+`POST /api/settings/connections/:name/secret`, validates against that
+connection's own far end before storing, and only a *shipped* connection has
+a validator — so proving that route needs a real credential, which no proof
+script here spends. Two routes that need none carry the same
+`storeSecret(ENV_FILE, …)` and `forgetSecret(ENV_FILE, …)` calls, and both are
+proven instead: the add-a-connection route writes the key into the relocated
+file, and the drawer's **forget** route,
+`DELETE /api/settings/connections/:name/secrets`, rewrites that same relocated
+file to `# FIXTURE_TOKEN=` with the maintainer's still byte-identical. Stated
+rather than glossed, because "shown live" is the criterion.
+
+A mutation round on the defaults test: **13/13 caught** — the data directory
+renamed, the secrets file renamed and moved under the data directory, a blank
+home honoured, a relative home carried, the trim dropped, roles and the
+catalog following the home, uploads staying in the repository, the default
+root becoming the working directory, the repository root keeping the trailing
+separator `fileURLToPath` leaves on a directory, and two path typos.
+
+Two things the review changed rather than confirmed. `InstallPaths` returned a
+`home` field **no production code called** — CLAUDE.md rule 2, and the ticket
+names three outputs, not four; it is gone, and `home` is now a local inside
+the function. And `REPO_ROOT` is `path.resolve`d: `fileURLToPath` of a
+directory URL ends in a separator, so unset the home ended in one and set it
+did not. Nothing today can tell — every path is `path.join`ed — but a prefix
+comparison between the two branches would have answered differently.
+
+The launcher is the one seam that could drift: `server/scripts/dev-logged.mjs`
+is plain node — it *launches* tsx, so it cannot import a `.ts` module — and it
+reads `AGENTLINGS_HOME` itself to place `server.log`. What stops the two
+answers diverging is two tests beside it that spawn the launcher for real,
+with no `AGENTLINGS_LOG_DIR` to steer it, and require the log at the path
+`installPaths` computes. **What they pin and what they do not** was itself
+established by mutating the launcher, and the first attempt over-claimed:
+deleting its `.trim()` fails, and ignoring the home entirely fails, but a
+*blank* home cannot be spawned without the log landing in this repository's
+own store — so that stays pinned in the module's test alone — and
+`path.resolve` on a relative home is an **equivalent mutant** there, because
+the launcher never changes its own working directory. The test's name says
+only what it proves.
+
+Rewired to the one call: the server, `npm run voice:install` (re-run: the
+model checked and 4/4 on the fixture) and `npm run bench:coverage` (re-run:
+1016 profiles, 18797 duties). **Deliberately not rewired:** the forty-odd
+`scripts/backfill-*` and `scripts/prove-*` maintainer tools, which are run by
+hand against this repo's own install and are not modules of an install.
+
+Suites: server 2,637 passed (105 files), web 363 passed (38 files), typecheck
+clean.

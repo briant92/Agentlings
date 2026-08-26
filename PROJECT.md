@@ -42,6 +42,18 @@ behavioral base lives there alone; this is the project half, split out on
   starvation alone. No pausing, no junction, no exclusion hunt is needed any
   more; a path in these notes that still says OneDrive is stale.
 - Secrets go in `.env` (gitignored) — never in code and never in this file.
+- **Where an install keeps things is one call** (D-270): `installPaths()` in
+  `server/src/installpaths.ts`. `AGENTLINGS_HOME` moves the operator's half —
+  `.env`, `.agentlings/`, `Artwork/` — and never roles, skills or the catalog;
+  unset, as on this machine, everything is exactly where it has always been.
+  No module of an install may derive those paths itself. The one exception is
+  `server/scripts/dev-logged.mjs`, which launches tsx and so cannot import a
+  `.ts` module; `dev-logged.test.ts` spawns it to pin the two together. The
+  hand-run `scripts/backfill-*` and `scripts/prove-*` tools are outside this.
+- **The environment beats the secrets file.** `process.loadEnvFile` does not
+  overwrite a name already in `process.env` (measured, D-270), so a variable
+  set by the host wins over the same name in `.env` at the next restart — even
+  one pasted into Settings, which works until then.
 
 ## Commands
 

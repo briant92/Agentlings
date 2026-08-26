@@ -473,9 +473,10 @@ ride the job's `input/` (`voice-<id>.oga`, `voice-<id>.txt`) so the words can
 be checked against the audio from the job alone; the note is spent by the
 job it queued and refused a second time by name. Nothing queues on
 its own; a stranger's note is passed over by name and never transcribed; a
-note over ten minutes is not fetched. Live — the mechanism proven on this
-machine (`voice:install` 4/4 against a known four-second clip); the routes
-and a real note owed on the restart (`prove-voice.mjs`).
+note over ten minutes is not fetched. Live — `voice:install` 4/4 against a
+known four-second clip, and `prove-voice.mjs` 24/24 on the restarted server
+with a real note (`446455175`, 10 s, read in 21 s, queued job `6693cd7a`
+with the audio and transcript in `input/`, $0; D-265).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.

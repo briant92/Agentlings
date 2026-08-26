@@ -20930,9 +20930,17 @@ model itself is never in the repo.
 - `npm run voice:install` on this machine, 2026-08-25: 240 MB on disk in
   14 s; then 4/4 — silence *nothing heard*; the fixture *"And so my fellow
   Americans, ask"*, `en`, 2.0 s.
-- Owed on the restart (the running server predates the sweep): `node
-  scripts/prove-voice.mjs`, and one real voice note from Brian's thumb —
-  its transcript, and the job it queued — for the ticket's live half.
+- On the restart, 2026-08-26: `prove-voice.mjs` 10/10 with no note on disk
+  (the routes, the transcriber as the desk reads it, Start refusing a note
+  by name), then Brian sent one to the bot and 21 s later it was on disk
+  read — `446455175`, 10 s, `en`: *"Hey guys, I need to know the next five schedules of the Premier League in England."* — and the script ran 24/24: listed
+  at the desk with its words, queued job `6693cd7a` on a rested proof
+  level, `voice-446455175.oga` (226,648 bytes, byte for byte) and
+  `voice-446455175.txt` in `input/`, the sentence the transcript, the
+  queued line *read from a voice note — Brian Thornton, 10 s, in en*, the
+  note spent on disk naming the job and refused a second time by name, no
+  longer listed, $0. The ticket's live half: one real note, its transcript,
+  the job it queued.
 
 ### The review's catches, taken
 

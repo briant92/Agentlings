@@ -20518,7 +20518,9 @@ search, no other MCP). `NOTE.md` carries quotes and 50/200-day SMAs for
 IBM, MSFT and SPY, every series `Last Refreshed: 2026-08-25`, each line
 saying which side of both averages the price sits — live data, nothing
 recalled. **Job `0b9886dc`, 22 turns, $1.1068.** The script never resolves a
-job; promotion is Brian's hand, and #14 closes when it is given.
+job; promotion was Brian's hand — **promoted** at 2026-08-26 00:26 UTC,
+stamped `resolvedBy: "you"` (D-260's stamp reading a person's verdict as a
+person's), and #14 closed on it. It counts toward next Monday's score.
 
 **Not built, on purpose.** No `.env.example` line — a user-added connection's
 key is written by the form (D-244), and the shipped example documents shipped

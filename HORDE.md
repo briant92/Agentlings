@@ -37,7 +37,7 @@ glossary disagree, the glossary is right.
 | **Score** | **Counted, and built to send.** Last full week (2026-08-17 to 23): **87 promoted, 0 auto-sent** on three real levels — hq 48, training-ground 26, home-chores 13 — 32 discarded, 3 failed, 0 awaiting, $146 spent, no refusal on a real level; `npm run ledger:report` leads with it (#12, D-260). Every verdict is stamped when and by whom from the next restart; the refusals file counts (#11, D-259); **the Monday send is built and proven live (#13, D-261; 31/31 on the 2026-08-25 restart)** — a `report: realwork` schedule row, $0, no model — and **HQ row `15548352` is armed**, Mondays 08:05: its first firing is 2026-08-31, approved by hand; the standing offer appears at the third (2026-09-14). Slice #21 closes when that first firing is approved |
 | Map | Hireable positions 5–10 of 922 · 16 % covered / 23 % partial / 61 % uncovered of 18,797 O*NET duties · calibration 52/58 · intake 53/54 |
 | Real work through what D-241+ built | Two mail rules armed on HQ against real senders; one reply threaded into a real Gmail conversation (D-248) |
-| Suites | server 2,386 across 97 files · web 343 · typecheck clean (full run 2026-08-25, with #13) |
+| Suites | server 2,395 across 97 files · web 343 · typecheck clean (full run 2026-08-25, with #15) |
 | Gate | **ARMED** — `AGENTLINGS_PASSWORD` set in `.env`; comment it out and restart to disarm |
 
 Everything below is committed. Nothing is in flight.
@@ -52,8 +52,9 @@ Everything below is committed. Nothing is in flight.
   fixed over stdin; the login lockout. 41 live checks in all.
 - **D-243 – D-245** — the `http` transport; **any MCP server added by the
   user** with its tool list read from the server; suggestions that only
-  fill the form (Xero, Notion, Sentry, Stripe — retiring under D-256; a
-  fifth, Alpha Vantage, arrived with D-262).
+  fill the form (Xero, Notion, Sentry, Stripe, and Alpha Vantage with
+  D-262) — **retired by #15, D-263**, replaced by the registry browse and
+  the verified-here shelf.
 - **D-246 – D-248** — a schedule carries **files** (folder + rule, read
   fresh each firing); no bookkeeper trade, on measurement; **mail arriving
   fires a schedule**, and the job may answer **one threaded reply** — proven
@@ -140,7 +141,7 @@ ticket with no blocker can be taken any time after #7.
 | #12 | **The real-work block** — the resolved-by stamp; one pure function over ledger, jobs and refusals; `ledger:report` prints it | D-249 | #11 |
 | #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ. Built and proven live 31/31, D-261; HQ row `15548352` armed, first firing 2026-08-31 | D-249 | #9, #12 |
 | #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable. Done with no code, D-262: Alpha Vantage's hosted server as a fifth D-245 chip, the key in a Bearer header, added by Brian through Settings; HQ job `0b9886dc` read live quotes through it (11 door calls, $1.11) and was promoted by hand (`prove-market-door.mjs` 8/8 both halves); issue closed | D-256, D-262 | — |
-| #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired | D-256 | — |
+| #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired. Built, D-263: the browse over `registry.modelcontextprotocol.io` fills the form and saves nothing, what it cannot carry is passed over by name and the registry down is a named state; the shelf stamps `verifiedAt` and `source` at the add (Alpha Vantage backfilled by identification); the five chips and their test and proof deleted, the rules moved to `registry.test.ts`. Mechanism proven live in-process 10/10 (real registry, Brave's real server through the fill with the `.env` key); the route and the form **owed on the restart** — `prove-user-connections.mjs` and `-ui.mjs` extended to run then | D-256, D-263 | — |
 | #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing | D-255 | #9 |
 | #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence | D-253 | — |
 | #18 | **Buk, read-only** — a stdio adapter over the reads, whatever the key's scope; on the shelf | D-252 | #15 |
@@ -200,9 +201,10 @@ node scripts/prove-wave0.mjs             # 16/16 — the gate, HTTP + socket
 node scripts/prove-wave0.mjs --lockout   # + the login lockout (LOCKS THE DOOR 5 min)
 node scripts/prove-wave0-ui.mjs          # 17/17 — the login screen, headless Edge
 node scripts/prove-http-mcp.mjs          #  6/6  — the http transport, real MCP server
-node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports
-node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form
-node scripts/prove-suggestions.mjs       # 15/15 — the suggestions, API and chips (retire with #15)
+node scripts/prove-user-connections.mjs  # 17/17 — adding a connection, both transports; + a fifth section (#15, D-263): the registry browse, the Brave fill connected with the .env key, the shelf's stamps on disk, removed — OWED on the restart, spawns npx for real
+node scripts/prove-user-connections-ui.mjs #  7/7 — adding one through the real form; + the shelf, a real registry search, a pick that saves nothing, the registry-down state said by name (#15, D-263) — OWED on the restart
+npx tsx scripts/prove-registry-fill.mts  #  9/9  — no server needed: the REAL registry → Brave's fill → the form's validator → the REAL probe spawning it with BRAVE_API_KEY from .env, 8 tools; Alpha Vantage's SSE-only entry passed over by name; unreachable named (#15, D-263)
+# prove-suggestions.mjs retired with the D-245 chips (#15, D-263); its rules live in server/src/registry.test.ts
 node scripts/prove-standing.mjs          # 25/25 — a schedule carrying files (D-246)
 node scripts/prove-standing-ui.mjs       # 16/16 — the work bar's control (D-246)
 node scripts/prove-mail-trigger.mjs      # 18/18 — trigger routes, preview, the dueNow sweep hazard (D-248)

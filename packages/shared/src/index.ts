@@ -379,6 +379,13 @@ export interface ConnectionInfo {
    * and the way to stop using one is the switch that already exists.
    */
   added?: boolean;
+  /**
+   * The verified-here shelf's two facts (D-256), on added connections only:
+   * when this install's probe read the server's tool list, and where the
+   * shape came from (a registry entry and version, or "typed by hand").
+   */
+  verifiedAt?: string;
+  source?: string;
 }
 
 /**

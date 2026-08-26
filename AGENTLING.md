@@ -363,14 +363,19 @@ someone knowing what it can do. Added ones live under `.agentlings/`, ship
 **off**, take their keys from `.env` like every other credential, and can never
 take a shipped connection's name. Live.
 
-**Not built — decided in D-256 (#15):** the form gains a browse over the public
-MCP registry that fills it — transport, command or URL, the credential's
-variable names — and saves nothing; verification stays the tool-list read.
-Above it, a *verified here* shelf of the doors this install has actually
-connected to, each with its source and date, replaces the five D-245
-suggestion chips (the fifth, Alpha Vantage's hosted market-data server, is
-the first real door taken through the form as it stands, and one HQ job has
-read live quotes through it — D-262).
+**The form browses the public MCP registry (D-256, built D-263, #15):** type
+a word, pick an entry, and the form fills — transport, command or URL, the
+credential's variable names — saving nothing; verification stays the
+tool-list read. An entry the form cannot carry (an SSE-only address, a key
+inside the address, a docker image) is passed over by name, and the registry
+being unreachable is said by name rather than shown as an empty list. Above
+the browse, a *verified here* shelf lists the doors this install has actually
+connected to, each with where its shape came from and when the server
+answered; it replaced the five D-245 suggestion chips (the fifth, Alpha
+Vantage's hosted market-data server, was the first real door taken through
+the form, and one HQ job read live quotes through it — D-262). Live in the
+code and unit-tested; the route and the form are owed their live proof on
+the next restart (`prove-user-connections.mjs`, `-ui.mjs`).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.

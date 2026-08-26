@@ -211,4 +211,31 @@ describe('building the connection', () => {
     expect(saved.name).toBe('xero');
     expect(saved.label).toBe('Xero');
   });
+
+  /**
+   * The verified-here shelf (D-256): a stored connection is by construction
+   * one whose server answered a tool-list read, so what the shelf needs
+   * beyond the row is WHEN that happened and WHERE the shape came from —
+   * D-245's provenance rule, a source and a date per entry, moved from a
+   * shipped file to the thing this install actually connected to.
+   */
+  it('stamps when the server answered, and where the shape was read', () => {
+    const saved = connectionFromDraft(
+      { ...stdioDraft, source: 'the MCP registry, entry x/y v1, read 2026-08-25' },
+      ['t'],
+      '2026-08-25T20:00:00.000Z',
+    );
+    expect(saved.verifiedAt).toBe('2026-08-25T20:00:00.000Z');
+    expect(saved.source).toBe('the MCP registry, entry x/y v1, read 2026-08-25');
+  });
+
+  it('a draft with no source was typed by hand, and the row says so', () => {
+    expect(connectionFromDraft(stdioDraft, ['t'], '2026-08-25T20:00:00.000Z').source).toBe('typed by hand');
+  });
+
+  it('holds the source to a short line of text', () => {
+    expect(draftProblem({ ...stdioDraft, source: 42 }, SHIPPED)).toContain('source');
+    expect(draftProblem({ ...stdioDraft, source: 'x'.repeat(401) }, SHIPPED)).toContain('source');
+    expect(draftProblem({ ...stdioDraft, source: 'the MCP registry' }, SHIPPED)).toBeNull();
+  });
 });

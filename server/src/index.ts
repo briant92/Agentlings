@@ -118,7 +118,7 @@ import {
   type Connection,
 } from './connections';
 import { probeConnection } from './mcpprobe';
-import { offerable, readSuggestions } from './suggestions';
+import { searchRegistry } from './registry';
 import {
   connectionFromDraft,
   draftProblem,
@@ -333,7 +333,6 @@ const SKILLS_DIR = path.join(ROOT, 'skills');
 const SOURCES_FILE = path.join(ROOT, 'catalog', 'sources.json');
 const CONNECTIONS_FILE = path.join(ROOT, 'catalog', 'connections.json');
 const USER_CONNECTIONS_FILE = userConnectionsFile(SANDBOX_ROOT);
-const SUGGESTIONS_FILE = path.join(ROOT, 'catalog', 'suggestions.json');
 
 /**
  * Every connection this machine has: the shipped catalog, then the user's own
@@ -848,13 +847,21 @@ function connectionList(): ConnectionInfo[] {
   // Which ones this machine added, so Settings can offer to remove those and
   // only those. Marked here rather than inside `describe`, which is given a
   // flat list and has no way to know where an entry came from.
-  const mine = new Set(readUserConnections(USER_CONNECTIONS_FILE).map((conn) => conn.name));
+  const mine = new Map(readUserConnections(USER_CONNECTIONS_FILE).map((conn) => [conn.name, conn]));
   return describe(
     connections,
     process.env,
     new Set(enabledNames(connections, settings, process.env)),
     settings.identities ?? {},
-  ).map((info) => ({ ...info, added: mine.has(info.name) }));
+  ).map((info) => {
+    const own = mine.get(info.name);
+    // The shelf's two facts ride the row (D-256): an added connection is by
+    // construction one whose server answered a tool-list read, so what the
+    // shelf adds is when, and where the shape came from.
+    return own
+      ? { ...info, added: true, ...(own.verifiedAt ? { verifiedAt: own.verifiedAt } : {}), ...(own.source ? { source: own.source } : {}) }
+      : { ...info, added: false };
+  });
 }
 
 app.get('/api/settings', (c) =>
@@ -4365,19 +4372,31 @@ async function probeDraft(
   return {
     status: 200,
     body: { tools: probe.tools, serverName: probe.serverName ?? null },
-    connection: connectionFromDraft(draft, probe.tools),
+    // Stamped now, because now is when the server answered (D-256).
+    connection: connectionFromDraft(draft, probe.tools, new Date().toISOString()),
     values,
   };
 }
 
 /**
- * Starting points for the form (D-245) — shapes read from vendors' own docs,
- * with the ones already installed dropped, since offering a taken name is
- * offering a dead end. They are not connections and carry no tools.
+ * The public MCP registry, searched for the words typed, as fills for the
+ * form (D-256) — the browse that replaced the D-245 chips. A fill is not a
+ * connection and carries no tools; the probe below is still what makes one
+ * real. Names already in use are suffixed in the fill rather than offered
+ * as dead ends. The registry unreachable answers 502 with the reason, so the
+ * form can say so by name — never an empty list that reads as "no such
+ * server".
  */
-app.get('/api/connections/suggestions', (c) =>
-  c.json({ suggestions: offerable(readSuggestions(SUGGESTIONS_FILE), allConnections()) }),
-);
+app.get('/api/connections/registry', async (c) => {
+  const query = (c.req.query('q') ?? '').trim();
+  if (!query) return c.json({ error: 'type a word or two to search the registry for' }, 400);
+  const found = await searchRegistry(query, {
+    readOn: new Date().toISOString().slice(0, 10),
+    taken: new Set(allConnections().map((conn) => conn.name)),
+  });
+  if (!found.ok) return c.json({ error: found.error }, 502);
+  return c.json(found);
+});
 
 /** Try a draft and report what the server offers, without keeping anything. */
 app.post('/api/connections/probe', async (c) => {

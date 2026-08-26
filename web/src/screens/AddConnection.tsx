@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ConnectionInfo } from '@agentlings/shared';
 import { api } from '../api';
 
@@ -13,6 +13,13 @@ import { api } from '../api';
  * **Nothing is saved until a server answers.** The one button both checks and
  * keeps: the tools it reports are what the connection will grant, so a
  * connection cannot exist in a state where nobody knows what it can do.
+ *
+ * Above the form (D-256): the **verified-here shelf** — the doors this install
+ * has actually connected to, each with where its shape came from and when the
+ * server answered — and a **browse over the public MCP registry**, which fills
+ * the form from an entry and saves nothing. The browse replaced the D-245
+ * chips; its rule survives them: a fill names its source and date, and the
+ * probe is still the only thing that makes one real.
  */
 
 interface SecretRow {
@@ -21,11 +28,8 @@ interface SecretRow {
   value: string;
 }
 
-/**
- * A shape the app ships, read from a vendor's own docs — never a connection.
- * Choosing one fills this form; the probe is still what makes it real.
- */
-interface Suggestion {
+/** A registry entry as the form can take it — never a connection. */
+interface Fill {
   name: string;
   label: string;
   description?: string;
@@ -36,12 +40,42 @@ interface Suggestion {
   headers?: Record<string, string>;
   secrets?: Record<string, string>;
   docs?: string;
-  source?: string;
+  source: string;
 }
+interface Hit {
+  id: string;
+  version: string;
+  fill: Fill;
+}
+interface Omitted {
+  id: string;
+  why: string;
+}
+
+/**
+ * The browse's states, each named. `unreachable` exists so that the registry
+ * being down never shows as an empty list — which would read as "no such
+ * server", the one thing the browse must never say by accident.
+ */
+type Browse =
+  | { state: 'idle' }
+  | { state: 'searching'; query: string }
+  | { state: 'found'; query: string; hits: Hit[]; omitted: Omitted[]; truncated: boolean }
+  | { state: 'unreachable'; query: string; error: string };
 
 const blankSecret = (): SecretRow => ({ name: '', why: '', value: '' });
 
-export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionInfo[]) => void }) {
+const day = (iso: string) => iso.slice(0, 10);
+/** The distinct reasons entries were passed over, as one clause. */
+const reasons = (omitted: Omitted[]) => [...new Set(omitted.map((o) => o.why))].join('; ');
+
+export function AddConnection({
+  connections,
+  onAdded,
+}: {
+  connections: ConnectionInfo[];
+  onAdded: (connections: ConnectionInfo[]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [transport, setTransport] = useState<'stdio' | 'http'>('stdio');
   const [name, setName] = useState('');
@@ -54,21 +88,30 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [found, setFound] = useState<string[] | null>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [chosen, setChosen] = useState<Suggestion | null>(null);
+  const [query, setQuery] = useState('');
+  const [browse, setBrowse] = useState<Browse>({ state: 'idle' });
+  const [chosen, setChosen] = useState<Hit | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    // Fetched when the form opens rather than at mount: it is one small list
-    // and nobody should pay for it on every Settings visit.
-    void api<{ suggestions: Suggestion[] }>('/api/connections/suggestions')
-      .then((r) => setSuggestions(r.suggestions))
-      .catch(() => setSuggestions([]));
-  }, [open]);
+  // The shelf lists what this install's probe has read a tool list from, and
+  // nothing else: the stamp is written at the add (D-256), so a row without
+  // one — a hand-edited file — is not a verified door and is not shown.
+  const verified = connections.filter((c) => c.added && c.verifiedAt);
 
-  /** Fill the form from a shipped shape. Nothing is submitted by choosing one. */
-  const choose = (s: Suggestion) => {
-    setChosen(s);
+  const search = () => {
+    const q = query.trim();
+    if (!q) return;
+    setBrowse({ state: 'searching', query: q });
+    api<{ hits: Hit[]; omitted: Omitted[]; truncated: boolean }>(`/api/connections/registry?q=${encodeURIComponent(q)}`)
+      .then((r) => setBrowse({ state: 'found', query: q, hits: r.hits, omitted: r.omitted, truncated: r.truncated }))
+      .catch((err: unknown) =>
+        setBrowse({ state: 'unreachable', query: q, error: err instanceof Error ? err.message : String(err) }),
+      );
+  };
+
+  /** Fill the form from a registry entry. Nothing is submitted by choosing one. */
+  const choose = (hit: Hit) => {
+    const s = hit.fill;
+    setChosen(hit);
     setError(null);
     setFound(null);
     setName(s.name);
@@ -99,6 +142,9 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
       label: label.trim(),
       transport,
       secrets: declared,
+      // Where the shape came from, for the shelf. Absent means typed by hand,
+      // and the server says so.
+      ...(chosen ? { source: chosen.fill.source } : {}),
     };
     if (transport === 'stdio') {
       return {
@@ -153,6 +199,8 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
   const reset = () => {
     setName('');
     setLabel('');
+    setTransport('stdio');
+    setCommand('npx');
     setArgs('');
     setUrl('');
     setHeaders('');
@@ -160,6 +208,8 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
     setFound(null);
     setError(null);
     setChosen(null);
+    setQuery('');
+    setBrowse({ state: 'idle' });
   };
 
   if (!open) {
@@ -178,45 +228,118 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
         server rather than typed.
       </p>
 
-      {suggestions.length > 0 && (
-        <div className="addc-suggest">
-          <div className="addc-suggest-head">start from one of these</div>
-          <div className="minis">
-            {suggestions.map((s) => (
-              <button
-                key={s.name}
-                type="button"
-                className={`mini addc-chip${chosen?.name === s.name ? ' on' : ''}`}
-                title={s.description}
-                onClick={() => choose(s)}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-          {/* Said plainly, because it is the difference between a suggestion
-              and a claim: these shapes come from each vendor's own page and
-              have not been connected to from here. The user's own check is
-              what makes any of it true. */}
-          {chosen ? (
-            <p className="addc-note">
-              Shape from {chosen.source ?? 'the vendor'}.{' '}
-              {chosen.docs && (
-                <a href={chosen.docs} target="_blank" rel="noreferrer">
-                  their instructions
-                </a>
-              )}{' '}
-              — check it against theirs. Nothing here has been tried from this machine; pressing
-              check is what tries it.
-            </p>
-          ) : (
-            <p className="addc-note">
-              Filled in from each vendor&rsquo;s own instructions, never tried from here. They only
-              fill the form — your check is what makes one real.
-            </p>
-          )}
+      {verified.length > 0 && (
+        <div className="addc-shelf">
+          <div className="addc-section-head">verified here</div>
+          {/* Only what this install has connected to — never a shape from a
+              file — with where it came from and when the server answered. */}
+          {verified.map((c) => (
+            <div className="addc-shelf-row" key={c.name}>
+              <span className="addc-shelf-label">{c.label}</span>
+              <span className="addc-shelf-meta">
+                answered {day(c.verifiedAt ?? '')} · shape from {c.source ?? 'not recorded'}
+              </span>
+            </div>
+          ))}
         </div>
       )}
+
+      <div className="addc-registry">
+        <div className="addc-section-head">or find one in the public MCP registry</div>
+        <form
+          className="addc-registry-search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            search();
+          }}
+        >
+          <input
+            className="addc-registry-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="a product, a company, a kind of data…"
+            spellCheck={false}
+          />
+          <button type="submit" disabled={browse.state === 'searching' || !query.trim()}>
+            {browse.state === 'searching' ? 'searching…' : 'search'}
+          </button>
+        </form>
+        {browse.state === 'unreachable' && (
+          <p className="addc-registry-down">
+            The registry could not be reached, so nothing is listed — that is not the same as no such
+            server. ({browse.error}) Try again in a moment, or paste the server&rsquo;s own
+            instructions below.
+          </p>
+        )}
+        {browse.state === 'found' && browse.hits.length === 0 && (
+          <p className="addc-note addc-registry-none">
+            Nothing in the registry matches &ldquo;{browse.query}&rdquo;
+            {browse.omitted.length > 0
+              ? ` in a shape this form can carry (${browse.omitted.length} passed over: ${reasons(browse.omitted)})`
+              : ''}
+            . Its own instructions can still be pasted below.
+          </p>
+        )}
+        {browse.state === 'found' && browse.hits.length > 0 && (
+          <>
+            <div className="addc-registry-hits">
+              {browse.hits.map((h) => (
+                <button
+                  key={h.id}
+                  type="button"
+                  className={`addc-registry-hit${chosen?.id === h.id ? ' on' : ''}`}
+                  title={h.fill.description}
+                  onClick={() => choose(h)}
+                >
+                  <span className="addc-registry-hit-name">
+                    {h.fill.label} <small>{h.id} v{h.version}</small>
+                  </span>
+                  <span className="addc-registry-hit-meta">
+                    {h.fill.transport === 'stdio' ? 'runs here' : 'runs elsewhere'} ·{' '}
+                    {Object.keys(h.fill.secrets ?? {}).length
+                      ? `keys: ${Object.keys(h.fill.secrets ?? {}).join(', ')}`
+                      : 'no key named'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {browse.omitted.length > 0 && (
+              <p className="addc-note">
+                {browse.omitted.length} more passed over — a shape this form cannot carry:{' '}
+                {reasons(browse.omitted)}.
+              </p>
+            )}
+            {/* A cut list must say so, or the rest reads as "no such server". */}
+            {browse.truncated && (
+              <p className="addc-note">
+                The registry had more than this page for &ldquo;{browse.query}&rdquo; — only the first
+                page is shown; try a more particular word.
+              </p>
+            )}
+          </>
+        )}
+        {/* Said plainly, because it is the difference between a fill and a
+            claim: a picked entry is what its authors published, and has not
+            been connected to from here. The user's own check is what makes
+            any of it true. */}
+        {chosen ? (
+          <p className="addc-note addc-registry-source">
+            Shape from {chosen.fill.source}.{' '}
+            {chosen.fill.docs && (
+              <a href={chosen.fill.docs} target="_blank" rel="noreferrer">
+                their page
+              </a>
+            )}{' '}
+            — check it against theirs. Nothing here has been tried from this machine; pressing check
+            is what tries it.
+          </p>
+        ) : (
+          <p className="addc-note addc-registry-source">
+            Picking one only fills the form, never tried from here — your check is what makes it
+            real.
+          </p>
+        )}
+      </div>
 
       <div className="addc-grid">
         <label>
@@ -324,7 +447,8 @@ export function AddConnection({ onAdded }: { onAdded: (connections: ConnectionIn
         ))}
         <p className="addc-note">
           Use <code>{'${NAME}'}</code> in a header to stand for a key — the value is filled in when
-          a job runs and never written into the job's own folder.
+          a job runs and never written into the job's own folder. A key already in <code>.env</code>{' '}
+          under that name is used as it is.
         </p>
       </div>
 

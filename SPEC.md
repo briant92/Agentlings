@@ -754,11 +754,11 @@ tried, measured and rejected is in `DECISIONS.md`:
     grant and says so (#8–#10 built and proven live, D-258: the work bar
     shows one chip per enabled non-sending door while a schedule or rule is
     being created, none ticked, and the row carries exactly the ticked ones).
-    Two more are decided and not
-    built: a browse over the public MCP registry that fills the
-    add-a-connection form, with a *verified here* shelf replacing the D-245
-    chips (D-256, #15); and the twelve browser acting tools as a second
-    connection, `browser-act`, under supervision only (D-255, #16).
+    The add-a-connection form browses the public MCP registry and fills
+    from an entry, saving nothing, with a *verified here* shelf — source and
+    date per door — replacing the D-245 chips (D-256, built D-263, #15).
+    One more is decided and not built: the twelve browser acting tools as a
+    second connection, `browser-act`, under supervision only (D-255, #16).
     Secrets are referenced by env-var name, never stored or returned; a
     connection whose secret is missing is listed as not ready and can never
     be switched on.

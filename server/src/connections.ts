@@ -67,6 +67,14 @@ export interface Connection {
    * makes the catalog say what a connection can do without running it.
    */
   tools?: string[];
+  /**
+   * User-added only (D-256): when this install's probe read the tool list
+   * above, and where the shape came from — a registry entry and version, or
+   * "typed by hand". D-245's provenance rule, a source and a date per
+   * entry, applied to the thing this machine actually connected to.
+   */
+  verifiedAt?: string;
+  source?: string;
   /** stdio only. */
   command?: string;
   args?: string[];

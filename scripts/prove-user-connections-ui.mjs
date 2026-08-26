@@ -6,6 +6,12 @@
 //
 // It stands up a real http MCP server, drives the real Settings form, and then
 // removes what it added so the box is left as it was found.
+//
+// Since #15 (D-256) it also drives the catalog's wide form: the verified-here
+// shelf above the browse, a real search of the public MCP registry, a pick
+// that fills the form and saves nothing, and the registry-unreachable state
+// said by name (the browse's call answered 502 from the page, as the server
+// answers when the registry is down).
 
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
@@ -75,6 +81,63 @@ check('the add button is on the reads board', (await page.locator('.addc-open').
 await page.click('.addc-open');
 await page.waitForTimeout(400);
 check('the form opens', (await page.locator('.addc').count()) === 1);
+
+// ── The catalog gets wide (D-256, #15): the shelf, the browse, the named state ──
+check('the D-245 chips are gone', (await page.locator('.addc-chip').count()) === 0);
+const shelfRows = await page.$$eval('.addc-shelf-row', (els) => els.map((e) => e.textContent?.trim() ?? ''));
+if (shelfRows.length) {
+  check('the verified-here shelf lists this install’s doors with source and date', shelfRows.every((r) => /answered \d{4}-\d{2}-\d{2}/.test(r) && /shape from/.test(r)), shelfRows.join(' | ').slice(0, 160));
+} else {
+  console.log('NOTE  no added connection on this install, so the shelf is rightly absent');
+}
+await page.fill('.addc-registry-input', 'brave');
+await page.keyboard.press('Enter');
+// A real search of the real registry: wait for it to answer, not for a clock.
+await page.waitForSelector('.addc-registry-hit, .addc-registry-down, .addc-registry-none', { timeout: 20_000 }).catch(() => null);
+const hits = await page.$$eval('.addc-registry-hit', (els) => els.map((e) => e.textContent ?? ''));
+check('searching the registry lists matching servers with transport and key names', hits.some((h) => /brave-search-mcp-server/.test(h) && /runs here/.test(h) && /BRAVE_API_KEY/.test(h)), `${hits.length} listed`);
+await page.evaluate(() => {
+  [...document.querySelectorAll('.addc-registry-hit')].find((b) => /io\.github\.brave\/brave-search-mcp-server/.test(b.textContent ?? ''))?.click();
+});
+await page.waitForTimeout(500);
+const filled = await page.evaluate(() => ({
+  name: document.querySelector('.addc-grid input[placeholder="xero"]')?.value,
+  args: document.querySelector('.addc textarea')?.value ?? '',
+  secrets: [...document.querySelectorAll('.addc-secret input:not([type="password"])')].map((i) => i.value),
+  note: document.querySelector('.addc-registry-source')?.textContent ?? '',
+}));
+check('picking one fills the form — name, command arguments, the key’s name', filled.name === 'brave-search-mcp-server' && filled.args.includes('@brave/brave-search-mcp-server') && filled.secrets.includes('BRAVE_API_KEY'), JSON.stringify(filled).slice(0, 160));
+check('and the note names the registry entry and the date, and says nothing was tried from here', /MCP registry/.test(filled.note) && /read \d{4}-\d{2}-\d{2}/.test(filled.note) && /Nothing here has been tried/.test(filled.note), filled.note.slice(0, 120));
+// Nothing was submitted by picking: the connection must not exist.
+const afterPick = await page.evaluate(async () => (await fetch('/api/connections')).json());
+check('and nothing was saved by picking', !afterPick.some?.((c) => c.name === 'brave-search-mcp-server'));
+
+// The registry unreachable is a NAMED state: answer the browse's call as the
+// server would when the registry is down, and read what the form says.
+await page.route('**/api/connections/registry*', (route) =>
+  route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'the registry could not be reached (fetch failed)' }) }),
+);
+await page.fill('.addc-registry-input', 'anything');
+await page.keyboard.press('Enter');
+await page.waitForTimeout(800);
+const down = (await page.locator('.addc-registry-down').textContent().catch(() => '')) ?? '';
+check('the registry unreachable is said by name — never an empty list that reads as no such server', /could not be reached/.test(down) && /not the same as no such server/.test(down), down.slice(0, 120));
+check('and no hits are shown as if the search had found nothing', (await page.locator('.addc-registry-hit').count()) === 0);
+await page.unroute('**/api/connections/registry*');
+
+// Back to the by-hand path, which is unchanged: cancel drops the pick (and
+// with it the source it would have stamped), and the form opens clean.
+await page.click('.addc-cancel');
+await page.waitForTimeout(300);
+await page.click('.addc-open');
+await page.waitForTimeout(400);
+const clean = await page.evaluate(() => ({
+  name: document.querySelector('.addc-grid input[placeholder="xero"]')?.value ?? '?',
+  query: document.querySelector('.addc-registry-input')?.value ?? '?',
+  hits: document.querySelectorAll('.addc-registry-hit').length,
+  transport: document.querySelector('.addc-kind button.on')?.textContent?.trim(),
+}));
+check('cancelling and reopening gives a clean form — no name, no search, no hits, the default transport', clean.name === '' && clean.query === '' && clean.hits === 0 && clean.transport === 'runs here', JSON.stringify(clean));
 
 // Fill it the way a person would.
 await page.fill('.addc-grid input[placeholder="xero"]', 'ui-proof');

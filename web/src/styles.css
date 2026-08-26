@@ -6429,15 +6429,34 @@ button.rv-step:hover {
 }
 
 /* suggestions inside the add form (D-245) */
-.addc-suggest { margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px dashed #3a3a4e; }
-.addc-suggest-head { font-size: 12px; color: #9aa3b8; margin-bottom: 6px; }
-.addc-chip {
-  font: inherit;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid #4a4a5e;
-  color: #9aa3b8;
+/* A small head over each block inside the add form: the shelf, the browse, the keys. */
+.addc-section-head { font-size: 12px; color: #9aa3b8; margin-bottom: 6px; }
+
+/* ── The verified-here shelf and the registry browse (D-256) ───────────────
+   Inside the add form, above the fields: what this install has connected to,
+   then the browse that fills the form. Both use the chips' head style. */
+.addc-shelf { margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px dashed #3a3a4e; }
+.addc-shelf-row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 12px; margin: 4px 0; }
+.addc-shelf-label { color: var(--db-lime-light); }
+.addc-shelf-meta { color: #9aa3b8; }
+.addc-registry { margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px dashed #3a3a4e; }
+.addc-registry-search { display: flex; gap: 8px; margin-bottom: 8px; }
+.addc-registry-search input { flex: 1; min-width: 0; }
+.addc-registry-search button {
+  font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid #3a3a4e; background: transparent; color: #c9d1e4; cursor: pointer;
 }
-.addc-chip:hover { border-color: var(--db-lime-light); color: var(--db-lime-light); }
-.addc-chip.on { border-color: var(--db-lime-light); color: var(--db-ink); background: var(--db-lime-light); }
-.addc-suggest .addc-note a { color: inherit; }
+.addc-registry-search button:disabled { opacity: 0.55; cursor: default; }
+.addc-registry-hits { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; margin-bottom: 6px; }
+.addc-registry-hit {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 6px;
+  border: 1px solid #3a3a4e; background: transparent; color: #c9d1e4; cursor: pointer;
+}
+.addc-registry-hit:hover { border-color: var(--db-lime-light); }
+.addc-registry-hit.on { border-color: var(--db-lime-light); }
+.addc-registry-hit-name small { color: #6f7891; margin-left: 6px; }
+.addc-registry-hit-meta { color: #9aa3b8; }
+/* The named state: the registry down is never an empty list (D-256). */
+.addc-registry-down { margin: 6px 0; font-size: 12px; color: #e0b24b; max-width: 62ch; }
+.addc-registry .addc-note a { color: inherit; }

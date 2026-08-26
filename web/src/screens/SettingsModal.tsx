@@ -692,6 +692,7 @@ export function SettingsModal({
                   reach is decided; a sending connection is still the outbox's
                   business and is not addable here. */}
               <AddConnection
+                connections={settings?.connections ?? []}
                 onAdded={(connections) =>
                   setSettings((prev) => (prev ? { ...prev, connections } : prev))
                 }

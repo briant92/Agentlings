@@ -272,6 +272,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent](#d-260--2026-08-25--built-the-real-work-block--every-verdict-stamped-with-when-and-by-whom-one-pure-function-over-the-ledger-the-job-records-and-the-refusals-and-ledgerreport-leads-with-it-87-jobs-promoted-on-three-real-levels-last-week-none-of-them-auto-sent)
 - [D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one](#d-261--2026-08-25--built-the-score-arrives-on-monday--a-schedule-row-may-carry-report-realwork-its-firing-composes-last-weeks-block-into-an-outbox-through-the-contract-a-sessions-outboxjson-meets-and-lands-it-in-review-at-0-with-no-model-no-door-and-no-ledger-row-and-the-standing-approval-it-earns-is-the-ordinary-one)
 - [D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and one HQ job read live quotes through it for $1.11](#d-262--2026-08-25--first-real-door-alpha-vantage-market-data-through-the-ordinary-form-with-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-the-far-end-checks-only-that-a-key-is-present-and-one-hq-job-read-live-quotes-through-it-for-111)
+- [D-263 — 2026-08-25 — The catalog gets wide, built: a browse over the public MCP registry fills the form and saves nothing, a verified-here shelf carries a source and a date per door, the D-245 chips retire — the mechanism proven live against the real registry and Brave’s real server with a key already in `.env`, the routes and the form owed on the restart](#d-263--2026-08-25--the-catalog-gets-wide-built-a-browse-over-the-public-mcp-registry-fills-the-form-and-saves-nothing-a-verified-here-shelf-carries-a-source-and-a-date-per-door-the-d-245-chips-retire--the-mechanism-proven-live-against-the-real-registry-and-braves-real-server-with-a-key-already-in-env-the-routes-and-the-form-owed-on-the-restart)
 
 ## By theme
 
@@ -1061,7 +1062,11 @@ entry updates one file rather than two.
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
-  retiring; and D-257, Brian as the manager, D-197 standing, a planner-only
+  retiring; D-263, the catalog built (#15) — the registry browse filling
+  the form and saving nothing, the shelf stamped with source and date,
+  the chips retired, the mechanism proven live 10/10 against the real
+  registry and Brave’s real server, the routes and the form owed on the
+  restart; and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -20526,3 +20531,141 @@ person's), and #14 closed on it. It counts toward next Monday's score.
 key is written by the form (D-244), and the shipped example documents shipped
 doors. The *verified here* shelf that #14's third criterion names is #15's.
 FMP is not a suggestion until its page can be read first-hand.
+
+## D-263 — 2026-08-25 — The catalog gets wide, built: a browse over the public MCP registry fills the form and saves nothing, a verified-here shelf carries a source and a date per door, the D-245 chips retire — the mechanism proven live against the real registry and Brave’s real server with a key already in `.env`, the routes and the form owed on the restart
+
+**Decision.** Built as D-256 decided, ticket #15. Settings → *reads* → add a
+connection now has, above the fields, a **browse over the public MCP
+registry** (`registry.modelcontextprotocol.io/v0.1/servers`): type a word,
+pick an entry, and the form fills — transport, command or address, the
+env-variable names its credential needs — **saving nothing**. Verification is
+unchanged from D-244: the connection exists only once this machine's own
+probe has read the server's tool list. Above the browse sits the
+**verified-here shelf**: the doors this install has completed a tool-list
+read on, each with where its shape came from and when the server answered.
+The four D-245 chips and Alpha Vantage's fifth are **retired** —
+`catalog/suggestions.json`, `suggestions.ts`, its test and
+`prove-suggestions.mjs` deleted; the test's rules moved, with a note, to
+`registry.test.ts`. Add-a-connection by hand is unchanged.
+
+### The registry, measured before it was read
+
+- **v0.1**, `?search=` matches name and description as a substring
+  (`alpha vantage` with a space matches nothing; `alphavantage` does),
+  cursor-paginated, **`limit` capped at 100** — 101 answers 422. One page
+  is what the browse reads; a search that needs a second page needs a
+  better word.
+- Every version of an entry is a row; `_meta.isLatest` and
+  `status: active` are what the browse keeps, so a server shows once.
+- The registry's **own Alpha Vantage entry lists only an SSE address**
+  (`io.github.alphavantage/alpha_vantage_mcp`) — the URL D-262 measured
+  answering streamable HTTP, published under the transport D-243 has no
+  branch for. So the door #14 built could not have been picked from this
+  browse; its shape now lives in `prove-market-door.mjs`, read from the
+  server's repository as D-262 recorded.
+
+### What the form carries, and what it passes over by name
+
+One fill per entry, the first shape the form can carry, tried in the order a
+person would: an **npm package** (`npx -y <identifier>@<version>`, the
+declared `environmentVariables` as the keys it needs), then a
+**streamable-http remote** (its `headers`, a `{var}` template becoming
+`${VAR}` and a declared key), then a **PyPI package** (`uvx`). Everything
+else is **passed over with a reason the browse shows** — *only an SSE
+address*, *a key inside its address* (a `{token}` URL template would put
+the key in the job's own folder, D-242/D-262), *only a docker / other
+package* — never dropped silently, because a browse that drops silently
+reads as *no such server*, and the same rule is why **the registry being
+unreachable is a named state**: the route answers 502 with the reason and
+the form says *that is not the same as no such server*.
+
+Two judgements inside the mapping:
+
+- A secret `Authorization` header with **no shape given** (GitHub's remote
+  says *"Authorization header with authentication token"* and nothing else)
+  cannot be carried as a whole-value placeholder: a token with a space in
+  it is refused at the door (`secretValueProblem`). It is carried as
+  `Bearer ${NAME}` — what every remote in the registry that does spell its
+  header out spells — and the key's reason says **Bearer is assumed**, so
+  the fill claims what it read and marks what it did not.
+- A name already in use is **suffixed in the fill** (`github-mcp-server-2`)
+  rather than offered as a dead end; `nameTaken` is now the one function
+  the fill and the door's refusal share, so they cannot disagree.
+
+### The shelf, and D-245's rule moving to it
+
+A stored connection is by construction one whose server answered (D-244),
+so the shelf is the user-added rows plus two facts stamped **at the add**:
+`verifiedAt`, the instant the probe answered, and `source`, the registry
+entry and version and the day it was read — or `typed by hand`. The rule
+D-245 wrote for a shipped file, *a primary source and a date per entry*,
+now applies to the thing this install actually connected to.
+
+The one row that predates the stamp, Alpha Vantage, was **backfilled by
+identification, not by guess** (the hard-won rule): `.agentlings/connections.json`
+and `.env` carry the same write instant to the millisecond (20:20:37.595 /
+.594 local, 2026-08-25) — the add route writes one after the other and
+nothing has rewritten either since — and HQ job `0b9886dc` was queued 67 s
+later. `verifiedAt: 2026-08-26T00:20:37.596Z`, the source naming the chip,
+D-262 and the backfill.
+
+### Evidence
+
+Unit, with real registry entries as fixtures (Brave, Smithery, GitHub,
+Alpha Vantage, NordicMCP, medium-ops, read 2026-08-25) rather than invented
+ones — a made-up entry proves only that the mapping reads what we imagined:
+`registry.test.ts` **17/17** (every fill passes `draftProblem`, none
+carries tools, every one names entry, version and date; the SSE-only and
+key-in-URL entries passed over by name; latest-and-active filtering; the
+search URL held to the cap; a second page the browse did not read reported
+as `truncated`; unreachable and a bad answer both named);
+`userconnections.test.ts` **24/24** (+3: the stamp, the by-hand default,
+the source held to a short line). Typecheck clean. Server **2,395** across
+97 files (from 2,386 — the 11 retired, 20 in), web **343**.
+
+**The mechanism, proven live on 2026-08-25** while the running server
+still predated the route (it was not restarted: a second instance shares
+`.agentlings/` and would double-fire the armed schedules) —
+`scripts/prove-registry-fill.mts`, checked in as an instrument that needs
+no server: the real registry, the real form validator, the real probe,
+nothing written, **9/9**. `brave` answered 6 fills in ~3 s; Brave's official entry
+filled as `npx -y @brave/brave-search-mcp-server@2.1.3` wanting
+`BRAVE_API_KEY`, which `.env` already held under that name; the probe
+**spawned it and Brave's server answered 8 tools in 6.7 s**
+(`brave_web_search` … `brave_place_search`, server name
+`brave-search-mcp-server`) with no value posted; what would be stored
+carried both stamps; the registry's Alpha Vantage entry was passed over by
+name; an unreachable registry came back as the named state.
+
+**Owed on the restart**, and written to run then:
+`prove-user-connections.mjs` gains a fifth section (browse → the Brave
+fill → connected through the route with the `.env` key → on the shelf with
+source and date, on disk not only in the reply → removed; an empty search
+refused; `/api/connections/suggestions` gone) and
+`prove-user-connections-ui.mjs` drives the real form (no chips; the shelf
+row with *answered <date> · shape from …*; a real registry search listing
+transport and key names; a pick filling name, arguments and key and saving
+nothing; the browse's call answered 502 from the page and the form saying
+*could not be reached … not the same as no such server*). Until they run,
+the route and the form are typechecked and unit-tested, not proven.
+
+**The review's catches, taken.** The shelf filtered on `added` alone —
+a hand-edited row with no stamp would have sat on it; it filters on
+`verifiedAt` now, which is what "completed a tool-list read" means in the
+data. The UI proof read the source note by a class the "N passed over"
+note shares, so a search with one SSE-only sibling would have failed the
+check on its first real run — the note has its own class. One API check
+could not fail (a fill's name is unused *by construction*, so "not saved
+yet" proved nothing) and two passed on empty lists — the passed-over check
+now searches `alphavantage`, whose SSE-only entry is known to be there. A
+list cut at the registry's page was silent — `truncated` rides the answer
+and the form says *only the first page*. The chips' CSS was orphaned and
+the retired word lived on in a class name; both gone. `nameTaken` takes
+names, not connections fabricated to look like some.
+
+**Not built, on purpose.** No re-verification — `verifiedAt` is the add,
+and a door that has stopped answering is the job's error to report, as
+before. No source on the Settings row itself; the shelf is inside the add
+form, above the browse, where D-256 put it. No `sse` transport — D-243's
+reason stands, and the registry's SSE-only entries are now counted rather
+than invisible, which is the measurement that would reopen it.

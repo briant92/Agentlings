@@ -66,10 +66,20 @@ export interface ConnectionDraft {
   url?: unknown;
   headers?: unknown;
   secrets?: unknown;
+  /** Where the shape came from — a registry fill says; a hand-typed form does not. */
+  source?: unknown;
 }
 
 /** Names that would collide with something the app already means by them. */
 const RESERVED = new Set(['web', 'render', 'browser']);
+
+/**
+ * Whether a name is already someone's — reserved, shipped or added. One rule,
+ * so the registry fill's suffixing and the door's refusal agree (D-256).
+ */
+export function nameTaken(name: string, names: Iterable<string>): boolean {
+  return RESERVED.has(name) || new Set(names).has(name);
+}
 
 /**
  * What is wrong with a draft, or null.
@@ -89,7 +99,7 @@ export function draftProblem(
   if (!/^[a-z][a-z0-9-]{1,30}$/.test(name)) {
     return 'the name must be lower-case letters, digits and dashes, starting with a letter';
   }
-  if (RESERVED.has(name) || existing.some((c) => c.name === name)) {
+  if (nameTaken(name, existing.map((c) => c.name))) {
     return `there is already a connection called "${name}"`;
   }
   if (typeof draft.label !== 'string' || !draft.label.trim()) {
@@ -135,6 +145,9 @@ export function draftProblem(
       }
     }
   }
+  if (draft.source !== undefined && (typeof draft.source !== 'string' || draft.source.length > 400)) {
+    return 'the source must be a short line of text';
+  }
   return null;
 }
 
@@ -168,6 +181,8 @@ function isLoopback(host: string): boolean {
 export function connectionFromDraft(
   draft: ConnectionDraft,
   tools: string[],
+  /** When the server answered — the shelf's date (D-256). */
+  verifiedAt?: string,
 ): Connection {
   const base: Connection = {
     name: (draft.name as string).trim(),
@@ -177,6 +192,10 @@ export function connectionFromDraft(
     // Off until Settings says otherwise. Adding a connection is saying "this
     // works", not "every job may now use it" — the grant is still per job.
     defaultOn: false,
+    ...(verifiedAt ? { verifiedAt } : {}),
+    // The shelf's provenance (D-245's rule, kept): a registry fill names its
+    // entry and the day it was read; a form filled by hand says so.
+    source: typeof draft.source === 'string' && draft.source.trim() ? draft.source.trim() : 'typed by hand',
   };
   if (typeof draft.description === 'string' && draft.description.trim()) {
     base.description = draft.description.trim();

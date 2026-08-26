@@ -4,11 +4,11 @@
 //
 // Two halves, against the running server.
 //
-// The first costs nothing and needs no key of Brian's: the Alpha Vantage chip
-// is offered, the form's own probe reaches Alpha Vantage's hosted MCP server
-// through the header the suggestion carries, and the server answers with its
-// tools — and nothing is written, to `.env` or to the connections file. It
-// probes with Alpha Vantage's public `demo` key, the one their docs hand out.
+// The first costs nothing and needs no key of Brian's: the form's own probe
+// reaches Alpha Vantage's hosted MCP server through the header the shape
+// below carries, and the server answers with its tools — and nothing is
+// written, to `.env` or to the connections file. It probes with Alpha
+// Vantage's public `demo` key, the one their docs hand out.
 //
 // The second needs a key (a free one from alphavantage.co/support, 25
 // requests a day), given as the first argument, as ALPHAVANTAGE_API_KEY in
@@ -38,6 +38,23 @@ const NAME = 'alphavantage';
 const SECRET = 'ALPHAVANTAGE_API_KEY';
 const JOB_WAIT_MS = 20 * 60_000;
 
+// The shape D-262 recorded, as the retired D-245 chip carried it. It lives
+// here now because the chips are gone (D-256, #15): the registry's own Alpha
+// Vantage entry lists only an SSE address, which the form cannot carry, so
+// this door's shape is the one read from the server's repository on
+// 2026-08-25 and measured live the same day (the Bearer header is honoured
+// but undocumented — D-262).
+const SHAPE = {
+  name: NAME,
+  label: 'Alpha Vantage market data',
+  transport: 'http',
+  url: 'https://mcp.alphavantage.co/mcp',
+  headers: { Authorization: `Bearer \${${SECRET}}` },
+  secrets: { [SECRET]: 'a free key from alphavantage.co/support — 25 requests a day on the free tier' },
+  docs: 'https://github.com/alphavantage/alpha_vantage_mcp',
+  source: 'the server’s own repository, read 2026-08-25; the Bearer header measured live the same day (D-262)',
+};
+
 const PROMPT = [
   'Market snapshot through the Alpha Vantage door.',
   'For IBM, MSFT and SPY: fetch the latest quote (GLOBAL_QUOTE) and the 50-day and',
@@ -62,8 +79,8 @@ const stop = (why) => {
 const envText = () => (existsSync(ENV) ? readFileSync(ENV, 'utf8') : '');
 const envValue = (name) => new RegExp(`^\\s*${name}\\s*=\\s*(.+)$`, 'm').exec(envText())?.[1]?.trim();
 const storeText = () => (existsSync(STORE) ? readFileSync(STORE, 'utf8') : '');
-// A chip carries two fields the form never posts.
-const asDraft = ({ docs: _d, source: _s, ...draft }) => draft;
+// The docs link is for a person; the source rides the draft to the shelf (D-256).
+const asDraft = ({ docs: _d, ...draft }) => draft;
 
 let cookie = '';
 const call = async (url, init = {}) => {
@@ -99,19 +116,15 @@ try {
   const listed = await connectionList();
   check('the connection list is readable, shipped doors on it', listed.some((c) => c.name === 'web'), `${listed.length} connections`);
   const installed = listed.find((c) => c.name === NAME);
-  const offered = (await call('/api/connections/suggestions')).body.suggestions ?? [];
-  const chip = offered.find((s) => s.name === NAME);
-
   if (installed) {
-    console.log(`(the "${NAME}" connection is already installed, so the chip is rightly not offered — skipping to the job)`);
+    console.log(`(the "${NAME}" connection is already installed — skipping to the job)`);
   } else {
-    if (!chip) stop('no alphavantage chip — the running server predates D-262, or catalog/suggestions.json lost the entry');
-    check('the chip is offered, and names its source and the page to check it against', Boolean(chip.source) && Boolean(chip.docs), chip.source);
-    check('it carries the key as a header placeholder, never in the URL', chip.headers?.Authorization === `Bearer \${${SECRET}}` && !/apikey/i.test(chip.url ?? ''), `${chip.url}  ${JSON.stringify(chip.headers)}`);
+    check('the shape names its source and the page to check it against', Boolean(SHAPE.source) && Boolean(SHAPE.docs), SHAPE.source);
+    check('it carries the key as a header placeholder, never in the URL', SHAPE.headers.Authorization === `Bearer \${${SECRET}}` && !/apikey/i.test(SHAPE.url), `${SHAPE.url}  ${JSON.stringify(SHAPE.headers)}`);
 
     const envBefore = envText();
     const storeBefore = storeText();
-    const probe = await post('/api/connections/probe', { draft: asDraft(chip), values: { [SECRET]: 'demo' } });
+    const probe = await post('/api/connections/probe', { draft: asDraft(SHAPE), values: { [SECRET]: 'demo' } });
     check('the form’s probe reached Alpha Vantage’s own server and it answered', probe.status === 200, probe.body.error ?? `${probe.status}`);
     const tools = probe.body.tools ?? [];
     check('the server named its tools — over a hundred, GLOBAL_QUOTE and SMA among them', tools.length >= 100 && tools.includes('GLOBAL_QUOTE') && tools.includes('SMA'), `${tools.length} tools`);
@@ -131,7 +144,7 @@ try {
   }
 
   if (!installed) {
-    const added = await post('/api/connections', { draft: asDraft(chip), values: { [SECRET]: key } });
+    const added = await post('/api/connections', { draft: asDraft(SHAPE), values: { [SECRET]: key } });
     check('the connection was added through the form’s own route', added.status === 201, added.body.error ?? `${added.status}`);
     const stored = JSON.parse(storeText()).connections?.find((c) => c.name === NAME) ?? {};
     check('it is stored off, with the tools the SERVER named', stored.defaultOn === false && (stored.tools ?? []).length >= 100, `${(stored.tools ?? []).length} tools, defaultOn ${stored.defaultOn}`);

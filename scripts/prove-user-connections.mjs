@@ -164,6 +164,51 @@ check('leaving the store as it was found', after.trim() === before.trim() || !af
 // Nothing was written to .env: the saved connection declared no secret.
 check('no secret was written to .env', !readFileSync(path.join(ROOT, '.env'), 'utf8').includes('FIXTURE_TOKEN'));
 
+// ── 5. the catalog gets wide (D-256, #15): browse, pick, connect, shelf, remove ──
+//
+// Brave's official server, because its key is the one already in `.env` under
+// the very name the registry entry declares — so the pick is connected to
+// with no value posted at all, which is the "key already in .env" path the
+// ticket names. The probe runs `npx -y @brave/brave-search-mcp-server@…` for
+// real, so this section takes as long as npx takes.
+const REGISTRY_PICK = 'io.github.brave/brave-search-mcp-server';
+const registry = await call(`/api/connections/registry?q=${encodeURIComponent('brave')}`);
+if (registry.status === 404) {
+  console.log('\nNOTE  the running server predates #15 (/api/connections/registry is unknown) — the browse and the shelf are not proven by this run; restart and run again');
+} else {
+  check('the registry browse answers a search', registry.status === 200 && Array.isArray(registry.body.hits), registry.body.error ?? `${registry.body.hits?.length} fills, ${registry.body.omitted?.length} passed over`);
+  const hit = (registry.body.hits ?? []).find((h) => h.id === REGISTRY_PICK);
+  check('Brave’s official entry is listed as a fill, with its transport and the key’s name', hit?.fill.transport === 'stdio' && Object.keys(hit?.fill.secrets ?? {}).join() === 'BRAVE_API_KEY', hit ? `${hit.fill.command} ${hit.fill.args?.join(' ')}` : 'missing');
+  check('the fill names its source and date, and carries no tools', Boolean(hit?.fill.source) && !('tools' in (hit?.fill ?? {})), hit?.fill.source);
+  // The registry's own Alpha Vantage entry lists only an SSE address (D-263),
+  // so this search is known to have something to pass over — the check
+  // cannot pass on an empty list.
+  const sse = await call(`/api/connections/registry?q=alphavantage`);
+  check('what the registry passed over is named with its reason, not dropped silently', (sse.body.omitted ?? []).some((o) => o.id === 'io.github.alphavantage/alpha_vantage_mcp' && /SSE/.test(o.why)), JSON.stringify(sse.body.omitted ?? sse.body.error));
+  const empty = await call('/api/connections/registry?q=');
+  check('an empty search is refused rather than answered with everything', empty.status === 400);
+
+  if (hit && readFileSync(path.join(ROOT, '.env'), 'utf8').includes('BRAVE_API_KEY=')) {
+    const { docs: _docs, ...draft } = hit.fill;
+    const kept = await call('/api/connections', json(draft, {}));
+    check('connected through the pick with the key .env already held — the server answered with its tools', kept.status === 201 && (kept.body.tools ?? []).length > 0, kept.body.error ?? `${kept.body.tools?.length} tools: ${(kept.body.tools ?? []).join(', ')}`);
+    const row = (kept.body.connections ?? []).find((c) => c.name === hit.fill.name);
+    check('it is on the verified-here shelf: added, with the source and the date the server answered', row?.added === true && typeof row.verifiedAt === 'string' && row.source === hit.fill.source, JSON.stringify({ verifiedAt: row?.verifiedAt, source: row?.source }));
+    const disk = JSON.parse(readFileSync(STORE, 'utf8')).connections.find((c) => c.name === hit.fill.name);
+    check('and the stamp is on disk, not only in the reply', typeof disk?.verifiedAt === 'string' && disk?.source === hit.fill.source);
+    const gone = await call(`/api/connections/${hit.fill.name}`, { method: 'DELETE' });
+    check('removed again, leaving the box as it was found', gone.status === 200 && !(gone.body.connections ?? []).some((c) => c.name === hit.fill.name));
+  } else {
+    console.log('NOTE  no BRAVE_API_KEY in .env — the pick was listed but not connected to');
+  }
+
+  const shelf = (await call('/api/connections')).body.filter((c) => c.added);
+  if (shelf.length === 0) console.log('NOTE  no added connection on this install, so the shelf has nothing to show');
+  else check('every door on the shelf carries the date its server answered and where its shape came from', shelf.every((c) => typeof c.verifiedAt === 'string' && typeof c.source === 'string'), shelf.map((c) => `${c.name} ${c.verifiedAt?.slice(0, 10)} · ${c.source}`).join(' | '));
+  const chips = await call('/api/connections/suggestions');
+  check('the D-245 chips are gone', chips.status === 404, `${chips.status}`);
+}
+
 http.close();
 console.log(bad === 0 ? '\nUSER CONNECTIONS PROVEN' : `\nNOT PROVEN — ${bad} failed`);
 process.exit(bad === 0 ? 0 : 1);

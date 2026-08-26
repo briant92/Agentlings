@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NominaCheck } from '@agentlings/shared';
-import { batchLine, payeeLine, refusedCount, verdictWording } from './nomina';
+import { batchLine, payeeLine, verdictWording } from './nomina';
 
 const CLEAN: NominaCheck = {
   paymentType: 'PRV',
@@ -50,7 +50,6 @@ describe('the batch card’s words (D-268)', () => {
 
   it('gives the server’s refusal verbatim rather than a second opinion about it', () => {
     expect(verdictWording(BLOCKED)).toBe(BLOCKED.refusal);
-    expect(refusedCount(BLOCKED)).toBe(1);
   });
 
   it('never says a clean batch pays anybody — approving writes a file', () => {
@@ -60,6 +59,5 @@ describe('the batch card’s words (D-268)', () => {
     expect(said).toContain('Nobody is paid');
     expect(said).toContain('authorise it at the bank');
     expect(said.toLowerCase()).not.toContain('sends');
-    expect(refusedCount(CLEAN)).toBe(0);
   });
 });

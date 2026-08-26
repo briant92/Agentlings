@@ -226,7 +226,7 @@ export function SettingsModal({
     if (settings) setChargeAccount(settings.wire.chargeAccount);
   }, [settings?.wire.chargeAccount]);
   /** Every wire write answers with the whole settings, which replaces the list. */
-  const putWire = async (path: string, init?: RequestInit) => {
+  const wireCall = async (path: string, init?: RequestInit) => {
     const saved = await api<SettingsInfo['wire']>(path, init);
     setSettings((prev) => (prev ? { ...prev, wire: saved } : prev));
     return saved;
@@ -234,10 +234,10 @@ export function SettingsModal({
   const saveWire = async () => {
     setWireNote(null);
     try {
-      const saved = await putWire('/api/settings/wire', {
+      const saved = await wireCall('/api/settings/wire', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chargeAccount, format: wire?.format ?? 'bci' }),
+        body: JSON.stringify({ chargeAccount }),
       });
       setWireNote({
         text: saved.chargeAccount
@@ -251,7 +251,7 @@ export function SettingsModal({
   const addPayee = async () => {
     setWireNote(null);
     try {
-      await putWire('/api/settings/wire/payees', {
+      await wireCall('/api/settings/wire/payees', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payee),
@@ -265,7 +265,7 @@ export function SettingsModal({
   const removePayee = async (rut: string) => {
     setWireNote(null);
     try {
-      await putWire(`/api/settings/wire/payees/${encodeURIComponent(rut)}`, { method: 'DELETE' });
+      await wireCall(`/api/settings/wire/payees/${encodeURIComponent(rut)}`, { method: 'DELETE' });
       setWireNote({ text: `removed ${rut} — a batch naming them is now refused` });
     } catch (err) {
       setWireNote({ text: err instanceof Error ? err.message : 'could not remove', error: true });

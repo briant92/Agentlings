@@ -1848,14 +1848,25 @@ it is composing half a payment run.
 
 Approving composes the file — `nomina.txt` in the sandbox, as a deliverable —
 and does nothing else. **Nobody is paid by any of it**: the app never calls a
-payment endpoint (D-219, measured by a grep over every server source, not
-asserted), and the act is Brian uploading the file at his bank and pressing
-his own token. The format is BCI's own published specification, thirteen
-delimited columns with its maxima and its types; a value longer than its
-column, or carrying a `;` or `|` the format cannot escape, is refused before
-a byte is written. Santander publishes no layout at all, so its column table
-is **Not built** and waits on the template the bank hands the client inside
-Office Banking.
+payment endpoint (D-219, measured by a recursive grep over 249 sources across
+server, web, scripts and packages, not asserted), and the act is Brian
+uploading the file at his bank and pressing his own token. The format is BCI's
+own published specification, thirteen delimited columns with its maxima and
+its types; a value longer than its column, or carrying a `;` or `|` the format
+cannot escape, is refused **at the gate**, before anything is sent and before
+a byte is written. `nomina.txt` is the app's name: a run that writes one
+itself is refused by name, because a file it composed would carry bank
+coordinates no allowlist ever saw. Santander publishes no layout at all, so
+its column table is **Not built** and waits on the template the bank hands the
+client inside Office Banking.
+
+Two limits, said rather than claimed away. *A payee is added only by a person*
+is true of every route — nothing a run can call widens the list — but it is
+not a filesystem guarantee: a run holds `Bash` and `.agentlings/settings.json`
+is on disk like everything else under the sandbox root. And the resemblance to
+D-082 is narrower than it sounds: D-082 gates an *auto*-send and drops it back
+to human review, while this refuses a person's own Approve outright, with no
+override. The subset rule is the same; the shape is stricter.
 ## 13. Reference — every number that binds
 
 ### Turns

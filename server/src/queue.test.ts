@@ -1259,3 +1259,43 @@ describe('nómina stamp (D-268)', () => {
     expect(JSON.stringify(done)).not.toContain('allowed');
   });
 });
+
+describe('the output name is the app’s (D-268)', () => {
+  it('refuses a run that wrote the bank file itself, by name', () => {
+    // Review's catch: `nomina.txt` was not reserved, so a run could write one
+    // carrying coordinates it invented, through no allowlist and no gate —
+    // and a person could not tell it from the composed file.
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-nomina-name-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Nómina', prompt: 'compose the nómina' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    writeFileSync(
+      path.join(queue.sandboxDir(job.id), 'nomina.txt'),
+      '000012345678;999;016;11111111;1;Quien Sea;9000000;;;REM;;;\r\n',
+    );
+    queue.complete(job.id, 'done it');
+    const done = queue.get(job.id)!;
+    expect(done.nominaError).toContain('nomina.txt');
+    expect(done.nominaError).toContain('written by the run');
+    expect(done.nomina).toBeUndefined();
+  });
+
+  it('refuses it even when a proper declaration sits beside it', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-nomina-both-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Nómina', prompt: 'compose the nómina' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    writeFileSync(path.join(queue.sandboxDir(job.id), 'nomina.txt'), 'anything\r\n');
+    writeFileSync(
+      path.join(queue.sandboxDir(job.id), 'NOMINA.json'),
+      JSON.stringify({ paymentType: 'REM', rows: [{ rut: '76123456-0', amount: 1 }] }),
+    );
+    queue.complete(job.id, 'done it');
+    // The same problem wearing paperwork: the declaration is not stamped, so
+    // the gate refuses rather than composing over the run's file.
+    expect(queue.get(job.id)!.nominaError).toContain('written by the run');
+    expect(queue.get(job.id)!.nomina).toBeUndefined();
+  });
+});

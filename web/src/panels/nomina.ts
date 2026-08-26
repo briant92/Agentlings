@@ -52,8 +52,3 @@ export function verdictWording(check: NominaCheck): string {
     `${n} ${n === 1 ? 'line' : 'lines'}. Nobody is paid by that: upload it and authorise it at the bank.`
   );
 }
-
-/** How many payees are blocking, for the header's own summary. */
-export function refusedCount(check: NominaCheck): number {
-  return check.rows.filter((row) => !row.allowed).length;
-}

@@ -107,19 +107,16 @@ export function wireSettings(settings: StoredSettings): WireSettings {
   };
 }
 
-/** Records the account a batch debits and the layout it is composed in. */
-export function setWire(
-  settings: StoredSettings,
-  value: { chargeAccount: string; format: NominaFormat },
-): StoredSettings {
-  return {
-    ...settings,
-    wire: {
-      ...settings.wire,
-      chargeAccount: value.chargeAccount.trim(),
-      format: value.format,
-    },
-  };
+/**
+ * Records the account a batch debits.
+ *
+ * The layout is deliberately not settable: one is built (D-268), and a route
+ * validating a field with a single legal value is configurability nobody
+ * asked for. When a second bank's column table lands, it gains a control
+ * then — the stored field is read through `wireSettings` either way.
+ */
+export function setWire(settings: StoredSettings, chargeAccount: string): StoredSettings {
+  return { ...settings, wire: { ...settings.wire, chargeAccount: chargeAccount.trim() } };
 }
 
 /**

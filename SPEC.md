@@ -1082,8 +1082,10 @@ tried, measured and rejected is in `DECISIONS.md`:
     `NOMINA.json` — who and how much, and never where: the bank, the account
     and the name on the file come from a **payee allowlist** in Settings that
     only a person adds to. Approve checks every payee against it and **refuses
-    the whole batch by name** if one is outside, exactly as a send is refused
-    for an unapproved recipient; inside, it composes `nomina.txt` in the bank's
+    the whole batch by name** if one is outside — the subset rule of D-082,
+    though stricter than it: D-082 gates an auto-send and drops back to human
+    review, and this refuses a person's own Approve. Inside, it composes
+    `nomina.txt` in the bank's
     upload format as a deliverable. The verdict is recomputed at every ask, so
     adding the payee makes the same batch approvable with no re-run. Nothing is
     paid: the app has no payment endpoint (D-219 stands, and the proof greps for

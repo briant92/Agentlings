@@ -21559,15 +21559,41 @@ sees it rather than finds it.
 ### D-219 stands, and is measured rather than asserted
 
 The app never calls a payment endpoint. That is worth nothing as a sentence in
-a comment, so the proof greps all 94 server sources for a `fetch`/`axios`
-against a `/payment`, `/transfer`, `/pago` or `/transferencia` path — the check
-that fails the day somebody adds one. Approve writes one file and the feed
-says *composed nomina.txt, N payees; upload and authorise it at the bank* —
-never "paid", never "sent", because nothing was.
+a comment, so the proof greps for one — and review broke the first version of
+that grep in two ways, both closed. It read a **flat** `server/src`, so
+`server/src/executors/` — the executor itself — plus `web/`, `scripts/` and
+`packages/` were never scanned; the walk is now recursive over all four, and
+reads **249 files**. And it required the path to sit inside the same
+`fetch(...)` call, which ``const u = `${base}/pagos`; await fetch(u)`` walks
+straight past; it now matches the payment-shaped **path itself**, wherever it
+is written, and `/pay`, `/payout` and `/wire` are in it. That trade
+over-reports rather than sleeps, which is the right direction for a check
+nobody reads until it fires — the three things it does over-report (this
+feature's own `/api/settings/wire` routes, the browser brief's prose sentence
+*confirm/pay/transfer*, and this proof file) are excluded by literal name, so
+no exclusion can grow to cover a real one. A canary proves the check can
+still fail, on three spellings it must catch and one it must not.
+
+Approve writes one file and the feed says *composed nomina.txt, N payees;
+upload and authorise it at the bank* — never "paid", never "sent", because
+nothing was.
+
+**One limit, named rather than claimed away.** "A payee is added only by a
+person" is true of every route: nothing a run can call widens the list. It is
+not a filesystem guarantee — a run holds `Bash` by default and
+`.agentlings/settings.json` is on disk like everything else under the sandbox
+root. That is the sandbox's general property rather than this gate's, and
+closing it is a different ticket; saying so is this one's job.
+
+**And the D-082 analogy is narrower than D-251's sentence.** D-082 gates an
+*auto*-send and drops it back to human review; this refuses a human's Approve
+outright, with no override. The subset semantics are the same — fewer payees
+than the sheet had is fine, one stranger blocks the batch — but the shape is
+stricter, not identical.
 
 ### What proved it
 
-`npx tsx scripts/prove-nomina.mts` — **37/37**, no server, no bank, no money,
+`npx tsx scripts/prove-nomina.mts` — **43/43**, no server, no bank, no money,
 nothing written outside a throwaway temp folder. Six sections: the format
 against BCI's own table and example line; the contract's named refusals; the
 gate refusing a stranger whole with the two approved payees composed nowhere;
@@ -21575,6 +21601,58 @@ the same declaration becoming approvable when the payee is added and refused
 again when they are removed; the format's own rules (a smuggled delimiter, a
 46-character name, a bank name where the code goes); and the payment-endpoint
 grep. `prove-buk-door.mts` still 30/30 and `prove-sii-door.mts` still 33/33.
+**25 mutations of `nomina.ts`, 25 caught.**
+
+### Review's catches, and the one that mattered
+
+Both axes found the same class first, and it was real: **the column bounds
+were asked only where the bytes are written.** `composeNomina` runs *after*
+the outbox has been sent and the pack installed, so a 46-character payee name
+or a `;` inside one meant Approve answered `400 nómina not composed` with the
+messages already gone — precisely what the outbox block above it forbids, *a
+refused send must leave nothing half-promoted*. The gate now asks the whole
+question, `composeNomina` is what it asks, and a test drives four settings
+through both to prove they cannot disagree. The compose step keeps a guard
+that now returns **500**, because a refusal reaching it is a bug rather than
+a reviewer's problem, and says so.
+
+The rest, each with a test:
+
+- **`nomina.txt` was not a reserved name.** A run could write one itself —
+  a bank file carrying coordinates no allowlist ever saw, which a person
+  could not tell from the composed one. Refused at the completion seam by
+  name, rather than overwritten: refusing names the problem, deleting hides
+  it. Refused too when a proper declaration sits beside it.
+- **The charge account preempted naming anybody.** With no `wire` block at
+  all — the shipped state — every batch refused with *no charge account* and
+  no payee was ever named, leaving the ticket's own acceptance sentence
+  unprovable until an account was set. One refusal names both now.
+- **`stampDelivered` never ran again,** so `job.delivered` — what the inbox
+  and the backoffice row read — counted `NOMINA.json` and never the composed
+  file: a run that delivered a bank file reading as though it delivered a
+  declaration. Recounted after the write.
+- **The maxima were restated in four places** (`payeeProblem` three times,
+  the charge-account route once) — which the second bank's table would have
+  had to change in four places and could disagree with in three. A named
+  `COLUMN` index means a layout is the only place a size is written.
+- **`payeeProblem`'s comment claimed more than it did:** it promised the
+  allowlist could not *hold* a payee the composer would refuse, while
+  checking neither the 45-character name nor the delimiter. It runs the
+  payee's fields through `columnProblem` now, so the form and the file
+  refuse one rule.
+- **It was also stricter than the bank:** column B is *Alfanumérico* and it
+  demanded digits, which would have refused an account BCI accepts. Being
+  stricter than the bank is not a safety property.
+- **`amount` was bounded by `Number.isInteger`,** which is true above 2^53 —
+  where the figure has already been rounded and is still short of the
+  column's sixteen digits. `Number.isSafeInteger` now.
+- **The allowlist map was built twice** and the second copy re-derived what
+  the first had resolved, behind two `!` assertions. One `resolveRows`, and
+  the assertions went with it.
+- **`refusedCount` was dead** and its comment named a caller that did not
+  exist; the `format` round-trip through the route and the form was
+  configurability nobody asked for, while the layout table itself is the
+  seam Brian did ask for — the table stays, the round-trip went.
 
 **OWED — the ticket's fourth box.** One real batch composed here, uploaded at
 Santander and authorised by hand. That needs Brian's charge account, his real
@@ -21582,4 +21660,4 @@ payees, his Office Banking template for the Santander column table, and his
 token. The proof's last line says NOT proven end to end until then, and the
 issue stays open.
 
-Whole suite **2597 server, 359 web**; typecheck clean.
+Whole suite **2609 server, 359 web**; typecheck clean.

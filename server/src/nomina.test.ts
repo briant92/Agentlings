@@ -6,6 +6,8 @@ import type { Nomina, WireSettings } from '@agentlings/shared';
 import {
   BCI_LAYOUT,
   checkNomina,
+  column,
+  runWroteOutput,
   composeNomina,
   NOMINA_FILE,
   NOMINA_OUTPUT,
@@ -417,17 +419,18 @@ describe('payeeProblem — what a person may type into the allowlist', () => {
       'name',
     );
     expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: 'BCI', account: '1' })).toContain(
-      'bank',
+      'Banco Destino',
     );
     expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: '016', account: '' })).toContain(
-      'account',
+      'account number',
     );
   });
 
-  it('refuses an account that is not digits — the bank routes money by it', () => {
-    expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: '016', account: '12-34' })).toContain(
-      'account',
-    );
+  it('takes an account the specification would take, rather than being stricter than the bank', () => {
+    // Column B is *Alfanumérico*. The first version demanded digits, which
+    // would have refused an account the bank itself accepts — and being
+    // stricter than the bank is not a safety property.
+    expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: '016', account: '12-34' })).toBeNull();
   });
 });
 
@@ -439,5 +442,110 @@ describe('nominaBrief — what the run is told', () => {
     expect(brief).toContain('allowlist');
     // The one thing a run must not try: bank coordinates.
     expect(brief.toLowerCase()).toContain('never');
+  });
+});
+
+describe("review's catches (D-268)", () => {
+  it('names the missing charge account AND every stranger in one refusal', () => {
+    // The first version answered the charge account and stopped, so in the
+    // shipped state — no wire block at all — every batch refused with "no
+    // charge account" and NO payee was ever named. Two trips, and the
+    // ticket's own acceptance sentence unprovable until an account was set.
+    const check = nominaCheck(
+      { paymentType: 'REM', rows: [{ rut: '11111111-1', amount: 1000 }] },
+      { chargeAccount: '', format: 'bci', payees: [] },
+    );
+    expect(check.refusal).toContain('charge account');
+    expect(check.refusal).toContain('11111111-1');
+  });
+
+  it('refuses a column the layout bounds AT THE GATE, not only when composing', () => {
+    // This is the one that mattered: composeNomina runs after the outbox has
+    // been sent, so a 46-character name meant Approve answered 400 with the
+    // messages already gone. The gate now asks the whole question.
+    const long: WireSettings = {
+      ...WIRE,
+      payees: [{ ...WIRE.payees[1]!, name: 'A'.repeat(46) }],
+    };
+    const refusal = nominaRefusal(
+      { nomina: { paymentType: 'REM', rows: [{ rut: '9876543-3', amount: 2 }] } },
+      long,
+    );
+    expect(refusal).toContain('Nombre Beneficiario');
+    expect(refusal).toContain('45');
+  });
+
+  it('refuses a smuggled delimiter at the gate too', () => {
+    const sneaky: WireSettings = {
+      ...WIRE,
+      payees: [{ ...WIRE.payees[1]!, name: 'Norte;Sur' }],
+    };
+    expect(
+      nominaRefusal({ nomina: { paymentType: 'REM', rows: [{ rut: '9876543-3', amount: 2 }] } }, sneaky),
+    ).toContain('Nombre Beneficiario');
+  });
+
+  it('the gate and the composer never disagree — whatever one refuses, so does the other', () => {
+    const wires: WireSettings[] = [
+      WIRE,
+      { ...WIRE, chargeAccount: '' },
+      { ...WIRE, payees: [{ ...WIRE.payees[1]!, name: 'A'.repeat(46) }] },
+      { ...WIRE, payees: [{ ...WIRE.payees[1]!, name: 'Norte;Sur' }] },
+      { ...WIRE, payees: [] },
+    ];
+    const batch: Nomina = { paymentType: 'REM', rows: [{ rut: '9876543-3', amount: 2 }] };
+    for (const wire of wires) {
+      const gate = nominaRefusal({ nomina: batch }, wire);
+      const composed = composeNomina(batch, wire);
+      expect(gate === null, JSON.stringify(wire.payees)).toBe(composed.text !== undefined);
+    }
+  });
+
+  it('refuses an amount too large to be written down exactly', () => {
+    // Number.isInteger is true above 2^53, where the figure has already been
+    // rounded — and 2^53 is still short of the column's sixteen digits.
+    expect(
+      checkNomina({ paymentType: 'REM', rows: [{ rut: '9876543-3', amount: 2 ** 53 + 2 }] }).error,
+    ).toContain('too large');
+  });
+
+  it('reserves the output name — a run may not write the bank file itself', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'nomina-out-'));
+    expect(runWroteOutput(dir)).toBe(false);
+    writeFileSync(path.join(dir, NOMINA_OUTPUT), 'anything;at;all\r\n', 'utf8');
+    expect(runWroteOutput(dir)).toBe(true);
+  });
+
+  it('takes the account the specification calls alfanumérico, not only digits', () => {
+    // The first version demanded digits and would have refused an account the
+    // bank itself accepts. Being stricter than the bank is not a safety
+    // property.
+    expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: '016', account: 'CTA00123' })).toBeNull();
+  });
+
+  it('refuses at the form what the file would refuse — the maxima are the layout’s', () => {
+    for (const [what, payee] of [
+      ['a name past the column', { rut: '76123456-0', name: 'A'.repeat(46), bank: '016', account: '1' }],
+      ['a name carrying a delimiter', { rut: '76123456-0', name: 'Norte;Sur', bank: '016', account: '1' }],
+      ['a bank code past three', { rut: '76123456-0', name: 'X', bank: '0161', account: '1' }],
+      ['an account past eighteen', { rut: '76123456-0', name: 'X', bank: '016', account: '1'.repeat(19) }],
+      ['an enrolled name past 25', { rut: '76123456-0', name: 'X', bank: '016', account: '1', accountLabel: 'A'.repeat(26) }],
+    ] as const) {
+      expect(payeeProblem(payee), what).not.toBeNull();
+    }
+  });
+
+  it('still refuses a bank code that is not numeric, because the column is', () => {
+    expect(payeeProblem({ rut: '76123456-0', name: 'X', bank: 'BCI', account: '1' })).toContain(
+      'numérico',
+    );
+  });
+
+  it('reads every bound off the layout, so one table is the only place a size is written', () => {
+    expect(column(BCI_LAYOUT, 'name').max).toBe(45);
+    expect(column(BCI_LAYOUT, 'account').max).toBe(18);
+    expect(column(BCI_LAYOUT, 'bank').max).toBe(3);
+    expect(column(BCI_LAYOUT, 'chargeAccount').max).toBe(12);
+    expect(column(BCI_LAYOUT, 'accountLabel').max).toBe(25);
   });
 });

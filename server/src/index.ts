@@ -123,8 +123,11 @@ import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
 import { recordRefusals } from './refusals';
 import {
+  column,
+  columnProblem,
   composeNomina,
   NOMINA_OUTPUT,
+  nominaLayout,
   nominaCheck,
   nominaRefusal,
   normalisePayee,
@@ -935,28 +938,18 @@ app.get('/api/settings', (c) =>
  * routes below, because adding one is a decision and saving a form is not.
  */
 app.put('/api/settings/wire', async (c) => {
-  const body = await c.req.json<{ chargeAccount?: unknown; format?: unknown }>();
+  const body = await c.req.json<{ chargeAccount?: unknown }>();
   if (typeof body.chargeAccount !== 'string') {
     return c.json({ error: 'chargeAccount must be the account this batch debits' }, 400);
   }
   const account = body.chargeAccount.trim();
-  // The layout's own column A: numeric, no dots, at most twelve. Checked
-  // here so the allowlist cannot hold a charge account the composer would
-  // refuse weeks later with a batch already written.
-  if (account && !/^\d{1,12}$/.test(account)) {
-    return c.json(
-      { error: 'a charge account is digits only, up to 12 — leading zeros are kept as you type them' },
-      400,
-    );
-  }
-  const format = body.format ?? 'bci';
-  if (format !== 'bci') {
-    return c.json({ error: 'the only layout built is bci — see D-268 for why' }, 400);
-  }
-  writeSettings(
-    SANDBOX_ROOT,
-    setWire(readSettings(SANDBOX_ROOT), { chargeAccount: account, format }),
-  );
+  // The layout's own column A, asked of the layout rather than restated here
+  // — so the day a second bank's table lands, its charge-account rule comes
+  // with it. Empty is allowed and means "not set yet", which the gate says.
+  const layout = nominaLayout(wireSettings(readSettings(SANDBOX_ROOT)).format);
+  const problem = account ? columnProblem(account, column(layout, 'chargeAccount'), layout) : null;
+  if (problem) return c.json({ error: `the charge account ${problem}` }, 400);
+  writeSettings(SANDBOX_ROOT, setWire(readSettings(SANDBOX_ROOT), account));
   return c.json(wireSettings(readSettings(SANDBOX_ROOT)));
 });
 
@@ -967,7 +960,12 @@ app.put('/api/settings/wire', async (c) => {
  */
 app.post('/api/settings/wire/payees', async (c) => {
   const body = await c.req.json<Record<string, unknown>>();
-  const problem = payeeProblem(body);
+  // Judged against the layout the file will actually be written in, so the
+  // form and the composer refuse the same things (review's catch).
+  const problem = payeeProblem(
+    body,
+    nominaLayout(wireSettings(readSettings(SANDBOX_ROOT)).format),
+  );
   if (problem) return c.json({ error: problem }, 400);
   writeSettings(
     SANDBOX_ROOT,
@@ -3632,16 +3630,23 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * characters is nobody's fault and is not a file the bank would take.
    */
   if (body.action === 'promote' && promotable && pending.nomina && !waitingTool) {
-    const wire = wireSettings(readSettings(SANDBOX_ROOT));
-    const composed = composeNomina(pending.nomina, wire);
-    if ('error' in composed) {
-      return c.json({ error: `nómina not composed — ${composed.error}` }, 400);
+    const composed = composeNomina(pending.nomina, wireSettings(readSettings(SANDBOX_ROOT)));
+    // Cannot refuse here: the gate above asked this exact question, of the
+    // same function, before anything was sent or applied. Kept as a guard
+    // rather than an assertion because the alternative is writing a file we
+    // did not check — but a refusal reaching this point is a bug, not a
+    // reviewer's problem, and says so.
+    if (composed.error !== undefined) {
+      return c.json(
+        { error: `nómina not composed — ${composed.error} (this should have been refused before anything was sent; please report it)` },
+        500,
+      );
     }
-    writeFileSync(
-      path.join(rt.queue.sandboxDir(pending.id), NOMINA_OUTPUT),
-      composed.text,
-      'utf8',
-    );
+    writeFileSync(path.join(rt.queue.sandboxDir(pending.id), NOMINA_OUTPUT), composed.text, 'utf8');
+    // The file lands after the completion stamp, so what the sandbox holds is
+    // counted again — otherwise the inbox reads a batch job as having
+    // delivered a JSON declaration and no bank file.
+    rt.queue.restampDelivered(pending.id);
     composedNomina = pending.nomina.rows.length;
   }
   // A compiling run's deliverable is the tool, never the clone it tried the

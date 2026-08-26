@@ -135,6 +135,38 @@ export function nominaLayout(format: WireSettings['format']): NominaLayout {
 }
 
 /**
+ * Which column each value is, by name.
+ *
+ * Every bound in this file is read through here rather than restated. Review
+ * caught the maxima written out again in `payeeProblem` and a third time in
+ * the charge-account route: four literals that a second bank's table would
+ * have had to change in four places, and that could disagree in three.
+ * A layout is now the only place a column's size is written down.
+ */
+export const COLUMN = {
+  chargeAccount: 0,
+  account: 1,
+  bank: 2,
+  rutBody: 3,
+  checkDigit: 4,
+  name: 5,
+  amount: 6,
+  invoice: 7,
+  purchaseOrder: 8,
+  paymentType: 9,
+  message: 10,
+  email: 11,
+  accountLabel: 12,
+} as const;
+
+/** One column of a layout, by name — the only way a bound is read. */
+export function column(layout: NominaLayout, of: keyof typeof COLUMN): NominaColumn {
+  // Non-null by construction: every layout declares all thirteen, and the
+  // proof asserts the count against the specification's own table.
+  return layout.columns[COLUMN[of]]!;
+}
+
+/**
  * A RUT taken down to its body and its verifying digit, or null.
  *
  * Its own modulo-11 digit is computed here rather than asked of a library:
@@ -175,6 +207,24 @@ function rutKey(rut: string): string | null {
 export type NominaRead =
   | { nomina: Nomina; error?: undefined }
   | { nomina?: undefined; error: string };
+
+/**
+ * Whether the run wrote the output file itself — which it may not.
+ *
+ * `nomina.txt` is the app's name for the file Approve composes from an
+ * approved batch. A run that writes it directly would be handing a person a
+ * bank file carrying coordinates *it* chose, through no allowlist and no
+ * gate, and the person would have no way to tell it apart from the real one.
+ * So the name is reserved, and a run using it is a refusal rather than a
+ * silent overwrite: refusing names the problem, and deleting the run's work
+ * would hide it.
+ *
+ * Asked at the completion seam, where the only thing that can have written
+ * that name is the run — Approve has not happened yet.
+ */
+export function runWroteOutput(dir: string): boolean {
+  return existsSync(path.join(dir, NOMINA_OUTPUT));
+}
 
 /** Parses NOMINA.json from a sandbox: null when absent, the reason when invalid. */
 export function readNomina(dir: string): NominaRead | null {
@@ -242,6 +292,15 @@ export function checkNomina(parsed: unknown): NominaRead {
     if (!Number.isInteger(raw.amount)) {
       return { error: `${n}: "amount" must be whole pesos — CLP has no cents` };
     }
+    // Safe, not merely integral. `Number.isInteger` is true above 2^53, where
+    // the figure has already been rounded by the parse and is still short of
+    // the column's sixteen digits — so a batch could carry a number that is
+    // not the number anybody wrote, and pass every other check.
+    if (!Number.isSafeInteger(raw.amount)) {
+      return {
+        error: `${n}: "amount" is too large to be written down exactly — no real payment is this size`,
+      };
+    }
     if (raw.amount <= 0) return { error: `${n}: "amount" must be more than zero` };
     const optional: Partial<NominaRow> = {};
     for (const field of ['invoice', 'purchaseOrder', 'message', 'email'] as const) {
@@ -274,41 +333,73 @@ export function checkNomina(parsed: unknown): NominaRead {
  * would be the D-026 shape — a gate that ships inert against the state it is
  * meant to read.
  */
-export function nominaCheck(nomina: Nomina, wire: WireSettings): NominaCheck {
+/**
+ * One declared row, the verdict on it, and the payee it resolved to.
+ *
+ * Internal, and deliberately not the shared type: the resolved payee carries
+ * an account number, and a review card has no use for one. The card gets
+ * `NominaCheckRow`, which is a name and a verdict.
+ *
+ * This exists because the allowlist lookup was written twice — once to judge
+ * and once to compose — and the second copy then re-derived what the first
+ * had already resolved, behind two non-null assertions. One resolution now,
+ * and the assertions are gone with it.
+ */
+interface ResolvedRow {
+  declared: NominaRow;
+  row: NominaCheckRow;
+  payee?: WirePayee;
+}
+
+function resolveRows(nomina: Nomina, wire: WireSettings): ResolvedRow[] {
   const byRut = new Map<string, WirePayee>();
   for (const payee of wire.payees) {
     const key = rutKey(payee.rut);
     if (key) byRut.set(key, payee);
   }
-  const rows: NominaCheckRow[] = nomina.rows.map((row) => {
-    const key = rutKey(row.rut);
+  return nomina.rows.map((declared) => {
+    const key = rutKey(declared.rut);
     if (!key) {
       return {
-        rut: row.rut,
-        amount: row.amount,
-        name: null,
-        allowed: false,
-        problem: 'not a RUT, or its verifying digit does not match its number',
+        declared,
+        row: {
+          rut: declared.rut,
+          amount: declared.amount,
+          name: null,
+          allowed: false,
+          problem: 'not a RUT, or its verifying digit does not match its number',
+        },
       };
     }
     const payee = byRut.get(key);
     if (!payee) {
       return {
-        rut: key,
-        amount: row.amount,
-        name: null,
-        allowed: false,
-        problem: 'not on the payee allowlist',
+        declared,
+        row: {
+          rut: key,
+          amount: declared.amount,
+          name: null,
+          allowed: false,
+          problem: 'not on the payee allowlist',
+        },
       };
     }
-    return { rut: key, amount: row.amount, name: payee.name, allowed: true };
+    return {
+      declared,
+      row: { rut: key, amount: declared.amount, name: payee.name, allowed: true },
+      payee,
+    };
   });
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+}
+
+export function nominaCheck(nomina: Nomina, wire: WireSettings): NominaCheck {
+  const resolved = resolveRows(nomina, wire);
+  const rows = resolved.map((r) => r.row);
   return {
     paymentType: nomina.paymentType,
     rows,
-    total,
-    refusal: refusalFor(rows, wire),
+    total: rows.reduce((sum, row) => sum + row.amount, 0),
+    refusal: refusalFor(resolved, nomina, wire),
     fileName: NOMINA_OUTPUT,
   };
 }
@@ -325,18 +416,84 @@ export function nominaCheck(nomina: Nomina, wire: WireSettings): NominaCheck {
  * approved blocks the batch, because a nómina is uploaded as one thing and
  * composing the clean half of it is composing half a payment run.
  */
-function refusalFor(rows: NominaCheckRow[], wire: WireSettings): string | null {
+function refusalFor(
+  resolved: ResolvedRow[],
+  nomina: Nomina,
+  wire: WireSettings,
+): string | null {
+  const problems: string[] = [];
   if (!wire.chargeAccount.trim()) {
-    return 'no charge account — set the account this batch debits in Settings, under the payee allowlist. Nothing was composed.';
+    problems.push(
+      'no charge account is set — the account this batch debits, in Settings under the payee allowlist',
+    );
   }
-  const refused = rows.filter((row) => !row.allowed);
-  if (refused.length === 0) return null;
-  const named = refused.map((row) => `${row.rut} (${row.problem})`).join('; ');
-  return (
-    `${refused.length} of ${rows.length} ${refused.length === 1 ? 'payee is' : 'payees are'} not approved to be paid: ${named}. ` +
-    'Add the payee in Settings under the payee allowlist, or have the run drop the line. ' +
-    'Nothing was composed — a nómina is uploaded whole, so it is refused whole.'
-  );
+  const refused = resolved.filter((r) => !r.row.allowed);
+  if (refused.length > 0) {
+    const named = refused.map((r) => `${r.row.rut} (${r.row.problem})`).join('; ');
+    problems.push(
+      `${refused.length} of ${resolved.length} ${refused.length === 1 ? 'payee is' : 'payees are'} not approved to be paid: ${named} — ` +
+        'add them in Settings under the payee allowlist, or have the run drop the line',
+    );
+  }
+  // Everything the layout itself would refuse, asked HERE rather than only
+  // where the bytes are written. Review caught that a 46-character name or a
+  // `;` inside one surfaced only in `composeNomina`, which runs after the
+  // outbox has already been sent — so Approve could answer 400 with messages
+  // gone, which is exactly what the outbox block forbids ("a refused send
+  // must leave nothing half-promoted"). The gate is now the whole question.
+  if (problems.length === 0) problems.push(...layoutProblems(resolved, nomina, wire));
+  if (problems.length === 0) return null;
+  return `${problems.join('. ')}. Nothing was composed — a nómina is uploaded whole, so it is refused whole.`;
+}
+
+/**
+ * What the bank's own format would refuse about this batch, line by line.
+ *
+ * Asked only once every payee is approved, because a column bound on a row
+ * whose payee is a stranger is the second-most-interesting thing about it.
+ */
+function layoutProblems(
+  resolved: ResolvedRow[],
+  nomina: Nomina,
+  wire: WireSettings,
+): string[] {
+  const layout = nominaLayout(wire.format);
+  const problems: string[] = [];
+  for (const [i, r] of resolved.entries()) {
+    if (!r.payee) continue;
+    for (const [c, value] of lineValues(r, nomina, wire).entries()) {
+      const col = layout.columns[c];
+      if (!col) continue;
+      const problem = columnProblem(value, col, layout);
+      if (problem) problems.push(`row ${i + 1}, ${col.label}: ${problem}`);
+    }
+  }
+  return problems;
+}
+
+/**
+ * One line's thirteen values, in the layout's order — the single place the
+ * mapping from "what we know" to "which column" is written. Both the gate and
+ * the composer read it, so they can never disagree about what would be
+ * written.
+ */
+function lineValues(r: ResolvedRow, nomina: Nomina, wire: WireSettings): string[] {
+  const split = normaliseRut(r.declared.rut);
+  const values: string[] = [];
+  values[COLUMN.chargeAccount] = wire.chargeAccount.trim();
+  values[COLUMN.account] = r.payee?.account.trim() ?? '';
+  values[COLUMN.bank] = r.payee?.bank.trim() ?? '';
+  values[COLUMN.rutBody] = split?.body ?? '';
+  values[COLUMN.checkDigit] = split?.dv ?? '';
+  values[COLUMN.name] = r.payee?.name.trim() ?? '';
+  values[COLUMN.amount] = String(r.declared.amount);
+  values[COLUMN.invoice] = r.declared.invoice ?? '';
+  values[COLUMN.purchaseOrder] = r.declared.purchaseOrder ?? '';
+  values[COLUMN.paymentType] = nomina.paymentType;
+  values[COLUMN.message] = r.declared.message ?? '';
+  values[COLUMN.email] = r.declared.email ?? '';
+  values[COLUMN.accountLabel] = r.payee?.accountLabel?.trim() ?? '';
+  return values;
 }
 
 /**
@@ -372,39 +529,9 @@ export function composeNomina(nomina: Nomina, wire: WireSettings): NominaCompose
   const layout = nominaLayout(wire.format);
   const check = nominaCheck(nomina, wire);
   if (check.refusal) return { error: check.refusal };
-  const byRut = new Map<string, WirePayee>();
-  for (const payee of wire.payees) {
-    const key = rutKey(payee.rut);
-    if (key) byRut.set(key, payee);
-  }
-
-  const lines: string[] = [];
-  for (const [i, row] of nomina.rows.entries()) {
-    // Non-null by construction: a row without a key or a payee is a refusal
-    // above, and this loop is only reached when there was none.
-    const split = normaliseRut(row.rut)!;
-    const payee = byRut.get(`${split.body}-${split.dv}`)!;
-    const values = [
-      wire.chargeAccount.trim(),
-      payee.account.trim(),
-      payee.bank.trim(),
-      split.body,
-      split.dv,
-      payee.name.trim(),
-      String(row.amount),
-      row.invoice ?? '',
-      row.purchaseOrder ?? '',
-      nomina.paymentType,
-      row.message ?? '',
-      row.email ?? '',
-      payee.accountLabel?.trim() ?? '',
-    ];
-    for (const [c, column] of layout.columns.entries()) {
-      const problem = columnProblem(values[c] ?? '', column, layout);
-      if (problem) return { error: `row ${i + 1}, ${column.label}: ${problem}` };
-    }
-    lines.push(values.join(layout.delimiter));
-  }
+  const lines = resolveRows(nomina, wire).map((r) =>
+    lineValues(r, nomina, wire).join(layout.delimiter),
+  );
   return { text: lines.map((line) => `${line}\r\n`).join('') };
 }
 
@@ -419,7 +546,11 @@ export function composeNomina(nomina: Nomina, wire: WireSettings): NominaCompose
  * whichever one this layout writes, because the file may be re-read with the
  * other.
  */
-function columnProblem(value: string, column: NominaColumn, layout: NominaLayout): string | null {
+export function columnProblem(
+  value: string,
+  column: NominaColumn,
+  layout: NominaLayout,
+): string | null {
   if (/[;|\r\n]/.test(value)) {
     return `"${value}" carries a ; | or line break, and ${layout.bank}'s format has no way to escape one — the line would parse as a different payment`;
   }
@@ -440,7 +571,7 @@ function columnProblem(value: string, column: NominaColumn, layout: NominaLayout
  * Approve, weeks later, with the batch already written and a person waiting.
  * The add flow probes before it writes, which is D-244's rule.
  */
-export function payeeProblem(payee: unknown): string | null {
+export function payeeProblem(payee: unknown, layout: NominaLayout = BCI_LAYOUT): string | null {
   if (!isRecord(payee)) return 'a payee is a RUT, a name, a bank code and an account number';
   const rut = typeof payee.rut === 'string' ? normaliseRut(payee.rut) : null;
   if (!rut) {
@@ -448,18 +579,39 @@ export function payeeProblem(payee: unknown): string | null {
   }
   const name = typeof payee.name === 'string' ? payee.name.trim() : '';
   if (!name) return 'a payee needs a name — it goes on the file as Nombre Beneficiario';
-  if (typeof payee.bank !== 'string' || !/^\d{1,3}$/.test(payee.bank.trim())) {
-    return "a bank code is up to three digits, as 016 — it is the bank's own code, not its name";
+  if (typeof payee.bank !== 'string' || !payee.bank.trim()) {
+    return "a payee needs their bank's own code, as 016 — the code, not the bank's name";
   }
-  if (typeof payee.account !== 'string' || !/^\d{1,18}$/.test(payee.account.trim())) {
-    return 'an account number is digits only, up to 18 — leading zeros are kept as you type them';
+  if (typeof payee.account !== 'string' || !payee.account.trim()) {
+    return 'a payee needs an account number — the bank routes the money by it';
   }
   const label = payee.accountLabel;
   if (label !== undefined && label !== null && typeof label !== 'string') {
     return 'the enrolled-account name must be text';
   }
-  if (typeof label === 'string' && label.trim().length > 25) {
-    return 'the enrolled-account name takes 25 characters';
+  /**
+   * Every field the payee contributes, put through the layout's own rules —
+   * rather than three regexes restating maxima the table already gives.
+   *
+   * Review caught this comment claiming more than the code did: a payee named
+   * `Norte;Sur`, or 46 characters long, was stored happily and refused only
+   * at Approve, which is the exact failure the comment says cannot happen.
+   * The bank's own words are used for the column, so what the form refuses
+   * and what the file refuses are one rule.
+   *
+   * The account is *Alfanumérico* in the specification, not numeric — the
+   * first version demanded digits and would have refused an account the bank
+   * itself accepts. Being stricter than the bank is not a safety property.
+   */
+  for (const [field, of] of [
+    ['name', 'name'],
+    ['bank', 'bank'],
+    ['account', 'account'],
+    ['accountLabel', 'accountLabel'],
+  ] as const) {
+    const value = typeof payee[field] === 'string' ? (payee[field] as string).trim() : '';
+    const problem = columnProblem(value, column(layout, of), layout);
+    if (problem) return `${column(layout, of).label}: ${problem}`;
   }
   return null;
 }

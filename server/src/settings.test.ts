@@ -289,20 +289,20 @@ describe('the wire’s settings (D-268)', () => {
 
   it('records the charge account and the layout, leaving other settings alone', () => {
     const before = setIdentity({}, 'telegram', '@bot');
-    const after = setWire(before, { chargeAccount: ' 000012345678 ', format: 'bci' });
+    const after = setWire(before, ' 000012345678 ');
     expect(wireSettings(after).chargeAccount).toBe('000012345678');
     expect(after.identities).toEqual(before.identities);
   });
 
   it('keeps the payees when the account is changed, and the account when a payee is added', () => {
-    const withAccount = setWire({}, { chargeAccount: '111', format: 'bci' });
+    const withAccount = setWire({}, '111');
     const withPayee = addWirePayee(withAccount, PAYEE);
     expect(wireSettings(withPayee)).toEqual({
       chargeAccount: '111',
       format: 'bci',
       payees: [PAYEE],
     });
-    const moved = setWire(withPayee, { chargeAccount: '222', format: 'bci' });
+    const moved = setWire(withPayee, '222');
     expect(wireSettings(moved).payees).toEqual([PAYEE]);
   });
 

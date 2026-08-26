@@ -24,7 +24,7 @@ import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
 import { attachmentShape } from './inputshape';
-import { NOMINA_FILE, readNomina } from './nomina';
+import { NOMINA_FILE, NOMINA_OUTPUT, readNomina, runWroteOutput } from './nomina';
 import { readReconciliation, summariseReconciliation } from './reconciliation';
 import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
@@ -678,7 +678,18 @@ export class JobQueue {
    */
   private stampNomina(job: Job): void {
     if (job.compile) return;
-    const read = readNomina(this.sandboxDir(job.id));
+    const dir = this.sandboxDir(job.id);
+    // The output name is the app's, and only Approve may write it. A run that
+    // wrote it itself is refused by name rather than overwritten, because the
+    // file it wrote would carry bank coordinates no allowlist ever saw and a
+    // person could not tell it from the composed one. Asked before the
+    // declaration, since a batch declared beside a hand-made file is the same
+    // problem wearing paperwork.
+    if (runWroteOutput(dir)) {
+      job.nominaError = `${NOMINA_OUTPUT} was written by the run — that name belongs to the file Approve composes from an approved batch, and a run may not write a bank file itself`;
+      return;
+    }
+    const read = readNomina(dir);
     if (!read) return;
     if (read.nomina) job.nomina = read.nomina;
     else job.nominaError = `${NOMINA_FILE}: ${read.error}`;
@@ -811,6 +822,20 @@ export class JobQueue {
     const seen = new Set(prior.map(opKey));
     const fresh = run.done.filter((op) => !seen.has(opKey(op)));
     job.movesRun = { at: Date.now(), done: [...prior, ...fresh], failed: run.failed };
+    this.persist();
+    return job;
+  }
+
+  /**
+   * Re-count what the sandbox holds, for the one thing Approve *adds* to it
+   * (D-268): the composed nómina lands after the completion stamp, so the
+   * summary the inbox and the backoffice row read would have counted
+   * `NOMINA.json` and never the file the person is meant to upload — a run
+   * that delivered a bank file reading as though it delivered a declaration.
+   */
+  restampDelivered(jobId: string): Job {
+    const job = this.mustGet(jobId);
+    job.delivered = deliverySummary(this.sandboxDir(jobId));
     this.persist();
     return job;
   }

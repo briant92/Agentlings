@@ -138,7 +138,7 @@ ticket with no blocker can be taken any time after #7.
 | #11 | **The desk counts what it refuses** — one line per never-row or not-built capability, beside the ledger | D-249 | — |
 | #12 | **The real-work block** — the resolved-by stamp; one pure function over ledger, jobs and refusals; `ledger:report` prints it | D-249 | #11 |
 | #13 | **The score arrives on Monday** — `report: realwork` on a schedule row, $0, no model, lands in review, earns standing approval the ordinary way; one row armed on HQ. Built and proven live 31/31, D-261; HQ row `15548352` armed, first firing 2026-08-31 | D-249 | #9, #12 |
-| #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable | D-256 | — |
+| #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable. Path proven live 7/7 with no code, D-262: Alpha Vantage's hosted server as a fifth D-245 chip, the key in a Bearer header; the HQ job waits on a free key (`prove-market-door.mjs`, second half) | D-256, D-262 | — |
 | #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired | D-256 | — |
 | #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing | D-255 | #9 |
 | #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence | D-253 | — |

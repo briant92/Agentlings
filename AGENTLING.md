@@ -367,8 +367,9 @@ take a shipped connection's name. Live.
 MCP registry that fills it — transport, command or URL, the credential's
 variable names — and saves nothing; verification stays the tool-list read.
 Above it, a *verified here* shelf of the doors this install has actually
-connected to, each with its source and date, replaces the four D-245
-suggestion chips.
+connected to, each with its source and date, replaces the five D-245
+suggestion chips (the fifth, Alpha Vantage's hosted market-data server, is
+the first real door taken through the form as it stands — D-262).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.

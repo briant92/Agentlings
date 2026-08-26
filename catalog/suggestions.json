@@ -5,8 +5,8 @@
     "reaches the server and it answers with its tools. That is the whole point:",
     "we ship the shape, the server supplies the truth.",
     "",
-    "Every entry's shape was read from a PRIMARY source on 2026-08-24 — the",
-    "vendor's own repository or docs, named in `source` — never from a search",
+    "Every entry's shape was read from a PRIMARY source, on the date its own",
+    "`source` names — the vendor's repository or docs — never from a search",
     "summary or another list. The list is short for that reason.",
     "",
     "Deliberately absent: servers that authenticate only by OAuth 2.1. Our",
@@ -70,6 +70,21 @@
       },
       "docs": "https://docs.stripe.com/mcp",
       "source": "Stripe's own MCP documentation, read 2026-08-24. It prefers OAuth; the restricted-key header is its own documented alternative, and the one this app can carry"
+    },
+    {
+      "name": "alphavantage",
+      "label": "Alpha Vantage market data",
+      "description": "Quotes, daily and intraday prices, fundamentals, forex, crypto, commodities, economic and technical indicators — read-only, from Alpha Vantage's own hosted server.",
+      "transport": "http",
+      "url": "https://mcp.alphavantage.co/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ALPHAVANTAGE_API_KEY}"
+      },
+      "secrets": {
+        "ALPHAVANTAGE_API_KEY": "a free key from alphavantage.co/support — 25 requests a day on the free tier"
+      },
+      "docs": "https://github.com/alphavantage/alpha_vantage_mcp",
+      "source": "the server's own repository, read 2026-08-25. It documents the key only as `?apikey=` in the URL; the Bearer header was measured live the same day (its 401 is RFC 6750, and `Bearer <key>` is answered) and is the form this app carries, because a key inside a URL would sit in the job's own folder (D-242, D-262)"
     }
   ]
 }

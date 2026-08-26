@@ -271,6 +271,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-259 — 2026-08-25 — Built: the desk counts what it refuses — one line per never-row or not-built capability beside the ledger, keyed as the board keys its rows but worded for a sentence, because the board's duty lists fired 99 times on 250 real sentences and never on a refusal](#d-259--2026-08-25--built-the-desk-counts-what-it-refuses--one-line-per-never-row-or-not-built-capability-beside-the-ledger-keyed-as-the-board-keys-its-rows-but-worded-for-a-sentence-because-the-boards-duty-lists-fired-99-times-on-250-real-sentences-and-never-on-a-refusal)
 - [D-260 — 2026-08-25 — Built: the real-work block — every verdict stamped with when and by whom, one pure function over the ledger, the job records and the refusals, and `ledger:report` leads with it: 87 jobs promoted on three real levels last week, none of them auto-sent](#d-260--2026-08-25--built-the-real-work-block--every-verdict-stamped-with-when-and-by-whom-one-pure-function-over-the-ledger-the-job-records-and-the-refusals-and-ledgerreport-leads-with-it-87-jobs-promoted-on-three-real-levels-last-week-none-of-them-auto-sent)
 - [D-261 — 2026-08-25 — Built: the score arrives on Monday — a schedule row may carry `report: realwork`, its firing composes last week's block into an outbox through the contract a session's OUTBOX.json meets and lands it in review at $0 with no model, no door and no ledger row, and the standing approval it earns is the ordinary one](#d-261--2026-08-25--built-the-score-arrives-on-monday--a-schedule-row-may-carry-report-realwork-its-firing-composes-last-weeks-block-into-an-outbox-through-the-contract-a-sessions-outboxjson-meets-and-lands-it-in-review-at-0-with-no-model-no-door-and-no-ledger-row-and-the-standing-approval-it-earns-is-the-ordinary-one)
+- [D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form, no code — the key rides a header the server honours but does not document, and the far end checks only that a key is present](#d-262--2026-08-25--first-real-door-alpha-vantage-market-data-through-the-ordinary-form-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-and-the-far-end-checks-only-that-a-key-is-present)
 
 ## By theme
 
@@ -1050,7 +1051,12 @@ entry updates one file rather than two.
   an outbox through the session contract, landed in review at $0 with no
   model, no door and no ledger row, climbing the ordinary standing
   approval; proven live 31/31 on the restart and the HQ row armed for
-  Mondays 08:05, first firing 2026-08-31; D-255, supervised live
+  Mondays 08:05, first firing 2026-08-31; D-262, the first real door
+  (#14) — Alpha Vantage's hosted market-data server through the D-244 form
+  with no code, a fifth D-245 chip carrying the key as a Bearer header the
+  server honours but documents only as `?apikey=`, the far end measured to
+  check a key's presence and never its value, the path proven live 7/7
+  and the HQ job owed on a key; D-255, supervised live
   acting as a second browser
   connection, headed, allowlisted, hand-queued, never standing; D-256, the
   catalog as a registry browse plus a verified-here shelf, the D-245 chips
@@ -20406,3 +20412,92 @@ row one person arms once per level; reopen if a second report kind
 arrives. No re-send on a failed firing: a refusal (the block over the cap)
 lands on the row's `lastError` like any firing's and the next Monday tries
 again.
+
+## D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form, no code — the key rides a header the server honours but does not document, and the far end checks only that a key is present
+
+**Decision.** The first door since D-241 to do real work is **Alpha Vantage's
+hosted MCP server**, added through the D-244 form exactly as it stands — no
+server code. It ships as a fifth D-245 suggestion (`catalog/suggestions.json`,
+source and date recorded), carrying the key as
+`Authorization: Bearer ${ALPHAVANTAGE_API_KEY}`. The path is proven live
+**7/7** on the running server without any key of Brian's; the HQ job (#14's
+second criterion) waits on a free key and is owed, with its id and cost, below.
+
+### The three candidates, read from their own pages on 2026-08-25
+
+| | official server | remote shape | on this machine |
+|---|---|---|---|
+| Alpha Vantage | `alphavantage/alpha_vantage_mcp` (MIT) | `https://mcp.alphavantage.co/mcp?apikey=KEY`, streamable HTTP; the server lists **133 tools** | yes — the remote needs nothing local; the local form is Python (`uvx`), which this machine does not have |
+| FMP | `site.financialmodelingprep.com/developer/docs/mcp-server` | `https://financialmodelingprep.com/mcp?apikey=KEY`, 27 tools since 2025-12 | the docs page answers **403** to a plain fetch, so its shape was read only through a search summary — **not shipped** as a suggestion, by D-245's own rule |
+| EODHD | `EodHistoricalData/EODHD-MCP-Server` | Python, `server.py --stdio`, `EODHD_API_KEY` | no Python here — out |
+
+### The gap the ticket anticipated, and what it turned out to be
+
+Both remote candidates document the key **in the URL query string**. The form
+substitutes `${NAME}` only in headers (`probeConnection`, `toMcpServers`,
+the runner's `resolveSecrets`); a URL is stored verbatim in
+`.agentlings/connections.json` and written into the sandbox's `.session.json`
+— the file the agentling reads all job long, which is the seam D-242 closed.
+So taking the documented shape *as it is* would put the key on disk twice,
+once beside the work. The code fix would have been URL placeholders across
+four seams: `draftProblem` (the URL must still parse), the probe,
+`toMcpServers` (placeholder kept on disk) and `resolveSecrets` (filled from
+stdin).
+
+**Measured before building it**, with `curl` against the real server:
+
+- a keyless `tools/list` answers `401` with an **RFC 6750** body —
+  `"Missing access token"`, `error_uri …rfc6750#section-3.1` — which is a
+  Bearer-token server describing itself;
+- `Authorization: Bearer demo` is recognised as the demo key (the server's
+  own *"the demo API key is for demo purposes only"* answer), and
+  `X-API-Key: demo` lists tools too;
+- so the header the form already carries — D-245's Stripe shape — works, and
+  the whole change is one catalog entry. The header is **undocumented**: the
+  README shows only `?apikey=` and OAuth. The entry's `source` says so. Reopen
+  trigger: the header stops answering → build the URL placeholders above.
+
+### What the far end does not check, which decides how this was proven
+
+`Bearer bogus-key-xyz` and `?apikey=bogus-key-xyz` **both** listed 133 tools
+**and returned a live IBM `GLOBAL_QUOTE`** (234.19, latest day 2026-08-25).
+The server checks that a token is present, not what it is; `demo` alone is
+refused, by name. Two consequences:
+
+- D-244's *proven before stored* cannot prove a **key** against this server
+  — a wrong one stores fine and answers fine. The probe proves the path and
+  the header, and the proof script says so in its own header rather than
+  claiming more.
+- The key is Alpha Vantage's accounting (25 requests a day on the free
+  tier), not a lock. So this proof uses only their public `demo` key, and the
+  HQ job waits on a key Brian claims: fetching real data on a made-up token
+  would be routing around their terms, and that is not the app's call. The
+  wait is a terms question, not a technical one.
+
+### Evidence
+
+`scripts/prove-market-door.mjs` — **7/7** on the 2026-08-25 server, **no
+restart needed** (suggestions are read per request): the chip is offered
+with its source and docs; the key is a header placeholder and the URL carries
+none; the form's own probe route reaches `mcp.alphavantage.co` and answers
+`200` with **133 tools**, `GLOBAL_QUOTE` and `SMA` among them, server name
+`alphavantage-mcp-server`; and `.env` and the connections file are
+byte-identical before and after. Unit: `suggestions.test.ts` 11/11 holds the
+shipped entry to `draftProblem`, to naming a source and a docs page, to the
+header naming its secret, and to https; `userconnections.test.ts` 21/21.
+
+**Owed — the HQ job.** With `ALPHAVANTAGE_API_KEY` in `.env` (Settings →
+reads → add a connection of your own → Alpha Vantage, or the line by hand),
+the script's second half adds the connection through `POST /api/connections`,
+checks it is stored **off** with the server's tools and the key nowhere in the
+connections file, switches it on, queues **one** job on HQ holding
+`tools: ["alphavantage"]` (`single: true`, nine door calls: three symbols ×
+quote, 50-day and 200-day SMA), waits for it, and reads the job's own trail
+for `mcp__alphavantage__*` calls and for the absence of any other door. It
+never resolves the job — promotion is Brian's hand. The job id and cost land
+here when it runs.
+
+**Not built, on purpose.** No `.env.example` line — a user-added connection's
+key is written by the form (D-244), and the shipped example documents shipped
+doors. The *verified here* shelf that #14's third criterion names is #15's.
+FMP is not a suggestion until its page can be read first-hand.

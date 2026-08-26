@@ -12,9 +12,10 @@ import type {
   Cadence,
   ConnectionInfo,
   ScheduleInfo,
+  VoiceReply,
   WorkPlan,
 } from '@agentlings/shared';
-import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '@agentlings/shared';
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS, VOICE_SWEEP_MS } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import type { AnchorFn } from '../world/anchor';
 import {
@@ -34,6 +35,7 @@ import { doorChoices, holdsLine, watchChoices, watchedTools } from './doors';
 import { whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
+import { voiceHead, voiceHold } from './voice';
 import {
   acceptGhost,
   gapClass,
@@ -173,6 +175,34 @@ export function WorkBar({
       .then((list) => setConnections(list.filter((c) => c.ready)))
       .catch(() => setConnections([]));
   }, []);
+
+  /**
+   * Voice notes waiting at the desk (D-265). Polled, because the server
+   * learns of one on its own sweep and the socket carries the world, not the
+   * desk. `voiceId` is the note whose words are in the box: Start carries it
+   * so the audio rides the job, and clearing the box lets it go.
+   */
+  const [voice, setVoice] = useState<VoiceReply | null>(null);
+  const [voiceId, setVoiceId] = useState<string | null>(null);
+  const refreshVoice = useCallback(() => {
+    void api<VoiceReply>('/api/voice')
+      .then(setVoice)
+      .catch(() => setVoice(null));
+  }, []);
+  useEffect(() => {
+    refreshVoice();
+    const timer = window.setInterval(refreshVoice, VOICE_SWEEP_MS);
+    return () => window.clearInterval(timer);
+  }, [refreshVoice]);
+  const dismissVoice = async (id: string) => {
+    try {
+      await api(`/api/voice/${encodeURIComponent(id)}/dismiss`, { method: 'POST' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+    if (voiceId === id) setVoiceId(null);
+    refreshVoice();
+  };
 
   /** What the current plan was computed for — a pick survives a re-plan of
    *  the same sentence (confirming a near-miss re-plans, D-093) and dies
@@ -685,6 +715,8 @@ export function WorkBar({
           // naming one must not drop the rest. Otherwise no list at all, and
           // the server's default grant leaves the supervised door out.
           ...(watch && repeatKind === 'off' ? { tools: watchedTools(connections) } : {}),
+          // The note the words came from (D-265): its audio rides the job.
+          ...(voiceId ? { voice: voiceId } : {}),
         }),
       );
       // The schedule stores what Start carried — the sentence verbatim (the
@@ -721,6 +753,10 @@ export function WorkBar({
       setScheduled(null);
       setAskingRepo(false);
       setRepoPath('');
+      if (voiceId) {
+        setVoiceId(null);
+        refreshVoice();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -814,6 +850,53 @@ export function WorkBar({
         void attach(e.dataTransfer.files);
       }}
     >
+      {/* Voice notes (D-265): each one quoted back with the words it became, or
+          the reason it became none. Use puts the words in the box — the same
+          reading and the same Start as a typed sentence; nothing queues here. */}
+      {voice && voice.notes.length > 0 && (
+        <ul className="work-voice">
+          {voice.notes.map((note) => {
+            const hold = voiceHold(note, voice.transcriber);
+            const taken = voiceId === note.id;
+            return (
+              <li key={note.id} className={taken ? 'work-voice-note taken' : 'work-voice-note'}>
+                <span className="work-voice-head">🎙 {voiceHead(note)}</span>
+                {hold ? (
+                  <span className="dim"> — {hold}</span>
+                ) : (
+                  <q className="work-voice-words">{note.transcript}</q>
+                )}
+                {!hold && !taken && (
+                  <button
+                    type="button"
+                    className="work-voice-use"
+                    onClick={() => {
+                      setText(note.transcript ?? '');
+                      setCaret((note.transcript ?? '').length);
+                      setVoiceId(note.id);
+                      if (scheduled) setScheduled(null);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    Use
+                  </button>
+                )}
+                {taken && (
+                  <span className="dim"> · in the box — fix anything misheard, then Start</span>
+                )}
+                <button
+                  type="button"
+                  className="work-voice-dismiss"
+                  aria-label={`Dismiss the voice note from ${note.from}`}
+                  onClick={() => void dismissVoice(note.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <form className="work-bar" onSubmit={submit}>
         <div className="work-input-wrap">
           <div className="work-input-paint" aria-hidden="true" ref={paintRef}>
@@ -848,6 +931,9 @@ export function WorkBar({
               setCaret(e.target.selectionStart ?? 0);
               // A new sentence retires the last schedule-only confirmation.
               if (scheduled) setScheduled(null);
+              // An emptied box lets the voice note go; an edit keeps it —
+              // fixing a misheard word is the point of quoting it back.
+              if (voiceId && !e.target.value.trim()) setVoiceId(null);
             }}
             onScroll={syncPaint}
             onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}

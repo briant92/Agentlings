@@ -274,6 +274,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-262 — 2026-08-25 — First real door: Alpha Vantage market data through the ordinary form with no code — the key rides a header the server honours but does not document, the far end checks only that a key is present, and one HQ job read live quotes through it for $1.11](#d-262--2026-08-25--first-real-door-alpha-vantage-market-data-through-the-ordinary-form-with-no-code--the-key-rides-a-header-the-server-honours-but-does-not-document-the-far-end-checks-only-that-a-key-is-present-and-one-hq-job-read-live-quotes-through-it-for-111)
 - [D-263 — 2026-08-25 — The catalog gets wide, built: a browse over the public MCP registry fills the form and saves nothing, a verified-here shelf carries a source and a date per door, the D-245 chips retire — the mechanism proven live against the real registry and Brave’s real server with a key already in `.env`, the routes and the form owed on the restart](#d-263--2026-08-25--the-catalog-gets-wide-built-a-browse-over-the-public-mcp-registry-fills-the-form-and-saves-nothing-a-verified-here-shelf-carries-a-source-and-a-date-per-door-the-d-245-chips-retire--the-mechanism-proven-live-against-the-real-registry-and-braves-real-server-with-a-key-already-in-env-the-routes-and-the-form-owed-on-the-restart)
 - [D-264 — 2026-08-25 — Supervised live acting, built: `browser-act` carries the twelve as a supervised second connection — hand-queued only, on a Settings allowlist, in a headed window the run itself owns and the person can close — proven live 19/19 through the real runner, the routes owed on the restart](#d-264--2026-08-25--supervised-live-acting-built-browser-act-carries-the-twelve-as-a-supervised-second-connection--hand-queued-only-on-a-settings-allowlist-in-a-headed-window-the-run-itself-owns-and-the-person-can-close--proven-live-1919-through-the-real-runner-the-routes-owed-on-the-restart)
+- [D-265 — 2026-08-25 — A voice note is a sentence, built: Telegram audio polled off the bot and read on this machine by whisper-small through transformers.js, the language asked of the model first and silence gated by energy, quoted back above the work bar and confirmed by the ordinary Start with the audio riding the job — the install one step proven 4/4, the routes and a real note owed on the restart](#d-265--2026-08-25--a-voice-note-is-a-sentence-built-telegram-audio-polled-off-the-bot-and-read-on-this-machine-by-whisper-small-through-transformersjs-the-language-asked-of-the-model-first-and-silence-gated-by-energy-quoted-back-above-the-work-bar-and-confirmed-by-the-ordinary-start-with-the-audio-riding-the-job--the-install-one-step-proven-44-the-routes-and-a-real-note-owed-on-the-restart)
 
 ## By theme
 
@@ -1075,7 +1076,12 @@ entry updates one file rather than two.
   list refused on the trail, the window's close ending the run, proven
   live 19/19 through the real runner and 24/24 on the restart with two HQ
   jobs (`72f85086` filled and submitted the form, `edceccd3` refused on
-  its trail); and D-257, Brian as the manager, D-197 standing, a planner-only
+  its trail); D-265, a voice note is a sentence built (#17) — Telegram
+  audio polled off the bot and read on this machine by whisper-small
+  through transformers.js, the language asked of the model first and
+  silence gated by energy, quoted back above the work bar and confirmed by
+  the ordinary Start with the audio riding `input/`, the install one step
+  proven 4/4, the routes and a real note owed on the restart; and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -20818,3 +20824,151 @@ argues. `browser_close`, `resize`, `hover`, `tabs` on neither connection
 covers its subdomains and nothing else; no IDN — `browserActHosts` keeps
 ASCII hosts only. No standing approval, no rule, no schedule — by
 construction, not by policy text.
+
+## D-265 — 2026-08-25 — A voice note is a sentence, built: Telegram audio polled off the bot and read on this machine by whisper-small through transformers.js, the language asked of the model first and silence gated by energy, quoted back above the work bar and confirmed by the ordinary Start with the audio riding the job — the install one step proven 4/4, the routes and a real note owed on the restart
+
+**Decision.** A voice note sent to the bot by anyone on the Telegram roster
+is polled off `getUpdates` every fifteen seconds while the telegram
+connection is on (D-253: polled, never delivered), fetched, and
+**transcribed on this machine** — `onnx-community/whisper-small`, int8, on
+the CPU through `@huggingface/transformers`, the Ogg Opus decoded in WASM by
+`ogg-opus-decoder` — into a note that waits above the work bar with who,
+how long, when, and **its words or its reason**. *Use* puts the words in the
+box; the ordinary reading and the ordinary Start apply, edited first if a
+word was misheard. The audio and the words as transcribed ride the job's
+`input/` (`voice-<id>.oga`, `voice-<id>.txt`) so the words can be checked
+against the audio from the job alone, whatever the desk edited the sentence
+into; the note is spent by the job it queued and refused a second time by
+name. **Nothing queues on its own.** The
+one install step is `npm run voice:install` (241 MB into
+`.agentlings/models/`); the server never downloads, and until the step has
+run a note that arrives carries *the transcriber is not installed* and the
+desk says so. Ticket #17.
+
+### Measured before choosing, on this machine
+
+Three sizes of the same model, int8 or int4 ONNX, CPU, through the same
+prototype (`scratchpad/proto`, 2026-08-25), on an 11 s English clip and a
+20 s Ogg Opus speech sample:
+
+| Model | On disk | Load | 11 s clip | 20 s note | Right? |
+|---|---|---|---|---|---|
+| `whisper-base` q8 | 76 MB | 5.4 s | 1.2 s | 2.9 s | no — *frequently* heard as *free-cooking* |
+| **`whisper-small` q8** | **241 MB** | 14.5 s | 4.6 s | 7.4 s | yes, both |
+| `whisper-large-v3-turbo` q4 | 727 MB | 19.4 s | 8.2 s | 13.2 s | yes, better punctuation |
+
+Small is the pick: the smallest that was right, and faster than realtime.
+Turbo is the upgrade path if a real note's Spanish proves too much for
+small — a constant, not a setting. **DirectML** (the RTX 5080 through
+onnxruntime's `dml` provider) loaded both models in a third of the time and
+decoded every clip to an empty token list — measured broken, not used.
+**The library defaults to English** when no language is given
+(`_retrieve_init_tokens`), which would read a Spanish note as a translation
+of a guess; fed only the start token, the model's first prediction is the
+language token — the same trick as its own `detect_language` — and a
+Spanish TTS sample came back `<|es|>` and verbatim. **Whisper invents a
+word in silence**: the install's first self-test fed a second of zeros and
+got *"you"*, so silence is judged by energy before the model hears it
+(`SILENCE_RMS` 0.005; the speech fixture measures 0.17) and a silent note
+is *nothing heard*, never a guessed sentence — the acceptance criterion the
+first version would have failed.
+
+Ruled out on the way: **whisper.cpp** — a fast CUDA build, but a binary to
+fetch by hand plus **ffmpeg** to turn Opus into WAV, two Windows-only
+installs where the ticket asked for one step; **a Python `faster-whisper`**
+— a third runtime on the machine; **any hosted transcription API** — the
+ticket's first line. What `npm install` now carries for this: 13 MB of
+transformers.js and 211 MB of onnxruntime-node under `node_modules/`. The
+model itself is never in the repo.
+
+### What is built
+
+- `server/src/voice.ts` — `pollVoice` (pure over getUpdates: the roster's
+  unseen voice messages oldest first, strangers passed over by name, both
+  into the seen ring), `downloadVoice` (getFile, then the file host), and
+  the note store under `.agentlings/voice/` — one JSON beside its audio,
+  `seen.json` capped at 500 ids so a restart re-reads nothing Telegram still
+  retains, `usableVoiceNote` refusing by name everything but a transcribed,
+  unused, undismissed note. Global like the bot: no level owns a note.
+- `server/src/transcribe.ts` — decode → mono 16 kHz (linear interpolation,
+  no dependency) → the energy gate → language detection → the read →
+  `cleanTranscript` dropping Whisper's bracketed noise tokens. The pipeline
+  is built once per process, lazily, through `import()` so nothing that
+  imports the file loads the native runtime. `transcribePcm` is the seam
+  the install step proves through.
+- `index.ts` — the sweep (`VOICE_SWEEP_MS`, advance-then-attempt as the
+  other two: the ring written before any download; a note over
+  `MAX_VOICE_SECONDS` not fetched; the note on disk *before* its read so
+  *still being transcribed* is a state the desk can show; a note a restart
+  left in that state is read first on the next sweep, never stuck);
+  `GET /api/voice` (the transcriber's state and the pending notes); `POST
+  /api/voice/:id/dismiss`; and `voice` on `/work` — the text is the
+  sentence as confirmed, the id attaches the audio and the transcript
+  (both counted against `MAX_ATTACHMENTS`, the audio against
+  `MAX_ATTACHMENT_BYTES`), marks the note spent by whichever of the three
+  ways in took it, and on the ordinary path puts *read from a voice note —
+  who, seconds, language* on the queued line (a party's lines are the
+  party's own).
+- The desk — a strip above the work bar polled every 15 s (`VoiceReply`),
+  each note with *Use* and ✕; *Use* fills the box and focuses it, an emptied
+  box lets the note go, an edit keeps it; Start carries `voice`. The
+  missing-model reason names the one step and its size.
+- `scripts/voice-install.mts` (`npm run voice:install`) — fetches the model
+  and then proves it: a second of silence must be *nothing heard*, and
+  `fixtures/voice/jfk-4s.wav` (four seconds of a public-domain speech, 128
+  KB, provenance in its README) must read back its known words in English.
+- `scripts/prove-voice.mjs` — the routes, the transcriber as the desk reads
+  it, Start refusing a note by name, and — with a real transcribed note on
+  disk — the whole way in on a level whose crew is rested: the audio riding
+  `input/` byte for byte, the note spent, refused twice, the queued line
+  read off the socket replay. It says *NOT proven end to end* until a real
+  note has been queued by it.
+
+### Proven
+
+- Unit: `voice.test.ts` 11, `transcribe.test.ts` 7, web `voice.test.ts` 7.
+- `npm run voice:install` on this machine, 2026-08-25: 240 MB on disk in
+  14 s; then 4/4 — silence *nothing heard*; the fixture *"And so my fellow
+  Americans, ask"*, `en`, 2.0 s.
+- Owed on the restart (the running server predates the sweep): `node
+  scripts/prove-voice.mjs`, and one real voice note from Brian's thumb —
+  its transcript, and the job it queued — for the ticket's live half.
+
+### The review's catches, taken
+
+The poll re-derived how a Telegram chat is flattened — the same guard and
+the same name rule as `telegramChats` — so `audience.ts` now exports the one
+`seenChat` both pollers read (D-030's rule). The transcript did not ride the
+job: only the audio did, and `job.prompt` is the sentence as edited, so the
+ticket's check could not be made from the job alone — `voice-<id>.txt` now
+rides beside the audio. A server dying mid-read left a note *still being
+transcribed* forever; the sweep reads those first. The desk decided the
+install hint by matching the error's prose (a D-119 sibling seam); it reads
+the transcriber's own `installed` now. `VOICE_SWEEP_MS` lives in `shared`
+so the desk's poll and the server's sweep are one number. A comment claimed
+a byte bound the code did not check; it checks it. `bytes` on the note was
+written and read by nothing, and is gone; three exports used only inside
+their file are exports no more; the proof's *words or reason* check passed
+any note and now refuses one carrying both. Left as they are, with the
+reason: `VoiceHttp` is a third network seam by D-187's count — it is the
+roster's own getUpdates seam widened by `arrayBuffer`, because the file
+host answers bytes and the library's `Http` answers text, and widening that
+one would touch every double in the suite for a member none of them uses;
+a stranger's update id enters the ring for good, so a person who joins the
+roster later sends the note again; and `getUpdates` answers its oldest
+hundred, the same window the roster poll has always read.
+
+### Not built, on purpose
+
+- **No reply on Telegram** — no *"heard: …"* back to the phone. The desk is
+  where a sentence is confirmed, and a message to a person is a send
+  (D-075); nobody asked for one. The reopen is a real note that Brian
+  wanted answered where he sent it.
+- **No queueing from the note.** The transcript is quoted back and confirmed
+  like a typed sentence — the ticket's own rule, and D-027's.
+- **`voice` messages only** — Telegram's `audio` (a music file forwarded) is
+  not a note. Strangers' notes are passed over by name, never transcribed;
+  a note over ten minutes is not fetched.
+- **No GPU, no model choice, no language setting** — DML measured broken;
+  turbo is a constant to change with a measurement; the language is asked
+  of the model, not of a form.

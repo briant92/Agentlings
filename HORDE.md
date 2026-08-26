@@ -143,7 +143,7 @@ ticket with no blocker can be taken any time after #7.
 | #14 | **First real door: market data through the ordinary path** — one official MCP server through the *existing* form, one HQ job promoted; if the form cannot take it, that gap is the deliverable. Done with no code, D-262: Alpha Vantage's hosted server as a fifth D-245 chip, the key in a Bearer header, added by Brian through Settings; HQ job `0b9886dc` read live quotes through it (11 door calls, $1.11) and was promoted by hand (`prove-market-door.mjs` 8/8 both halves); issue closed | D-256, D-262 | — |
 | #15 | **The catalog gets wide** — registry browse that fills the form, the verified-here shelf, the D-245 chips retired. Built, D-263: the browse over `registry.modelcontextprotocol.io` fills the form and saves nothing, what it cannot carry is passed over by name and the registry down is a named state; the shelf stamps `verifiedAt` and `source` at the add (Alpha Vantage backfilled by identification); the five chips and their test and proof deleted, the rules moved to `registry.test.ts`. Proven live: `prove-registry-fill.mts` 9/9 without a server (real registry, Brave's real server through the fill with the `.env` key), then on the restart `prove-user-connections.mjs` 28/28 and `-ui.mjs` 16/16; issue closed | D-256, D-263 | — |
 | #16 | **Supervised live acting** — `browser-act`, headed, allowlisted, hand-queued only, never standing. Built, D-264: a `supervised` second connection carrying the twelve acts and the eight reads, off by default and never in the default grant — a job holds it only by naming it (the work bar's *watch* tick), a rule or schedule naming it refused by name (`validTools`), the chips never offering it; the allowlist and profile folder on the row (`PUT /api/settings/browser-act`); the runner launching a headed persistent Edge the person signed into, Playwright MCP attached over CDP with `--allowed-origins`, a `PreToolUse` hook refusing `browser_navigate` off the list by name on the trail, the context's `close` ending the run in one sentence. Proven live through the real runner 19/19 (`prove-browser-act-runner.mjs`: form filled and submitted $0.60, off-list navigate refused $0.31, closed window ended the run) and on the restarted server 24/24 (`prove-browser-act.mjs`: the rule refusals by name, HQ job `72f85086` filling and submitting the form $0.43, HQ job `edceccd3` refused on its trail $0.25); issue closes when Brian promotes `72f85086` | D-255, D-264 | #9 |
-| #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence | D-253 | — |
+| #17 | **A voice note is a sentence** — Telegram audio transcribed on this machine, quoted back like any sentence. Built, D-265: the bot polled every 15 s while telegram is on, the roster's notes fetched and read by `whisper-small` through transformers.js on the CPU (language detected first, silence gated by energy), each waiting above the work bar with its words or its reason; *Use* fills the box, the ordinary reading and Start apply, the audio and the transcript ride `input/`, the note is spent by the job. `npm run voice:install` is the one step (241 MB) and proves itself 4/4 on a known clip. Owed on the restart: `prove-voice.mjs`, and one real note from Brian's thumb for the live half | D-253, D-265 | — |
 | #18 | **Buk, read-only** — a stdio adapter over the reads, whatever the key's scope; on the shelf | D-252 | #15 |
 | #19 | **SII purchases and sales register, read-only** — certificate login, reads only; accept/claim excluded by name | D-252, D-250 | #15 |
 | #20 | **The wire file** — a *nómina* composed here, payees checked against a Settings allowlist, authorised at the bank by hand; build when a batch is due | D-251 | — |
@@ -165,7 +165,7 @@ nobody rebuilds one from the artifact.
   the runtime is **not built**, see below.
 - **Wave 4** (deploy / sign / money) — the wire file is #20 as a
   *deliverable*, D-219 standing; nothing else is opened.
-- **Wave 5** (media) — transcription in, #17; generation waits, see below.
+- **Wave 5** (media) — transcription in, #17 (built, D-265); generation waits, see below.
 - **Wave 6** (a manager) — not built, D-257.
 
 ### Deliberately not built, and why
@@ -216,6 +216,8 @@ node scripts/prove-refusals.mjs          # 19/19 — the refusals file: Start, p
 npm run ledger:report                    # leads with the score: real work per real level, last full week, the block the Monday send composes (#12, D-260; #13, D-261) — the app's own stamp (`resolvedBy: 'app'`) is proven only by a standing approval sending on a restarted server
 node scripts/prove-realwork.mjs          # 31/31 — a report row on a rested level: six refused shapes, one firing, the job read off disk (done, one telegram message, the block as body, $0, no door, nothing sent), the row deleted, zero ledger rows (#13, D-261)
 node scripts/prove-market-door.mjs [<key>] #  8/8 keyless — the Alpha Vantage chip, the form's probe against the real server, nothing written; with a key: adds, switches on, one HQ job holding the door, its trail (#14, D-262)
+npm run voice:install                    #  4/4  — no server needed: fetches whisper-small (241 MB) into .agentlings/models once, then proves it on this machine — silence is "nothing heard", fixtures/voice/jfk-4s.wav reads back its known words in ~2 s (#17, D-265)
+node scripts/prove-voice.mjs             # the voice routes, the transcriber as the desk reads it, Start refusing a note by name; with a REAL transcribed note on disk, the whole way in on a rested level (audio riding input/, the note spent, refused twice) — says NOT proven end to end until one has (#17, D-265)
 node scripts/arm-realwork.mjs <level> telegram <chat id>   # arms the Monday report on a level (HQ has `15548352`, Mondays 08:05 — do not arm a second one there); reads the row back and prints its label (#13, D-261)
 ```
 
@@ -270,6 +272,7 @@ must do the same or its first real click is lost.
   person's at its finish time. The one seam no unit test reaches is the
   auto-send path naming `'app'` — proven only by a standing approval
   sending on a restarted server, which is when to read `resolvedBy` back.
+- **The transcriber is installed** — `.agentlings/models/onnx-community/whisper-small`, 241 MB, put there by `npm run voice:install` on 2026-08-25 and proven 4/4. `.agentlings/voice/` does not exist yet: no voice note has reached the bot since the sweep was built, and the running server predates it — after the restart, one note from Brian and `prove-voice.mjs` is the live half of #17.
 - Otherwise nothing is in flight.
 
 ---

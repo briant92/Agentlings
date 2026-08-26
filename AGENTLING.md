@@ -427,7 +427,7 @@ off, so the app's fetch was gated and this second door was not.
 | `mail` — search and read the user's own Gmail | builtin | off; ready the moment `google` is connected | Live, read-only; the second reading sibling (D-158, D-191) — two tools on the find/read split (D-053): Gmail's own query language in, compact lines out, one message's text on request, attachments named and never fetched. The stored consent predates `gmail.readonly`, so reads answer with the fresh-sign-in sentence until Connect is walked once more. Same deliberate absence from the compiled-tool doors |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
 | `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed Edge the runner launches) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run |
-| `telegram` — send messages, at approval only | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075 |
+| `telegram` — send messages, at approval only; **receive voice notes** | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075. While on, a voice note from anyone on the roster is polled off the bot every 15 s, transcribed on this machine and quoted back at the desk (D-265, #17) — see below |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
 | `slack` — send messages, at approval only | builtin | off, needs `SLACK_BOT_TOKEN` | Live; grants a session **no tools** — posts as your own bot (D-104) |
@@ -454,6 +454,28 @@ Vantage's hosted market-data server, was the first real door taken through
 the form, and one HQ job read live quotes through it — D-262). Live —
 proven on the running server (`prove-user-connections.mjs` 28/28,
 `-ui.mjs` 16/16, D-263).
+
+**A voice note is a sentence (D-265, built for #17).** While the telegram
+connection is on, the server polls the bot's own `getUpdates` every fifteen
+seconds (D-253: polled, never delivered). A voice note from anyone on the
+Telegram roster — whoever tapped Start or was ever sent to — is fetched and
+**transcribed on this machine**: `onnx-community/whisper-small` (int8, 241 MB,
+CPU) through `@huggingface/transformers`, the Ogg Opus decoded in WASM, the
+language asked of the model before the words are read, silence judged by
+energy before the model hears it (Whisper invents a word in silence). No API,
+no per-call cost, no binary to fetch: `npm run voice:install` is the one step,
+and until it has run a note that arrives carries *the transcriber is not
+installed* and the desk says so by name. The note then waits above the work
+bar — who, how long, when, and the words or the reason there are none —
+and **Use** puts the words in the box: the same reading, the same Start,
+edited first if a word was misheard. The audio and the words as transcribed
+ride the job's `input/` (`voice-<id>.oga`, `voice-<id>.txt`) so the words can
+be checked against the audio from the job alone; the note is spent by the
+job it queued and refused a second time by name. Nothing queues on
+its own; a stranger's note is passed over by name and never transcribed; a
+note over ten minutes is not fetched. Live — the mechanism proven on this
+machine (`voice:install` 4/4 against a known four-second clip); the routes
+and a real note owed on the restart (`prove-voice.mjs`).
 
 Your own notes are **not** a connection and deliberately never became one — see
 below.
@@ -1807,6 +1829,11 @@ the headers (D-221 declined the vocabulary).
 | `MAX_QUESTIONS` | 3 | `clarify.ts` | Above this the box has become a form |
 | `MAX_ATTACHMENTS` | 5 | `shared` | Per job |
 | `MAX_ATTACHMENT_BYTES` | 10 MB | `shared` | Per file |
+| `VOICE_SWEEP_MS` | 15 s | `voice.ts` | How often the bot is asked for voice notes while telegram is on (D-265) |
+| `MAX_VOICE_SECONDS` | 600 | `voice.ts` | A longer note is not fetched — said on the note |
+| `VOICE_SEEN_CAP` | 500 | `voice.ts` | Update ids remembered, so a restart re-reads no note Telegram still retains |
+| `VOICE_MODEL` · `VOICE_MODEL_MB` | `onnx-community/whisper-small` · 241 | `transcribe.ts` | What `npm run voice:install` fetches into `.agentlings/models/`; measured 2026-08-25 |
+| `SILENCE_RMS` | 0.005 | `transcribe.ts` | Under it a note is *nothing heard* before the model sees it; the speech fixture measures 0.17 |
 | `MAX_RECONCILIATION_ADJUSTMENTS` · `_MATCHES` · `_UNMATCHED` · `_ENTRIES` | 200 · 2,000 · 500 · 100 | `shared` | The reconciliation contract's caps (D-222) |
 | `RECONCILIATION_TOLERANCE` | 0.005 | `shared` | Under it the two adjusted sides are equal; the sums are done in cents, so it is a guard and not a fudge |
 | `SNIFF_BYTES` | 8,000 | `outputs.ts` | How much to read before calling a file binary |

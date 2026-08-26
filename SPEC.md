@@ -439,7 +439,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.10 reading what you keep → D-058–D-062
 - M5.11 connections that send → D-075–D-077, D-097
 - M5.12 the recurrence timer → D-103 · mail triggers and one reply → D-248 ·
-  a rule holds only the doors it names → D-254
+  a rule holds only the doors it names → D-254 · a voice note is a sentence → D-265
 - M5.13 the acting surface finished → D-104
 - M5.14 composite work → D-105
 - M5.15 backdrops, level packs, worlds the crew authors → D-107–D-111
@@ -1154,6 +1154,22 @@ tried, measured and rejected is in `DECISIONS.md`:
     first run belongs on the cadence — and the confirmation says the first
     firing's date, computed by the server, never re-derived at the desk
     (D-106).
+
+    **A voice note is a sentence (D-265, #17).** The third way a sentence
+    arrives, after typing and a mail firing: while the telegram connection
+    is on, the server polls the bot's `getUpdates` every fifteen seconds
+    (D-253: polled, never delivered) and a voice note from anyone on the
+    roster is fetched and transcribed **on this machine** — whisper-small
+    through transformers.js on the CPU, the language asked of the model
+    before the read, silence judged by energy so a quiet note is *nothing
+    heard* and never a guessed word. The note waits above the work bar
+    with its words or its reason; *Use* puts the words in the box and the
+    ordinary reading and Start apply — a note is never queued on its own,
+    and `voice` on `/work` only attaches the audio and the words as
+    transcribed to `input/` and spends the note. `npm run voice:install` is the one step (241 MB into
+    `.agentlings/models/`, proven on a known clip); until it has run, a
+    note says *the transcriber is not installed* by name. `GET /api/voice`
+    lists the transcriber and the waiting notes; `POST /api/voice/:id/dismiss`.
   - **M5.13 — the acting surface finished (built).** D-104. Three channels,
     no new idea about acting — every one is an outbox replayed at Approve.
     **Slack** is telegram's shape wholesale (paste-a-token, empty grant),

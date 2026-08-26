@@ -130,6 +130,52 @@ export interface BrowserActSettings {
   profileDir: string;
 }
 
+/**
+ * A Telegram voice note transcribed on this machine (D-265, #17): the audio
+ * on disk, the words it became, or the reason it did not. Global like the
+ * bot itself — a level has no voice notes of its own, the desk on any level
+ * can take one.
+ */
+export interface VoiceNote {
+  /** Telegram's update id — the poll's own key, so a note is never taken twice. */
+  id: string;
+  chatId: string;
+  from: string;
+  /** When Telegram says it was sent, ms. */
+  at: number;
+  seconds: number;
+  /** The audio's file name in the voice folder; the same name rides the job's input/. */
+  file: string;
+  transcript?: string;
+  /** Whisper's own language code (es, en…), detected before the words were read. */
+  language?: string;
+  transcribedAt?: number;
+  /** Why there is no transcript — said by name, never an empty sentence. */
+  error?: string;
+  /** The job Start queued from it; a used note never queues a second. */
+  usedBy?: string;
+  dismissedAt?: number;
+}
+
+/** Whether this machine can transcribe, and with what (D-265). */
+export interface VoiceStatus {
+  /** The model is on disk — `npm run voice:install` is the one step that puts it there. */
+  installed: boolean;
+  model: string;
+  /** What the install fetches, in MB — measured, the number the docs quote. */
+  modelMb: number;
+  dir: string;
+}
+
+/** GET /api/voice: the transcriber, and every note waiting at the desk. */
+export interface VoiceReply {
+  transcriber: VoiceStatus;
+  notes: VoiceNote[];
+}
+
+/** How often the bot is asked for voice notes, and how often the desk asks the server — one number, so neither waits on the other. */
+export const VOICE_SWEEP_MS = 15_000;
+
 export type JobStatus =
   | 'queued'
   | 'running'

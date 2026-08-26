@@ -57,6 +57,9 @@ behavioral base lives there alone; this is the project half, split out on
   sibling of the same command.
 - Coverage benchmark: `npm run bench:coverage -- --onet <dir>` over a
   downloaded O*NET text release (fixtures alone with no flags; D-230)
+- Voice notes: `npm run voice:install` once — fetches the Whisper model
+  (241 MB) into `.agentlings/models/` and proves it runs; until then a note
+  that arrives says *the transcriber is not installed* at the desk (D-265)
 - Test: `npm test`
 - Lint / typecheck: `npm run typecheck`
 

@@ -3280,6 +3280,63 @@ button.danger:hover {
   color: #d95763;
 }
 
+/* Voice notes waiting at the desk (D-265): each quoted back with its words or
+   its reason. Use puts the words in the box; nothing here queues. */
+.work-voice {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.work-voice-note {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #11151f;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  color: #d8dce6;
+}
+.work-voice-note.taken {
+  border-color: #3b5f8a;
+}
+.work-voice-head {
+  color: #9aa3b8;
+  white-space: nowrap;
+}
+.work-voice-words {
+  color: #e9ecf3;
+}
+.work-voice-use {
+  border: 1px solid #3b5f8a;
+  background: transparent;
+  color: #d8dce6;
+  border-radius: 8px;
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.work-voice-use:hover {
+  background: #1b2a3f;
+}
+.work-voice-dismiss {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #626a7d;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 11px;
+}
+.work-voice-dismiss:hover {
+  color: #d95763;
+}
+
 /* Questions asked before the money moves. Never a blocker: Start ignores them. */
 .work-ask {
   display: flex;

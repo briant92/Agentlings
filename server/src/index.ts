@@ -22,6 +22,8 @@ import type {
   ServerMessage,
   ConnectionInfo,
   SettingsInfo,
+  VoiceNote,
+  VoiceReply,
   BrowserActSettings,
   WorkPlan,
   WorkProfile,
@@ -29,6 +31,7 @@ import type {
 import {
   awaitingVerdict,
   MAX_ATTACHMENT_BYTES,
+  VOICE_SWEEP_MS,
   MAX_ATTACHMENTS,
   opKey,
   opLabel,
@@ -80,6 +83,23 @@ import {
 } from './schedules';
 import { fireRealWork, REALWORK_PROMPT, scoreBlock } from './report';
 import { MAIL_TRIGGER_SWEEP_MS, MAX_TRIGGER_FIRES_PER_DAY, pollTrigger } from './mailtrigger';
+import {
+  downloadVoice,
+  MAX_VOICE_SECONDS,
+  pendingVoiceNotes,
+  pollVoice,
+  readVoiceNote,
+  readVoiceSeen,
+  unreadVoiceNotes,
+  usableVoiceNote,
+  voiceAttachmentName,
+  voiceAudioFile,
+  voiceDir,
+  voiceTranscriptName,
+  writeVoiceNote,
+  writeVoiceSeen,
+} from './voice';
+import { transcribe, voiceStatus } from './transcribe';
 import { newestMatch, resolveStanding, validateStanding, type StandingInput } from './standing';
 import { pickForwards, splitSteps, stepBrief } from './steps';
 import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
@@ -2510,6 +2530,12 @@ app.post('/api/levels/:lid/work', async (c) => {
     single?: boolean;
     /** The user asked a planner to propose the split (TEAMWORK T3). */
     planParty?: boolean;
+    /**
+     * The voice note this sentence was read from (D-265). The words are
+     * `text` as the desk confirmed them, edited or not; the id only says
+     * whose audio rides the job's input/ and which note is now spent.
+     */
+    voice?: string;
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
@@ -2525,6 +2551,49 @@ app.post('/api/levels/:lid/work', async (c) => {
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : 'bad attachment' }, 400);
   }
+
+  // A note is refused by name unless it was transcribed and never queued —
+  // the transcript is the sentence, and a note without one cannot become a
+  // job by being pressed. Two files then ride input/: the audio and the
+  // words as transcribed, so the check the ticket asks for can be made from
+  // the job alone whatever the desk edited the sentence into. Both count
+  // against the file bound, the audio against the byte bound.
+  let voiceNote: VoiceNote | undefined;
+  if (body.voice !== undefined) {
+    const usable = usableVoiceNote(SANDBOX_ROOT, String(body.voice));
+    if ('error' in usable) return c.json({ error: usable.error }, 400);
+    const audioFile = voiceAudioFile(SANDBOX_ROOT, usable.note);
+    if (!existsSync(audioFile)) {
+      return c.json({ error: `voice note ${usable.note.id}'s audio is no longer on disk` }, 400);
+    }
+    if (attachments.length + 2 > MAX_ATTACHMENTS) {
+      return c.json(
+        { error: `${MAX_ATTACHMENTS} files at most, counting the voice note's audio and transcript` },
+        400,
+      );
+    }
+    const audio = readFileSync(audioFile);
+    if (audio.length > MAX_ATTACHMENT_BYTES) {
+      return c.json(
+        { error: `voice note ${usable.note.id}'s audio is larger than ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB` },
+        400,
+      );
+    }
+    voiceNote = usable.note;
+    attachments = [
+      ...attachments,
+      { name: voiceAttachmentName(voiceNote), data: audio },
+      {
+        name: voiceTranscriptName(voiceNote),
+        data: Buffer.from(`${usable.note.transcript}\n`, 'utf8'),
+      },
+    ];
+  }
+  /** The note is spent by the job it queued, whichever way in took it. */
+  const spentOn = (job: Job): Job => {
+    if (voiceNote) writeVoiceNote(SANDBOX_ROOT, { ...voiceNote, usedBy: job.id });
+    return job;
+  };
 
   if (body.repoPath !== undefined) {
     const repoPath = body.repoPath.trim();
@@ -2551,7 +2620,7 @@ app.post('/api/levels/:lid/work', async (c) => {
       answers: body.answers,
       attachments,
     });
-    return c.json(job, 201);
+    return c.json(spentOn(job), 201);
   }
   // A party queues here and only here (TEAMWORK T2): the desk previewed it,
   // Start carries it, and the schedule sweep deliberately does not — a
@@ -2567,7 +2636,7 @@ app.post('/api/levels/:lid/work', async (c) => {
         answers: body.answers,
         attachments,
       });
-      return c.json(hands[0], 201);
+      return c.json(spentOn(hands[0]!), 201);
     }
   }
   // Everything from the plan to the queued event is the shared glue above —
@@ -2580,8 +2649,11 @@ app.post('/api/levels/:lid/work', async (c) => {
     answers: body.answers,
     attachments,
     ...(body.single === true ? { noSplit: true } : {}),
+    ...(voiceNote
+      ? { note: `read from a voice note — ${voiceNote.from}, ${voiceNote.seconds} s, in ${voiceNote.language ?? '?'}` }
+      : {}),
   });
-  return c.json(job, 201);
+  return c.json(spentOn(job), 201);
 });
 
 /** The recurrence timer (D-103): the sentences this level queues again on a cadence. */
@@ -4373,6 +4445,28 @@ app.get('/api/spend', (c) => {
   });
 });
 
+/**
+ * The desk's voice notes (D-265, #17): whether this machine can transcribe,
+ * and every note waiting to be confirmed — global like the bot, so the desk
+ * on any level lists the same ones. A note leaves the list by queueing a job
+ * (`voice` on /work) or by being dismissed; it is never queued from here.
+ */
+app.get('/api/voice', (c) =>
+  c.json({
+    transcriber: voiceStatus(SANDBOX_ROOT),
+    notes: pendingVoiceNotes(SANDBOX_ROOT),
+  } satisfies VoiceReply),
+);
+
+app.post('/api/voice/:id/dismiss', (c) => {
+  const id = c.req.param('id');
+  const note = readVoiceNote(SANDBOX_ROOT, id);
+  if (!note) return c.json({ error: `no voice note ${id}` }, 404);
+  const dismissed: VoiceNote = { ...note, dismissedAt: Date.now() };
+  writeVoiceNote(SANDBOX_ROOT, dismissed);
+  return c.json(dismissed);
+});
+
 app.get('/api/connections', (c) => c.json(connectionList()));
 
 /**
@@ -5204,3 +5298,94 @@ setInterval(() => void sweepMailTriggers(), MAIL_TRIGGER_SWEEP_MS);
 // No boot firing beyond the watermark: `sinceMs` persists, so mail that
 // arrived while the server was off fires on the first interval, bounded by
 // the daily cap like any other batch.
+
+/**
+ * The voice sweep (D-265, #17): the bot's getUpdates every fifteen seconds
+ * while the telegram connection is on, the roster's new voice notes written
+ * to disk and transcribed here, one after another. Advance-then-attempt as
+ * the other sweeps: the ring is written before any download is tried, so a
+ * note that fails is a note carrying its error, never one retried every
+ * fifteen seconds. Nothing here queues — the desk does, by confirming.
+ */
+let voiceSweepRunning = false;
+let lastVoiceError: string | null = null;
+async function sweepVoice(): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token || voiceSweepRunning) return;
+  if (!enabledNames(allConnections(), readSettings(SANDBOX_ROOT), process.env).includes('telegram')) {
+    return;
+  }
+  voiceSweepRunning = true;
+  try {
+    // A restart mid-read leaves a note on disk with neither words nor reason;
+    // it is read now rather than waiting forever as "still being transcribed".
+    for (const note of unreadVoiceNotes(SANDBOX_ROOT)) {
+      await readVoiceNoteAloud(note, readFileSync(voiceAudioFile(SANDBOX_ROOT, note)));
+    }
+    const roster = new Set(readAudience(SANDBOX_ROOT, 'telegram').map((person) => person.id));
+    const seenBefore = readVoiceSeen(SANDBOX_ROOT);
+    const poll = await pollVoice({ http: fetch, token, roster, seen: new Set(seenBefore) });
+    if ('error' in poll) {
+      // Said once per distinct failure: this runs four times a minute forever.
+      if (poll.error !== lastVoiceError) console.warn(`[voice] ${poll.error}`);
+      lastVoiceError = poll.error;
+      return;
+    }
+    lastVoiceError = null;
+    if (poll.seen.length === 0) return;
+    writeVoiceSeen(SANDBOX_ROOT, [...seenBefore, ...poll.seen]);
+    for (const over of poll.passedOver) {
+      console.log(`[voice] a note from ${over.from} (${over.chatId}) passed over — not on the roster`);
+    }
+    for (const incoming of poll.notes) {
+      const note: VoiceNote = {
+        id: incoming.id,
+        chatId: incoming.chatId,
+        from: incoming.from,
+        at: incoming.at,
+        seconds: incoming.seconds,
+        file: voiceAttachmentName(incoming),
+      };
+      if (incoming.seconds > MAX_VOICE_SECONDS) {
+        writeVoiceNote(SANDBOX_ROOT, {
+          ...note,
+          error: `longer than ${MAX_VOICE_SECONDS / 60} minutes — not fetched`,
+        });
+        continue;
+      }
+      const audio = await downloadVoice(fetch, token, incoming.fileId);
+      if ('error' in audio) {
+        writeVoiceNote(SANDBOX_ROOT, { ...note, error: audio.error });
+        continue;
+      }
+      mkdirSync(voiceDir(SANDBOX_ROOT), { recursive: true });
+      writeFileSync(voiceAudioFile(SANDBOX_ROOT, note), audio);
+      // On disk before the read, so "still being transcribed" is a state the
+      // desk can show rather than a note that does not exist yet.
+      writeVoiceNote(SANDBOX_ROOT, note);
+      await readVoiceNoteAloud(note, audio);
+    }
+  } finally {
+    voiceSweepRunning = false;
+  }
+}
+
+/** The read, and the note rewritten with its words or its reason. */
+async function readVoiceNoteAloud(note: VoiceNote, audio: Buffer): Promise<void> {
+  const read = await transcribe(SANDBOX_ROOT, audio);
+  if ('error' in read) {
+    writeVoiceNote(SANDBOX_ROOT, { ...note, error: read.error });
+    console.warn(`[voice] note ${note.id} from ${note.from}: ${read.error}`);
+    return;
+  }
+  writeVoiceNote(SANDBOX_ROOT, {
+    ...note,
+    transcript: read.text,
+    language: read.language,
+    transcribedAt: Date.now(),
+  });
+  console.log(
+    `[voice] note ${note.id} from ${note.from}, ${note.seconds} s, ${read.language}, read in ${read.ms} ms`,
+  );
+}
+setInterval(() => void sweepVoice(), VOICE_SWEEP_MS);

@@ -172,6 +172,29 @@ export function removePerson(
   return kept;
 }
 
+/** A raw Telegram chat as getUpdates carries it. */
+export interface TelegramChat {
+  id?: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+}
+
+/**
+ * One chat flattened the one way — the roster reads it, and so does the
+ * voice sweep (D-265): a name is first and last joined, and the id when
+ * there is no name. Null when the chat has no numeric id to key on.
+ */
+export function seenChat(chat: TelegramChat | undefined): SeenChat | null {
+  if (!chat || typeof chat.id !== 'number') return null;
+  const name = [chat.first_name, chat.last_name].filter(Boolean).join(' ').trim();
+  return {
+    id: String(chat.id),
+    name: name || String(chat.id),
+    ...(chat.username ? { username: chat.username } : {}),
+  };
+}
+
 /**
  * Whoever has said hello to the bot lately, flattened to chats. getUpdates
  * retains ~24 hours, which is why the roster persists what this returns
@@ -185,19 +208,11 @@ export async function telegramChats(
 ): Promise<SeenChat[]> {
   const reply = await http(`https://api.telegram.org/bot${token}/getUpdates`);
   if (!reply.ok) return [];
-  const body = (await reply.json()) as {
-    result?: { message?: { chat?: { id?: number; first_name?: string; last_name?: string; username?: string } } }[];
-  };
+  const body = (await reply.json()) as { result?: { message?: { chat?: TelegramChat } }[] };
   const chats = new Map<string, SeenChat>();
   for (const update of body.result ?? []) {
-    const chat = update.message?.chat;
-    if (!chat || typeof chat.id !== 'number') continue;
-    const name = [chat.first_name, chat.last_name].filter(Boolean).join(' ').trim();
-    chats.set(String(chat.id), {
-      id: String(chat.id),
-      name: name || String(chat.id),
-      ...(chat.username ? { username: chat.username } : {}),
-    });
+    const chat = seenChat(update.message?.chat);
+    if (chat) chats.set(chat.id, chat);
   }
   return [...chats.values()];
 }

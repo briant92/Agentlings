@@ -121,6 +121,8 @@ export interface SettingsInfo {
    * form shows the default before anyone chose.
    */
   browserAct: BrowserActSettings;
+  /** The wire's charge account, layout and payee allowlist (D-268). */
+  wire: WireSettings;
 }
 
 export interface BrowserActSettings {
@@ -854,6 +856,106 @@ export const MAX_RECONCILIATION_TEXT_CHARS = 200;
 /** Under this the two adjusted sides are equal; sums are done in cents, so it is a guard, not a fudge. */
 export const RECONCILIATION_TOLERANCE = 0.005;
 
+/**
+ * The wire file (D-268, #20): a transfer batch composed here as a deliverable
+ * and authorised at the bank by hand. The app never calls a payment endpoint,
+ * so D-219 stands — composing a file initiates nothing.
+ *
+ * The split is the whole design. A run says **who and how much**; the payee
+ * allowlist a person typed says **where the money goes**. So a run cannot name
+ * an account at all, and "outside the allowlist" is the only way a payee can
+ * be wrong — a run that kept an allowed name while changing the account number
+ * is not a case that exists.
+ */
+
+/** The four codes BCI's specification allows in `Tipo de Pago` (note 2, page 2). */
+export type NominaPaymentType = 'PRV' | 'REM' | 'DIV' | 'OTR';
+export const NOMINA_PAYMENT_TYPES: readonly NominaPaymentType[] = ['PRV', 'REM', 'DIV', 'OTR'];
+
+/**
+ * One line of a batch as the run declares it in NOMINA.json — who, how much,
+ * and the paperwork the bank wants beside it. No account number, no bank: the
+ * allowlist owns those.
+ */
+export interface NominaRow {
+  /** The payee, as the key into the allowlist. Any spelling; matched on digits. */
+  rut: string;
+  /** Whole pesos. CLP has no cents and the bank's Monto column is numeric. */
+  amount: number;
+  /** `Nro. Factura Boleta` — required for PRV (specification note 1). */
+  invoice?: string;
+  /** `Nº Orden de Compra` — required for PRV (specification note 1). */
+  purchaseOrder?: string;
+  /** `Mensaje Destinatario`, optional. */
+  message?: string;
+  /** `E-mail Destinatario` — the bank mails a confirmation only if it is there (note 3). */
+  email?: string;
+}
+
+/** The batch a run declared: what it is for, and its lines. */
+export interface Nomina {
+  paymentType: NominaPaymentType;
+  rows: NominaRow[];
+}
+
+/** One payee a person typed into Settings — the only source of bank coordinates. */
+export interface WirePayee {
+  /** Normalised to digits and a check digit, as `76123456-0`. */
+  rut: string;
+  /** `Nombre Beneficiario` on the file. */
+  name: string;
+  /** `Banco Destino` — the bank's 3-digit code. */
+  bank: string;
+  /** `Nº Cuenta de Destino`, digits only. */
+  account: string;
+  /** `Cuenta Destino inscrita como` — only needed when the account is not enrolled (note 4). */
+  accountLabel?: string;
+}
+
+/** Which bank's column table the composer writes. One today; a second joins it by name. */
+export type NominaFormat = 'bci';
+
+/** The wire's settings: whose account pays, which layout, and who may be paid. */
+export interface WireSettings {
+  /** `Nº Cuenta de Cargo` — the account the batch debits. Empty until a person sets it. */
+  chargeAccount: string;
+  format: NominaFormat;
+  payees: WirePayee[];
+}
+
+/** One line of the batch as review reads it: the run's figures against the allowlist. */
+export interface NominaCheckRow {
+  rut: string;
+  amount: number;
+  /** The allowlist's name for this payee, or null when it holds none. */
+  name: string | null;
+  /** Whether this line may be composed. */
+  allowed: boolean;
+  /** Why not, when it may not — named, so the reviewer can act on it. */
+  problem?: string;
+}
+
+/**
+ * What Approve would do with this batch, recomputed every time it is asked.
+ * Never stamped on the job: a payee added in Settings after the refusal must
+ * make the same file approvable without re-running anything.
+ */
+export interface NominaCheck {
+  paymentType: NominaPaymentType;
+  rows: NominaCheckRow[];
+  /** The sum of every line, allowed or not — what leaves the account if it goes. */
+  total: number;
+  /** The one sentence Approve refuses with, or null when it would compose. */
+  refusal: string | null;
+  /** What the file will be called when it is composed. */
+  fileName: string;
+}
+
+/** A batch may not be bigger than this. Ours, not the bank's — see D-268. */
+export const MAX_NOMINA_ROWS = 500;
+/** A field on one line may not be longer than the longest column the layout has. */
+export const MAX_NOMINA_TEXT_CHARS = 200;
+
 export type MoveOp =
   | { op: 'mkdir'; path: string }
   | { op: 'move'; from: string; to: string };
@@ -1364,6 +1466,14 @@ export interface Job {
   reconciliation?: ReconciliationSummary;
   /** RECONCILIATION.json existed and was not a valid declaration — the reason, never a silent drop. */
   reconciliationError?: string;
+  /**
+   * The transfer batch the run declared (D-268), exactly as it wrote it — who
+   * and how much, never where. What Approve makes of it is asked fresh against
+   * the allowlist and is deliberately not stamped here.
+   */
+  nomina?: Nomina;
+  /** NOMINA.json existed and was not a valid declaration — the reason, never a silent drop. */
+  nominaError?: string;
   /** Move results so far, merged across retries — the accumulator behind the journal. */
   movesRun?: MovesRun;
   /**

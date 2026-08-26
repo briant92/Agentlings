@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import type { NominaFormat, WirePayee, WireSettings } from '@agentlings/shared';
 import { missingSecrets, type Connection } from './connections';
 
 /**
@@ -28,6 +29,13 @@ export interface StoredSettings {
    * logs in through the window.
    */
   browserAct?: { allow: string[]; profileDir?: string };
+  /**
+   * The wire's settings (D-268): the account a batch debits, the bank layout
+   * it is composed in, and the payee allowlist. Absent means no charge
+   * account and nobody approved — which refuses every batch, and is the right
+   * default for money leaving.
+   */
+  wire?: { chargeAccount?: string; format?: NominaFormat; payees?: WirePayee[] };
 }
 
 const FILE = 'settings.json';
@@ -83,6 +91,54 @@ export function setBrowserAct(
     ...settings,
     browserAct: { allow: value.allow, ...(profileDir ? { profileDir } : {}) },
   };
+}
+
+/**
+ * The wire as everything reads it (D-268) — effective, never absent, so the
+ * gate, the composer and the form all see one answer. An unset charge account
+ * is the empty string rather than a missing field, because "not set yet" is
+ * something the refusal has to be able to say.
+ */
+export function wireSettings(settings: StoredSettings): WireSettings {
+  return {
+    chargeAccount: settings.wire?.chargeAccount ?? '',
+    format: settings.wire?.format ?? 'bci',
+    payees: settings.wire?.payees ?? [],
+  };
+}
+
+/** Records the account a batch debits and the layout it is composed in. */
+export function setWire(
+  settings: StoredSettings,
+  value: { chargeAccount: string; format: NominaFormat },
+): StoredSettings {
+  return {
+    ...settings,
+    wire: {
+      ...settings.wire,
+      chargeAccount: value.chargeAccount.trim(),
+      format: value.format,
+    },
+  };
+}
+
+/**
+ * Adds one payee, or replaces the one with that RUT.
+ *
+ * Replacing rather than appending is the point: two rows for one RUT would
+ * make "which account does this payee use" a question with two answers, and
+ * the composer takes the first — which is D-032's defect pointed at money.
+ * Editing an account is therefore adding the payee again.
+ */
+export function addWirePayee(settings: StoredSettings, payee: WirePayee): StoredSettings {
+  const payees = (settings.wire?.payees ?? []).filter((p) => p.rut !== payee.rut);
+  return { ...settings, wire: { ...settings.wire, payees: [...payees, payee] } };
+}
+
+/** Takes one payee off the list, by RUT. */
+export function removeWirePayee(settings: StoredSettings, rut: string): StoredSettings {
+  const payees = (settings.wire?.payees ?? []).filter((p) => p.rut !== rut);
+  return { ...settings, wire: { ...settings.wire, payees } };
 }
 
 /**

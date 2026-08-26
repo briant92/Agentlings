@@ -4851,6 +4851,43 @@ button.danger:hover {
   color: #8a2b22;
 }
 
+/* The payee allowlist in Settings (D-268): who, where, and one click to take
+   them off. The where-line is quiet and underneath, because the name is what
+   you scan for and the account is what you check once. */
+.wire-payees {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+.wire-payees li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e6e1d8;
+  font-size: 12px;
+}
+.wire-where {
+  flex-basis: 100%;
+  order: 3;
+  font-size: 10.5px;
+  color: #8a8172;
+  font-variant-numeric: tabular-nums;
+}
+.wire-rm {
+  margin-left: auto;
+}
+
+/* The transfer batch's payees (D-268). One line each in the withheld panel's
+   list; a payee outside the allowlist wears the refusal's red, because the
+   line that blocks the file has to be findable without reading the sentence
+   underneath it. */
+.rv-payee-no .rv-withheld-what {
+  color: #8a2b22;
+  font-weight: 600;
+}
+
 /* The check pass verdict (TEAMWORK T1, D-194). Above the messages like the
    withheld panel: a second opinion is context for reading the work, not a
    footnote after. Green holds, red refutes, amber for a check that named no

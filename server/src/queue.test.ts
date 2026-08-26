@@ -1198,3 +1198,64 @@ describe('reconciliation stamp (D-222)', () => {
     expect(queue.get(plain.id)!.reconciliationError).toBeUndefined();
   });
 });
+
+describe('nómina stamp (D-268)', () => {
+  const file = (queue: JobQueue, id: string) => path.join(queue.sandboxDir(id), 'NOMINA.json');
+
+  it('keeps the declaration at completion, and refuses a malformed file by name', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-nomina-stamp-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Nómina', prompt: 'compose the nómina for August' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    writeFileSync(
+      file(queue, job.id),
+      JSON.stringify({
+        paymentType: 'REM',
+        rows: [{ rut: '76123456-0', amount: 450000 }],
+      }),
+    );
+    queue.complete(job.id, 'done it');
+    const done = queue.get(job.id)!;
+    expect(done.nomina?.paymentType).toBe('REM');
+    expect(done.nomina?.rows).toHaveLength(1);
+    expect(done.nominaError).toBeUndefined();
+
+    const bad = queue.add({ title: 'Nómina', prompt: 'compose the nómina for August' });
+    queue.assign(bad.id, 'a1');
+    queue.start(bad.id);
+    writeFileSync(file(queue, bad.id), '{ "paymentType": "SUELDO", "rows": [] }');
+    queue.complete(bad.id, 'done it');
+    expect(queue.get(bad.id)!.nominaError).toContain('NOMINA.json:');
+    expect(queue.get(bad.id)!.nominaError).toContain('PRV');
+    expect(queue.get(bad.id)!.nomina).toBeUndefined();
+
+    // Nothing written, nothing stamped — an ordinary job is untouched.
+    const plain = queue.add({ title: 'Plain', prompt: 'summarise the attached expenses' });
+    queue.assign(plain.id, 'a1');
+    queue.start(plain.id);
+    queue.complete(plain.id, 'done it');
+    expect(queue.get(plain.id)!.nomina).toBeUndefined();
+    expect(queue.get(plain.id)!.nominaError).toBeUndefined();
+  });
+
+  it('stamps only what the run declared — never a verdict about the allowlist', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'agentlings-nomina-fresh-'));
+    const queue = new JobQueue(root);
+    const job = queue.add({ title: 'Nómina', prompt: 'compose the nómina' });
+    queue.assign(job.id, 'a1');
+    queue.start(job.id);
+    writeFileSync(
+      file(queue, job.id),
+      JSON.stringify({ paymentType: 'REM', rows: [{ rut: '11111111-1', amount: 1 }] }),
+    );
+    queue.complete(job.id, 'done it');
+    // A payee nobody has approved is stamped exactly as an approved one is:
+    // the question is asked at review, so a payee added afterwards makes this
+    // same job approvable without a re-run.
+    const done = queue.get(job.id)!;
+    expect(done.nomina?.rows[0]!.rut).toBe('11111111-1');
+    expect(done.nominaError).toBeUndefined();
+    expect(JSON.stringify(done)).not.toContain('allowed');
+  });
+});

@@ -24,6 +24,7 @@ import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
 import { readOutbox } from './outbox';
 import { attachmentShape } from './inputshape';
+import { NOMINA_FILE, readNomina } from './nomina';
 import { readReconciliation, summariseReconciliation } from './reconciliation';
 import { readWithheld } from './redact';
 import { MOVES_FILE, type MovesRunResult, readMoves } from './moves';
@@ -573,6 +574,7 @@ export class JobQueue {
     this.stampOutbox(job);
     this.stampWithheld(job);
     this.stampReconciliation(job);
+    this.stampNomina(job);
     this.stampPackDraft(job);
     this.stampPartyDraft(job);
     this.stampMoves(job);
@@ -666,6 +668,20 @@ export class JobQueue {
     if (!read) return;
     if (read.reconciliation) job.reconciliation = summariseReconciliation(read.reconciliation);
     else job.reconciliationError = `RECONCILIATION.json: ${read.error}`;
+  }
+
+  /**
+   * The transfer batch the run declared (D-268), read at the same seam as
+   * every other contract. Only the declaration is kept: what the allowlist
+   * makes of it is asked fresh at review, so a payee added after the refusal
+   * makes the same file approvable without re-running anything.
+   */
+  private stampNomina(job: Job): void {
+    if (job.compile) return;
+    const read = readNomina(this.sandboxDir(job.id));
+    if (!read) return;
+    if (read.nomina) job.nomina = read.nomina;
+    else job.nominaError = `${NOMINA_FILE}: ${read.error}`;
   }
 
   /**

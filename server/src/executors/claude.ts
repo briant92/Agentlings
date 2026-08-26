@@ -15,6 +15,7 @@ import type {
   Agentling,
   AudiencePerson,
   BrowserActSettings,
+  WireSettings,
   Job,
   JobAttachment,
   JobMeter,
@@ -25,6 +26,7 @@ import { SERVER_PORT } from '@agentlings/shared';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
 import { PRIOR_RECONCILIATION_FILE, reconciliationBrief, wantsReconciliation } from '../reconciliation';
+import { nominaBrief, wantsNomina } from '../nomina';
 import { inputShapeOf } from '../inputshape';
 import {
   mcpSecretValues,
@@ -682,6 +684,14 @@ export function buildAppend(
    * spend turns finding out, or worse, try.
    */
   browserActText?: string,
+  /**
+   * The transfer-batch contract, when the sentence asks for a nómina (D-268).
+   * Told for D-031's reason like the others, and for one more: a run not told
+   * that bank coordinates come from the allowlist will invent them, and an
+   * invented account number is the one mistake in this whole feature that a
+   * reviewer reading a report cannot see.
+   */
+  nominaText?: string,
 ): string {
   const parts: string[] = [];
   parts.push(role?.prompt ?? 'You are a general-purpose worker agentling.');
@@ -730,6 +740,7 @@ export function buildAppend(
   if (organizeText) parts.push(organizeText);
   if (reconciliationText) parts.push(reconciliationText);
   if (browserActText) parts.push(browserActText);
+  if (nominaText) parts.push(nominaText);
   if (attachments.length > 0) {
     parts.push(
       [
@@ -1090,6 +1101,13 @@ export class ClaudeAgentExecutor implements Executor {
       undefined,
     /** The supervised browser's allowlist and profile folder (D-255), read at the run. */
     private browserAct: () => BrowserActSettings = () => ({ allow: [], profileDir: '' }),
+    /**
+     * The payee allowlist (D-268), read at the run so the batch brief can name
+     * who may be paid. Names only — the run is shown who is approved so it can
+     * say plainly when the sheet asks for somebody who is not, and is never
+     * shown an account number, which it has no use for.
+     */
+    private wire: () => WireSettings = () => ({ chargeAccount: '', format: 'bci', payees: [] }),
   ) {}
 
   /** Live sessions by job id, so one can be stopped on request. */
@@ -1247,6 +1265,7 @@ export class ClaudeAgentExecutor implements Executor {
           timeoutMsFor(role) / 60_000,
           wantsReconciliation(job.prompt) ? reconciliationBrief(prior) : undefined,
           act ? browserActBrief(act.allow) : undefined,
+          wantsNomina(job.prompt) ? nominaBrief(this.wire().payees) : undefined,
         ),
         allowedTools,
         // Named here rather than assembled in the runner, so what a connection

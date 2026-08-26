@@ -1820,6 +1820,42 @@ may carry the other side. A single workbook passes: two sheets are two sides.
 The desk does not say which file is which — that is the run's reading, off
 the headers (D-221 declined the vocabulary).
 
+### Composing a transfer batch, specifically
+
+A sentence that asks for a *nómina*, a *transfer batch* or a *payment file*
+tells the run, in its brief, to deliver `NOMINA.json` beside its report
+(D-268, **Live**): the payment type — `PRV` suppliers, `REM` payroll, `DIV`
+dividends, `OTR` other — and one row per payee carrying a RUT, whole pesos,
+and the bank's paperwork (the factura and the orden de compra, which the
+specification makes obligatory for `PRV` and asks of no other type).
+
+**The run says who and how much. It never says where.** No account number,
+no bank code, no name-on-the-account: those come from the **payee allowlist**
+in Settings, which only a person adds to. So a run cannot pay an approved
+payee's name into an unapproved account — it was never asked for an account.
+The brief names the approved payees to the run so it can say plainly when the
+sheet asks for somebody who is not one; it is never shown their account
+numbers.
+
+At completion the server stamps **only the declaration**. What the allowlist
+makes of it is recomputed at the review card and again at Approve, against
+the list as it stands at that moment — so a payee added in Settings after a
+refusal makes the same batch approvable with no re-run and nothing re-billed.
+**Approve is refused whole and by name** when any payee is outside the list,
+or when no charge account is set; the job stays reviewable. Whole, never
+partial: a nómina is uploaded as one thing, and composing the clean half of
+it is composing half a payment run.
+
+Approving composes the file — `nomina.txt` in the sandbox, as a deliverable —
+and does nothing else. **Nobody is paid by any of it**: the app never calls a
+payment endpoint (D-219, measured by a grep over every server source, not
+asserted), and the act is Brian uploading the file at his bank and pressing
+his own token. The format is BCI's own published specification, thirteen
+delimited columns with its maxima and its types; a value longer than its
+column, or carrying a `;` or `|` the format cannot escape, is refused before
+a byte is written. Santander publishes no layout at all, so its column table
+is **Not built** and waits on the template the bank hands the client inside
+Office Banking.
 ## 13. Reference — every number that binds
 
 ### Turns

@@ -123,6 +123,14 @@ import { sentOn } from './outbox';
 import { wantsWithholding, withholdingLeaks, withholdingRefusal } from './redact';
 import { recordRefusals } from './refusals';
 import {
+  composeNomina,
+  NOMINA_OUTPUT,
+  nominaCheck,
+  nominaRefusal,
+  normalisePayee,
+  payeeProblem,
+} from './nomina';
+import {
   latestRollForward,
   reconciliationRefusal,
   wantsReconciliation,
@@ -158,6 +166,10 @@ import {
   setBrowserAct,
   setConnection,
   setIdentity,
+  setWire,
+  addWirePayee,
+  removeWirePayee,
+  wireSettings,
   writeSettings,
 } from './settings';
 import { clarificationLines, questionsFor, sendFacts, sendToId } from './clarify';
@@ -506,6 +518,10 @@ function makeLevel(dir: string): LevelRuntime {
           // The supervised browser's allowlist and profile, read at the run
           // so an edit in Settings reaches the next job (D-255).
           () => browserActSettings(),
+          // The payee allowlist, read at the run for the same reason (D-268):
+          // a payee added this morning should be named in this afternoon's
+          // batch brief without a restart.
+          () => wireSettings(readSettings(SANDBOX_ROOT)),
         )
       : simulated,
     // Absent without a key, which is what makes the free tier refuse to claim
@@ -910,8 +926,72 @@ app.get('/api/settings', (c) =>
     auth,
     connections: connectionList(),
     browserAct: browserActSettings(),
+    wire: wireSettings(readSettings(SANDBOX_ROOT)),
   } satisfies SettingsInfo),
 );
+
+/**
+ * The wire's charge account and layout (D-268). The payees are their own
+ * routes below, because adding one is a decision and saving a form is not.
+ */
+app.put('/api/settings/wire', async (c) => {
+  const body = await c.req.json<{ chargeAccount?: unknown; format?: unknown }>();
+  if (typeof body.chargeAccount !== 'string') {
+    return c.json({ error: 'chargeAccount must be the account this batch debits' }, 400);
+  }
+  const account = body.chargeAccount.trim();
+  // The layout's own column A: numeric, no dots, at most twelve. Checked
+  // here so the allowlist cannot hold a charge account the composer would
+  // refuse weeks later with a batch already written.
+  if (account && !/^\d{1,12}$/.test(account)) {
+    return c.json(
+      { error: 'a charge account is digits only, up to 12 — leading zeros are kept as you type them' },
+      400,
+    );
+  }
+  const format = body.format ?? 'bci';
+  if (format !== 'bci') {
+    return c.json({ error: 'the only layout built is bci — see D-268 for why' }, 400);
+  }
+  writeSettings(
+    SANDBOX_ROOT,
+    setWire(readSettings(SANDBOX_ROOT), { chargeAccount: account, format }),
+  );
+  return c.json(wireSettings(readSettings(SANDBOX_ROOT)));
+});
+
+/**
+ * A payee added by a person, and only by a person (D-268): there is no route
+ * a run can reach that widens this list, which is the whole of what makes it
+ * an allowlist rather than a cache of whoever has been paid before.
+ */
+app.post('/api/settings/wire/payees', async (c) => {
+  const body = await c.req.json<Record<string, unknown>>();
+  const problem = payeeProblem(body);
+  if (problem) return c.json({ error: problem }, 400);
+  writeSettings(
+    SANDBOX_ROOT,
+    addWirePayee(
+      readSettings(SANDBOX_ROOT),
+      normalisePayee(
+        body as unknown as {
+          rut: string;
+          name: string;
+          bank: string;
+          account: string;
+          accountLabel?: string;
+        },
+      ),
+    ),
+  );
+  return c.json(wireSettings(readSettings(SANDBOX_ROOT)));
+});
+
+/** One-click removal. Taking a payee off is never refused — narrowing is always safe. */
+app.delete('/api/settings/wire/payees/:rut', (c) => {
+  writeSettings(SANDBOX_ROOT, removeWirePayee(readSettings(SANDBOX_ROOT), c.req.param('rut')));
+  return c.json(wireSettings(readSettings(SANDBOX_ROOT)));
+});
 
 /**
  * The supervised browser's allowlist and profile folder (D-255). Hosts arrive
@@ -3148,6 +3228,21 @@ app.get('/api/levels/:lid/jobs/:id/output/:name/preview', async (c) => {
   return c.json(await previewFile(file));
 });
 
+/**
+ * What Approve would do with this job's batch (D-268) — asked by the review
+ * card so the reviewer reads the same verdict the gate will apply, computed
+ * from the allowlist as it stands at the moment of asking rather than as it
+ * stood when the run finished.
+ */
+app.get('/api/levels/:lid/jobs/:id/nomina', (c) => {
+  const rt = getLevel(c.req.param('lid'));
+  if (!rt) return c.json({ error: 'unknown level' }, 404);
+  const job = rt.queue.get(c.req.param('id'));
+  if (!job) return c.json({ error: 'unknown job' }, 404);
+  if (!job.nomina) return c.json({ error: 'this job declared no batch' }, 404);
+  return c.json(nominaCheck(job.nomina, wireSettings(readSettings(SANDBOX_ROOT))));
+});
+
 app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   const rt = getLevel(c.req.param('lid'));
   if (!rt) return c.json({ error: 'unknown level' }, 404);
@@ -3219,6 +3314,21 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   if (body.action === 'promote' && promotable) {
     const unreconciled = reconciliationRefusal(pending);
     if (unreconciled) return c.json({ error: unreconciled }, 400);
+  }
+  /**
+   * The payee gate (D-268), beside the reconciliation gate and before any
+   * send, patch or install: a batch naming somebody nobody approved is
+   * refused whole, by name, with the job still reviewable and nothing
+   * written. The recipient rule of D-082 applied to a file — and asked of
+   * Settings *now*, so adding the payee and pressing Approve again is the
+   * whole fix, with no re-run.
+   *
+   * A clear or a discard pass, as they do at every other gate: neither keeps
+   * anything, and refusing to throw a batch away would be absurd.
+   */
+  if (body.action === 'promote' && promotable) {
+    const unapproved = nominaRefusal(pending, wireSettings(readSettings(SANDBOX_ROOT)));
+    if (unapproved) return c.json({ error: `nómina not composed — ${unapproved}` }, 400);
   }
   /**
    * A reviewed outbox is replayed exactly as a reviewed patch is: at Approve,
@@ -3476,6 +3586,8 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
    * for the outbox, the event loop grants this block for free, and an await
    * introduced into this stretch would silently take it away (D-162).
    */
+  /** How many lines the batch was composed with, so the feed says what landed (D-268). */
+  let composedNomina = 0;
   let movedNow = 0;
   if (
     body.action === 'promote' &&
@@ -3507,6 +3619,30 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
         400,
       );
     }
+  }
+  /**
+   * The batch, composed (D-268). Written only here, only at Approve, and only
+   * once the gate above let it through — the same shape as the patch: the
+   * real thing happens at the moment a person approves it, never when the run
+   * finished. Until then there is no file to upload, which is what "refused
+   * whole" has to mean for a deliverable.
+   *
+   * The composer re-asks the allowlist rather than trusting the gate, and can
+   * still refuse on a column the specification bounds — a payee name of 46
+   * characters is nobody's fault and is not a file the bank would take.
+   */
+  if (body.action === 'promote' && promotable && pending.nomina && !waitingTool) {
+    const wire = wireSettings(readSettings(SANDBOX_ROOT));
+    const composed = composeNomina(pending.nomina, wire);
+    if ('error' in composed) {
+      return c.json({ error: `nómina not composed — ${composed.error}` }, 400);
+    }
+    writeFileSync(
+      path.join(rt.queue.sandboxDir(pending.id), NOMINA_OUTPUT),
+      composed.text,
+      'utf8',
+    );
+    composedNomina = pending.nomina.rows.length;
   }
   // A compiling run's deliverable is the tool, never the clone it tried the
   // tool out in. Found the hard way: the session sensibly ran its own script
@@ -3617,7 +3753,11 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
               ? `approved — sent ${sentNow} via ${(pending.outbox ?? []).map((o) => o.channel).join(' and ')}`
               : installedPack
                 ? `approved — installed the ${installedPack} world`
-                : 'approved') +
+                : composedNomina > 0
+                  ? // Never "paid": nothing was. The file is a deliverable, and
+                    // the act is Brian's token press at the bank (D-219, D-251).
+                    `approved — composed ${NOMINA_OUTPUT}, ${composedNomina} ${composedNomina === 1 ? 'payee' : 'payees'}; upload and authorise it at the bank`
+                  : 'approved') +
             (chainPriced.rows > 0
               ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`
               : '')

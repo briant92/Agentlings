@@ -5,8 +5,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Connection } from './connections';
 import {
+  addWirePayee,
   browserActHosts,
   clearIdentity,
+  removeWirePayee,
+  setWire,
+  wireSettings,
   connectionEnabled,
   enabledNames,
   grantedTools,
@@ -271,5 +275,51 @@ describe('clearIdentity (D-218)', () => {
   it('returns the settings untouched when there was no identity to forget', () => {
     const settings = setIdentity({}, 'telegram', '@bot');
     expect(clearIdentity(settings, 'google')).toBe(settings);
+  });
+});
+
+describe('the wire’s settings (D-268)', () => {
+  const PAYEE = { rut: '76123456-0', name: 'Imprenta Norte SpA', bank: '016', account: '123' };
+
+  it('reads as no account and nobody approved when nothing was ever set', () => {
+    // The default that refuses every batch, which is the right default for
+    // money leaving: a fresh install pays nobody until a person says so.
+    expect(wireSettings({})).toEqual({ chargeAccount: '', format: 'bci', payees: [] });
+  });
+
+  it('records the charge account and the layout, leaving other settings alone', () => {
+    const before = setIdentity({}, 'telegram', '@bot');
+    const after = setWire(before, { chargeAccount: ' 000012345678 ', format: 'bci' });
+    expect(wireSettings(after).chargeAccount).toBe('000012345678');
+    expect(after.identities).toEqual(before.identities);
+  });
+
+  it('keeps the payees when the account is changed, and the account when a payee is added', () => {
+    const withAccount = setWire({}, { chargeAccount: '111', format: 'bci' });
+    const withPayee = addWirePayee(withAccount, PAYEE);
+    expect(wireSettings(withPayee)).toEqual({
+      chargeAccount: '111',
+      format: 'bci',
+      payees: [PAYEE],
+    });
+    const moved = setWire(withPayee, { chargeAccount: '222', format: 'bci' });
+    expect(wireSettings(moved).payees).toEqual([PAYEE]);
+  });
+
+  it('replaces the payee with that RUT rather than keeping two of them', () => {
+    // Two rows for one RUT would make "which account does this payee use" a
+    // question with two answers, and the composer takes the first.
+    const moved = { ...PAYEE, account: '999', name: 'Imprenta Norte SpA' };
+    const list = wireSettings(addWirePayee(addWirePayee({}, PAYEE), moved)).payees;
+    expect(list).toHaveLength(1);
+    expect(list[0]!.account).toBe('999');
+  });
+
+  it('takes one off by RUT and leaves the others', () => {
+    const other = { rut: '9876543-3', name: 'Ana Rivas', bank: '037', account: '77712345' };
+    const both = addWirePayee(addWirePayee({}, PAYEE), other);
+    expect(wireSettings(removeWirePayee(both, PAYEE.rut)).payees).toEqual([other]);
+    // Removing one nobody has is not an error — narrowing is always safe.
+    expect(wireSettings(removeWirePayee(both, '1-9')).payees).toHaveLength(2);
   });
 });

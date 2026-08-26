@@ -277,6 +277,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-265 — 2026-08-25 — A voice note is a sentence, built: Telegram audio polled off the bot and read on this machine by whisper-small through transformers.js, the language asked of the model first and silence gated by energy, quoted back above the work bar and confirmed by the ordinary Start with the audio riding the job — the install one step proven 4/4, the routes and a real note owed on the restart](#d-265--2026-08-25--a-voice-note-is-a-sentence-built-telegram-audio-polled-off-the-bot-and-read-on-this-machine-by-whisper-small-through-transformersjs-the-language-asked-of-the-model-first-and-silence-gated-by-energy-quoted-back-above-the-work-bar-and-confirmed-by-the-ordinary-start-with-the-audio-riding-the-job--the-install-one-step-proven-44-the-routes-and-a-real-note-owed-on-the-restart)
 - [D-266 — 2026-08-26 — Buk, read-only, built: five reads taken off Buk's own published contract behind a stdio adapter that can issue nothing but `GET`, the tenant configuration and the key a secret — proven 30/30 against the real adapter, the real contract and the real Buk with no key; the door not installed here and one real payroll owed](#d-266--2026-08-26--buk-read-only-built-five-reads-taken-off-buks-own-published-contract-behind-a-stdio-adapter-that-can-issue-nothing-but-get-the-tenant-configuration-and-the-key-a-secret--proven-3030-against-the-real-adapter-the-real-contract-and-the-real-buk-with-no-key-the-door-not-installed-here-and-one-real-payroll-owed)
 - [D-267 — 2026-08-26 — The SII register, read-only, built: the ticket's own premise was false, so the certificate login is ours — three reads behind a stdio adapter whose credential is a `.p12` and which holds no portal password, proven 33/33 against the real adapter and the real SII with no certificate; the door not installed here and one real month owed](#d-267--2026-08-26--the-sii-register-read-only-built-the-tickets-own-premise-was-false-so-the-certificate-login-is-ours--three-reads-behind-a-stdio-adapter-whose-credential-is-a-p12-and-which-holds-no-portal-password-proven-3333-against-the-real-adapter-and-the-real-sii-with-no-certificate-the-door-not-installed-here-and-one-real-month-owed)
+- [D-268 — 2026-08-26 — The wire file, built: the run says who and how much, the allowlist says where, and BCI's is the only specification anybody publishes](#d-268--2026-08-26--the-wire-file-built-the-run-says-who-and-how-much-the-allowlist-says-where-and-bcis-is-the-only-specification-anybody-publishes)
 
 ## By theme
 
@@ -1111,7 +1112,14 @@ entry updates one file rather than two.
   no certificate, the door not installed and both live boxes owed on a
   `.p12`; and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
-  `HORDE.md` §4
+  `HORDE.md` §4. D-268 closes the line's last ticket: the wire file built
+  (#20) — a run says who and how much and the allowlist says where, so a
+  changed account number is not a case that exists; the verdict asked
+  fresh so adding the payee makes the same batch approvable; the file
+  written at Approve and nowhere else; Santander publishes no layout at
+  all, so the format is BCI's own published specification and Santander
+  joins the column table when its Office Banking template arrives; D-219
+  measured by grep rather than asserted; proven 37/37, one real batch owed
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
 
@@ -21451,3 +21459,127 @@ and both turned out to be a bug in the tests rather than a gap in them: two of
 the three tools were handed an argument they refuse, so they passed the wire
 check without ever reaching the wire. Whole suite **2548 server, 353 web**;
 typecheck clean.
+
+## D-268 — 2026-08-26 — The wire file, built: the run says who and how much, the allowlist says where, and BCI's is the only specification anybody publishes
+
+**Decision.** #20 as D-251 asked for it, with one thing D-251 could not have
+known. A transfer batch is composed here as a deliverable and authorised at the
+bank by hand; the payee allowlist lives in Settings; a batch naming somebody
+outside it is refused **whole** at review with the payee named. Three choices
+inside that shape are this entry's:
+
+1. **A run says who and how much; the allowlist says where.** `NOMINA.json`
+   carries a RUT, an amount and the bank's paperwork, and carries no account
+   number, no bank code and no name-on-the-account — those come from the
+   allowlist a person typed. So the case where a run keeps an approved payee's
+   name and quietly changes their account number **does not exist**: the run
+   was never asked for an account. That is what makes the gate a set
+   membership on a RUT rather than a diff of bank coordinates, and it is why
+   the brief names the approved payees to the run but never their accounts.
+2. **The verdict is asked fresh, never stamped.** The queue keeps only the
+   declaration. What the allowlist makes of it is recomputed at the card and
+   at Approve, so adding the payee in Settings and pressing Approve again is
+   the whole fix, with no re-run and nothing re-billed. A verdict frozen at
+   completion would have been the D-026 shape — a gate shipping inert against
+   the state it exists to read.
+3. **The file is written at Approve and nowhere else.** Like the patch: until
+   a person approves, there is no file to upload. That is what "refused whole"
+   has to mean for a deliverable — not a file with the stranger's line left
+   out, and not a file that exists and is merely disapproved of.
+
+`server/src/nomina.ts` holds all of it — the contract, the RUT, the layout,
+the gate, the composer, the brief. The columns are `BCI_LAYOUT`; a second bank
+joins that table and nothing else changes.
+
+### The ticket's third box moved, because Santander publishes nothing
+
+The acceptance asked that the format be *validated against the bank's own
+specification, cited in the D-entry*. D-251 named Santander, where Brian
+actually banks. Measured 2026-08-26:
+
+- **Santander Chile publishes no layout at all.** `banco.santander.cl/empresas/pagos-masivos`
+  answers 403 to a non-browser; no specification exists anywhere public; the
+  Office Banking contract PDFs (Nov 2021, Feb 2022, Jul 2022) cover the
+  service and never the bytes. The ERP vendors that generate one — Manager+'s
+  SANTANDER8, Buk, Talana — document only *that* they build "la estructura
+  requerida por el banco", never a single field. Its layout is a template the
+  bank hands the client **inside** Office Banking.
+- **BCI publishes its own, in full.** *Estructura Archivos — Pago de nómina en
+  línea*, 5 pages, read 2026-08-26:
+  `http://www.bci.cl/medios/2012/empresarios/capacitacion_pnol/archivos/estructura.pdf`
+  — thirteen columns in order, each with its maximum and its type, the four
+  `Tipo de Pago` codes, both allowed delimiters, and a screenshot of a correct
+  file.
+
+Brian chose: build to BCI's now, Santander joins the table the day he pastes
+its template. Everything except the thirteen-row column table is
+bank-independent, so that day is a table, not a rebuild.
+
+### What the specification said that a guess would have got wrong
+
+Every one of these changed the code:
+
+- **Both the factura and the orden de compra are obligatory for PRV** (its
+  note 1) and asked for by neither of the other types. A composer that
+  required them always would refuse every payroll run; one that never
+  required them would produce a supplier file the bank rejects.
+- **Four payment-type codes, not a free string**: PRV, REM, DIV, OTR.
+- **Column B is Cuenta Destino and column C is Banco Destino** — account
+  first, then bank. Reversed, every line stays well-formed and pays nobody
+  right; the proof pins the order on a line it can read.
+- **The delimiter is `;` or `|`, and nothing escapes either.** So a payee
+  called `Norte;Sur` does not make a malformed line the bank rejects — it
+  makes a **well-formed line with fourteen fields**, which is a different
+  payment. Both delimiters are refused inside a value whichever one is
+  written.
+- **Its own example line's RUT does not pass modulo-11.** The specification's
+  page 5 shows `123455678;3`, and 123455678 checks to 5. Fabricated example
+  digits — so the proof reproduces the line byte for byte except the two RUT
+  columns, and says so rather than quietly weakening the check to match a
+  typo in a PDF.
+
+Four things it does **not** settle, chosen once and written down rather than
+left to be discovered: the delimiter is `;` (its own example's); there is **no
+padding** — the table gives maxima, not widths, the file is delimited, and its
+example pads column B to 17 where the maximum is 18, so no padding rule can be
+read off it and those leading zeros are simply the customer's account number
+as typed; line endings are CRLF, as its Notepad screenshot shows; and the
+encoding is **UTF-8**, which it never states. The encoding is the one the
+first real upload will settle — refusing non-ASCII was never an option, since
+an ordinary Chilean supplier name carries an ñ.
+
+The RUT's check digit is computed here rather than asked of `@emisso/sii`,
+whose `validateRut` D-267 measured calling `761234560` valid while its own
+`splitRut` threw on it. A money file is not the place to hold a dependency
+already measured disagreeing with itself. `sii.ts` keeps its wrapper — it is a
+proven door and this ticket had no business rewriting it — so the overlap is
+one implementation here and one library call there, named so the next person
+sees it rather than finds it.
+
+### D-219 stands, and is measured rather than asserted
+
+The app never calls a payment endpoint. That is worth nothing as a sentence in
+a comment, so the proof greps all 94 server sources for a `fetch`/`axios`
+against a `/payment`, `/transfer`, `/pago` or `/transferencia` path — the check
+that fails the day somebody adds one. Approve writes one file and the feed
+says *composed nomina.txt, N payees; upload and authorise it at the bank* —
+never "paid", never "sent", because nothing was.
+
+### What proved it
+
+`npx tsx scripts/prove-nomina.mts` — **37/37**, no server, no bank, no money,
+nothing written outside a throwaway temp folder. Six sections: the format
+against BCI's own table and example line; the contract's named refusals; the
+gate refusing a stranger whole with the two approved payees composed nowhere;
+the same declaration becoming approvable when the payee is added and refused
+again when they are removed; the format's own rules (a smuggled delimiter, a
+46-character name, a bank name where the code goes); and the payment-endpoint
+grep. `prove-buk-door.mts` still 30/30 and `prove-sii-door.mts` still 33/33.
+
+**OWED — the ticket's fourth box.** One real batch composed here, uploaded at
+Santander and authorised by hand. That needs Brian's charge account, his real
+payees, his Office Banking template for the Santander column table, and his
+token. The proof's last line says NOT proven end to end until then, and the
+issue stays open.
+
+Whole suite **2597 server, 359 web**; typecheck clean.

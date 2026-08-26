@@ -206,6 +206,71 @@ export function SettingsModal({
       setActNote({ text: err instanceof Error ? err.message : 'could not save', error: true });
     }
   };
+  /**
+   * The payee allowlist's form (D-268). The list itself lives on `settings`
+   * and is the server's answer after every write — never a local copy kept in
+   * step, because a list of who may be paid that disagreed with the server's
+   * would be the worst possible thing to be wrong about.
+   */
+  const wire = settings?.wire ?? null;
+  const [chargeAccount, setChargeAccount] = useState('');
+  const [payee, setPayee] = useState({
+    rut: '',
+    name: '',
+    bank: '',
+    account: '',
+    accountLabel: '',
+  });
+  const [wireNote, setWireNote] = useState<{ text: string; error?: boolean } | null>(null);
+  useEffect(() => {
+    if (settings) setChargeAccount(settings.wire.chargeAccount);
+  }, [settings?.wire.chargeAccount]);
+  /** Every wire write answers with the whole settings, which replaces the list. */
+  const putWire = async (path: string, init?: RequestInit) => {
+    const saved = await api<SettingsInfo['wire']>(path, init);
+    setSettings((prev) => (prev ? { ...prev, wire: saved } : prev));
+    return saved;
+  };
+  const saveWire = async () => {
+    setWireNote(null);
+    try {
+      const saved = await putWire('/api/settings/wire', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ chargeAccount, format: wire?.format ?? 'bci' }),
+      });
+      setWireNote({
+        text: saved.chargeAccount
+          ? `saved — batches debit account ${saved.chargeAccount}`
+          : 'saved — no charge account, so every batch is refused until you set one',
+      });
+    } catch (err) {
+      setWireNote({ text: err instanceof Error ? err.message : 'could not save', error: true });
+    }
+  };
+  const addPayee = async () => {
+    setWireNote(null);
+    try {
+      await putWire('/api/settings/wire/payees', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payee),
+      });
+      setWireNote({ text: `added ${payee.name.trim()} — batches may name them` });
+      setPayee({ rut: '', name: '', bank: '', account: '', accountLabel: '' });
+    } catch (err) {
+      setWireNote({ text: err instanceof Error ? err.message : 'could not add', error: true });
+    }
+  };
+  const removePayee = async (rut: string) => {
+    setWireNote(null);
+    try {
+      await putWire(`/api/settings/wire/payees/${encodeURIComponent(rut)}`, { method: 'DELETE' });
+      setWireNote({ text: `removed ${rut} — a batch naming them is now refused` });
+    } catch (err) {
+      setWireNote({ text: err instanceof Error ? err.message : 'could not remove', error: true });
+    }
+  };
   /** A Google sign-in tab is open; the server flips ready when it comes back. */
   const [googlePending, setGooglePending] = useState(false);
   /** The connected row's re-approve (D-123): sent, or why it could not be. */
@@ -810,6 +875,121 @@ export function SettingsModal({
                   </div>
                 </Section>
               )}
+              {/* The payee allowlist (D-268). On this board because it is the
+                  same question the rows above answer — what a review may let
+                  out — even though nothing here is sent: approving a batch
+                  writes a file, and you authorise it at the bank yourself. */}
+              <Section
+                panel="settings"
+                id="wire"
+                label="payee allowlist — who a transfer batch may pay"
+                count={wire ? wire.payees.length : '…'}
+                summary={
+                  wire?.chargeAccount
+                    ? `from account ${wire.chargeAccount}`
+                    : 'no charge account set'
+                }
+              >
+                <div className="secret-drawer">
+                  <p className="dim secret-note">
+                    A nómina is composed here and authorised at your bank by hand — the app never
+                    calls a payment endpoint. A run says who and how much; the bank, the account
+                    and the name on the file come from this list, and only you add to it. A batch
+                    naming anybody who is not here is refused whole at review, with the payee
+                    named.
+                  </p>
+                  <div className="secret-row">
+                    <input
+                      type="text"
+                      placeholder="charge account — the account a batch debits, digits only"
+                      aria-label="wire charge account"
+                      value={chargeAccount}
+                      spellCheck={false}
+                      onChange={(e) => setChargeAccount(e.target.value)}
+                    />
+                    <button onClick={() => void saveWire()}>Save</button>
+                  </div>
+                  {wire?.payees.length ? (
+                    <ul className="wire-payees">
+                      {wire.payees.map((payee) => (
+                        <li key={payee.rut}>
+                          <span className="wire-who">
+                            <b>{payee.name}</b> · {payee.rut}
+                          </span>
+                          <span className="wire-where">
+                            banco {payee.bank} · cuenta {payee.account}
+                            {payee.accountLabel ? ` · ${payee.accountLabel}` : ''}
+                          </span>
+                          {/* One click, no arming: taking a payee off can only
+                              ever narrow what may be paid, so a confirmation
+                              would guard the safe direction. */}
+                          <button
+                            className="wire-rm"
+                            aria-label={`remove ${payee.name}`}
+                            onClick={() => void removePayee(payee.rut)}
+                          >
+                            remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="dim">
+                      Nobody is on the list, so every batch is refused. Add the first payee below.
+                    </p>
+                  )}
+                  <div className="secret-row">
+                    <input
+                      type="text"
+                      placeholder="RUT — 76123456-0"
+                      aria-label="payee RUT"
+                      value={payee.rut}
+                      spellCheck={false}
+                      onChange={(e) => setPayee({ ...payee, rut: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      placeholder="name — as it goes on the file"
+                      aria-label="payee name"
+                      value={payee.name}
+                      spellCheck={false}
+                      onChange={(e) => setPayee({ ...payee, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="secret-row">
+                    <input
+                      type="text"
+                      placeholder="bank code — 016"
+                      aria-label="payee bank code"
+                      value={payee.bank}
+                      spellCheck={false}
+                      onChange={(e) => setPayee({ ...payee, bank: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      placeholder="account number — digits only"
+                      aria-label="payee account number"
+                      value={payee.account}
+                      spellCheck={false}
+                      onChange={(e) => setPayee({ ...payee, account: e.target.value })}
+                    />
+                  </div>
+                  <div className="secret-row">
+                    <input
+                      type="text"
+                      placeholder="account enrolled as — only if it is not already enrolled"
+                      aria-label="payee enrolled account name"
+                      value={payee.accountLabel}
+                      spellCheck={false}
+                      onChange={(e) => setPayee({ ...payee, accountLabel: e.target.value })}
+                    />
+                    <button onClick={() => void addPayee()}>Add payee</button>
+                  </div>
+                  {wireNote && (
+                    <p className={wireNote.error ? 'error' : 'dim'}>{wireNote.text}</p>
+                  )}
+                </div>
+              </Section>
             </>
           )}
           {tab === 'app' && (

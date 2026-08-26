@@ -5,6 +5,7 @@ import type {
   DeliveryFile,
   DeliverySummary,
   Job,
+  NominaCheck,
   PackDraft,
   Quote,
   SendApprovalInfo,
@@ -25,6 +26,7 @@ import { TurnsStrip } from './TurnsStrip';
 import { moveRows, movesLeft, movesSummary } from './moves';
 import { adjustmentLine, amountText, balanceWording, countsLine } from './reconcile';
 import { noSendLine } from './noSend';
+import { batchLine, payeeLine, verdictWording } from './nomina';
 import { allLooks, renderScenePreview } from '../world/looks';
 
 /**
@@ -99,6 +101,8 @@ export function ReviewModal({
   /** What the next leg receives, from the list the copy is made from (UI.md, step 10). */
   const [carries, setCarries] = useState<CarryManifest | null>(null);
   const [clarify, setClarify] = useState('');
+  /** What Approve would do with this job's transfer batch (D-268), or null when it declared none. */
+  const [nomina, setNomina] = useState<NominaCheck | null>(null);
   const [busy, setBusy] = useState(false);
   const approveRef = useRef<HTMLButtonElement>(null);
   // Either limit reads as cut (D-138): a run stopped by the clock is as
@@ -176,6 +180,35 @@ export function ReviewModal({
       alive = false;
     };
   }, [levelId, job.id, canCarryOn]);
+
+  /**
+   * What Approve would do with this job's batch (D-268).
+   *
+   * Fetched rather than read off the job for the same reason the quote is
+   * fetched: the verdict belongs to the allowlist as it stands now, not as it
+   * stood when the run finished — so adding the payee in Settings and coming
+   * back shows the batch approvable, with no re-run. Reopening the card is
+   * what re-asks; a refused Approve leaves the job reviewable, which is what
+   * makes that second look possible at all.
+   */
+  useEffect(() => {
+    if (!job.nomina) {
+      setNomina(null);
+      return;
+    }
+    let alive = true;
+    void api<NominaCheck>(lvl(levelId, `/jobs/${job.id}/nomina`))
+      .then((check) => {
+        if (alive) setNomina(check);
+      })
+      // A verdict that will not load must not hide the batch: the rows the
+      // run declared are still worth reading, and Approve applies the gate
+      // whatever this card managed to say.
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [levelId, job.id, job.nomina]);
 
   // Approve takes focus, so a run you already trust is one keystroke after
   // REVIEW — the speed the terminal's bare Approve used to give (D-114).
@@ -608,6 +641,38 @@ export function ReviewModal({
                 {countsLine(job.reconciliation)} · Approve recomputes both sides from the run's own
                 adjustments and refuses when they differ. It checks the arithmetic the run declared
                 — not that every line was matched rightly; the lists are in RECONCILIATION.json.
+              </p>
+            </div>
+          )}
+          {/* The transfer batch (D-268): who the run says to pay and how much,
+              each line against the payee allowlist, and what Approve would do.
+              Above the files with the withheld and reconciliation panels — a
+              batch is the thing being reviewed, not a footnote after it. */}
+          {job.nominaError && (
+            <p className="rv-error">
+              {job.nominaError} — approving composes nothing until the run writes it properly.
+            </p>
+          )}
+          {job.nomina && nomina && (
+            <div className="rv-withheld">
+              <div className="rv-withheld-t">Transfer batch — {batchLine(nomina)}</div>
+              <ul className="rv-withheld-list">
+                {nomina.rows.map((row, i) => (
+                  <li
+                    key={`${row.rut}-${i}`}
+                    className={row.allowed ? 'rv-payee' : 'rv-payee rv-payee-no'}
+                  >
+                    <span className="rv-withheld-what">{payeeLine(row)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className={nomina.refusal ? 'rv-recon-bad' : 'rv-recon-ok'}>
+                {verdictWording(nomina)}
+              </p>
+              <p className="rv-withheld-foot">
+                The run said who and how much; where the money goes comes from the payee allowlist
+                in Settings, and only a person adds to it. Nothing here reaches a bank: the app
+                never calls a payment endpoint, and the file is authorised by your own token.
               </p>
             </div>
           )}

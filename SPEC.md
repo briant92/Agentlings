@@ -437,7 +437,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.7 your own notes → D-046–D-051 · M5.8 finding a page → D-052–D-055
 - M5.9 reading the crew record → D-056, D-057
 - M5.10 reading what you keep → D-058–D-062
-- M5.11 connections that send → D-075–D-077, D-097
+- M5.11 connections that send → D-075–D-077, D-097 · the wire file, a batch composed here and authorised at the bank by hand → D-219, D-251, D-268
 - M5.12 the recurrence timer → D-103 · mail triggers and one reply → D-248 ·
   a rule holds only the doors it names → D-254 · a voice note is a sentence → D-265
 - M5.13 the acting surface finished → D-104
@@ -1077,6 +1077,19 @@ tried, measured and rejected is in `DECISIONS.md`:
     stays reviewable. Credentials are a Connect button for the OAuth pair
     and paste-a-token for everything else, passwords never (D-076).
 
+    **The one thing beside a send that Approve lets out is a file (D-268,
+    built).** A sentence asking for a *nómina* has the run write
+    `NOMINA.json` — who and how much, and never where: the bank, the account
+    and the name on the file come from a **payee allowlist** in Settings that
+    only a person adds to. Approve checks every payee against it and **refuses
+    the whole batch by name** if one is outside, exactly as a send is refused
+    for an unapproved recipient; inside, it composes `nomina.txt` in the bank's
+    upload format as a deliverable. The verdict is recomputed at every ask, so
+    adding the payee makes the same batch approvable with no re-run. Nothing is
+    paid: the app has no payment endpoint (D-219 stands, and the proof greps for
+    one), and the act is uploading the file and pressing the bank's own token.
+    The format is BCI's published specification; Santander publishes none, so
+    its column table waits on the template the bank hands the client.
     Slices, in the approved order — the review path exists before anything
     can ask to send:
     - [x] **Outbox + review.** `outbox.ts` (contract + validation),

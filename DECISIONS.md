@@ -1073,8 +1073,9 @@ entry updates one file rather than two.
   the allowlist and profile folder in Settings, the runner owning a headed
   Edge window that Playwright MCP attaches to over CDP, a navigate off the
   list refused on the trail, the window's close ending the run, proven
-  live 19/19 through the real runner and the routes owed on the restart;
-  and D-257, Brian as the manager, D-197 standing, a planner-only
+  live 19/19 through the real runner and 24/24 on the restart with two HQ
+  jobs (`72f85086` filled and submitted the form, `edceccd3` refused on
+  its trail); and D-257, Brian as the manager, D-197 standing, a planner-only
   manager the reopen shape. The order of the fourteen tickets is
   `HORDE.md` §4
 
@@ -20766,14 +20767,27 @@ seconds of opening**, before the SDK's first turn; the runner reported each
 as closed and the proof read as failed, both correctly — the script now
 says on screen to leave the windows open.
 
-**Owed on the next restart** (not restarted from a session — a second
-instance shares `.agentlings/` and would double-fire the armed rows):
-`node scripts/prove-browser-act.mjs` — the door as Settings lists it, the
-allowlist saved and read back as bare hosts, a relative profile folder
-refused, a schedule and a mail rule naming the door refused by name, then
-two hand-queued HQ jobs holding exactly `browser-act`: the form filled and
-submitted with every step on its trail, and the off-list domain refused on
-its trail. The Settings form has no headless-Edge script of its own.
+**Proven live on the restart, the same night — `node
+scripts/prove-browser-act.mjs` 24/24.** The door listed as a read door,
+supervised, off; the allowlist saved from a pasted `https://WWW.Selenium.dev/…,
+Example.COM/path` and read back as `www.selenium.dev, example.com`, the
+profile folder defaulting under `.agentlings/`, a relative folder refused;
+a schedule and a mail rule naming the door both answered 400 with *"browser-act"
+is supervised — only a job you queue by hand can hold it, never a rule or a
+schedule*, seven rows on HQ and none holding it; then two hand-queued HQ
+jobs holding exactly `["browser-act"]` on disk: **`72f85086`** navigated,
+filled (`browser_fill_form`) and submitted (`browser_click`) the form with
+every call and result on its trajectory, no refusal, RESULT.md quoting the
+confirmation page — 11 calls, $0.43, in review for Brian's promote; and
+**`edceccd3`** with its only navigate refused in the run — `refused:
+example.com is not on the browser-act allowlist (www.selenium.dev)` on its
+trajectory — and still done on its own result, $0.25. The script put the
+allowlist back and switched the door off. Its first run stopped on its own
+reader: `jobs.json` read mid-write is torn JSON, the throw ran the
+`finally`, and the allowlist was emptied under a job just queued
+(`c855e85c`, cancelled by hand, no cost) — the reader now answers a torn
+read from its last whole one. The Settings form has no headless-Edge script
+of its own.
 
 **The review's catches, taken.** The server proof's *nothing was armed*
 read the bare body of `GET /schedules` (which answers `{schedules}`) and

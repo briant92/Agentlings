@@ -344,9 +344,12 @@ and `browser_click`, the confirmation page read back into RESULT.md (11
 calls, $0.60); a navigate to a domain off the list refused before it was
 made, the reason on the observation line, the run ending with its own
 result ($0.31); the window ended mid-run, the runner's one sentence the
-last line, no result and no RESULT.md. The routes — the Settings form, the
-rule refusal, two hand-queued HQ jobs — are `prove-browser-act.mjs`, owed
-on the next restart.
+last line, no result and no RESULT.md. **And on the restarted server the
+same night, `node scripts/prove-browser-act.mjs` 24/24:** the allowlist
+round trip, a schedule and a mail rule refused by name, then HQ job
+`72f85086` filling and submitting the form with every step on its
+trajectory ($0.43, in review) and HQ job `edceccd3` with its navigate
+refused in the run and named on its trajectory ($0.25).
 
 **Measured again in production, and the case is still weak** (D-053). A run
 sent looking for a fact it could not search for spent ten tool calls in the

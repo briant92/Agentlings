@@ -53,9 +53,18 @@ const connectionList = async () => {
   return Array.isArray(body) ? body : body.connections ?? [];
 };
 const jobsFile = path.join(ROOT, '.agentlings', 'levels', LEVEL, 'jobs.json');
+// The server rewrites jobs.json whole; a read that lands mid-write is torn
+// JSON, not a missing job. The first live run threw on exactly that, and the
+// throw ran the `finally` — emptying the allowlist under a job just queued.
+let lastGood = [];
 const readJob = (id) => {
-  const parsed = JSON.parse(readFileSync(jobsFile, 'utf8'));
-  return (Array.isArray(parsed) ? parsed : parsed.jobs ?? []).find((j) => j.id === id);
+  try {
+    const parsed = JSON.parse(readFileSync(jobsFile, 'utf8'));
+    lastGood = Array.isArray(parsed) ? parsed : parsed.jobs ?? [];
+  } catch {
+    // torn — answer from the last whole read; the next poll re-reads
+  }
+  return lastGood.find((j) => j.id === id);
 };
 const waitFor = async (id) => {
   const started = Date.now();

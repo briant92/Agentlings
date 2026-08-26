@@ -21847,14 +21847,26 @@ claimed" means when the row and the key are not the same thing.
   sentence with no line and no tail; a WhatsApp sentence with its ask card and
   no line; and `refusals.jsonl` byte-identical before and after.
 
-**OWED.** The live proof has not run. The API was not listening when this was
-built (Vite was up on 5173, nothing on 4600), and a session must not start or
-restart the server: `npm run serve` does not watch, so the running server
-would be stale anyway, and starting one fires the armed rows — HQ's Monday
-report `15548352` and the two mail rules `c9bc102f` and `c4a97302` — which
-would spend money and send real mail. So the script is written and refuses a
-server older than #22 by name, and the ticket's fourth acceptance box stays
-unticked until Brian runs `npm run serve` and the script against it.
+**PROVEN LIVE, 2026-08-26: `node scripts/prove-refusal-ui.mjs` — 21/21, all
+PASS, run twice.** Brian started `npm run serve` and the script ran against
+the real server in headless Edge; Start was never pressed and nothing was
+queued. The desk drew the whole line — *this asks for a payment — Never moves
+money or takes it: payments are on the shelf of never (D-219). It will prepare
+the payment for you to make.* — and the reason matched `BOUNDARIES.why` read
+off `coverage.ts` **byte for byte**, so the desk and the positions board are
+one string in fact and not only by construction. The screen drew the two rows
+in the order the route sent (`["money","act"]`), which is the check round
+three had to split out because folded into the content condition it could
+never have failed. Start was undisabled throughout, ordinary work drew nothing,
+and the never-channel got its ask card and no line. **`refusals.jsonl`:
+904 → 904 bytes**, unchanged across a run made entirely of refusing sentences
+— D-259's rule holding where it is easiest to break.
+
+That was the ticket's fourth box, and #22 has no others outstanding. Until it
+ran, the entry said so: a session must not start or restart the server itself,
+because `npm run serve` does not watch and starting one fires the armed rows —
+HQ's Monday report `15548352` and the mail rules `c9bc102f` and `c4a97302` —
+which would spend money and send real mail.
 
 ### What review changed, on top of the two above
 

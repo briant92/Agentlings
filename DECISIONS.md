@@ -284,6 +284,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-272 — 2026-08-27 — One origin: the server serves the built bundle from its own port, in front of the gate because the sign-in is part of the bundle](#d-272--2026-08-27--one-origin-the-server-serves-the-built-bundle-from-its-own-port-in-front-of-the-gate-because-the-sign-in-is-part-of-the-bundle)
 - [D-273 — 2026-08-27 — D-169 and D-174 reopen on a motive neither listed: Agentlings is published as a template others self-host, and the reference install is measured rather than described](#d-273--2026-08-27--d-169-and-d-174-reopen-on-a-motive-neither-listed-agentlings-is-published-as-a-template-others-self-host-and-the-reference-install-is-measured-rather-than-described)
 - [D-274 — 2026-08-27 — The fourth status: *Not available hosted* is read off five probes and held there by a test, and the README is written for a person deploying rather than for a person browsing](#d-274--2026-08-27--the-fourth-status-not-available-hosted-is-read-off-five-probes-and-held-there-by-a-test-and-the-readme-is-written-for-a-person-deploying-rather-than-for-a-person-browsing)
+- [D-275 — 2026-08-27 — Repo work from a URL: one reader decides what a level's repo is, and *promote* stops meaning "apply a patch" and starts meaning "push a branch and open a pull request"](#d-275--2026-08-27--repo-work-from-a-url-one-reader-decides-what-a-levels-repo-is-and-promote-stops-meaning-apply-a-patch-and-starts-meaning-push-a-branch-and-open-a-pull-request)
 
 ## By theme
 
@@ -1038,7 +1039,20 @@ entry updates one file rather than two.
   install needs two, because there is nowhere in the app to paste a model
   key, closing it properly needs a new route with a weaker rule than
   D-078/D-081 plus re-deciding `useClaude` after a paste, and the spec is
-  the thing that is wrong. Do not re-open it; cite D-274
+  the thing that is wrong. Do not re-open it; cite D-274; and **D-275, the
+  first capability built after publishing** — repo work from a URL. A
+  level's repo may be a GitHub URL, decided by ONE reader
+  (`repoTarget` in `packages/shared`, asked by the clone, the promote, the set
+  route and the review card) rather than by a second field, and *promote* on
+  one means a branch pushed and a pull request opened instead of a patch
+  applied. The two halves are recorded SEPARATELY (`PromotedTo`) because a
+  token that can push and cannot open a pull request leaves the work on the
+  remote — neither a failure nor an approval. The token is the existing
+  `GITHUB_TOKEN`, handed to git as a TRANSIENT `http.extraHeader` so the clone
+  the session works in holds no credential, and `openPullRequest` is
+  deliberately NOT a tool, so a session still cannot push. The composition —
+  not either half — is the seam that got a function and a test, per D-030. The
+  live proof against the reference install is OWED
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -23136,3 +23150,149 @@ takes with `AGENTLING.md` and the code.
 install to "copy .env.example → .env and restart the dev server", which is
 advice with nowhere to act on it on a host. Fixing the drawer is not this
 slice's ticket and is not smuggled into it.
+
+## D-275 — 2026-08-27 — Repo work from a URL: one reader decides what a level's repo is, and *promote* stops meaning "apply a patch" and starts meaning "push a branch and open a pull request"
+
+Slice 8 of the publish line (issue #26, spec #27), and the first capability
+built *after* publishing rather than to make publishing possible. D-273 and
+D-274 left the desk honest about what a hosted install cannot do; five
+capabilities carry *Not available hosted*, and the first of them — `repo work
+from a local path` — is the one that contradicts the sentence on the tin. "A
+horde that picks up real coding jobs" was, on a hosted install, exactly the
+thing refused.
+
+Both ends were a path on this disk: `git clone --local --no-hardlinks
+<repoPath>` into the sandbox, and `git apply DIFF.patch` back onto that same
+path at Approve. Neither half survives a container, and neither is fixable
+without deciding what *promote* means when there is no working tree to apply
+anything to.
+
+### The three questions the ticket held open, and how each was answered
+
+**Branch push vs. pull request at promote** — both, as one Approve. The button
+on a URL-backed level reads *Approve & open a pull request*, and the card says
+before it is pressed which branch it will push and that the pull request goes
+against the default branch. A branch alone would leave the delivery one click
+short of reviewable by whoever owns the repository, which is the whole point of
+promoting to a repository you do not own.
+
+The two are nevertheless **recorded separately**, and that is the part worth
+keeping. `PromotedTo` is `{ branch, prNumber?, prUrl?, prError? }`, because the
+push is durable and the pull request is refusable independently of it: a token
+that can push and cannot open one leaves the work *on the remote* and no pull
+request. Reporting that as a failure would be false — the branch is there — and
+reporting it as "approved" would be false too. The card says *The branch is
+pushed*, names it, and gives the reason the pull request was not opened. The
+event feed says the same thing, because the feed is the record.
+
+**A new level kind, or `repoPath` allowed to hold a URL** — the same field,
+with **one reader**: `repoTarget()` in `packages/shared`, answering `path` |
+`url` | `unsupported`. The clone side, the promote side, the route that sets a
+level's repo and the review card all ask it. The alternative — a second
+`repoUrl` field — turns every one of the ~30 existing `repoPath` reads into a
+pair and re-derives "does this level have a repo" in each of them, which is
+precisely the duplicated notion D-030 keeps charging for. No migration: a
+`level.json` written before today still reads as `path`.
+
+It lives in `packages/shared` rather than in `gitwork.ts` for the same reason:
+the review card has to describe the Approve it is about to cause, and a web
+copy of the rule would be the same duplication with a language boundary through
+the middle. `palette.ts` is the precedent — shared code, tests in `server/src`.
+
+`unsupported` carries **the sentence a person reads**, not a boolean. Every
+other answer here is a refusal with nowhere to say why, which is D-269's lesson
+applied one file earlier.
+
+**Where the token lives** — `GITHUB_TOKEN`, the one that already exists for the
+code-host door, in the secrets file under the data directory via Settings
+(D-078, D-270). One credential for one code host. The read/act line is **not**
+weakened by this and is not enforced by the token's scopes: it is enforced by
+which tools exist. `openPullRequest` lives in `github.ts` beside the read tools
+and is deliberately **not one of them** — `catalog.test.ts` still asserts the
+twelve acting tools of the reference server are absent, and a test here asserts
+no tool is named `open_pull_request` either. A session cannot reach it; the
+route calls it when a person presses Approve, which is the same shape as an
+outbox send (D-075).
+
+### What the code actually does
+
+| | folder on this disk | GitHub URL |
+|---|---|---|
+| set | `existsSync` — `no folder at "…"` | `repoTarget` — shape only, never a network call |
+| clone | `git clone --local --no-hardlinks` | `git clone` over https with the token |
+| Approve | `git apply DIFF.patch` onto the working tree | `checkout -B` → `add -A` → commit → `push --force-with-lease`, then `POST /repos/{o}/{n}/pulls` |
+| hosted | refused at the probe | works |
+
+Four details that are decisions rather than mechanics:
+
+- **The token never reaches git as an argument or inside a URL.** It is a
+  transient `-c http.extraHeader=Authorization: Basic …` set *before* the
+  subcommand, which — unlike `clone --config` — is **not written into the new
+  repository**. So the clone the session then works in holds a plain remote and
+  no credential of the operator's, and the session cannot read the token out of
+  `.git/config`. A URL pasted with its own credentials (`https://user:token@…`)
+  is refused rather than used, and the refusal never echoes the secret back.
+- **`GIT_TERMINAL_PROMPT=0`.** Without it, a private repository and no token is
+  not a failure — it is a server waiting forever for a username on a stdin that
+  will never answer.
+- **The commit has its own identity** (`Agentlings <agentlings@localhost>`),
+  because a container has no git config at all and a commit with no author is a
+  promote that dies at the last step. Proven by reading the author back off the
+  remote rather than by asserting the flag was passed.
+- **Idempotent.** `checkout -B` plus `--force-with-lease` mean a promote retried
+  after the pull-request half failed lands the same one commit, not a second.
+  Proven by pushing twice and counting `main..branch` as one commit.
+
+The base branch is read from the clone's `refs/remotes/origin/HEAD`, **not**
+from the checked-out branch: a job that carries a sandbox forward (D-139) may
+already be sitting on a previous promote's branch, and a pull request based on
+that would be a diff against the wrong thing.
+
+### What is pushed is what was reviewed
+
+The reviewed artifact is `DIFF.patch`, produced by `writeDiff` from the sandbox
+clone's working tree. The push commits **that same working tree** rather than
+replaying the patch onto a second checkout — the two are the same set by
+construction (`add -N .` and `add -A` respect the same ignore rules), and
+replaying a patch to reach a state you are already standing in is a second
+chance to be wrong.
+
+### The composition is the part that ships inert
+
+The pusher is tested against a real bare repository and the pull-request call
+against a fake code host, and both were green while the **wiring between them**
+lived hand-written in the resolve route, which has no app-level seam under it
+(#27's testing decisions say so, and no seam was added). That is exactly the
+shape D-030 records: a correct function, a correct route, and nothing reaching
+anything.
+
+So the composition is one function — `promoteToRemote` — that the route calls
+and a test drives, with `http` injected the way every other outward call in
+this server injects it. Both branches are proven against a **real git remote**:
+the pull request opened, and the pull request refused with the branch still on
+the remote afterwards. 41/41 across `gitwork.test.ts` and `github.test.ts`.
+
+### The capability file's tag narrowed rather than disappeared
+
+`repo work from a local path` stays tagged *Not available hosted*, and the
+citation moved with the code (`existsSync(where.path)`). The row now says both
+halves, because the capability did not become hosted — a **second way to have
+one** became hosted. `hosted.test.ts` caught the stale citation on the first
+full run, which is the derived-file rule doing its job rather than a person
+remembering.
+
+### Left standing
+
+- **The live box is owed.** #26's third acceptance criterion is a run against
+  the reference install with a throwaway public repository, output in the
+  closing comment. Nothing here has touched github.com: the proof is against
+  local bare repositories and an injected code host. Until that run happens
+  this entry records a mechanism that is tested, not a capability that is
+  proven — and by this repository's own rule those are different things.
+- **github.com only.** The pull request is a GitHub API call, so a non-GitHub
+  https URL is refused *by name* with a sentence rather than half-supported.
+  Widening it is a ticket, not an oversight.
+- **A private repository cannot be re-fetched from inside the sandbox.** The
+  clone is complete and the credential is transient by design, so a session that
+  runs `git fetch` in its clone gets nothing. Public repositories are
+  unaffected. Nobody has asked for it.

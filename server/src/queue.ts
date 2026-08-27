@@ -16,6 +16,7 @@ import type {
   MoveOp,
   Outbox,
   OutboxSent,
+  PromotedTo,
   ResolvedBy,
 } from '@agentlings/shared';
 import { MAX_STATIONS, opKey } from '@agentlings/shared';
@@ -836,6 +837,18 @@ export class JobQueue {
   restampDelivered(jobId: string): Job {
     const job = this.mustGet(jobId);
     job.delivered = deliverySummary(this.sandboxDir(jobId));
+    this.persist();
+    return job;
+  }
+
+  /**
+   * Where Approve pushed the work, for a level whose repo is a URL (D-275).
+   * Stamped by the resolve route before the verdict, so the card that opens on
+   * the reply already carries the branch and the pull request.
+   */
+  setPromotedTo(jobId: string, promotedTo: PromotedTo): Job {
+    const job = this.mustGet(jobId);
+    job.promotedTo = promotedTo;
     this.persist();
     return job;
   }

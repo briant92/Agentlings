@@ -7,12 +7,13 @@ import type {
   Job,
   NominaCheck,
   PackDraft,
+  PromotedTo,
   Quote,
   SendApprovalInfo,
   TrajectoryLine,
 } from '@agentlings/shared';
 import type { Verdict } from '@agentlings/shared';
-import { awaitingVerdict, outcomeOf } from '@agentlings/shared';
+import { awaitingVerdict, branchName, outcomeOf, repoTarget } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { carryNote } from './carry';
@@ -94,6 +95,14 @@ export function ReviewModal({
    */
   const [offer, setOffer] = useState<SendApprovalInfo | null>(null);
   const [granting, setGranting] = useState(false);
+  /**
+   * Where Approve pushed the work, when this level's repo is a URL (D-275).
+   * Like the standing offer above, it holds the modal open after the verdict
+   * rather than gating it: the branch is already on the remote and this is
+   * where its address is, since a promote that closes the card takes the
+   * pull request's URL with it.
+   */
+  const [pushed, setPushed] = useState<PromotedTo | null>(null);
   /** The name this world installs under; editable, because a clash must be fixable here. */
   const [packSlug, setPackSlug] = useState(job.packDraft?.slug ?? '');
   /** What carrying on would cost, fetched from the route that will charge it. */
@@ -112,6 +121,11 @@ export function ReviewModal({
   const canCarryOn = Boolean(
     (job.meter?.outOfTurns || job.meter?.timedOut) && !job.continuedBy,
   );
+  // The level's repo as a URL, when it is one — the same reader the server's
+  // clone and promote ask, so the card cannot describe an Approve the server
+  // would not perform.
+  const target = job.repoPath ? repoTarget(job.repoPath) : null;
+  const remote = target?.kind === 'url' ? target : null;
   // A cut said as a boundary, not an annulment (D-138; D-015/D-025: often
   // the ordinary ending): the raw error in red above a reviewable delivery
   // read as "definitively unfinished" even when the checker was clean, so a
@@ -253,6 +267,10 @@ export function ReviewModal({
       );
       if (action === 'promote' && reply.sendApproval?.eligible) {
         setOffer(reply.sendApproval);
+        return;
+      }
+      if (action === 'promote' && reply.promotedTo) {
+        setPushed(reply.promotedTo);
         return;
       }
       decided();
@@ -831,6 +849,18 @@ export function ReviewModal({
                   <li key={name}>{name}</li>
                 ))}
               </ul>
+              {/* What Approve *means* here, said before it is pressed (D-275).
+                  For a folder on this disk it has always been "apply the patch";
+                  for a URL there is no working tree to apply anything to, so it
+                  is a branch and a pull request — and the reviewer should know
+                  which of the two they are about to do. */}
+              {remote && (
+                <p className="dim">
+                  {remote.owner}/{remote.name} — approving pushes{' '}
+                  <code>{branchName(job.id, job.title)}</code> and opens a pull request against its
+                  default branch.
+                </p>
+              )}
             </>
           )}
           {/* Where it got to and what it did not, so granting turns is a
@@ -951,6 +981,37 @@ export function ReviewModal({
               </div>
             </div>
           )}
+          {pushed && (
+            <div className="rv-standing">
+              <div className="rv-standing-t">
+                {pushed.prUrl ? `Pull request #${pushed.prNumber} opened.` : 'The branch is pushed.'}
+              </div>
+              <p className="rv-standing-b">
+                <code>{pushed.branch}</code>
+                {pushed.prUrl ? (
+                  <>
+                    {' · '}
+                    <a href={pushed.prUrl} target="_blank" rel="noreferrer">
+                      {pushed.prUrl}
+                    </a>
+                  </>
+                ) : null}
+                {/* Half a promote, said as half a promote: the work is on the
+                    remote and the pull request is not, and neither "approved"
+                    nor an error would be true (D-275). */}
+                {pushed.prError ? (
+                  <>
+                    <br />
+                    The pull request was not opened — {pushed.prError}. Open it from the branch, or
+                    paste a token that can.
+                  </>
+                ) : null}
+              </p>
+              <div className="rv-standing-btns">
+                <button onClick={decided}>Close</button>
+              </div>
+            </div>
+          )}
           {offer?.auto && (
             <div className="rv-standing">
               <div className="rv-standing-t">Auto-send is on for this job.</div>
@@ -971,7 +1032,7 @@ export function ReviewModal({
           {/* `partial` gets the same actions the terminal card offers it:
               without this, "See the changes" on the status that most needs
               reviewing opened a modal whose only button was Close. */}
-          {!offer && (job.status === 'done' || job.status === 'partial') && (
+          {!offer && !pushed && (job.status === 'done' || job.status === 'partial') && (
             <>
               <button
                 ref={approveRef}
@@ -982,7 +1043,9 @@ export function ReviewModal({
                   ? `Approve & send ${sendTotal}`
                   : moveLeft.length > 0
                     ? `Approve & move ${moveLeft.filter((m) => m.op === 'move').length}`
-                    : 'Approve'}
+                    : remote && (job.changes?.files ?? 0) > 0
+                      ? 'Approve & open a pull request'
+                      : 'Approve'}
               </button>
               <button className="btn-quiet" onClick={() => void resolve('discard')}>
                 Discard

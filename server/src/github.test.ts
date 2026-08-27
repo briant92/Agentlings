@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GITHUB_TOOLS, GITHUB_TOOL_NAMES, callGithub, isRepo } from './github';
+import { GITHUB_TOOLS, GITHUB_TOOL_NAMES, callGithub, isRepo, openPullRequest } from './github';
 import type { Http } from './library';
 
 /** A fake GitHub: no network, and it records what was asked for. */
@@ -181,5 +181,81 @@ describe('the granted surface', () => {
       'update_pull_request_branch',
     ];
     for (const name of acting) expect(GITHUB_TOOL_NAMES).not.toContain(name);
+  });
+});
+
+/**
+ * Opening a pull request is the one thing in this file that acts (D-275). It
+ * lives beside the read tools and is deliberately not one of them: promote is
+ * the server acting on a person's Approve, the same shape as an outbox send,
+ * and a session that could call this would be pushing to a code host by
+ * itself. `catalog.test.ts` is what holds that line; these are its manners.
+ */
+describe('openPullRequest', () => {
+  function poster(reply: unknown, status = 201) {
+    const calls: { url: string; headers: Record<string, string>; init?: { method?: string; body?: string } }[] = [];
+    const http: Http = async (url, headers, init) => {
+      calls.push({ url, headers, init });
+      return { ok: status >= 200 && status < 300, status, text: async () => JSON.stringify(reply) };
+    };
+    return { http, calls };
+  }
+
+  it('posts the branch against the base and returns what a person can open', async () => {
+    const { http, calls } = poster({ number: 4, html_url: 'https://github.com/o/n/pull/4' });
+    const r = await openPullRequest(
+      {
+        owner: 'o',
+        name: 'n',
+        head: 'agentlings/abc123-fix-it',
+        base: 'main',
+        title: 'Fix it',
+        body: 'Queued in Agentlings.',
+      },
+      { http, token: 'tok' },
+    );
+    expect(r).toEqual({ number: 4, url: 'https://github.com/o/n/pull/4' });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe('https://api.github.com/repos/o/n/pulls');
+    expect(calls[0].init?.method).toBe('POST');
+    expect(calls[0].headers.authorization).toBe('Bearer tok');
+    expect(JSON.parse(calls[0].init?.body ?? '{}')).toMatchObject({
+      head: 'agentlings/abc123-fix-it',
+      base: 'main',
+      title: 'Fix it',
+    });
+  });
+
+  it('says which permission is missing rather than a bare status', async () => {
+    const { http } = poster({}, 403);
+    const r = await openPullRequest(
+      { owner: 'o', name: 'n', head: 'h', base: 'main', title: 't', body: 'b' },
+      { http, token: 'tok' },
+    );
+    expect('error' in r && r.error).toMatch(/permission|rate limit/i);
+  });
+
+  it('refuses a repo it could not address before asking anything', async () => {
+    const { http, calls } = poster({});
+    const r = await openPullRequest(
+      { owner: '../etc', name: 'n', head: 'h', base: 'main', title: 't', body: 'b' },
+      { http, token: 'tok' },
+    );
+    expect('error' in r && r.error).toMatch(/owner\/name/);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('reports a reply that was not a pull request instead of inventing a URL', async () => {
+    const { http } = poster({ message: 'ok but weird' });
+    const r = await openPullRequest(
+      { owner: 'o', name: 'n', head: 'h', base: 'main', title: 't', body: 'b' },
+      { http, token: 'tok' },
+    );
+    expect('error' in r).toBe(true);
+  });
+
+  it('is not a tool a session can call — the door lists reads only', () => {
+    expect(GITHUB_TOOL_NAMES).not.toContain('open_pull_request');
+    expect(GITHUB_TOOL_NAMES).not.toContain('create_pull_request');
   });
 });

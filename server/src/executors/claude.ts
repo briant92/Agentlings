@@ -1136,7 +1136,7 @@ export class ClaudeAgentExecutor implements Executor {
     let hasRepo = false;
     if (job.repoPath) {
       onProgress?.(`cloning ${job.repoPath}`);
-      await cloneRepo(job.repoPath, sandboxDir);
+      await cloneRepo(job.repoPath, sandboxDir, process.env.GITHUB_TOKEN);
       hasRepo = true;
     }
     if (job.continues) await carryForward(job.continues, sandboxDir, hasRepo, onProgress);

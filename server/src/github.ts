@@ -356,3 +356,59 @@ export async function callGithub(
       return { error: `no such tool: ${tool}` };
   }
 }
+
+/**
+ * Opening a pull request (D-275) — the one call in this file that acts, and
+ * deliberately not a tool.
+ *
+ * Everything above reads, and `catalog.test.ts` asserts that the twelve acting
+ * tools of the reference server are absent. This does not weaken that line: it
+ * is called by the resolve route when a person presses Approve on a job whose
+ * level is a URL, which is the server acting on an operator's own decision —
+ * the same shape as an outbox send (D-075). A session cannot reach it, because
+ * there is no tool by this name for the allowlist to grant.
+ */
+export async function openPullRequest(
+  pr: { owner: string; name: string; head: string; base: string; title: string; body: string },
+  options: { http: Http; token?: string },
+): Promise<{ number: number; url: string } | { error: string }> {
+  const repo = `${pr.owner}/${pr.name}`;
+  if (!isRepo(repo)) return { error: 'repo must look like owner/name' };
+  let res;
+  try {
+    res = await options.http(
+      `${API}/repos/${repo}/pulls`,
+      {
+        accept: 'application/vnd.github+json',
+        'content-type': 'application/json',
+        'user-agent': 'agentlings',
+        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+      },
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          title: pr.title,
+          body: pr.body,
+          head: pr.head,
+          base: pr.base,
+        }),
+      },
+    );
+  } catch (err) {
+    return { error: `could not reach GitHub: ${err instanceof Error ? err.message : String(err)}` };
+  }
+  if (!res.ok) return { error: explain(res.status, repo, `a pull request on ${repo}`) };
+  let data: unknown;
+  try {
+    data = JSON.parse(await res.text());
+  } catch {
+    return { error: 'GitHub returned something that was not JSON' };
+  }
+  const pull = data as { number?: unknown; html_url?: unknown };
+  // Never an invented URL: the branch is pushed either way, and saying so is
+  // worth more than a link that 404s.
+  if (typeof pull.number !== 'number' || typeof pull.html_url !== 'string') {
+    return { error: 'GitHub accepted the request but did not return a pull request' };
+  }
+  return { number: pull.number, url: pull.html_url };
+}

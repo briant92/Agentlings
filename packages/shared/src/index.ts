@@ -586,6 +586,23 @@ export interface JobChanges {
   names: string[];
 }
 
+/**
+ * Where Approve put the work on a level whose repo is a URL (D-275): a branch
+ * pushed, and a pull request opened from it.
+ *
+ * The two are recorded separately because they can part company. The branch is
+ * pushed first and is the durable half; a token that can push but not open a
+ * pull request leaves `prError` and no `prUrl`, and the card says exactly that
+ * rather than reporting a promote that half happened as a success or as a
+ * failure — neither of which would be true.
+ */
+export interface PromotedTo {
+  branch: string;
+  prNumber?: number;
+  prUrl?: string;
+  prError?: string;
+}
+
 /** One message an outbox asks to send. `to` is the channel's own address shape. */
 export interface OutboxMessage {
   to: string;
@@ -1392,6 +1409,8 @@ export interface Job {
   quotedUsd?: number;
   /** Filled in when the job completes and left a patch behind. */
   changes?: JobChanges;
+  /** Where Approve put the work, when the level's repo was a URL (D-275). */
+  promotedTo?: PromotedTo;
   /**
    * Parsed from OUTBOX.json when the run left a valid one. Approve executes it
    * (D-075).
@@ -2500,3 +2519,85 @@ export const SOCKET_UNAUTHENTICATED = 4401;
 // `server/src/session.ts` now — the same function the listener is bound from,
 // so the runner's way back cannot point at a port nothing is answering on.
 // Nothing in `web` ever read it.
+
+/**
+ * What a level's repo actually is (D-275). A level's repo used to be a folder
+ * on the operator's own disk and nothing else, which is why a hosted install
+ * refused repo work outright. It may now be a GitHub URL instead, and this is
+ * the one place that decides which — the clone side, the promote side and the
+ * route that sets it all ask it rather than each testing the string their own
+ * way, which is the duplicated notion D-030 keeps charging for.
+ *
+ * `unsupported` carries the sentence a person reads, because every other
+ * answer here is a refusal with nowhere to say why.
+ */
+export type RepoTarget =
+  | { kind: 'path'; path: string }
+  | { kind: 'url'; url: string; owner: string; name: string }
+  | { kind: 'unsupported'; reason: string };
+
+/** The one code host promote can open a pull request on. */
+const REPO_HOST = 'github.com';
+/** `owner/name` as GitHub allows them; anything else is not a repository. */
+const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+export function repoTarget(repo: string): RepoTarget {
+  const text = repo.trim();
+  // Only the https form is a URL here. The others are named rather than
+  // silently read as folders, so `git@github.com:owner/name` gets a sentence
+  // instead of "no folder at ...", which is true and useless.
+  if (/^(ssh|git|http):\/\//i.test(text) || /^[^/\\]+@[^/\\]+:/.test(text)) {
+    return {
+      kind: 'unsupported',
+      reason: `only an https ${REPO_HOST} URL works — not ssh, git or http`,
+    };
+  }
+  if (!/^https:\/\//i.test(text)) return { kind: 'path', path: text };
+
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return { kind: 'unsupported', reason: 'that is not a URL' };
+  }
+  // Never the string it was handed: a pasted `https://user:token@host/…` is a
+  // credential, and repeating it back would put it in an error, a log and a
+  // level file. The token is ours to supply, from `.env` (D-078).
+  if (url.username || url.password) {
+    return {
+      kind: 'unsupported',
+      reason: 'that URL carries a password or token — paste the plain URL; GITHUB_TOKEN is what signs in',
+    };
+  }
+  if (url.hostname.toLowerCase() !== REPO_HOST) {
+    return { kind: 'unsupported', reason: `only ${REPO_HOST} repositories work so far` };
+  }
+  const parts = url.pathname.split('/').filter(Boolean);
+  const owner = parts[0];
+  const name = parts[1]?.replace(/\.git$/i, '');
+  if (parts.length !== 2 || !owner || !name || !SEGMENT.test(owner) || !SEGMENT.test(name)) {
+    return {
+      kind: 'unsupported',
+      reason: `that is not one repository — it should look like https://${REPO_HOST}/owner/name`,
+    };
+  }
+  return { kind: 'url', url: `https://${REPO_HOST}/${owner}/${name}.git`, owner, name };
+}
+/** Enough of the title to recognise the branch in a list, and no more. */
+const MAX_SLUG = 32;
+
+/**
+ * One branch per job, named so the person reading a pull-request list can tell
+ * which of their sentences it was. The job id leads because it is the thing
+ * that is unique; the title is there for eyes.
+ */
+export function branchName(jobId: string, title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, MAX_SLUG)
+    .replace(/-+$/g, '');
+  const short = jobId.slice(0, 8);
+  return `agentlings/${short}${slug ? `-${slug}` : ''}`;
+}

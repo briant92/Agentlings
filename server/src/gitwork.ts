@@ -1,8 +1,10 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import type { JobChanges } from '@agentlings/shared';
+import { branchName, type JobChanges, type PromotedTo, repoTarget } from '@agentlings/shared';
+import { openPullRequest } from './github';
+import type { Http } from './library';
 
 const run = promisify(execFile);
 const MAX_DIFF_BYTES = 50 * 1024 * 1024;
@@ -16,11 +18,96 @@ export function patchFile(sandboxDir: string): string {
   return path.join(sandboxDir, 'DIFF.patch');
 }
 
+/**
+ * Git is never given the token in an argument or in a URL: `-c` config set
+ * before the subcommand is transient — unlike `clone --config`, it is not
+ * written into the new repository — so the clone the session then works in
+ * holds a plain remote and no credential of the operator's.
+ *
+ * `GIT_TERMINAL_PROMPT=0` is the other half: without it a private repo and no
+ * token is not a failure, it is a server waiting forever for a username.
+ */
+function gitAuth(token?: string): { config: string[]; env: NodeJS.ProcessEnv } {
+  const config = ['-c', 'credential.helper='];
+  if (token) {
+    const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+    config.push('-c', `http.extraHeader=Authorization: Basic ${basic}`);
+  }
+  return { config, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } };
+}
+
 /** Cheap local clone the agent can tear up without touching the original. */
-export async function cloneRepo(repoPath: string, sandboxDir: string): Promise<string> {
+export async function cloneRepo(
+  repoPath: string,
+  sandboxDir: string,
+  token?: string,
+): Promise<string> {
   const target = repoDir(sandboxDir);
-  await run('git', ['clone', '--local', '--no-hardlinks', repoPath, target]);
+  const where = repoTarget(repoPath);
+  if (where.kind === 'unsupported') throw new Error(where.reason);
+  if (where.kind === 'url') {
+    const auth = gitAuth(token);
+    await run('git', [...auth.config, 'clone', where.url, target], { env: auth.env });
+  } else {
+    await run('git', ['clone', '--local', '--no-hardlinks', where.path, target]);
+  }
   return target;
+}
+
+/**
+ * The branch a promote opens against — the clone's own idea of what the remote
+ * calls its default, which `git clone` records. Read from the remote rather
+ * than from the checked-out branch because a job that carries a sandbox
+ * forward (D-139) may already be sitting on a promote's branch.
+ */
+export function baseBranch(sandboxDir: string): string {
+  const repo = repoDir(sandboxDir);
+  try {
+    const head = execFileSync('git', ['-C', repo, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    return head.replace(/^origin\//, '');
+  } catch {
+    return execFileSync('git', ['-C', repo, 'rev-parse', '--abbrev-ref', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  }
+}
+
+/**
+ * Promote for a URL-backed level (D-275): the reviewed change, committed on
+ * its own branch and pushed. The reviewed change is the sandbox clone's
+ * working tree, which is exactly what `writeDiff` read to produce DIFF.patch —
+ * so this pushes what was reviewed rather than replaying a patch onto a second
+ * checkout of the same thing.
+ *
+ * Idempotent on purpose: `checkout -B` and a force-with-lease push mean a
+ * promote retried after the pull request half failed lands the same one
+ * commit, not a second.
+ */
+export async function pushBranch(
+  sandboxDir: string,
+  opts: { remote: string; branch: string; message: string; token?: string },
+): Promise<void> {
+  const repo = repoDir(sandboxDir);
+  const auth = gitAuth(opts.token);
+  const at = ['-C', repo];
+  // Its own identity, not the operator's: a container has no git config at
+  // all, and a commit with no author is a promote that fails at the last step.
+  const who = ['-c', 'user.name=Agentlings', '-c', 'user.email=agentlings@localhost'];
+  await run('git', [...at, 'checkout', '-B', opts.branch]);
+  await run('git', [...at, 'add', '-A']);
+  const { stdout: staged } = await run('git', [...at, 'diff', '--cached', '--name-only'], {
+    maxBuffer: MAX_DIFF_BYTES,
+  });
+  if (staged.trim()) {
+    await run('git', [...at, ...who, 'commit', '-m', opts.message]);
+  }
+  await run('git', [...at, ...auth.config, 'push', '--force-with-lease', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
+    env: auth.env,
+  });
 }
 
 /**
@@ -96,4 +183,50 @@ export function endPatch(jobId: string): void {
 
 export function patchInFlight(jobId: string): boolean {
   return patching.has(jobId);
+}
+
+/**
+ * The whole of what Approve does on a URL-backed level (D-275), in one place
+ * the route calls and a test can drive.
+ *
+ * It exists rather than living inline in the resolve route because the two
+ * halves below are separately tested and their *composition* is the part that
+ * has historically reached nothing (D-030): a correct pusher and a correct
+ * pull-request call, wired by hand in a route with no seam under it, is
+ * exactly the shape that ships inert. `http` is injected the way every other
+ * outward call in this server injects it, so the composition is provable
+ * against a real git remote and a fake code host.
+ *
+ * The two results are kept apart on purpose. The push is the durable half; if
+ * the pull request is refused the branch is still on the remote, and saying
+ * so is the only true answer.
+ */
+export async function promoteToRemote(
+  sandboxDir: string,
+  target: { url: string; owner: string; name: string },
+  job: { id: string; title: string; prompt: string },
+  deps: { http: Http; token?: string },
+): Promise<PromotedTo> {
+  const branch = branchName(job.id, job.title);
+  const base = baseBranch(sandboxDir);
+  await pushBranch(sandboxDir, {
+    remote: target.url,
+    branch,
+    message: job.title,
+    token: deps.token,
+  });
+  const pr = await openPullRequest(
+    {
+      owner: target.owner,
+      name: target.name,
+      head: branch,
+      base,
+      title: job.title,
+      body: `Queued in Agentlings as job \`${job.id}\` and approved at review.\n\n${job.prompt}`,
+    },
+    deps,
+  );
+  return 'error' in pr
+    ? { branch, prError: pr.error }
+    : { branch, prNumber: pr.number, prUrl: pr.url };
 }

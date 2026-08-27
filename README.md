@@ -92,7 +92,10 @@ five carry the tag **Not available hosted** in [AGENTLING.md](AGENTLING.md), eac
 citing the probe that produces it:
 
 - **repo work from a local path** — a level points at a folder on the operator's
-  machine and the server checks it exists. In a container it does not.
+  machine and the server checks it exists. In a container it does not. Point the
+  level at a GitHub URL instead and repo work runs on any install: the clone is
+  over https, and Approve pushes a branch and opens a pull request rather than
+  applying a patch to a working tree that isn't there.
 - **the folder organizer** — a run proposes moves and *you* approve them, over a
   folder picked in a native dialog. There is no typed-path fallback by design, so
   with no desktop to open a dialog on this is a refusal and not a detour.

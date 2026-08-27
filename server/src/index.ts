@@ -35,6 +35,7 @@ import {
   MAX_ATTACHMENTS,
   opKey,
   opLabel,
+  repoTarget,
   slugProblem,
   SOCKET_FORBIDDEN_ORIGIN,
   SOCKET_LEVEL_GONE,
@@ -234,7 +235,14 @@ import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
 import { categorise, entriesIn, indexedBySource } from './browse';
 import { deliveredIds, DELIVERIES_SHOWN, deliveriesFor } from './deliveries';
-import { applyPatch, beginPatch, endPatch, patchFile, patchInFlight } from './gitwork';
+import {
+  applyPatch,
+  beginPatch,
+  endPatch,
+  patchFile,
+  patchInFlight,
+  promoteToRemote,
+} from './gitwork';
 import {
   appendKnowledge,
   createLevelFiles,
@@ -2785,7 +2793,13 @@ app.post('/api/levels/:lid/work', async (c) => {
 
   if (body.repoPath !== undefined) {
     const repoPath = body.repoPath.trim();
-    if (repoPath && !existsSync(repoPath)) {
+    // A folder is checked for; a URL is checked *as* a URL and never for
+    // existence — reaching out to see whether a repository is there would make
+    // setting a level's repo a network call, and a private one answers 404 to
+    // an anonymous look anyway. What is wrong with it surfaces at the clone.
+    const where = repoTarget(repoPath);
+    if (repoPath && where.kind === 'unsupported') return c.json({ error: where.reason }, 400);
+    if (repoPath && where.kind === 'path' && !existsSync(where.path)) {
       return c.json({ error: `no folder at "${repoPath}"` }, 400);
     }
     rt.meta = { ...rt.meta, repoPath };
@@ -3765,14 +3779,39 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
   // the compile carried that stray file into the real repository. Its brief
   // says to change nothing else, so nothing else is what gets applied.
   if (body.action === 'promote' && promotable && pending.repoPath && !waitingTool) {
-    const patch = patchFile(rt.queue.sandboxDir(pending.id));
+    const sandbox = rt.queue.sandboxDir(pending.id);
+    const patch = patchFile(sandbox);
+    // Where the level's repo actually is decides what promote *means* (D-275):
+    // a folder on this disk takes the reviewed patch; a URL takes a branch and
+    // a pull request, because there is no working tree to apply anything to.
+    // One reader answers which, the same one the clone asked.
+    const where = repoTarget(pending.repoPath);
+    if (where.kind === 'unsupported') return c.json({ error: where.reason }, 400);
     if (existsSync(patch)) {
       beginPatch(pending.id);
       try {
-        await applyPatch(pending.repoPath, patch);
+        if (where.kind === 'path') {
+          await applyPatch(where.path, patch);
+        } else {
+          rt.queue.setPromotedTo(
+            pending.id,
+            await promoteToRemote(sandbox, where, pending, {
+              http,
+              token: process.env.GITHUB_TOKEN,
+            }),
+          );
+        }
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
-        return c.json({ error: `patch did not apply: ${detail}` }, 400);
+        return c.json(
+          {
+            error:
+              where.kind === 'path'
+                ? `patch did not apply: ${detail}`
+                : `nothing was pushed: ${detail}`,
+          },
+          400,
+        );
       } finally {
         endPatch(pending.id);
       }
@@ -3872,7 +3911,14 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
                   ? // Never "paid": nothing was. The file is a deliverable, and
                     // the act is Brian's token press at the bank (D-219, D-251).
                     `approved — composed ${NOMINA_OUTPUT}, ${composedNomina} ${composedNomina === 1 ? 'payee' : 'payees'}; upload and authorise it at the bank`
-                  : 'approved') +
+                  : // What promote did on a remote (D-275). The pull request
+                    // when there is one, the branch when the pull request half
+                    // did not happen — the feed is the record, so it says which.
+                    job.promotedTo
+                    ? job.promotedTo.prUrl
+                      ? `approved — pull request #${job.promotedTo.prNumber} opened from ${job.promotedTo.branch}`
+                      : `approved — pushed ${job.promotedTo.branch}; no pull request (${job.promotedTo.prError})`
+                    : 'approved') +
             (chainPriced.rows > 0
               ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`
               : '')

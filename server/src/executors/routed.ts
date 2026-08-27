@@ -167,7 +167,7 @@ export class RoutedExecutor implements Executor {
      */
     if (job.repoPath) {
       try {
-        await cloneRepo(job.repoPath, sandboxDir);
+        await cloneRepo(job.repoPath, sandboxDir, process.env.GITHUB_TOKEN);
       } catch (err) {
         return wipe(`could not clone for the ${name} tool (${first(err)})`);
       }

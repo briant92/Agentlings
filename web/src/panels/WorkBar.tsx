@@ -1668,12 +1668,12 @@ export function WorkBar({
 
       {askingRepo && (
         <div className="work-repo">
-          <label htmlFor="work-folder">Which project folder should they work in?</label>
+          <label htmlFor="work-folder">Which project should they work in?</label>
           <div className="work-repo-row">
             <input
               id="work-folder"
               autoFocus
-              placeholder="C:\Users\you\projects\my-app"
+              placeholder="C:\Users\you\projects\my-app — or https://github.com/you/my-app"
               value={repoPath}
               onChange={(e) => setRepoPath(e.target.value)}
             />
@@ -1681,11 +1681,14 @@ export function WorkBar({
               Use this
             </button>
             <button className="ghost" disabled={busy} onClick={() => void queue('')}>
-              Skip — no folder
+              Skip — no project
             </button>
           </div>
+          {/* Two answers, and they end differently (D-275) — said here rather
+              than at the review, because this is where the choice is made. */}
           <p className="dim work-hint">
-            Asked once per level. Nothing is written there until you approve the result.
+            Asked once per level. Nothing is written until you approve the result: a folder gets the
+            change applied, a GitHub URL gets a branch and a pull request.
           </p>
         </div>
       )}

@@ -741,9 +741,19 @@ async function hostedMode() {
   const inContainer = async (source, ...args) => {
     // 45s: a shell into a live container answers in a few seconds, and one
     // into a container that is coming back answers not at all.
-    const r = await railway(['ssh', '--service', service, 'node', '-e', source, ...args], 45_000);
-    if (r.code !== 0) throw new Error(`ssh failed: ${r.err.trim().split('\n').pop()}`);
-    return r.out.trim();
+    //
+    // Retried for `railwayJson`'s reason, learnt the same way: Railway's API
+    // handed its own CLI a body it could not decode — "expected value at line
+    // 1 column 1" — and that threw a whole run away at the first ssh. A
+    // transient far end is not a proof failing.
+    let last = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await sleep(5000);
+      const r = await railway(['ssh', '--service', service, 'node', '-e', source, ...args], 45_000);
+      if (r.code === 0) return r.out.trim();
+      last = r.err.trim().split('\n').filter(Boolean).pop() ?? `exit ${r.code}`;
+    }
+    throw new Error(`ssh failed after 3 tries: ${last}`);
   };
 
   // ── who and where ─────────────────────────────────────────────────────────

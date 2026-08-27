@@ -780,8 +780,12 @@ async function hostedMode() {
 
   // The whole run happens in a level of its own, torn down at the end: the
   // reference install must be left as it was found.
+  // Unique to this run: a level left behind by an earlier one then reads as
+  // two cards on the select screen and fails loudly, rather than being the
+  // card the browser half happens to click.
+  const LEVEL_NAME = `hosted proof ${randomUUID().slice(0, 6)}`;
   const made = await post('/api/levels', {
-    name: 'hosted proof',
+    name: LEVEL_NAME,
     project: 'Proof',
     theme: 'cave',
   });
@@ -834,7 +838,7 @@ async function hostedMode() {
     // the bar. The D-177/D-178 gap, and the shape #16, #17 and #29 were each
     // caught by — most recently `prove-standing-ui` asserting on an empty
     // string for four tickets.
-    await workBarSaysIt(BASE_URL, password, LEVEL, check);
+    await workBarSaysIt(BASE_URL, password, LEVEL_NAME, check);
 
     // ── 1 & 2. a paste and a run, read back across one redeploy ─────────────
     console.log('\n── a key pasted into Settings, and what a run costs ──');
@@ -1142,7 +1146,7 @@ async function hostedMode() {
  * rather than failing when there is no browser to drive — a check that could
  * not be made is not a check that passed.
  */
-async function workBarSaysIt(base, password, levelId, report) {
+async function workBarSaysIt(base, password, levelName, report) {
   let chromium;
   try {
     ({ chromium } = await import('playwright-core'));
@@ -1168,17 +1172,25 @@ async function workBarSaysIt(base, password, levelId, report) {
     }
     // There are no URLs to navigate by — the app is one screen deep in state,
     // so a level is reached the way a person reaches it. `prove-refusal-ui`'s
-    // recipe, because it is the one that works.
+    // recipe, waited on rather than slept through: the first run of this
+    // passed on fixed timeouts and the second failed on them, against a
+    // container that had just come back from a deploy.
+    await page.locator('.ts-item').first().waitFor({ timeout: 30_000 });
     await page.evaluate(() => {
       const items = [...document.querySelectorAll('.ts-item')];
       (items.find((i) => i.textContent?.includes('START')) ?? items[0])?.click();
     });
-    await page.waitForTimeout(2500);
-    await page.evaluate((id) => {
-      const cards = [...document.querySelectorAll('.lvl-card')];
-      (cards.find((c) => c.textContent?.toLowerCase().includes('hosted proof')) ?? cards[0])?.click();
-    }, levelId);
-    await page.waitForTimeout(3500);
+    // The screen change goes through the iris, so the cards arrive late.
+    await page.locator('.lvl-card').first().waitFor({ timeout: 30_000 });
+    // By name, and it must be THIS level. The fall-through to `cards[0]` this
+    // replaces did not fail — it PASSED, against the install's own HQ level,
+    // because the refused-door row is a property of the install and shows on
+    // any bar. A green check that never looked at the thing it names is the
+    // fault this project keeps finding in its own instruments.
+    const card = page.locator('.lvl-card', { hasText: levelName });
+    report('the proof level is on the select screen', (await card.count()) === 1, `cards=${await card.count()}`);
+    await card.first().click();
+    await page.locator('.work-input, .tour').first().waitFor({ timeout: 30_000 });
     // A fresh install shows the first-run tour over everything, which is
     // exactly the state a person deploying the template is in. Dismissed the
     // way they would dismiss it (D-248's lesson).

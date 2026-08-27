@@ -1052,7 +1052,7 @@ entry updates one file rather than two.
   the session works in holds no credential, and `openPullRequest` is
   deliberately NOT a tool, so a session still cannot push. The composition —
   not either half — is the seam that got a function and a test, per D-030. The
-  live proof against the reference install is OWED
+  capability is PROVEN LIVE both ways: 26/26 twice against real github.com from this machine, and one job end to end on the reference install (PR #4), which cost D-273 a scoped token deleted afterwards
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -23406,15 +23406,66 @@ committed-in-clone refusal reaching nothing, that a public repo clones with no
 token while the push without one fails rather than hangs, and the local-path
 path unchanged.
 
+### The hosted run, and what it cost D-273 to get it
+
+#26's third box wanted the run made **on the reference install**, and D-273
+keeps that install keyless — "no real keys, and nothing that proof can leak".
+Both cannot be true at once, so the conflict was put to Brian rather than
+resolved quietly. His answer: a token **scoped to the throwaway repository and
+nothing else**, plus a model key, set for the run and deleted after. D-273
+survives in substance — the only thing that credential could ever reach is a
+public repository built to be deleted.
+
+The run, on `agentlings-production.up.railway.app`, deployment `59f645ae` of
+`133faed`: `executor` read `claude-agent-sdk` with `auth.source: api-key`, a
+level was created with `repoPath = https://github.com/briant92/agentlings-repo-url-proof`,
+and Approve answered
+
+```
+"status":"promoted"
+"promotedTo":{"branch":"agentlings/ae726b3c-in-greet-js","prNumber":4,
+              "prUrl":"https://github.com/briant92/agentlings-repo-url-proof/pull/4"}
+```
+
+read back off GitHub as an open pull request from that branch against `main`,
+commit `5f5c66eb` authored `Agentlings <agentlings@localhost>`, `greet.js`
+changed on the branch and **untouched on `main`**. Two jobs, **$0.256** against
+$0.508 quoted.
+
+**The first run is the one worth keeping.** The repository held only a
+`README.md` when it was cloned, and the run said so from inside the container —
+`ls -a repo` → `.git README.md` — and *refused to invent the file*: "authoring
+a new file would be a different job". That refusal is what proves the clone: a
+container reading the repository's actual contents over https, reported by the
+run rather than by us. A cheerful run that had guessed a `greet.js` into
+existence would have produced a diff and proved nothing.
+
+**The cleanup is the other half.** Both variables were **deleted, not blanked**
+— blanking is #30's fault, and by D-270 an empty host variable shadows
+`/data/.env` under that name for good. Deleting a Railway variable does not
+redeploy (#31 measured that), so the service was redeployed and the result read
+from the app rather than from the variable list: `executor: simulated`,
+`auth: {ok: false, source: none}`, `github` reporting
+`missingSecrets: ["GITHUB_TOKEN"]`. The install holds no real key again.
+
+Two smaller things the run settled. The Railway MCP surface has **no
+delete-variable tool** — `set-variables` only overwrites, which would have
+meant blanking — so the CLI's `railway variable delete` is the only correct
+route, and it takes the key as a positional argument. And the reference
+install's password from #24 died with that session's scratchpad; it was
+regenerated with `skipDeploys`, so three variable changes cost one restart
+rather than three.
+
 ### Left standing
 
-- **The hosted half of the live box is owed.** #26's third criterion asks for
-  the run to be made *on the reference install*. `prove-repo-url.mts` proves
-  the capability against the real github.com from this machine; the reference
-  install is keyless by D-273 and has neither a model credential to run a job
-  nor a `GITHUB_TOKEN` to push with, and giving it either contradicts "holds no
-  real keys". Doing it properly needs a fine-grained token scoped to the
-  throwaway repository alone. Named, not smuggled.
+- **Nothing of #26's is owed.** All three boxes are met: the capability against
+  the real github.com from this machine (`prove-repo-url.mts`, 26/26 twice) and
+  the run on the reference install above. The section before this one records
+  what it cost D-273 and how the install was put back.
+- **The maintainer's `GITHUB_TOKEN` must be rotated**, having been disclosed by
+  the leak this entry records. The scoped token used for the hosted run should
+  be revoked too; it can only reach a throwaway repository, but it has no
+  further purpose.
 - **github.com only.** The pull request is a GitHub API call, so a non-GitHub
   https URL is refused *by name* with a sentence rather than half-supported.
   Widening it is a ticket, not an oversight.

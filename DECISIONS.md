@@ -22559,6 +22559,11 @@ it. What it costs is stated plainly: on a hosted install everything Vite copies
 out of `web/public` is readable by a stranger who has the URL. That is the
 repository's own committed content, which #31 makes public anyway.
 
+**Put to Brian with that cost named, and ratified 2026-08-27** — so the
+deviation from #29's literal wording is a decision this entry carries, not a
+liberty the implementation took. The criterion stands corrected by its own
+second clause. Issue #29 closed on it.
+
 ### Proved
 
 `node scripts/prove-hosted.mjs --local` — **ALL PASS**, run four times, and

@@ -169,6 +169,8 @@ export function WorkBar({
   const [error, setError] = useState<string | null>(null);
   const [connections, setConnections] = useState<ConnectionInfo[]>([]);
   const live = connections.filter((c) => c.enabled);
+  /** The doors this install cannot offer at all (#30) — computed once per render. */
+  const refusedDoors = doorsRefused(connections);
 
   useEffect(() => {
     void api<ConnectionInfo[]>('/api/connections')
@@ -788,7 +790,7 @@ export function WorkBar({
       // would otherwise reach the picker and come back with an error, which
       // is the fault this ticket exists to close one layer down.
       if (plan.organizeRefused) {
-        setError(`organizing needs a folder picked on this machine — ${plan.organizeRefused}`);
+        setError(plan.organizeRefused);
         return;
       }
       void pickOrganizeFolder();
@@ -1012,10 +1014,10 @@ export function WorkBar({
           reach, rather than left to a refusal halfway through a paid run.
           Refused rather than absent on purpose: a person deploying the
           template learns what the local version would have done. */}
-      {doorsRefused(connections).length > 0 && !askingRepo && (
+      {refusedDoors.length > 0 && !askingRepo && (
         <p className="work-gaps work-conn-refused">
-          {doorsRefused(connections).map((c) => (
-            <span key={c.name} className="work-refused-door">
+          {refusedDoors.map((c) => (
+            <span key={c.name}>
               <span className="work-refused-name">{c.label.toLowerCase()}</span>
               {' — '}
               {c.unavailable}
@@ -1470,9 +1472,9 @@ export function WorkBar({
           step stays visible, and it says why it cannot be taken. */}
       {plan?.organize && plan.organizeRefused && !askingRepo && (
         <div className="work-organize">
-          <p className="work-organize-refused">
-            organizing needs a folder picked on this machine — {plan.organizeRefused}
-          </p>
+          {/* Rendered verbatim: the sentence is the server's, whole, so the
+              bar and Start cannot end up saying it differently. */}
+          <p className="work-organize-refused">{plan.organizeRefused}</p>
         </div>
       )}
       {plan?.organize && !plan.organizeRefused && !askingRepo && (

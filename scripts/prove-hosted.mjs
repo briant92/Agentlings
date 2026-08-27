@@ -90,6 +90,27 @@ const check = (label, ok, detail) => {
   if (!ok) bad++;
 };
 
+/**
+ * A check that could not be made, counted.
+ *
+ * The file already said "a check that cannot be made is not a check that
+ * passed" and then let a run print a bare ALL PASS with a browser it never
+ * found and a paid job it never ran. Skips are named in the last line now, so
+ * ALL PASS means all four, and three of four says so.
+ */
+const skipped = [];
+const skip = (label, why) => {
+  console.log(`SKIP  ${label}  — ${why}`);
+  skipped.push(label);
+};
+
+/** The last line, which has to be readable on its own in a closing comment. */
+const verdict = () => {
+  if (bad > 0) return `${bad} FAILED${skipped.length ? `, ${skipped.length} skipped` : ''}`;
+  if (skipped.length) return `PASS, but ${skipped.length} skipped: ${skipped.join('; ')}`;
+  return 'ALL PASS';
+};
+
 const hash = (file) =>
   existsSync(file) ? createHash('sha256').update(readFileSync(file)).digest('hex') : 'absent';
 
@@ -137,7 +158,7 @@ if (MODE === 'hosted') {
     // back. Said as a failure and counted, so the exit code is honest.
     check('the hosted run completed', false, err instanceof Error ? err.message : String(err));
   }
-  console.log(`\n${bad === 0 ? 'ALL PASS' : `${bad} FAILED`}`);
+  console.log(`\n${verdict()}`);
   process.exit(bad === 0 ? 0 : 1);
 }
 
@@ -559,13 +580,13 @@ check('.env is byte-identical', hash(MINE.env) === before.env);
 // FAIL that means nothing. Said out loud rather than quietly dropped: a check
 // that cannot be made is not a check that passed.
 if (await listening(4600)) {
-  console.log("SKIP  server.log — the maintainer's own install is up and writing to it");
+  skip('server.log is byte-identical', "the maintainer's own install is up and writing to it");
 } else {
   check('server.log is byte-identical', hash(MINE.log) === before.log);
 }
 check('nothing is left on the proof port', !(await listening(PORT)));
 
-console.log(`\n${bad === 0 ? 'ALL PASS' : `${bad} FAILED`}`);
+console.log(`\n${verdict()}`);
 process.exit(bad === 0 ? 0 : 1);
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -885,8 +906,14 @@ async function hostedMode() {
     );
     // The doors that DO work here are untouched by any of this: a blanket
     // "hosted means less" would be the easy wrong version of this change.
+    // `web` has to be FOUND as well as silent — `undefined?.unavailable` is
+    // `undefined` too, so the obvious spelling passes when the list is empty.
     const web = (Array.isArray(conns) ? conns : []).find((c) => c.name === 'web');
-    check('an ordinary door says nothing of the kind', web?.unavailable === undefined);
+    check(
+      'an ordinary door is listed and says nothing of the kind',
+      !!web && web.unavailable === undefined,
+      web ? '' : 'web is not in the list at all',
+    );
 
     const organize = await post(`/api/levels/${LEVEL}/work/plan`, {
       text: 'organize my downloads folder into subfolders by kind',
@@ -1017,6 +1044,12 @@ async function hostedMode() {
 
     let spentBefore = null;
     let paidJob = null;
+    if (!paid) {
+      // Check 2 of four, named as unproven rather than passed over in silence:
+      // without this a plain `--hosted` run printed ALL PASS having proven
+      // three of them.
+      skip('check 2 — one paid desk job end to end, ledger row on the volume', 'no --paid');
+    }
     if (paid) {
       console.log('      queueing one web-fetch summary…');
       // The ledger is the install's, not this run's, and an earlier run leaves
@@ -1079,9 +1112,28 @@ async function hostedMode() {
     );
 
     if (paid) {
+      // Read from the FILE on the volume, not through `/api/spend`. The API
+      // reads the same file, so it is not wrong — but the acceptance says "read
+      // back from the volume", and the check beside it in check 4 does the
+      // literal thing. An instrument one layer further from the claim is the
+      // thing this ticket kept getting caught by.
+      const LEDGER_ON_VOLUME = [
+        "const fs=require('node:fs');",
+        "const f='/data/.agentlings/ledger.jsonl';",
+        "const raw=fs.existsSync(f)?fs.readFileSync(f,'utf8'):'';",
+        "const rows=raw.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean).map(x=>{try{return JSON.parse(x)}catch{return null}}).filter(Boolean);",
+        "const r=rows.find(x=>x.jobId===process.argv[1]);",
+        "console.log(JSON.stringify(r?{jobId:r.jobId,costUsd:r.costUsd,levelId:r.levelId}:null));",
+      ].join('');
+      const onVolumeRow = JSON.parse(await inContainer(LEDGER_ON_VOLUME, paidJob).catch(() => 'null'));
+      check(
+        "the paid run's own ledger row is on the volume AFTER the redeploy",
+        !!onVolumeRow && onVolumeRow.jobId === paidJob && onVolumeRow.costUsd > 0,
+        JSON.stringify(onVolumeRow),
+      );
       const spentAfter = (await get('/api/spend')).body;
       check(
-        "the paid run's ledger row is read back from the volume AFTER the redeploy",
+        '  …and the install reads the same total back through its own API',
         (spentAfter?.overall?.costUsd ?? 0) > 0 &&
           spentAfter.overall.costUsd === spentBefore.overall.costUsd,
         `${JSON.stringify(spentAfter?.overall ?? null)}`,
@@ -1310,14 +1362,14 @@ async function workBarSaysIt(base, password, levelName, report) {
   try {
     ({ chromium } = await import('playwright-core'));
   } catch {
-    console.log('SKIP  the work bar on screen — playwright-core is not installed here');
+    skip('the work bar on screen', 'playwright-core is not installed here');
     return;
   }
   let browser;
   try {
     browser = await chromium.launch({ channel: 'msedge', headless: true });
   } catch (err) {
-    console.log(`SKIP  the work bar on screen — no browser to drive (${String(err).slice(0, 60)})`);
+    skip('the work bar on screen', `no browser to drive (${String(err).slice(0, 60)})`);
     return;
   }
   try {

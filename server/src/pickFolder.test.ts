@@ -152,6 +152,14 @@ describe('the two refusals, which are not one refusal', () => {
     expect(NO_ORGANIZE_HERE).toMatch(/desktop|screen/);
     expect(NO_ORGANIZE_HERE).toContain('picked');
   });
+
+  // The review's catch: the browser was composing the first half of this
+  // sentence, at two separate sites. The server owns what the client renders
+  // (PROJECT.md), so the sentence has to be whole here — it names its own
+  // subject, and a caller has nothing left to prepend.
+  it('is a whole sentence, so no caller has to supply its subject', () => {
+    expect(NO_ORGANIZE_HERE).toMatch(/^organizing /);
+  });
 });
 
 describe('pickFolderAvailable', () => {

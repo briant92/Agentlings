@@ -181,23 +181,29 @@ export function pickFolderAvailable(platform: NodeJS.Platform = process.platform
 }
 
 /**
- * Why the dialog cannot be shown here — for the callers that CAN offer a typed
- * path instead. The reading panel is one: it takes a folder as text.
+ * Why the dialog cannot be shown here, as the *dialog's own* answer — what
+ * `pickFolder` returns when it is asked on a machine that has none. It reaches
+ * a caller through the route's reply, and the one surface that can act on it
+ * is the reading panel, which takes a folder as text. Exported for its test.
  */
 export const NO_PICKER = 'the folder dialog needs Windows — type the path instead';
 
 /**
- * …and why an organize sentence cannot be started here at all (#30).
+ * …and the whole sentence the desk says when an organize job cannot be started
+ * here at all (#30).
  *
- * A separate sentence rather than `NO_PICKER`, because the work bar has no
- * text box to fall back to — D-132 is deliberate that a folder is picked and
- * never typed — so "type the path instead" is advice with nowhere to act on
- * it. The first live hosted run put exactly that on screen: *organizing needs
- * a folder picked on this machine — the folder dialog needs Windows — type the
- * path instead*.
+ * Whole, not a clause: the server owns what the client renders (PROJECT.md),
+ * and the review of this ticket found the browser composing the first half at
+ * two separate sites — the D-030 shape, in the one change that was otherwise
+ * careful about it.
+ *
+ * Separate from `NO_PICKER` because the work bar has no text box to fall back
+ * to — D-132 is deliberate that a folder is picked and never typed — so "type
+ * the path instead" is advice with nowhere to act on it. The first live hosted
+ * run put exactly that on screen.
  */
 export const NO_ORGANIZE_HERE =
-  'this install has no desktop to open a folder dialog on, and a folder can only be picked';
+  'organizing needs a folder picked on this machine, and this install has no desktop to open a folder dialog on';
 
 export async function pickFolder(run: typeof runDialog = runDialog): Promise<Picked> {
   if (!pickFolderAvailable()) {

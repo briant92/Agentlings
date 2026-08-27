@@ -36,8 +36,9 @@ export function doorChoices(connections: readonly ConnectionInfo[]): ConnectionI
  * not exist, and the person deploying the template would never learn what
  * they gave up. So the chip goes, the row stays, and it says why.
  *
- * Off and unready are not this: a door with no key is one paste away and the
- * drawer already says so. Only the machine's own answer belongs here.
+ * Being off, or unready for want of a key, does not put a door in this list —
+ * only the machine's own answer does. A door with no key is one paste away and
+ * the drawer already says so; a door with no screen is not.
  */
 export function doorsRefused(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
   return connections.filter((c) => c.kind === 'read' && !!c.unavailable);

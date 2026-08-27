@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { type PublishedTemplate, templateDrift } from './template';
+import {
+  type PublishedTemplate,
+  templateCodeFromReadme,
+  templateDrift,
+} from './template';
 
 /**
  * The declared side, as `.railway/railway.ts` compiles to — the same three
@@ -145,5 +149,55 @@ describe('templateDrift', () => {
     const drift = templateDrift(declared, { services: {} });
     expect(drift).toHaveLength(1);
     expect(drift[0]).toMatch(/one service/i);
+  });
+});
+
+describe('templateCodeFromReadme', () => {
+  const button = (url: string) =>
+    `# Agentlings\n\n[![Deploy on Railway](https://railway.com/button.svg)](${url})\n\nprose\n`;
+
+  it('reads the code a visitor would click', () => {
+    expect(templateCodeFromReadme(button('https://railway.com/deploy/agentlings'))).toBe(
+      'agentlings',
+    );
+  });
+
+  it('reads a code that is not ours, rather than assuming the one we expect', () => {
+    // The whole point. If the button is republished under a new code the live
+    // check must follow the button; a reader that answered 'agentlings' for
+    // anything would re-create the second copy this function exists to remove.
+    expect(templateCodeFromReadme(button('https://railway.com/deploy/agentlings-v2'))).toBe(
+      'agentlings-v2',
+    );
+  });
+
+  it('is null when there is no button at all', () => {
+    expect(templateCodeFromReadme('# Agentlings\n\nno button here\n')).toBeNull();
+  });
+
+  it('is null for a Railway link that is not a template deploy', () => {
+    // A button pointing somewhere undeployable must not read as a good one.
+    expect(templateCodeFromReadme(button('https://railway.com/project/abc123'))).toBeNull();
+  });
+
+  it('survives CRLF, which is how README.md is stored in this repo', () => {
+    // `prove-template.mts` reads the file off disk without the normalisation
+    // `hosted.test.ts` does, so this is the shape it actually sees.
+    const crlf = button('https://railway.com/deploy/agentlings').replace(/\n/g, '\r\n');
+    expect(templateCodeFromReadme(crlf)).toBe('agentlings');
+  });
+});
+
+describe('templateCodeFromReadme, badges side by side', () => {
+  it('stops at its own closing paren when another badge follows immediately', () => {
+    // Markdown badge rows are conventionally written with no space between
+    // them. A capture of `\S+` reads to the LAST paren on the line and returns
+    // `agentlings)[![Licence](...)](...` as the code — which the mutation
+    // round found surviving, because every other fixture here ends the line at
+    // the button.
+    const row =
+      '[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/agentlings)' +
+      '[![Licence](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)\n';
+    expect(templateCodeFromReadme(row)).toBe('agentlings');
   });
 });

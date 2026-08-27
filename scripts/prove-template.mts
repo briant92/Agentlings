@@ -15,14 +15,33 @@
 // What it cannot do is deploy. #24's second box wants the button pressed by
 // someone who is not the maintainer, and that needs a second Railway account
 // on a paid plan. This proves everything short of the click.
+import { readFileSync } from 'node:fs';
 import { createRailwayContext, project } from 'railway/iac';
-import { templateDrift, type PublishedTemplate } from '../server/src/template';
+import {
+  templateCodeFromReadme,
+  templateDrift,
+  type PublishedTemplate,
+} from '../server/src/template';
 
 const arg = (name: string): string | undefined => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
-const CODE = arg('code') ?? 'agentlings';
+// The code a visitor would actually click, not a literal of our own. This
+// script's default and the README's button were two separate copies of
+// `agentlings`, so a republish under a new code would have had this proving
+// the *old* template — green, about an artifact nobody can reach (D-030).
+const README = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+const CODE = arg('code') ?? templateCodeFromReadme(README);
+if (!CODE) {
+  // Not `process.exit()` (see the note further down) and not a silent skip: a
+  // README with no button is the failure this script is for, since #31 makes
+  // the button the first thing a visitor can do. Throwing stops the run with
+  // a non-zero status the shell reads correctly.
+  throw new Error(
+    'no Deploy on Railway button in README.md — a visitor has nothing to click, so there is no published template to check',
+  );
+}
 const API = 'https://backboard.railway.com/graphql/v2';
 
 let pass = 0;
@@ -87,8 +106,14 @@ if (published) {
   const svcs = Object.values(published.services ?? {});
   ok('it is one service', svcs.length === 1, svcs.map((s) => s.name ?? '?').join(', '));
   if (svcs[0]) {
+    // `!== true`, matching `templateDrift`. It read `=== false` here — the
+    // predicate D-276's mutation round rejected inside the function, left
+    // standing in the line that prints the same fact. A newly-required input
+    // that omits the flag would have been counted as drift by the verdict and
+    // omitted from the detail above it, so the two lines would contradict
+    // each other exactly where someone was trying to read what went wrong.
     const req = Object.entries(svcs[0].variables ?? {})
-      .filter(([, v]) => v.isOptional === false)
+      .filter(([, v]) => v.isOptional !== true)
       .map(([n]) => n);
     console.log(`        a stranger is asked for: ${req.length ? req.join(', ') : 'nothing'}`);
     console.log(`        volume mounts at        : ${Object.values(svcs[0].volumeMounts ?? {})[0]?.mountPath ?? '(none)'}`);

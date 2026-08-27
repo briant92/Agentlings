@@ -119,3 +119,26 @@ export function templateDrift(
 
   return drift;
 }
+
+/**
+ * The template code a visitor actually clicks, read out of the README's
+ * *Deploy on Railway* button. `null` when there is no such button.
+ *
+ * This exists because the code lived as three independent copies: the button,
+ * the test that pins it, and `prove-template.mts`'s own default. The pin's
+ * comment names the hazard exactly — the code changed once when the template
+ * was published, and a stale one "would look fine here and 404 for everybody
+ * else" — and then guarded it by writing the string a second time. Nothing
+ * tied the code the *live* check asks Railway about to the code a visitor
+ * clicks, so the proof could pass green about the wrong artifact while the
+ * button 404s. One reader, called by both (D-030).
+ *
+ * Tolerant of CRLF: the README is a CRLF file in this repo and the script
+ * reads it off disk without the test's normalisation.
+ */
+export function templateCodeFromReadme(readme: string): string | null {
+  const button = readme.match(
+    /\[!\[Deploy on Railway\]\(https:\/\/railway\.com\/button\.svg\)\]\(https:\/\/railway\.com\/deploy\/([^)\s]+)\)/,
+  );
+  return button ? button[1] : null;
+}

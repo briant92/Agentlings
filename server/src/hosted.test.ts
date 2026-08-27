@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { headedAvailable } from './browserchannel';
 import { doorUnavailable, NO_SCREEN, type Connection } from './connections';
 import { REPO_ROOT } from './installpaths';
+import { templateCodeFromReadme } from './template';
 
 /**
  * The *Not available hosted* tag, held against the probes that produce it.
@@ -213,11 +214,17 @@ describe('the three lists agree', () => {
     // when the template was published — the pre-publish code stopped
     // resolving the moment it did, so a stale one would look fine here and
     // 404 for everybody else.
-    const button = README.match(
-      /\[!\[Deploy on Railway\]\(https:\/\/railway\.com\/button\.svg\)\]\((https:\/\/railway\.com\/\S+?)\)/,
-    );
-    expect(button, 'no Deploy on Railway button in README.md').not.toBeNull();
-    expect(button![1]).toBe('https://railway.com/deploy/agentlings');
+    //
+    // Read with the SAME function `prove-template.mts` uses to decide which
+    // template to ask Railway about, so the string pinned here is the string
+    // the live check verifies. It was not: this pin and that script's default
+    // were two independent copies of `agentlings`, and a republish under a new
+    // code would have left the proof passing about the old template while the
+    // button 404ed (D-030).
+    expect(
+      templateCodeFromReadme(README),
+      'no Deploy on Railway button pointing at a template in README.md',
+    ).toBe('agentlings');
   });
 
   it('every claim of the tag carries a citation', () => {

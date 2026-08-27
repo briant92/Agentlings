@@ -664,10 +664,30 @@ async function hostedMode() {
       child.on('close', (code) => resolve({ code: code ?? 1, out, err }));
     });
 
+  /**
+   * A CLI call that must answer, retried three times.
+   *
+   * Railway's API answered one `deployment list` mid-run with a body its own
+   * CLI could not decode ("expected value at line 1 column 1"), which threw
+   * out of the wait loop and took the cleanup with it — leaving a real model
+   * key in a live process. A transient far end is not a proof failing.
+   */
   const railwayJson = async (args) => {
-    const r = await railway([...args, '--json']);
-    if (r.code !== 0) throw new Error(`railway ${args.join(' ')} failed: ${r.err.trim()}`);
-    return JSON.parse(r.out);
+    let last = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await sleep(4000);
+      const r = await railway([...args, '--json']);
+      if (r.code !== 0) {
+        last = r.err.trim();
+        continue;
+      }
+      try {
+        return JSON.parse(r.out);
+      } catch {
+        last = `unreadable answer: ${r.out.slice(0, 80)}`;
+      }
+    }
+    throw new Error(`railway ${args.join(' ')} failed after 3 tries: ${last}`);
   };
 
   /**
@@ -794,6 +814,10 @@ async function hostedMode() {
     throw new Error(`could not make a level to work in: ${made.status} ${JSON.stringify(made.body)}`);
   }
 
+  /** The connection check 1 adds, and the variable its secret is written under. */
+  const CONN = 'proof-hosted';
+  const TOKEN = 'FIXTURE_TOKEN';
+
   /** Everything created on the install, undone in reverse however this ends. */
   const cleanup = [async () => del(`/api/levels/${LEVEL}`)];
 
@@ -876,15 +900,56 @@ async function hostedMode() {
       );
     }
 
-    // A well-formed value that is not a key. Persistence is the claim; the far
-    // end is never called, and never should be with a made-up value.
-    const FAKE = `prove-hosted-not-a-real-key-${randomUUID().replace(/-/g, '')}`;
-    const pasted = await post('/api/settings/connections/search/secret', {
-      secret: 'BRAVE_API_KEY',
-      value: FAKE,
+    // The paste is an ADD (D-244), not a paste into a shipped door, and that
+    // is forced rather than chosen. `POST /api/settings/connections/:name/secret`
+    // calls the connection's own far end and stores only what answers, so it
+    // cannot be proven without a real credential — the first live run of this
+    // learnt it as a flat 400 on a made-up value. `prove-install-paths` hit the
+    // same wall at #23 and wrote down the same answer. The add route probes the
+    // server it is given instead, and the server it is given here is this
+    // repository's own MCP fixture, which refuses to start unless its secret
+    // reached it: so the value provably travelled, and no real key is spent.
+    //
+    // It is the same drawer and the same secrets file either way, which is the
+    // fact under test. What is NOT proven hosted is the validating route, and
+    // that is said here rather than glossed.
+    const SECRET = `pasted-into-settings-${randomUUID().replace(/-/g, '')}`;
+    // Asked of the container rather than hardcoded: an image that moves node
+    // or the fixture should fail here, loudly, not silently prove nothing.
+    const where = JSON.parse(
+      await inContainer(
+        [
+          "const fs=require('node:fs');",
+          "const f=process.cwd()+'/server/src/mcpprobe.fixture.mjs';",
+          "console.log(JSON.stringify({node:process.execPath,fixture:fs.existsSync(f)?f:null}));",
+        ].join(''),
+      ),
+    );
+    check('the image carries the MCP fixture to probe against', !!where.fixture, JSON.stringify(where));
+
+    // A leftover from a run that died mid-flight would make the add fail for
+    // the wrong reason; cleared first, and its failure ignored.
+    await del(`/api/connections/${CONN}`);
+    const pasted = await post('/api/connections', {
+      draft: {
+        name: CONN,
+        label: 'Proof (hosted)',
+        transport: 'stdio',
+        command: where.node,
+        args: [where.fixture],
+        secrets: { [TOKEN]: 'the fixture refuses to start without it' },
+      },
+      values: { [TOKEN]: SECRET },
     });
-    cleanup.push(async () => del('/api/settings/connections/search/secrets'));
-    check('the drawer accepts a pasted door key', pasted.status === 200, `status=${pasted.status}`);
+    cleanup.push(async () => {
+      await del(`/api/settings/connections/${CONN}/secrets`);
+      await del(`/api/connections/${CONN}`);
+    });
+    check(
+      'a key pasted into Settings is accepted, and its far end answered',
+      pasted.status === 201,
+      `status=${pasted.status} ${JSON.stringify(pasted.body?.error ?? '')}`,
+    );
 
     const HASH_LINE = [
       "const fs=require('node:fs'),h=require('node:crypto');",
@@ -894,14 +959,14 @@ async function hostedMode() {
       "const l=raw.split(String.fromCharCode(10)).map(x=>x.trim()).find(x=>x.startsWith(want))||'';",
       "console.log(l?h.createHash('sha256').update(l).digest('hex'):'absent');",
     ].join('');
-    const expected = createHash('sha256').update(`BRAVE_API_KEY=${FAKE}`).digest('hex');
-    const onVolume = await inContainer(HASH_LINE, 'BRAVE_API_KEY');
+    const expected = createHash('sha256').update(`${TOKEN}=${SECRET}`).digest('hex');
+    const onVolume = await inContainer(HASH_LINE, TOKEN);
     check(
       'it lands on the volume, byte for byte, as the value that was sent',
       onVolume === expected,
       `${onVolume.slice(0, 12)} vs ${expected.slice(0, 12)}`,
     );
-    const readyBefore = (await get('/api/connections')).body.find((c) => c.name === 'search');
+    const readyBefore = (await get('/api/connections')).body.find((c) => c.name === CONN);
     check('and the door reads as ready', readyBefore?.ready === true);
 
     let spentBefore = null;
@@ -947,9 +1012,14 @@ async function hostedMode() {
     const nowOn = await waitForNewDeploy(beforeRedeploy, 'the redeploy');
     console.log(`      back on ${nowOn.id}`);
 
-    const readyAfter = (await get('/api/connections')).body.find((c) => c.name === 'search');
-    check('the pasted key is still there after the redeploy', readyAfter?.ready === true);
-    const afterVolume = await inContainer(HASH_LINE, 'BRAVE_API_KEY');
+    const readyAfter = (await get('/api/connections')).body.find((c) => c.name === CONN);
+    // The connection itself lives under the data directory and the key under
+    // the secrets file, and both are on the volume — so this one row proves
+    // both halves of "one data directory" survived a container being rebuilt.
+    check('the connection is still listed after the redeploy', !!readyAfter);
+    check('  …and its pasted key is still there', readyAfter?.ready === true,
+      JSON.stringify(readyAfter?.missingSecrets ?? null));
+    const afterVolume = await inContainer(HASH_LINE, TOKEN);
     check(
       '  …and the same bytes, not merely a name that is set',
       afterVolume === expected,
@@ -1116,13 +1186,25 @@ async function hostedMode() {
     }
   }
 
-  // Asked of the install, not assumed from having called the undo functions.
-  await sleep(1000);
-  const ended = (await get('/api/settings')).body;
-  check('it is keyless again', ended.auth?.source === 'none' && ended.executor === 'simulated',
-    `executor=${ended.executor} auth=${ended.auth?.source}`);
+  // Asked of the install, not assumed from having called the undo functions —
+  // and waited for, because deleting the variable only takes the key out of
+  // the PROCESS once Railway has finished the redeploy that delete triggers.
+  // Run 1 exited before that and left a live key in a live process.
+  let ended = null;
+  const untilKeyless = Date.now() + DEPLOY_TIMEOUT_MS;
+  while (Date.now() < untilKeyless) {
+    ended = (await get('/api/settings').catch(() => ({ body: {} }))).body;
+    if (ended?.auth?.source === 'none' && ended.executor === 'simulated') break;
+    await signIn().catch(() => {});
+    await sleep(5000);
+  }
   check(
-    '  …and the pasted door key is gone from the volume',
+    'it is keyless again',
+    ended?.auth?.source === 'none' && ended?.executor === 'simulated',
+    `executor=${ended?.executor} auth=${ended?.auth?.source}`,
+  );
+  check(
+    '  …and the pasted key is gone from the volume',
     (await inContainer(
       [
         "const fs=require('node:fs');",
@@ -1131,7 +1213,7 @@ async function hostedMode() {
         "const l=raw.split(String.fromCharCode(10)).map(x=>x.trim()).find(x=>x.startsWith(process.argv[1]+'='))||'';",
         "console.log(l?'live':'gone');",
       ].join(''),
-      'BRAVE_API_KEY',
+      TOKEN,
     )) === 'gone',
   );
   const stillUp = await fetch(`${BASE_URL}/`).then((r) => r.status).catch(() => 0);
@@ -1188,6 +1270,11 @@ async function workBarSaysIt(base, password, levelName, report) {
     // any bar. A green check that never looked at the thing it names is the
     // fault this project keeps finding in its own instruments.
     const card = page.locator('.lvl-card', { hasText: levelName });
+    // Waited for before it is counted. Counting the moment the FIRST card
+    // appears reads the list mid-render — HQ arrives before the proof level —
+    // and reported cards=0 for a card that was there a beat later, which
+    // `click()` then auto-waited for and found.
+    await card.first().waitFor({ timeout: 30_000 }).catch(() => {});
     report('the proof level is on the select screen', (await card.count()) === 1, `cards=${await card.count()}`);
     await card.first().click();
     await page.locator('.work-input, .tour').first().waitFor({ timeout: 30_000 });

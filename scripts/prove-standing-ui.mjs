@@ -100,7 +100,19 @@ check('opened a level and found the work bar', true);
 await box.fill('Reconcile input/statement.xlsx against input/ledger.xlsx');
 await page.waitForTimeout(2500);
 
-const repeatRow = page.locator('.work-repeat');
+// `.work-repeat` alone stopped meaning "the repeats row" at #16 (D-264),
+// which put a second paragraph in that class — the *watch* tick, shown while
+// no cadence is chosen and a supervised door is ready. Measured on this
+// install: two matches, `watch:` and `repeats:`.
+//
+// It broke this check loudly and the next one **silently**, which is the part
+// worth keeping: `innerText()` on a two-match locator throws in strict mode,
+// the `.catch(() => '')` below turned that into an empty string, and an empty
+// string does not include "runs once" — so the attachment check has been
+// passing on nothing at all for three tickets. Named by what it is rather
+// than by what it is not, so a third row in the class does not silently
+// rejoin it.
+const repeatRow = page.locator('.work-repeat').filter({ hasText: /repeats:|runs once/ });
 check('the repeat row is there once a sentence is typed', (await repeatRow.count()) === 1);
 check(
   'the dead-end copy about attachments is gone with no files attached',

@@ -22590,7 +22590,23 @@ that was wrong.
 
 `npm test` 3,050 green (2,687 server + 363 web) and `npm run typecheck` clean.
 
-Two acceptance boxes are **owed** and are not claimed here: the existing
-`prove-*-ui` scripts against the running dev setup, which need Brian's own
-install up and must never be run by starting one from a session (armed rows
-double-fire), and the closing comment on #29 carrying this output.
+**All five `prove-*-ui` scripts pass against the running dev setup** — run
+2026-08-27 against Brian's own `npm run serve`, never one started from a
+session: `prove-wave0-ui` 17/17, `prove-refusal-ui` 21/21, `prove-trigger-ui`
+28/28, `prove-user-connections-ui` 16/16, `prove-standing-ui` 16/16. They drive
+Vite on `:5173`, which this slice does not touch, and that is the point of
+running them: the change is on `:4600` and the dev path had to be shown
+unmoved.
+
+`prove-standing-ui` failed first, and **not because of this slice** — the
+commit touches no file under `web/`. `.work-repeat` stopped meaning "the
+repeats row" at #16 (`9624aea`, D-264), which put a second paragraph in that
+class for the *watch* tick; the script was last updated at `9fed1cf`, three
+tickets earlier. Measured on this install: two matches, `watch:` and
+`repeats:`. It broke one check loudly and the next one **silently** —
+`innerText()` on a two-match locator throws in strict mode, a `.catch(() => '')`
+turned that into an empty string, and an empty string does not contain the
+"runs once" copy the check was looking for, so that assertion had been passing
+on nothing for three tickets. The locator now names the row by what it is.
+`prove-trigger-ui` reads the same class while a cadence is on, when the watch
+row does not render, so it was never affected.

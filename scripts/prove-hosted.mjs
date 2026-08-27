@@ -1284,10 +1284,15 @@ async function hostedMode() {
 
     console.log('      restarting the process…');
     const bootedBefore = await processStartedAt();
-    const restarted = await railway(['service', 'restart', '--service', service, '--yes']);
+    // The command is a REQUEST; the evidence is PID 1's start time. `railway
+    // service restart` blocks until the restart completes and can outlast any
+    // timeout worth setting — one run threw the whole proof away on a command
+    // that had almost certainly done its job. So a non-zero exit here buys a
+    // fallback attempt and nothing more; what decides is the check below.
+    const restarted = await railway(['service', 'restart', '--service', service, '--yes'], 240_000);
     if (restarted.code !== 0) {
-      const fallback = await railway(['redeploy', '--service', service, '--yes']);
-      if (fallback.code !== 0) throw new Error(`could not restart: ${restarted.err.trim()}`);
+      console.log(`      (the restart command exited ${restarted.code} — trying a redeploy too)`);
+      await railway(['redeploy', '--service', service, '--yes'], 240_000);
     }
     const bootedAfter = await waitForRestart(bootedBefore);
     check(

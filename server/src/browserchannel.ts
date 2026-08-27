@@ -109,3 +109,30 @@ export async function launchChromium(): Promise<import('playwright-core').Browse
   }
   return open(channel);
 }
+
+/**
+ * Whether this install can show a window at all.
+ *
+ * The probe supervised live acting was always described as having and never
+ * had. D-255's browser is *headed on purpose* — the operator watches it, signs
+ * into it, and closing it ends the run — so it needs a desktop the way OCR
+ * needs Windows. `ocr.ts` and `pickFolder.ts` refuse off-platform; this door
+ * did not, so on a container a job holding it would have launched a window at
+ * nothing and died halfway through paid work instead of being refused before
+ * it started.
+ *
+ * Pure, and not a launch: the honest probe would be to open a headed browser
+ * and close it, but on this machine that means a browser window flashing up
+ * every time a supervised job is queued. The condition below is the one
+ * Chromium itself imposes, so nothing is being guessed — a desktop platform,
+ * or an X or Wayland display on Linux. An empty value is not a display, which
+ * is `sessionPassword`'s failure direction: a stray `DISPLAY=` must not switch
+ * this back on for a container.
+ */
+export function headedAvailable(
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (platform === 'win32' || platform === 'darwin') return true;
+  return (env.DISPLAY ?? '').trim() !== '' || (env.WAYLAND_DISPLAY ?? '').trim() !== '';
+}

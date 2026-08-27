@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { type ConnectionInfo } from '@agentlings/shared';
+import { headedAvailable } from './browserchannel';
 import { listenPort } from './session';
 
 /**
@@ -232,11 +233,29 @@ export function sharingSecrets(connection: Connection, connections: Connection[]
     .map((c) => c.name);
 }
 
-/** The connections a job asked for, dropping any that are unknown or unready. */
+/**
+ * Why a supervised door cannot be held on an install with no desktop.
+ *
+ * Exported so the one place that refuses it and anything that wants to say so
+ * cannot drift apart, which is the D-030 shape: "it delivered" kept being
+ * re-derived locally until every copy quietly assumed something different.
+ */
+export const NO_SCREEN = 'needs a screen to open a window on, and this install has none';
+
+/**
+ * The connections a job asked for, dropping any that are unknown or unready.
+ *
+ * `headed` is measured by the caller and passed in rather than probed here,
+ * so this stays a pure function of its arguments — `listenPolicy`'s shape, and
+ * for the same reason: a policy that reaches out to the machine is a policy
+ * that cannot be tested against the machine it will actually run on. It
+ * defaults to this install's own answer, so no call site had to change.
+ */
 export function resolveForJob(
   requested: string[] | undefined,
   connections: Connection[],
   env: Record<string, string | undefined>,
+  headed: boolean = headedAvailable(),
 ): { granted: Connection[]; refused: { name: string; reason: string }[] } {
   const granted: Connection[] = [];
   const refused: { name: string; reason: string }[] = [];
@@ -244,6 +263,16 @@ export function resolveForJob(
     const found = connections.find((c) => c.name === name);
     if (!found) {
       refused.push({ name, reason: 'no such connection' });
+      continue;
+    }
+    // A supervised door is headed by construction (D-255): the operator
+    // watches the window, signs into it themselves, and closing it ends the
+    // run. An install with no desktop cannot offer any of that, so it is
+    // refused here — before a turn is spent — rather than at the launch,
+    // halfway through work already paid for. This is the probe #24 says
+    // supervised acting has; until #24 it did not have one.
+    if (found.supervised && !headed) {
+      refused.push({ name, reason: NO_SCREEN });
       continue;
     }
     const missing = missingSecrets(found, env);

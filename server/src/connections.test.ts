@@ -31,6 +31,16 @@ const TRACKER: Connection = {
   secrets: { TRACKER_TOKEN: 'API token for the tracker' },
 };
 
+/** A supervised door (D-255): headed, watched, and so it needs a desktop. */
+const WATCHED: Connection = {
+  name: 'browser-act',
+  label: 'Act in a browser you can watch',
+  transport: 'stdio',
+  supervised: true,
+  command: 'npx',
+  args: ['-y', '@playwright/mcp@latest'],
+};
+
 describe('missingSecrets', () => {
   it('finds nothing missing for a connection that needs none', () => {
     expect(missingSecrets(WEB, {})).toEqual([]);
@@ -102,6 +112,41 @@ describe('resolveForJob', () => {
     const { granted, refused } = resolveForJob(['tracker'], all, {});
     expect(granted).toEqual([]);
     expect(refused[0].reason).toContain('TRACKER_TOKEN');
+  });
+
+  /**
+   * A supervised door on an install with no screen (#24).
+   *
+   * The window is the point of D-255 — the operator watches it, signs into it,
+   * and closing it ends the run — so an install with no desktop cannot hold
+   * this door at all. Before this it was granted anyway and the run died at
+   * the launch, halfway through work the user had already paid for.
+   */
+  const watched = [WEB, TRACKER, WATCHED];
+
+  it('refuses a supervised door where no window can be shown, and says why', () => {
+    const { granted, refused } = resolveForJob(['browser-act'], watched, env, false);
+    expect(granted).toEqual([]);
+    expect(refused[0]).toMatchObject({ name: 'browser-act' });
+    expect(refused[0].reason).toContain('screen');
+  });
+
+  it('grants it where there is a screen — this machine, unchanged', () => {
+    const { granted, refused } = resolveForJob(['browser-act'], watched, env, true);
+    expect(granted.map((c) => c.name)).toEqual(['browser-act']);
+    expect(refused).toEqual([]);
+  });
+
+  it('refuses only the supervised door, and grants the rest of the same ask', () => {
+    // The refusal is per door, not per job: a hosted install still gets its
+    // web and its tracker out of an ask that also wanted the watched browser.
+    const { granted, refused } = resolveForJob(['web', 'browser-act', 'tracker'], watched, env, false);
+    expect(granted.map((c) => c.name)).toEqual(['web', 'tracker']);
+    expect(refused.map((r) => r.name)).toEqual(['browser-act']);
+  });
+
+  it('leaves an unsupervised door alone on the same screenless install', () => {
+    expect(resolveForJob(['web'], watched, env, false).granted.map((c) => c.name)).toEqual(['web']);
   });
 });
 

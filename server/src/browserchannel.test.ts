@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { browserChannel, forgetBrowserChannel, pickChannel } from './browserchannel';
+import {
+  browserChannel,
+  forgetBrowserChannel,
+  headedAvailable,
+  pickChannel,
+} from './browserchannel';
 
 /**
  * Every case drives the prober by hand. The point of this module is what it
@@ -73,5 +78,43 @@ describe('browserChannel', () => {
     forgetBrowserChannel();
     expect(await browserChannel(async (c) => c === 'chromium')).toBe('chromium');
     forgetBrowserChannel();
+  });
+});
+
+/**
+ * The other half of "what browsers can this install open": not which build,
+ * but whether a window can be shown at all. It exists because #24's
+ * acceptance says supervised live acting is *refused at its probe* on a host
+ * and, until this, there was no such probe — only `ocr.ts` and
+ * `pickFolder.ts` gate on the platform, so a hosted install would have
+ * launched a headed browser at nothing and killed a paid job halfway.
+ */
+describe('headedAvailable', () => {
+  it('is true where a desktop is the norm', () => {
+    // This machine's branch, and the one that must not change: on Windows a
+    // supervised job is granted exactly as it was before the probe existed.
+    expect(headedAvailable('win32', {})).toBe(true);
+    expect(headedAvailable('darwin', {})).toBe(true);
+  });
+
+  it('is false on a Linux container, which is the case it was written for', () => {
+    expect(headedAvailable('linux', {})).toBe(false);
+  });
+
+  it('is true on Linux with a display, because that is a real desktop', () => {
+    // A Linux workstation is not a container. The condition is the one
+    // Chromium itself imposes, so the probe is the truth rather than a guess
+    // about where the code is running.
+    expect(headedAvailable('linux', { DISPLAY: ':0' })).toBe(true);
+    expect(headedAvailable('linux', { WAYLAND_DISPLAY: 'wayland-0' })).toBe(true);
+  });
+
+  it('does not count an empty display as a display', () => {
+    // `sessionPassword`'s failure direction: a variable that exists and says
+    // nothing is not a desktop, and a stray `DISPLAY=` in a Dockerfile would
+    // otherwise switch supervised acting back on for a container.
+    expect(headedAvailable('linux', { DISPLAY: '' })).toBe(false);
+    expect(headedAvailable('linux', { DISPLAY: '   ' })).toBe(false);
+    expect(headedAvailable('linux', { WAYLAND_DISPLAY: '' })).toBe(false);
   });
 });

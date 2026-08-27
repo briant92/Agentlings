@@ -101,6 +101,16 @@ describe('headedAvailable', () => {
     expect(headedAvailable('linux', {})).toBe(false);
   });
 
+  it('is a list of desktops, not "anything that is not Linux"', () => {
+    // A mutation run turned the test into `platform !== 'linux'` and nothing
+    // caught it, because nothing here had ever named a third platform. The
+    // two spellings differ on every other Unix, where a display is just as
+    // necessary — and the whitelist is the safe direction: an unlisted
+    // platform is asked for a display rather than assumed to have a screen.
+    expect(headedAvailable('freebsd', {})).toBe(false);
+    expect(headedAvailable('freebsd', { DISPLAY: ':0' })).toBe(true);
+  });
+
   it('is true on Linux with a display, because that is a real desktop', () => {
     // A Linux workstation is not a container. The condition is the one
     // Chromium itself imposes, so the probe is the truth rather than a guess

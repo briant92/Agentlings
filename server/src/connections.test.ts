@@ -7,6 +7,7 @@ import {
   mcpSecretValues,
   mcpToolNames,
   missingSecrets,
+  NO_SCREEN,
   resolveForJob,
   toMcpServers,
   type Connection,
@@ -147,6 +148,27 @@ describe('resolveForJob', () => {
 
   it('leaves an unsupervised door alone on the same screenless install', () => {
     expect(resolveForJob(['web'], watched, env, false).granted.map((c) => c.name)).toEqual(['web']);
+  });
+
+  it('asks this install itself when the caller says nothing', () => {
+    // The argument every test above passes is the argument production never
+    // does — so without this one, replacing the default with a bare `true`
+    // leaves the whole suite green while the deployed install grants the door
+    // it cannot open. A mutation run found exactly that.
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform');
+    const { DISPLAY, WAYLAND_DISPLAY } = process.env;
+    try {
+      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+      delete process.env.DISPLAY;
+      delete process.env.WAYLAND_DISPLAY;
+      const { granted, refused } = resolveForJob(['browser-act'], watched, env);
+      expect(granted).toEqual([]);
+      expect(refused[0]).toMatchObject({ name: 'browser-act', reason: NO_SCREEN });
+    } finally {
+      if (platform) Object.defineProperty(process, 'platform', platform);
+      if (DISPLAY !== undefined) process.env.DISPLAY = DISPLAY;
+      if (WAYLAND_DISPLAY !== undefined) process.env.WAYLAND_DISPLAY = WAYLAND_DISPLAY;
+    }
   });
 });
 

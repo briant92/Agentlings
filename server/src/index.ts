@@ -300,7 +300,7 @@ import {
   safeOutputPath,
   deliverySummary,
 } from './outputs';
-import { NO_PICKER, pickFolder, pickFolderAvailable } from './pickFolder';
+import { NO_ORGANIZE_HERE, pickFolder, pickFolderAvailable } from './pickFolder';
 import { previewFile } from './preview';
 import { isDiscardNote, isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
@@ -1783,7 +1783,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
           // …and on an install with no desktop the picker is the whole ask,
           // so the desk says so instead of offering a button that errors on
           // the click (#30). Asked of the picker rather than restated here.
-          ...(pickFolderAvailable() ? {} : { organizeRefused: NO_PICKER }),
+          ...(pickFolderAvailable() ? {} : { organizeRefused: NO_ORGANIZE_HERE }),
         }
       : {}),
     // A reconciliation is named here and counted at the desk (D-224): the

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  NO_ORGANIZE_HERE,
   NO_PICKER,
   PICK_TIMEOUT_MS,
   parsePickOutput,
@@ -139,6 +140,20 @@ describe('how long a person may browse', () => {
  * and the refusal — which is the same shape #24 found on supervised acting,
  * one layer up.
  */
+describe('the two refusals, which are not one refusal', () => {
+  // The first live hosted run put NO_PICKER on the work bar, where it read
+  // "…type the path instead" beside a bar with nothing to type a path into.
+  it('the work bar\'s sentence offers no typed path, because there is none', () => {
+    expect(NO_PICKER).toContain('type the path');
+    expect(NO_ORGANIZE_HERE).not.toContain('type the path');
+  });
+
+  it('and it says what is missing rather than what platform is wanted', () => {
+    expect(NO_ORGANIZE_HERE).toMatch(/desktop|screen/);
+    expect(NO_ORGANIZE_HERE).toContain('picked');
+  });
+});
+
 describe('pickFolderAvailable', () => {
   it('is Windows and nothing else', () => {
     expect(pickFolderAvailable('win32')).toBe(true);

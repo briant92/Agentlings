@@ -180,8 +180,24 @@ export function pickFolderAvailable(platform: NodeJS.Platform = process.platform
   return platform === 'win32';
 }
 
-/** Why the dialog cannot be shown here — one sentence, wherever it is said. */
+/**
+ * Why the dialog cannot be shown here — for the callers that CAN offer a typed
+ * path instead. The reading panel is one: it takes a folder as text.
+ */
 export const NO_PICKER = 'the folder dialog needs Windows — type the path instead';
+
+/**
+ * …and why an organize sentence cannot be started here at all (#30).
+ *
+ * A separate sentence rather than `NO_PICKER`, because the work bar has no
+ * text box to fall back to — D-132 is deliberate that a folder is picked and
+ * never typed — so "type the path instead" is advice with nowhere to act on
+ * it. The first live hosted run put exactly that on screen: *organizing needs
+ * a folder picked on this machine — the folder dialog needs Windows — type the
+ * path instead*.
+ */
+export const NO_ORGANIZE_HERE =
+  'this install has no desktop to open a folder dialog on, and a folder can only be picked';
 
 export async function pickFolder(run: typeof runDialog = runDialog): Promise<Picked> {
   if (!pickFolderAvailable()) {

@@ -115,10 +115,19 @@ const MINE = {
 };
 const before = { env: hash(MINE.env), log: hash(MINE.log) };
 
+/** Every deploy Railway has to finish before the install answers again. */
+const DEPLOY_TIMEOUT_MS = 6 * 60_000;
+/** How long one small paid job may take before this gives up on it. */
+const JOB_TIMEOUT_MS = 8 * 60_000;
+/** How far ahead the proof schedule is armed — over one sweep, under a wait. */
+const ARM_AHEAD_MS = 150_000;
+
 // The hosted mode talks to a machine that is not this one and starts no server
 // here, so it forks off before any of the local scaffolding below — the temp
 // home, the child process, the port. Its own section is at the foot of the
-// file.
+// file, and its three timings are up here rather than beside it because a
+// `const` does not hoist: declared down there, the first live run died on a
+// temporal-dead-zone error after setting a real key on a public install.
 if (MODE === 'hosted') {
   try {
     await hostedMode();
@@ -606,13 +615,6 @@ process.exit(bad === 0 ? 0 : 1);
 // It leaves the install as it found it: keyless, with no proof level, no
 // schedule row and no secret.
 
-/** Every deploy Railway has to finish before the install answers again. */
-const DEPLOY_TIMEOUT_MS = 6 * 60_000;
-/** How long one small paid job may take before this gives up on it. */
-const JOB_TIMEOUT_MS = 8 * 60_000;
-/** How far ahead the proof schedule is armed — over one sweep, under a wait. */
-const ARM_AHEAD_MS = 150_000;
-
 /**
  * The Railway CLI as a program, not as a shell line.
  *
@@ -845,8 +847,14 @@ async function hostedMode() {
       // A host variable, because there is nowhere in the app to paste one.
       // Removed again at the end — the install is a reference install and
       // holds no real key when nobody is watching it.
+      //
+      // DELETED, never set empty. The first run of this blanked it instead,
+      // and an empty host variable is still a name `process.env` holds — so by
+      // D-270 it would have shadowed anything ever pasted into `/data/.env`
+      // under that name, permanently and silently. The rule this whole slice
+      // is about, caught in its own cleanup.
       cleanup.push(async () => {
-        await railway(['variables', '--service', service, '--set', 'ANTHROPIC_API_KEY=']);
+        await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
       });
       const was = await latestDeploy();
       const set = await railway(['variables', '--service', service, '--set', `ANTHROPIC_API_KEY=${key}`]);
@@ -954,7 +962,7 @@ async function hostedMode() {
       );
       // The money removed again before anything else runs on this install.
       const wasPaid = await latestDeploy();
-      await railway(['variables', '--service', service, '--set', 'ANTHROPIC_API_KEY=']);
+      await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
       console.log('      model key removed — waiting out that redeploy');
       await waitForNewDeploy(wasPaid, 'the key-removal redeploy');
       const back = (await get('/api/settings')).body;

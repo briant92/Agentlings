@@ -22782,15 +22782,53 @@ the run below.
 
 ### The proof, and what it cost to make it honest
 
-`node scripts/prove-hosted.mjs --hosted --paid`, run twice, output in #30's
-closing comment. Four checks: what the install cannot offer (API and the work
-bar in a real browser); a key pasted into Settings and a paid run read back
-across one real Railway redeploy; a schedule armed minutes ahead firing once;
-a real process restart after which the boot sweep does not fire it again.
+`node scripts/prove-hosted.mjs --hosted --paid`, **40 checks, ALL PASS, run
+twice** against `agentlings-production.up.railway.app`; the full output is in
+#30's closing comment. Four checks: what the install cannot offer (API and the
+work bar in a real browser); a key pasted into Settings and a paid run read
+back across one real Railway redeploy; a schedule armed minutes ahead firing
+once; a real process restart after which the boot sweep does not fire it again.
 
-**Seven faults were found by running it, and five of them were in the proof
+The lines that carry the claim, from the first of the two runs:
+
+```
+PASS  supervised acting is listed at all — refused, not absent
+PASS    …and carries the reason this install cannot offer it
+        — "needs a screen to open a window on, and this install has none"
+PASS    …which is about the machine, not a missing key  — ready=true missingSecrets=[]
+PASS  the work bar itself says the door is refused, and why
+        — "act in a browser you can watch — needs a screen to open a window on,
+           and this install has none"
+
+PASS  the executor is real only after the restart the key forced
+        — executor=claude-agent-sdk auth=api-key
+PASS  a key pasted into Settings is accepted, and its far end answered  — status=201
+PASS  it lands on the volume, byte for byte, as the value that was sent
+PASS  and THIS run cost real money — a simulated run costs nothing  — $0.1144 on one new row
+      redeploying…  back on 34a50082
+PASS    …and its pasted key is still there  — []
+PASS  the paid run's own ledger row is on the volume AFTER the redeploy
+        — {"jobId":"0d328de7","costUsd":0.1144,"levelId":"hosted-proof-730f93"}
+
+PASS  it fires  — 2026-08-27T16:04:24.133Z
+PASS  exactly one job came of it  — jobs=1
+PASS  the schedules file on the volume records that one firing
+        — {"lastFiredAt":1787846664133,"nextDueAt":1787933040000,"error":null}
+PASS  the process really restarted — a new one is serving the install
+        — started 16:02:23.038Z → 16:04:33.930Z
+PASS  the boot sweep does not fire it a second time  — 1787846664133 → 1787846664133
+PASS    …and there is still exactly one job, not one per boot  — jobs=1
+
+PASS  it is keyless again  — executor=simulated auth=none
+PASS  and it is still up  — GET / -> 200
+
+ALL PASS
+```
+
+**Eleven faults were found by running it, and nine of them were in the proof
 itself.** They are listed because the pattern is the entry's real content: a
-check that reports a number it was never measuring.
+check that reports a number it was never measuring, or an instrument that
+throws a proof away over its own convenience.
 
 - A `const` declared in the hosted section and read from the dispatch at the
   top of the file — no hoisting, so the first run died on the temporal dead
@@ -22821,6 +22859,27 @@ check that reports a number it was never measuring.
   The run sat waiting for a deployment that was never coming, while the process
   it was cleaning still held the model key in memory. Deleting takes a key out
   of Railway's store; only a new process takes it out of memory.
+- `railway ssh` against a container that is restarting neither fails nor
+  returns. Five live `railway.exe` processes were left behind and the wait loop
+  could not advance. Every CLI call is bounded now.
+- The retry that Railway's undecodable API answers earned was added to the JSON
+  call and **not** to the `ssh` call, which then threw a whole run away at its
+  first shell — a fix applied where it was found and not where else the same
+  far end was reached, which is D-269's own lesson, inside this ticket.
+- The restart *command* outran its bound, and a non-zero exit from it was
+  treated as the claim failing — while the check that could settle it, PID 1's
+  start time, sat two lines below and was never reached. The command is a
+  request; the evidence is the process. The final run exited `-2` on that
+  command and proved the restart anyway.
+
+The review of this ticket added two more, and the first is the sharpest: the
+change is scrupulous that one rule has one home — `doorUnavailable` read by
+`resolveForJob` *and* `describe`, `pickFolderAvailable` by the desk *and* the
+dialog — and then composed the organize refusal half in the server and half in
+the browser, at **two** browser sites. And a run could print a bare `ALL PASS`
+with a browser it never found and a paid job it never ran, in a file whose own
+text says *a check that cannot be made is not a check that passed*; skips are
+counted and named in the verdict now.
 
 The timezone was nearly an eighth. The row is armed in the install's local
 time, derived from a probe row's own `nextDueAt` — and the first version had

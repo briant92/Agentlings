@@ -53,9 +53,9 @@ RUN mkdir -p /data
 # ungated install on a public address.
 ENV AGENTLINGS_BIND=0.0.0.0
 
-# The port is the host's (`PORT`, D-271), so nothing is wired here. EXPOSE is
-# documentation; Railway routes to whatever the process listens on.
-EXPOSE 4600
+# The port is the host's (`PORT`, D-271), so nothing is wired here — and no
+# EXPOSE either, which would be a second copy of `DEFAULT_PORT` with nothing
+# keeping the two honest. Railway routes to whatever the process listens on.
 
 # The same launcher `npm run serve` uses, called directly rather than through
 # npm so that the platform's SIGTERM reaches the wrapper — which forwards it —

@@ -23,9 +23,45 @@ import { BIND_VAR, listenPolicy, PASSWORD_VAR } from './session';
 const DOCKERFILE = path.join(REPO_ROOT, 'Dockerfile');
 const dockerfile = readFileSync(DOCKERFILE, 'utf8');
 
-/** `ENV NAME=value`, which is the only form this Dockerfile uses. */
+/**
+ * What the image sets `name` to, or undefined.
+ *
+ * **Both** of Docker's forms, and that is the whole point of the function:
+ * written to see only `ENV NAME=value` it answered undefined for the legacy
+ * `ENV NAME value`, so every *negative* assertion built on it would have
+ * passed against a Dockerfile that set the variable in the other spelling. A
+ * check that cannot see the thing it forbids is this repository's oldest scar
+ * (PROJECT.md, hard-won rules) and it was in here on the first draft.
+ */
 const envLine = (name: string): string | undefined =>
-  dockerfile.match(new RegExp(`^ENV ${name}=(.+)$`, 'm'))?.[1]?.trim();
+  dockerfile.match(new RegExp(`^ENV ${name}(?:=|\\s+)(.+)$`, 'm'))?.[1]?.trim();
+
+/**
+ * The reader's own reader, because every negative assertion below is only as
+ * honest as this one function and it has been wrong twice: once seeing only
+ * `NAME=value`, and once with `\s` written into a template literal — where
+ * the backslash is dropped and the class quietly becomes "an equals sign or
+ * the letter s". Both spellings answered confidently.
+ */
+describe('envLine', () => {
+  const from = (text: string, name: string) =>
+    text.match(new RegExp(`^ENV ${name}(?:=|\\s+)(.+)$`, 'm'))?.[1]?.trim();
+
+  it("reads both of Docker's ENV forms", () => {
+    expect(from('ENV NODE_ENV=production', 'NODE_ENV')).toBe('production');
+    expect(from('ENV NODE_ENV production', 'NODE_ENV')).toBe('production');
+  });
+
+  it('stops at the name boundary', () => {
+    // origin.test.ts's label-boundary case, one file along: a name that merely
+    // starts with the one asked for is a different variable.
+    expect(from('ENV NODE_ENVIRONMENT=other', 'NODE_ENV')).toBeUndefined();
+  });
+
+  it('answers undefined for a variable the image never sets', () => {
+    expect(from('ENV OTHER=1', 'NODE_ENV')).toBeUndefined();
+  });
+});
 
 describe('the Dockerfile and the browsers it ships', () => {
   it('pins the base image to the playwright-core the server drives', () => {
@@ -127,24 +163,91 @@ describe('.dockerignore', () => {
   });
 });
 
-describe('railway.json', () => {
-  const config = JSON.parse(readFileSync(path.join(REPO_ROOT, 'railway.json'), 'utf8'));
+/**
+ * The template, run rather than read.
+ *
+ * `.railway/railway.ts` is a program, so the honest way to ask what it
+ * declares is to execute it and look at the graph — the same graph
+ * `railway config apply` sends. Reading it as text would be back to matching
+ * strings that already exist; and the file it replaced, `railway.json`, was
+ * worse than that — Railway has deprecated Config as Code and new services
+ * cannot opt into it, so those assertions pinned a file the platform would
+ * never have read.
+ */
+describe('the Railway template', async () => {
+  const authoring = await import('../../.railway/railway.ts');
+  const { createRailwayContext, project } = await import('railway/iac');
+  const graph = await authoring.default(createRailwayContext(), project);
 
-  it('builds from the Dockerfile that exists', () => {
-    expect(config.build.builder).toBe('DOCKERFILE');
-    expect(existsSync(path.join(REPO_ROOT, config.build.dockerfilePath))).toBe(true);
+  /**
+   * What `project()` returns at run time, which is not what it is typed as.
+   *
+   * The declared type describes the *input* a program hands back; the value is
+   * the compiled graph the CLI sends — every resource stamped with an address,
+   * `volumeMounts` normalised into `volumeAttachments`, every variable wrapped
+   * in a `{ type, value }` envelope. Asserting against the input type would be
+   * asserting against the shape Railway never sees, so the compiled shape is
+   * named here instead, and the assertions below are what keep it honest.
+   */
+  type Compiled = {
+    type: string;
+    build: { builder: string; dockerfilePath: string };
+    deploy: { healthcheckPath: string };
+    variables: Record<string, { value: { value?: string; isOptional?: boolean } }>;
+    volumeAttachments?: Record<string, { mountPath: string }>;
+  };
+  const resources = graph.resources as unknown as Compiled[];
+  const svc = resources.find((r) => r.type === 'service') as Compiled;
+  const declared = Object.fromEntries(
+    Object.entries(svc.variables).map(([name, v]) => [name, v.value.value]),
+  );
+  const attachment = Object.values(svc.volumeAttachments ?? {})[0];
+
+  it('is one service and one volume — there is no other state', () => {
+    expect(resources.map((r) => r.type).sort()).toEqual(['service', 'volume']);
   });
 
-  it('starts the launcher that exists, and the one the Dockerfile starts', () => {
-    const [, ...argv] = config.deploy.startCommand.split(' ');
-    expect(existsSync(path.join(REPO_ROOT, argv[0]))).toBe(true);
-    expect(dockerfile).toContain(`"${argv[0]}"`);
+  it('builds from the Dockerfile that exists', () => {
+    expect(svc.build.builder).toBe('DOCKERFILE');
+    expect(existsSync(path.join(REPO_ROOT, svc.build.dockerfilePath))).toBe(true);
+  });
+
+  it('mounts the volume exactly where the home variable points', () => {
+    // The one that matters. A mount path and a home that disagree is an
+    // install writing the operator's keys and ledger into the container layer
+    // instead — working perfectly right up until the first redeploy.
+    expect(attachment.mountPath).toBe(envLine(HOME_VAR));
+    expect(declared[HOME_VAR]).toBe(attachment.mountPath);
+  });
+
+  it('requires the password, and requires nothing else', () => {
+    const required = Object.entries(svc.variables)
+      .filter(([, v]) => v.value.isOptional === false)
+      .map(([name]) => name);
+    expect(required).toEqual([PASSWORD_VAR]);
+  });
+
+  it('binds a public interface, which only the password makes safe', () => {
+    // The template's own declared environment, put through the policy the
+    // server actually runs: as written it listens with the gate on, and with
+    // the password taken away it refuses. Both branches, on the real values.
+    expect(declared[BIND_VAR]).toBeDefined();
+    expect(listenPolicy({ ...declared, [PASSWORD_VAR]: 'a password of my own' })).toMatchObject({
+      listen: true,
+      gate: true,
+    });
+    expect(listenPolicy(declared).listen).toBe(false);
+  });
+
+  it('leaves the port to Railway', () => {
+    expect(Object.keys(svc.variables)).not.toContain('PORT');
+    expect(Object.keys(svc.variables)).not.toContain('AGENTLINGS_PORT');
   });
 
   it('health-checks a path the bundle answers before the gate', () => {
     // `/` is served in front of the sign-in (D-272), so a gated install still
     // reads as healthy. Any path under `/api` would read a live install as
     // down the moment its operator set a password.
-    expect(config.deploy.healthcheckPath).toBe('/');
+    expect(svc.deploy.healthcheckPath).toBe('/');
   });
 });

@@ -20,9 +20,16 @@
  * can open.
  */
 
-/** In order of preference. Edge first, always. */
-export const CHANNELS = ['msedge', 'chromium'] as const;
-export type BrowserChannel = (typeof CHANNELS)[number];
+/**
+ * In order of preference. Edge first, always.
+ *
+ * Not exported, and not called `CHANNELS`: that name is taken by
+ * `channels.ts`, and *channel* in this project's glossary is where a send
+ * goes — Telegram, Gmail, Slack. This is Playwright's unrelated sense of the
+ * word, so it wears the qualifier and stays inside this file.
+ */
+const BROWSER_CHANNELS = ['msedge', 'chromium'] as const;
+export type BrowserChannel = (typeof BROWSER_CHANNELS)[number];
 
 /** Can this install launch that channel? The real one launches a browser. */
 export type ChannelProbe = (channel: BrowserChannel) => Promise<boolean>;
@@ -38,7 +45,7 @@ export type ChannelProbe = (channel: BrowserChannel) => Promise<boolean>;
  * answer rather than crash.
  */
 export async function pickChannel(canLaunch: ChannelProbe): Promise<BrowserChannel | null> {
-  for (const channel of CHANNELS) {
+  for (const channel of BROWSER_CHANNELS) {
     try {
       if (await canLaunch(channel)) return channel;
     } catch {
@@ -49,15 +56,19 @@ export async function pickChannel(canLaunch: ChannelProbe): Promise<BrowserChann
 }
 
 /**
- * Actually launch it, headless, and close it again — `ocrAvailable()`'s
- * pattern. Lazy on purpose: the server must boot, and every other test must
- * run, on a machine with no browser and no `playwright-core` install
- * completed.
+ * The one way this file starts a browser.
+ *
+ * Lazy on purpose: the server must boot, and every other test must run, on a
+ * machine with no browser and no `playwright-core` install completed.
  */
-const launches: ChannelProbe = async (channel) => {
+const open = async (channel: BrowserChannel) => {
   const { chromium } = await import('playwright-core');
-  const browser = await chromium.launch({ channel, headless: true });
-  await browser.close();
+  return chromium.launch({ channel, headless: true });
+};
+
+/** Launch it and close it again — `ocrAvailable()`'s pattern. */
+const launches: ChannelProbe = async (channel) => {
+  await (await open(channel)).close();
   return true;
 };
 
@@ -92,10 +103,9 @@ export function forgetBrowserChannel(): void {
  * absence loud rather than mysterious.
  */
 export async function launchChromium(): Promise<import('playwright-core').Browser> {
-  const { chromium } = await import('playwright-core');
   const channel = await browserChannel();
   if (channel === null) {
     throw new Error('no browser on this install — neither Microsoft Edge nor a Chromium launched');
   }
-  return chromium.launch({ channel, headless: true });
+  return open(channel);
 }

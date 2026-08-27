@@ -109,8 +109,9 @@
     "messages up to 5 numbers you verify, which is the whole demo loop.",
     "",
     "'render' is builtin and defaultOn like 'web', and reaches nothing: it",
-    "prints a run's own HTML into a styled PDF through the Edge this machine",
-    "already has (playwright-core by channel — no browser download, D-128).",
+    "prints a run's own HTML into a styled PDF through the Chromium this",
+    "install already has — Edge on Windows, the container's own otherwise",
+    "(playwright-core by channel, browserchannel.ts — no download, D-128).",
     "The render is offline — every request the page makes is aborted — so the",
     "document must be self-contained: inline CSS, data: images, @page rules",
     "for size and margins. The reply is bytes the runner writes at the",
@@ -150,7 +151,7 @@
     {
       "name": "render",
       "label": "Print HTML to PDF, render backdrop plates",
-      "description": "Renders a run's own self-contained HTML through the system Edge, offline — into a styled PDF, or a 2000×900 level-backdrop plate quantized to the backdrop budget. External URLs are blocked during the render; three.js is served from the server's own pinned copy.",
+      "description": "Renders a run's own self-contained HTML through this install's own browser, offline — into a styled PDF, or a 2000×900 level-backdrop plate quantized to the backdrop budget. External URLs are blocked during the render; three.js is served from the server's own pinned copy.",
       "transport": "builtin",
       "defaultOn": true,
       "tools": ["render_pdf", "render_plate"]

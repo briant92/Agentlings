@@ -30,7 +30,8 @@
     "demo:record": "tsx scripts/record-demo.ts"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "railway": "^3.11.0"
   },
   "dependencies": {
     "docx": "^9.7.1",

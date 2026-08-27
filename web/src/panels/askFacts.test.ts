@@ -93,36 +93,36 @@ import {
   recipientProblem,
 } from './askFacts';
 
-const BRIAN = { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 };
-const JOSE = {
-  id: '6783316106',
-  name: 'Jose Dussaillant',
-  aliases: ['Jose Dussaillant (Pepo)'],
+const BRIAN = { id: '1000000001', name: 'Brian Thornton', viaStart: true, sends: 1 };
+const SAMPLE = {
+  id: '1000000002',
+  name: 'Sample Doe',
+  aliases: ['Sample Doe (Sammy)'],
   viaStart: true,
   sends: 1,
 };
 
 describe('matchRecipient (D-094)', () => {
-  it('finds Jose through the alias a reviewed send taught the roster', () => {
-    expect(matchRecipient('Now send the same Telegram to Pepo', [BRIAN, JOSE])?.id).toBe(
-      '6783316106',
+  it('finds Sample through the alias a reviewed send taught the roster', () => {
+    expect(matchRecipient('Now send the same Telegram to Sammy', [BRIAN, SAMPLE])?.id).toBe(
+      '1000000002',
     );
   });
 
   it('matches a plain first name, whole-word and case-blind', () => {
-    expect(matchRecipient('send brian the summary on telegram', [BRIAN, JOSE])?.id).toBe(
-      '8633678680',
+    expect(matchRecipient('send brian the summary on telegram', [BRIAN, SAMPLE])?.id).toBe(
+      '1000000001',
     );
   });
 
   it('an ambiguous sentence prefills nobody', () => {
-    const twins = [JOSE, { ...BRIAN, name: 'Jose Miguel' }];
-    expect(matchRecipient('send it to Jose on telegram', twins)).toBeNull();
+    const twins = [SAMPLE, { ...BRIAN, name: 'Sample Roe' }];
+    expect(matchRecipient('send it to Sample on telegram', twins)).toBeNull();
   });
 
   it('"me", short words and absent names prefill nobody', () => {
-    expect(matchRecipient('Send me a Telegram with the meta', [BRIAN, JOSE])).toBeNull();
-    expect(matchRecipient('send the reminder to Ana', [BRIAN, JOSE])).toBeNull();
+    expect(matchRecipient('Send me a Telegram with the meta', [BRIAN, SAMPLE])).toBeNull();
+    expect(matchRecipient('send the reminder to Ana', [BRIAN, SAMPLE])).toBeNull();
   });
 
   it('never fires on a substring — Brianna is not Brian', () => {
@@ -132,14 +132,14 @@ describe('matchRecipient (D-094)', () => {
 
 describe('recipientProblem (D-091)', () => {
   it('a name is not a chat id — the 71¢ wall, caught at the desk', () => {
-    expect(recipientProblem('telegram', 'Pepo Dussaillant')).toBe(
-      '“Pepo Dussaillant” isn’t a chat id',
+    expect(recipientProblem('telegram', 'Sammy Doe')).toBe(
+      '“Sammy Doe” isn’t a chat id',
     );
   });
 
   it('digits anywhere satisfy the chat-id shape, name included', () => {
-    expect(recipientProblem('telegram', '8633678680')).toBeNull();
-    expect(recipientProblem('telegram', 'Brian — 8633678680')).toBeNull();
+    expect(recipientProblem('telegram', '1000000001')).toBeNull();
+    expect(recipientProblem('telegram', 'Brian — 1000000001')).toBeNull();
     expect(recipientProblem('whatsapp-business', '+56 9 1234 5678')).toBeNull();
   });
 
@@ -149,7 +149,7 @@ describe('recipientProblem (D-091)', () => {
   });
 
   it('whatsapp-business without digits names its want', () => {
-    expect(recipientProblem('whatsapp-business', 'Pepo')).toBe('“Pepo” isn’t a number');
+    expect(recipientProblem('whatsapp-business', 'Sammy')).toBe('“Sammy” isn’t a number');
   });
 
   it('a channel with no declared shape objects to nothing', () => {
@@ -158,7 +158,7 @@ describe('recipientProblem (D-091)', () => {
   });
 
   it('a long wrong value is quoted truncated, not in full', () => {
-    const long = 'Pepo Dussaillant of the Warzone squad, the tall one';
+    const long = 'Sammy Doe of the Warzone squad, the tall one';
     const problem = recipientProblem('telegram', long)!;
     expect(problem).toContain('…');
     expect(problem.length).toBeLessThan(long.length + 20);
@@ -205,7 +205,7 @@ describe('recipientProblem — slack and github (D-104)', () => {
   });
 
   it('calendar wants an address in every comma part (D-124)', () => {
-    expect(recipientProblem('calendar', 'Andy — andytg1111@gmail.com')).toBeNull();
+    expect(recipientProblem('calendar', 'Andy — andy@example.com')).toBeNull();
     expect(
       recipientProblem('calendar', 'Andy — andy@x.com, Ana García — ana@y.com'),
     ).toBeNull();
@@ -225,7 +225,7 @@ describe('missingRecipient (D-124, D-180)', () => {
     expect(missingRecipient([TO('telegram')], {})).toEqual(['telegram']);
     expect(missingRecipient([TO('telegram')], { 'send-to:telegram': '  ' })).toEqual(['telegram']);
     expect(
-      missingRecipient([TO('telegram')], { 'send-to:telegram': 'Brian — 8633678680' }),
+      missingRecipient([TO('telegram')], { 'send-to:telegram': 'Brian — 1000000001' }),
     ).toEqual([]);
   });
 

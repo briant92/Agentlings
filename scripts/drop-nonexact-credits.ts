@@ -4,7 +4,7 @@
  *
  * Only exact matches say anything about the job a key names, and until D-099
  * every match credited everything. Measured: "I need to send a Telegram to
- * Pepo" credited the recipe for "Send Pepo the current Warzone meta summary on
+ * Sammy" credited the recipe for "Send Sammy the current Warzone meta summary on
  * Telegram" with a 3-turn completion — two words into an outbox against work
  * its siblings measured at 14 and 15 turns — and armed a five-turn leash on it.
  *

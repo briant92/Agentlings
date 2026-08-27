@@ -5,7 +5,7 @@ import { voiceHead, voiceHold, voiceLength } from './voice';
 const NOW = new Date(2026, 7, 25, 23, 50).getTime();
 const note = (over: Partial<VoiceNote> = {}): VoiceNote => ({
   id: '10',
-  chatId: '8633678680',
+  chatId: '1000000001',
   from: 'Brian Thornton',
   at: new Date(2026, 7, 25, 23, 41).getTime(),
   seconds: 74,

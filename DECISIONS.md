@@ -10,7 +10,7 @@ decision plus what proved it — length is whatever the evidence takes.
 
 ## Contents
 
-- [D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL](#d-001--2026-07-29--named-agentlings-separate-from-igpl)
+- [D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project](#d-001--2026-07-29--named-agentlings-separate-from-the-maintainers-other-project)
 - [D-002 — 2026-07-29 — Adopted the Karpathy-inspired behavioral guidelines](#d-002--2026-07-29--adopted-the-karpathy-inspired-behavioral-guidelines)
 - [D-003 — 2026-07-30 — Concept resolved: a personal real-work orchestrator](#d-003--2026-07-30--concept-resolved-a-personal-real-work-orchestrator)
 - [D-004 — 2026-07-30 — Stack: TS monorepo, Vite/React/PixiJS web, Node/Hono/ws server](#d-004--2026-07-30--stack-ts-monorepo-vitereactpixijs-web-nodehonows-server)
@@ -805,7 +805,7 @@ entry updates one file rather than two.
   entirely — the opted-in audience persists as a named roster (getUpdates
   merged with the send audit, nothing imported), the To field becomes a
   picker, Settings lists who the bot knows with a forget button, and the
-  session brief carries the legend so "send it to Pepo" resolves with the
+  session brief carries the legend so "send it to Sammy" resolves with the
   never-invent rule intact; and D-122, where Gmail's roster reads the saved
   contact book on the consent already given — reachability vs autofill is
   the channel's own rule — and the legend narrows to named-or-used, capped,
@@ -819,7 +819,7 @@ entry updates one file rather than two.
   *question* the user can confirm into the full send surface, and a job
   that mentioned a channel it never carried says at review that approving
   sends nothing, with the reply as the way out; and D-094, from the first
-  real sends — "to Pepo" prefills To through an alias a reviewed send
+  real sends — "to Sammy" prefills To through an alias a reviewed send
   taught the roster (unique match or nothing), and "send the same again"
   reuses the audited body verbatim, since sends.jsonl now records what
   was said; and D-097, from reviewing that run as a user rather than as
@@ -963,7 +963,7 @@ entry updates one file rather than two.
   card states a fact about the bytes (carried, or written this run) and leaves
   the reading to the reviewer
 - **Hosting, and the platform accounts** — D-165, where D-001's separation from
-  IGPL was refined rather than repeated: separate projects were never the
+  the maintainer's other project was refined rather than repeated: separate projects were never the
   risk, the account-scoped connector was, so Agentlings owns a Free Supabase
   org and its own Vercel project and reaches them by `.env` alone (D-078's
   shape). Carries the measurement that Vercel cannot host this server —
@@ -1153,10 +1153,11 @@ entry updates one file rather than two.
   never-channel left to the ask card that has stated it since D-079, and
   nothing counted from a route that re-runs on every keystroke
 
-## D-001 — 2026-07-29 — Named "Agentlings"; separate from IGPL
+## D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project
 
 Named "Agentlings" (agents + -lings, Lemmings homage); lives at
-`Escritorio\Agentlings` as a sibling of IGPL, fully separate context.
+`Escritorio\Agentlings` as a sibling of the maintainer's other project, fully
+separate context.
 
 ## D-002 — 2026-07-29 — Adopted the Karpathy-inspired behavioral guidelines
 
@@ -2648,7 +2649,7 @@ against `11912ca` — plus a project header naming the four documents, and
 The import is the whole point and worth stating plainly: **a file that is not
 imported is not resident, and a rule that is not resident does not apply.**
 Moving the project half behind a pointer would have quietly switched off the
-IGPL boundary, the secrets rule and the hard-won rules — the last of which
+other-project boundary, the secrets rule and the hard-won rules — the last of which
 exist precisely because an archive changes no behaviour. So this buys
 separation and an upstream-diffable base, and saves no context at all: 90 + 110
 lines against 151, both loaded every turn. That is the opposite of what the
@@ -5877,7 +5878,7 @@ guards. The first tagged lesson arrives with the next real close-out.
 The demo loop's first real job hit the wall D-085 and D-087 were built to
 prevent, one layer past their fixes. Brian connected @WZBottero_Bot (the
 garage worked end to end) and queued *"I need a summary of the current
-Call of Duty: Warzone meta **to be sent** to my friend Pepo Dussaillant on
+Call of Duty: Warzone meta **to be sent** to my friend Sammy Doe on
 Telegram"*. The verb gate knew only bare infinitives — `\bsend\b` does not
 match "sent" — so the desk asked nothing, the job carried no channel, the
 session was never told the outbox contract, and Pip did the honourable
@@ -5899,7 +5900,7 @@ Two fixes, one boundary decided:
 - **A reply may supply the missing channel through the same gates.** The
   reply route's continuation carries `previous.channel ??
   detectChannelAsk(reply …)?.channel` — detection, not invention, so
-  "send it to Pepo on telegram" in an answer box gives the continuation
+  "send it to Sammy on telegram" in an answer box gives the continuation
   the outbox contract the original never had, and `carryForward` hands it
   the already-composed message (everything but paperwork crosses; its own
   doc: "answering a question would re-do and re-bill work already paid
@@ -5912,14 +5913,14 @@ and typecheck green. Live against the running server, the exact failed
 sentence's plan now returns `channelAsk: telegram/ready` with `send-to,
 send-say` and the chat-id hint. The recovery is the reply path: the 65¢
 run's research and composed message carry forward, and the continuation's
-only work is an OUTBOX.json with Pepo's chat id — the down payment shape
+only work is an OUTBOX.json with Sammy's chat id — the down payment shape
 D-087 promised, about to be exercised for real for the first time.
 
 ## D-091 — 2026-08-05 — The channel names its recipient's shape, and the desk objects to a name where a number belongs
 
 The demo's third wall, one layer past D-090: with the verb fixed, the
 re-run carried `channel: telegram` from birth, the To/Say facts rode as
-clarifications — and To said "Pepo Dussaillant". A name, where Telegram's
+clarifications — and To said "Sammy Doe". A name, where Telegram's
 contract wants the numeric chat id. The field's hint said so; nothing
 enforced it. The run obeyed the never-invent rule to the letter — composed
 the message, left it out of the outbox, wrote
@@ -5931,8 +5932,8 @@ Now it can. `recipientProblem(channel, to)` in its own tested module: a
 channel declares the shape its contract wants — telegram and
 whatsapp-business want digits somewhere, gmail wants an @ — and a filled
 To that fails its channel's shape joins the arrest, with the value quoted
-on the button: *Queue anyway — "Pepo Dussaillant" isn't a chat id*.
-"Brian — 8633678680" passes, because digits anywhere satisfy a chat id
+on the button: *Queue anyway — "Sammy Doe" isn't a chat id*.
+"Brian — 1000000001" passes, because digits anywhere satisfy a chat id
 and the name riding along is what review wants anyway. A channel with no
 declared shape objects to nothing, and the check runs only when To is
 filled — "no recipient" keeps its own clause. Client-side only, D-087's
@@ -5949,13 +5950,13 @@ D-085's verb-form "mail".
 digits-anywhere passing, gmail's @, the undeclared-channel silence, the
 truncated quote); 104 web tests and typecheck green. Live on a second web
 server with Telegram genuinely connected: the ready chip up, To filled
-with "Pepo Dussaillant", the first press queued nothing and the button
-read the quoted objection; retyping "Brian — 8633678680" flipped it back
+with "Sammy Doe", the first press queued nothing and the button
+read the quoted objection; retyping "Brian — 1000000001" flipped it back
 to Start without a second press being wasted.
 
 ## D-092 — 2026-08-05 — The audience roster: names for the opted-in, a picker behind To, and the legend the session reads
 
-"8633678680 is nobody's idea of a friend." Brian asked for names once the
+"1000000001 is nobody's idea of a friend." Brian asked for names once the
 chat ids exist, and the data was already on the right boundary: everyone
 who taps Start is in the bot's own getUpdates with their name, and
 everyone a reviewed send went to is in sends.jsonl. So the roster is the
@@ -5988,10 +5989,10 @@ refreshes the name and never loses a send count, idempotent audit
 re-merge, a tapped-Start name outranking the audit, disk round-trip,
 remove, getUpdates flattening with an injected http); two legend tests;
 1042 + 104 and typecheck green. Live against the real bot: the endpoint
-returned **two people — and one was news**: Jose "Pepo" Dussaillant had
-tapped Start (6783316106), so the roster's first real read resolved the
+returned **two people — and one was news**: Sample "Sammy" Doe had
+tapped Start (1000000002), so the roster's first real read resolved the
 very id the whole errand was missing. The picker opened with both, chose
-Jose, wrote "Jose Dussaillant — 6783316106", and Start stayed Start; the
+Sample, wrote "Sample Doe — 1000000002", and Start stayed Start; the
 garage showed "knows 2 people" with forget buttons. The probe's only
 failures were the hidden pane's focus semantics, not the code. The forget
 button was deliberately not pressed on real people.
@@ -6035,21 +6036,21 @@ no ask but `channelMention: Telegram (wired)`; re-planning with the
 confirmed channel returns `send-to, send-say`; and the whole client flow
 ran for $0 behind a fake 201 — the question line rendered, one click
 brought the picked-note and both fact rows, the picker filled "Brian
-Thornton — 8633678680", and the captured queue POST carried
+Thornton — 1000000001", and the captured queue POST carried
 `channel: telegram` with the answer. The review guard ships in the
 bundle and meets its first real job the next time a mention slips
 through unconfirmed.
 
 ## D-094 — 2026-08-05 — A known name prefills To, and "the same again" means the audited words
 
-Asked by Brian off the back of the first two real sends: "to Pepo" made
+Asked by Brian off the back of the first two real sends: "to Sammy" made
 him pick from the roster by hand, and "send the same Telegram" made the
 run rebuild the message from source — honestly disclosed, but drift where
 he wanted integrity. Both halves resolved on data the app already owned.
 
-**"Pepo" lives in the audit, so the roster learns it as an alias.** The
-Telegram name is Jose Dussaillant; the reviewed send recorded "Jose
-Dussaillant (Pepo)". `mergeSends` now keeps any reviewed name that
+**"Sammy" lives in the audit, so the roster learns it as an alias.** The
+Telegram name is Sample Doe; the reviewed send recorded "Sample
+Doe (Sammy)". `mergeSends` now keeps any reviewed name that
 differs from the roster's as an alias (set semantics — the whole-audit
 re-merge stays idempotent; a name equal to the id never qualifies), and
 `matchRecipient` prefills To when the prompt names exactly one person —
@@ -6060,7 +6061,7 @@ which row is the user and will not pretend to. The picker's filter learnt
 the aliases too.
 
 **"The same again" is the audited body, not a rebuild.** The lesson the
-Pepo run banked said it itself: the original lived in another sandbox, so
+Sammy run banked said it itself: the original lived in another sandbox, so
 it rebuilt and disclosed. Now `SendRecord` carries the body on sends that
 happened — the audit of what left the machine finally records *what
 left* — and when a send prompt asks for sameness (`RESEND_WORDS`, a
@@ -6070,15 +6071,15 @@ which tells the run: reuse this text verbatim, adjust only what the user
 asked, and say it was reused. Say stays a gist field — integrity lives in
 the brief, not stuffed into a one-line input.
 
-**Evidence.** Five `matchRecipient` tests (the Pepo sentence verbatim
+**Evidence.** Five `matchRecipient` tests (the Sammy sentence verbatim
 through the alias, whole-word and case-blind, ambiguity → nobody, "me" →
 nobody, Brianna ≠ Brian), two alias-merge tests (collected once however
 often re-merged; name-equals-id never qualifies), a reuse-block brief
 test and four RESEND_WORDS cases with two quiet counter-cases; 1050 + 109
 and typecheck green. Live: the roster's next read grew
-`aliases: ["Jose Dussaillant (Pepo)"]` from the real audit line, and
-typing the exact sentence "Now send the same Telegram to Pepo" prefilled
-To with "Jose Dussaillant — 6783316106" — zero clicks. The reuse block's
+`aliases: ["Sample Doe (Sammy)"]` from the real audit line, and
+typing the exact sentence "Now send the same Telegram to Sammy" prefilled
+To with "Sample Doe — 1000000002" — zero clicks. The reuse block's
 first real exercise waits for the next same-again send, since proving it
 live means paying for a session; its construction is pinned by the brief
 test and the trigger fires on that very sentence.
@@ -6242,7 +6243,7 @@ guessed when it had no data.
 
 ## D-097 — 2026-08-05 — The desk asks for the words, and a send it already holds costs nothing
 
-Brian's observation, reviewing the "I need to send a Telegram to Pepo" run
+Brian's observation, reviewing the "I need to send a Telegram to Sammy" run
 (job 470d7389, 32.4¢, 2m06s): the prompt is an *instruction*, and `Say`
 was framed as a *direction* — "what should it say, roughly? / a line is
 enough, they write it out properly". So a send that carries no content had
@@ -6255,16 +6256,16 @@ carried a verbatim clause only for resends (D-094) and said nothing about
 fidelity for a fresh one, and the recipe the run matched had banked "add
 minimal embellishment only for tone". Nothing was misbehaving.
 
-**Two shapes, and only one of them wants a gist.** "Send Pepo the current
+**Two shapes, and only one of them wants a gist.** "Send Sammy the current
 Warzone meta summary" has a message to *write*, so a rough direction is
-the right ask and steering it is the job. "Send a Telegram to Pepo" has no
+the right ask and steering it is the job. "Send a Telegram to Sammy" has no
 message anywhere but in the user's head. The distinction had to be narrow
 or it would break the case it was never about — Brian scoped it exactly
 that way, and the scoping is the rule.
 
 **Telling them apart by what is *left*.** A subject test cannot do it:
 "on Telegram" and "with a summary" are the same preposition, so the
-channel supplies the very evidence being looked for, while "Send Pepo the
+channel supplies the very evidence being looked for, while "Send Sammy the
 current Warzone meta summary" carries real content with no preposition at
 all. Instead strip the send words, the channel words and the roster's own
 names, then ask `terms()` — the recipe matcher's stemmer — what survives.
@@ -6391,7 +6392,7 @@ quotes a session; both facts in hand flip it to "Free — nothing to work
 out" *with the fields still there*; asking for a draft returns it to a
 session; the content-bearing sentence is untouched at "roughly"/**Say**.
 Queued for real, it came back `costUsd 0, turns 0, routed`, wrote
-`to: 8633678680` with the name kept and the body **"A DARLE"** unchanged,
+`to: 1000000001` with the name kept and the body **"A DARLE"** unchanged,
 and RESULT.md that reads as a review. Debugging cost 30.2¢ across two
 sessions; the four test jobs were discarded and `sends.jsonl` is untouched
 at three rows — nothing was sent to prove any of this.
@@ -6500,9 +6501,9 @@ lend a *method* to a related job — that is the whole point of scoring shapes
 rather than strings — and lending a method is not evidence about the job the
 key names.
 
-**What it did.** "I need to send a Telegram to Pepo" scored close enough to
-the recipe for "Send Pepo the current Warzone meta summary on Telegram" —
-they share *send*, *pepo*, *telegram* — ran three turns because it had two
+**What it did.** "I need to send a Telegram to Sammy" scored close enough to
+the recipe for "Send Sammy the current Warzone meta summary on Telegram" —
+they share *send*, *sammy*, *telegram* — ran three turns because it had two
 words to put in an outbox, and credited that recipe with a **3-turn
 completion**. The siblings that actually did the research measured 14 and 15.
 `canShortenLeash` then read the 3 and armed a five-turn leash, so the next
@@ -6669,7 +6670,7 @@ then both mutations — dropping the label check, weakening the emptiness test
 **The proof ran clean, and free.** Four queues of the verbatim sentence with
 the desk holding the words, every one composed in code: 0 turns, $0.00 total.
 
-- `9ad35c4c` approved → approvals 1, recipients locked to `[8633678680]`.
+- `9ad35c4c` approved → approvals 1, recipients locked to `[1000000001]`.
 - `03005cac` approved → 2. The body was retyped lowercase between runs and
   the count grew anyway — bodies sit outside the signature by design (a
   weekly reminder's words change), and this exercised it.
@@ -7878,7 +7879,7 @@ unchanged approvals → offer), and the grant was left on the table: the
 permission layer treats taking a standing auto-send rule as the user's own
 click, which is the right reading — it is one click in the panel now.
 Calendar's first firing is wired-correct and walled by the Google console
-(`calendar-json.googleapis.com` disabled on project 40965402983 — the same
+(`calendar-json.googleapis.com` disabled on project 123456789012 — the same
 wall gmail cleared earlier the same evening); the 400 leaves the job
 reviewable and "nobody is messaged twice" held. The recurrence timer's
 mechanism live-fired on a disposable $0 daily (created, fired +7s, deleted;
@@ -8233,7 +8234,7 @@ naming the console enable link — and succeeded 2026-08-08 08:04 after
 Brian enabled the Calendar API, *before* ui-check was closed; the
 "re-Approve waits with the closed level" note was stale. The **first real
 attendee-carrying invite** then sent the same morning (`be099816`, the
-Pollo reminder, ok:true 10:21, andytg1111@gmail.com attached) — but it
+Pollo reminder, ok:true 10:21, andy@example.com attached) — but it
 had needed the old detour: a first job asking for Andy's email, Brian's
 reply, a second job. What remained unproven was exactly what this entry
 built that evening.
@@ -8241,7 +8242,7 @@ built that evening.
 Tonight closed it: `f3124c4f`, "Send a calendar invite to Andy for
 tomorrow at 6pm about joining the Agentlings revolution", queued through
 the D-124 desk. The clarifications carried both answers in the desk's own
-words — "Who's invited? Andy — andytg1111@gmail.com" (the picker's
+words — "Who's invited? Andy — andy@example.com" (the picker's
 format, straight off the 116-person book) and "What's the event called?
 AGENTLINGS" (verbatim, capitals kept) — and the run shows what that
 bought: **3 turns, one Write, 15.8 s, `asked: false`**, the event exact
@@ -10650,7 +10651,7 @@ and one gmail outbox — subject + body + 2 attachments through the
 media-upload endpoint. Output, verbatim:
 
 ```
-TELEGRAM {"sentTo":["8633678680"],"failed":[]}
+TELEGRAM {"sentTo":["1000000001"],"failed":[]}
 GMAIL {"sentTo":["bthorntong@gmail.com"],"failed":[]}
 ```
 
@@ -10662,18 +10663,18 @@ seam is the in-app leg — queue → paperclip row on the card → Approve —
 which the desk's compose tier makes a $0 check on any real send that
 carries a Start attachment.
 
-The in-app leg then ran the same evening — a session-written PDF to Pepo,
+The in-app leg then ran the same evening — a session-written PDF to Sammy,
 paperclip on the card, Approve delivering text + document — and running
 live did what running live does: it surfaced a real bug the whole suite
 could not see. The send went out twice. That story is D-160's.
 
 ## D-160 — 2026-08-11 — One door for the outbox send: the double-send race closed at its seam
 
-Brian asked whether Pepo's PDF summary went out twice. It had:
+Brian asked whether Sammy's PDF summary went out twice. It had:
 `sends.jsonl` lines 33–34 — two `ok=true` rows for job `3e14937a`, same
 recipient, same `agentlings-improvements.pdf`, at 18:26:50 and 18:26:51 —
 and the job's own stamp agreed, `outboxSent.sentTo` holding the same
-chat id twice. Pepo received the text and the document twice each, on
+chat id twice. Sammy received the text and the document twice each, on
 D-159's first in-app outing.
 
 **The mechanism: a guarantee about a sequence nobody serialized.**
@@ -10961,8 +10962,8 @@ comment naming D-164 at the seam.
 ## D-165 — 2026-08-12 — Agentlings gets its own accounts, and the danger was never the projects
 
 Opened by Brian correcting a premise of my own: PROJECT.md's ground rule
-treated the Supabase and Vercel connectors as belonging to IGPL Family
-Office and forbade them outright, and the rule was written defensively —
+treated the Supabase and Vercel connectors as belonging to the maintainer's
+other project and forbade them outright, and the rule was written defensively —
 by a non-expert making sure nothing got broken — rather than from a
 reading of how either platform isolates anything. Asked directly whether
 new projects could simply be created, the honest answer needed measuring
@@ -10977,8 +10978,8 @@ that form.
 **The risk that does exist is the connector.** The Supabase MCP server
 visible in these sessions is *account-scoped* — it carries
 `list_organizations`, `create_project`, `execute_sql` and
-`apply_migration`, so it can reach any project in the account, Family
-Office included. The isolation question was the safe one; the tool sitting
+`apply_migration`, so it can reach any project in the account, the other
+project included. The isolation question was the safe one; the tool sitting
 in my own session was the sharp one. So the boundary is now structural
 rather than a promise: **Agentlings never needs the connector at all.**
 The app reaches Postgres by a connection string in `.env`, which is
@@ -10990,7 +10991,7 @@ offers the option.
 per *organisation*, and each project runs its own compute instance charged
 separately; the Pro plan's $10/month credit covers exactly one Micro, so
 Supabase's own worked example puts two Micro projects in one Pro org at
-**$35/month**. Adding Agentlings to the existing Family Office org would
+**$35/month**. Adding Agentlings to the maintainer's existing org would
 therefore have cost **+$10/month, not nothing** — the reverse of the
 assumption behind the question. A **new organisation on the Free plan** is
 $0, isolates the bill as well as the data, and its limits (500 MB, pausing
@@ -11827,7 +11828,7 @@ half true — free, and *serving*.
 
 It stores nothing and is wired to nothing. Its cost is that PROJECT.md's
 sharpest ground rule says the Supabase connector is **account-scoped** and can
-reach IGPL Family Office, and an "Agentlings" project sitting inside that same
+reach the maintainer's other project, and an "Agentlings" project sitting inside that same
 account manufactures the exact reasoning error the rule exists to prevent — a
 session sees an Agentlings project and concludes the connector must be safe
 here. Deleting it converts a warning into a fact: there is no Agentlings
@@ -11836,7 +11837,7 @@ cannot satisfy by mistake beats a rule you have to remember.**
 
 Worth stating that the deletion was done by hand in both dashboards, and
 deliberately *not* through the Supabase connector. Aiming an account-scoped
-`delete` at the one account that also holds Family Office is the worst
+`delete` at the one account that also holds the other project is the worst
 available way to act on this entry, and the tool that could do it is the tool
 the ground rule forbids.
 
@@ -11938,7 +11939,7 @@ answered `200` to a `Host:` of `agentlings.tail1234.ts.net` and **403** to
 name is the address to use — a wrong URL there looks like a broken app.
 
 **The chain was proven layer by layer before the phone was touched**, over
-`https://desktop-km12e2b.tail97d572.ts.net`: app root `200`; `/api/levels`
+`https://desktop-abc.tail1234.ts.net`: app root `200`; `/api/levels`
 `200` returning real level data through Tailscale → Vite → :4600; and `/ws`
 answering **`101 Switching Protocols`**. That last one mattered — without it
 the world would have rendered once and frozen, which on a phone reads as a
@@ -12120,7 +12121,7 @@ regression.
 
 - **A job carries one channel.** All five multi-channel sentences drop the
   second **silently** — earliest mention wins in `detectChannelAsk` *and* in
-  `mentionsChannel`, so there is not even a near-miss card. "Telegram Pepo the
+  `mentionsChannel`, so there is not even a near-miss card. "Telegram Sammy the
   UF and email the same figures to Ana" queues a Telegram job and the email is
   gone without a trace. This is a data-model decision (the outbox is
   per-channel and approval is per-message, so one job per channel is the
@@ -12160,7 +12161,7 @@ D-177 left four structural gaps named as corpus cases. This is the first, and
 it was the worst-behaved of them: every other way the desk can be wrong about a
 send is loud — a near-miss raises a question (D-093), an unavailable channel
 forks honestly (D-077), a job that mentioned a channel it never carried says so
-at review — and this one was **silent**. "Telegram Pepo the UF for today and
+at review — and this one was **silent**. "Telegram Sammy the UF for today and
 email the same figures to Ana" queued a Telegram job, and the email was gone
 with no card, no question and no mention, because the near-miss line fires only
 when *no* channel was settled.
@@ -12173,7 +12174,7 @@ same message twice**:
 
 | sentence | what it is |
 | --- | --- |
-| Telegram Pepo the UF **and email the same figures to Ana** | one body, two audiences |
+| Telegram Sammy the UF **and email the same figures to Ana** | one body, two audiences |
 | Email the board **and telegram me when it has gone out** | a delivery and a *receipt* |
 | Release notes to the team on Slack **and email the investors** | two audiences, two wordings |
 | …email it to Ana **and telegram me the headline** | explicitly different bodies |
@@ -12845,7 +12846,7 @@ keeps finding empty after a change is complete in the type and the function.
 And on the card itself: the line renders; typing a plain send over it clears it
 (the stale-reading hazard D-185 had just been bitten by, which does not
 reproduce here because the note reads from the plan rather than from an effect
-on `text`); and a two-channel sentence — *send the report PDF to Pepo on
+on `text`); and a two-channel sentence — *send the report PDF to Sammy on
 telegram and post it on slack* — shows **sends via Telegram and Slack** beside a
 warning naming Slack alone, which is the whole reason the function takes the
 carried list rather than a single channel. Zero console errors.
@@ -17676,7 +17677,7 @@ download will be needed then.
 ## D-233 — 2026-08-23 — One prompt, one review: a step chain surfaces as one card, one door and one panel, settled from its end — execution unchanged
 
 Raised by Brian off a live chain the same evening: "I need an elevator
-pitch … then send it to Pepo on Telegram" split as D-105 says it should,
+pitch … then send it to Sammy on Telegram" split as D-105 says it should,
 ran cleanly, and left **two parallel REVIEW cards** for one ask. The code
 read confirmed the surface was lying about the structure: the completion
 hook queues step 2 off step 1's *delivery*, so by the time step 1's REVIEW
@@ -19853,7 +19854,7 @@ D-204's test, unchanged.
 several exchanges under a **commitments policy** — what it may promise,
 when it must escalate. The plan's Wave 3 built a runtime for it. Read
 against the record: **every standing approval ever earned is to Brian's own
-Telegram**, and the externals ever reached are two people, Pepo and Andy,
+Telegram**, and the externals ever reached are two people, Sammy and Andy,
 one reviewed send each. There is **no correspondent**, so a commitments
 policy would govern nobody. D-248's one threaded reply is a send, not
 outreach, and the entry said so. Reopen when a real counterparty needs a
@@ -20466,7 +20467,7 @@ level closed. (Its dry run on the pre-restart server had stopped at
 *restart it first* as designed.)
 
 **The HQ row is armed**: `15548352`, Mondays at 08:05 (between the 08:00
-calendar brief and the 08:10 mail brief), telegram `8633678680`, `tools:
+calendar brief and the 08:10 mail brief), telegram `1000000001`, `tools:
 []`, first firing **2026-08-31**. Brian approves that one by hand; the
 third unchanged approval (2026-09-14) is when the standing offer appears.
 Still not proven: the standing approval sending a Monday report on its

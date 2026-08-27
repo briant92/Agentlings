@@ -407,7 +407,7 @@ each one rests on already is.
    automation once granted.
 4. **Calendar is wired and walled**: its first firing failed only on the
    Google console toggle (`calendar-json.googleapis.com`, project
-   40965402983 — the same wall gmail cleared the same evening). Enable, then
+   123456789012 — the same wall gmail cleared the same evening). Enable, then
    re-Approve job `3e5ef9f2` in ui-check: "nobody is messaged twice" held.
 5. **T5 fires itself Wed 12 Aug 2026 at 09:00**, on its real monthly cadence
    (schedule `c639d84a`, untouched tonight). Still not to be hand-queued.

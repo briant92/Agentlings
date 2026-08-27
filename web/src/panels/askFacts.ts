@@ -8,7 +8,7 @@ import type { ChannelOption } from '@agentlings/shared';
  * nothing to object to; a channel with no declared shape objects to nothing.
  *
  * Learned from a real 71¢ run: the desk asked "who should this go to?",
- * accepted "Pepo Dussaillant" for a channel whose contract wants a numeric
+ * accepted "Sammy Doe" for a channel whose contract wants a numeric
  * chat id, and the run could only refuse honestly after the money was spent.
  */
 const SHAPES: Record<string, { test: RegExp; wants: string }> = {
@@ -204,7 +204,7 @@ interface Nameable {
 /**
  * The one person the sentence plainly names, or nobody (D-094). Tokens of
  * three letters and up from names, usernames and reviewed aliases, matched
- * as whole words — "to Pepo" finds Jose through the alias a reviewed send
+ * as whole words — "to Sammy" finds Sample through the alias a reviewed send
  * taught the roster. Exactly one candidate prefills; ambiguity and absence
  * prefill nothing, because a guessed recipient is worse than an empty
  * field the arrest will catch.

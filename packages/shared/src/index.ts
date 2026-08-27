@@ -468,8 +468,8 @@ export interface AudiencePerson {
   name: string;
   username?: string;
   /**
-   * Other names they have gone by in reviewed sends (D-094) — "Pepo" lives
-   * here when Telegram says "Jose Dussaillant". Matching material for the
+   * Other names they have gone by in reviewed sends (D-094) — "Sammy" lives
+   * here when Telegram says "Sample Doe". Matching material for the
    * To prefill; only ever collected from names the user approved at review.
    */
   aliases?: string[];
@@ -1091,7 +1091,7 @@ export interface ChannelAsk {
    * The other channels this sentence asks to send on, which this job cannot
    * carry (D-178).
    *
-   * A job holds one channel and the earliest mention wins, so "telegram Pepo
+   * A job holds one channel and the earliest mention wins, so "telegram Sammy
    * the UF and email the same figures to Ana" queued a Telegram job and the
    * email vanished — no card, no question, not even the near-miss line, since
    * that fires only when *no* channel was settled. Every other way the desk

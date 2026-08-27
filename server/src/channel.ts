@@ -97,7 +97,7 @@ const VERB_LEAD = String.raw`(?:^|[,;.]\s*(?:and\s+)?|\bthen\s+)`;
 
 /**
  * A channel word standing where the verb goes (measured 2026-08-14): "Telegram
- * Pepo the total", "Slack the release notes to the team".
+ * Sammy the total", "Slack the release notes to the team".
  *
  * `SEND_VERBS` knew email, text, dm and ping but not the channel names people
  * use as verbs, so eight of fifty-one benchmark sentences fell to D-093's
@@ -360,7 +360,7 @@ const SEND_VERB =
  * because it can only mean one thing wherever it appears.
  *
  * Deliberately quiet when unsure: a file named before its verb ("the contract
- * PDF, send it to Pepo") reads as no ride and says nothing. Missing a warning
+ * PDF, send it to Sammy") reads as no ride and says nothing. Missing a warning
  * costs what it always cost — the contract still refuses the file, and the run
  * still reports it — while a warning on a send carrying no file is wrong on the
  * card, in front of the user, about their own sentence.
@@ -885,7 +885,7 @@ export function channelBrief(
           '```',
         ]
       : []),
-    // The legend (D-092): "send it to Pepo" resolves by lookup instead of
+    // The legend (D-092): "send it to Sammy" resolves by lookup instead of
     // failing honestly, while the never-invent rule keeps its teeth — an id
     // the user gives directly always wins, and a name that is neither on
     // the roster nor given an id stays missing, exactly as before.

@@ -1488,7 +1488,7 @@ browser call in total, and that one went through MCP and was refused — and it
 is localhost, single-user. It becomes load-bearing the day the app is hosted,
 which is why per-job isolation belongs to that decision rather than this one.
 
-A job carries **every channel the sentence asks for** (D-179). "Telegram Pepo
+A job carries **every channel the sentence asks for** (D-179). "Telegram Sammy
 the UF and email the same figures to Ana" is one job: the work happens once, so
 the figures agree, and the run writes one message set per channel, so the bodies
 may differ — which is what most two-channel sentences actually want. The review
@@ -2189,7 +2189,7 @@ list per channel (D-077; SPEC M5.11 has the slices):
       carries only people the sentence names or the user has sent to,
       capped at 20 — the never-invent rule intact, the whole address
       book never riding a prompt. A channel's own name claims when it is
-      standing where the verb goes — "Telegram Pepo the total", "Slack the
+      standing where the verb goes — "Telegram Sammy the total", "Slack the
       notes to the team", and the same after a sequence marker (D-177) — so
       a chain's sending step is recognised as one. A channel word with
       no send verb beside it — a typo'd "Sen", a bare mention — raises a

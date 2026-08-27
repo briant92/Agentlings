@@ -86,7 +86,7 @@ describe('detectChannelAsk — when it fires', () => {
 
   it('inflected verbs claim too — the 65¢ run that slipped past as a participle (D-090)', () => {
     const real = ask(
-      'I need a summary of the current Call of Duty: Warzone meta to be sent to my friend Pepo Dussaillant on Telegram',
+      'I need a summary of the current Call of Duty: Warzone meta to be sent to my friend Sammy Doe on Telegram',
       CONNECTED,
       TOKEN,
     );
@@ -323,12 +323,12 @@ describe('channelBrief', () => {
 
   it('carries the audience legend, and the user-given address still wins (D-092)', () => {
     const brief = channelBrief('telegram', [
-      { id: '8633678680', name: 'Brian Thornton', viaStart: true, sends: 1 },
-      { id: '71', name: 'Pepo Dussaillant', viaStart: true, sends: 0 },
+      { id: '1000000001', name: 'Brian Thornton', viaStart: true, sends: 1 },
+      { id: '71', name: 'Sammy Doe', viaStart: true, sends: 0 },
     ])!;
     expect(brief).toContain('Known recipients');
-    expect(brief).toContain('Brian Thornton — 8633678680');
-    expect(brief).toContain('Pepo Dussaillant — 71');
+    expect(brief).toContain('Brian Thornton — 1000000001');
+    expect(brief).toContain('Sammy Doe — 71');
     expect(brief).toContain('gives directly always wins');
     expect(brief).toContain('never invent one');
   });
@@ -390,10 +390,10 @@ describe('channelBrief', () => {
 describe('RESEND_WORDS (D-094)', () => {
   it('hears the ways people ask for the same thing again', () => {
     for (const p of [
-      'Now send the same Telegram to Pepo',
+      'Now send the same Telegram to Sammy',
       'send it again to Ana',
       'resend the reminder',
-      'send Pepo one like the last message',
+      'send Sammy one like the last message',
     ]) {
       expect(RESEND_WORDS.test(p)).toBe(true);
     }
@@ -478,7 +478,7 @@ describe('briefForJob', () => {
   // when the sentence asked for the same thing again.
   it('reaches for the last body only when the prompt asks for the same', () => {
     const asked = briefForJob(
-      job({ channels: ['telegram'], prompt: 'send the same again to Pepo' }),
+      job({ channels: ['telegram'], prompt: 'send the same again to Sammy' }),
       audience,
       lastSend,
     )!;
@@ -515,8 +515,8 @@ describe('legendAudience (D-122)', () => {
   });
 
   it('matches through aliases, the way the To prefill does (D-094)', () => {
-    const got = legendAudience('send it to Pepo', [
-      person('6783316106', 'Jose Dussaillant', 2, { aliases: ['Pepo'] }),
+    const got = legendAudience('send it to Sammy', [
+      person('1000000002', 'Sample Doe', 2, { aliases: ['Sammy'] }),
     ]);
     expect(got).toHaveLength(1);
   });
@@ -639,7 +639,7 @@ describe('scoped claims — calendar and github', () => {
  */
 describe('a channel name standing where the verb goes', () => {
   it('claims at the start of a sentence, with an object after it', () => {
-    expect(ask('telegram Pepo the UF and the dollar for today')?.asked).toBe('telegram');
+    expect(ask('telegram Sammy the UF and the dollar for today')?.asked).toBe('telegram');
     expect(ask('slack the release notes to the team')?.asked).toBe('slack');
   });
 
@@ -693,7 +693,7 @@ describe('a channel name standing where the verb goes', () => {
  */
 describe('the channels an ask could not take', () => {
   it('names the second channel, whichever way round the sentence puts them', () => {
-    const one = ask('telegram Pepo the UF for today and email the same figures to Ana');
+    const one = ask('telegram Sammy the UF for today and email the same figures to Ana');
     expect(one?.asked).toBe('telegram');
     expect(one?.also?.map((o) => o.channel)).toEqual(['gmail']);
 
@@ -704,7 +704,7 @@ describe('the channels an ask could not take', () => {
 
   it('carries each one with its own state, so the card can offer the swap', () => {
     const got = ask(
-      'telegram Pepo the UF and email the figures to Ana',
+      'telegram Sammy the UF and email the figures to Ana',
       { connections: { telegram: true } },
       TOKEN,
     );
@@ -736,11 +736,11 @@ describe('the channels an ask could not take', () => {
 
   it('a sentence with one channel carries no also at all', () => {
     expect(ask('email Ana the Q3 expenses')?.also).toBeUndefined();
-    expect(ask('telegram Pepo the total')?.also).toBeUndefined();
+    expect(ask('telegram Sammy the total')?.also).toBeUndefined();
   });
 
   it('the dropped list is everything asked for minus what is carried', () => {
-    const got = ask('telegram Pepo the UF and email the figures to Ana');
+    const got = ask('telegram Sammy the UF and email the figures to Ana');
     expect(droppedChannels(got, ['telegram'])).toEqual([{ channel: 'gmail', label: 'Gmail' }]);
     // The case that cannot be seen from `also` alone: picking the second
     // channel on the fork card makes the asked one the dropped one.
@@ -759,12 +759,12 @@ describe('the channels an ask could not take', () => {
       { channel: 'slack', label: 'Slack', phrase: 'file' },
     ]);
     // The same file on a channel that carries one is not worth a word.
-    expect(filelessChannels('Send Pepo the contract PDF on Telegram', ['telegram'])).toEqual([]);
+    expect(filelessChannels('Send Sammy the contract PDF on Telegram', ['telegram'])).toEqual([]);
     // Two channels, one of each (D-179): the file rides on Telegram and the
     // warning names Slack alone. A warning that named the send rather than
     // the channel would be wrong about half of it.
     expect(
-      filelessChannels('send the report PDF to Pepo on telegram and post it on slack', [
+      filelessChannels('send the report PDF to Sammy on telegram and post it on slack', [
         'telegram',
         'slack',
       ]).map((f) => f.channel),

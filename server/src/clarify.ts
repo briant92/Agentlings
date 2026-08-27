@@ -165,12 +165,12 @@ function contentless(text: string): boolean {
 }
 
 /**
- * A send with no message anywhere in it — "send a Telegram to Pepo".
+ * A send with no message anywhere in it — "send a Telegram to Sammy".
  *
  * The test is what is *left*, not what is there. Asking whether the sentence
  * has a subject cannot work: "on Telegram" and "with a summary" are the same
  * preposition, so the channel supplies the very evidence being looked for,
- * while "Send Pepo the current Warzone meta summary" carries real content
+ * while "Send Sammy the current Warzone meta summary" carries real content
  * with no preposition at all. Strip the send words, the channel words and the
  * people this channel knows, then ask the recipe matcher's own stemmer what
  * survives. Nothing surviving means the message exists only in the user's

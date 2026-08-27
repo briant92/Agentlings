@@ -6,12 +6,12 @@ behavioral base lives there alone; this is the project half, split out on
 
 ## Ground rules
 
-- IMPORTANT: This project is completely separate from the IGPL Family Office
+- IMPORTANT: This project is completely separate from the maintainer's other
   project. Account-level connectors visible in sessions here (Supabase, Gmail,
   Calendar, Carta, Vercel) reach **that** project's resources — NEVER read from
   or write to them for Agentlings work. The Supabase connector is the sharp one:
   it is account-scoped, so `execute_sql` and `apply_migration` can hit any
-  project in the account, Family Office included.
+  project in the account, the other project included.
   Agentlings owns its own resources instead, and reaches them the way every
   connection in this app does — a key in `.env`, never a connector (D-078).
   **Agentlings has no cloud account of its own** (D-174): the Supabase project

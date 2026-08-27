@@ -158,7 +158,7 @@ describe('the store', () => {
         prompt: 'Send a Telegram to Brian',
         cadence: weekly(4, 9, 0),
         channel: 'telegram',
-        answers: { 'send-to': 'Brian — 8633678680', 'send-say': 'padel tonight' },
+        answers: { 'send-to': 'Brian — 1000000001', 'send-say': 'padel tonight' },
       },
       now,
     );
@@ -166,7 +166,7 @@ describe('the store', () => {
     const read = readSchedules(dir);
     expect(read).toHaveLength(1);
     expect(read[0].channel).toBe('telegram');
-    expect(read[0].answers?.['send-to']).toBe('Brian — 8633678680');
+    expect(read[0].answers?.['send-to']).toBe('Brian — 1000000001');
   });
 
   it('drops empty answers rather than storing an empty object', () => {
@@ -608,7 +608,7 @@ describe('the doors a row names', () => {
     });
 
     describe('validReport', () => {
-      const good = { report: 'realwork', channel: 'telegram', to: '8633678680' };
+      const good = { report: 'realwork', channel: 'telegram', to: '1000000001' };
 
       it('accepts realwork with a channel and a recipient', () => {
         expect(validReport(good)).toBeNull();

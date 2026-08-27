@@ -565,8 +565,8 @@ export class RoutedExecutor implements Executor {
        * A recipe is matched two ways: the same sentence, or a similar one. The
        * second is right for lending a method — that is what similarity is for
        * — and wrong for saying anything about the job the key names. Measured:
-       * "I need to send a Telegram to Pepo" scored close enough to the recipe
-       * for "Send Pepo the current Warzone meta summary on Telegram", ran three
+       * "I need to send a Telegram to Sammy" scored close enough to the recipe
+       * for "Send Sammy the current Warzone meta summary on Telegram", ran three
        * turns because it had two words to put in an outbox, and credited that
        * recipe with a 3-turn completion. Its siblings that actually did the
        * research measured 14 and 15. The leash then armed on the 3.

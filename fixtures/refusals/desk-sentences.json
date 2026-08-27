@@ -8,7 +8,7 @@
   { "text": "Make a payment of 300 USD to the electrician", "keys": ["money"] },
   { "text": "Buy the domain agentlings.cl", "keys": ["money"] },
   { "text": "Refund him the difference", "keys": ["money"] },
-  { "text": "Send some money to Pepo for the tickets", "keys": ["money"] },
+  { "text": "Send some money to Sammy for the tickets", "keys": ["money"] },
 
   { "text": "Sign the lease renewal on my behalf", "keys": ["sign"] },
   { "text": "Notarise the power of attorney", "keys": ["sign"] },
@@ -40,7 +40,7 @@
   { "text": "Open it in Photoshop and fix the levels", "keys": ["design-tool"] },
 
   { "text": "Send the summary to Ana on WhatsApp", "keys": ["whatsapp"] },
-  { "text": "Message Pepo on LinkedIn with the pitch", "keys": ["linkedin"] },
+  { "text": "Message Sammy on LinkedIn with the pitch", "keys": ["linkedin"] },
 
   { "text": "Pay the deposit, sign the contract and send the receipt on Signal", "keys": ["money", "sign", "signal"] },
   { "text": "Record a voice-over for the podcast intro and generate a photoreal cover image", "keys": ["audio", "image"] },
@@ -73,7 +73,7 @@
   { "text": "For every figure give the latest reading published as of today, with the reference period beside it", "keys": [] },
   { "text": "Author a level pack: a lighthouse lamp room at dawn", "keys": [] },
   { "text": "Extend the tests to cover those gaps, following the naming voice already in those files", "keys": [] },
-  { "text": "Get the pitch ready to send to Pepo on Telegram. Don’t send anything without my approval.", "keys": [] },
+  { "text": "Get the pitch ready to send to Sammy on Telegram. Don’t send anything without my approval.", "keys": [] },
   { "text": "We need to sell that if we open source the platform the repo stays the product", "keys": [] },
   { "text": "Pay attention to the walk-through in docs/executors.md and the machinery around installed packs", "keys": [] },
   { "text": "Install the pack and describe how the patch layer is enforced against the clone", "keys": [] },

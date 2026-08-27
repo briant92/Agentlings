@@ -9,7 +9,7 @@ import { appendSends } from './sends';
  * resolve route and auto-send), and it held only for *sequential* Approves:
  * the send in the middle takes real seconds, and a second Approve arriving
  * inside that window read a stamp that was not yet written and sent again —
- * job 3e14937a delivered Pepo the same PDF twice, one second apart, on
+ * job 3e14937a delivered Sammy the same PDF twice, one second apart, on
  * D-159's first in-app outing. "Approving twice can never message anyone
  * twice" (D-075) was a claim about a sequence the route never actually
  * serialized.

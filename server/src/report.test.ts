@@ -59,7 +59,7 @@ describe('fireRealWork', () => {
     rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }).catch(() => {}),
   );
 
-  const row = { channel: 'telegram', answers: { [sendToId('telegram')]: '8633678680' } };
+  const row = { channel: 'telegram', answers: { [sendToId('telegram')]: '1000000001' } };
 
   it('lands a done job whose outbox body is the block, at $0 and zero turns, holding no door', () => {
     const job = fireRealWork(queue, row, EMPTY, NOW);
@@ -68,7 +68,7 @@ describe('fireRealWork', () => {
     expect(stored.prompt).toBe(REALWORK_PROMPT);
     expect(stored.channels).toEqual(['telegram']);
     expect(stored.outbox).toEqual([
-      { channel: 'telegram', messages: [{ to: '8633678680', body: formatRealWork(EMPTY) }] },
+      { channel: 'telegram', messages: [{ to: '1000000001', body: formatRealWork(EMPTY) }] },
     ]);
     expect(stored.outboxError).toBeUndefined();
     expect(stored.meter).toMatchObject({ costUsd: 0, turns: 0, turnsAllowed: 0 });
@@ -85,19 +85,19 @@ describe('fireRealWork', () => {
     expect(existsSync(file)).toBe(true);
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
       channel: 'telegram',
-      messages: [{ to: '8633678680', body: formatRealWork(EMPTY) }],
+      messages: [{ to: '1000000001', body: formatRealWork(EMPTY) }],
     });
   });
 
   it('splits a picker-shaped recipient the way the desk does', () => {
     const job = fireRealWork(
       queue,
-      { channel: 'telegram', answers: { [sendToId('telegram')]: 'Brian — 8633678680' } },
+      { channel: 'telegram', answers: { [sendToId('telegram')]: 'Brian — 1000000001' } },
       EMPTY,
       NOW,
     );
     expect(queue.get(job.id)!.outbox![0].messages[0]).toMatchObject({
-      to: '8633678680',
+      to: '1000000001',
       name: 'Brian',
     });
   });

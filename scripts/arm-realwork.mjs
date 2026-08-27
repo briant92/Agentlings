@@ -2,7 +2,7 @@
 // at $0 with no model, landing in review like any send.
 //
 //   node scripts/arm-realwork.mjs <level> <channel> <recipient>
-//   node scripts/arm-realwork.mjs hq telegram 8633678680
+//   node scripts/arm-realwork.mjs hq telegram 1000000001
 //
 // Mondays at 08:05 — between HQ's 08:00 calendar brief and its 08:10 mail
 // brief. One POST through the route, with the gate's cookie — kept as a

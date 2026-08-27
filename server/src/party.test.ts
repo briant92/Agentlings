@@ -164,10 +164,10 @@ describe('gatherBrief', () => {
     const brief = gatherBrief({
       ...base,
       sendTail: 'telegram me the result',
-      sendLines: ['Send the result on telegram to 8633678680 — write OUTBOX.json as briefed.'],
+      sendLines: ['Send the result on telegram to 1000000001 — write OUTBOX.json as briefed.'],
     });
     expect(brief).toContain('telegram me the result');
-    expect(brief).toContain('8633678680');
+    expect(brief).toContain('1000000001');
   });
 });
 

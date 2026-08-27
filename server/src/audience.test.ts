@@ -20,7 +20,7 @@ const send = (over: Partial<SendRecord> = {}): SendRecord => ({
   levelId: 'training-ground',
   jobId: 'j',
   channel: 'telegram',
-  to: '8633678680',
+  to: '1000000001',
   ok: true,
   ...over,
 });
@@ -105,14 +105,14 @@ describe('mergeSends (D-092)', () => {
     const got = mergeSends(
       [],
       [
-        send({ to: '71', name: 'Pepo Dussaillant' }),
-        send({ to: '71', name: 'Pepo Dussaillant' }),
+        send({ to: '71', name: 'Sammy Doe' }),
+        send({ to: '71', name: 'Sammy Doe' }),
         send({ to: '99', ok: false, reason: 'chat not found' }),
         send({ to: '55', channel: 'gmail' }),
       ],
       'telegram',
     );
-    expect(got).toEqual([{ id: '71', name: 'Pepo Dussaillant', viaStart: false, sends: 2 }]);
+    expect(got).toEqual([{ id: '71', name: 'Sammy Doe', viaStart: false, sends: 2 }]);
   });
 
   it('is idempotent — re-merging the whole audit does not double the counts', () => {
@@ -123,15 +123,15 @@ describe('mergeSends (D-092)', () => {
   });
 
   it('a reviewed name that differs becomes an alias, once, however often re-merged (D-094)', () => {
-    const viaStart = [{ id: '67', name: 'Jose Dussaillant', viaStart: true, sends: 0 }];
+    const viaStart = [{ id: '67', name: 'Sample Doe', viaStart: true, sends: 0 }];
     const audit = [
-      send({ to: '67', name: 'Jose Dussaillant (Pepo)' }),
-      send({ to: '67', name: 'Jose Dussaillant (Pepo)' }),
+      send({ to: '67', name: 'Sample Doe (Sammy)' }),
+      send({ to: '67', name: 'Sample Doe (Sammy)' }),
     ];
     const once = mergeSends(viaStart, audit, 'telegram');
-    expect(once[0].aliases).toEqual(['Jose Dussaillant (Pepo)']);
+    expect(once[0].aliases).toEqual(['Sample Doe (Sammy)']);
     const twice = mergeSends(once, audit, 'telegram');
-    expect(twice[0].aliases).toEqual(['Jose Dussaillant (Pepo)']);
+    expect(twice[0].aliases).toEqual(['Sample Doe (Sammy)']);
   });
 
   it('a name that matches, or is the id, never becomes an alias', () => {
@@ -173,7 +173,7 @@ describe('the roster on disk', () => {
   it('removing a person un-knows them and persists it', () => {
     writeAudience(root, 'telegram', [
       { id: '86', name: 'Brian', viaStart: true, sends: 0 },
-      { id: '71', name: 'Pepo', viaStart: true, sends: 0 },
+      { id: '71', name: 'Sammy', viaStart: true, sends: 0 },
     ]);
     const kept = removePerson(root, 'telegram', '71');
     expect(kept.map((p) => p.id)).toEqual(['86']);
@@ -185,9 +185,9 @@ describe('telegramChats', () => {
   it('flattens updates to unique chats with composed names', async () => {
     const body = {
       result: [
-        { message: { chat: { id: 8633678680, first_name: 'Brian', last_name: 'Thornton' } } },
-        { message: { chat: { id: 8633678680, first_name: 'Brian', last_name: 'Thornton' } } },
-        { message: { chat: { id: 71, first_name: 'Pepo', username: 'pepo' } } },
+        { message: { chat: { id: 1000000001, first_name: 'Brian', last_name: 'Thornton' } } },
+        { message: { chat: { id: 1000000001, first_name: 'Brian', last_name: 'Thornton' } } },
+        { message: { chat: { id: 71, first_name: 'Sammy', username: 'sammy' } } },
         { message: {} },
       ],
     };
@@ -195,8 +195,8 @@ describe('telegramChats', () => {
       Promise.resolve({ ok: true, json: () => Promise.resolve(body) }),
     );
     expect(got).toEqual([
-      { id: '8633678680', name: 'Brian Thornton' },
-      { id: '71', name: 'Pepo', username: 'pepo' },
+      { id: '1000000001', name: 'Brian Thornton' },
+      { id: '71', name: 'Sammy', username: 'sammy' },
     ]);
   });
 

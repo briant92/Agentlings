@@ -194,21 +194,21 @@ describe('readOutbox', () => {
 /** The desk's own recipient field, split back into what the channel needs (D-097). */
 describe('splitRecipient', () => {
   it('takes the address the picker wrote after the em-dash', () => {
-    expect(splitRecipient('Jose Dussaillant — 6783316106')).toEqual({
-      to: '6783316106',
-      name: 'Jose Dussaillant',
+    expect(splitRecipient('Sample Doe — 1000000002')).toEqual({
+      to: '1000000002',
+      name: 'Sample Doe',
     });
   });
 
   it('takes a pasted address whole, since nobody named it', () => {
-    expect(splitRecipient('6783316106')).toEqual({ to: '6783316106' });
+    expect(splitRecipient('1000000002')).toEqual({ to: '1000000002' });
     expect(splitRecipient(' brian@example.com ')).toEqual({ to: 'brian@example.com' });
   });
 
   // The field is free text, so the shape gets typed by hand as well as picked.
   it('reads the separators a person types for the same shape', () => {
-    expect(splitRecipient('Brian Thornton – 8633678680').to).toBe('8633678680');
-    expect(splitRecipient('Brian Thornton - 8633678680').to).toBe('8633678680');
+    expect(splitRecipient('Brian Thornton – 1000000001').to).toBe('1000000001');
+    expect(splitRecipient('Brian Thornton - 1000000001').to).toBe('1000000001');
   });
 
   /** Names carry hyphens; addresses rarely do. */
@@ -222,16 +222,16 @@ describe('splitRecipient', () => {
   // Otherwise the contract refuses with "to must be a non-empty string" for
   // what is really a missing address.
   it('treats a trailing separator as part of the name, not a split', () => {
-    expect(splitRecipient('Pepo — ')).toEqual({ to: 'Pepo —' });
+    expect(splitRecipient('Sammy — ')).toEqual({ to: 'Sammy —' });
   });
 });
 
 describe('composeOutbox', () => {
   it('builds the same object a session would have written', () => {
-    const { outboxes } = composeOutbox('telegram', 'Jose Dussaillant — 6783316106', 'A DARLE');
+    const { outboxes } = composeOutbox('telegram', 'Sample Doe — 1000000002', 'A DARLE');
     expect(outboxes?.[0]).toEqual({
       channel: 'telegram',
-      messages: [{ to: '6783316106', body: 'A DARLE', name: 'Jose Dussaillant' }],
+      messages: [{ to: '1000000002', body: 'A DARLE', name: 'Sample Doe' }],
     });
   });
 
@@ -242,11 +242,11 @@ describe('composeOutbox', () => {
    */
   it('is refused by the contract exactly as a session file would be', () => {
     expect(composeOutbox('telegram', '   ', 'A DARLE').error).toMatch(/"to"/);
-    expect(composeOutbox('telegram', '6783316106', '   ').error).toMatch(/"body"/);
+    expect(composeOutbox('telegram', '1000000002', '   ').error).toMatch(/"body"/);
     // The one refusal a real desk can produce: the words are free text, and
     // nothing upstream caps their length — held to the channel's own limit
     // (D-193), same as a session's file.
-    expect(composeOutbox('telegram', '6783316106', 'x'.repeat(5000)).error).toMatch(
+    expect(composeOutbox('telegram', '1000000002', 'x'.repeat(5000)).error).toMatch(
       /telegram's limit is 4096/,
     );
   });
@@ -320,7 +320,7 @@ describe('the event block', () => {
       event: {
         start: '2026-08-13T16:00:00',
         end: '2026-08-13T17:00:00',
-        attendees: ['Pepo Dussaillant'],
+        attendees: ['Sammy Doe'],
       },
     });
     expect(checkOutbox(named).error).toContain('not an email address');

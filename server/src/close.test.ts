@@ -39,7 +39,7 @@ const schedule = (id: string, paused?: boolean): Schedule => ({
 
 const approval = (key: string, auto: boolean): SendApproval => ({
   key,
-  channels: [{ channel: 'telegram', recipients: ['8633678680'] }],
+  channels: [{ channel: 'telegram', recipients: ['1000000001'] }],
   approvals: auto ? 4 : 1,
   auto,
   ...(auto ? { grantedAt: 5 } : {}),

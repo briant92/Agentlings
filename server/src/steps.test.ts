@@ -122,7 +122,7 @@ describe('splitSteps — an "and" before a send', () => {
 
   it('two sends are one job on two channels, never two steps (D-179)', () => {
     expect(splitSteps('email it to Ana and telegram me the headline')).toBeNull();
-    expect(splitSteps('telegram Pepo the UF and email the same figures to Ana')).toBeNull();
+    expect(splitSteps('telegram Sammy the UF and email the same figures to Ana')).toBeNull();
   });
 
   it('a mentioned channel is not a send — the split needs a real claim', () => {

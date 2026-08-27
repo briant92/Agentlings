@@ -345,9 +345,9 @@ describe('queuedJobSpec', () => {
       plan: planFor('I need to send a Telegram to Brian'),
       quote: quote(0),
       channels: ['telegram'],
-      send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
+      send: { to: 'Brian Thornton — 1000000001', words: 'A DARLE' },
     });
-    expect(spec.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
+    expect(spec.send).toEqual({ to: 'Brian Thornton — 1000000001', words: 'A DARLE' });
   });
 
   it('settles the role rather than leaving it to whoever is free', () => {
@@ -494,12 +494,12 @@ describe('redoJobSpec', () => {
 
   it('carries the answers the user already gave', () => {
     const spec = redoJobSpec(
-      job({ clarifications: ['Who should this go to? Brian — 8633678680'] }),
+      job({ clarifications: ['Who should this go to? Brian — 1000000001'] }),
       [],
       2,
       undefined,
     );
-    expect(spec.clarifications).toEqual(['Who should this go to? Brian — 8633678680']);
+    expect(spec.clarifications).toEqual(['Who should this go to? Brian — 1000000001']);
   });
 
   it('carries the standing brief', () => {
@@ -523,7 +523,7 @@ describe('redoJobSpec', () => {
    */
   it('drops the send, so asking properly asks for judgement', () => {
     const spec = redoJobSpec(
-      job({ channels: ['telegram'], send: { to: '8633678680', words: 'A DARLE' } }),
+      job({ channels: ['telegram'], send: { to: '1000000001', words: 'A DARLE' } }),
       [],
       2,
       undefined,

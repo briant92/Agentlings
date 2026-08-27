@@ -1107,7 +1107,7 @@ app.get('/api/channels', (c) => c.json(channelShelf()));
  * Every name this channel could be asked to send to, aliases included.
  *
  * The bare-send test needs them because a recipient is not a subject (D-097):
- * "send a Telegram to Pepo" names a person, and without knowing that "Pepo"
+ * "send a Telegram to Sammy" names a person, and without knowing that "Sammy"
  * is a person it reads as a topic. Names come from the same roster the picker
  * offers, so the two agree by construction — and a channel with nobody on it
  * simply contributes none, which reads every send as content-bearing and is
@@ -3101,7 +3101,7 @@ app.post('/api/levels/:lid/jobs/:id/reply', async (c) => {
       // The answer continues the send it answers for (D-087) — and when the
       // original never carried one because the detector missed, the reply's
       // own words may supply it through the same gates (D-090): "send it to
-      // Pepo on telegram" is detection, not invention. The brief is derived
+      // Sammy on telegram" is detection, not invention. The brief is derived
       // from job.channel at run time.
       channels:
         previous.channels ??
@@ -3489,7 +3489,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
       /**
        * One door, claimed per job (D-160): a second Approve landing while
        * this one is mid-send is refused by name instead of racing through
-       * the read→send→stamp gap — job 3e14937a sent Pepo the same PDF twice
+       * the read→send→stamp gap — job 3e14937a sent Sammy the same PDF twice
        * through exactly that window. The recipients list is re-read under
        * the claim; the outer `alreadySent` above only decides whether to
        * enter at all.

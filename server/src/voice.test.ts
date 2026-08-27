@@ -65,9 +65,9 @@ function fake(routes: Record<string, unknown>, binary: Record<string, Buffer> = 
   return { http, calls };
 }
 
-const BRIAN = { id: 8633678680, first_name: 'Brian', last_name: 'Thornton' };
+const BRIAN = { id: 1000000001, first_name: 'Brian', last_name: 'Thornton' };
 const STRANGER = { id: 1, first_name: 'Nobody' };
-const ROSTER = new Set(['8633678680']);
+const ROSTER = new Set(['1000000001']);
 
 describe('pollVoice', () => {
   it('returns the roster’s unseen voice notes, oldest first, and passes strangers over by name', async () => {
@@ -86,7 +86,7 @@ describe('pollVoice', () => {
     if ('error' in poll) throw new Error(poll.error);
     expect(poll.notes.map((n) => n.id)).toEqual(['10', '12']);
     expect(poll.notes[0]).toMatchObject({
-      chatId: '8633678680',
+      chatId: '1000000001',
       from: 'Brian Thornton',
       fileId: 'f-10',
       seconds: 14,
@@ -149,7 +149,7 @@ describe('the note store', () => {
   });
   const note = (id: string, over: Record<string, unknown> = {}) => ({
     id,
-    chatId: '8633678680',
+    chatId: '1000000001',
     from: 'Brian Thornton',
     at: Number(id) * 1000,
     seconds: 14,

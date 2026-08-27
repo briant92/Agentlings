@@ -442,7 +442,7 @@ export function gatherBrief(args: {
     leftBehind: string[];
     failed?: boolean;
   }[];
-  /** "telegram to 8633678680" lines, from the party's own desk answers. */
+  /** "telegram to 1000000001" lines, from the party's own desk answers. */
   sendLines?: string[];
   /**
    * A repo party's merge half (TEAMWORK T4): the hand patches waiting in

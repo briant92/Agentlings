@@ -122,7 +122,7 @@ describe('clarificationLines: send answers ride only with the channel context', 
  */
 describe('questionsFor: a send on more than one channel', () => {
   const both = (over: Record<string, unknown> = {}) =>
-    questionsFor('telegram Pepo the UF and email the figures to Ana', {
+    questionsFor('telegram Sammy the UF and email the figures to Ana', {
       hasRepo: false,
       tier: 'session',
       channel: 'telegram',
@@ -196,7 +196,7 @@ describe('questionsFor: a send on more than one channel', () => {
 
   it('each channel’s answer rides as its own line, naming the channel', () => {
     const lines = clarificationLines(
-      'telegram Pepo the UF and email the figures to Ana',
+      'telegram Sammy the UF and email the figures to Ana',
       {
         hasRepo: false,
         tier: 'session',
@@ -204,13 +204,13 @@ describe('questionsFor: a send on more than one channel', () => {
         channels: ['telegram', 'gmail'],
       },
       {
-        'send-to:telegram': '6783316106',
+        'send-to:telegram': '1000000002',
         'send-to:gmail': 'ana@example.com',
         'send-say': 'the UF and the dollar for today',
       },
     );
     expect(lines).toEqual([
-      'Who should this go to on Telegram? 6783316106',
+      'Who should this go to on Telegram? 1000000002',
       'Who should this go to on Gmail? ana@example.com',
       'What should it say, roughly? the UF and the dollar for today',
     ]);
@@ -218,7 +218,7 @@ describe('questionsFor: a send on more than one channel', () => {
 
   it('an address given for one channel never rides as another’s', () => {
     const lines = clarificationLines(
-      'telegram Pepo the UF and email the figures to Ana',
+      'telegram Sammy the UF and email the figures to Ana',
       {
         hasRepo: false,
         tier: 'session',
@@ -237,16 +237,16 @@ describe('questionsFor: a send on more than one channel', () => {
    */
   it('an answer stored under the old key still reaches the first channel', () => {
     const lines = clarificationLines(
-      'telegram Pepo the UF and email the figures to Ana',
+      'telegram Sammy the UF and email the figures to Ana',
       {
         hasRepo: false,
         tier: 'session',
         channel: 'telegram',
         channels: ['telegram', 'gmail'],
       },
-      { 'send-to': '6783316106' },
+      { 'send-to': '1000000002' },
     );
-    expect(lines).toEqual(['Who should this go to on Telegram? 6783316106']);
+    expect(lines).toEqual(['Who should this go to on Telegram? 1000000002']);
   });
 });
 
@@ -414,15 +414,15 @@ describe('clarificationLines', () => {
  * Telegram" and "with a summary" are the same preposition.
  */
 describe('telling a bare send from one that carries content', () => {
-  const NAMES = ['Brian Thornton', 'Jose Dussaillant', 'Jose Dussaillant (Pepo)'];
+  const NAMES = ['Brian Thornton', 'Sample Doe', 'Sample Doe (Sammy)'];
   const SEND = { hasRepo: false, tier: 'session' as const, channel: 'telegram', names: NAMES };
   const say = (text: string) => questionsFor(text, SEND).find((q) => q.id === 'send-say');
 
   it('asks for the words when the sentence names no message', () => {
     for (const text of [
-      'I need to send a Telegram to Pepo',
-      'Send a message to Pepo on Telegram',
-      'shoot Pepo a telegram',
+      'I need to send a Telegram to Sammy',
+      'Send a message to Sammy on Telegram',
+      'shoot Sammy a telegram',
     ]) {
       expect(bareSend(text, NAMES), text).toBe(true);
       expect(say(text)?.ask, text).toBe('What should the message say?');
@@ -433,9 +433,9 @@ describe('telling a bare send from one that carries content', () => {
 
   it('keeps the rough direction when there is something to write', () => {
     for (const text of [
-      'Send Pepo the current Warzone meta summary on Telegram.',
+      'Send Sammy the current Warzone meta summary on Telegram.',
       'Send me a Telegram with the latest Call of Duty: Warzone meta',
-      'Text Pepo about dinner on Telegram',
+      'Text Sammy about dinner on Telegram',
       'Email Brian the Q3 numbers',
     ]) {
       expect(bareSend(text, NAMES), text).toBe(false);
@@ -450,7 +450,7 @@ describe('telling a bare send from one that carries content', () => {
    * such a test looks for.
    */
   it('does not read the channel word as the message', () => {
-    expect(bareSend('Send a message to Pepo on Telegram', NAMES)).toBe(true);
+    expect(bareSend('Send a message to Sammy on Telegram', NAMES)).toBe(true);
   });
 
   /** A recipient is not a subject either — but only a known one can be told apart. */
@@ -460,25 +460,25 @@ describe('telling a bare send from one that carries content', () => {
   });
 
   it('asks nothing extra when no channel is in play', () => {
-    expect(questionsFor('I need to send a Telegram to Pepo', NO_REPO)).toEqual([]);
+    expect(questionsFor('I need to send a Telegram to Sammy', NO_REPO)).toEqual([]);
   });
 });
 
 describe('the send the desk can compose without a session', () => {
-  const NAMES = ['Jose Dussaillant (Pepo)'];
+  const NAMES = ['Sample Doe (Sammy)'];
   const ctx = { channel: 'telegram', names: NAMES };
-  const BARE = 'I need to send a Telegram to Pepo';
-  const answers = { 'send-to': 'Jose Dussaillant — 6783316106', 'send-say': 'A DARLE' };
+  const BARE = 'I need to send a Telegram to Sammy';
+  const answers = { 'send-to': 'Sample Doe — 1000000002', 'send-say': 'A DARLE' };
 
   it('holds both facts of a bare send', () => {
     expect(sendFacts(BARE, ctx, answers)).toEqual({
-      to: 'Jose Dussaillant — 6783316106',
+      to: 'Sample Doe — 1000000002',
       words: 'A DARLE',
     });
   });
 
   it('refuses when there is a message to write', () => {
-    expect(sendFacts('Text Pepo about dinner on Telegram', ctx, answers)).toBeNull();
+    expect(sendFacts('Text Sammy about dinner on Telegram', ctx, answers)).toBeNull();
   });
 
   it('refuses on a missing fact, since half a send composes nothing', () => {
@@ -518,13 +518,13 @@ describe('clarificationLines: the drafting request is spent at the desk', () => 
     hasRepo: false,
     tier: 'session' as const,
     channel: 'telegram',
-    names: ['Jose Dussaillant (Pepo)'],
+    names: ['Sample Doe (Sammy)'],
   };
-  const BARE = 'I need to send a Telegram to Pepo';
+  const BARE = 'I need to send a Telegram to Sammy';
 
   it('forwards the direction without the phrase that requested it', () => {
     const lines = clarificationLines(BARE, CTX, {
-      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-to': 'Sample Doe — 1000000002',
       'send-say': 'write it out: tell him I am running late',
     });
     expect(lines[1]).toBe('What should the message say? tell him I am running late');
@@ -533,7 +533,7 @@ describe('clarificationLines: the drafting request is spent at the desk', () => 
 
   it('leaves an ordinary answer exactly as typed', () => {
     const lines = clarificationLines(BARE, CTX, {
-      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-to': 'Sample Doe — 1000000002',
       'send-say': 'A DARLE',
     });
     expect(lines[1]).toBe('What should the message say? A DARLE');
@@ -543,7 +543,7 @@ describe('clarificationLines: the drafting request is spent at the desk', () => 
   it('does not strip it from the middle of a message', () => {
     const said = 'tell him to write it out before Friday';
     const lines = clarificationLines(BARE, CTX, {
-      'send-to': 'Jose Dussaillant — 6783316106',
+      'send-to': 'Sample Doe — 1000000002',
       'send-say': said,
     });
     expect(lines[1]).toBe(`What should the message say? ${said}`);

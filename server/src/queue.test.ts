@@ -145,9 +145,9 @@ describe('JobQueue', () => {
       title: 'Telegram to Brian',
       prompt: 'I need to send a Telegram to Brian',
       channels: ['telegram'],
-      send: { to: 'Brian Thornton — 8633678680', words: 'A DARLE' },
+      send: { to: 'Brian Thornton — 1000000001', words: 'A DARLE' },
     });
-    expect(job.send).toEqual({ to: 'Brian Thornton — 8633678680', words: 'A DARLE' });
+    expect(job.send).toEqual({ to: 'Brian Thornton — 1000000001', words: 'A DARLE' });
     // And survives the round trip to disk, since the run reads it back.
     expect(new JobQueue(root).get(job.id)?.send).toEqual(job.send);
   });
@@ -233,7 +233,7 @@ describe('JobQueue', () => {
   it('still takes fewer channels than were queued — a left-out send is D-180 territory', () => {
     const job = queue.add({
       title: 'Both',
-      prompt: 'telegram Pepo and email Ana',
+      prompt: 'telegram Sammy and email Ana',
       channels: ['telegram', 'gmail'],
     });
     queue.assign(job.id, 'a1');
@@ -279,7 +279,7 @@ describe('JobQueue', () => {
    * as one — the review renders a card each, and Approve sends them all.
    */
   it('stamps an OUTBOX.json that carries two channels', () => {
-    const job = queue.add({ title: 'Both', prompt: 'telegram Pepo and email Ana' });
+    const job = queue.add({ title: 'Both', prompt: 'telegram Sammy and email Ana' });
     queue.assign(job.id, 'a1');
     const dir = queue.start(job.id);
     writeFileSync(
@@ -303,7 +303,7 @@ describe('JobQueue', () => {
   });
 
   it('refuses two outboxes for one channel, by name', () => {
-    const job = queue.add({ title: 'Both', prompt: 'telegram Pepo twice' });
+    const job = queue.add({ title: 'Both', prompt: 'telegram Sammy twice' });
     queue.assign(job.id, 'a1');
     const dir = queue.start(job.id);
     writeFileSync(

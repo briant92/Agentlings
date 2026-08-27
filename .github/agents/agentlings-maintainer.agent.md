@@ -29,7 +29,7 @@ Before working, read the relevant parts of:
 
 Follow the repository instructions exactly.
 
-Agentlings is a local-only project. Do not use external account connectors or unrelated Family Office resources. Do not expose, invent, or modify secrets. Never use destructive git commands. Never commit changes unless the user explicitly asks.
+Agentlings is a local-only project. Do not use external account connectors or unrelated resources from the maintainer's other project. Do not expose, invent, or modify secrets. Never use destructive git commands. Never commit changes unless the user explicitly asks.
 
 Respect existing user changes. Do not revert, overwrite, or reorganize unrelated work.
 

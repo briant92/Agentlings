@@ -386,8 +386,8 @@ export function WorkBar({
   const problemOn = (c: string | undefined) => (c ? audiences[c]?.problem : undefined);
 
   // An address already in the sentence answers "who" — and so does a name
-  // the roster knows uniquely, aliases included (D-094): "to Pepo" prefills
-  // Jose through the name a reviewed send taught it. Prefill, never
+  // the roster knows uniquely, aliases included (D-094): "to Sammy" prefills
+  // Sample through the name a reviewed send taught it. Prefill, never
   // overwrite, and never on ambiguity — the arrest catches an empty field.
   useEffect(() => {
     const recipients = (plan?.questions ?? []).filter(

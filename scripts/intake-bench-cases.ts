@@ -55,7 +55,7 @@ export const CASES: BenchCase[] = [
   {
     id: 'send-01',
     family: 'send-single',
-    prompt: 'Telegram Pepo the UF and the dollar for today',
+    prompt: 'Telegram Sammy the UF and the dollar for today',
     expect: { channels: ['telegram'], steps: null, asks: ['send-to:telegram'], tier: 'agent' },
   },
   {
@@ -87,7 +87,7 @@ export const CASES: BenchCase[] = [
   {
     id: 'multi-01',
     family: 'send-multi',
-    prompt: 'Telegram Pepo the UF for today and email the same figures to Ana',
+    prompt: 'Telegram Sammy the UF for today and email the same figures to Ana',
     expect: { channels: ['telegram', 'gmail'], steps: null },
     note: 'One task, two recipients, two channels, one body.',
   },
@@ -226,7 +226,7 @@ export const CASES: BenchCase[] = [
   {
     id: 'attach-02',
     family: 'attach',
-    prompt: 'Send Pepo the contract PDF on Telegram',
+    prompt: 'Send Sammy the contract PDF on Telegram',
     expect: { channels: ['telegram'], attaches: true },
   },
   {

@@ -185,9 +185,9 @@ describe('RoutedExecutor', () => {
   describe('a send the desk holds whole', () => {
     const composed = () =>
       job({
-        prompt: 'I need to send a Telegram to Pepo',
+        prompt: 'I need to send a Telegram to Sammy',
         channels: ['telegram'],
-        send: { to: 'Jose Dussaillant — 6783316106', words: 'A DARLE' },
+        send: { to: 'Sample Doe — 1000000002', words: 'A DARLE' },
       });
     const outbox = () => JSON.parse(readFileSync(path.join(sandboxDir, 'OUTBOX.json'), 'utf8'));
 
@@ -199,7 +199,7 @@ describe('RoutedExecutor', () => {
       expect(out.meter).toEqual({ costUsd: 0, turns: 0, routed: true });
       expect(outbox()).toEqual({
         channel: 'telegram',
-        messages: [{ to: '6783316106', body: 'A DARLE', name: 'Jose Dussaillant' }],
+        messages: [{ to: '1000000002', body: 'A DARLE', name: 'Sample Doe' }],
       });
     });
 
@@ -212,7 +212,7 @@ describe('RoutedExecutor', () => {
     it('shows the message in RESULT.md, so review reads without opening a file', async () => {
       await run(build(new FakeSession()), composed(), PIP);
       expect(result()).toContain('A DARLE');
-      expect(result()).toContain('6783316106');
+      expect(result()).toContain('1000000002');
     });
 
     it('says why it needed no session', async () => {
@@ -238,11 +238,11 @@ describe('RoutedExecutor', () => {
       await run(
         build(session),
         job({
-          prompt: 'I need to send a Telegram to Pepo',
+          prompt: 'I need to send a Telegram to Sammy',
           channels: ['telegram'],
           // Over the body cap — the one refusal a real desk can produce,
           // since the words are free text and nothing upstream limits them.
-          send: { to: '6783316106', words: 'x'.repeat(5000) },
+          send: { to: '1000000002', words: 'x'.repeat(5000) },
         }),
         PIP,
       );
@@ -252,7 +252,7 @@ describe('RoutedExecutor', () => {
 
     it('stays a session when the desk holds only half of it', async () => {
       const session = new FakeSession();
-      await run(build(session), job({ prompt: 'I need to send a Telegram to Pepo', channels: ['telegram'] }), PIP);
+      await run(build(session), job({ prompt: 'I need to send a Telegram to Sammy', channels: ['telegram'] }), PIP);
       expect(session.runs).toHaveLength(1);
     });
   });
@@ -340,7 +340,7 @@ describe('RoutedExecutor', () => {
    * resembles it did not do that job.
    *
    * The 3-turn send that credited a 15-turn research recipe is the case: it
-   * scored close enough on "send / pepo / telegram", had two words to put in
+   * scored close enough on "send / sammy / telegram", had two words to put in
    * an outbox, and armed a five-turn leash on work its own siblings measured
    * at 14 and 15.
    */

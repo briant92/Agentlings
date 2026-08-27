@@ -1,11 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { headedAvailable } from './browserchannel';
 import { doorUnavailable, NO_SCREEN, type Connection } from './connections';
 import { REPO_ROOT } from './installpaths';
-import { forgetOcrAvailability, ocrAvailable } from './ocr';
-import { pickFolderAvailable } from './pickFolder';
 
 /**
  * The *Not available hosted* tag, held against the probes that produce it.
@@ -27,10 +25,30 @@ import { pickFolderAvailable } from './pickFolder';
 const read = (rel: string) => readFileSync(path.join(REPO_ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 
 const CONTEXT = read('CONTEXT.md');
-const CAPABILITIES = read('AGENTLING.md');
+const CAPABILITY_FILE = read('AGENTLING.md');
 const README = read('README.md');
 
-const TAG = 'Not available hosted';
+/**
+ * The tag as a *claim*, whitespace-tolerant, and only in its bold form.
+ *
+ * Bold is the tag; italic is prose naming it — the glossary and this file's own
+ * header both mention *Not available hosted* in a sentence, and neither is a
+ * capability being tagged. Making the difference load-bearing is what lets the
+ * count below be exact instead of approximate.
+ */
+const BOLD_TAG = /\*\*Not\s+available\s+hosted\*\*/g;
+
+interface Citation {
+  name: string;
+  probe: string;
+  file: string;
+}
+
+/**
+ * Parsed once: two `describe`s ask the same question of the same file.
+ * `taggedCapabilities` is a function declaration, so it is hoisted above this.
+ */
+const TAGGED = taggedCapabilities(CAPABILITY_FILE);
 
 /**
  * The glossary's own list of what a hosted install refuses, out of the
@@ -59,9 +77,9 @@ function glossaryDiskBound(text: string): string[] {
  * read three of the five and reported the other two as absent — a reader that
  * was really measuring where the line breaks were.
  */
-function taggedCapabilities(text: string): { name: string; probe: string; file: string }[] {
-  const found: { name: string; probe: string; file: string }[] = [];
-  const re = /\*\*Not available hosted\*\*\s+\(\*([^*]+)\*\s+—\s+`([^`]+)`,\s+`([^`]+)`\)/g;
+function taggedCapabilities(text: string): Citation[] {
+  const found: Citation[] = [];
+  const re = /\*\*Not\s+available\s+hosted\*\*\s+\(\*([^*]+)\*\s+—\s+`([^`]+)`,\s+`([^`]+)`\)/g;
   const flat = (s: string) => s.replace(/\s+/g, ' ').trim();
   for (const m of text.matchAll(re)) {
     found.push({ name: flat(m[1]), probe: flat(m[2]), file: flat(m[3]) });
@@ -147,11 +165,26 @@ describe('the readers', () => {
   it('throws rather than answer nothing when the README section has gone', () => {
     expect(() => readmeDiskBound('\n## Deploying\n\n- **a thing**\n\n## Next\n')).toThrow();
   });
+
+  it('counts a claim of the tag however it wraps, and only in its bold form', () => {
+    // The hole the review found, and the reason the count is a regex now: an
+    // UNCITED tag that wraps is invisible to `taggedCapabilities` — that is
+    // what the count exists to catch — so if the count cannot see it either,
+    // the two agree on a file with a silent hole in it.
+    const uncitedAndWrapped = 'A sixth thing is **Not available\nhosted** and cites nothing.';
+    expect(taggedCapabilities(uncitedAndWrapped)).toEqual([]);
+    expect([...uncitedAndWrapped.matchAll(BOLD_TAG)]).toHaveLength(1);
+
+    // Italic is prose naming the tag, not a capability claiming it. Both the
+    // glossary and this file's own header do it, and neither owes a citation.
+    expect([...'the statuses gain a fourth, *Not available hosted*.'.matchAll(BOLD_TAG)]).toEqual(
+      [],
+    );
+  });
 });
 
 describe('the three lists agree', () => {
   const glossary = glossaryDiskBound(CONTEXT);
-  const tagged = taggedCapabilities(CAPABILITIES);
 
   it('the glossary names five disk-bound capabilities', () => {
     // Not a magic number: it is the count the tag, the README and the probe
@@ -166,25 +199,33 @@ describe('the three lists agree', () => {
   });
 
   it('the capability file tags exactly those, and each exactly once', () => {
-    expect(tagged.map((t) => t.name).sort()).toEqual([...glossary].sort());
+    expect(TAGGED.map((t) => t.name).sort()).toEqual([...glossary].sort());
   });
 
   it('the README tells a person deploying the same list', () => {
     expect(readmeDiskBound(README).sort()).toEqual([...glossary].sort());
   });
 
-  it('every occurrence of the tag carries a citation', () => {
-    // The count is what makes the regex reader safe: a tag it cannot parse is
-    // invisible to it, so the two numbers are compared rather than trusted.
-    // The legend row is the one deliberate exception — it defines the tag.
-    const occurrences = CAPABILITIES.split(TAG).length - 1;
-    expect(occurrences).toBe(tagged.length + 1);
-    expect(CAPABILITIES).toContain(`| **${TAG}** |`);
+  it('every claim of the tag carries a citation', () => {
+    // The count is what makes the regex reader safe: a tag the reader cannot
+    // parse is invisible to it, so the two numbers are compared rather than
+    // trusted. The legend row is the one deliberate difference — it defines
+    // the tag rather than claiming it.
+    //
+    // Counted with the SAME whitespace tolerance the reader has. It was not,
+    // and the review caught it: `split` on a literal-space string, over a file
+    // this test itself calls prose wrapped at 79 columns. An uncited tag that
+    // happened to wrap was invisible to both readers at once, so the guard
+    // against exactly that passed — the fault D-274 records fixing in the
+    // reader, still sitting in the guard. Measured, then fixed.
+    const claims = [...CAPABILITY_FILE.matchAll(BOLD_TAG)].length;
+    expect(claims).toBe(TAGGED.length + 1);
+    expect(CAPABILITY_FILE).toMatch(/\|\s+\*\*Not\s+available\s+hosted\*\*\s+\|/);
   });
 });
 
 describe('every cited probe exists', () => {
-  for (const { name, probe, file } of taggedCapabilities(CAPABILITIES)) {
+  for (const { name, probe, file } of TAGGED) {
     it(`${name} cites ${probe} in ${file}`, () => {
       const full = path.join(REPO_ROOT, file);
       expect(existsSync(full), `${file} does not exist`).toBe(true);
@@ -195,47 +236,36 @@ describe('every cited probe exists', () => {
 
 /**
  * …and the citation is not the proof. A file containing a string is the check
- * that once passed by matching text which already existed (PROJECT.md). What
- * follows puts each probe that *can* be asked to the hosted shape — Linux, no
- * display — and reads its answer.
+ * that once passed by matching text which already existed (PROJECT.md).
  *
- * Two of the five cannot be asked here and are not faked. `existsSync` on the
- * operator's own path answers about the machine running the test, so repo work
- * and the knowledge store are proven by a real install refusing rather than by
- * a unit test; that gap is named in D-274 rather than papered over.
+ * What is *not* here is as deliberate as what is. Each probe's own refusing
+ * branch is already pinned where the probe lives — `pickFolderAvailable` off
+ * Windows in `pickFolder.test.ts`, `ocrAvailable` asking nobody off Windows in
+ * `ocr.test.ts`, `headedAvailable` against a stray empty `DISPLAY` in
+ * `browserchannel.test.ts`, `doorUnavailable` in `connections.test.ts` — and
+ * copying those four here would be a second answer to each of four questions
+ * (D-030), in the file whose whole subject is one probe having one reader. The
+ * review of this ticket found exactly that, and it was cut rather than kept.
+ *
+ * What remains is the one assertion none of them makes: the two probes
+ * *composed*.
+ *
+ * Two of the five cannot be asked here at all, and are not faked. `existsSync`
+ * answers about the machine running the test, so repo work and the knowledge
+ * store are proven by a real install refusing rather than by a unit test —
+ * and `prove-hosted.mjs` does not reach them either. Named in D-274 rather
+ * than papered over.
  */
 describe('the probes refuse under the hosted shape', () => {
-  const platform = process.platform;
-  const asPlatform = (value: string) =>
-    Object.defineProperty(process, 'platform', { value, configurable: true });
-  afterEach(() => {
-    asPlatform(platform);
-    forgetOcrAvailability();
-  });
-
-  it('the folder organizer: no Windows, no dialog', () => {
-    expect(pickFolderAvailable('linux')).toBe(false);
-    expect(pickFolderAvailable('win32')).toBe(true);
-  });
-
-  it('supervised live acting: no display, no window to watch', () => {
-    const watched: Connection = {
-      name: 'browser-act',
-      label: 'Act in a browser you can watch',
-      transport: 'stdio',
-      supervised: true,
-      command: 'npx',
-      args: ['-y', '@playwright/mcp@latest'],
-    };
-    expect(headedAvailable('linux', {})).toBe(false);
-    expect(headedAvailable('linux', { DISPLAY: ':0' })).toBe(true);
+  it('supervised live acting: the two probes composed, as the runner composes them', () => {
+    // `connections.test.ts` pins `doorUnavailable` against literal booleans and
+    // `browserchannel.test.ts` pins `headedAvailable` against a container's
+    // environment. Neither joins them, and the join is what the tag claims:
+    // feed one probe's real answer to the other and a supervised door on a
+    // Linux box with no display comes back refused.
+    const watched = { name: 'browser-act', supervised: true } as Connection;
     expect(doorUnavailable(watched, headedAvailable('linux', {}))).toBe(NO_SCREEN);
+    expect(doorUnavailable(watched, headedAvailable('linux', { DISPLAY: '' }))).toBe(NO_SCREEN);
     expect(doorUnavailable(watched, headedAvailable('win32', {}))).toBeNull();
-  });
-
-  it('OCR: no Windows engine, and it asks nobody', async () => {
-    asPlatform('linux');
-    forgetOcrAvailability();
-    await expect(ocrAvailable()).resolves.toBe(false);
   });
 });

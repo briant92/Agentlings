@@ -102,8 +102,13 @@ not, before a turn is spent rather than halfway through work you paid for.
 
 Everything else is the desk, and it works: fetching and searching the web, every
 document format, PDF and backdrop rendering, the read-only browser door, every
-send channel, the calendar, schedules and mail triggers, voice notes, recipes,
-compiled tools, the ladder and the ledger, and any remote MCP server you add.
+send channel, the calendar, schedules and mail triggers, recipes, compiled
+tools, the ladder and the ledger, and any remote MCP server you add.
+
+Voice notes work too, but not out of the box: the transcriber is not baked into
+the image. Run `npm run voice:install` once and it fetches the model (241 MB)
+onto your volume. Until you do, a note that arrives says the transcriber is not
+installed rather than failing quietly.
 
 ## Run it on your own machine instead
 

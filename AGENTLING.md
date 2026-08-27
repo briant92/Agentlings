@@ -16,7 +16,7 @@ Every capability carries a status:
 | **Live** | Built, running, and exercised by tests or by real jobs |
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
-| **Not available hosted** | Live here, refused on an install with no operator disk under it — beside one of the three above, never instead of one. Each carries the probe that refuses it (D-274) |
+| **Not available hosted** | Live here, refused on an install with no operator disk under it. It qualifies one of the three above rather than replacing it — the capability is still *Live*, and this says where. Each carries the probe that refuses it (D-274) |
 
 Written 2026-08-01 against `e5c80c9`, re-read against `3839d4d`
 (2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,

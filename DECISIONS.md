@@ -22978,6 +22978,42 @@ it would have been the spec's prose beating a measurement.
   of occurrences of the literal tag is compared with the number of citations
   parsed, and the legend row is the single deliberate difference.
 
+### The review round: the fix went into the reader and not into the guard
+
+Three faults above, and then the review found the one that mattered. The
+reader was made whitespace-tolerant; **the guard that makes the reader safe was
+not**. It counted with `split` on a literal-space string, over a file the same
+test calls prose wrapped at 79 columns. Measured by planting one:
+
+```
+planted an uncited tag that wraps across a line
+  guard sees occurrences = 6   parsed citations = 5
+  guard asserts occ === parsed + 1 -> PASSES
+```
+
+An uncited tag that wraps is invisible to the reader — which is the single
+thing the count exists to catch — and was invisible to the count as well, so
+the two agreed about a file with a hole in it. The count passed on this file
+only by luck of where a line happened to fall; reflowing one existing paragraph
+would have made it *fail* while nothing was wrong. Both halves read the tag the
+same way now, and the distinction that makes the count exact is that **bold is
+a claim and italic is prose**: the glossary and this file's own header name the
+tag in a sentence and owe no citation.
+
+The same round cut what should never have been there. Four assertions in
+*the probes refuse under the hosted shape* were verbatim copies of
+`pickFolder.test.ts`, `ocr.test.ts`, `browserchannel.test.ts` and
+`connections.test.ts` — four second answers to four questions, in the ticket
+whose subject is one probe having one reader (D-030). What survived is the one
+thing none of them asserts: the two probes **composed**, `headedAvailable`'s
+real answer fed to `doorUnavailable`, which is how the runner actually asks.
+
+Mutation round **13/13**, including the two the old guard could not see: an
+uncited tag that wraps is now caught, and a cited tag reflowed onto one line
+correctly stays quiet. And D-021 collected its toll again — the mutation script
+runs `git checkout -- <path>`, which ate two doc fixes made *after* the commit.
+Mutate after committing means after committing *everything*.
+
 ### Two of the five are not proven by a unit test, and are not faked
 
 `existsSync` answers about the machine running the test, so repo work and the

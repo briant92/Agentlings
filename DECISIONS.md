@@ -22288,7 +22288,7 @@ arrive at a different address. Re-deriving it would have been a
 
 ### Evidence
 
-`node scripts/prove-hosted.mjs --local` — **29/29 PASS, live, run twice**,
+`node scripts/prove-hosted.mjs --local` — **PASS, live, run twice**,
 against a server it starts itself on a temp `AGENTLINGS_HOME` and port 4611, so
 it can never be mistaken for the maintainer's install or wake it. The sequence
 the ticket asked for, in order: refuse, accept, own-origin, foreign-origin,
@@ -22385,7 +22385,19 @@ Two findings were declined, and why:
   re-cut into eight; #28's own acceptance criteria are the authority and do not
   list it.
 
-**Owed, and it cannot be paid from a session:** `prove-wave0.mjs` on a
-*restarted* maintainer install. Nothing was listening on 4600 while this was
-built, so there was no live session to endanger and none to test against; the
-box is Brian's next `npm run serve`.
+**`prove-wave0.mjs` on the restarted maintainer install: 16/16, PROVEN.**
+Run 2026-08-27 against Brian's own `npm run serve`, which came up on the new
+boot line — `server on 127.0.0.1:4600 — gate on` — so the listen policy ran on
+this install and changed nothing about where it listens. Every Wave 0 claim
+still holds with the origin check now taking a second argument: the ungated
+socket closed 4401 with **zero bytes** where the signed-in one was handed
+594,535, the hostile origin closed 4403 with zero, `/internal/*` and the Google
+callback are still never 401, and the tailnet origin is still served.
+
+Running the proof beside a live install exposed two checks that were about the
+world rather than about the thing under test, and both are fixed: the
+`server.log` hash now **skips and says so** when something is on 4600, because
+a check that cannot be made is not a check that passed; and `and 4600 is still
+nobody` was simply wrong — the door request is dialled at 4611 by address, so
+4600's state was never part of the claim. 28 checks with the install down,
+27 when it is up.

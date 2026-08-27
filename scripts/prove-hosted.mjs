@@ -775,23 +775,46 @@ async function hostedMode() {
   };
 
   /**
-   * A restart makes no new deployment row, so it is watched the other way
-   * round: the install has to go away and come back. Proven by the process's
-   * own boot, not by a clock — the boot sweep is the thing under test.
+   * When the process running this install started.
+   *
+   * PID 1 in the container IS the server — `node server/scripts/dev-logged.mjs
+   * --no-watch` — so the creation time of its `/proc` entry is the process's
+   * own start, exactly, from inside the machine it is a fact about.
    */
-  const waitForRestart = async () => {
+  const processStartedAt = async () =>
+    Number(
+      await inContainer(
+        [
+          "const fs=require('node:fs');",
+          "console.log(fs.statSync('/proc/1').ctimeMs);",
+        ].join(''),
+      ),
+    );
+
+  /**
+   * A restart makes no new deployment row, so it is watched by what it does to
+   * the process rather than by the hole it leaves in the HTTP answers.
+   *
+   * The first version polled for the install to go away and come back, and
+   * missed: a Railway restart is quick enough that a two-second poll can step
+   * over the outage entirely, so it waited out its whole six minutes and
+   * reported a restart that had in fact happened — measured, PID 1 had started
+   * 11.6 s AFTER the firing while the poll was still saying no. Asking the
+   * process when it started cannot miss.
+   */
+  const waitForRestart = async (startedBefore) => {
     const until = Date.now() + DEPLOY_TIMEOUT_MS;
-    let wentAway = false;
     while (Date.now() < until) {
+      await sleep(5000);
       const res = await fetch(`${BASE_URL}/api/session`).catch(() => null);
-      if (!res?.ok) wentAway = true;
-      else if (wentAway) {
+      if (!res?.ok) continue;
+      const now = await processStartedAt().catch(() => 0);
+      if (now > startedBefore) {
         await signIn();
-        return true;
+        return now;
       }
-      await sleep(2000);
     }
-    return false;
+    return 0;
   };
 
   await signIn();
@@ -1119,9 +1142,21 @@ async function hostedMode() {
 
     const rowNow = async () =>
       ((await get(`/api/levels/${LEVEL}/schedules`)).body.schedules ?? []).find((s) => s.id === rowId);
+    /**
+     * The jobs this level has gained since the row was armed.
+     *
+     * By id against a snapshot, not by matching the queued note: `queueSentence`
+     * puts that note on the EVENT, never on the job, so the first version of
+     * this counted zero every time and would have counted zero just as happily
+     * if the boot sweep had fired the row ten times. The level is this run's
+     * own and nothing else queues into it, so anything new is the firing's.
+     */
+    const jobIdsBefore = new Set(
+      ((await get(`/api/levels/${LEVEL}/state`)).body.jobs ?? []).map((j) => j.id),
+    );
     const firedJobs = async () =>
-      ((await get(`/api/levels/${LEVEL}/state`)).body.jobs ?? []).filter((j) =>
-        String(j.note ?? '').includes('queued by its schedule'),
+      ((await get(`/api/levels/${LEVEL}/state`)).body.jobs ?? []).filter(
+        (j) => !jobIdsBefore.has(j.id),
       );
 
     const due = (await rowNow())?.nextDueAt;
@@ -1165,12 +1200,18 @@ async function hostedMode() {
     );
 
     console.log('      restarting the process…');
+    const bootedBefore = await processStartedAt();
     const restarted = await railway(['service', 'restart', '--service', service, '--yes']);
     if (restarted.code !== 0) {
       const fallback = await railway(['redeploy', '--service', service, '--yes']);
       if (fallback.code !== 0) throw new Error(`could not restart: ${restarted.err.trim()}`);
     }
-    check('the install goes away and comes back', await waitForRestart());
+    const bootedAfter = await waitForRestart(bootedBefore);
+    check(
+      'the process really restarted — a new one is serving the install',
+      bootedAfter > bootedBefore,
+      `started ${new Date(bootedBefore).toISOString()} → ${bootedAfter ? new Date(bootedAfter).toISOString() : 'never'}`,
+    );
 
     // The point of the whole check. Boot is a sweep too (index.ts), and a row
     // whose occurrence is behind it would fire again on every single deploy —

@@ -1,14 +1,19 @@
 // The live proof for the publish line — an install that anybody can reach.
 //
 //   node scripts/prove-hosted.mjs --local
+//   node scripts/prove-hosted.mjs --hosted [--paid]
 //
-// `--local` is the half #28 owes, and it runs on this machine with no
-// container anywhere: start the server on every interface with no password and
-// watch it refuse; give it one and watch it listen with the gate on; then send
-// it a POST from its own address and one from somebody else's. The other mode
-// — this script with no flag, against the reference install — belongs to #30
-// and is not written yet, which is why the flag is required rather than
-// defaulted. #24 builds the install it will run against, not the mode.
+// Two modes, because there are two claims. `--local` is the half #28 and #29
+// owe, and it runs on this machine with no container anywhere: start the
+// server on every interface with no password and watch it refuse; give it one
+// and watch it listen with the gate on; then send it a POST from its own
+// address and one from somebody else's. `--hosted` is #30's, and it runs
+// against the reference install #24 built — over the public internet, through
+// a real Railway redeploy and a real process restart. Neither is defaulted to,
+// because they do very different things to very different machines.
+//
+// Everything below the `--local` sections belongs to `--hosted`; its own
+// header is down there with it.
 //
 // Since #29 it also proves the *one origin*: with `web/dist` built and no Vite
 // running anywhere, the title screen, the sign-in, the API and the WebSocket
@@ -31,8 +36,8 @@
 // The maintainer's own store is proven untouched by hashing `.env` and
 // `.agentlings/server.log` before and after.
 
-import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { execFileSync, spawn } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import http from 'node:http';
 import { createConnection } from 'node:net';
@@ -45,13 +50,29 @@ import { WebSocket } from 'ws';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LAUNCHER = path.join(ROOT, 'server', 'scripts', 'dev-logged.mjs');
 
-if (!process.argv.slice(2).includes('--local')) {
+const MODE = process.argv.includes('--hosted')
+  ? 'hosted'
+  : process.argv.includes('--local')
+    ? 'local'
+    : null;
+if (!MODE) {
   console.error(
     'usage: node scripts/prove-hosted.mjs --local\n' +
-      '(the hosted mode, against the reference install, is #30 and does not exist yet)',
+      '       node scripts/prove-hosted.mjs --hosted [--paid] [--service NAME]\n' +
+      '\n' +
+      '--local  the policy on this machine, with no container anywhere (#28, #29)\n' +
+      '--hosted the reference install over the public internet (#30) — a real\n' +
+      '         redeploy and a real restart; --paid also runs one small job\n' +
+      '         for a few cents and takes the key back out afterwards',
   );
   process.exit(1);
 }
+
+/** The value after a flag, or undefined — `--service Agentlings`. */
+const argFor = (flag) => {
+  const at = process.argv.indexOf(flag);
+  return at >= 0 ? process.argv[at + 1] : undefined;
+};
 
 // Not 4600: that is where the maintainer's install lives, and this must never
 // be able to reach it, wake it, or be mistaken for it.
@@ -82,7 +103,7 @@ const listening = (port) =>
       .on('error', () => resolve(false));
   });
 
-if (await listening(PORT)) {
+if (MODE === 'local' && (await listening(PORT))) {
   console.error(`something is already on ${PORT} — stop it first.`);
   process.exit(1);
 }
@@ -93,6 +114,23 @@ const MINE = {
   log: path.join(ROOT, '.agentlings', 'server.log'),
 };
 const before = { env: hash(MINE.env), log: hash(MINE.log) };
+
+// The hosted mode talks to a machine that is not this one and starts no server
+// here, so it forks off before any of the local scaffolding below — the temp
+// home, the child process, the port. Its own section is at the foot of the
+// file.
+if (MODE === 'hosted') {
+  try {
+    await hostedMode();
+  } catch (err) {
+    // A thrown error here is the proof failing, not the script misbehaving:
+    // the install did not answer, the CLI is not linked, a deploy never came
+    // back. Said as a failure and counted, so the exit code is honest.
+    check('the hosted run completed', false, err instanceof Error ? err.message : String(err));
+  }
+  console.log(`\n${bad === 0 ? 'ALL PASS' : `${bad} FAILED`}`);
+  process.exit(bad === 0 ? 0 : 1);
+}
 
 // ── a home of its own, and an environment that carries nothing of this one ──
 const HOME = mkdtempSync(path.join(os.tmpdir(), 'agentlings-hosted-'));
@@ -520,3 +558,670 @@ check('nothing is left on the proof port', !(await listening(PORT)));
 
 console.log(`\n${bad === 0 ? 'ALL PASS' : `${bad} FAILED`}`);
 process.exit(bad === 0 ? 0 : 1);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The hosted mode (#30) — the reference install, over the public internet.
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `--local` above proves the policy on this machine. This proves the same app
+// is an *install* when somebody else deploys it: that what they paste survives
+// the redeploy their host performs on every push, that a run's money is on the
+// volume and not in the container, that the desk says what this install cannot
+// do, and that the scheduler — the one thing a host restarts constantly —
+// fires each row once and not once per boot.
+//
+// Everything here is measured against the running install. The redeploy is a
+// real Railway redeploy and appears in the deploy history; the restart is a
+// real process restart. Nothing below asserts on a hash of the source or on a
+// figure in a note: the whole ticket exists because #24's own premise about
+// supervised acting turned out to be false when it was finally run.
+//
+// ── what it costs ──
+// Free by default. `--paid` additionally lifts ANTHROPIC_API_KEY out of this
+// machine's `.env`, sets it as a service variable, runs ONE small web-fetch
+// summary, and removes the variable again — a few cents, and the flag exists
+// so that never happens because somebody ran the script.
+//
+// ── why the model key is a variable and the door key is a paste ──
+// The Settings drawer can only paste a *connection*'s secret; there is no
+// field anywhere for the model key, and the drawer says so in words ("copy
+// .env.example → .env"). So on a hosted install the model key can only be a
+// host variable — which then beats `/data/.env` for good (D-270). That is the
+// gap #31's README has to carry, and it is why check 1 is proven with a door
+// key: a paste is the thing being tested, and only a door can be pasted.
+//
+// The pasted value is a well-formed throwaway and is never used to call
+// anything. What is under test is that the bytes survive the redeploy, and
+// they are checked by hashing that one line INSIDE the container — the value
+// never crosses back over the network.
+//
+// ── running it ──
+//   node scripts/prove-hosted.mjs --hosted            (checks 1, 3, 4)
+//   node scripts/prove-hosted.mjs --hosted --paid     (all four)
+//
+// It needs the Railway CLI logged in and the project linked. It reads the
+// install's address and password from the service's own variables, so nothing
+// is typed and no password appears in the output.
+//
+// It leaves the install as it found it: keyless, with no proof level, no
+// schedule row and no secret.
+
+/** Every deploy Railway has to finish before the install answers again. */
+const DEPLOY_TIMEOUT_MS = 6 * 60_000;
+/** How long one small paid job may take before this gives up on it. */
+const JOB_TIMEOUT_MS = 8 * 60_000;
+/** How far ahead the proof schedule is armed — over one sweep, under a wait. */
+const ARM_AHEAD_MS = 150_000;
+
+/**
+ * The Railway CLI as a program, not as a shell line.
+ *
+ * npm installs it on Windows as a `.cmd` shim, and Node will only run one of
+ * those through `cmd.exe` — which then splits our arguments on its own rules
+ * and mangles the one that matters, the little script that hashes a line of
+ * the store inside the container. Resolving the real executable means every
+ * call below is an argv, with nothing between us and it.
+ */
+function railwayBin() {
+  if (process.env.RAILWAY_CLI) return process.env.RAILWAY_CLI;
+  if (process.platform !== 'win32') return 'railway';
+  const found = execFileSync('where.exe', ['railway'], { encoding: 'utf8' })
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const exe = found.find((f) => f.toLowerCase().endsWith('.exe'));
+  if (exe) return exe;
+  for (const shim of found) {
+    const beside = path.join(
+      path.dirname(shim),
+      'node_modules',
+      '@railway',
+      'cli',
+      'bin',
+      'railway.exe',
+    );
+    if (existsSync(beside)) return beside;
+  }
+  throw new Error('the Railway CLI is not on PATH — install it and `railway link` this project');
+}
+
+async function hostedMode() {
+  const service = argFor('--service') ?? 'Agentlings';
+  const paid = process.argv.includes('--paid');
+  const BIN = railwayBin();
+
+  /** One CLI call. Output is returned, never printed — variables come back through here. */
+  const railway = (args) =>
+    new Promise((resolve) => {
+      const child = spawn(BIN, args);
+      let out = '';
+      let err = '';
+      child.stdout.on('data', (d) => (out += d));
+      child.stderr.on('data', (d) => (err += d));
+      child.on('error', (e) => resolve({ code: -1, out, err: String(e) }));
+      child.on('close', (code) => resolve({ code: code ?? 1, out, err }));
+    });
+
+  const railwayJson = async (args) => {
+    const r = await railway([...args, '--json']);
+    if (r.code !== 0) throw new Error(`railway ${args.join(' ')} failed: ${r.err.trim()}`);
+    return JSON.parse(r.out);
+  };
+
+  /**
+   * Runs a little program in the container and returns what it printed.
+   *
+   * Deliberately backslash-free at the call sites: the command crosses a shell
+   * on the way in, which eats them — a `/\r?\n/` written here arrives as a
+   * literal newline and the remote parse fails on an unterminated regexp. The
+   * first version of this did exactly that.
+   */
+  const inContainer = async (source, ...args) => {
+    const r = await railway(['ssh', '--service', service, 'node', '-e', source, ...args]);
+    if (r.code !== 0) throw new Error(`ssh failed: ${r.err.trim().split('\n').pop()}`);
+    return r.out.trim();
+  };
+
+  // ── who and where ─────────────────────────────────────────────────────────
+  const vars = await railwayJson(['variables', '--service', service]);
+  const domain = vars.RAILWAY_PUBLIC_DOMAIN;
+  const password = vars.AGENTLINGS_PASSWORD;
+  if (!domain) throw new Error(`${service} has no public domain`);
+  if (!password) throw new Error(`${service} has no AGENTLINGS_PASSWORD — D-271 says it cannot listen`);
+  const BASE_URL = `https://${domain}`;
+
+  console.log(`install   ${BASE_URL}`);
+  console.log(`service   ${service}`);
+  console.log(`paid job  ${paid ? 'yes — one web-fetch summary' : 'no (pass --paid)'}\n`);
+
+  /** The session cookie for the whole run; the password appears nowhere else. */
+  let cookie = '';
+  const signIn = async () => {
+    const res = await fetch(`${BASE_URL}/api/session`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(`the install refused the password (${res.status})`);
+    cookie = (res.headers.get('set-cookie') ?? '').split(';')[0];
+  };
+
+  const get = async (p) => {
+    const res = await fetch(`${BASE_URL}${p}`, { headers: cookie ? { cookie } : {} });
+    return { status: res.status, body: await res.json().catch(() => ({})) };
+  };
+  const send = async (method, p, body) => {
+    const res = await fetch(`${BASE_URL}${p}`, {
+      method,
+      headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: res.status, body: await res.json().catch(() => ({})) };
+  };
+  const post = (p, body) => send('POST', p, body);
+  const del = (p) => send('DELETE', p);
+
+  const latestDeploy = async () => (await railwayJson(['deployment', 'list', '--service', service]))[0];
+
+  /**
+   * Waits out a redeploy or a restart, and proves it happened rather than
+   * assuming it: a new deployment id must reach SUCCESS, and the install must
+   * then answer again. Polling the URL alone would pass instantly against the
+   * process that is still up.
+   */
+  const waitForNewDeploy = async (was, label) => {
+    const until = Date.now() + DEPLOY_TIMEOUT_MS;
+    let now = was;
+    while (Date.now() < until) {
+      await sleep(5000);
+      now = await latestDeploy();
+      if (now && now.id !== was.id && now.status === 'SUCCESS') break;
+      if (now && now.id !== was.id && ['FAILED', 'CRASHED'].includes(now.status)) {
+        throw new Error(`${label} ended ${now.status}`);
+      }
+    }
+    if (!now || now.id === was.id) throw new Error(`${label} produced no new deployment`);
+    while (Date.now() < until) {
+      const res = await fetch(`${BASE_URL}/api/session`).catch(() => null);
+      if (res?.ok) {
+        await signIn();
+        return now;
+      }
+      await sleep(3000);
+    }
+    throw new Error(`${label} never came back on ${BASE_URL}`);
+  };
+
+  /**
+   * A restart makes no new deployment row, so it is watched the other way
+   * round: the install has to go away and come back. Proven by the process's
+   * own boot, not by a clock — the boot sweep is the thing under test.
+   */
+  const waitForRestart = async () => {
+    const until = Date.now() + DEPLOY_TIMEOUT_MS;
+    let wentAway = false;
+    while (Date.now() < until) {
+      const res = await fetch(`${BASE_URL}/api/session`).catch(() => null);
+      if (!res?.ok) wentAway = true;
+      else if (wentAway) {
+        await signIn();
+        return true;
+      }
+      await sleep(2000);
+    }
+    return false;
+  };
+
+  await signIn();
+  const startedOn = await latestDeploy();
+  console.log(`on deploy ${startedOn.id}  (${startedOn.status})\n`);
+
+  // The whole run happens in a level of its own, torn down at the end: the
+  // reference install must be left as it was found.
+  const made = await post('/api/levels', {
+    name: 'hosted proof',
+    project: 'Proof',
+    theme: 'cave',
+  });
+  const LEVEL = made.body.id;
+  if (made.status !== 201 || !LEVEL) {
+    throw new Error(`could not make a level to work in: ${made.status} ${JSON.stringify(made.body)}`);
+  }
+
+  /** Everything created on the install, undone in reverse however this ends. */
+  const cleanup = [async () => del(`/api/levels/${LEVEL}`)];
+
+  try {
+    // ── 3. what this install cannot do, said where the work is queued ───────
+    // First because it is free, needs no state, and is the half of the ticket
+    // that turned out to need code rather than a script.
+    console.log('── the doors this install cannot offer ──');
+    const conns = (await get('/api/connections')).body;
+    const act = (Array.isArray(conns) ? conns : []).find((c) => c.name === 'browser-act');
+    check('supervised acting is listed at all — refused, not absent', !!act, act ? '' : 'missing');
+    check(
+      '  …and carries the reason this install cannot offer it',
+      typeof act?.unavailable === 'string' && act.unavailable.length > 0,
+      JSON.stringify(act?.unavailable ?? null),
+    );
+    check(
+      '  …which is about the machine, not a missing key',
+      act?.ready === true && act?.missingSecrets?.length === 0,
+      `ready=${act?.ready} missingSecrets=${JSON.stringify(act?.missingSecrets)}`,
+    );
+    // The doors that DO work here are untouched by any of this: a blanket
+    // "hosted means less" would be the easy wrong version of this change.
+    const web = (Array.isArray(conns) ? conns : []).find((c) => c.name === 'web');
+    check('an ordinary door says nothing of the kind', web?.unavailable === undefined);
+
+    const organize = await post(`/api/levels/${LEVEL}/work/plan`, {
+      text: 'organize my downloads folder into subfolders by kind',
+    });
+    check(
+      'an organize sentence is still read as one',
+      organize.body.organize === true,
+      `organize=${organize.body.organize}`,
+    );
+    check(
+      '  …and the desk says the folder cannot be picked here, before Start',
+      typeof organize.body.organizeRefused === 'string',
+      JSON.stringify(organize.body.organizeRefused ?? null),
+    );
+
+    // The half only a browser can show: that the route's fact is actually on
+    // the bar. The D-177/D-178 gap, and the shape #16, #17 and #29 were each
+    // caught by — most recently `prove-standing-ui` asserting on an empty
+    // string for four tickets.
+    await workBarSaysIt(BASE_URL, password, LEVEL, check);
+
+    // ── 1 & 2. a paste and a run, read back across one redeploy ─────────────
+    console.log('\n── a key pasted into Settings, and what a run costs ──');
+
+    if (paid) {
+      const key = /^\s*ANTHROPIC_API_KEY\s*=\s*(.+)$/m.exec(
+        existsSync(MINE.env) ? readFileSync(MINE.env, 'utf8') : '',
+      )?.[1]?.trim();
+      if (!key) throw new Error('--paid needs ANTHROPIC_API_KEY in this machine\'s .env');
+      // A host variable, because there is nowhere in the app to paste one.
+      // Removed again at the end — the install is a reference install and
+      // holds no real key when nobody is watching it.
+      cleanup.push(async () => {
+        await railway(['variables', '--service', service, '--set', 'ANTHROPIC_API_KEY=']);
+      });
+      const was = await latestDeploy();
+      const set = await railway(['variables', '--service', service, '--set', `ANTHROPIC_API_KEY=${key}`]);
+      if (set.code !== 0) throw new Error(`could not set the model key: ${set.err.trim()}`);
+      console.log('      model key set as a service variable — waiting out the redeploy it triggers');
+      await waitForNewDeploy(was, 'the model-key redeploy');
+      const settings = (await get('/api/settings')).body;
+      // The finding this sequence exists for: the executor is decided ONCE, at
+      // boot. A key that arrives after boot reaches `process.env` and changes
+      // nothing until the process comes back.
+      check(
+        'the executor is real only after the restart the key forced',
+        settings.executor === 'claude-agent-sdk',
+        `executor=${settings.executor} auth=${settings.auth?.source}`,
+      );
+    }
+
+    // A well-formed value that is not a key. Persistence is the claim; the far
+    // end is never called, and never should be with a made-up value.
+    const FAKE = `prove-hosted-not-a-real-key-${randomUUID().replace(/-/g, '')}`;
+    const pasted = await post('/api/settings/connections/search/secret', {
+      secret: 'BRAVE_API_KEY',
+      value: FAKE,
+    });
+    cleanup.push(async () => del('/api/settings/connections/search/secrets'));
+    check('the drawer accepts a pasted door key', pasted.status === 200, `status=${pasted.status}`);
+
+    const HASH_LINE = [
+      "const fs=require('node:fs'),h=require('node:crypto');",
+      "const f='/data/.env';",
+      "const want=process.argv[1]+'=';",
+      "const raw=fs.existsSync(f)?fs.readFileSync(f,'utf8'):'';",
+      "const l=raw.split(String.fromCharCode(10)).map(x=>x.trim()).find(x=>x.startsWith(want))||'';",
+      "console.log(l?h.createHash('sha256').update(l).digest('hex'):'absent');",
+    ].join('');
+    const expected = createHash('sha256').update(`BRAVE_API_KEY=${FAKE}`).digest('hex');
+    const onVolume = await inContainer(HASH_LINE, 'BRAVE_API_KEY');
+    check(
+      'it lands on the volume, byte for byte, as the value that was sent',
+      onVolume === expected,
+      `${onVolume.slice(0, 12)} vs ${expected.slice(0, 12)}`,
+    );
+    const readyBefore = (await get('/api/connections')).body.find((c) => c.name === 'search');
+    check('and the door reads as ready', readyBefore?.ready === true);
+
+    let spentBefore = null;
+    let paidJob = null;
+    if (paid) {
+      console.log('      queueing one web-fetch summary…');
+      const queued = await post(`/api/levels/${LEVEL}/work`, {
+        text: 'Read https://example.com and write RESULT.md with one sentence saying what that page is for.',
+        tools: ['web'],
+      });
+      check('the paid job is queued', queued.status === 201, `status=${queued.status}`);
+      paidJob = queued.body?.id ?? queued.body?.job?.id ?? null;
+      const until = Date.now() + JOB_TIMEOUT_MS;
+      let finished = null;
+      while (Date.now() < until) {
+        await sleep(5000);
+        const state = (await get(`/api/levels/${LEVEL}/state`)).body;
+        const job = (state.jobs ?? []).find((j) => j.id === paidJob);
+        if (job && !['queued', 'running'].includes(job.status)) {
+          finished = job;
+          break;
+        }
+      }
+      check(
+        'it runs to an ending rather than sitting in the queue',
+        !!finished,
+        finished ? `status=${finished.status}` : `still ${JOB_TIMEOUT_MS / 1000}s later`,
+      );
+      spentBefore = (await get('/api/spend')).body;
+      check(
+        'and it cost real money — a simulated run costs nothing',
+        (spentBefore?.overall?.costUsd ?? 0) > 0,
+        JSON.stringify(spentBefore?.overall ?? null),
+      );
+    }
+
+    // The redeploy both checks read across. A real one: it is in the deploy
+    // history, and the container it produces has never seen either fact.
+    console.log('      redeploying…');
+    const beforeRedeploy = await latestDeploy();
+    const redeploy = await railway(['redeploy', '--service', service, '--yes']);
+    if (redeploy.code !== 0) throw new Error(`redeploy failed: ${redeploy.err.trim()}`);
+    const nowOn = await waitForNewDeploy(beforeRedeploy, 'the redeploy');
+    console.log(`      back on ${nowOn.id}`);
+
+    const readyAfter = (await get('/api/connections')).body.find((c) => c.name === 'search');
+    check('the pasted key is still there after the redeploy', readyAfter?.ready === true);
+    const afterVolume = await inContainer(HASH_LINE, 'BRAVE_API_KEY');
+    check(
+      '  …and the same bytes, not merely a name that is set',
+      afterVolume === expected,
+      `${afterVolume.slice(0, 12)} vs ${expected.slice(0, 12)}`,
+    );
+
+    if (paid) {
+      const spentAfter = (await get('/api/spend')).body;
+      check(
+        "the paid run's ledger row is read back from the volume AFTER the redeploy",
+        (spentAfter?.overall?.costUsd ?? 0) > 0 &&
+          spentAfter.overall.costUsd === spentBefore.overall.costUsd,
+        `${JSON.stringify(spentAfter?.overall ?? null)}`,
+      );
+      // The money removed again before anything else runs on this install.
+      const wasPaid = await latestDeploy();
+      await railway(['variables', '--service', service, '--set', 'ANTHROPIC_API_KEY=']);
+      console.log('      model key removed — waiting out that redeploy');
+      await waitForNewDeploy(wasPaid, 'the key-removal redeploy');
+      const back = (await get('/api/settings')).body;
+      check('and the install is back to simulated before anything else runs', back.executor === 'simulated');
+    }
+
+    // ── 4. one firing, and a restart that does not repeat it ────────────────
+    console.log('\n── a schedule fires once, and a restart does not fire it again ──');
+
+    // The row is armed in the SERVER's local time, which is the container's,
+    // not this machine's. Asked of the install rather than assumed: a probe
+    // row's own `nextDueAt` says what it made of an hour and a minute, and the
+    // difference from ours is the offset. A guessed UTC would have worked here
+    // and broken on the first install in a different zone.
+    const probeAt = new Date(Date.now() + 3600_000);
+    const probeRow = await post(`/api/levels/${LEVEL}/schedules`, {
+      text: 'a probe that is deleted before it can fire',
+      cadence: { kind: 'daily', hour: probeAt.getUTCHours(), minute: probeAt.getUTCMinutes() },
+    });
+    const probeDue = probeRow.body?.schedule?.nextDueAt ?? probeRow.body?.nextDueAt;
+    await del(`/api/levels/${LEVEL}/schedules/${probeRow.body?.schedule?.id ?? probeRow.body?.id}`);
+    check('the install says when it would fire a row', typeof probeDue === 'number', String(probeDue));
+    // `probeAt`'s wall-clock reading, asked for as if it were UTC. The install
+    // read the same two numbers in ITS zone, so the gap between the two
+    // instants is the zone gap — folded into ±12h because a zone far enough
+    // ahead pushes the probe's occurrence into tomorrow and adds a day to it.
+    const asUtc = Date.UTC(
+      probeAt.getUTCFullYear(),
+      probeAt.getUTCMonth(),
+      probeAt.getUTCDate(),
+      probeAt.getUTCHours(),
+      probeAt.getUTCMinutes(),
+      0,
+      0,
+    );
+    const DAY = 86_400_000;
+    let offsetMs = Math.round((probeDue - asUtc) / 60_000) * 60_000;
+    while (offsetMs > DAY / 2) offsetMs -= DAY;
+    while (offsetMs <= -DAY / 2) offsetMs += DAY;
+    console.log(`      the install's clock runs ${-offsetMs / 3_600_000}h from UTC`);
+    // MINUS: the install reads its own clock, so to land at the instant we
+    // want, the row must name that instant's reading THERE. Plus was the first
+    // version and it would have passed anyway on this container, which runs
+    // UTC — which is why the arming is checked below rather than trusted.
+    const armAt = new Date(Date.now() + ARM_AHEAD_MS - offsetMs);
+    const armed = await post(`/api/levels/${LEVEL}/schedules`, {
+      text: 'say hello, and nothing else',
+      cadence: { kind: 'daily', hour: armAt.getUTCHours(), minute: armAt.getUTCMinutes() },
+      // Holds no door: a firing that reached out would be a second variable.
+      tools: [],
+    });
+    const rowId = armed.body?.schedule?.id ?? armed.body?.id;
+    check('a row is armed', armed.status === 201 && !!rowId, `status=${armed.status}`);
+    cleanup.push(async () => del(`/api/levels/${LEVEL}/schedules/${rowId}`));
+    // The arming asserted rather than assumed: the row has to be due within
+    // the next couple of minutes, or the wait below would time out and the
+    // failure would read as "the scheduler is broken" instead of "the proof
+    // pointed it at the wrong minute".
+    const dueIn = (armed.body?.nextDueAt ?? 0) - Date.now();
+    check(
+      '  …for a moment that is actually a couple of minutes away',
+      dueIn > 30_000 && dueIn < ARM_AHEAD_MS + 90_000,
+      `due in ${Math.round(dueIn / 1000)}s`,
+    );
+
+    const rowNow = async () =>
+      ((await get(`/api/levels/${LEVEL}/schedules`)).body.schedules ?? []).find((s) => s.id === rowId);
+    const firedJobs = async () =>
+      ((await get(`/api/levels/${LEVEL}/state`)).body.jobs ?? []).filter((j) =>
+        String(j.note ?? '').includes('queued by its schedule'),
+      );
+
+    const due = (await rowNow())?.nextDueAt;
+    console.log(
+      `      due in ${Math.round((due - Date.now()) / 1000)}s by this machine's clock — waiting`,
+    );
+    const untilFired = Date.now() + ARM_AHEAD_MS + 120_000;
+    let fired = null;
+    while (Date.now() < untilFired) {
+      await sleep(10_000);
+      const row = await rowNow();
+      if (row?.lastFiredAt) {
+        fired = row;
+        break;
+      }
+    }
+    check('it fires', !!fired, fired ? new Date(fired.lastFiredAt).toISOString() : 'never fired');
+    const jobsAfterFiring = await firedJobs();
+    check('exactly one job came of it', jobsAfterFiring.length === 1, `jobs=${jobsAfterFiring.length}`);
+    check(
+      'and the row has moved past the occurrence, not stayed on it',
+      fired && fired.nextDueAt > fired.lastFiredAt,
+      fired ? `next=${new Date(fired.nextDueAt).toISOString()}` : '',
+    );
+
+    // The acceptance's own words: the schedules file on the volume. Read
+    // there rather than through the API, because the API is the process that
+    // is about to be killed.
+    const ROW_ON_VOLUME = [
+      "const fs=require('node:fs');",
+      "const dir='/data/.agentlings/levels/'+process.argv[1]+'/schedules.json';",
+      "const rows=fs.existsSync(dir)?JSON.parse(fs.readFileSync(dir,'utf8')):[];",
+      "const r=rows.find(x=>x.id===process.argv[2]);",
+      "console.log(JSON.stringify(r?{lastFiredAt:r.lastFiredAt,nextDueAt:r.nextDueAt,error:r.lastError||null}:null));",
+    ].join('');
+    const onDiskBefore = JSON.parse(await inContainer(ROW_ON_VOLUME, LEVEL, rowId));
+    check(
+      'the schedules file on the volume records that one firing',
+      onDiskBefore && onDiskBefore.lastFiredAt === fired?.lastFiredAt && !onDiskBefore.error,
+      JSON.stringify(onDiskBefore),
+    );
+
+    console.log('      restarting the process…');
+    const restarted = await railway(['service', 'restart', '--service', service, '--yes']);
+    if (restarted.code !== 0) {
+      const fallback = await railway(['redeploy', '--service', service, '--yes']);
+      if (fallback.code !== 0) throw new Error(`could not restart: ${restarted.err.trim()}`);
+    }
+    check('the install goes away and comes back', await waitForRestart());
+
+    // The point of the whole check. Boot is a sweep too (index.ts), and a row
+    // whose occurrence is behind it would fire again on every single deploy —
+    // which on a host is every push. `markFired` advancing BEFORE the attempt
+    // is what makes that not happen, and this is that, live.
+    const afterBoot = await rowNow();
+    check(
+      'the boot sweep does not fire it a second time',
+      afterBoot?.lastFiredAt === fired?.lastFiredAt,
+      `${fired?.lastFiredAt} → ${afterBoot?.lastFiredAt}`,
+    );
+    const jobsAfterBoot = await firedJobs();
+    check(
+      '  …and there is still exactly one job, not one per boot',
+      jobsAfterBoot.length === 1,
+      `jobs=${jobsAfterBoot.length}`,
+    );
+    const onDiskAfter = JSON.parse(await inContainer(ROW_ON_VOLUME, LEVEL, rowId));
+    check(
+      '  …with the volume agreeing, which is where the row actually lives',
+      JSON.stringify(onDiskAfter) === JSON.stringify(onDiskBefore),
+      JSON.stringify(onDiskAfter),
+    );
+  } finally {
+    console.log('\n── leaving the install as it was found ──');
+    for (const undo of cleanup.reverse()) {
+      await undo().catch(() => {});
+    }
+  }
+
+  // Asked of the install, not assumed from having called the undo functions.
+  await sleep(1000);
+  const ended = (await get('/api/settings')).body;
+  check('it is keyless again', ended.auth?.source === 'none' && ended.executor === 'simulated',
+    `executor=${ended.executor} auth=${ended.auth?.source}`);
+  check(
+    '  …and the pasted door key is gone from the volume',
+    (await inContainer(
+      [
+        "const fs=require('node:fs');",
+        "const f='/data/.env';",
+        "const raw=fs.existsSync(f)?fs.readFileSync(f,'utf8'):'';",
+        "const l=raw.split(String.fromCharCode(10)).map(x=>x.trim()).find(x=>x.startsWith(process.argv[1]+'='))||'';",
+        "console.log(l?'live':'gone');",
+      ].join(''),
+      'BRAVE_API_KEY',
+    )) === 'gone',
+  );
+  const stillUp = await fetch(`${BASE_URL}/`).then((r) => r.status).catch(() => 0);
+  check('and it is still up', stillUp === 200, `GET / -> ${stillUp}`);
+}
+
+/**
+ * The work bar itself, in a browser, on the hosted address.
+ *
+ * The route carrying a fact and the bar painting it are two different claims,
+ * and this project has now been caught on that gap four times. Skips loudly
+ * rather than failing when there is no browser to drive — a check that could
+ * not be made is not a check that passed.
+ */
+async function workBarSaysIt(base, password, levelId, report) {
+  let chromium;
+  try {
+    ({ chromium } = await import('playwright-core'));
+  } catch {
+    console.log('SKIP  the work bar on screen — playwright-core is not installed here');
+    return;
+  }
+  let browser;
+  try {
+    browser = await chromium.launch({ channel: 'msedge', headless: true });
+  } catch (err) {
+    console.log(`SKIP  the work bar on screen — no browser to drive (${String(err).slice(0, 60)})`);
+    return;
+  }
+  try {
+    const page = await browser.newPage();
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1200);
+    if (await page.locator('.login-screen').count()) {
+      await page.fill('.login-field', password);
+      await page.click('.login-go');
+      await page.waitForTimeout(3000);
+    }
+    // There are no URLs to navigate by — the app is one screen deep in state,
+    // so a level is reached the way a person reaches it. `prove-refusal-ui`'s
+    // recipe, because it is the one that works.
+    await page.evaluate(() => {
+      const items = [...document.querySelectorAll('.ts-item')];
+      (items.find((i) => i.textContent?.includes('START')) ?? items[0])?.click();
+    });
+    await page.waitForTimeout(2500);
+    await page.evaluate((id) => {
+      const cards = [...document.querySelectorAll('.lvl-card')];
+      (cards.find((c) => c.textContent?.toLowerCase().includes('hosted proof')) ?? cards[0])?.click();
+    }, levelId);
+    await page.waitForTimeout(3500);
+    // A fresh install shows the first-run tour over everything, which is
+    // exactly the state a person deploying the template is in. Dismissed the
+    // way they would dismiss it (D-248's lesson).
+    if (await page.locator('.tour').count()) {
+      await page.evaluate(() => {
+        [...document.querySelectorAll('.tour-foot button')]
+          .find((b) => b.textContent?.trim() === 'Skip')
+          ?.click();
+      });
+      await page.waitForTimeout(800);
+    }
+    report('the work bar is on screen at all', (await page.locator('.work-input').count()) === 1);
+    const refusedRow = page.locator('.work-conn-refused');
+    await refusedRow.first().waitFor({ timeout: 15_000 }).catch(() => {});
+    const said = (await refusedRow.count()) ? (await refusedRow.first().innerText()).trim() : '';
+    report(
+      'the work bar itself says the door is refused, and why',
+      said.length > 0 && /screen/i.test(said),
+      JSON.stringify(said),
+    );
+    // "Refused, not absent": the name has to be on screen, not merely a
+    // sentence about screens.
+    report(
+      '  …naming the door, so it reads as something this install cannot host',
+      /browser/i.test(said),
+      JSON.stringify(said.slice(0, 80)),
+    );
+
+    await page.locator('.work-input').first().fill('organize my downloads folder into subfolders by kind');
+    // The plan is debounced and then round-trips, so this waits for the answer
+    // rather than for a number of milliseconds.
+    await page
+      .locator('.work-organize, .work-organize-refused')
+      .first()
+      .waitFor({ timeout: 20_000 })
+      .catch(() => {});
+    const organizeRow = page.locator('.work-organize-refused');
+    const organizeSaid = (await organizeRow.count())
+      ? (await organizeRow.first().innerText()).trim()
+      : '';
+    report(
+      'and an organize sentence gets the reason instead of a button that errors',
+      organizeSaid.length > 0,
+      JSON.stringify(organizeSaid),
+    );
+    report(
+      '  …with no folder button on offer beside it',
+      (await page.locator('.work-folder-btn').count()) === 0,
+      `buttons=${await page.locator('.work-folder-btn').count()}`,
+    );
+  } finally {
+    await browser.close();
+  }
+}

@@ -1,0 +1,17 @@
+# What `railway up` must never upload.
+#
+# `.gitignore` already excludes both of these and Railway honours it, so this
+# file is the second lock rather than the first: `--no-gitignore` exists, and
+# the day someone passes it this machine's secrets file and its whole ledger
+# would go up with the source. `.railwayignore` is not overridable.
+#
+# `container.test.ts` reads the names from `installPaths()`, so renaming
+# either one breaks the build here rather than on somebody else's disk.
+.env
+.agentlings/
+
+# Untracked inputs and rendered measurements — nothing reads them at run time.
+Artwork/
+art/blender/
+*.log
+.claude/

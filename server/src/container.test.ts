@@ -146,17 +146,25 @@ describe('the environment the container runs with', () => {
   });
 });
 
-describe('.dockerignore', () => {
-  const ignored = readFileSync(path.join(REPO_ROOT, '.dockerignore'), 'utf8')
+/**
+ * The two ignore files, held to the same bar.
+ *
+ * `.dockerignore` bounds the image build context and `.railwayignore` bounds
+ * what `railway up` uploads — different mechanisms, one job between them: this
+ * machine's secrets file and its whole ledger must not leave it. Neither is a
+ * tidiness rule. An image built here would otherwise carry the maintainer's
+ * `.env` and every job in the ledger onto a registry, and an upload would put
+ * the same thing on Railway's builders.
+ */
+describe.each(['.dockerignore', '.railwayignore'])('%s', (file) => {
+  const ignored = readFileSync(path.join(REPO_ROOT, file), 'utf8')
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l !== '' && !l.startsWith('#'));
 
-  it("keeps this machine's secrets file and data directory out of the image", () => {
-    // Not a tidiness rule: a published image built on this machine would
-    // otherwise carry the maintainer's `.env` and every job in the ledger.
-    // The names are read from `installPaths()` so that renaming either one
-    // breaks here rather than on a registry.
+  it("keeps this machine's secrets file and data directory out", () => {
+    // The names come from `installPaths()`, so renaming either one breaks
+    // here rather than on a registry or somebody else's disk.
     const paths = installPaths();
     expect(ignored).toContain(path.basename(paths.secretsFile));
     expect(ignored).toContain(`${path.basename(paths.dataDir)}/`);

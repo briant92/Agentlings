@@ -5312,6 +5312,14 @@ const server = serve({ fetch: app.fetch, port: PORT, hostname: LISTEN.hostname }
   console.log(
     `[agentlings] server on ${LISTEN.hostname}:${info.port} — gate ${LISTEN.gate ? 'on' : 'off'}`,
   );
+  // Where this install decided to keep things, said out loud (#24).
+  //
+  // On a laptop it is a line nobody reads. On a host it is the only way to
+  // answer "is the store on the volume, or in a container layer the next
+  // deploy throws away?" without a shell — and that question has exactly one
+  // wrong answer, which looks identical to the right one until the redeploy.
+  // Paths, never values: the secrets file is named, never opened.
+  console.log(`[agentlings] store: ${PATHS.secretsFile} and ${PATHS.dataDir}`);
 });
 
 // Refresh the library in the background when the cache is old; never on the

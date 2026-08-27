@@ -282,6 +282,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-270 — 2026-08-26 — One module says where an install keeps things: `AGENTLINGS_HOME` moves the operator's half and never the product's, and the environment beats the secrets file](#d-270--2026-08-26--one-module-says-where-an-install-keeps-things-agentlings_home-moves-the-operators-half-and-never-the-products-and-the-environment-beats-the-secrets-file)
 - [D-271 — 2026-08-26 — No password, no public interface: the bind decides whether the gate is optional, and the request carries its own address](#d-271--2026-08-26--no-password-no-public-interface-the-bind-decides-whether-the-gate-is-optional-and-the-request-carries-its-own-address)
 - [D-272 — 2026-08-27 — One origin: the server serves the built bundle from its own port, in front of the gate because the sign-in is part of the bundle](#d-272--2026-08-27--one-origin-the-server-serves-the-built-bundle-from-its-own-port-in-front-of-the-gate-because-the-sign-in-is-part-of-the-bundle)
+- [D-273 — 2026-08-27 — D-169 and D-174 reopen on a motive neither listed: Agentlings is published as a template others self-host, and the reference install is measured rather than described](#d-273--2026-08-27--d-169-and-d-174-reopen-on-a-motive-neither-listed-agentlings-is-published-as-a-template-others-self-host-and-the-reference-install-is-measured-rather-than-described)
 
 ## By theme
 
@@ -1008,7 +1009,20 @@ entry updates one file rather than two.
   act on it. What makes that honest is that the bundle is product and the
   operator's data is behind `/api`, a prefix it refuses by name. With no
   bundle built it answers nothing, so `npm run dev` and `npm run serve` are
-  unchanged. D-169 is untouched by that one too
+  unchanged. D-169 is untouched by that one too; and **D-273, where D-169
+  and D-174 REOPEN** — on a motive neither listed, publishing as a template
+  rather than a second person, written when the reference install existed and
+  had been measured rather than as an intention. D-169's capability split is not overturned but enforced:
+  `doorUnavailable()` is one rule read by `resolveForJob` AND by
+  `describe`, so a door an install cannot open is refused where it would
+  otherwise be OFFERED — `browser-act` is `ready: true` on the reference
+  install and still refused, and the work bar says why. Two premises of the
+  ticket were false on contact: a made-up key cannot be pasted at all (the
+  drawer calls the far end first), and there is nowhere in the app to paste
+  a MODEL key, so a hosted install's executor can only be a host variable
+  that D-270 then lets outlive the secrets file forever. Five of the seven
+  faults the live runs found were in the PROOF, each one a check reporting
+  a number it was never measuring
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -22616,3 +22630,214 @@ turned that into an empty string, and an empty string does not contain the
 on nothing for three tickets. The locator now names the row by what it is.
 `prove-trigger-ui` reads the same class while a cadence is on, when the watch
 row does not render, so it was never affected.
+
+## D-273 — 2026-08-27 — D-169 and D-174 reopen on a motive neither listed: Agentlings is published as a template others self-host, and the reference install is measured rather than described
+
+Slice 5 of the publish line (issue #30, spec #27). This is the entry the whole
+line was waiting on, and it is written here rather than at #24 because #27 said
+it should be written when the reference install *exists and has been measured*
+— which it now has, twice through `prove-hosted.mjs --hosted --paid` against
+`https://agentlings-production.up.railway.app`.
+
+### What reopens, and what does not
+
+D-169 declined hosting on a measured capability split and D-174 deleted the two
+platform accounts unused. Both stand as accounts of what was true. What
+reopens them is that **neither listed this motive**.
+
+D-169's stated reopen triggers were *wanting to queue work from a phone* and *a
+second person needing access*. The first was answered without hosting (D-175,
+Tailscale). The second has not happened. The motive here is a third thing:
+**publishing the app so that other people can run their own copy**. That is not
+"a second person needing access" — nobody gets access to this machine, and the
+maintainer runs nothing for anybody. It is a different question with a
+different answer, and D-169's own reasoning does not reach it.
+
+**The maintainer's install is untouched and stays on this machine.** D-169's
+capability argument is not overturned — it is *confirmed*, and now enforced in
+code rather than described in a table. A hosted install really is the smaller
+product, and the point of #30 is that it now says so out loud, at the desk,
+before anyone pays for a model.
+
+**D-174 reopens narrowly.** Agentlings has one cloud resource again: a Railway
+project holding the **reference install**. It is not the maintainer's install
+and never becomes one. It holds no real key when nobody is running a proof
+against it, and PROJECT.md's ground rule about account-level connectors is
+untouched — the reference install is reached by the Railway CLI and by its own
+HTTP API, never by a connector.
+
+### The thirteen decisions of the 2026-08-26 grilling
+
+Recorded by question number so nothing is re-asked. The glossary that carries
+the vocabulary was committed at `646254f`.
+
+- **Q1 — the motive.** Publishing, not a second person: the thing D-169 never
+  listed, and the reason this entry exists at all.
+- **Q2 — a template others self-host**, one operator per install, a *Deploy on
+  Railway* button. **Not** a service the maintainer runs: tenancy, auth, and
+  custody of other people's bank allowlists were all refused at the root. Not a
+  showcase either — D-170's recorder answers that.
+- **Q3 — a public GitHub repository, the same one.** Not a Docker-image-only
+  template, not a curated second repo.
+- **Q4 — the maintainer's install stays on this machine.** The Railway one is a
+  *reference install*: no real keys, existing only to be proven against.
+- **Q5c — hosted is the desk half, honestly labelled.** Disk-bound capabilities
+  are refused at their probes and tagged *Not available hosted*.
+- **Q6a — one data directory.** `AGENTLINGS_HOME` holds `.env` *and*
+  `.agentlings/`, so D-078's single store survives and Settings keeps writing
+  keys where it always did. The trap it closes: a host's filesystem is rebuilt
+  every deploy, so a key pasted into Settings would otherwise vanish silently,
+  days later.
+- **Q7a — no password, no public interface.** A non-loopback bind without
+  `AGENTLINGS_PASSWORD` refuses to listen. Tied to the bind, never to a
+  "hosted mode" flag.
+- **Q8a — the Playwright base image with Chromium**; `msedge` falls back to
+  `chromium` where Edge is absent; `browser-act` stays refused hosted.
+- **Q9a — Apache-2.0** on code and packs, one licence file.
+- **Q10c — the proof is `prove-hosted.mjs`** against the reference install: the
+  gate up, a key surviving a redeploy, one paid desk job with its ledger row on
+  the volume, and one schedule firing once and not again after a restart.
+- **Q11a — redact at HEAD only.** A sweep of all 747 commits found no secret
+  has ever been committed, and a rewrite would invalidate every commit hash the
+  decision log cites.
+- **Q12a — the words.** *Install* is the unit; *reference install*; *hosted* as
+  a capability qualifier. Avoid instance, deployment, tenant.
+- **Q13a — issues, no board file.** The repository flips public only after the
+  proof passes.
+
+### What the reference install measures
+
+Slice 4's figures, re-read from #24's closing comment rather than remembered:
+
+| | |
+|---|---|
+| Image, uncompressed in the container | **4.8 GB** — `/app/node_modules` 1.9 GB, `/ms-playwright` 1.3 GB, `/usr` 1.2 GB, `web/dist` 19 MB |
+| Build, cold (upload → deploy complete) | **3 m 54 s** |
+| Build, warm layer cache | **1 m 12 s** |
+| Redeploy, image reused | **62 s** |
+| Volume | 46 GB available, 52 KB used at first boot |
+
+And this slice's own, from the runs below:
+
+| | |
+|---|---|
+| One small paid desk job (web fetch + summary) | **$0.118** and **$0.100** on two separate runs |
+| The install's clock | UTC, asked of it rather than assumed |
+| Monthly cost | Railway Hobby plus the volume — there is no free tier, and this was accepted at the grilling |
+
+### What #30 had to build, because the ticket's premise was wrong twice
+
+**The doors were not refused where they were offered.** #24 put the screen
+probe inside `resolveForJob`, which refuses at the launch. Every surface that
+*offers* a door was still offering this one: read back from the reference
+install, `browser-act` is `ready: true` there — no secret is missing — so the
+work bar's watch chip was live and the refusal would have arrived after the
+sentence was written and priced. `doorUnavailable` is that rule, exported and
+read by **both** `resolveForJob` and `describe`, so the offer and the refusal
+cannot drift; a test holds the two against each other over every door, with a
+screen and without one, rather than against a restatement of either. It reaches
+the browser as `ConnectionInfo.unavailable`.
+
+`pickFolderAvailable` is the same shape one layer up: an organize sentence on a
+hosted install used to get the *Choose the folder to organize…* button, a
+click, and an error. Its refusal is its own sentence — the first live run put
+`NO_PICKER` on the work bar, where "type the path instead" read beside a bar
+with nothing to type a path into, D-132 being deliberate that a folder is
+picked and never typed.
+
+**A made-up key cannot be pasted, by design.** Check 1 was planned around a
+well-formed throwaway, on the reasoning that persistence is the claim and the
+far end need never be called. The install answered with a flat 400:
+`POST /api/settings/connections/:name/secret` calls the connection's own far
+end and stores only what answers (D-078, D-081). So the choice between a fake
+key and a real one was a false one — there was never a fake option. The proof
+pastes through the **add-a-connection** route (D-244) instead, whose far end is
+this repository's own MCP fixture: it refuses to start unless its secret
+reached it, so the value provably travelled and no real credential is spent.
+`prove-install-paths` hit the identical wall at #23 and wrote the identical
+answer into a comment nobody re-read.
+
+### Three findings a person deploying this needs, and #31 owes
+
+**There is nowhere to paste a model key.** The Settings drawer pastes
+*connection* secrets only; for the executor it says, in words, *copy
+`.env.example` → `.env`, set `ANTHROPIC_API_KEY`*. A hosted install has no hand
+to do that with. So the model key can only be a host variable — and D-270 then
+applies for good: the environment beats the same name in the secrets file, so
+that variable permanently and silently outlives anything ever pasted under that
+name. #27's implementation note says the executor authenticates "from the
+secrets file"; on a host that is not reachable.
+
+**`bls` is worse.** It declares a secret and has no validator at all, so its
+paste is refused outright with *"no validator for bls — set its secret in .env
+instead"*. Five connections have validators — telegram, github, search,
+whatsapp-business, slack — and every other credentialed one is unreachable from
+a hosted drawer.
+
+**The executor is decided once, at boot** (`index.ts`, `useClaude`). A key that
+arrives after boot reaches `process.env` and changes nothing until the process
+comes back. On a host that is invisible: the person pastes, nothing happens,
+and there is no message. Proven rather than read — the check that says so is in
+the run below.
+
+### The proof, and what it cost to make it honest
+
+`node scripts/prove-hosted.mjs --hosted --paid`, run twice, output in #30's
+closing comment. Four checks: what the install cannot offer (API and the work
+bar in a real browser); a key pasted into Settings and a paid run read back
+across one real Railway redeploy; a schedule armed minutes ahead firing once;
+a real process restart after which the boot sweep does not fire it again.
+
+**Seven faults were found by running it, and five of them were in the proof
+itself.** They are listed because the pattern is the entry's real content: a
+check that reports a number it was never measuring.
+
+- A `const` declared in the hosted section and read from the dispatch at the
+  top of the file — no hoisting, so the first run died on the temporal dead
+  zone *after* setting a real model key on a public install.
+- The cleanup set `ANTHROPIC_API_KEY` to the **empty string** rather than
+  deleting it. An empty host variable is still a name `process.env` holds, so
+  by D-270 it would have shadowed the secrets file under that name forever.
+  This slice's own rule, caught in this slice's own cleanup.
+- The browser half reached the level by clicking `.lvl-card` and falling back
+  to `cards[0]`. The reference install has its own HQ level, so `cards[0]` was
+  HQ — and the checks **passed** against it, because the refused-door row is a
+  property of the install and shows on any bar.
+- "It cost real money" was asserted on the ledger **total**, which is the
+  install's and not the run's: it would have passed on a row left by an earlier
+  run even if the job had cost nothing.
+- The firing counter matched jobs on the "queued by its schedule" note.
+  `queueSentence` puts that note on the *event*, never on the job — so it
+  counted zero for a firing that had plainly happened, and would have counted
+  zero just as contentedly had the boot sweep fired the row ten times, which is
+  the entire claim.
+- The restart was watched by polling for the install to go away and come back.
+  A Railway restart steps over a two-second poll: one run waited out its whole
+  six minutes reporting no restart while PID 1 in the container had started
+  11.6 s after the firing. PID 1 *is* the server, so the creation time of its
+  `/proc` entry is the process's own start, asked from inside the machine it is
+  a fact about.
+- Setting a Railway variable triggers a redeploy; **deleting one does not**.
+  The run sat waiting for a deployment that was never coming, while the process
+  it was cleaning still held the model key in memory. Deleting takes a key out
+  of Railway's store; only a new process takes it out of memory.
+
+The timezone was nearly an eighth. The row is armed in the install's local
+time, derived from a probe row's own `nextDueAt` — and the first version had
+the sign backwards, which would have passed anyway on this container because it
+runs UTC. It is asserted before the wait now rather than trusted.
+
+### What this does not decide
+
+- **D-168 stays parked.** Per-job isolation was deferred to "the hosting
+  decision" on the grounds that a `Bash` run can already drive a browser
+  unreviewed. The reference install holds no real key and no real data, so its
+  severity is unchanged there. It becomes load-bearing for **a person who
+  deploys this template and pastes their own keys into it**, and that is now a
+  real population rather than a hypothetical one. Its trigger is intact and its
+  severity is no longer purely theoretical.
+- **The maintainer's install does not move**, in whole or as D-169's hybrid.
+  Two installs sharing one data directory is last-write-wins on the job file
+  and every schedule double-firing.
+- **Nothing about what a job may do changes on a hosted install.** The
+  capability surface is the local one minus what the probes refuse.

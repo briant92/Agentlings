@@ -57,7 +57,9 @@ behavioral base lives there alone; this is the project half, split out on
   loopback without `AGENTLINGS_PASSWORD` and the server exits with the reason
   as its one line. Unset, as on this machine, it is `127.0.0.1:4600` exactly as
   before. Boot must call it **after** `process.loadEnvFile` — the password may
-  live in `.env`.
+  live in `.env`. `listenPort()` beside it is the *only* answer to "what port
+  is this install on": the runner and every tool door build their loopback URLs
+  from it, and the `SERVER_PORT` constant they used to read is gone.
 - **The environment beats the secrets file.** `process.loadEnvFile` does not
   overwrite a name already in `process.env` (measured, D-270), so a variable
   set by the host wins over the same name in `.env` at the next restart — even

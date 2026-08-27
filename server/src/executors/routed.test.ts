@@ -4,7 +4,8 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { SERVER_PORT, type Agentling, type Job } from '@agentlings/shared';
+import { type Agentling, type Job } from '@agentlings/shared';
+import { listenPort } from '../session';
 import type { Connection } from '../connections';
 import {
   TOOL_CANDIDATE_RUNS,
@@ -1403,7 +1404,7 @@ describe('RoutedExecutor', () => {
           expect(out.meter).toMatchObject({ costUsd: 0, tooled: true });
           const seen = JSON.parse(result());
           expect(JSON.parse(seen.doors)).toEqual({
-            github: `http://127.0.0.1:${SERVER_PORT}/internal/github`,
+            github: `http://127.0.0.1:${listenPort()}/internal/github`,
           });
           // The whole point of a door: the server holds the key. A script that
           // inherited it could reach the code host without one, and then the

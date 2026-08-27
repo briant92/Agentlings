@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DOORS,
   describe as describeConnections,
+  doorEndpoints,
   expandArgs,
   mcpSecretValues,
   mcpToolNames,
@@ -353,5 +355,50 @@ describe('credentialed and shared secrets (D-218)', () => {
     expect(sharingSecrets(TRACKER, [WEB, GOOGLE, MAIL, TRACKER])).toEqual([]);
     const listed = describeConnections([GOOGLE, MAIL], { G_ID: 'a', G_REFRESH: 'b' });
     expect(listed.map((c) => c.sharesSecretsWith)).toEqual([['mail'], ['google']]);
+  });
+});
+
+/**
+ * D-271, and the reason this test exists at all: when the listener gained the
+ * right to move off 4600, the door URLs did not move with it. They were built
+ * from `SERVER_PORT = 4600` in `@agentlings/shared` — a second answer to a
+ * question that now had a variable one — so a hosted install would have
+ * listened on `PORT` while every door dialled a port nothing was on. The kind
+ * of change that is complete in the type, the spec and the route and reaches
+ * nothing.
+ *
+ * `listenPort()` reads the live environment, which is why this restores it.
+ */
+describe('the doors dial the port this install is actually on', () => {
+  const withPort = <T>(port: string | undefined, fn: () => T): T => {
+    const had = process.env.PORT;
+    if (port === undefined) delete process.env.PORT;
+    else process.env.PORT = port;
+    try {
+      return fn();
+    } finally {
+      if (had === undefined) delete process.env.PORT;
+      else process.env.PORT = had;
+    }
+  };
+
+  it('is 4600 when nothing moved it, which is every install today', () => {
+    expect(withPort(undefined, () => doorEndpoints(['web']))).toEqual({
+      web: 'http://127.0.0.1:4600/internal/fetch',
+    });
+  });
+
+  it('follows the port a host injected', () => {
+    expect(withPort('8080', () => doorEndpoints(['web']))).toEqual({
+      web: 'http://127.0.0.1:8080/internal/fetch',
+    });
+  });
+
+  it('stays on loopback wherever the listener went', () => {
+    // The door is the runner talking to its own server from inside this
+    // machine. Moving the bind is not permission to dial anywhere else.
+    for (const url of Object.values(withPort('8080', () => doorEndpoints(Object.keys(DOORS))))) {
+      expect(url.startsWith('http://127.0.0.1:8080/internal/')).toBe(true);
+    }
   });
 });

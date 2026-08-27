@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { SERVER_PORT, type ConnectionInfo } from '@agentlings/shared';
+import { type ConnectionInfo } from '@agentlings/shared';
+import { listenPort } from './session';
 
 /**
  * The connection registry: what a job may reach outside its sandbox. Nothing
@@ -142,7 +143,7 @@ export const DOORS: Record<string, string> = {
 export function doorEndpoints(names: string[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (const name of names) {
-    if (DOORS[name]) out[name] = `http://127.0.0.1:${SERVER_PORT}${DOORS[name]}`;
+    if (DOORS[name]) out[name] = `http://127.0.0.1:${listenPort()}${DOORS[name]}`;
   }
   return out;
 }

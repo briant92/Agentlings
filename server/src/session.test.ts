@@ -24,7 +24,7 @@ import {
   noteLoginSuccess,
   passwordAccepted,
   readCookie,
-  refusesToListen,
+  listenRefusal,
   requestAllowed,
   requestIsSecure,
   sessionCookie,
@@ -435,9 +435,15 @@ describe('the listen policy', () => {
   /**
    * The branch this ticket exists for. It is also the shape the repository has
    * been bitten by three times in one day — a guard that passes because no test
-   * input ever reaches it (D-246) — so the input is here, the reason is
-   * asserted rather than the boolean alone, and `refusesToListen` below deletes
-   * the branch to check that this fails when it is gone.
+   * input ever reaches it (D-246) — so the input is here and the reason is
+   * asserted rather than the boolean alone.
+   *
+   * **This test is what kills the mutant**, measured rather than asserted:
+   * replacing the refuse branch with `{ listen: true, … }` fails this and the
+   * `'refuses on any address that is not this machine'` case below, and nothing
+   * else in the suite. The `describe('the refusal sentence')` block further
+   * down is *not* that check — it pins what the sentence has to contain, and
+   * would stay green if the branch that produces it vanished.
    */
   it('refuses to listen on a public interface with no password, and says why', () => {
     const refused = listenPolicy({ [BIND_VAR]: '0.0.0.0' });
@@ -504,16 +510,13 @@ describe('the listen policy', () => {
 });
 
 /**
- * The never-executing-guard check, run as a mutation in the test rather than
- * described in a commit message: delete the refuse branch and the test above
- * must go red. `listenPolicy` cannot be edited from here, so what is mutated is
- * the sentence the branch produces — if `refusesToListen` were ever reduced to
- * something that does not name the variable, the operator would get a line that
- * tells them nothing, and this is what says so.
+ * What the refusal has to say, separately from whether it is reached. A
+ * container that exits prints this line and nothing else, so a sentence
+ * reduced to "refused" would leave an operator with nowhere to go.
  */
 describe('the refusal sentence', () => {
   it('names both the address it refused and the variable that fixes it', () => {
-    const reason = refusesToListen('0.0.0.0');
+    const reason = listenRefusal('0.0.0.0');
     expect(reason).toContain('0.0.0.0');
     expect(reason).toContain(PASSWORD_VAR);
     expect(reason).toContain(BIND_VAR);

@@ -22,7 +22,7 @@ import type {
   Pending,
   ReconciliationRollForward,
 } from '@agentlings/shared';
-import { SERVER_PORT } from '@agentlings/shared';
+import { listenPort } from '../session';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
 import { PRIOR_RECONCILIATION_FILE, reconciliationBrief, wantsReconciliation } from '../reconciliation';
@@ -1282,12 +1282,12 @@ export class ClaudeAgentExecutor implements Executor {
           ? { browserAct: { server: supervised.name, profileDir: act.profileDir, allow: act.allow } }
           : {}),
         ...(web
-          ? { web: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/fetch` } }
+          ? { web: { endpoint: `http://127.0.0.1:${listenPort()}/internal/fetch` } }
           : {}),
         // Web-shaped, not loop-shaped: the reply is bytes the runner writes,
         // so the runner holds a dedicated block and this carries only the door.
         ...(render
-          ? { render: { endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/render` } }
+          ? { render: { endpoint: `http://127.0.0.1:${listenPort()}/internal/render` } }
           : {}),
         // Builtin like `web`, and for the same reason: the server owns the
         // call so it owns the size of the reply. Only the tools the catalog
@@ -1296,7 +1296,7 @@ export class ClaudeAgentExecutor implements Executor {
         ...(codeHost
           ? {
               github: {
-                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/github`,
+                endpoint: `http://127.0.0.1:${listenPort()}/internal/github`,
                 tools: GITHUB_TOOLS.filter((t) => (codeHost.tools ?? []).includes(t.name)),
               },
             }
@@ -1309,7 +1309,7 @@ export class ClaudeAgentExecutor implements Executor {
         ...(searchConn
           ? {
               search: {
-                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/search`,
+                endpoint: `http://127.0.0.1:${listenPort()}/internal/search`,
                 tools: SEARCH_TOOLS.filter((t) => (searchConn.tools ?? []).includes(t.name)),
               },
             }
@@ -1324,7 +1324,7 @@ export class ClaudeAgentExecutor implements Executor {
         ...(blsConn
           ? {
               bls: {
-                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/bls`,
+                endpoint: `http://127.0.0.1:${listenPort()}/internal/bls`,
                 tools: BLS_TOOLS.filter((t) => (blsConn.tools ?? []).includes(t.name)),
               },
             }
@@ -1336,7 +1336,7 @@ export class ClaudeAgentExecutor implements Executor {
         ...(calendarConn
           ? {
               calendar: {
-                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/calendar`,
+                endpoint: `http://127.0.0.1:${listenPort()}/internal/calendar`,
                 tools: CALENDAR_TOOLS.filter((t) => (calendarConn.tools ?? []).includes(t.name)),
               },
             }
@@ -1347,7 +1347,7 @@ export class ClaudeAgentExecutor implements Executor {
         ...(mailConn
           ? {
               mail: {
-                endpoint: `http://127.0.0.1:${SERVER_PORT}/internal/mail`,
+                endpoint: `http://127.0.0.1:${listenPort()}/internal/mail`,
                 tools: MAIL_TOOLS.filter((t) => (mailConn.tools ?? []).includes(t.name)),
               },
             }

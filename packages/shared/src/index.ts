@@ -2479,5 +2479,8 @@ export const SOCKET_FORBIDDEN_ORIGIN = 4403;
  * show the login screen rather than an error.
  */
 export const SOCKET_UNAUTHENTICATED = 4401;
-/** Localhost API port; the spawned runner calls back here for web fetches. */
-export const SERVER_PORT = 4600;
+// The API port used to be a constant here, and stopped being one when an
+// install gained the right to move it (D-271). It is `listenPort()` in
+// `server/src/session.ts` now — the same function the listener is bound from,
+// so the runner's way back cannot point at a port nothing is answering on.
+// Nothing in `web` ever read it.

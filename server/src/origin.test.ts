@@ -148,6 +148,25 @@ describe('isLoopbackHost', () => {
     expect(isLoopbackHost('127.999.0.1')).toBe(false);
     expect(isLoopbackHost('')).toBe(false);
   });
+
+  /**
+   * Deliberate, and pinned so it is a choice rather than an accident: the
+   * shorthand forms that the operating system treats as loopback are refused.
+   * The cost is an operator who writes `AGENTLINGS_BIND=127.1` being told to
+   * set a password they did not need; the alternative is a shorthand nobody
+   * recognised being read as public and let through ungated, which is the
+   * failure this whole ticket exists to prevent. The origin check never sees
+   * either form — `new URL` expands them first.
+   */
+  it('takes loopback written out in full, and refuses the shorthands', () => {
+    expect(isLoopbackHost('127.1')).toBe(false);
+    expect(isLoopbackHost('127.0.1')).toBe(false);
+    expect(isLoopbackHost('0:0:0:0:0:0:0:1')).toBe(false);
+    // …and what the parser does hand back is the expanded form, so the origin
+    // check is unaffected by any of that.
+    expect(new URL('http://127.1').hostname).toBe('127.0.0.1');
+    expect(originAllowed('http://127.1', 'horde.example.com')).toBe(true);
+  });
 });
 
 /**
@@ -188,6 +207,33 @@ describe('googleRedirectUri', () => {
     expect(googleRedirectUri('horde.example.com', 'http', 4600)).toBe(
       `http://horde.example.com${GOOGLE_CALLBACK_PATH}`,
     );
+  });
+
+  /**
+   * The redirect emits the *parsed* authority, never the raw header. Google
+   * matches a registered redirect URI byte for byte, so a proxy forwarding
+   * `Host: Horde.Example.Com` — which `originAllowed` accepts, since host names
+   * are case-insensitive — would otherwise produce a URI no console holds.
+   */
+  it('normalises the address rather than echoing the header back', () => {
+    expect(googleRedirectUri('Horde.Example.Com', 'https', 4600)).toBe(
+      `https://horde.example.com${GOOGLE_CALLBACK_PATH}`,
+    );
+    expect(googleRedirectUri('  horde.example.com:8443  ', 'https', 4600)).toBe(
+      `https://horde.example.com:8443${GOOGLE_CALLBACK_PATH}`,
+    );
+    // The proxy's own protocol is read the same way.
+    expect(googleRedirectUri('horde.example.com', ' HTTPS ', 4600)).toBe(
+      `https://horde.example.com${GOOGLE_CALLBACK_PATH}`,
+    );
+  });
+
+  it('falls back to loopback for a Host it cannot read, rather than building nonsense', () => {
+    for (const junk of ['', '   ', ':::', 'not a host']) {
+      expect(googleRedirectUri(junk, 'https', 4600)).toBe(
+        `http://127.0.0.1:4600${GOOGLE_CALLBACK_PATH}`,
+      );
+    }
   });
 
   it('assumes https for a public address that arrived without a forwarded protocol', () => {

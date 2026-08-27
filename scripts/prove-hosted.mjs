@@ -210,6 +210,19 @@ try {
     ),
   );
 
+  // The doors moved with the listener. The review of this ticket found they
+  // had not: they were built from a `SERVER_PORT = 4600` constant, so on a
+  // host injecting a port the server would have listened in one place and
+  // every door dialled another. This is that, live — the runner's own way back
+  // answering on the moved port, not on 4600.
+  const door = await post('/internal/fetch', {}, { host: `127.0.0.1:${PORT}` });
+  check(
+    `the runner doors are on ${PORT} too, not on 4600`,
+    door.status !== 404,
+    `status=${door.status}`,
+  );
+  check('and 4600 is still nobody', !(await listening(4600)));
+
   // ── 3. the install's own origin ───────────────────────────────────────────
   // A domain this repository never heard of, carried by the request itself.
   // Logging in is the POST used because it changes nothing that outlives this

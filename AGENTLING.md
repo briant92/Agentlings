@@ -1990,7 +1990,7 @@ override. The subset rule is the same; the shape is stricter.
 |---|---|---|
 | `MAX_STATIONS` | 5 | Jobs visibly in progress; extras wait |
 | `TICK_MS` | 100 | Sim tick — 10 Hz on the wire |
-| `DEFAULT_PORT` | 4600 | API and WebSocket; the runner calls back here for fetches. `PORT`, or `AGENTLINGS_PORT` when both are set, moves it (D-271) |
+| `listenPort()` | 4600 | API and WebSocket; the runner and every tool door call back here. `PORT`, or `AGENTLINGS_PORT` when both are set, moves it — and moves the doors with it, since they are built from the same call (D-271) |
 | `DEFAULT_BIND` | `127.0.0.1` | The interface `serve()` binds; `AGENTLINGS_BIND` moves it, and moving it makes a password compulsory (D-271) |
 | `WORLD_WIDTH` | 1000 | Logical units the client scales |
 | `SCHEDULE_SWEEP_MS` | 30 s | How often due schedules are looked for; boot is a sweep too (D-103) |

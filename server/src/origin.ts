@@ -39,6 +39,14 @@
  *
  * The whole `127.0.0.0/8` block counts, not just the `.1` of it — every
  * address in it routes nowhere but here.
+ *
+ * Written out in full or not at all: the dotted shorthand `127.1` and the
+ * expanded `0:0:0:0:0:0:0:1` are loopback to the operating system and are
+ * **not** loopback here. That costs an operator who writes `AGENTLINGS_BIND`
+ * in shorthand a refusal they did not need — and the direction it fails in is
+ * the one worth failing in, since the alternative is a shorthand nobody
+ * recognised being read as public and let through ungated. The origin check
+ * never sees either form: `new URL` normalises them before this is asked.
  */
 export function isLoopbackHost(host: string | null | undefined): boolean {
   if (!host) return false;
@@ -56,11 +64,32 @@ export function isLoopbackHost(host: string | null | undefined): boolean {
  * comes back as the address and not as a fragment of one.
  */
 function hostHeaderName(hostHeader: string | null | undefined): string | null {
+  return hostHeaderParts(hostHeader)?.name ?? null;
+}
+
+/**
+ * The hostname and the authority a `Host` header names — the second being the
+ * hostname with its port, lowercased and normalised by the URL parser.
+ *
+ * Both, from one parse, because emitting the *raw* header while deciding on
+ * the parsed one is a bug with a name: a proxy that forwards
+ * `Host: Horde.Example.Com` would have produced a mixed-case `redirect_uri`
+ * that Google — which matches registered URIs byte for byte — rejects, on the
+ * very request the origin check had just accepted.
+ */
+function hostHeaderParts(
+  hostHeader: string | null | undefined,
+): { name: string; authority: string } | null {
   const raw = hostHeader?.trim();
   if (!raw) return null;
   try {
-    const name = new URL(`http://${raw}`).hostname.toLowerCase();
-    return name === '' ? null : name;
+    // No empty-hostname guard, and its absence is the considered choice: `http`
+    // is a special scheme, so the WHATWG parser treats a missing host as a
+    // parse *failure* rather than an empty one. A guard for it would be a
+    // branch no input can reach — the shape D-246 named — and the `catch` is
+    // what actually handles a Host header that is not one.
+    const url = new URL(`http://${raw}`);
+    return { name: url.hostname.toLowerCase(), authority: url.host.toLowerCase() };
   } catch {
     return null;
   }
@@ -124,9 +153,19 @@ export const originRefusal =
   'localhost or your tailnet name.';
 
 /**
- * Where Google sends the browser back. Named here rather than spelled into a
- * route string, because two places must agree on it: this, and `isExempt` in
- * the session module, which lets the callback through without a cookie (R-06).
+ * Where Google sends the browser back.
+ *
+ * Named here because it is half of two different things that must agree: the
+ * redirect URI Google is handed below, and `isExempt` in the session module,
+ * which lets the callback through without a cookie (R-06). Both read this.
+ *
+ * `index.ts` registers the route with the literal rather than this constant,
+ * and that is deliberate rather than an oversight: `session.test.ts` scrapes
+ * the app's registrations out of the source text to prove no route escapes the
+ * gate (R-05), and it can only read literals. What keeps that third copy
+ * honest is the same test — it asserts the exempt set is exactly these two
+ * paths, so a route literal that drifted from this constant would stop being
+ * exempt and fail there.
  */
 export const GOOGLE_CALLBACK_PATH = '/api/oauth/google/callback';
 
@@ -156,10 +195,10 @@ export function googleRedirectUri(
   forwardedProto: string | null | undefined,
   apiPort: number,
 ): string {
-  const name = hostHeaderName(requestHost);
-  if (name === null || isLoopbackHost(name)) {
+  const host = hostHeaderParts(requestHost);
+  if (host === null || isLoopbackHost(host.name)) {
     return `http://127.0.0.1:${apiPort}${GOOGLE_CALLBACK_PATH}`;
   }
   const proto = (forwardedProto?.split(',')[0] ?? '').trim().toLowerCase() || 'https';
-  return `${proto}://${requestHost!.trim()}${GOOGLE_CALLBACK_PATH}`;
+  return `${proto}://${host.authority}${GOOGLE_CALLBACK_PATH}`;
 }

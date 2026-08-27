@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
-import { type Context, Hono } from 'hono';
+import { Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
   Agentling,
@@ -1264,14 +1264,6 @@ app.delete('/api/settings/connections/:name/secrets', async (c) => {
  * which is D-078's rule stretched over two requests.
  */
 const googleFlows = new FlowStore();
-/**
- * Where Google sends the browser back — a function of the request that started
- * the walk, not a constant (#28, user story 13). An install on its own domain
- * has to name that domain, and only the request knows it. On loopback it is
- * still the literal this replaced, which is what keeps Connect working here.
- */
-const googleRedirect = (c: Context): string =>
-  googleRedirectUri(c.req.header('host'), c.req.header('x-forwarded-proto'), PORT);
 
 app.post('/api/settings/connections/google/oauth/start', async (c) => {
   const body = await c.req.json<{ clientId?: string; clientSecret?: string }>();
@@ -1287,7 +1279,18 @@ app.post('/api/settings/connections/google/oauth/start', async (c) => {
     const problem = secretValueProblem(value);
     if (problem) return c.json({ error: `${label}: ${problem}` }, 400);
   }
-  const { url } = googleFlows.begin(clientId, clientSecret, googleRedirect(c), Date.now());
+  // Where Google sends the browser back — a function of the request that
+  // started the walk, not a constant (#28, user story 13). An install on its
+  // own domain has to name that domain, and only the request knows it. On
+  // loopback it is still the literal this replaced, which is what keeps
+  // Connect working here. The callback does not re-derive it: the flow keeps
+  // it, because Google matches the exchange against the one it was given.
+  const redirectUri = googleRedirectUri(
+    c.req.header('host'),
+    c.req.header('x-forwarded-proto'),
+    PORT,
+  );
+  const { url } = googleFlows.begin(clientId, clientSecret, redirectUri, Date.now());
   return c.json({ url });
 });
 

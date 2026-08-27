@@ -22288,7 +22288,7 @@ arrive at a different address. Re-deriving it would have been a
 
 ### Evidence
 
-`node scripts/prove-hosted.mjs --local` — **26/26 PASS, live, run twice**,
+`node scripts/prove-hosted.mjs --local` — **29/29 PASS, live, run twice**,
 against a server it starts itself on a temp `AGENTLINGS_HOME` and port 4611, so
 it can never be mistaken for the maintainer's install or wake it. The sequence
 the ticket asked for, in order: refuse, accept, own-origin, foreign-origin,
@@ -22320,8 +22320,70 @@ sentence rather than the boolean — the reason names the address, the variable
 that fixes it, and the variable that undoes it, because a container that exits
 prints that line and nothing else.
 
-Suites: server 2,658 passed (105 files), web 363 passed (38 files), typecheck
+Suites: server 2,664 passed (105 files), web 363 passed (38 files), typecheck
 clean.
+
+### The review round, and the one it caught
+
+Two reviewers ran independently — one on the repository's standards, one on
+the ticket — and **both, separately, found the same defect**, which is the
+strongest signal either produced.
+
+**The listener moved and the doors did not.** `listenPolicy` gave the port a
+variable answer; `packages/shared` still exported `SERVER_PORT = 4600`, and
+`connections.ts` and `executors/claude.ts` built eight loopback callback URLs
+from it — `fetch`, `render`, `github`, `search`, `bls`, `calendar`, `mail` and
+the compiled-tool doors. On the exact deploy this line exists for — a host
+injecting `PORT=8080` — the server would have listened on 8080 while every
+door dialled a dead 4600. Complete in the type, the spec and the route, and it
+reaches nothing; and a second constant answering a question that had just
+become a variable, which is the duplicated-notion rule in its plainest form.
+
+`SERVER_PORT` is deleted. `listenPort()` is exported from `session.ts` — the
+same function the listener is bound from — and the three call sites ask it.
+Nothing in `web` ever read it. The guard is `connections.test.ts`, which pins
+that an unmoved install still gets 4600, that a moved one gets the moved port,
+and that the doors stay on loopback wherever the listener went; plus a live
+check in the proof that the runner's own door answers on 4611 while 4600 is
+nobody.
+
+Four smaller findings, all real:
+
+- **The redirect emitted the raw `Host` while deciding on the parsed one.** A
+  proxy forwarding `Host: Horde.Example.Com` — which the origin check accepts,
+  host names being case-insensitive — would have produced a mixed-case
+  `redirect_uri`, and Google matches registered URIs byte for byte. One parse
+  now yields both the name to decide on and the authority to emit.
+- `GOOGLE_CALLBACK_PATH` claimed a coupling it did not have; `isExempt` now
+  reads it. The third copy, `index.ts`'s route literal, stays a literal on
+  purpose — R-05's instrument scrapes registrations out of the source text and
+  can only read literals — and what keeps *it* honest is that same test, which
+  asserts the exempt set is exactly two paths.
+- A test docstring said it *ran* the never-executing-guard mutation. It did
+  not; it pinned the sentence. Both are now named for what they do, and which
+  test actually kills the mutant is stated because it was measured.
+- `refusesToListen` read as a predicate and returned a sentence — `listenRefusal`,
+  matching `originRefusal`, `gateRefusal` and `loginRefusal`.
+
+**Mutation round: 17 mutants, 16 killed.** The one survivor was an empty-hostname
+guard in the `Host` parser — and brute-forcing the parser proved *no input
+reaches it*: `http` is a special scheme, so the WHATWG parser treats a missing
+host as a parse failure and the `catch` is what actually handles it. A guard no
+input can reach is the shape D-246 named, so it was deleted rather than given a
+test that could not exist. The two mutants that then had to be written by hand
+— the redirect echoing the raw header, and the doors back on a hardcoded 4600 —
+both die.
+
+Two findings were declined, and why:
+
+- *"Three port variables, not the two the ticket names."* `PORT` and
+  `AGENTLINGS_PORT` are one variable under two names and were chosen that way
+  deliberately, with the cost — a maintainer shell exporting a generic `PORT`
+  moves the local server — put to Brian before a line was written and accepted.
+- *"No static bundle served, which #27 asks for under One origin."* That is
+  slice 3 (#29). #27's prose attributes it to "#23" from before the line was
+  re-cut into eight; #28's own acceptance criteria are the authority and do not
+  list it.
 
 **Owed, and it cannot be paid from a session:** `prove-wave0.mjs` on a
 *restarted* maintainer install. Nothing was listening on 4600 while this was

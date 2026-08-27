@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { isLoopbackHost } from './origin';
+import { GOOGLE_CALLBACK_PATH, isLoopbackHost } from './origin';
 
 /**
  * Wave 0's credential: a password the user types once, exchanged for an
@@ -83,11 +83,22 @@ function bindAddress(env: NodeJS.ProcessEnv): string {
 }
 
 /**
+ * The port this install answers on.
+ *
  * A value that is not a port falls back to 4600 rather than being obeyed:
  * `Number('')` is 0 and `Number('80.5')` is not a port, and binding either
  * would be a listener nobody asked for on an address nobody named.
+ *
+ * **Exported because the listener is not the only thing that needs it.** The
+ * runner and the tool doors dial the server back on loopback, and until D-271
+ * they built those URLs from a `SERVER_PORT = 4600` constant in
+ * `@agentlings/shared`. The moment a host could move the listener, that
+ * constant became a second answer to one question — a hosted install would
+ * have listened on `PORT` while `fetch`, `render`, `github`, `search`, `bls`,
+ * `calendar` and `mail` all dialled a dead 4600. One function, so they cannot
+ * disagree.
  */
-function listenPort(env: NodeJS.ProcessEnv): number {
+export function listenPort(env: NodeJS.ProcessEnv = process.env): number {
   for (const name of [PORT_VAR, HOST_PORT_VAR]) {
     const raw = env[name]?.trim() ?? '';
     if (raw === '') continue;
@@ -102,7 +113,7 @@ function listenPort(env: NodeJS.ProcessEnv): number {
  * to carry both halves: what was refused, and the two variables either of
  * which resolves it.
  */
-export const refusesToListen = (bind: string): string =>
+export const listenRefusal = (bind: string): string =>
   `refusing to listen on ${bind}: an install anyone can reach needs a password. ` +
   `Set ${PASSWORD_VAR} to a password of your own, or unset ${BIND_VAR} to listen ` +
   `on ${DEFAULT_BIND} and nothing else.`;
@@ -137,7 +148,7 @@ export function listenPolicy(env: NodeJS.ProcessEnv = process.env): ListenPolicy
   const port = listenPort(env);
   if (gateEnabled(env)) return { listen: true, hostname, port, gate: true };
   if (isLoopbackHost(hostname)) return { listen: true, hostname, port, gate: false };
-  return { listen: false, reason: refusesToListen(hostname) };
+  return { listen: false, reason: listenRefusal(hostname) };
 }
 
 /**
@@ -257,7 +268,9 @@ export function isExempt(path: string): boolean {
   // Google redirects the browser here and the callback carries no cookie of
   // ours — a `SameSite` cookie is withheld on a cross-site navigation, which
   // is exactly what this is. Its own `state` check is the credential (R-06).
-  if (path === '/api/oauth/google/callback') return true;
+  // From the constant, not a second literal: the path is also half of the
+  // redirect URI Google is handed, and the two must not drift apart.
+  if (path === GOOGLE_CALLBACK_PATH) return true;
   return false;
 }
 

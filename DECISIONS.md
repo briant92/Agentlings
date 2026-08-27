@@ -283,6 +283,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-271 — 2026-08-26 — No password, no public interface: the bind decides whether the gate is optional, and the request carries its own address](#d-271--2026-08-26--no-password-no-public-interface-the-bind-decides-whether-the-gate-is-optional-and-the-request-carries-its-own-address)
 - [D-272 — 2026-08-27 — One origin: the server serves the built bundle from its own port, in front of the gate because the sign-in is part of the bundle](#d-272--2026-08-27--one-origin-the-server-serves-the-built-bundle-from-its-own-port-in-front-of-the-gate-because-the-sign-in-is-part-of-the-bundle)
 - [D-273 — 2026-08-27 — D-169 and D-174 reopen on a motive neither listed: Agentlings is published as a template others self-host, and the reference install is measured rather than described](#d-273--2026-08-27--d-169-and-d-174-reopen-on-a-motive-neither-listed-agentlings-is-published-as-a-template-others-self-host-and-the-reference-install-is-measured-rather-than-described)
+- [D-274 — 2026-08-27 — The fourth status: *Not available hosted* is read off five probes and held there by a test, and the README is written for a person deploying rather than for a person browsing](#d-274--2026-08-27--the-fourth-status-not-available-hosted-is-read-off-five-probes-and-held-there-by-a-test-and-the-readme-is-written-for-a-person-deploying-rather-than-for-a-person-browsing)
 
 ## By theme
 
@@ -1022,7 +1023,17 @@ entry updates one file rather than two.
   a MODEL key, so a hosted install's executor can only be a host variable
   that D-270 then lets outlive the secrets file forever. Five of the seven
   faults the live runs found were in the PROOF, each one a check reporting
-  a number it was never measuring
+  a number it was never measuring; and **D-274, which closes the line** —
+  the capability file gains a fourth status, *Not available hosted*, on five
+  capabilities, each carrying the probe it was read off. It is the first
+  status that is INVISIBLE where the file is written (every probe on this
+  machine says yes), so it is the one that cannot be typed by hand:
+  `hosted.test.ts` holds the glossary, the tags and the README against each
+  other and the probes against a hosted shape. `renderAvailable` is
+  deliberately NOT tagged — the container has its own Chromium and #30
+  proved it. The README is written for a person deploying: one required
+  variable, connection keys in Settings, and the model credential named as
+  the exception it actually is
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -22900,3 +22911,104 @@ runs UTC. It is asserted before the wait now rather than trusted.
   and every schedule double-firing.
 - **Nothing about what a job may do changes on a hosted install.** The
   capability surface is the local one minus what the probes refuse.
+
+## D-274 — 2026-08-27 — The fourth status: *Not available hosted* is read off five probes and held there by a test, and the README is written for a person deploying rather than for a person browsing
+
+Slice 7 of the publish line (issue #31, spec #27), and the last of them. **It
+does not reopen anything** — D-273 already did the reopening, and this entry
+records what publishing needed once the reopen was settled.
+
+### The tag is derived, and that is the whole difficulty
+
+`AGENTLING.md` is derived, never authored (PROJECT.md): a claim in it is
+regenerable from the code, and where it disagrees with the code the code wins.
+Every existing status survives that rule easily, because *Live* and *Not built*
+are visible on this machine — run the thing and look.
+
+*Not available hosted* is the first status that is **invisible where the file
+is written**. Every probe on this machine says yes. So a tag typed by hand from
+#27's prose would have been indistinguishable from a tag read off the code, and
+would have stayed indistinguishable until somebody deployed and found a sixth
+capability missing that nothing had tagged.
+
+The tag therefore has a machine-readable shape and carries its own probe:
+
+```
+**Not available hosted** (*the folder organizer* — `pickFolderAvailable`, `server/src/pickFolder.ts`)
+```
+
+and `server/src/hosted.test.ts` holds **three lists** against each other, each
+read from its own file rather than retyped: `CONTEXT.md`'s *Hosted* entry says
+which capabilities are disk-bound, `AGENTLING.md` tags them and cites a probe
+apiece, and `README.md` tells a person deploying the same list. Editing any one
+of the three alone fails. The glossary is the one the other two answer to,
+because PROJECT.md makes it the vocabulary.
+
+### The five, and what each probe actually answers
+
+| Capability | Probe, as cited | Hosted answer |
+|---|---|---|
+| repo work from a local path | `existsSync(repoPath)`, `server/src/index.ts` | `no folder at "…"` — a level's repo path is on the operator's disk |
+| the folder organizer | `pickFolderAvailable`, `server/src/pickFolder.ts` | `false` off `win32`; the desk says `NO_ORGANIZE_HERE` |
+| OCR | `ocrAvailable`, `server/src/ocr.ts` | `false` off `win32` — and a real engine run even on it |
+| the knowledge store over folders | `paths.filter((p) => !existsSync(p))`, `server/src/index.ts` | every source reported `missing` |
+| supervised live acting | `doorUnavailable`, `server/src/connections.ts` | `NO_SCREEN`, via `headedAvailable` |
+
+`renderAvailable` is **not** among them, and that is the check that matters
+most: it asks `browserChannel()`, which finds the container's own Chromium, and
+#30 proved PDF and plate rendering working on the reference install. A tag on
+it would have been the spec's prose beating a measurement.
+
+### Three faults, and the shape they share
+
+- **The tag already existed, and adding it again was the duplication this
+  repository keeps paying for.** #30 had tagged the supervised door in §5's
+  connections table. Writing a second one under §4's heading produced two
+  answers to one question — D-030, in the ticket whose entire subject is that
+  one probe should have one reader. The §5 row was upgraded to carry the
+  citation and §4 now points at it.
+- **The reader was really measuring where the lines break.** `AGENTLING.md` is
+  prose wrapped at 79 columns, so three of the five citations fall either side
+  of a newline. A regex with literal spaces read two of five and reported the
+  other three as *absent* — the same confident silence as #29's assertion on an
+  empty string. Every gap in it is `\s+` now, and the wrapped case is its own
+  test.
+- **What turns "not found" into a failure is the count, not the regex.** A
+  reader that skips what it cannot parse is invisible on its own, so the number
+  of occurrences of the literal tag is compared with the number of citations
+  parsed, and the legend row is the single deliberate difference.
+
+### Two of the five are not proven by a unit test, and are not faked
+
+`existsSync` answers about the machine running the test, so repo work and the
+knowledge store cannot be put to a hosted shape in `hosted.test.ts` — the same
+"no app seam" that #27 decided for `index.ts`. They are cited and their
+citations are checked; the *refusal* is proven by a live install and nothing
+else. `prove-hosted.mjs` covers the organizer and supervised acting live, and
+does not cover these two. Named here rather than papered over, as D-270 named
+its two launcher gaps.
+
+### The README says what the app cannot
+
+The one required variable is `AGENTLINGS_PASSWORD`; every connection key goes
+in Settings and lands in the secrets file on the volume. The **model
+credential is the exception, and the README says so** rather than repeating
+#27's "everything else is entered inside the app": there is nowhere in the app
+to paste one — the drawer's route calls the far end before storing and only a
+shipped connection has a validator (D-078/D-081) — so on a host it can only be
+a service variable, which by D-270 then beats `/data/.env` under that name for
+good. That is the right answer for a model key and the wrong answer to
+discover by accident, so the precedence rule from D-270 is stated in the README
+with its consequence: a paste works immediately and loses at the next restart
+if a variable of that name exists.
+
+The executor's third route — a fresh `claude` login the app auto-detects — does
+not exist in a container, and the README says that too. `useClaude` is decided
+once at boot, so the credential must arrive before a restart; setting a Railway
+variable redeploys, which is why that route works and a hypothetical paste
+would not.
+
+**Left standing, and owed to a later ticket:** Settings still tells every
+install to "copy .env.example → .env and restart the dev server", which is
+advice with nowhere to act on it on a host. Fixing the drawer is not this
+slice's ticket and is not smuggled into it.

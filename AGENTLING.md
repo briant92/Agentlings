@@ -16,6 +16,7 @@ Every capability carries a status:
 | **Live** | Built, running, and exercised by tests or by real jobs |
 | **Partial** | The mechanism exists; the thing it is for is not fully there |
 | **Not built** | Designed, decided, or deliberately refused — with the reason |
+| **Not available hosted** | Live here, refused on an install with no operator disk under it — beside one of the three above, never instead of one. Each carries the probe that refuses it (D-274) |
 
 Written 2026-08-01 against `e5c80c9`, re-read against `3839d4d`
 (2026-08-17) — §§2, 3, 5, 10 and 15 corrected where D-158 landed: the clerk,
@@ -58,7 +59,13 @@ under supervision, counted weekly from the ledger and the job records —
 (D-260), and a `report: realwork` schedule row sends the same block on
 Monday at $0 with no model (D-261) — and the map recorded zero
 for D-241–D-248. §8's figures regenerate with the same command, and §15 is
-the list of what is not here yet.
+the list of what is not here yet. The statuses gain a **fourth**, *Not
+available hosted*, on 2026-08-27 where the publish line closed (D-274, #31):
+§§4, 5 and 11 re-read against the five probes that answer it rather than
+against the spec's prose, each tag carrying the probe it was read from, and
+`hosted.test.ts` holds the glossary, the tags and the README against each
+other and against the probes — so this is the one status in the file that
+cannot be typed by hand.
 
 ---
 
@@ -201,7 +208,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Read, write and edit files | SDK `Read` / `Write` / `Edit`, gated by role |
 | Run commands | `Bash`, gated by role. No shell is available to a role without it |
 | Search | `Grep` / `Glob` |
-| Work on your code | `git clone --local --no-hardlinks` into `sandbox/repo`; every change captured as `DIFF.patch` after the session |
+| Work on your code | `git clone --local --no-hardlinks` into `sandbox/repo`; every change captured as `DIFF.patch` after the session. **Not available hosted** (*repo work from a local path* — `existsSync(repoPath)`, `server/src/index.ts`): a level's repo path is a folder on the operator's own machine, checked when it is set, and a container has none. Repo work from a URL is the first capability built after publishing (#26) |
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through whichever Chromium this install has — Edge on Windows, the container's own on a host (`browserchannel.ts`) — offline, every external URL aborted (D-128) |
 | Author a backdrop plate stack | The run writes self-contained HTML pages — three.js served from the server's pinned copy at `http://three.local/three.module.js`, the offline rule's one stated exception — sets `document.title = "ready"`, and `render_plate` writes PNGs at the sandbox root, quantized to the 128-colour backdrop budget. Five modes (D-148): `plate` 2000×900 opaque, `plate-overscan` 2120×900 (drifts with the pointer), `cutout`/`cutout-overscan` (transparent-background upper plates and occlusion strips, alpha snapped binary, receipt reports coverage), `tile` ≤512×512 for `plateloop` regions — each crossed with `finish: quantized\|smooth` (D-151: smooth keeps the render exactly as drawn, for `backdrop.finish: "smooth"` packs and for `backdrop.depthMap` grayscale maps, which displace the back plate under the pointer on quantized packs). The budget is the layer's: one palette across every raster (`pack:quantize` cuts it jointly); a smooth pack has no budget at all. Named in `backdrop.plates`/`backdrop.occlusion`/`backdrop.depthMap`, the files ride the PACK.json draft through review, and Approve installs them all (D-143, D-148, D-151) |
@@ -274,6 +281,10 @@ those names against the shipped catalog, so the boundary is a test rather than
 a description of one. Why, in full, is §11.
 
 ### Acting in a browser you can watch — Live, under supervision (D-255, D-264)
+
+Refused on an install with no desktop, and tagged as such in §5's row for the
+door — the whole point is a window you are watching, so it is headed by
+construction and there is nothing on a container to open one on.
 
 The twelve ship as a **second** connection, `browser-act` — `supervised` in
 the catalog, off by default, no secret — holding the twelve acts **and** the
@@ -434,7 +445,7 @@ off, so the app's fetch was gated and this second door was not.
 | `calendar` — read the user's own Google Calendar | builtin | off; ready the moment `google` is connected | Live, read-only; the first reading sibling on the Google consent (D-158), reusing the Connect flow's stored secrets behind its own switch. One tool returns compact event lines — times as the calendar states them, replies still owed, who is invited. Deliberately no compiled-tool door: desk work never compiles |
 | `mail` — search and read the user's own Gmail | builtin | off; ready the moment `google` is connected | Live, read-only; the second reading sibling (D-158, D-191) — two tools on the find/read split (D-053): Gmail's own query language in, compact lines out, one message's text on request, attachments named and never fetched. The stored consent predates `gmail.readonly`, so reads answer with the fresh-sign-in sentence until Connect is walked once more. Same deliberate absence from the compiled-tool doors |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
-| `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed browser the runner launches — Edge here, the install's own channel) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run. **Not available hosted** (D-273): `doorUnavailable()` is the one rule, read by `resolveForJob` *and* by `describe`, so an install with no desktop refuses it at the launch **and** says so where it would otherwise be offered — the row carries `unavailable` and the work bar shows it struck through with the reason. Read back live from the reference install, where it is `ready: true` and still refused |
+| `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed browser the runner launches — Edge here, the install's own channel) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run. **Not available hosted** (*supervised live acting* — `doorUnavailable`, `server/src/connections.ts`), D-273: that one rule is read by `resolveForJob` *and* by `describe`, so an install with no desktop refuses it at the launch **and** says so where it would otherwise be offered — the row carries `unavailable` and the work bar shows it struck through with the reason. Read back live from the reference install, where it is `ready: true` and still refused |
 | `telegram` — send messages, at approval only; **receive voice notes** | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075. While on, a voice note from anyone on the roster is polled off the bot every 15 s, transcribed on this machine and quoted back at the desk (D-265, #17) — see below |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |
@@ -565,6 +576,12 @@ A level can be pointed at folders of your own material. They are read **once,
 by a sync you ask for**, into `store-index.json` beside that level's other
 files; the crew reads the index and never the source (D-047).
 
+**Not available hosted** (*the knowledge store over folders* —
+`paths.filter((p) => !existsSync(p))`, `server/src/index.ts`): the folders are
+on the operator's own machine, and the route that saves them reports every one
+it cannot find rather than leaving a sync to come back empty. On an install with
+no operator disk that is all of them.
+
 That is not an implementation detail, it is the reason this exists at all. Every
 guarantee here rests on one shape — work in a sandbox, review, promote; nothing
 arrives unread — and a live connection to a notes store hands a session reach
@@ -572,7 +589,7 @@ into a corpus nobody has looked at. An index is a file you can open first.
 
 | | |
 |---|---|
-| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf` `.xlsx` `.pptx` `.png` `.jpg`, walked recursively; dotfolders and `node_modules` skipped. A scan or a photograph is read by OCR where Windows has an engine, and marked `read from a scan` on the line (D-061) |
+| What is indexed | `.md` `.markdown` `.mdx` `.txt` `.docx` `.pdf` `.xlsx` `.pptx` `.png` `.jpg`, walked recursively; dotfolders and `node_modules` skipped. A scan or a photograph is read by OCR where Windows has an engine, and marked `read from a scan` on the line (D-061) — **Not available hosted** (*OCR* — `ocrAvailable`, `server/src/ocr.ts`): the engine is Windows', and the probe is a real run over an empty list rather than a platform check, because `win32` is necessary and not sufficient — the engine exists only where a language pack is installed |
 | What a passage is | A markdown section where there are headings, kept with its heading; a slide, under its own title; a run of spreadsheet rows, each carrying its sheet and column names; otherwise a length-bounded run cut at a sentence end (D-059, D-060) |
 | Size | 600 chars a passage, 200 passages a file, 250 files a source — every overflow **reported** rather than dropped quietly |
 | Provenance | Every line ends `[<file>, synced <date>]`, so a free answer and a session's context both say where it came from |
@@ -1589,6 +1606,14 @@ reverse it. The session installs nothing, touches nothing outside its
 sandbox, and has no tool that could — this is the first time the promote
 shape crosses into a real folder outside the app, and it crosses only as a
 reviewed manifest the server carries out.
+
+**Not available hosted** (*the folder organizer* — `pickFolderAvailable`,
+`server/src/pickFolder.ts`): the folder is **picked**, in a native dialog on the
+operator's own machine, and D-132 is deliberate that there is no typed-path
+fallback — so with no desktop this is a refusal rather than a detour, and the
+desk says the whole sentence rather than offering a text box with nowhere to
+act. The dialog and the desk read the one function, so a desk that offers and a
+dialog that refuses cannot happen (D-032).
 
 The structural argument survives intact. Every guarantee rests on one shape —
 **work in a sandbox, review, promote** — and a send goes *through* promote, as

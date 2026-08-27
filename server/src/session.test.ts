@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { SERVER_OWNED } from './bundle';
 import {
   BIND_VAR,
   HOST_PORT_VAR,
@@ -384,14 +385,47 @@ describe('every route the server registers is covered by a prefix (R-05)', () =>
     expect(paths.length).toBeGreaterThan(80);
   });
 
-  it('registers nothing outside /api/* and /internal/*', () => {
-    const stray = paths.filter((p) => !p.startsWith('/api/') && !p.startsWith('/internal/'));
+  /**
+   * Checked against `SERVER_OWNED` itself rather than against a second copy of
+   * those prefixes, because since #29 this test carries a second job. The
+   * bundle middleware runs *before* the routes, so a top-level registration
+   * outside these prefixes — `/healthz`, `/metrics` — has no extension, takes
+   * the deep-link fall-through, and is answered with the shell: a 200 of HTML
+   * where a route was meant to be, and nothing failing anywhere to say so.
+   * One list, so `bundle.ts` and the router cannot drift apart.
+   */
+  it('registers nothing outside the prefixes the bundle refuses to claim', () => {
+    const stray = paths.filter((p) => !SERVER_OWNED.some((owned) => p.startsWith(`${owned}/`)));
     expect(stray).toEqual([]);
+    expect(SERVER_OWNED).toContain('/api');
+    expect(SERVER_OWNED).toContain('/internal');
   });
 
   it('leaves every /api/ route gated except the two named exemptions', () => {
     const open = [...new Set(paths.filter((p) => p.startsWith('/api/') && isExempt(p)))];
     expect(open.sort()).toEqual(['/api/oauth/google/callback', '/api/session']);
+  });
+
+  /**
+   * #29 put one handler in front of that gate: the built web bundle, which is
+   * product — the same bytes for every install, already public in the
+   * repository — while the operator's data stays behind `/api`, a prefix
+   * `bundleFile` refuses to claim under any spelling.
+   *
+   * The order is the whole of it being right, and it is invisible to every
+   * other test here: move the static middleware below the gate and a hosted
+   * install answers a browser `{"error":"Sign in to reach this"}` with no
+   * screen to sign in on — the shell has to arrive before it can ask
+   * `/api/session` and draw the password box. Read from the source text,
+   * which is weak; `scripts/prove-hosted.mjs --local` fetches the title screen
+   * with the gate on and no cookie, which is not.
+   */
+  it('serves the bundle before the gate, so the sign-in can be reached (#29)', () => {
+    const bundle = source.indexOf('bundleFile(new URL(');
+    const gate = source.indexOf('requestAllowed(new URL(');
+    expect(bundle).toBeGreaterThan(-1);
+    expect(gate).toBeGreaterThan(-1);
+    expect(bundle).toBeLessThan(gate);
   });
 });
 

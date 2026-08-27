@@ -60,6 +60,14 @@ behavioral base lives there alone; this is the project half, split out on
   live in `.env`. `listenPort()` beside it is the *only* answer to "what port
   is this install on": the runner and every tool door build their loopback URLs
   from it, and the `SERVER_PORT` constant they used to read is gone.
+- **One origin** (D-272): the server serves the built web bundle from its own
+  port. `bundleFile()` in `server/src/bundle.ts` decides what the bundle
+  answers; `installPaths().webDistDir` is where it looks, on the product side.
+  It runs **in front of the gate** — the sign-in screen is part of the bundle,
+  so a gated shell would be a refusal with nowhere to act on it — and it
+  refuses `/api`, `/internal` and `/ws` by name, so the operator's data is
+  gated exactly as before. With no bundle built it answers nothing, which is
+  why `npm run dev` and `npm run serve` are unchanged.
 - **The environment beats the secrets file.** `process.loadEnvFile` does not
   overwrite a name already in `process.env` (measured, D-270), so a variable
   set by the host wins over the same name in `.env` at the next restart — even
@@ -73,6 +81,9 @@ behavioral base lives there alone; this is the project half, split out on
 - Run stable: `npm run serve` — same server and log, **no file watching**, so
   a source edit or a OneDrive echo cannot restart it mid-session (D-140).
   Drive the app with this; use `dev` only while changing server code.
+- Run on one port: `npm run build`, then the server alone — the API port
+  serves the title screen too (D-272). This is what a container does; nobody
+  here needs it, and `dev`/`serve` are unaffected by whether `web/dist` exists.
 - Run on the phone: `tailscale serve --bg 5173`, then `tailscale serve status`
   for the URL — use the MagicDNS name, not the `100.x` IP (D-175). Never
   `tailscale funnel`: the API has no auth and funnel is the public-internet

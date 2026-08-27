@@ -281,6 +281,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-269 — 2026-08-26 — The desk says what it refuses: the rows a sentence claims, read as it is typed and shown under the plan in the job board's own words, verbatim — a line and never a block, with the never-channel left to the ask card that already says it better](#d-269--2026-08-26--the-desk-says-what-it-refuses-the-rows-a-sentence-claims-read-as-it-is-typed-and-shown-under-the-plan-in-the-job-boards-own-words-verbatim--a-line-and-never-a-block-with-the-never-channel-left-to-the-ask-card-that-already-says-it-better)
 - [D-270 — 2026-08-26 — One module says where an install keeps things: `AGENTLINGS_HOME` moves the operator's half and never the product's, and the environment beats the secrets file](#d-270--2026-08-26--one-module-says-where-an-install-keeps-things-agentlings_home-moves-the-operators-half-and-never-the-products-and-the-environment-beats-the-secrets-file)
 - [D-271 — 2026-08-26 — No password, no public interface: the bind decides whether the gate is optional, and the request carries its own address](#d-271--2026-08-26--no-password-no-public-interface-the-bind-decides-whether-the-gate-is-optional-and-the-request-carries-its-own-address)
+- [D-272 — 2026-08-27 — One origin: the server serves the built bundle from its own port, in front of the gate because the sign-in is part of the bundle](#d-272--2026-08-27--one-origin-the-server-serves-the-built-bundle-from-its-own-port-in-front-of-the-gate-because-the-sign-in-is-part-of-the-bundle)
 
 ## By theme
 
@@ -1000,7 +1001,14 @@ entry updates one file rather than two.
   The same entry makes the request carry its own address — the origin check
   accepts an origin equal to the request's `Host` (equality, never a suffix),
   and the Google redirect is a function of the request with loopback still
-  returning the old constant. D-169 is untouched by that one too
+  returning the old constant. D-169 is untouched by that one too; and
+  **D-272, which gives an install one address** — the server serves the built
+  web bundle from its own port, *in front of* the gate, because the sign-in
+  screen is part of the bundle and a gated shell is a refusal with nowhere to
+  act on it. What makes that honest is that the bundle is product and the
+  operator's data is behind `/api`, a prefix it refuses by name. With no
+  bundle built it answers nothing, so `npm run dev` and `npm run serve` are
+  unchanged. D-169 is untouched by that one too
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -22401,3 +22409,188 @@ a check that cannot be made is not a check that passed; and `and 4600 is still
 nobody` was simply wrong — the door request is dialled at 4611 by address, so
 4600's state was never part of the claim. 28 checks with the install down,
 27 when it is up.
+
+## D-272 — 2026-08-27 — One origin: the server serves the built bundle from its own port, in front of the gate because the sign-in is part of the bundle
+
+Slice 3 of the publish line (issue #29, spec #27). **It does not reopen
+D-169**: nothing is hosted by this entry, no account is touched, and the
+maintainer's install is byte-for-byte the same to drive. It is the slice that
+makes an install reachable at one address at all.
+
+### What was wrong
+
+There was no production serve path. `npm run serve` drops the server's file
+watching (D-140) and still runs the **Vite dev server** for the web half, with
+the browser reaching the API through Vite's proxy. That is three origins —
+Vite on `:5173`, the API on `:4600`, and the `.ts.net` name in front of both —
+and it is why the session cookie's `Secure` flag is decided per request rather
+than set (D-241, R-04).
+
+Three origins are fine on a machine somebody is sitting at. A container has
+one port and no Vite, so a browser opening a hosted install's address would
+have reached the API and nothing else: no title screen, no sign-in, no world.
+
+### What was built
+
+`bundleFile(urlPath, distDir)` in `server/src/bundle.ts` — a request path in,
+the file that answers it out, or `null` meaning *not ours*, which falls through
+to the routes and their 404 exactly as before. The route in `index.ts` is an
+adapter and decides nothing, for the reason D-271 paid for: `index.ts` starts
+listening at import, so anything decided there cannot be reached by a test.
+
+Where the bundle lives is `installPaths().webDistDir`, on the **product** side
+(D-270). Emphatically so: it is the output of the code, rebuilt from the image
+every deploy, and an install whose `AGENTLINGS_HOME` moved it would serve
+whatever bundle first landed on the volume for as long as the volume lasted.
+
+**It runs in front of the gate, and that ordering is the whole of it being
+right.** The instinct is that a static route should be gated like everything
+else; follow it and a hosted install answers a browser
+`{"error":"Sign in to reach this"}` with no screen to sign in on — the sign-in
+*is* the bundle, and the shell has to arrive before it can ask `/api/session`
+and draw the password box. What makes serving it ungated honest is that the
+bundle is product: the same bytes for every install, already public in the
+repository, containing none of the operator's data. The operator's data is
+behind `/api`, and `bundleFile` refuses `/api`, `/internal` and `/ws` **by
+name** rather than by whether a file happens to be missing — so a future route
+under one of those prefixes is server-owned the moment it is registered, and a
+file that found its way into `dist/api/` could not shadow one. The gate itself
+is untouched: `isExempt` gained nothing, and with a password set,
+`GET /api/levels` on that same origin is still 401.
+
+Nothing changes for the maintainer. With no bundle built the module answers
+`null` for every path, which is a dev checkout's state, so `npm run dev` and
+`npm run serve` behave exactly as they did — Vite still serves the web half and
+proxies `/api` and `/ws` here.
+
+Two smaller rules, both with a failure they exist to prevent:
+
+- **A deep link gets the shell; a missing asset does not.** `/settings` has no
+  file and is a client route; `/assets/index-gone.js` is a 404. Answering HTML
+  to a request for a deleted script is what produces `Unexpected token '<'` —
+  an error about syntax that is really an error about routing.
+- **`index.html` is `no-cache`, `/assets/*` is immutable.** Vite names those
+  files by their content, and a browser holding yesterday's shell after a
+  redeploy would ask for names that no longer exist and render a blank page:
+  the one caching mistake that looks like the app being broken rather than
+  stale.
+
+### What the mutation pass found
+
+**16 mutants, 14 killed.** Three of the kills were tests this ticket did not
+have until the mutation was run, and each was a real gap:
+
+- **The containment check had no input that reached it.** Every traversal in
+  the test file — `..` segments, backslash forms, `/C:/Windows/win.ini` —
+  was refused by an earlier check or resolved back *inside* the bundle,
+  because `C:` is drive-**relative** on Windows and lands on the drive the
+  bundle is already on. A different letter does not: `path.resolve` answers
+  `Z:\secret.txt`, which is somewhere else on the disk entirely. That is the
+  D-246 shape — a guard that passes because nothing ever reaches it — caught
+  this time by mutation rather than in production.
+- **An unknown extension defaulted to `text/html`** and no test said
+  otherwise. The real bundle carries `.py` files inside a pack; a file the
+  browser was never meant to interpret would have been handed to it as a page.
+  It is `application/octet-stream`, pinned.
+- **The extension was lowercased and nothing proved it had to be.** A
+  hand-dropped `Logo.PNG` is a real name, and a case-sensitive lookup serves an
+  image as bytes the browser will not draw.
+
+**The two survivors are kept deliberately and are written down rather than
+defended.** Deleting either the NUL check or the backslash check leaves every
+test passing, because the containment check refuses the same backslash paths
+and `statSync` throws on a name carrying a NUL. That makes them the outer of
+two locks, and the reason to keep them is what the inner one rests on:
+`path.resolve`'s Windows drive-letter rules and an exception from `node:fs`,
+neither of which this module owns or would be told about if it changed.
+Refusing on the *name*, before anything is resolved or opened, is the part that
+does not depend on anyone else's semantics. This is not D-271's deleted
+survivor: that guard was **unreachable**, this one runs on every request.
+
+### What the review round found
+
+Two reviewers, and between them four real findings — the most useful being the
+one that says the *instrument* was wrong again.
+
+- **The traversal check was proving the wrong rule.** The proof sent
+  `/%2e%2e/.env` and read its 404 as *traversal refused*. It is not: the route
+  passes `new URL(c.req.url).pathname`, and the WHATWG parser removes dot
+  segments before `bundleFile` is called, so `/%2e%2e/.env` and `/../.env`
+  both arrive as `/.env` and are refused for being a **dotfile**. Measured:
+  `%2f` and `%5c` survive that parse, so `/..%2f.env` reaches the module as a
+  live `..` and `/%5c..%5c.env` as a live backslash. Those two are what the
+  traversal handling is actually for, and they are what the proof now sends —
+  a test in `bundle.test.ts` pins the four normalisations themselves so the
+  claim cannot rot. This is the third time in two slices that the instrument
+  measured something other than the claim (D-271's `Host` header, its
+  `server.log` hash, and now this), which is worth more than any of the three.
+- **A future top-level route would have been silently shadowed.** `/healthz`,
+  `/metrics` — anything registered outside `/api`, `/internal`, `/ws` — has no
+  extension, so it takes the deep-link fall-through and is answered **200
+  HTML** where a route was meant to be, with nothing failing anywhere.
+  `SERVER_OWNED` is exported and R-05's existing source-scraping test now
+  checks the registrations against *that list* rather than a second copy of
+  those prefixes.
+- **`SERVER_OWNED` was matched case-sensitively.** `/API/levels` is the API's
+  own 404 (Hono's routes are case-sensitive too) and would have been claimed by
+  the bundle and answered with the shell. The refusal is lowercased, which is
+  what "by name under any spelling" was already claiming.
+- **`HEAD` fell through to the gate**, so a host health check reading `HEAD /`
+  would see a live install as down. `@hono/node-server` was measured returning
+  the status and headers with a zero-byte body, so `HEAD` shares `GET`'s
+  answer.
+
+And one the review named that this entry had already half-shipped: `no-cache`
+is *revalidate*, and there was nothing to revalidate against — so the shell and
+every pack image would have come down in full on every page load, on somebody's
+metered container. `BundleHit` carries a weak ETag from the size and mtime of
+the stat the module already takes, and the route answers 304 to a matching
+`If-None-Match` without reading the file at all. `.map` came out of the type
+table in the same pass: Vite emits no sourcemaps here, so it was a type for a
+build setting we do not use.
+
+The review's remaining finding is **not** fixed and is a decision, not an
+oversight: #29's criterion reads *"the gate applies to the static route exactly
+as it does to the app"*, and the bundle is deliberately served in front of the
+gate. The criterion's own second clause — *"an unauthenticated request to the
+root gets the sign-in, not the world"* — is what settles it, because the
+sign-in **is** the bundle and a gated shell is a refusal with nowhere to act on
+it. What it costs is stated plainly: on a hosted install everything Vite copies
+out of `web/public` is readable by a stranger who has the URL. That is the
+repository's own committed content, which #31 makes public anyway.
+
+### Proved
+
+`node scripts/prove-hosted.mjs --local` — **ALL PASS**, run four times, and
+its one-origin section is sixteen of those checks: with `web/dist` built, the
+child server bound on `0.0.0.0:4611` with the gate on and **no Vite anywhere**,
+an unauthenticated `GET /` returns the title screen as `text/html` / `no-cache`
+carrying `<div id="root">`; `GET /api/levels` on that same origin is still 401;
+the `/assets/index-*.js` the shell names loads from the same port as
+`text/javascript` with the immutable header **and hashes equal to the file on
+disk** — a 200 with the right type would pass just as happily on a truncated
+body, and a `Buffer` handed to a writer that reads its backing `ArrayBuffer`
+rather than its own window is exactly how a pooled read sends the wrong bytes;
+a second visit revalidates to **304** rather than re-sending it; `HEAD /`
+answers 200 with a zero-byte body; a deep link falls through to the shell; both
+traversal spellings that survive URL parsing are 404 while signed in; signing
+in on that origin hands back the cookie; and the cookie carries onto
+`ws://127.0.0.1:4611/ws`, which is handed 1,461 bytes of world — while the same
+socket without it closes 4401 with zero.
+
+The traversal check is sent **signed in**, deliberately, and that was a real
+correction: unsigned, the gate answers 401 to anything the bundle declined, so
+the check passed whether the traversal was refused or served — the pass would
+have been the gate's and not this slice's. With the cookie, the only thing left
+to refuse it is the bundle, and the 404 is that refusal. It is also sent on
+`node:http` rather than `fetch`, because `fetch` resolves `..` away before the
+request leaves: the same class of trap as `Host` being a forbidden header name
+in D-271, and the second time in two slices that the instrument was the thing
+that was wrong.
+
+`npm test` 3,050 green (2,687 server + 363 web) and `npm run typecheck` clean.
+
+Two acceptance boxes are **owed** and are not claimed here: the existing
+`prove-*-ui` scripts against the running dev setup, which need Brian's own
+install up and must never be run by starting one from a session (armed rows
+double-fire), and the closing comment on #29 carrying this output.

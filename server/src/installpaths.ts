@@ -58,6 +58,18 @@ export type InstallPaths = {
   skillsDir: string;
   sourcesFile: string;
   connectionsFile: string;
+  /**
+   * The built web bundle (#29), which `npm run build` writes and the server
+   * serves from its own port. Product too, and emphatically so: it is the
+   * output of the code, rebuilt from the image every deploy, and an install
+   * whose `AGENTLINGS_HOME` moved it would be serving whatever bundle first
+   * landed on the volume for as long as the volume lasted.
+   *
+   * It is derived here and not in `bundle.ts` for the D-270 rule: one module
+   * says where an install keeps things, and a second answer is how the two
+   * come to disagree.
+   */
+  webDistDir: string;
 };
 
 /**
@@ -84,5 +96,6 @@ export function installPaths(
     skillsDir: path.join(repoRoot, 'skills'),
     sourcesFile: path.join(repoRoot, 'catalog', 'sources.json'),
     connectionsFile: path.join(repoRoot, 'catalog', 'connections.json'),
+    webDistDir: path.join(repoRoot, 'web', 'dist'),
   };
 }

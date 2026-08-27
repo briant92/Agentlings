@@ -31,6 +31,7 @@ describe('with AGENTLINGS_HOME unset', () => {
       skillsDir: path.join(REPO_ROOT, 'skills'),
       sourcesFile: path.join(REPO_ROOT, 'catalog', 'sources.json'),
       connectionsFile: path.join(REPO_ROOT, 'catalog', 'connections.json'),
+      webDistDir: path.join(REPO_ROOT, 'web', 'dist'),
     });
   });
 
@@ -61,6 +62,10 @@ describe('with AGENTLINGS_HOME set', () => {
     expect(paths.skillsDir).toBe(path.join(REPO_ROOT, 'skills'));
     expect(paths.sourcesFile).toBe(path.join(REPO_ROOT, 'catalog', 'sources.json'));
     expect(paths.connectionsFile).toBe(path.join(REPO_ROOT, 'catalog', 'connections.json'));
+    // The build output most of all: it is the code's own output, so an install
+    // whose home moved it would serve whatever bundle first landed on the
+    // volume for as long as the volume lasted (#29).
+    expect(paths.webDistDir).toBe(path.join(REPO_ROOT, 'web', 'dist'));
   });
 
   it('resolves a relative value rather than carrying it', () => {

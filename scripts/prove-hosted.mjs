@@ -10,6 +10,12 @@
 // and is not written yet, which is why the flag is required rather than
 // defaulted.
 //
+// Since #29 it also proves the *one origin*: with `web/dist` built and no Vite
+// running anywhere, the title screen, the sign-in, the API and the WebSocket
+// all answer on that single port — which is a container's situation exactly.
+// Run `npm run build` first; the last section says so rather than skipping if
+// the bundle is not there.
+//
 // Like `prove-install-paths.mjs`, it starts its OWN server rather than talking
 // to a running one, and for the same reasons: the whole point is a different
 // AGENTLINGS_BIND, a fresh AGENTLINGS_HOME has no levels so no armed schedule
@@ -34,6 +40,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { WebSocket } from 'ws';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LAUNCHER = path.join(ROOT, 'server', 'scripts', 'dev-logged.mjs');
@@ -176,6 +183,64 @@ const post = (pathname, body, { host, origin, cookie } = {}) =>
     req.end(payload);
   });
 
+/**
+ * A GET whose path is sent exactly as written.
+ *
+ * `fetch` normalises a URL before it dials — `/%2e%2e/.env` leaves as `/.env`
+ * — so a traversal asked for through it is not the traversal that was asked
+ * about. Same lesson as the `Host` header above, and the reason this file owns
+ * two little clients rather than one convenient one.
+ */
+const rawRequest = (method, pathname, cookie) =>
+  new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        host: '127.0.0.1',
+        port: PORT,
+        path: pathname,
+        method,
+        headers: cookie === undefined ? {} : { cookie },
+      },
+      (res) => {
+        let text = '';
+        res.on('data', (c) => (text += c));
+        res.on('end', () => resolve({ status: res.statusCode, text }));
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+
+const rawGet = (pathname, cookie) => rawRequest('GET', pathname, cookie);
+
+/**
+ * Open `/ws` on the same port the screen came from and report what happened.
+ *
+ * A browser puts the cookie on the handshake by itself and cannot be made to
+ * put anything else there; here it is by hand, which is the only difference.
+ */
+const socket = (levelId, cookie) =>
+  new Promise((resolve) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${PORT}/ws?level=${encodeURIComponent(levelId)}`, {
+      headers: {
+        origin: `http://127.0.0.1:${PORT}`,
+        ...(cookie ? { cookie } : {}),
+      },
+    });
+    let bytes = 0;
+    ws.on('message', (d) => {
+      bytes += d.length;
+      // Enough to know it was handed the level; do not sit on the feed.
+      setTimeout(() => ws.close(), 300);
+    });
+    ws.on('close', (code) => resolve({ code, bytes }));
+    ws.on('error', () => resolve({ code: -1, bytes }));
+    setTimeout(() => {
+      ws.terminate();
+      resolve({ code: -2, bytes });
+    }, 5000);
+  });
+
 let running = null;
 try {
   // ── 1. refuse ─────────────────────────────────────────────────────────────
@@ -298,6 +363,140 @@ try {
     localRedirect === `http://127.0.0.1:${PORT}/api/oauth/google/callback`,
     JSON.stringify(localRedirect),
   );
+
+  // ── 6. one origin ─────────────────────────────────────────────────────────
+  // #29: the whole app on the API port — no Vite anywhere in this run, which
+  // is the container's situation exactly. The bundle is the repository's own
+  // `web/dist`, not the temp home's: it is product, rebuilt with the code.
+  console.log('\n── one origin: the app on the API port, no Vite ──');
+  if (!existsSync(path.join(ROOT, 'web', 'dist', 'index.html'))) {
+    check('the web bundle is built', false, 'run "npm run build" first — nothing to serve');
+  } else {
+    // No cookie, and the gate is on. This is the acceptance criterion in one
+    // request: what an unauthenticated browser gets is the screen it signs in
+    // on, not a refusal it cannot act on.
+    const root = await fetch(`${BASE}/`);
+    const html = await root.text();
+    check('the root serves the title screen with no cookie', root.status === 200, `status=${root.status}`);
+    check(
+      '  …as HTML, no-cache so a redeploy is not shadowed by yesterday shell',
+      (root.headers.get('content-type') ?? '').startsWith('text/html') &&
+        root.headers.get('cache-control') === 'no-cache',
+      `${root.headers.get('content-type')} / ${root.headers.get('cache-control')}`,
+    );
+    check('  …and it is the app shell', html.includes('<div id="root">'));
+
+    // The gate did not move: the shell is product, the world is the operator's.
+    const world = await fetch(`${BASE}/api/levels`);
+    check('the world on the same origin still needs a session', world.status === 401, `status=${world.status}`);
+
+    // The asset the shell names, on that same port. A one-origin claim that
+    // stopped at the HTML would be a white screen in a browser.
+    const asset = /src="([^"]+\.js)"/.exec(html)?.[1] ?? '';
+    const script = await fetch(`${BASE}${asset}`);
+    check(
+      `the script it names loads from the same port  — ${asset}`,
+      script.status === 200 && (script.headers.get('content-type') ?? '').includes('javascript'),
+      `status=${script.status} ${script.headers.get('content-type')}`,
+    );
+    check(
+      '  …and is cached forever, because its name is its content',
+      script.headers.get('cache-control') === 'public, max-age=31536000, immutable',
+      String(script.headers.get('cache-control')),
+    );
+    // Byte for byte against the file on disk. A 200 with the right type would
+    // pass on a truncated or over-long body just as happily — and a `Buffer`
+    // handed to a writer that reads its backing `ArrayBuffer` instead of its
+    // own window is exactly how a pooled read sends the wrong bytes.
+    const sent = createHash('sha256')
+      .update(Buffer.from(await script.arrayBuffer()))
+      .digest('hex');
+    const onDisk = hash(path.join(ROOT, 'web', 'dist', ...asset.slice(1).split('/')));
+    check('  …and arrives byte for byte as it is on disk', sent === onDisk, `${sent.slice(0, 12)} vs ${onDisk.slice(0, 12)}`);
+
+    // The half that makes `no-cache` mean revalidate rather than re-download.
+    const stale = await fetch(`${BASE}/`, { headers: { 'if-none-match': root.headers.get('etag') } });
+    check(
+      '  …and a second visit revalidates to 304 instead of re-sending the shell',
+      stale.status === 304 && (await stale.text()) === '',
+      `status=${stale.status}`,
+    );
+
+    // A host's health check is often HEAD, and a 404 there reads as an install
+    // that is down.
+    const head = await rawRequest('HEAD', '/');
+    check(
+      'HEAD on the root answers like GET, with no body',
+      head.status === 200 && head.text === '',
+      `status=${head.status} bytes=${head.text.length}`,
+    );
+
+    const deep = await fetch(`${BASE}/level/whatever`);
+    check(
+      'a deep link the client owns falls through to the shell',
+      deep.status === 200 && (await deep.text()).includes('<div id="root">'),
+      `status=${deep.status}`,
+    );
+
+    // Sign in on this origin, then take the cookie onto the socket. The
+    // browser does this by itself; here it is by hand, and it is the point of
+    // the slice — one address for the screen, the API and the feed.
+    const signIn = await post('/api/session', { password: PASSWORD }, {
+      host: `127.0.0.1:${PORT}`,
+      origin: `http://127.0.0.1:${PORT}`,
+    });
+    const oneOriginCookie = signIn.setCookie?.[0]?.split(';')[0] ?? '';
+    check('signing in on that origin hands back a cookie', oneOriginCookie.startsWith('agentlings_session='));
+
+    // `..%2f` and not `%2e%2e` or a plain `..`, and the difference is the whole
+    // reason this check is worth anything. The server reads
+    // `new URL(req.url).pathname`, and the WHATWG parser removes dot segments
+    // *before* the bundle sees them: `/%2e%2e/.env` arrives as `/.env`, which
+    // is refused for being a dotfile and proves nothing about traversal. `%2f`
+    // survives the parse, so this spelling reaches the module as a live `..`.
+    // The review of this ticket caught the earlier version asserting the first
+    // and calling it the second — the third time in two slices that the
+    // instrument was measuring something other than the claim.
+    //
+    // Sent raw rather than through `fetch`, which normalises it away too, and
+    // sent *signed in*: without the cookie the gate answers 401 to anything the
+    // bundle declined, so the check would pass whether the traversal was
+    // refused or served, and the pass would be the gate's rather than this
+    // slice's. With the cookie the only thing left to refuse it is the bundle.
+    const escape = await rawGet('/..%2f.env', oneOriginCookie);
+    check(
+      'a traversal that survives URL parsing gets nothing, gate or no gate',
+      escape.status === 404 && !escape.text.includes('AGENTLINGS_PASSWORD'),
+      `status=${escape.status}`,
+    );
+    const backslash = await rawGet('/%5c..%5c.env', oneOriginCookie);
+    check(
+      '  …and so does the backslash spelling, which also survives it',
+      backslash.status === 404 && !backslash.text.includes('AGENTLINGS_PASSWORD'),
+      `status=${backslash.status}`,
+    );
+
+    const made = await post(
+      '/api/levels',
+      { name: 'one origin', project: 'Proof', theme: 'cave' },
+      { host: `127.0.0.1:${PORT}`, origin: `http://127.0.0.1:${PORT}`, cookie: oneOriginCookie },
+    );
+    const levelId = made.json().id ?? '';
+    check('a level to watch exists', made.status === 201 && levelId !== '', `status=${made.status}`);
+
+    const watched = await socket(levelId, oneOriginCookie);
+    check(
+      'the WebSocket opens on the same port and is handed the world',
+      watched.bytes > 0,
+      `close=${watched.code} bytes=${watched.bytes}`,
+    );
+    const bare = await socket(levelId, null);
+    check(
+      'and without the cookie it is closed as unauthenticated',
+      bare.code === 4401 && bare.bytes === 0,
+      `close=${bare.code} bytes=${bare.bytes}`,
+    );
+  }
 } finally {
   running?.child?.kill();
   await sleep(500);

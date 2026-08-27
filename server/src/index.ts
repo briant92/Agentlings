@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { Hono } from 'hono';
@@ -49,6 +50,7 @@ import {
   recordApproval,
   setAuto,
 } from './approvals';
+import { bundleFile } from './bundle';
 import { UNSAFE_METHODS, googleRedirectUri, originAllowed, originRefusal } from './origin';
 import {
   attemptLogin,
@@ -378,6 +380,7 @@ const ARTWORK_DIR = PATHS.artworkDir;
 const SKILLS_DIR = PATHS.skillsDir;
 const SOURCES_FILE = PATHS.sourcesFile;
 const CONNECTIONS_FILE = PATHS.connectionsFile;
+const WEB_DIST = PATHS.webDistDir;
 const USER_CONNECTIONS_FILE = userConnectionsFile(SANDBOX_ROOT);
 // A named home may be an empty volume on its first boot. Everything below
 // writes under it, and the first writer to find no directory is whichever
@@ -824,9 +827,46 @@ app.use('*', async (c, next) => {
 });
 
 /**
- * The second thing every request meets: Wave 0's gate. It runs after the
- * origin check on purpose — *which site sent this* is cheaper to answer and
- * refuses a hostile page before any cookie is parsed.
+ * The built web bundle, from this same port — *one origin* (#29).
+ *
+ * An adapter and nothing more: `bundleFile` decides what, if anything, the
+ * bundle answers for a path, and `null` means *not ours*, which falls through
+ * to the routes below and their 404 exactly as before. With no bundle built —
+ * a dev checkout, and this machine until somebody runs `npm run build` — that
+ * is every path, so `npm run dev` and `npm run serve` are untouched: Vite
+ * still serves the web half on `:5173` and proxies `/api` and `/ws` here.
+ *
+ * **Before the gate, and after the origin check.** What it serves is product,
+ * byte-identical for every install and already public in the repository, so
+ * there is nothing here for a session to protect — while the operator's data
+ * is behind `/api`, which `bundleFile` refuses to claim under any spelling.
+ * That ordering is what makes the sign-in reachable at all: the shell has to
+ * arrive before it can ask `/api/session` and draw the password box. A gated
+ * shell would answer a browser with `{"error":"Sign in to reach this"}` and
+ * no way to.
+ *
+ * Reads alone. Nothing in a bundle is written to, and a POST to a client route
+ * belongs to the API's 404, not to a file. `HEAD` is here with `GET` because a
+ * host's health check is often one and would otherwise read a live install as
+ * down; `@hono/node-server` was measured returning the status and headers with
+ * a zero-byte body for it, so the same answer serves both.
+ */
+app.use('*', async (c, next) => {
+  if (c.req.method !== 'GET' && c.req.method !== 'HEAD') return next();
+  const hit = bundleFile(new URL(c.req.url).pathname, WEB_DIST);
+  if (!hit) return next();
+  const headers = { 'cache-control': hit.cache, etag: hit.etag };
+  // `no-cache` is *revalidate*, and this is the half that makes it mean
+  // something: without a validator the shell and every pack image would come
+  // down in full on every page load. The file is not read at all on a 304.
+  if (c.req.header('if-none-match') === hit.etag) return c.body(null, 304, headers);
+  return c.body(await readFile(hit.file), 200, { ...headers, 'content-type': hit.type });
+});
+
+/**
+ * Wave 0's gate — the last thing a request meets before the routes. It runs
+ * after the origin check on purpose — *which site sent this* is cheaper to
+ * answer and refuses a hostile page before any cookie is parsed.
  *
  * Unlike the check above, this one gates **reads too**. It has to: the whole
  * finding behind Wave 0 is that a level's state is every job and every prompt

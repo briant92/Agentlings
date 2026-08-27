@@ -23220,7 +23220,7 @@ outbox send (D-075).
 |---|---|---|
 | set | `existsSync` — `no folder at "…"` | `repoTarget` — shape only, never a network call |
 | clone | `git clone --local --no-hardlinks` | `git clone` over https with the token |
-| Approve | `git apply DIFF.patch` onto the working tree | `checkout -B` → `add -A` → commit → `push --force-with-lease`, then `POST /repos/{o}/{n}/pulls` |
+| Approve | `git apply DIFF.patch` onto the working tree | refuse unless HEAD is still what was cloned, then `checkout -B` → `add -A` → commit → `push`, then `POST /repos/{o}/{n}/pulls` |
 | hosted | refused at the probe | works |
 
 Four details that are decisions rather than mechanics:
@@ -23239,23 +23239,56 @@ Four details that are decisions rather than mechanics:
   because a container has no git config at all and a commit with no author is a
   promote that dies at the last step. Proven by reading the author back off the
   remote rather than by asserting the flag was passed.
-- **Idempotent.** `checkout -B` plus `--force-with-lease` mean a promote retried
-  after the pull-request half failed lands the same one commit, not a second.
-  Proven by pushing twice and counting `main..branch` as one commit.
+- **Idempotent, and a plain push.** `checkout -B` means a promote retried after
+  the pull-request half failed lands the same one commit, not a second; proven
+  by pushing twice and counting `main..branch` as one commit. This shipped with
+  `--force-with-lease`, which the mutation round found untested and the spec
+  review then explained: the remote is a bare URL with **no remote-tracking ref
+  to hold a lease against**, so it was an unconditional force wearing a safe
+  name. Nothing needed it — pushing the same commit twice is a no-op either
+  way — and a branch someone else already pushed under this name should stop a
+  promote loudly rather than be overwritten. Removed.
 
 The base branch is read from the clone's `refs/remotes/origin/HEAD`, **not**
 from the checked-out branch: a job that carries a sandbox forward (D-139) may
 already be sitting on a previous promote's branch, and a pull request based on
 that would be a diff against the wrong thing.
 
-### What is pushed is what was reviewed
+### What is pushed is what was reviewed — and the sentence that was false
 
 The reviewed artifact is `DIFF.patch`, produced by `writeDiff` from the sandbox
 clone's working tree. The push commits **that same working tree** rather than
-replaying the patch onto a second checkout — the two are the same set by
-construction (`add -N .` and `add -A` respect the same ignore rules), and
-replaying a patch to reach a state you are already standing in is a second
-chance to be wrong.
+replaying the patch onto a second checkout, because replaying a patch to reach
+a state you are already standing in is a second chance to be wrong.
+
+This entry first said the two were "the same set by construction". **They are
+not**, and the spec review of the first commit is what said so. `DIFF.patch` is
+the working tree against the index; the push carries HEAD. Those agree only
+while HEAD is still the commit that was cloned — and **nothing stops a session
+from running `git commit` in its own clone**: no brief forbids it, `Bash` is
+right there, and a grep for any such instruction finds none. Two consequences,
+both real and neither caught by the eight green tests:
+
+- a run that committed *some* of its work would have had those commits pushed
+  **unseen**, the reviewer having approved strictly less than went to the
+  remote;
+- a run that committed *everything* leaves no `DIFF.patch` at all, so the
+  existence check the local path uses was false, promote pushed nothing, and
+  the feed said "approved".
+
+So the clone is now checked against what was cloned — `HEAD` against
+`refs/remotes/origin/<base>` — and a promote that the reviewed diff cannot
+describe **does not happen**: it refuses, names the branch the work is sitting
+on in the sandbox, and pushes nothing. The route asks a URL level every time
+rather than only when a patch exists, because "there is no patch" stopped
+meaning "there is nothing to push" the moment a clone could hold commits.
+
+The same defect exists on the local path and is **older than this ticket**: a
+session that commits in its clone has always had that work silently dropped
+from `DIFF.patch`, from `job.changes` and from the apply. It is not fixed here
+— #26 says the local-path path is unchanged, and widening `writeDiff` to diff
+against the clone's base changes what every existing repo job promotes. It is
+written down instead, which is the honest half of leaving it.
 
 ### The composition is the part that ships inert
 
@@ -23280,6 +23313,33 @@ halves, because the capability did not become hosted — a **second way to have
 one** became hosted. `hosted.test.ts` caught the stale citation on the first
 full run, which is the derived-file rule doing its job rather than a person
 remembering.
+
+### The review round, and what a green suite was hiding
+
+Eight tests were green, `2773/2773` passed, and the mutation round then found
+**three** survivors and the two reviews found **five** more. Worth listing,
+because four of the eight are the same shape this log keeps recording.
+
+| Found by | What | Shape |
+|---|---|---|
+| mutation | the host comparison could be `endsWith` and every test still passed | the *instrument* was wrong: `github.com.evil.example` fails a suffix check too, so the D-272 case alone proves nothing. `notgithub.com` is the one that separates them |
+| mutation | `branchName`'s trailing-dash trim was never exercised | no fixture put the 32-character cap on a dash |
+| mutation | `--force-with-lease` was untested — then removed | see above |
+| spec review | **a run that commits in its clone gets its commits pushed unseen** | the real defect; see the section above |
+| spec review | a fully-committed run pushed nothing while the feed said "approved" | the same defect's other face |
+| spec review | `job.promotedTo` was **written and never read** | the card showed the pull request from the POST reply only, so reopening it lost the URL. D-030's exact shape, in a field added by this very entry |
+| standards review | the promote sentence was rebuilt in the feed *and* in the card | the duplicated notion D-030 charges for — cited by this entry while committing it. `promotedLine()` in `packages/shared` is now the one copy |
+| standards review | `baseBranch` used `execFileSync` — a blocking git call on the resolve request path | every other call in `gitwork.ts` is `promisify(execFile)`; style divergence that was also a real block |
+
+Two more were raised and **not** taken. `promoteToRemote` living in
+`gitwork.ts` makes that file import `./github`, which does change its
+character — but a fourth module holding one 25-line function is the abstraction
+CLAUDE.md rule 2 warns about, and there is no cycle. And `PromotedTo` encodes
+two exclusive outcomes as optional fields rather than a union; that is the
+idiom of every persisted record in this project, `Job` most of all.
+
+After the round: **12 of 12 mutants caught**, 24 tests in `gitwork.test.ts` and
+20 in `github.test.ts`, `2776/2776` across the suite.
 
 ### Left standing
 

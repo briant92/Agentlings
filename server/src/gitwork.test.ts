@@ -146,10 +146,23 @@ describe('repoTarget', () => {
     }
   });
 
-  it('refuses a host that merely ends in the same letters (D-272 label boundary)', () => {
-    const target = repoTarget('https://github.com.evil.example/briant92/scratch-repo');
-    expect(target.kind).toBe('unsupported');
-    expect(target.kind === 'unsupported' && target.reason).toMatch(/github\.com/);
+  // D-272's label boundary, and the mutation round's first survivor: a suffix
+  // check passes `github.com.evil.example` too, so that case alone proves
+  // nothing about how the host is compared. `notgithub.com` is the one that
+  // separates "ends with" from "is" — the same shape of wrong instrument
+  // D-272 records, caught here by mutating the comparison rather than by
+  // reading it.
+  it('refuses a host that merely contains or ends in the same letters', () => {
+    for (const bad of [
+      'https://github.com.evil.example/briant92/scratch-repo',
+      'https://notgithub.com/briant92/scratch-repo',
+      'https://github.com.co/briant92/scratch-repo',
+      'https://raw.github.com/briant92/scratch-repo',
+    ]) {
+      const target = repoTarget(bad);
+      expect(target.kind, bad).toBe('unsupported');
+      expect(target.kind === 'unsupported' && target.reason).toMatch(/github\.com/);
+    }
   });
 
   it('refuses a URL carrying its own credentials — the token is ours to supply', () => {
@@ -196,6 +209,18 @@ describe('branchName', () => {
     const name = branchName('7f3c1a2b-0000', 'a'.repeat(300));
     expect(name.length).toBeLessThanOrEqual(60);
   });
+
+  // The cap is applied to a slug that already has its dashes, so the cut can
+  // land on one — and a ref ending in a dash is legal but ugly, while the
+  // trim that prevents it survived the first mutation round untested. This
+  // title puts a word boundary exactly on the 33rd character.
+  it('does not end on the dash the cap happens to cut at', () => {
+    // "make-the-greeting-say-hello-yes-no" puts a dash at index 31, so the
+    // 32-character cap slices to "…-yes-" and the trim is what removes it.
+    const name = branchName('7f3c1a2b-0000', 'make the greeting say hello yes no');
+    expect(name).toBe('agentlings/7f3c1a2b-make-the-greeting-say-hello-yes');
+    expect(name.endsWith('-')).toBe(false);
+  });
 });
 
 /**
@@ -231,7 +256,7 @@ describe('pushBranch', () => {
 
   it('pushes what the reviewer approved, and says what the base branch is', async () => {
     await cloneRepo(remote, sandbox);
-    expect(baseBranch(sandbox)).toBe('main');
+    expect(await baseBranch(sandbox)).toBe('main');
 
     writeFileSync(path.join(repoDir(sandbox), 'greet.js'), "console.log('Hello');\n");
     writeFileSync(path.join(repoDir(sandbox), 'NEW.md'), 'brand new file\n');
@@ -362,6 +387,49 @@ describe('promoteToRemote', () => {
     ).toContain('Hello');
   });
 
+  // Both found by the spec review rather than by the eight tests that were
+  // already green, and both are about the same invariant: the reviewer must
+  // never approve less than gets pushed. `DIFF.patch` is the clone's working
+  // tree; the push carries its HEAD; a session that runs `git commit` in its
+  // own clone parts the two, and nothing forbids it from doing so.
+  it('refuses to push a run that committed inside its clone — review never saw it', async () => {
+    const repo = repoDir(sandbox);
+    writeFileSync(path.join(repo, 'sneaky.js'), 'this was never reviewed\n');
+    execFileSync('git', ['-C', repo, 'add', '-A'], { stdio: 'pipe' });
+    execFileSync(
+      'git',
+      ['-C', repo, '-c', 'user.name=S', '-c', 'user.email=s@e', 'commit', '-q', '-m', 'mine'],
+      { stdio: 'pipe' },
+    );
+    const { http } = host({ number: 1, html_url: 'https://github.com/o/n/pull/1' });
+    await expect(
+      promoteToRemote(sandbox, { url: remote, owner: 'o', name: 'n' }, job, { http }),
+    ).rejects.toThrow(/committed inside its own clone/);
+    // …and nothing reached the remote: no branch, and main is untouched.
+    const refs = execFileSync('git', ['-C', remote, 'branch', '--list'], { encoding: 'utf8' });
+    expect(refs).not.toContain('agentlings/');
+  });
+
+  it('pushes nothing, and says nothing was pushed, when the run changed nothing', async () => {
+    // A fresh clone with no edits: the working tree matches, so `writeDiff`
+    // left no patch. Promote is still asked — that is the point, since "no
+    // patch" stopped meaning "nothing happened" the moment a clone could
+    // hold commits — and answers null rather than pushing an empty branch.
+    const fresh = path.join(root, 'fresh');
+    mkdirSync(fresh);
+    await cloneRepo(remote, fresh);
+    expect(await writeDiff(fresh)).toBe(false);
+    const { http, bodies } = host({ number: 1, html_url: 'https://github.com/o/n/pull/1' });
+    const result = await promoteToRemote(fresh, { url: remote, owner: 'o', name: 'n' }, job, {
+      http,
+    });
+    expect(result).toBeNull();
+    expect(bodies).toHaveLength(0);
+    expect(
+      execFileSync('git', ['-C', remote, 'branch', '--list'], { encoding: 'utf8' }),
+    ).not.toContain('agentlings/');
+  });
+
   it('reports the branch when the pull request is refused — the push already happened', async () => {
     const { http } = host({}, 403);
     const result = await promoteToRemote(
@@ -370,9 +438,9 @@ describe('promoteToRemote', () => {
       job,
       { http, token: 'read-only' },
     );
-    expect(result.branch).toBe('agentlings/7f3c1a2b-fix-the-greeting');
-    expect(result.prUrl).toBeUndefined();
-    expect(result.prError).toMatch(/permission|rate limit/i);
+    expect(result?.branch).toBe('agentlings/7f3c1a2b-fix-the-greeting');
+    expect(result?.prUrl).toBeUndefined();
+    expect(result?.prError).toMatch(/permission|rate limit/i);
     // The half that succeeded stays true: the work is on the remote.
     expect(
       execFileSync('git', ['-C', remote, 'show', 'agentlings/7f3c1a2b-fix-the-greeting:greet.js'], {

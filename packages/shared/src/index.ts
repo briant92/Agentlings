@@ -603,6 +603,21 @@ export interface PromotedTo {
   prError?: string;
 }
 
+/**
+ * What a promote to a remote did, in one sentence — asked by the event feed on
+ * the server and by the review card in the browser.
+ *
+ * It is here rather than in either of them because both were deriving the same
+ * fork from the same field, which is the duplicated notion D-030 charges for
+ * and D-275 cited while committing it. `PromotedTo` was shared and the sentence
+ * was not; now the pair is.
+ */
+export function promotedLine(to: PromotedTo): string {
+  return to.prUrl
+    ? `pull request #${to.prNumber} opened from ${to.branch}`
+    : `pushed ${to.branch}; no pull request (${to.prError})`;
+}
+
 /** One message an outbox asks to send. `to` is the channel's own address shape. */
 export interface OutboxMessage {
   to: string;

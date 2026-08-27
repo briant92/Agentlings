@@ -35,6 +35,7 @@ import {
   MAX_ATTACHMENTS,
   opKey,
   opLabel,
+  promotedLine,
   repoTarget,
   slugProblem,
   SOCKET_FORBIDDEN_ORIGIN,
@@ -3787,19 +3788,21 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     // One reader answers which, the same one the clone asked.
     const where = repoTarget(pending.repoPath);
     if (where.kind === 'unsupported') return c.json({ error: where.reason }, 400);
-    if (existsSync(patch)) {
+    // A local path acts only when there is a patch to apply, exactly as
+    // before. A URL is asked every time, because "there is no patch" is not
+    // the same as "there is nothing to push" once a clone can hold commits —
+    // and deciding that here would put the question in two places.
+    if (where.kind === 'path' ? existsSync(patch) : true) {
       beginPatch(pending.id);
       try {
         if (where.kind === 'path') {
           await applyPatch(where.path, patch);
         } else {
-          rt.queue.setPromotedTo(
-            pending.id,
-            await promoteToRemote(sandbox, where, pending, {
-              http,
-              token: process.env.GITHUB_TOKEN,
-            }),
-          );
+          const to = await promoteToRemote(sandbox, where, pending, {
+            http,
+            token: process.env.GITHUB_TOKEN,
+          });
+          if (to) rt.queue.setPromotedTo(pending.id, to);
         }
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
@@ -3911,13 +3914,11 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
                   ? // Never "paid": nothing was. The file is a deliverable, and
                     // the act is Brian's token press at the bank (D-219, D-251).
                     `approved — composed ${NOMINA_OUTPUT}, ${composedNomina} ${composedNomina === 1 ? 'payee' : 'payees'}; upload and authorise it at the bank`
-                  : // What promote did on a remote (D-275). The pull request
-                    // when there is one, the branch when the pull request half
-                    // did not happen — the feed is the record, so it says which.
+                  : // What promote did on a remote (D-275) — the feed is the
+                    // record, so it says which half happened. The sentence is
+                    // the review card's, from the one function both ask.
                     job.promotedTo
-                    ? job.promotedTo.prUrl
-                      ? `approved — pull request #${job.promotedTo.prNumber} opened from ${job.promotedTo.branch}`
-                      : `approved — pushed ${job.promotedTo.branch}; no pull request (${job.promotedTo.prError})`
+                    ? `approved — ${promotedLine(job.promotedTo)}`
                     : 'approved') +
             (chainPriced.rows > 0
               ? ` · the chain's ${chainPriced.rows} cut leg${chainPriced.rows === 1 ? '' : 's'} now charged $${chainPriced.chargedUsd.toFixed(2)}`

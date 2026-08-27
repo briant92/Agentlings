@@ -13,7 +13,7 @@ import type {
   TrajectoryLine,
 } from '@agentlings/shared';
 import type { Verdict } from '@agentlings/shared';
-import { awaitingVerdict, branchName, outcomeOf, repoTarget } from '@agentlings/shared';
+import { awaitingVerdict, branchName, outcomeOf, promotedLine, repoTarget } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
 import { CHANNEL_LABELS, ChannelLogo } from './ChannelLogo';
 import { carryNote } from './carry';
@@ -101,8 +101,13 @@ export function ReviewModal({
    * rather than gating it: the branch is already on the remote and this is
    * where its address is, since a promote that closes the card takes the
    * pull request's URL with it.
+   *
+   * Seeded from the job rather than only from the reply, so reopening the card
+   * of an already-promoted job shows the pull request again instead of losing
+   * it to the event feed. It is stored on the job for exactly that reason and
+   * was being written and never read — the shape D-030 records.
    */
-  const [pushed, setPushed] = useState<PromotedTo | null>(null);
+  const [pushed, setPushed] = useState<PromotedTo | null>(job.promotedTo ?? null);
   /** The name this world installs under; editable, because a clash must be fixable here. */
   const [packSlug, setPackSlug] = useState(job.packDraft?.slug ?? '');
   /** What carrying on would cost, fetched from the route that will charge it. */
@@ -983,29 +988,21 @@ export function ReviewModal({
           )}
           {pushed && (
             <div className="rv-standing">
-              <div className="rv-standing-t">
-                {pushed.prUrl ? `Pull request #${pushed.prNumber} opened.` : 'The branch is pushed.'}
-              </div>
+              {/* The same sentence the event feed records, from the one
+                  function both ask — the card and the record cannot disagree
+                  about what Approve did (D-275). */}
+              <div className="rv-standing-t">{promotedLine(pushed)}</div>
               <p className="rv-standing-b">
-                <code>{pushed.branch}</code>
                 {pushed.prUrl ? (
-                  <>
-                    {' · '}
-                    <a href={pushed.prUrl} target="_blank" rel="noreferrer">
-                      {pushed.prUrl}
-                    </a>
-                  </>
-                ) : null}
-                {/* Half a promote, said as half a promote: the work is on the
-                    remote and the pull request is not, and neither "approved"
-                    nor an error would be true (D-275). */}
-                {pushed.prError ? (
-                  <>
-                    <br />
-                    The pull request was not opened — {pushed.prError}. Open it from the branch, or
-                    paste a token that can.
-                  </>
-                ) : null}
+                  <a href={pushed.prUrl} target="_blank" rel="noreferrer">
+                    {pushed.prUrl}
+                  </a>
+                ) : (
+                  /* Half a promote, said as half a promote: the work is on the
+                     remote and the pull request is not, and neither "approved"
+                     nor an error would be true (D-275). */
+                  <>Open it from the branch on GitHub, or paste a token that can.</>
+                )}
               </p>
               <div className="rv-standing-btns">
                 <button onClick={decided}>Close</button>

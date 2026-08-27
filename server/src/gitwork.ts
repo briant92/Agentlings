@@ -60,19 +60,20 @@ export async function cloneRepo(
  * than from the checked-out branch because a job that carries a sandbox
  * forward (D-139) may already be sitting on a promote's branch.
  */
-export function baseBranch(sandboxDir: string): string {
+export async function baseBranch(sandboxDir: string): Promise<string> {
   const repo = repoDir(sandboxDir);
   try {
-    const head = execFileSync('git', ['-C', repo, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    return head.replace(/^origin\//, '');
+    const { stdout } = await run('git', [
+      '-C',
+      repo,
+      'symbolic-ref',
+      '--short',
+      'refs/remotes/origin/HEAD',
+    ]);
+    return stdout.trim().replace(/^origin\//, '');
   } catch {
-    return execFileSync('git', ['-C', repo, 'rev-parse', '--abbrev-ref', 'HEAD'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    const { stdout } = await run('git', ['-C', repo, 'rev-parse', '--abbrev-ref', 'HEAD']);
+    return stdout.trim();
   }
 }
 
@@ -99,13 +100,23 @@ export async function pushBranch(
   const who = ['-c', 'user.name=Agentlings', '-c', 'user.email=agentlings@localhost'];
   await run('git', [...at, 'checkout', '-B', opts.branch]);
   await run('git', [...at, 'add', '-A']);
-  const { stdout: staged } = await run('git', [...at, 'diff', '--cached', '--name-only'], {
-    maxBuffer: MAX_DIFF_BYTES,
-  });
-  if (staged.trim()) {
+  // `--quiet` exits non-zero when there *is* something staged, so nothing has
+  // to be buffered to find out — a name list is not a thing worth reading into
+  // memory to ask a yes/no question.
+  const staged = await run('git', [...at, 'diff', '--cached', '--quiet']).then(
+    () => false,
+    () => true,
+  );
+  if (staged) {
     await run('git', [...at, ...who, 'commit', '-m', opts.message]);
   }
-  await run('git', [...at, ...auth.config, 'push', '--force-with-lease', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
+  // A plain push, deliberately. `--force-with-lease` was here and bought
+  // nothing: the remote is a bare URL with no remote-tracking ref to hold a
+  // lease against, so it is an unconditional force wearing a safe name — and
+  // a branch someone else already pushed under this name should stop a
+  // promote loudly rather than be overwritten. Nothing needed the force:
+  // pushing the same commit twice is a no-op either way.
+  await run('git', [...at, ...auth.config, 'push', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
     env: auth.env,
   });
 }
@@ -200,15 +211,42 @@ export function patchInFlight(jobId: string): boolean {
  * The two results are kept apart on purpose. The push is the durable half; if
  * the pull request is refused the branch is still on the remote, and saying
  * so is the only true answer.
+ *
+ * Returns null when there is nothing to promote, which is the same answer the
+ * local path gives by finding no `DIFF.patch`.
  */
 export async function promoteToRemote(
   sandboxDir: string,
   target: { url: string; owner: string; name: string },
   job: { id: string; title: string; prompt: string },
   deps: { http: Http; token?: string },
-): Promise<PromotedTo> {
+): Promise<PromotedTo | null> {
   const branch = branchName(job.id, job.title);
-  const base = baseBranch(sandboxDir);
+  const base = await baseBranch(sandboxDir);
+  // The reviewer must never approve less than gets pushed.
+  //
+  // `DIFF.patch` — the whole of what review shows — is the clone's *working
+  // tree* against its index. The push carries the clone's HEAD. Those are the
+  // same change only while HEAD is still the commit that was cloned, and
+  // nothing stops a session from running `git commit` in its own clone: no
+  // brief forbids it and `Bash` is right there. A run that did would have had
+  // its commits pushed unseen, and a run that committed *everything* would
+  // have left no patch at all, so promote would have pushed nothing while the
+  // feed said "approved" — the review truthful about neither.
+  //
+  // So the clone is checked against what was cloned, and a promote that cannot
+  // be described by the diff the reviewer read does not happen. Found by the
+  // spec review, not by the eight tests that were already green.
+  const [{ stdout: head }, { stdout: cloned }] = await Promise.all([
+    run('git', ['-C', repoDir(sandboxDir), 'rev-parse', 'HEAD']),
+    run('git', ['-C', repoDir(sandboxDir), 'rev-parse', `refs/remotes/origin/${base}`]),
+  ]);
+  if (head.trim() !== cloned.trim()) {
+    throw new Error(
+      `this run committed inside its own clone, and the review only ever showed what it left uncommitted — nothing has been pushed. Its work is in the job's sandbox, on ${base}`,
+    );
+  }
+  if (!existsSync(patchFile(sandboxDir))) return null;
   await pushBranch(sandboxDir, {
     remote: target.url,
     branch,

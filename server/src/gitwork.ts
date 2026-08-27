@@ -19,21 +19,58 @@ export function patchFile(sandboxDir: string): string {
 }
 
 /**
- * Git is never given the token in an argument or in a URL: `-c` config set
- * before the subcommand is transient — unlike `clone --config`, it is not
- * written into the new repository — so the clone the session then works in
- * holds a plain remote and no credential of the operator's.
+ * Git is never given the token in an argument, in a URL, or in the clone.
+ *
+ * It rides in `GIT_CONFIG_KEY_n`/`GIT_CONFIG_VALUE_n` — config injected through
+ * the environment, which git applies to the process and never writes into the
+ * repository. The clone the session then works in holds a plain remote and no
+ * credential of the operator's.
+ *
+ * This began as `-c http.extraHeader=…` before the subcommand, which is also
+ * transient and also never written to the repository — and was **wrong**, for
+ * a reason no test reached and the live proof produced on its first run: `-c`
+ * puts the credential in **argv**, and `execFile`'s rejection carries argv in
+ * its `message` and `cmd`. A push that failed therefore printed
+ * `Authorization: Basic <base64 of x-access-token:PAT>` into the route's error,
+ * the review card and the log. The mechanism that kept the token out of the
+ * clone handed it to the failure path instead. argv is also world-readable on
+ * Linux while the command runs, which the environment is not.
  *
  * `GIT_TERMINAL_PROMPT=0` is the other half: without it a private repo and no
  * token is not a failure, it is a server waiting forever for a username.
  */
-function gitAuth(token?: string): { config: string[]; env: NodeJS.ProcessEnv } {
-  const config = ['-c', 'credential.helper='];
+function gitAuth(token?: string): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'credential.helper',
+    GIT_CONFIG_VALUE_0: '',
+  };
   if (token) {
     const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
-    config.push('-c', `http.extraHeader=Authorization: Basic ${basic}`);
+    env.GIT_CONFIG_COUNT = '2';
+    env.GIT_CONFIG_KEY_1 = 'http.extraHeader';
+    env.GIT_CONFIG_VALUE_1 = `Authorization: Basic ${basic}`;
   }
-  return { config, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } };
+  return env;
+}
+
+/**
+ * Every git failure this module reports, with the credential taken out of it.
+ *
+ * Belt and braces beside `gitAuth`: the token is no longer in anything git is
+ * handed on the command line, and an error that carried one anyway would be a
+ * disclosure rather than a bug report. So the token and its base64 are struck
+ * from the message before it can become an HTTP response.
+ */
+function scrubbed(err: unknown, token?: string): Error {
+  const message = err instanceof Error ? err.message : String(err);
+  if (!token) return new Error(message);
+  const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+  return new Error(
+    message.split(token).join('[GITHUB_TOKEN]').split(basic).join('[GITHUB_TOKEN]'),
+  );
 }
 
 /** Cheap local clone the agent can tear up without touching the original. */
@@ -46,8 +83,11 @@ export async function cloneRepo(
   const where = repoTarget(repoPath);
   if (where.kind === 'unsupported') throw new Error(where.reason);
   if (where.kind === 'url') {
-    const auth = gitAuth(token);
-    await run('git', [...auth.config, 'clone', where.url, target], { env: auth.env });
+    try {
+      await run('git', ['clone', where.url, target], { env: gitAuth(token) });
+    } catch (err) {
+      throw scrubbed(err, token);
+    }
   } else {
     await run('git', ['clone', '--local', '--no-hardlinks', where.path, target]);
   }
@@ -93,7 +133,6 @@ export async function pushBranch(
   opts: { remote: string; branch: string; message: string; token?: string },
 ): Promise<void> {
   const repo = repoDir(sandboxDir);
-  const auth = gitAuth(opts.token);
   const at = ['-C', repo];
   // Its own identity, not the operator's: a container has no git config at
   // all, and a commit with no author is a promote that fails at the last step.
@@ -116,9 +155,13 @@ export async function pushBranch(
   // a branch someone else already pushed under this name should stop a
   // promote loudly rather than be overwritten. Nothing needed the force:
   // pushing the same commit twice is a no-op either way.
-  await run('git', [...at, ...auth.config, 'push', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
-    env: auth.env,
-  });
+  try {
+    await run('git', [...at, 'push', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
+      env: gitAuth(opts.token),
+    });
+  } catch (err) {
+    throw scrubbed(err, opts.token);
+  }
 }
 
 /**

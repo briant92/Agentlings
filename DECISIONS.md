@@ -23341,14 +23341,80 @@ idiom of every persisted record in this project, `Job` most of all.
 After the round: **12 of 12 mutants caught**, 24 tests in `gitwork.test.ts` and
 20 in `github.test.ts`, `2776/2776` across the suite.
 
+### The credential leak, which only a real failure could show
+
+The transient `-c http.extraHeader=Authorization: Basic …` was **wrong**, and
+the live proof found it on its first run by doing the one thing 2776 passing
+tests had never done: *failing a push against a real remote*.
+
+`-c` before the subcommand keeps the credential out of the repository, which
+was the whole argument for it. It puts the credential in **argv** — and
+`execFile`'s rejection carries argv verbatim in its `message` and `cmd`. So the
+one path that reports trouble to a person, the route's `nothing was pushed:
+${detail}`, carried `Authorization: Basic <base64 of x-access-token:PAT>` into
+an HTTP response, the review card and the log. The mechanism that kept the
+token out of the clone handed it to the failure path instead. argv is also
+world-readable on Linux for the life of the command, which the environment
+is not.
+
+The token now rides in `GIT_CONFIG_KEY_n` / `GIT_CONFIG_VALUE_n` — config
+injected through the **environment**, applied to the process and never written
+to the repository, and never in argv. Beside it, `scrubbed()` strikes the token
+and its base64 out of any git error before it can leave this module. The two
+are independent: either alone prevents the disclosure, which is why a mutation
+of *either one* survives and only removing **both** fails the test. That is
+recorded rather than tidied away, because a single-mutant survivor here reads
+like a gap and is not one.
+
+**The maintainer's `GITHUB_TOKEN` was disclosed** in the session that found
+this, in decodable form, and must be rotated. That is the cost of finding it
+by running it rather than by reading it — and it is still the cheaper of the
+two ways to find out.
+
+Three process notes, all the same lesson:
+
+- **The first test written for this leak passed against the leak.** It called
+  `pushBranch` on a sandbox it had never cloned into, so the run died at
+  `checkout -B` and never reached the push. D-246's never-executing guard,
+  caught by mutating the code back to the shipped form and watching the test
+  stay green. It now clones first, and the mutation fails it.
+- **The token's own permissions were read off the wrong field.** The `GET
+  /repos/{o}/{n}` payload's `permissions` block describes the **authenticated
+  user's** access to the repository, not the grants of the token presented. It
+  said `push: true` for a fine-grained PAT that GitHub then refused with
+  `403 Permission … denied`. A token's reach is proven by pushing, not by
+  asking a field that answers a different question.
+- **The proof's own first run reported three faults that were all its own
+  instruments**: two branches "leaked" that were its own §4 branch, because
+  `branchName` slices `jobId` to eight characters and the script had built
+  three ids sharing a prefix; and the local-clone check tested the formatting
+  of `.git/config` rather than asking git. Fixed in the script, which is the
+  fourth time in this line that the instrument was the thing that was wrong.
+
+### The live proof
+
+`scripts/prove-repo-url.mts`, against the real github.com and a throwaway
+public repository, driving the functions the resolve route calls — no server,
+nothing mocked, the pull request read back off GitHub rather than off our own
+return value. **26/26, twice**, opening
+`briant92/agentlings-repo-url-proof#2` and `#3`.
+
+It covers the reader, the https clone and the credential's absence from it,
+that what the reviewer sees is what gets pushed, the branch and pull request
+verified on the remote with the default branch untouched, the
+committed-in-clone refusal reaching nothing, that a public repo clones with no
+token while the push without one fails rather than hangs, and the local-path
+path unchanged.
+
 ### Left standing
 
-- **The live box is owed.** #26's third acceptance criterion is a run against
-  the reference install with a throwaway public repository, output in the
-  closing comment. Nothing here has touched github.com: the proof is against
-  local bare repositories and an injected code host. Until that run happens
-  this entry records a mechanism that is tested, not a capability that is
-  proven — and by this repository's own rule those are different things.
+- **The hosted half of the live box is owed.** #26's third criterion asks for
+  the run to be made *on the reference install*. `prove-repo-url.mts` proves
+  the capability against the real github.com from this machine; the reference
+  install is keyless by D-273 and has neither a model credential to run a job
+  nor a `GITHUB_TOKEN` to push with, and giving it either contradicts "holds no
+  real keys". Doing it properly needs a fine-grained token scoped to the
+  throwaway repository alone. Named, not smuggled.
 - **github.com only.** The pull request is a GitHub API call, so a non-GitHub
   https URL is refused *by name* with a sentence rather than half-supported.
   Widening it is a ticket, not an oversight.

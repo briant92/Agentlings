@@ -302,6 +302,64 @@ describe('pushBranch', () => {
     expect(log.split('\n').filter(Boolean)).toHaveLength(1);
   });
 
+  /**
+   * The credential must not survive a *failure* (D-275). This shipped wrong:
+   * the token rode in `-c http.extraHeader=…` before the subcommand, which is
+   * transient and never written to the clone — and is **argv**, which
+   * `execFile` copies into the rejection's `message` and `cmd`. So the one
+   * path that reports trouble to the operator, `nothing was pushed: …`, put
+   * `Authorization: Basic <base64 of x-access-token:PAT>` into an HTTP
+   * response and a log. Found by the live proof on its first run against a
+   * real remote, by failing; every unit test here had only ever succeeded,
+   * which is D-017's population problem exactly.
+   */
+  it('never puts the token in a failure, in any encoding', async () => {
+    const token = 'ghp_averysecrettokenvalue';
+    const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+    // The clone has to exist, or this fails at `checkout -B` and never reaches
+    // the push — which is how the first version of this test passed against
+    // the very leak it was written for. D-246's shape, caught by mutating.
+    await cloneRepo(remote, sandbox);
+    writeFileSync(path.join(repoDir(sandbox), 'greet.js'), "console.log('Hello');\n");
+    await writeDiff(sandbox);
+    // A remote that cannot exist, so the push must fail with the token set.
+    const nowhere = path.join(root, 'no-such-remote.git');
+    let message = '';
+    try {
+      await pushBranch(sandbox, {
+        remote: nowhere,
+        branch: 'agentlings/leak-check',
+        message: 'Fix the greeting',
+        token,
+      });
+    } catch (err) {
+      message = err instanceof Error ? err.message : String(err);
+    }
+    expect(message, 'the push was supposed to fail').not.toBe('');
+    expect(message).not.toContain(token);
+    expect(message).not.toContain(basic);
+    // …and still says something a person can act on.
+    expect(message.length).toBeGreaterThan(10);
+  });
+
+  it('never puts the token in a failed clone either', async () => {
+    const token = 'ghp_averysecrettokenvalue';
+    const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+    let message = '';
+    try {
+      await cloneRepo(
+        'https://github.com/briant92/no-such-repo-anywhere-at-all.git',
+        path.join(root, 'doomed'),
+        token,
+      );
+    } catch (err) {
+      message = err instanceof Error ? err.message : String(err);
+    }
+    expect(message, 'the clone was supposed to fail').not.toBe('');
+    expect(message).not.toContain(token);
+    expect(message).not.toContain(basic);
+  });
+
   it('commits under its own identity, so a host with no git config can still promote', async () => {
     await cloneRepo(remote, sandbox);
     writeFileSync(path.join(repoDir(sandbox), 'greet.js'), "console.log('Hello');\n");

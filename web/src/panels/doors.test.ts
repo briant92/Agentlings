@@ -119,6 +119,20 @@ describe('a door this install cannot offer (#30)', () => {
     expect(doorChoices(hosted).map((c) => c.name)).toEqual(['web']);
   });
 
+  // …and not because it is supervised, which is the only reason a door is
+  // unavailable TODAY. The mutation round found this: dropping the
+  // `unavailable` guard from `doorChoices` changed nothing, because the
+  // supervised guard beside it was doing all the work. The rule being pinned
+  // is "never offer a door this install cannot open", not "never offer a
+  // supervised one" — so the door under test here is an ordinary one.
+  it('nor is an ORDINARY door the install cannot offer', () => {
+    const chips = doorChoices([
+      connection({ name: 'web' }),
+      connection({ name: 'scanner', label: 'Read scans', unavailable: 'needs Windows' }),
+    ]);
+    expect(chips.map((c) => c.name)).toEqual(['web']);
+  });
+
   it('is not offered as the watch choice either', () => {
     expect(watchChoices(here).map((c) => c.name)).toEqual(['browser-act']);
     expect(watchChoices(hosted)).toEqual([]);

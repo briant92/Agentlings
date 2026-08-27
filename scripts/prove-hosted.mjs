@@ -652,16 +652,35 @@ async function hostedMode() {
   const paid = process.argv.includes('--paid');
   const BIN = railwayBin();
 
-  /** One CLI call. Output is returned, never printed — variables come back through here. */
-  const railway = (args) =>
+  /**
+   * One CLI call. Output is returned, never printed — variables come back
+   * through here.
+   *
+   * Bounded, because `railway ssh` against a container that is restarting does
+   * not fail and does not return: a run left five of them alive and sat in a
+   * wait loop that could not advance. A call that has not answered in two
+   * minutes is a hung call, and the caller decides what that means.
+   */
+  const railway = (args, timeoutMs = 120_000) =>
     new Promise((resolve) => {
       const child = spawn(BIN, args);
       let out = '';
       let err = '';
+      let done = false;
+      const finish = (result) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(result);
+      };
+      const timer = setTimeout(() => {
+        child.kill('SIGKILL');
+        finish({ code: -2, out, err: `timed out after ${timeoutMs / 1000}s` });
+      }, timeoutMs);
       child.stdout.on('data', (d) => (out += d));
       child.stderr.on('data', (d) => (err += d));
-      child.on('error', (e) => resolve({ code: -1, out, err: String(e) }));
-      child.on('close', (code) => resolve({ code: code ?? 1, out, err }));
+      child.on('error', (e) => finish({ code: -1, out, err: String(e) }));
+      child.on('close', (code) => finish({ code: code ?? 1, out, err }));
     });
 
   /**
@@ -699,7 +718,9 @@ async function hostedMode() {
    * first version of this did exactly that.
    */
   const inContainer = async (source, ...args) => {
-    const r = await railway(['ssh', '--service', service, 'node', '-e', source, ...args]);
+    // 45s: a shell into a live container answers in a few seconds, and one
+    // into a container that is coming back answers not at all.
+    const r = await railway(['ssh', '--service', service, 'node', '-e', source, ...args], 45_000);
     if (r.code !== 0) throw new Error(`ssh failed: ${r.err.trim().split('\n').pop()}`);
     return r.out.trim();
   };

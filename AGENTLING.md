@@ -1608,10 +1608,17 @@ job sent itself 906 ms after finishing, no reviewer in the loop (D-101).
 What is true today:
 
 - **Localhost only, and since D-127 that is a bind rather than a habit.**
-  No multi-user, no auth, no hosting, no telemetry. `serve()` pins
-  `hostname: '127.0.0.1'` — measured 2026-08-09 by netstat against the live
+  No multi-user, no hosting, no telemetry. `serve()` is handed
+  `listenPolicy().hostname`, which is `127.0.0.1` unless `AGENTLINGS_BIND`
+  says otherwise — measured 2026-08-09 by netstat against the live
   server: loopback only, after the first architect run found the default
   had been listening on every interface (G7).
+- **An install that binds anything else must have a password** (D-271). The
+  gate is off by default and that is safe only because the bind is loopback,
+  so the two are joined: `AGENTLINGS_BIND` set to a public address with no
+  `AGENTLINGS_PASSWORD` and the server refuses to listen at all, printing the
+  reason as its one line. There is no arrangement of the two that puts an
+  ungated server where anyone can reach it.
 - **`.agentlings/` is gitignored.** The app's memory is not the repository's:
   the ledger, the sandboxes, the rosters, the lessons and everything fetched
   stay out of version control.
@@ -1983,7 +1990,8 @@ override. The subset rule is the same; the shape is stricter.
 |---|---|---|
 | `MAX_STATIONS` | 5 | Jobs visibly in progress; extras wait |
 | `TICK_MS` | 100 | Sim tick — 10 Hz on the wire |
-| `SERVER_PORT` | 4600 | API and WebSocket; the runner calls back here for fetches |
+| `DEFAULT_PORT` | 4600 | API and WebSocket; the runner calls back here for fetches. `PORT`, or `AGENTLINGS_PORT` when both are set, moves it (D-271) |
+| `DEFAULT_BIND` | `127.0.0.1` | The interface `serve()` binds; `AGENTLINGS_BIND` moves it, and moving it makes a password compulsory (D-271) |
 | `WORLD_WIDTH` | 1000 | Logical units the client scales |
 | `SCHEDULE_SWEEP_MS` | 30 s | How often due schedules are looked for; boot is a sweep too (D-103) |
 | `DECODE_TIMEOUT_MS` | 5 s | A plate that has not decoded by then is a plate that failed to load (D-185) |

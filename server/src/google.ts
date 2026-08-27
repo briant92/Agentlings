@@ -72,6 +72,14 @@ export interface PendingFlow {
   clientId: string;
   clientSecret: string;
   verifier: string;
+  /**
+   * The URI this walk was begun with. Kept because Google requires the
+   * exchange to present the *same* one it was given, and since #28 that is a
+   * function of the request rather than a constant — so the callback, which is
+   * a different request, must not re-derive it. Two requests that disagree
+   * would be a `redirect_uri_mismatch` nobody could read off either one.
+   */
+  redirectUri: string;
   at: number;
 }
 
@@ -93,7 +101,7 @@ export class FlowStore {
     const state = base64url(randomBytes(24));
     const verifier = base64url(randomBytes(48));
     const challenge = base64url(createHash('sha256').update(verifier).digest());
-    this.flows.set(state, { clientId, clientSecret, verifier, at: now });
+    this.flows.set(state, { clientId, clientSecret, verifier, redirectUri, at: now });
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,

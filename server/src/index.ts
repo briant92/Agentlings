@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
   Agentling,
@@ -49,12 +49,13 @@ import {
   recordApproval,
   setAuto,
 } from './approvals';
-import { UNSAFE_METHODS, originAllowed, originRefusal } from './origin';
+import { UNSAFE_METHODS, googleRedirectUri, originAllowed, originRefusal } from './origin';
 import {
   attemptLogin,
   clearedCookie,
   gateEnabled,
   gateRefusal,
+  listenPolicy,
   newLoginGate,
   requestAllowed,
   requestIsSecure,
@@ -361,7 +362,6 @@ import {
   runnerRole,
 } from './work';
 
-const PORT = 4600;
 /**
  * Where this install keeps things — one call, `installpaths.ts`, which is the
  * only place any of these is derived. `AGENTLINGS_HOME` moves the operator's
@@ -416,6 +416,28 @@ try {
 } catch {
   // No .env yet — fine.
 }
+
+/**
+ * Whether this install may listen at all, and where — one call, `session.ts`,
+ * which is the only place the bind and the port are derived (#28). *No
+ * password, no public interface*: an install that binds anything but loopback
+ * without `AGENTLINGS_PASSWORD` does not start, and the reason is its one
+ * line.
+ *
+ * **Directly after the secrets file is loaded, and that placement is the whole
+ * of it being correct.** The password may live in either place — the host's
+ * environment on a container, `.env` on this machine — and a policy asked
+ * before the file was read would refuse an install whose operator had set a
+ * password perfectly well. It is also as early as it can be: everything below
+ * takes minutes to build, and an install that is not allowed to exist should
+ * say so before it starts loading roles.
+ */
+const LISTEN = listenPolicy();
+if (!LISTEN.listen) {
+  console.error(`[agentlings] ${LISTEN.reason}`);
+  process.exit(1);
+}
+const PORT = LISTEN.port;
 
 const registry = new RoleRegistry(ROLES_DIR);
 registry.load();
@@ -792,7 +814,10 @@ const app = new Hono();
  * came back.
  */
 app.use('*', async (c, next) => {
-  if (UNSAFE_METHODS.has(c.req.method) && !originAllowed(c.req.header('origin'))) {
+  if (
+    UNSAFE_METHODS.has(c.req.method) &&
+    !originAllowed(c.req.header('origin'), c.req.header('host'))
+  ) {
     return c.json({ error: originRefusal }, 403);
   }
   return next();
@@ -1239,7 +1264,14 @@ app.delete('/api/settings/connections/:name/secrets', async (c) => {
  * which is D-078's rule stretched over two requests.
  */
 const googleFlows = new FlowStore();
-const GOOGLE_REDIRECT = `http://127.0.0.1:${PORT}/api/oauth/google/callback`;
+/**
+ * Where Google sends the browser back — a function of the request that started
+ * the walk, not a constant (#28, user story 13). An install on its own domain
+ * has to name that domain, and only the request knows it. On loopback it is
+ * still the literal this replaced, which is what keeps Connect working here.
+ */
+const googleRedirect = (c: Context): string =>
+  googleRedirectUri(c.req.header('host'), c.req.header('x-forwarded-proto'), PORT);
 
 app.post('/api/settings/connections/google/oauth/start', async (c) => {
   const body = await c.req.json<{ clientId?: string; clientSecret?: string }>();
@@ -1255,7 +1287,7 @@ app.post('/api/settings/connections/google/oauth/start', async (c) => {
     const problem = secretValueProblem(value);
     if (problem) return c.json({ error: `${label}: ${problem}` }, 400);
   }
-  const { url } = googleFlows.begin(clientId, clientSecret, GOOGLE_REDIRECT, Date.now());
+  const { url } = googleFlows.begin(clientId, clientSecret, googleRedirect(c), Date.now());
   return c.json({ url });
 });
 
@@ -1290,7 +1322,9 @@ app.get('/api/oauth/google/callback', async (c) => {
     verifier: flow.verifier,
     clientId: flow.clientId,
     clientSecret: flow.clientSecret,
-    redirectUri: GOOGLE_REDIRECT,
+    // The one the walk was begun with, not this request's — Google matches it
+    // exactly, and the two requests can arrive at different addresses.
+    redirectUri: flow.redirectUri,
   });
   if ('error' in got) {
     return c.html(oauthPage('Not connected', `${got.error} You can close this tab.`), 400);
@@ -5228,8 +5262,13 @@ app.post('/api/templates/install', async (c) => {
 // The bind is the whole boundary: the /internal doors carry no auth, and
 // with no hostname this listened on 0.0.0.0 — every route reachable from
 // the LAN (found by the first architect run, measured by netstat; D-127).
-const server = serve({ fetch: app.fetch, port: PORT, hostname: '127.0.0.1' }, (info) => {
-  console.log(`[agentlings] server on http://localhost:${info.port}`);
+// Since #28 the address is `LISTEN`'s, decided at the top of this file, and
+// the one arrangement that would spend D-127's reason — a public interface
+// with the gate off — never reaches here.
+const server = serve({ fetch: app.fetch, port: PORT, hostname: LISTEN.hostname }, (info) => {
+  console.log(
+    `[agentlings] server on ${LISTEN.hostname}:${info.port} — gate ${LISTEN.gate ? 'on' : 'off'}`,
+  );
 });
 
 // Refresh the library in the background when the cache is old; never on the
@@ -5262,7 +5301,7 @@ wss.on('connection', (socket, req) => {
   // Before the level is even read: this socket is sent every job in the level
   // and the whole event log the moment it opens, and a WebSocket handshake is
   // exempt from the same-origin policy (D-239).
-  if (!originAllowed(req.headers.origin)) {
+  if (!originAllowed(req.headers.origin, req.headers.host)) {
     socket.close(SOCKET_FORBIDDEN_ORIGIN, 'origin not allowed');
     return;
   }

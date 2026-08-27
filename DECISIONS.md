@@ -280,6 +280,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-268 — 2026-08-26 — The wire file, built: the run says who and how much, the allowlist says where, and BCI's is the only specification anybody publishes](#d-268--2026-08-26--the-wire-file-built-the-run-says-who-and-how-much-the-allowlist-says-where-and-bcis-is-the-only-specification-anybody-publishes)
 - [D-269 — 2026-08-26 — The desk says what it refuses: the rows a sentence claims, read as it is typed and shown under the plan in the job board's own words, verbatim — a line and never a block, with the never-channel left to the ask card that already says it better](#d-269--2026-08-26--the-desk-says-what-it-refuses-the-rows-a-sentence-claims-read-as-it-is-typed-and-shown-under-the-plan-in-the-job-boards-own-words-verbatim--a-line-and-never-a-block-with-the-never-channel-left-to-the-ask-card-that-already-says-it-better)
 - [D-270 — 2026-08-26 — One module says where an install keeps things: `AGENTLINGS_HOME` moves the operator's half and never the product's, and the environment beats the secrets file](#d-270--2026-08-26--one-module-says-where-an-install-keeps-things-agentlings_home-moves-the-operators-half-and-never-the-products-and-the-environment-beats-the-secrets-file)
+- [D-271 — 2026-08-26 — No password, no public interface: the bind decides whether the gate is optional, and the request carries its own address](#d-271--2026-08-26--no-password-no-public-interface-the-bind-decides-whether-the-gate-is-optional-and-the-request-carries-its-own-address)
 
 ## By theme
 
@@ -991,7 +992,15 @@ entry updates one file rather than two.
   (data directory, secrets file, uploads) and never the product's (roles,
   skills, catalog), with the precedence measured rather than assumed: the
   environment beats the same name in the secrets file, so a host variable
-  quietly outlives a key pasted into Settings. D-169 is untouched by it
+  quietly outlives a key pasted into Settings. D-169 is untouched by it — and
+  **D-271, which joins the gate to the bind**: *no password, no public
+  interface*, so an install that binds anything but loopback without
+  `AGENTLINGS_PASSWORD` refuses to listen and says why in one line, D-127's
+  loopback reason having been spent the moment a host binds every interface.
+  The same entry makes the request carry its own address — the origin check
+  accepts an origin equal to the request's `Host` (equality, never a suffix),
+  and the Google redirect is a function of the request with loopback still
+  returning the old constant. D-169 is untouched by that one too
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -22171,3 +22180,150 @@ hand against this repo's own install and are not modules of an install.
 
 Suites: server 2,637 passed (105 files), web 363 passed (38 files), typecheck
 clean.
+
+## D-271 — 2026-08-26 — No password, no public interface: the bind decides whether the gate is optional, and the request carries its own address
+
+Slice 2 of the publish line (issue #28, spec #27). **It does not reopen
+D-169** either — nothing is hosted by this entry, no account is touched, and
+the maintainer's install boots on exactly the address it always did. It is the
+slice that makes an install anybody else deploys survivable.
+
+### What was wrong
+
+Wave 0's gate ships **off** when nothing sets `AGENTLINGS_PASSWORD` (D-241),
+and that is deliberate: a default-closed gate would lock the operator out of a
+server already running, possibly with paid jobs in flight, on the strength of a
+commit they had not read. It is safe here for exactly one reason, and the
+reason is not the gate — it is D-127, *the loopback bind is the security*: the
+only caller who can reach an ungated server is already sitting at it.
+
+An install on a host has to bind every interface. That spends D-127's reason
+entirely, and the two facts had never been joined anywhere in the code — they
+were joined only by a habit of not passing a hostname. An off-by-default gate
+on `0.0.0.0` is a server anyone with the URL can drive: `POST /jobs/:id/resolve`
+is Approve, which is the send (D-075).
+
+Two smaller things were wrong the same way, and are in this entry because they
+are the same fact — *the request carries its own address*:
+
+- `originAllowed` knew three addresses: loopback, `.ts.net`, nothing else. An
+  operator's own domain is a name this repository cannot know, so a list was
+  never going to be the answer.
+- The Google redirect URI was `http://127.0.0.1:4600/api/oauth/google/callback`,
+  a constant. It is right for exactly one install.
+
+### What was built
+
+**The listen policy**, beside the gate check in `server/src/session.ts`,
+because it is the same question asked one level up. The environment in; one of
+three out:
+
+| bind | password | result |
+|---|---|---|
+| loopback | none | listen, gate off — today, unchanged |
+| anything | set | listen, gate on |
+| non-loopback | none | **refuse**, with the reason |
+
+`AGENTLINGS_BIND` names the interface and defaults to `127.0.0.1`. The port has
+two names: `PORT`, which every host that could run this template injects, so a
+deploy needs no port wiring at all; and `AGENTLINGS_PORT`, which wins, because
+a variable somebody typed beats one a platform assumed. A value that is not a
+port falls back to 4600 rather than being obeyed — `Number('')` is 0 and
+`Number('80.5')` is not a port, and binding either would be a listener nobody
+asked for.
+
+It is **tied to the bind, not to a hosted-mode flag**, because a flag is a
+second thing that can be wrong. There is no arrangement of these variables that
+puts an ungated server on a public interface.
+
+It takes the environment and not a bind address, though the bind is what it
+decides on. That is D-270's lesson applied one module along: if boot passed the
+address in, boot would be deriving it, and the policy and the listener could
+then disagree about what was bound. One call answers both, and `serve()` is
+handed `LISTEN.hostname`.
+
+**Where boot calls it is load-bearing and was got wrong first.** The obvious
+place is where `const PORT = 4600` used to sit, at the top of `index.ts` — and
+there it is sixty lines *above* `process.loadEnvFile`, so an install whose
+password lives in `.env` (which is this machine, and every install that pastes
+one into Settings) would have been refused for not having the password it has.
+It is called immediately after the secrets file is loaded and immediately
+before roles start loading: as late as correctness demands and as early as it
+allows.
+
+**The origin check takes the request's `Host`**, and accepts an origin whose
+hostname equals it — equality, never a suffix, which is the same trap the
+`.ts.net` line already had to dodge and which `evilhorde.example.com` is the
+shape of here. The argument is **required, not optional**, so a call site that
+forgets it is a type error rather than a quietly narrower check. A browser sets
+`Host` to the authority it connected to and page script cannot change it, which
+is the same property that makes `Origin` worth reading at all. What that leaves
+is DNS rebinding — a name the attacker controls pointed at the install's
+address, so the browser sends both headers honestly — and the answer to that
+one is not in the origin check but in the listen policy above, which is why a
+public install must have a password.
+
+`isLoopbackHost` is **one function for the two callers**, the origin check and
+the listen policy, rather than the two nearly-identical inline lists they were
+about to be (the duplicating-a-notion rule). It widened one thing on the way:
+the whole `127.0.0.0/8` block now counts as this machine, not just the `.1` of
+it — every address in it routes nowhere else.
+
+**The Google redirect is a function of the request** (`googleRedirectUri`), and
+**loopback still returns the old constant**, which is a branch rather than an
+apology. Google's console holds one registered redirect URI per client; this
+machine reaches its own app through three origins — Vite on `:5173`, the API on
+`:4600`, the tailnet name — and only the second is registered. Without that
+branch, pressing Connect through the dev server would have started sending
+Google `http://127.0.0.1:5173/...` and Connect would have broken here the day
+this shipped. A request from anywhere else names the address it arrived at, and
+assumes `https` when no proxy said otherwise: the direction that costs nothing,
+since Google refuses a non-loopback redirect URI that is not https.
+
+**One consequence had to be followed:** the flow now carries its `redirectUri`
+(`PendingFlow`), because Google matches the exchange's URI against the one the
+walk was begun with, and the callback is a *different request* that could
+arrive at a different address. Re-deriving it would have been a
+`redirect_uri_mismatch` readable off neither request.
+
+### Evidence
+
+`node scripts/prove-hosted.mjs --local` — **26/26 PASS, live, run twice**,
+against a server it starts itself on a temp `AGENTLINGS_HOME` and port 4611, so
+it can never be mistaken for the maintainer's install or wake it. The sequence
+the ticket asked for, in order: refuse, accept, own-origin, foreign-origin,
+plus the redirect.
+
+    PASS  the server exits instead of listening  - exit=1
+    PASS  and says it once  - "[agentlings] refusing to listen on 0.0.0.0: an
+          install anyone can reach needs a password. Set AGENTLINGS_PASSWORD to
+          a password of your own, or unset AGENTLINGS_BIND to listen on
+          127.0.0.1 and nothing else."
+    PASS  the boot line says both  - "[agentlings] server on 0.0.0.0:4611 - gate on"
+    PASS  is not refused as cross-origin  - status=200
+    PASS  a host that ends in the same letters is refused  - status=403
+    PASS  names the address the request arrived at  - "https://horde.example.test:4611/api/oauth/google/callback"
+    PASS  and reproduces the old constant on loopback  - "http://127.0.0.1:4611/api/oauth/google/callback"
+
+**The instrument had to be rebuilt mid-run, and that is the finding worth
+keeping.** The first version sent its own-origin POST with `fetch` and a `Host`
+header — and `Host` is a forbidden header name in the Fetch standard, so undici
+silently replaced it with the address it had dialled. The script therefore
+"proved" the refusal it was trying to disprove: a `403` that looked like a real
+defect in the new branch and was an artefact of the instrument. Rewritten on
+`node:http`, where we have to be the browser by hand. *A negative result from an
+instrument you just built is a claim about the instrument first.*
+
+**The never-executing-guard shape, called out.** The refuse branch is reached
+by `listenPolicy({ AGENTLINGS_BIND: '0.0.0.0' })`, and the test asserts the
+sentence rather than the boolean — the reason names the address, the variable
+that fixes it, and the variable that undoes it, because a container that exits
+prints that line and nothing else.
+
+Suites: server 2,658 passed (105 files), web 363 passed (38 files), typecheck
+clean.
+
+**Owed, and it cannot be paid from a session:** `prove-wave0.mjs` on a
+*restarted* maintainer install. Nothing was listening on 4600 while this was
+built, so there was no live session to endanger and none to test against; the
+box is Brian's next `npm run serve`.

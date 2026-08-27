@@ -19,15 +19,75 @@
  * script, which is exactly the attacker this stops; a non-browser client can
  * put anything it likes in the header, and for that one the network boundary
  * (loopback bind, the tailnet, never `funnel`) is still the whole answer.
+ *
+ * Since #28 this module also answers **what address is this install reached
+ * at**, because that turned out to be the same question asked twice: the
+ * origin check needs it to accept an install's own domain, and Google needs it
+ * to redirect a consent walk back. Both take it from the request rather than
+ * from a list, because a template others self-host cannot know their names.
  */
+
+/**
+ * The hostnames that mean *this machine and nothing else*.
+ *
+ * One function for the two places that ask — the origin check, which asks of
+ * an `Origin`, and the listen policy, which asks of a bind address. They are
+ * the same notion and were nearly written twice; the difference that matters
+ * is only that `0.0.0.0` and `::` are addresses you can *bind* and not ones a
+ * browser can *arrive from*, and both are false here either way, which is the
+ * answer the listen policy needs.
+ *
+ * The whole `127.0.0.0/8` block counts, not just the `.1` of it — every
+ * address in it routes nowhere but here.
+ */
+export function isLoopbackHost(host: string | null | undefined): boolean {
+  if (!host) return false;
+  // A bracketed IPv6 literal is how a `Host` header carries one.
+  const name = host.trim().toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
+  if (name === 'localhost' || name === '::1') return true;
+  const parts = name.split('.');
+  if (parts.length !== 4 || parts[0] !== '127') return false;
+  return parts.every((p) => /^\d{1,3}$/.test(p) && Number(p) <= 255);
+}
+
+/**
+ * The hostname a `Host` header names, lowercased, or null when there is not
+ * one to read. Parsed rather than split on `:`, so a bracketed IPv6 literal
+ * comes back as the address and not as a fragment of one.
+ */
+function hostHeaderName(hostHeader: string | null | undefined): string | null {
+  const raw = hostHeader?.trim();
+  if (!raw) return null;
+  try {
+    const name = new URL(`http://${raw}`).hostname.toLowerCase();
+    return name === '' ? null : name;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * A missing `Origin` is allowed on purpose. Browsers always send one on a
  * WebSocket handshake and on a cross-origin unsafe request, so absence means a
  * non-browser caller: curl, the test suite, and the spawned runner calling
  * back into `/internal/*`. Refusing those would break the app to stop nobody.
+ *
+ * `requestHost` is the request's own `Host` header, and it is required rather
+ * than optional so that a call site which forgets it is a type error instead of
+ * a quietly narrower check. What it buys is the case a self-hosted install
+ * cannot get any other way (#28, user story 16): the operator picked a domain
+ * this repository never heard of, and the request itself is the only thing
+ * that knows it. A browser sets `Host` to the authority it connected to and
+ * page script cannot change it — the same property that makes `Origin` worth
+ * reading. What that leaves is DNS rebinding, where a name the attacker
+ * controls is pointed at the install's address so the browser sends both
+ * headers honestly; the answer to that one is not here but in the listen
+ * policy, which is why an install on a public interface must have a password.
  */
-export function originAllowed(origin: string | null | undefined): boolean {
+export function originAllowed(
+  origin: string | null | undefined,
+  requestHost: string | null | undefined,
+): boolean {
   if (!origin) return true;
   let host: string;
   try {
@@ -39,11 +99,15 @@ export function originAllowed(origin: string | null | undefined): boolean {
   }
   // The app is served from this machine (D-169, D-174) — any port, because the
   // dev server picks its own and the API answers on another.
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true;
+  if (isLoopbackHost(host)) return true;
   // The tailnet is the same trust boundary D-175 already drew, and the same
   // suffix the Vite config allows: a MagicDNS name, never a `100.x` literal.
   if (host === 'ts.net' || host.endsWith('.ts.net')) return true;
-  return false;
+  // The install's own address. Equality, never a suffix — the same trap the
+  // `.ts.net` line above had to dodge, and `evilhorde.example.com` is the
+  // shape of it here. The port is not compared, for the reason the loopback
+  // line does not compare it either: one install answers on more than one.
+  return host === hostHeaderName(requestHost);
 }
 
 /**
@@ -58,3 +122,44 @@ export const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 export const originRefusal =
   'This request came from another site, so it was refused. Open the app from ' +
   'localhost or your tailnet name.';
+
+/**
+ * Where Google sends the browser back. Named here rather than spelled into a
+ * route string, because two places must agree on it: this, and `isExempt` in
+ * the session module, which lets the callback through without a cookie (R-06).
+ */
+export const GOOGLE_CALLBACK_PATH = '/api/oauth/google/callback';
+
+/**
+ * The redirect URI a consent walk must carry, as a function of the request
+ * that started it (#28, user story 13).
+ *
+ * Until this ticket it was a constant naming `127.0.0.1`, which is right for
+ * exactly one install and wrong for every install anybody else deploys.
+ *
+ * **Loopback still means the constant**, and that is not a special case
+ * apologised for but the point of the branch. Google's console holds one
+ * registered redirect URI per client, this machine reaches its own app through
+ * three origins — Vite on `:5173`, the API on `:4600`, the tailnet name — and
+ * only the second is what is registered. A request arriving on any loopback
+ * address therefore answers with the API's own, which is what keeps Connect
+ * working here the day this ships (#28's rule: an unset variable changes
+ * nothing).
+ *
+ * A request that arrived anywhere else names the address it arrived at, and
+ * assumes https when no proxy said otherwise — the direction that costs
+ * nothing, since Google refuses a non-loopback redirect URI that is not https,
+ * so guessing http could only ever produce a URI no console would accept.
+ */
+export function googleRedirectUri(
+  requestHost: string | null | undefined,
+  forwardedProto: string | null | undefined,
+  apiPort: number,
+): string {
+  const name = hostHeaderName(requestHost);
+  if (name === null || isLoopbackHost(name)) {
+    return `http://127.0.0.1:${apiPort}${GOOGLE_CALLBACK_PATH}`;
+  }
+  const proto = (forwardedProto?.split(',')[0] ?? '').trim().toLowerCase() || 'https';
+  return `${proto}://${requestHost!.trim()}${GOOGLE_CALLBACK_PATH}`;
+}

@@ -67,6 +67,22 @@ describe('FlowStore', () => {
     expect(store.take(state, 2000)).toBeNull();
   });
 
+  /**
+   * #28: the redirect URI stopped being a constant and became a function of
+   * the request that began the walk, so the callback — a different request,
+   * possibly on a different address — has to be handed back the one Google was
+   * actually given. Google matches it exactly; a re-derivation that disagreed
+   * would fail the exchange with a mismatch nobody could read off either
+   * request.
+   */
+  it('hands the callback back the redirect URI the walk was begun with', () => {
+    const store = new FlowStore();
+    const own = 'https://horde.example.com/api/oauth/google/callback';
+    const { state, url } = store.begin('id', 'sec', own, 1000);
+    expect(new URL(url).searchParams.get('redirect_uri')).toBe(own);
+    expect(store.take(state, 2000)?.redirectUri).toBe(own);
+  });
+
   it('an abandoned tab expires', () => {
     const store = new FlowStore();
     const { state } = store.begin('id', 'sec', REDIRECT, 1000);

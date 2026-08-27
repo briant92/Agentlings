@@ -50,6 +50,14 @@ behavioral base lives there alone; this is the project half, split out on
   `server/scripts/dev-logged.mjs`, which launches tsx and so cannot import a
   `.ts` module; `dev-logged.test.ts` spawns it to pin the two together. The
   hand-run `scripts/backfill-*` and `scripts/prove-*` tools are outside this.
+- **No password, no public interface** (D-271): `listenPolicy()` in
+  `server/src/session.ts` decides whether this install may listen at all.
+  `AGENTLINGS_BIND` names the interface (default loopback) and the port comes
+  from `PORT`, or `AGENTLINGS_PORT` when both are set. Bind anything but
+  loopback without `AGENTLINGS_PASSWORD` and the server exits with the reason
+  as its one line. Unset, as on this machine, it is `127.0.0.1:4600` exactly as
+  before. Boot must call it **after** `process.loadEnvFile` — the password may
+  live in `.env`.
 - **The environment beats the secrets file.** `process.loadEnvFile` does not
   overwrite a name already in `process.env` (measured, D-270), so a variable
   set by the host wins over the same name in `.env` at the next restart — even

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { isLoopbackHost } from './origin';
 
 /**
  * Wave 0's credential: a password the user types once, exchanged for an
@@ -55,6 +56,88 @@ export function sessionPassword(env: NodeJS.ProcessEnv = process.env): string | 
 /** Whether requests are gated at all. */
 export function gateEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return sessionPassword(env) !== null;
+}
+
+/**
+ * The interface to bind. Unset is loopback, which is where this has always
+ * listened and the boundary D-127 measured.
+ */
+export const BIND_VAR = 'AGENTLINGS_BIND';
+export const DEFAULT_BIND = '127.0.0.1';
+
+/**
+ * The port, under two names.
+ *
+ * `PORT` is what every host that could run this template injects, so reading
+ * it means a deploy needs no port wiring at all. `AGENTLINGS_PORT` is what an
+ * operator writes when the host guessed wrong, and it wins — a variable
+ * somebody typed beats one a platform assumed.
+ */
+export const PORT_VAR = 'AGENTLINGS_PORT';
+export const HOST_PORT_VAR = 'PORT';
+export const DEFAULT_PORT = 4600;
+
+function bindAddress(env: NodeJS.ProcessEnv): string {
+  const named = env[BIND_VAR]?.trim() ?? '';
+  return named === '' ? DEFAULT_BIND : named;
+}
+
+/**
+ * A value that is not a port falls back to 4600 rather than being obeyed:
+ * `Number('')` is 0 and `Number('80.5')` is not a port, and binding either
+ * would be a listener nobody asked for on an address nobody named.
+ */
+function listenPort(env: NodeJS.ProcessEnv): number {
+  for (const name of [PORT_VAR, HOST_PORT_VAR]) {
+    const raw = env[name]?.trim() ?? '';
+    if (raw === '') continue;
+    const n = Number(raw);
+    if (Number.isInteger(n) && n > 0 && n <= 65535) return n;
+  }
+  return DEFAULT_PORT;
+}
+
+/**
+ * The one line an operator gets when their install will not start, so it has
+ * to carry both halves: what was refused, and the two variables either of
+ * which resolves it.
+ */
+export const refusesToListen = (bind: string): string =>
+  `refusing to listen on ${bind}: an install anyone can reach needs a password. ` +
+  `Set ${PASSWORD_VAR} to a password of your own, or unset ${BIND_VAR} to listen ` +
+  `on ${DEFAULT_BIND} and nothing else.`;
+
+export type ListenPolicy =
+  | { listen: true; hostname: string; port: number; gate: boolean }
+  | { listen: false; reason: string };
+
+/**
+ * Whether this install may listen, where, and with the gate on — *no password,
+ * no public interface* (#28).
+ *
+ * The gate above ships off when nothing sets a password, deliberately: a
+ * default-closed gate would lock the operator out of a server already running,
+ * possibly with paid jobs in flight. That is safe on this machine for exactly
+ * one reason — the bind is loopback, so the only caller who can reach an
+ * ungated server is already sitting at it. An install that binds every
+ * interface has spent that reason. So the two facts are joined here rather
+ * than left as a habit: **the bind decides whether the password is optional.**
+ *
+ * Tied to the bind and not to a "hosted mode" flag, because a flag is a second
+ * thing that can be wrong. There is no arrangement of these variables that
+ * puts an ungated server on a public interface.
+ *
+ * It takes the environment and not a bind address, though the bind is what it
+ * decides on. That is the D-270 lesson applied one module along: if boot passed
+ * the address in, boot would be deriving it, and the policy and the listener
+ * could then disagree about what was bound. One call answers both.
+ */
+export function listenPolicy(env: NodeJS.ProcessEnv = process.env): ListenPolicy {
+  const hostname = bindAddress(env);
+  const port = listenPort(env);
+  if (gateEnabled(env)) return { listen: true, hostname, port, gate: true };
+  if (isLoopbackHost(hostname)) return { listen: true, hostname, port, gate: false };
+  return { listen: false, reason: refusesToListen(hostname) };
 }
 
 /**

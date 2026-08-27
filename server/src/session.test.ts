@@ -3,15 +3,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  BIND_VAR,
+  HOST_PORT_VAR,
   LOGIN_ATTEMPTS,
   LOGIN_LOCKOUT_MS,
   PASSWORD_VAR,
+  PORT_VAR,
   SESSION_COOKIE,
   SESSION_TTL_MS,
   attemptLogin,
   clearedCookie,
   gateEnabled,
   isExempt,
+  listenPolicy,
   lockoutRefusal,
   lockoutRemaining,
   mintToken,
@@ -20,6 +24,7 @@ import {
   noteLoginSuccess,
   passwordAccepted,
   readCookie,
+  refusesToListen,
   requestAllowed,
   requestIsSecure,
   sessionCookie,
@@ -387,5 +392,130 @@ describe('every route the server registers is covered by a prefix (R-05)', () =>
   it('leaves every /api/ route gated except the two named exemptions', () => {
     const open = [...new Set(paths.filter((p) => p.startsWith('/api/') && isExempt(p)))];
     expect(open.sort()).toEqual(['/api/oauth/google/callback', '/api/session']);
+  });
+});
+
+/**
+ * #28 — *no password, no public interface*.
+ *
+ * The gate above ships off when nothing sets a password, and that is safe on
+ * this machine for exactly one reason: the bind is loopback, so the only
+ * caller who can reach an ungated server is already sitting at it (D-127, *the
+ * loopback bind is the security*). An install that binds every interface has
+ * spent that reason, and an off-by-default gate there is a server anyone with
+ * the URL can drive. So the two facts are joined here rather than left as a
+ * habit: the bind decides whether the password is optional.
+ *
+ * These are the whole test of it, because the policy is a pure function and the
+ * server's entry file starts listening at import — there is no seam there and
+ * none was added. `scripts/prove-hosted.mjs --local` is what proves the boot
+ * path actually calls this.
+ */
+describe('the listen policy', () => {
+  it('listens on loopback with the gate off when nothing is set, which is today', () => {
+    // The maintainer's install, unchanged: no variable of this ticket exists
+    // in its environment (#28's rule, and user story 18).
+    expect(listenPolicy({})).toEqual({
+      listen: true,
+      hostname: '127.0.0.1',
+      port: 4600,
+      gate: false,
+    });
+  });
+
+  it('listens on loopback with the gate on when a password is set', () => {
+    expect(listenPolicy({ [PASSWORD_VAR]: 'correct horse' })).toEqual({
+      listen: true,
+      hostname: '127.0.0.1',
+      port: 4600,
+      gate: true,
+    });
+  });
+
+  /**
+   * The branch this ticket exists for. It is also the shape the repository has
+   * been bitten by three times in one day — a guard that passes because no test
+   * input ever reaches it (D-246) — so the input is here, the reason is
+   * asserted rather than the boolean alone, and `refusesToListen` below deletes
+   * the branch to check that this fails when it is gone.
+   */
+  it('refuses to listen on a public interface with no password, and says why', () => {
+    const refused = listenPolicy({ [BIND_VAR]: '0.0.0.0' });
+    expect(refused.listen).toBe(false);
+    if (refused.listen) throw new Error('unreachable');
+    // The reason has to name the variable, because it is the only line the
+    // operator gets: a container that exits prints this and nothing else.
+    expect(refused.reason).toContain(PASSWORD_VAR);
+    expect(refused.reason).toContain('0.0.0.0');
+  });
+
+  it('refuses on any address that is not this machine, not just 0.0.0.0', () => {
+    for (const bind of ['0.0.0.0', '::', '[::]', '192.168.1.20', 'horde.example.com']) {
+      expect(listenPolicy({ [BIND_VAR]: bind }).listen).toBe(false);
+    }
+    // And accepts every form of loopback, so an operator who writes the bind
+    // out explicitly is not refused for agreeing with the default.
+    for (const bind of ['127.0.0.1', 'localhost', '::1', '[::1]', '127.0.0.2']) {
+      expect(listenPolicy({ [BIND_VAR]: bind }).listen).toBe(true);
+    }
+  });
+
+  it('listens on a public interface once there is a password, with the gate on', () => {
+    expect(listenPolicy({ [BIND_VAR]: '0.0.0.0', [PASSWORD_VAR]: 'correct horse' })).toEqual({
+      listen: true,
+      hostname: '0.0.0.0',
+      port: 4600,
+      gate: true,
+    });
+  });
+
+  it('treats a blank bind as unset, so a stray "AGENTLINGS_BIND=" is not a refusal', () => {
+    // The same failure direction as AGENTLINGS_HOME and the password: an empty
+    // value is a line somebody left in a template, not an instruction.
+    expect(listenPolicy({ [BIND_VAR]: '' })).toEqual(listenPolicy({}));
+    expect(listenPolicy({ [BIND_VAR]: '   ' })).toEqual(listenPolicy({}));
+  });
+
+  /**
+   * Two names for the port on purpose. `PORT` is what every host that could
+   * run this template injects; `AGENTLINGS_PORT` is what an operator writes
+   * when the host guessed wrong, and it wins because a variable somebody typed
+   * beats one a platform assumed.
+   */
+  it('takes the port from the host, and lets the operator overrule it', () => {
+    expect(listenPolicy({ [HOST_PORT_VAR]: '8080' })).toMatchObject({ port: 8080 });
+    expect(listenPolicy({ [PORT_VAR]: '8081' })).toMatchObject({ port: 8081 });
+    expect(listenPolicy({ [HOST_PORT_VAR]: '8080', [PORT_VAR]: '8081' })).toMatchObject({
+      port: 8081,
+    });
+  });
+
+  it('falls back to 4600 for a value that is not a port, rather than binding something else', () => {
+    for (const bad of ['', '  ', 'eight thousand', '0', '-1', '70000', '80.5']) {
+      expect(listenPolicy({ [HOST_PORT_VAR]: bad })).toMatchObject({ port: 4600 });
+    }
+  });
+
+  it('reads the real environment when it is given none', () => {
+    // The signature every other function in this file has, and the one boot
+    // uses. It is here so that a refactor which drops the default is caught.
+    expect(typeof listenPolicy().listen).toBe('boolean');
+  });
+});
+
+/**
+ * The never-executing-guard check, run as a mutation in the test rather than
+ * described in a commit message: delete the refuse branch and the test above
+ * must go red. `listenPolicy` cannot be edited from here, so what is mutated is
+ * the sentence the branch produces — if `refusesToListen` were ever reduced to
+ * something that does not name the variable, the operator would get a line that
+ * tells them nothing, and this is what says so.
+ */
+describe('the refusal sentence', () => {
+  it('names both the address it refused and the variable that fixes it', () => {
+    const reason = refusesToListen('0.0.0.0');
+    expect(reason).toContain('0.0.0.0');
+    expect(reason).toContain(PASSWORD_VAR);
+    expect(reason).toContain(BIND_VAR);
   });
 });

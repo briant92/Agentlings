@@ -6,9 +6,9 @@
 // container anywhere: start the server on every interface with no password and
 // watch it refuse; give it one and watch it listen with the gate on; then send
 // it a POST from its own address and one from somebody else's. The other mode
-// — this script with no flag, against the reference install — belongs to #24
+// — this script with no flag, against the reference install — belongs to #30
 // and is not written yet, which is why the flag is required rather than
-// defaulted.
+// defaulted. #24 builds the install it will run against, not the mode.
 //
 // Since #29 it also proves the *one origin*: with `web/dist` built and no Vite
 // running anywhere, the title screen, the sign-in, the API and the WebSocket
@@ -48,7 +48,7 @@ const LAUNCHER = path.join(ROOT, 'server', 'scripts', 'dev-logged.mjs');
 if (!process.argv.slice(2).includes('--local')) {
   console.error(
     'usage: node scripts/prove-hosted.mjs --local\n' +
-      '(the hosted mode, against the reference install, is #24 and does not exist yet)',
+      '(the hosted mode, against the reference install, is #30 and does not exist yet)',
   );
   process.exit(1);
 }

@@ -1,0 +1,27 @@
+# The operator's half never goes in an image: `.env` is the secrets file and
+# `.agentlings/` is this machine's ledger, levels and sandboxes. Both live on
+# the volume at `/data` on a host, and a copy of the maintainer's baked into a
+# published image is exactly the leak this line prevents.
+.env
+.agentlings/
+
+# Rebuilt inside the image, and platform-specific: the tree resolved on
+# Windows carries the wrong optional binaries for Linux.
+node_modules/
+**/node_modules/
+web/dist/
+
+# History is not needed to run, and it is the largest thing here.
+.git/
+.github/
+
+# Untracked inputs (`Artwork/`), rendered measurements and Blender sources —
+# none of them are read at run time.
+Artwork/
+art/blender/
+*.log
+.claude/
+
+# Windows and macOS leavings.
+Thumbs.db
+.DS_Store

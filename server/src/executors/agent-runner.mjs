@@ -52,7 +52,7 @@ try {
   // the question moot.
   const hooks = {};
   if (config.browserAct && mcpServers[config.browserAct.server]) {
-    const { server, profileDir, allow } = config.browserAct;
+    const { server, profileDir, allow, channel } = config.browserAct;
     const { chromium } = await import('playwright-core');
     mkdirSync(profileDir, { recursive: true });
     const port = await new Promise((resolve, reject) => {
@@ -64,7 +64,11 @@ try {
       });
     });
     browserContext = await chromium.launchPersistentContext(profileDir, {
-      channel: 'msedge',
+      // The server measured which browser this install has and put it here
+      // (#24); this process cannot import the TypeScript module that decides
+      // it, so it is told rather than asking again. Absent — an install with
+      // no browser at all — Playwright's own default speaks for itself.
+      ...(channel ? { channel } : {}),
       headless: false,
       args: [`--remote-debugging-port=${port}`],
     });

@@ -22,6 +22,7 @@ import type {
   Pending,
   ReconciliationRollForward,
 } from '@agentlings/shared';
+import { browserChannel } from '../browserchannel';
 import { listenPort } from '../session';
 import { briefForJob } from '../channel';
 import { folderInventory, organizeBrief } from '../organize';
@@ -1154,6 +1155,12 @@ export class ClaudeAgentExecutor implements Executor {
     // and the profile folder rather than the server assembling any argument.
     const supervised = granted.find((c) => c.supervised && c.transport === 'stdio');
     const act = supervised ? this.browserAct() : undefined;
+    // Which browser the runner opens (#24). Named here rather than in the
+    // runner for the same reason the tool list is: what an install can launch
+    // is decided in one place, `browserchannel.ts`. Asked only when a window
+    // is actually going to be opened — the probe costs a browser start, and a
+    // job that never opens one must not pay it.
+    const actChannel = supervised && act ? await browserChannel() : null;
 
     // Lever 1 and 5 together: addresses the user wrote are fetched here, by
     // plain code, at no token cost — and land as trimmed text the session
@@ -1279,7 +1286,14 @@ export class ClaudeAgentExecutor implements Executor {
         // where its profile lives, and what it may reach. The runner launches
         // the window before the SDK starts and ends the run when it closes.
         ...(supervised && act
-          ? { browserAct: { server: supervised.name, profileDir: act.profileDir, allow: act.allow } }
+          ? {
+              browserAct: {
+                server: supervised.name,
+                profileDir: act.profileDir,
+                allow: act.allow,
+                channel: actChannel,
+              },
+            }
           : {}),
         ...(web
           ? { web: { endpoint: `http://127.0.0.1:${listenPort()}/internal/fetch` } }

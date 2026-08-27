@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { PLATE_OVERSCAN } from '@agentlings/shared';
+import { browserChannel, forgetBrowserChannel, launchChromium } from './browserchannel';
 import type { ToolSpec } from './github';
 import { COLOR_POOL } from './levels';
 import { STAND_POSITIONS } from './plates';
@@ -175,7 +176,7 @@ export async function callRender(
     };
   }
   if (!(await renderAvailable())) {
-    return { error: 'no renderer on this machine — Microsoft Edge was not found' };
+    return { error: 'no renderer on this install — no Microsoft Edge and no Chromium was found' };
   }
 
   if (tool === 'render_plate') return renderPlate(html, args);
@@ -319,8 +320,7 @@ async function screenshotPlate(
   omitBackground: boolean,
 ): Promise<Buffer> {
   const vendorDir = vendoredThreeDir();
-  const { chromium } = await import('playwright-core');
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const browser = await launchChromium();
   try {
     return await Promise.race([
       (async () => {
@@ -369,9 +369,8 @@ async function screenshotPlate(
 
 async function print(html: string): Promise<Buffer> {
   // Lazy on purpose: the server must boot, and every other test must run, on
-  // a machine with no Edge and no playwright-core install completed.
-  const { chromium } = await import('playwright-core');
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  // a machine with no browser and no playwright-core install completed.
+  const browser = await launchChromium();
   try {
     return await Promise.race([
       (async () => {
@@ -392,26 +391,19 @@ async function print(html: string): Promise<Buffer> {
 }
 
 /**
- * Whether this machine can render at all — a real probe, memoised, on
- * ocrAvailable()'s pattern: the channel exists only where Edge is installed,
- * so asking the OS is the only honest answer.
+ * Whether this install can render at all — a real probe, memoised, on
+ * ocrAvailable()'s pattern: a channel launches only where that browser is
+ * installed, so asking the OS is the only honest answer.
+ *
+ * It is `browserChannel()` and nothing else since #24: "can this install
+ * render" and "which browser does it launch" are one question, and two memos
+ * would be two answers to it.
  */
-let known: Promise<boolean> | null = null;
-export function renderAvailable(): Promise<boolean> {
-  known ??= (async () => {
-    try {
-      const { chromium } = await import('playwright-core');
-      const browser = await chromium.launch({ channel: 'msedge', headless: true });
-      await browser.close();
-      return true;
-    } catch {
-      return false;
-    }
-  })();
-  return known;
+export async function renderAvailable(): Promise<boolean> {
+  return (await browserChannel()) !== null;
 }
 
 /** For tests, which must not inherit an answer measured by another test. */
 export function forgetRenderAvailability(): void {
-  known = null;
+  forgetBrowserChannel();
 }

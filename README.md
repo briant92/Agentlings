@@ -9,7 +9,7 @@ own; nobody runs anything for you.
 
 ## Deploy your own install
 
-<!-- The Deploy on Railway button lands here when the template is published. -->
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/agentlings)
 
 An **install** is one operator's copy of Agentlings: one secrets file, one data
 directory, one ledger, jobs running as that operator. There is no multi-tenancy

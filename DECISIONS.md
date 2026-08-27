@@ -23049,6 +23049,54 @@ once at boot, so the credential must arrive before a restart; setting a Railway
 variable redeploys, which is why that route works and a hypothetical paste
 would not.
 
+### Publishing it, and the four things that only appeared live
+
+The repository is public and the template is published at
+`https://railway.com/deploy/agentlings`. The reference install now deploys
+**from GitHub** rather than from a `railway up` upload, which is the shape the
+template actually describes. Four things were learnt doing it, none of them
+guessable from the ticket:
+
+- **`railway config apply` would have destroyed the reference install.**
+  `.railway/railway.ts` declares `service('agentlings')`; the live service is
+  **`Agentlings`**. `railway config plan` reads *2 to add, 0 to change, 1 to
+  destroy* — a delete-and-recreate that takes the volume, and with it the keys,
+  ledger and schedules the volume exists to hold. The plan was read and the
+  apply was not run. Either the file or the service needs renaming before that
+  command is ever safe here.
+- **The template generator carries no variable values at all.** Generated from
+  a project with three variables, it produced three *required inputs with no
+  defaults* — so a stranger would have been asked for `AGENTLINGS_HOME` and
+  `AGENTLINGS_BIND`, which the template is supposed to set itself. There is no
+  API to fix it: the only template mutations are generate, publish, clone,
+  delete, revert, unpublish and volumeUpdate; `templateGenerate` takes a
+  project id and nothing else. The fix was to delete both variables from the
+  *service* — the Dockerfile already sets them — and regenerate.
+- **Deleting them proved the Dockerfile, and the proof needed a restart.**
+  Deleting a Railway variable does not redeploy (D-273), so the install went on
+  answering with the deleted values still in memory. Redeployed on purpose:
+  `AGENTLINGS_HOME=/data` and `AGENTLINGS_BIND=0.0.0.0` came from the image,
+  the gate answered `required: true`, `/api/world` answered 401, and `/data`
+  is a mounted 46 G device holding `.agentlings` — with `/data/.env` seventeen
+  bytes and no variable line in it, so the reference install is still keyless.
+- **The template's code changed when it was published** — the draft code
+  stopped resolving the moment it did. Committing the pre-publish URL would
+  have shipped a button that 404s for everybody. The published code is pinned
+  in `hosted.test.ts`.
+
+Two instruments lied again, both #30's shape, and both were caught by asking
+what they were really measuring. Curling the public URL returned **200
+throughout the new build** — the *previous* deployment was still serving it, so
+the check could not tell "the new image works" from "the old one is not torn
+down yet"; the deployment's own terminal status is the answer. And Railway's
+single-page app returns **200 for any path**, so a 200 on a template URL is not
+evidence a template exists — the unauthenticated GraphQL lookup is.
+
+**Acceptance criterion 1 is not closed by this entry.** *Followed from a
+browser not logged in as the maintainer, it deploys* cannot be checked from
+this machine; what is checked is that the template resolves for an
+unauthenticated caller and asks for exactly one variable.
+
 ### The deviation from #27's story 3, ratified — do not re-open, cite D-274
 
 Spec #27 story 3 reads: *"As a person deploying, I want the only variable I

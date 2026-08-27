@@ -206,6 +206,20 @@ describe('the three lists agree', () => {
     expect(readmeDiskBound(README).sort()).toEqual([...glossary].sort());
   });
 
+  it('the README carries a deploy button pointing at a real template', () => {
+    // The first thing a visitor can do is deploy (#31), so the button is the
+    // one link in this file that is load-bearing. Pinned because it spent two
+    // commits as an HTML placeholder, and because the template code CHANGED
+    // when the template was published — the pre-publish code stopped
+    // resolving the moment it did, so a stale one would look fine here and
+    // 404 for everybody else.
+    const button = README.match(
+      /\[!\[Deploy on Railway\]\(https:\/\/railway\.com\/button\.svg\)\]\((https:\/\/railway\.com\/\S+?)\)/,
+    );
+    expect(button, 'no Deploy on Railway button in README.md').not.toBeNull();
+    expect(button![1]).toBe('https://railway.com/deploy/agentlings');
+  });
+
   it('every claim of the tag carries a citation', () => {
     // The count is what makes the regex reader safe: a tag the reader cannot
     // parse is invisible to it, so the two numbers are compared rather than

@@ -302,7 +302,9 @@ a request:
   anyway plus this one (`watchedTools`), or an API caller names it. A
   schedule or mail rule naming it is refused at creation, by name and with
   the reason (`validTools`'s `supervised` list), and the door chips never
-  offer it (`doorChoices`).
+  offer it (`doorChoices`). On an install with no desktop it is not offered
+  as a **watch** tick either, and the work bar says why instead of leaving it
+  out — `doorsRefused`, D-273.
 - **Allowlisted.** Settings → the row holds the hosts a run may reach (bare,
   lowercase, subdomains included) and the profile folder;
   `PUT /api/settings/browser-act`. In the run, two layers: a `PreToolUse`
@@ -432,7 +434,7 @@ off, so the app's fetch was gated and this second door was not.
 | `calendar` — read the user's own Google Calendar | builtin | off; ready the moment `google` is connected | Live, read-only; the first reading sibling on the Google consent (D-158), reusing the Connect flow's stored secrets behind its own switch. One tool returns compact event lines — times as the calendar states them, replies still owed, who is invited. Deliberately no compiled-tool door: desk work never compiles |
 | `mail` — search and read the user's own Gmail | builtin | off; ready the moment `google` is connected | Live, read-only; the second reading sibling (D-158, D-191) — two tools on the find/read split (D-053): Gmail's own query language in, compact lines out, one message's text on request, attachments named and never fetched. The stored consent predates `gmail.readonly`, so reads answer with the fresh-sign-in sentence until Connect is walked once more. Same deliberate absence from the compiled-tool doors |
 | `browser` — read pages in a real browser | stdio (Playwright MCP) | off | Partial, read-only |
-| `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed browser the runner launches — Edge here, the install's own channel) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run. Refused at `resolveForJob` on an install with no desktop — `headedAvailable()`, #24 — so a hosted install never holds it |
+| `browser-act` — act in a browser you can watch | stdio (Playwright MCP over CDP, into a headed browser the runner launches — Edge here, the install's own channel) | off; `supervised` | Live under supervision (D-255, D-264): the twelve acts + the eight reads, hand-queued jobs only, Settings allowlist, the person's own signed-in profile, closing the window ends the run. **Not available hosted** (D-273): `doorUnavailable()` is the one rule, read by `resolveForJob` *and* by `describe`, so an install with no desktop refuses it at the launch **and** says so where it would otherwise be offered — the row carries `unavailable` and the work bar shows it struck through with the reason. Read back live from the reference install, where it is `ready: true` and still refused |
 | `telegram` — send messages, at approval only; **receive voice notes** | builtin | off, needs `TELEGRAM_BOT_TOKEN` | Live; grants a session **no tools** — see §11 and D-075. While on, a voice note from anyone on the roster is polled off the bot every 15 s, transcribed on this machine and quoted back at the desk (D-265, #17) — see below |
 | `google` — send Gmail and create Calendar events as the user, at approval only | builtin | off; the Connect flow stores its three secrets | Live; grants a session **no tools** — loopback OAuth against the user's own client, one consent covering both (D-080, D-104) |
 | `whatsapp-business` — send template messages, at approval only | builtin | off, needs `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` | Live; grants a session **no tools** — pre-approved templates from a business number, priced by Meta (D-081) |

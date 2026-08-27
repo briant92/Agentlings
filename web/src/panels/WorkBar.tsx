@@ -31,7 +31,7 @@ import {
 import { AskBubble } from './AskBubble';
 import { ChannelAskCard } from './ChannelAskCard';
 import { ChannelLogo } from './ChannelLogo';
-import { doorChoices, holdsLine, watchChoices, watchedTools } from './doors';
+import { doorChoices, doorsRefused, holdsLine, watchChoices, watchedTools } from './doors';
 import { refusalDesk, whoSuffix } from './planLine';
 import { RecipientPicker } from './RecipientPicker';
 import { previewLine, type PreviewLine, type TriggerPreviewReply } from './trigger';
@@ -784,6 +784,13 @@ export function WorkBar({
     // dialog rather than queuing something with nothing to organize — the
     // repo ask's twin, one line above.
     if (plan?.organize && !organizeRoot) {
+      // …unless this install has no dialog to open (#30): pressing Start
+      // would otherwise reach the picker and come back with an error, which
+      // is the fault this ticket exists to close one layer down.
+      if (plan.organizeRefused) {
+        setError(`organizing needs a folder picked on this machine — ${plan.organizeRefused}`);
+        return;
+      }
       void pickOrganizeFolder();
       return;
     }
@@ -996,6 +1003,24 @@ export function WorkBar({
             <span className="work-conn-off">the crew is working offline</span>
           )}
           <span className="dim">· change in settings</span>
+        </p>
+      )}
+
+      {/* What this install cannot offer at all, and why (#30). Not a switch
+          and not a missing key — the machine under the install has no screen
+          to open a window on — so it is said here, beside what the crew CAN
+          reach, rather than left to a refusal halfway through a paid run.
+          Refused rather than absent on purpose: a person deploying the
+          template learns what the local version would have done. */}
+      {doorsRefused(connections).length > 0 && !askingRepo && (
+        <p className="work-gaps work-conn-refused">
+          {doorsRefused(connections).map((c) => (
+            <span key={c.name} className="work-refused-door">
+              <span className="work-refused-name">{c.label.toLowerCase()}</span>
+              {' — '}
+              {c.unavailable}
+            </span>
+          ))}
         </p>
       )}
 
@@ -1439,7 +1464,18 @@ export function WorkBar({
           absolute path (D-132) — never a text box for a path nobody can type.
           Until one is picked, Start has nothing to organize, so the pick is
           the gate. */}
-      {plan?.organize && !askingRepo && (
+      {/* …and on an install with no desktop there is no picker to offer, so
+          the desk says that instead of a button whose only outcome is an
+          error on the click (#30). Same shape as the refused doors above: the
+          step stays visible, and it says why it cannot be taken. */}
+      {plan?.organize && plan.organizeRefused && !askingRepo && (
+        <div className="work-organize">
+          <p className="work-organize-refused">
+            organizing needs a folder picked on this machine — {plan.organizeRefused}
+          </p>
+        </div>
+      )}
+      {plan?.organize && !plan.organizeRefused && !askingRepo && (
         <div className="work-organize">
           {organizeRoot ? (
             <div className="work-organize-picked">

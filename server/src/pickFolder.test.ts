@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PICK_TIMEOUT_MS, parsePickOutput, pickFolder } from './pickFolder';
+import {
+  NO_PICKER,
+  PICK_TIMEOUT_MS,
+  parsePickOutput,
+  pickFolder,
+  pickFolderAvailable,
+} from './pickFolder';
 
 // The dialog itself is a person and a window, so tests only ever run the
 // seams around it: the output contract, and the one-at-a-time gate.
@@ -124,5 +130,39 @@ describe('how long a person may browse', () => {
   it('is five minutes, and the message that quotes it agrees', () => {
     expect(PICK_TIMEOUT_MS).toBe(300_000);
     expect(PICK_TIMEOUT_MS / 60000).toBe(5);
+  });
+});
+
+/**
+ * #30: the desk has to know BEFORE it offers the button. An organize sentence
+ * on a hosted install used to get "Choose the folder to organize…", a click,
+ * and the refusal — which is the same shape #24 found on supervised acting,
+ * one layer up.
+ */
+describe('pickFolderAvailable', () => {
+  it('is Windows and nothing else', () => {
+    expect(pickFolderAvailable('win32')).toBe(true);
+    expect(pickFolderAvailable('linux')).toBe(false);
+    expect(pickFolderAvailable('darwin')).toBe(false);
+  });
+
+  // One rule, two readers — the same discipline `doorUnavailable` is held to.
+  // A desk that offers the button and a dialog that then refuses is two
+  // answers to one question (D-032).
+  it('agrees with what pickFolder itself does', async () => {
+    const platform = process.platform;
+    try {
+      for (const p of ['win32', 'linux', 'darwin'] as const) {
+        Object.defineProperty(process, 'platform', { value: p, configurable: true });
+        // A cancel, so the mock needs no path of its own: what is under test
+        // is whether the dialog was reached at all.
+        const run = vi.fn(() => Promise.resolve({ stdout: 'CANCELLED', stderr: '', code: 0 }));
+        const picked = await pickFolder(run);
+        if (pickFolderAvailable(p)) expect(run).toHaveBeenCalled();
+        else expect(picked).toEqual({ error: NO_PICKER });
+      }
+    } finally {
+      Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+    }
   });
 });

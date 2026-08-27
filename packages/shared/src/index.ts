@@ -435,6 +435,14 @@ export interface ConnectionInfo {
    */
   supervised?: boolean;
   /**
+   * Why THIS install cannot offer the door, absent when it can (#30). The
+   * same rule `resolveForJob` refuses on, carried to the surfaces that
+   * offer doors so a chip is refused with its reason rather than offered and
+   * then declined halfway through paid work. Nothing to do with a missing
+   * credential — that is `ready` — and a door can be both.
+   */
+  unavailable?: string;
+  /**
    * The other connections declaring a secret this one declares — the Google
    * trio share one sign-in — so a Disconnect can say who else it takes down
    * before it is pressed, never after.
@@ -2364,6 +2372,14 @@ export interface WorkPlan {
    * the picked path rides back into `/work` as `organizeRoot`.
    */
   organize?: boolean;
+  /**
+   * Why this install cannot show that picker (#30), absent where it can.
+   * D-132 is deliberate that there is no typed-path fallback, so on an
+   * install with no desktop the pick is not merely awkward — the sentence
+   * cannot be started at all, and the desk says so before Start rather than
+   * on the click. `ConnectionInfo.unavailable`'s shape, one layer up.
+   */
+  organizeRefused?: string;
   /**
    * The sentence asks to reconcile (D-224). Named by the server so the desk
    * never re-derives the verb; the desk counts the files and arrests a

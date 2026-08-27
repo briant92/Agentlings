@@ -895,6 +895,20 @@ button.ghost {
 .work-conn-off {
   color: var(--db-orange);
 }
+/* What this install cannot offer at all (#30) — refused, never absent, so a
+   person deploying the template learns what the local version would have
+   done. Dimmer than a door that is merely off: nothing here is a switch. */
+.work-conn-refused {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--db-orange);
+  opacity: 0.75;
+}
+.work-refused-name {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
 .work-link {
   background: none;
   border: none;
@@ -2646,6 +2660,12 @@ button.danger:hover {
 .work-organize-path {
   font-family: var(--mono, monospace);
   opacity: 0.9;
+}
+/* The step stays, and says why it cannot be taken here (#30). */
+.work-organize-refused {
+  margin: 0;
+  color: var(--db-orange);
+  opacity: 0.8;
 }
 .rv-outbox-head {
   display: flex;

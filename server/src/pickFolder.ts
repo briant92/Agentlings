@@ -162,9 +162,30 @@ async function runDialog(): Promise<{ stdout: string; stderr: string; code: numb
 /** One dialog at a time: a second "+" while one is open is a mistake, not a queue. */
 let open = false;
 
+/**
+ * Whether this install can show the dialog at all (#30).
+ *
+ * Exported so the desk can ask BEFORE it offers the button, which is the same
+ * fault #24 found one layer up: an install that cannot do a thing was letting
+ * the work be started and refusing it afterwards. A hosted install has no
+ * desktop, so an organize sentence there can never reach a folder — and D-132
+ * is deliberate that there is no typed-path fallback in the app, so this is a
+ * refusal and not a detour.
+ *
+ * `pickFolder` reads the same function rather than repeating the condition:
+ * a desk that offers and a dialog that refuses is two answers to one question
+ * (D-032).
+ */
+export function pickFolderAvailable(platform: NodeJS.Platform = process.platform): boolean {
+  return platform === 'win32';
+}
+
+/** Why the dialog cannot be shown here — one sentence, wherever it is said. */
+export const NO_PICKER = 'the folder dialog needs Windows — type the path instead';
+
 export async function pickFolder(run: typeof runDialog = runDialog): Promise<Picked> {
-  if (process.platform !== 'win32') {
-    return { error: 'the folder dialog needs Windows — type the path instead' };
+  if (!pickFolderAvailable()) {
+    return { error: NO_PICKER };
   }
   if (open) return { error: 'a folder dialog is already open — finish that one first' };
   open = true;

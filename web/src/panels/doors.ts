@@ -21,7 +21,26 @@ import type { ConnectionInfo } from '@agentlings/shared';
  * the window, and the server refuses a rule naming it by name.
  */
 export function doorChoices(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
-  return connections.filter((c) => c.kind === 'read' && c.enabled && c.ready && !c.supervised);
+  return connections.filter(
+    (c) => c.kind === 'read' && c.enabled && c.ready && !c.supervised && !c.unavailable,
+  );
+}
+
+/**
+ * The doors this install cannot offer at all, with the reason on each (#30).
+ *
+ * Kept apart from `doorChoices` rather than folded into it, because the two
+ * are opposite jobs: that one answers "what may be ticked", this one answers
+ * "what would this app do on a machine that could". A hosted install drops
+ * supervised acting; showing nothing there would read as a feature that does
+ * not exist, and the person deploying the template would never learn what
+ * they gave up. So the chip goes, the row stays, and it says why.
+ *
+ * Off and unready are not this: a door with no key is one paste away and the
+ * drawer already says so. Only the machine's own answer belongs here.
+ */
+export function doorsRefused(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
+  return connections.filter((c) => c.kind === 'read' && !!c.unavailable);
 }
 
 /**
@@ -31,7 +50,10 @@ export function doorChoices(connections: readonly ConnectionInfo[]): ConnectionI
  * so the choice is not offered at all.
  */
 export function watchChoices(connections: readonly ConnectionInfo[]): ConnectionInfo[] {
-  return connections.filter((c) => c.kind === 'read' && c.enabled && c.ready && c.supervised === true);
+  return connections.filter(
+    (c) =>
+      c.kind === 'read' && c.enabled && c.ready && c.supervised === true && !c.unavailable,
+  );
 }
 
 /**

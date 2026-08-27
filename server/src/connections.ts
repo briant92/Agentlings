@@ -195,9 +195,17 @@ export function describe(
   enabled: Set<string> = new Set(),
   /** Who each connection turned out to be, where a connect flow learned it. */
   identities: Record<string, string> = {},
+  /**
+   * Whether this install has a screen — measured by the caller and passed in
+   * for `resolveForJob`'s reason: a describer that reaches out to the machine
+   * cannot be tested against the machine it will actually run on. Defaults to
+   * this install's own answer, so no call site had to change.
+   */
+  headed: boolean = headedAvailable(),
 ): ConnectionInfo[] {
   return connections.map((c) => {
     const missing = missingSecrets(c, env);
+    const cannotOffer = doorUnavailable(c, headed);
     return {
       name: c.name,
       label: c.label,
@@ -216,6 +224,10 @@ export function describe(
       credentialed: Object.keys(c.secrets ?? {}).length > 0,
       sharesSecretsWith: sharingSecrets(c, connections),
       ...(c.supervised ? { supervised: true } : {}),
+      // Why this install cannot offer it (#30). Absent rather than an explicit
+      // `undefined`: this rides to the browser as JSON, where a present key
+      // reads as an answer.
+      ...(cannotOffer ? { unavailable: cannotOffer } : {}),
     };
   });
 }
@@ -241,6 +253,26 @@ export function sharingSecrets(connection: Connection, connections: Connection[]
  * re-derived locally until every copy quietly assumed something different.
  */
 export const NO_SCREEN = 'needs a screen to open a window on, and this install has none';
+
+/**
+ * Why this install cannot offer a door at all, or null when it can (#30).
+ *
+ * Not about a credential — that is `missingSecrets` — but about the machine
+ * under the install: a supervised door is headed by construction (D-255) and
+ * a container has nothing to open a window on. #24 put that rule inside
+ * `resolveForJob`, which refuses at the launch; every surface that OFFERS a
+ * door was still offering this one, so a person deploying the template learnt
+ * what their install could not do halfway through work they had paid for.
+ *
+ * Exported and read by BOTH `resolveForJob` and `describe` rather than
+ * restated in the second one. A door the chips offer and the run refuses is
+ * exactly the D-030 shape, and the test holds the two against each other
+ * rather than against a copy of what either is supposed to say.
+ */
+export function doorUnavailable(connection: Connection, headed: boolean): string | null {
+  if (connection.supervised && !headed) return NO_SCREEN;
+  return null;
+}
 
 /**
  * The connections a job asked for, dropping any that are unknown or unready.
@@ -271,8 +303,9 @@ export function resolveForJob(
     // refused here — before a turn is spent — rather than at the launch,
     // halfway through work already paid for. This is the probe #24 says
     // supervised acting has; until #24 it did not have one.
-    if (found.supervised && !headed) {
-      refused.push({ name, reason: NO_SCREEN });
+    const cannotHere = doorUnavailable(found, headed);
+    if (cannotHere) {
+      refused.push({ name, reason: cannotHere });
       continue;
     }
     const missing = missingSecrets(found, env);

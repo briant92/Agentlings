@@ -7,6 +7,7 @@ import {
   mcpSecretValues,
   mcpToolNames,
   missingSecrets,
+  doorUnavailable,
   NO_SCREEN,
   resolveForJob,
   toMcpServers,
@@ -467,5 +468,67 @@ describe('the doors dial the port this install is actually on', () => {
     for (const url of Object.values(withPort('8080', () => doorEndpoints(Object.keys(DOORS))))) {
       expect(url.startsWith('http://127.0.0.1:8080/internal/')).toBe(true);
     }
+  });
+});
+
+/**
+ * #30: the reason an install cannot offer a door, said where the work bar can
+ * read it. The point of these is that they are the SAME rule `resolveForJob`
+ * applies — a second copy is the D-030 shape, and here it would put a chip on
+ * screen for a door the run would then refuse.
+ */
+describe('doorUnavailable', () => {
+  it('is null for an ordinary door, whatever the screen', () => {
+    expect(doorUnavailable(WEB, false)).toBeNull();
+    expect(doorUnavailable(WEB, true)).toBeNull();
+  });
+
+  it('names the screen for a supervised door on an install with none', () => {
+    expect(doorUnavailable(WATCHED, false)).toBe(NO_SCREEN);
+  });
+
+  it('is null for a supervised door where there is a screen', () => {
+    expect(doorUnavailable(WATCHED, true)).toBeNull();
+  });
+
+  // The whole reason it is exported: one rule, two readers. A door this says
+  // nothing about must be one the run grants, and a door it names must be one
+  // the run refuses — asserted against `resolveForJob` itself rather than
+  // against a restatement of what it does.
+  it('agrees with resolveForJob on every door, on a screen and without one', () => {
+    const all = [WEB, TRACKER, WATCHED];
+    const env = { TRACKER_TOKEN: 'abc' };
+    for (const headed of [true, false]) {
+      for (const door of all) {
+        const { granted, refused } = resolveForJob([door.name], all, env, headed);
+        const reason = doorUnavailable(door, headed);
+        if (reason === null) expect(granted.map((c) => c.name)).toEqual([door.name]);
+        else expect(refused).toEqual([{ name: door.name, reason }]);
+      }
+    }
+  });
+});
+
+describe('describe — the reason a door is not on offer here (#30)', () => {
+  it('carries it, so the chip is refused rather than absent', () => {
+    const listed = describeConnections([WEB, WATCHED], {}, new Set(), {}, false);
+    expect(listed[0].unavailable).toBeUndefined();
+    expect(listed[1].unavailable).toBe(NO_SCREEN);
+  });
+
+  it('leaves the field off entirely where the install can offer the door', () => {
+    const listed = describeConnections([WEB, WATCHED], {}, new Set(), {}, true);
+    expect(listed.every((c) => c.unavailable === undefined)).toBe(true);
+    // Absent, not `undefined` spelled out: this rides to the browser as JSON.
+    expect(JSON.stringify(listed)).not.toContain('unavailable');
+  });
+
+  // A door can be both: no secret AND nothing to show it on. Readiness is
+  // about the credential and this is about the machine, and a row that
+  // collapsed them would tell a person to paste a token that cannot help.
+  it('is independent of readiness', () => {
+    const needy = { ...WATCHED, secrets: { WATCH_TOKEN: 'a token' } };
+    const listed = describeConnections([needy], {}, new Set(), {}, false);
+    expect(listed[0]).toMatchObject({ ready: false, unavailable: NO_SCREEN });
   });
 });

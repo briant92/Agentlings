@@ -300,7 +300,7 @@ import {
   safeOutputPath,
   deliverySummary,
 } from './outputs';
-import { pickFolder } from './pickFolder';
+import { NO_PICKER, pickFolder, pickFolderAvailable } from './pickFolder';
 import { previewFile } from './preview';
 import { isDiscardNote, isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
@@ -1777,7 +1777,15 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
     // send asks for its recipient (D-132): the sentence wants organizing, but
     // only the native picker yields the absolute path, so the desk shows a
     // "choose the folder" step rather than claiming one from the words.
-    ...(wantsOrganize(text) ? { organize: true } : {}),
+    ...(wantsOrganize(text)
+      ? {
+          organize: true,
+          // …and on an install with no desktop the picker is the whole ask,
+          // so the desk says so instead of offering a button that errors on
+          // the click (#30). Asked of the picker rather than restated here.
+          ...(pickFolderAvailable() ? {} : { organizeRefused: NO_PICKER }),
+        }
+      : {}),
     // A reconciliation is named here and counted at the desk (D-224): the
     // preview carries no files, and the verb is the server's to hear.
     ...(wantsReconciliation(text) ? { reconcile: true } : {}),

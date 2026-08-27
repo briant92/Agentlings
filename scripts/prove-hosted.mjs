@@ -883,6 +883,8 @@ async function hostedMode() {
       // is about, caught in its own cleanup.
       cleanup.push(async () => {
         await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
+        // Deleting stages it; only a new process forgets it.
+        await railway(['redeploy', '--service', service, '--yes']);
       });
       const was = await latestDeploy();
       const set = await railway(['variables', '--service', service, '--set', `ANTHROPIC_API_KEY=${key}`]);
@@ -973,6 +975,11 @@ async function hostedMode() {
     let paidJob = null;
     if (paid) {
       console.log('      queueing one web-fetch summary…');
+      // The ledger is the install's, not this run's, and an earlier run leaves
+      // rows in it. Measuring the DELTA rather than the total: "> 0" would
+      // have passed on a previous run's row even if this job cost nothing,
+      // which is the same wrong-thing-measured shape as the level card.
+      const spentAtStart = (await get('/api/spend')).body?.overall ?? { jobs: 0, costUsd: 0 };
       const queued = await post(`/api/levels/${LEVEL}/work`, {
         text: 'Read https://example.com and write RESULT.md with one sentence saying what that page is for.',
         tools: ['web'],
@@ -996,10 +1003,11 @@ async function hostedMode() {
         finished ? `status=${finished.status}` : `still ${JOB_TIMEOUT_MS / 1000}s later`,
       );
       spentBefore = (await get('/api/spend')).body;
+      const cost = (spentBefore?.overall?.costUsd ?? 0) - spentAtStart.costUsd;
       check(
-        'and it cost real money — a simulated run costs nothing',
-        (spentBefore?.overall?.costUsd ?? 0) > 0,
-        JSON.stringify(spentBefore?.overall ?? null),
+        'and THIS run cost real money — a simulated run costs nothing',
+        cost > 0 && (spentBefore?.overall?.jobs ?? 0) === spentAtStart.jobs + 1,
+        `$${cost.toFixed(4)} on one new row · ledger now ${JSON.stringify(spentBefore?.overall ?? null)}`,
       );
     }
 
@@ -1035,9 +1043,16 @@ async function hostedMode() {
         `${JSON.stringify(spentAfter?.overall ?? null)}`,
       );
       // The money removed again before anything else runs on this install.
-      const wasPaid = await latestDeploy();
+      //
+      // The delete is followed by an EXPLICIT redeploy: setting a variable
+      // triggers one, deleting one does not, and the first run to get this far
+      // sat waiting for a deployment that was never coming — while the running
+      // process still held the key in its environment. Deleting takes it out
+      // of Railway's store; only a new process takes it out of memory.
       await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
-      console.log('      model key removed — waiting out that redeploy');
+      const wasPaid = await latestDeploy();
+      await railway(['redeploy', '--service', service, '--yes']);
+      console.log('      model key removed — waiting out the redeploy that clears it');
       await waitForNewDeploy(wasPaid, 'the key-removal redeploy');
       const back = (await get('/api/settings')).body;
       check('and the install is back to simulated before anything else runs', back.executor === 'simulated');

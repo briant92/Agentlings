@@ -23,9 +23,14 @@ on that volume, which is what makes a key you paste on Monday still work after a
 rebuild on Tuesday. Lose the volume and you lose the keys, the ledger and the
 schedules with it.
 
-### The one variable you must fill in
+### The one variable the template asks for
 
 `AGENTLINGS_PASSWORD`. Anyone with this and your URL is you, so make it long.
+
+It is the only one the template requires to *start*. To have your install do
+real work you will set a second — the model credential below — because there is
+nowhere in the app to paste that one. Two variables, then, and everything else
+goes in Settings.
 
 Without it the server **refuses to start** rather than put an ungated horde on a
 public address, and says so in one line. That is the whole rule: no password, no
@@ -49,9 +54,12 @@ The third route a laptop has — a fresh `claude` login that the app auto-detect
 **does not exist in a container**. There is no interactive login to do and no
 stored session to find.
 
-Set whichever you choose as a **variable on the service**. Setting a variable
-redeploys, which is what you want: the executor is decided once at boot, so a
-credential that arrives without a restart changes nothing until the next one.
+Set whichever you choose as a **variable on the service** — this is the one key
+that does not go in Settings, because the drawer checks a key against the
+service it belongs to before storing it, and a model key has no free call to
+check with. Setting a variable redeploys, which is what you want here: the
+executor is decided once at boot, so a credential that arrives without a
+restart changes nothing until the next one.
 
 ### Where every other key goes
 

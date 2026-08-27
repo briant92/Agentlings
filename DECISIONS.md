@@ -1033,7 +1033,12 @@ entry updates one file rather than two.
   deliberately NOT tagged — the container has its own Chromium and #30
   proved it. The README is written for a person deploying: one required
   variable, connection keys in Settings, and the model credential named as
-  the exception it actually is
+  the exception it actually is. **#27's story 3 — "the only variable I must
+  fill in [is] that password" — is FALSE and RATIFIED false**: a working
+  install needs two, because there is nowhere in the app to paste a model
+  key, closing it properly needs a new route with a weaker rule than
+  D-078/D-081 plus re-deciding `useClaude` after a paste, and the spec is
+  the thing that is wrong. Do not re-open it; cite D-274
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -23043,6 +23048,41 @@ not exist in a container, and the README says that too. `useClaude` is decided
 once at boot, so the credential must arrive before a restart; setting a Railway
 variable redeploys, which is why that route works and a hypothetical paste
 would not.
+
+### The deviation from #27's story 3, ratified — do not re-open, cite D-274
+
+Spec #27 story 3 reads: *"As a person deploying, I want the only variable I
+must fill in to be that password, so that everything else is entered inside the
+app where it explains itself."* **That is not true of an install doing real
+work, and this slice does not make it true.** A person deploying fills in two
+variables: the password, and a model credential.
+
+It is stated here as a deviation rather than left as a paragraph because the
+spec is the record and this contradicts it in the user's own words. The review
+of #31 raised it on exactly that ground and **Brian ratified it** with the cost
+named. What was weighed:
+
+- **What it would take to close.** A route that accepts a model key would have
+  to skip the validate-before-store rule every other credential obeys
+  (D-078/D-081) — `POST /api/settings/connections/:name/secret` calls the far
+  end first, and the model key has no far end to call that does not cost money.
+  So it is a *new* route with a *weaker* rule, not a fifth entry in an existing
+  list. That is a ticket, not a line.
+- **And it would still not be enough.** `useClaude` is decided once at boot
+  (`index.ts`), so a pasted key changes nothing until a restart — silently.
+  Closing story 3 honestly means the paste route *and* re-deciding the executor
+  after a paste, or a restart the app asks for and the operator can give. Three
+  gaps, not one; #30's closing comment lists them.
+- **What the deviation costs, in full.** Two variables instead of one at deploy
+  time, and a model key that by D-270 outlives `/data/.env` under that name for
+  good. The second half is not a defect for *this* key — a model credential
+  that survives every redeploy is what you want — which is why the honest move
+  was to say so rather than to paper over it.
+
+The README therefore names the model credential as the exception in its own
+section, and does not repeat story 3's sentence. **The spec is wrong here and
+the README is right**, which is the D-030 direction this repository already
+takes with `AGENTLING.md` and the code.
 
 **Left standing, and owed to a later ticket:** Settings still tells every
 install to "copy .env.example → .env and restart the dev server", which is

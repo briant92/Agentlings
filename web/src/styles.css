@@ -1394,13 +1394,47 @@ select {
   background: var(--db-ink);
   overflow: hidden;
 }
-/* The pre-rendered Starbase plate (art/blender/starbase_render.py) — a smooth
-   photographic backdrop, the HD-2D contrast against the pixel horde on top. */
+/* The reference Starbase artwork — a smooth photographic backdrop, the HD-2D
+   contrast against the pixel horde on top. A slow pan is the backdrop's own
+   share of the parallax; the cloud layer above it drifts independently. */
 .ts-bg {
   position: absolute;
-  inset: 0;
+  inset: -2%;
   background-size: cover;
   background-position: center bottom;
+  animation: bg-pan 120s ease-in-out infinite alternate;
+}
+@keyframes bg-pan {
+  from {
+    transform: scale(1.02) translate(0, 0);
+  }
+  to {
+    transform: scale(1.02) translate(-1.2%, 0.6%);
+  }
+}
+/* A second, independent layer of motion over the painted sky — soft drifting
+   cloud accents, each at its own speed, the parallax cue the flat plate can't
+   give on its own. */
+.ts-clouds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ts-cloud {
+  position: absolute;
+  aspect-ratio: 3 / 1;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+  filter: blur(4px);
+  animation: cloud-drift linear infinite;
+}
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-6vw);
+  }
+  to {
+    transform: translateX(6vw);
+  }
 }
 /* Logo and menu on a solid signboard, so contrast never depends on what the
    scene behind them happens to be painting at that spot. */
@@ -1486,53 +1520,29 @@ select {
 .ts-item:not(.on) .ts-cursor {
   animation: none;
 }
-/* Two crossings of the floor, anchored to where the painted ground sits
-   regardless of viewport size — the upper row at desk height, the lower at
-   the true floor line. */
-.ts-row {
+/* The entrance cluster: a small box over the building's door in the artwork,
+   holding a handful of walkers that mill in place rather than march across
+   the whole screen — "busy at the door", not "a parade". */
+.ts-entrance {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 60px;
+  left: 82%;
+  top: 77%;
+  width: 12%;
+  height: 9%;
 }
-.ts-row.upper {
-  bottom: 24%;
-}
-.ts-row.ground {
-  bottom: 10%;
-}
-.ts-march {
+.ts-entrance-unit {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: flex-end;
-  gap: 34px;
-  padding-left: 20px;
-  animation: march 26s linear infinite;
+  animation-name: mill;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
-.ts-march.fast {
-  animation-duration: 15s;
-}
-.ts-march.rev {
-  animation-name: march-rev;
-  animation-duration: 22s;
-}
-@keyframes march {
-  from {
-    transform: translateX(-360px);
+@keyframes mill {
+  0%,
+  100% {
+    transform: translateX(0);
   }
-  to {
-    transform: translateX(1500px);
-  }
-}
-@keyframes march-rev {
-  from {
-    transform: translateX(1500px);
-  }
-  to {
-    transform: translateX(-360px);
+  50% {
+    transform: translateX(14px);
   }
 }
 .ts-unit {
@@ -1554,16 +1564,7 @@ select {
 .ts-walker {
   display: block;
   image-rendering: pixelated;
-}
-/* The farther row reads as farther: smaller and a touch duller. */
-.ts-row.upper .ts-walker {
-  transform: scale(0.8);
-  opacity: 0.85;
-  filter: brightness(0.88);
-}
-/* A row walking right-to-left needs its steps mirrored, or it reads as walking backwards. */
-.ts-march.rev .ts-walker {
-  transform: scaleX(-1);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
 }
 /* The horde "solving issues": a tick pops over one walker's head per row. */
 .ts-ticket {

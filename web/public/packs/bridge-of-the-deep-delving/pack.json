@@ -1,0 +1,402 @@
+{
+  "name": "Bridge of the Deep Delving",
+  "provenance": "Composed for this pack by an Agentlings designer. The scene, geometry, figures, lighting and palette are original work; far.png and mid.png were rendered here with three.js through render_plate and ship with the pack. The setting is an original interpretation of a situation from J.R.R. Tolkien's The Lord of the Rings (1954, in copyright) — a grey pilgrim holding a narrow span against a horned fire-demon in the deep halls of a delved mountain. mid.png carries the two figures: both were drawn as flat polygons to coordinates written here, from the description in the prose (a grey robe, a broad-brimmed hat, a staff and a sword; a shadow-shape whose mane was kindled, with a whip of flame). Nothing is reproduced from any edition, film, game or third-party artwork: no text, marks, names, logos, character designs, poses or reference images were used, and no character is named in the pack. Reusable within this repository under the repository's own terms.",
+  "viewH": 450,
+  "groundY": 388,
+  "rim": "stoneDark",
+  "theme": {
+    "void": 1051401,
+    "rock": 4996153,
+    "rockLight": 7231560,
+    "rockDark": 1971234,
+    "rockEdge": 9327412,
+    "accent": 16742952,
+    "accentLight": 16761450,
+    "accentDark": 11557392,
+    "grass": 10271436,
+    "grassDark": 4886988,
+    "wood": 5981246,
+    "woodDark": 2957341,
+    "stoneDark": 1051401,
+    "flame": 16751674,
+    "flameCore": 16773832,
+    "hover": 16765570
+  },
+  "backdrop": {
+    "plates": [
+      "far.png",
+      "mid.png"
+    ],
+    "finish": "smooth",
+    "ops": []
+  },
+  "ops": [
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 62,
+      "color": "stoneDark"
+    },
+    {
+      "op": "rect",
+      "x": 520,
+      "y": "groundY",
+      "w": 480,
+      "h": 62,
+      "color": "accentDark",
+      "alpha": 0.1
+    },
+    {
+      "op": "rect",
+      "x": 680,
+      "y": "groundY",
+      "w": 320,
+      "h": 62,
+      "color": "accentDark",
+      "alpha": 0.1
+    },
+    {
+      "op": "rect",
+      "x": 810,
+      "y": "groundY",
+      "w": 190,
+      "h": 44,
+      "color": "accentDark",
+      "alpha": 0.12
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+28",
+      "w": 1000,
+      "h": 34,
+      "color": "void",
+      "alpha": 0.45
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY",
+      "w": 1000,
+      "h": 2,
+      "color": "rockDark"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+2",
+      "w": 1000,
+      "h": 2,
+      "color": "accentDark",
+      "alpha": 0.55
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 8,
+      "to": 996,
+      "step": 43,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+1",
+          "w": 21,
+          "h": 1,
+          "color": "flame",
+          "alpha": 0.3
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 560,
+      "to": 996,
+      "step": 29,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+2",
+          "w": 13,
+          "h": 2,
+          "color": "flame",
+          "alpha": 0.28
+        }
+      ]
+    },
+    {
+      "op": "band",
+      "axis": "x",
+      "from": 690,
+      "to": 990,
+      "step": 61,
+      "of": [
+        {
+          "op": "rect",
+          "x": 0,
+          "y": "groundY+1",
+          "w": 9,
+          "h": 3,
+          "color": "flameCore",
+          "alpha": 0.3
+        }
+      ]
+    },
+    {
+      "op": "veins",
+      "x": 0,
+      "y": "groundY+5",
+      "w": 1000,
+      "h": 52,
+      "count": 11,
+      "color": "void",
+      "alpha": 0.7
+    },
+    {
+      "op": "veins",
+      "x": 470,
+      "y": "groundY+4",
+      "w": 530,
+      "h": 40,
+      "count": 7,
+      "color": "accentDark",
+      "alpha": 0.5
+    },
+    {
+      "op": "veins",
+      "x": 700,
+      "y": "groundY+4",
+      "w": 300,
+      "h": 26,
+      "count": 4,
+      "color": "accent",
+      "alpha": 0.3
+    },
+    {
+      "op": "speckle",
+      "x": 0,
+      "y": "groundY+3",
+      "w": 1000,
+      "h": 59,
+      "count": 520,
+      "light": "rock",
+      "dark": "void"
+    },
+    {
+      "op": "speckle",
+      "x": 600,
+      "y": "groundY+3",
+      "w": 400,
+      "h": 30,
+      "count": 130,
+      "light": "accentDark",
+      "dark": "void"
+    },
+    {
+      "op": "repeat",
+      "at": [
+        46,
+        288,
+        604,
+        878
+      ],
+      "of": [
+        {
+          "op": "poly",
+          "points": [
+            [
+              0,
+              396
+            ],
+            [
+              11,
+              389
+            ],
+            [
+              24,
+              393
+            ],
+            [
+              27,
+              404
+            ],
+            [
+              5,
+              405
+            ]
+          ],
+          "color": "rock"
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              2,
+              395
+            ],
+            [
+              11,
+              390
+            ],
+            [
+              18,
+              393
+            ],
+            [
+              9,
+              398
+            ]
+          ],
+          "color": "rockLight",
+          "alpha": 0.45
+        },
+        {
+          "op": "rect",
+          "x": 0,
+          "y": 404,
+          "w": 27,
+          "h": 2,
+          "color": "void",
+          "alpha": 0.6
+        }
+      ]
+    },
+    {
+      "op": "repeat",
+      "at": [
+        128,
+        372,
+        447,
+        728,
+        946
+      ],
+      "of": [
+        {
+          "op": "poly",
+          "points": [
+            [
+              0,
+              400
+            ],
+            [
+              7,
+              393
+            ],
+            [
+              15,
+              399
+            ],
+            [
+              13,
+              406
+            ],
+            [
+              3,
+              406
+            ]
+          ],
+          "color": "rockDark"
+        },
+        {
+          "op": "poly",
+          "points": [
+            [
+              2,
+              398
+            ],
+            [
+              7,
+              394
+            ],
+            [
+              11,
+              398
+            ],
+            [
+              6,
+              401
+            ]
+          ],
+          "color": "rockEdge",
+          "alpha": 0.4
+        }
+      ]
+    },
+    {
+      "op": "repeat",
+      "at": [
+        92,
+        214,
+        336,
+        520,
+        662,
+        802,
+        918
+      ],
+      "of": [
+        {
+          "op": "poly",
+          "points": [
+            [
+              0,
+              418
+            ],
+            [
+              8,
+              412
+            ],
+            [
+              17,
+              417
+            ],
+            [
+              12,
+              424
+            ],
+            [
+              3,
+              423
+            ]
+          ],
+          "color": "rockDark",
+          "alpha": 0.85
+        }
+      ]
+    },
+    {
+      "op": "tufts",
+      "x": 660,
+      "y": "groundY+40",
+      "w": 300,
+      "h": 6,
+      "count": 22,
+      "height": 7,
+      "color": "accent",
+      "alt": "flame"
+    },
+    {
+      "op": "tufts",
+      "x": 40,
+      "y": "groundY+46",
+      "w": 240,
+      "h": 5,
+      "count": 12,
+      "height": 5,
+      "color": "rockDark",
+      "alt": "rock"
+    },
+    {
+      "op": "rect",
+      "x": 0,
+      "y": "groundY+56",
+      "w": 1000,
+      "h": 6,
+      "color": "void",
+      "alpha": 0.55
+    }
+  ]
+}

@@ -108,6 +108,12 @@ behavioral base lives there alone; this is the project half, split out on
 - Definition of done (extends CLAUDE.md rule 4): show the evidence — test output,
   command results — don't just assert success.
 - Commit early and often with descriptive messages.
+- **A push to `main` is a deploy.** The reference install rebuilds from `main`
+  on every push — measured 2026-08-28, deployment `bb1c8b7f` of `ed5e622`,
+  SUCCESS in 61 s — and the published template tracks `main` rather than a
+  pinned commit (D-276), so one push changes both the live install and what a
+  stranger clicking *Deploy* receives. Say so when offering a push, and never
+  push a container build that has not been typechecked and tested.
 
 ## Decision log
 

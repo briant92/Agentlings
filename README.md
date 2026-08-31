@@ -54,12 +54,23 @@ The third route a laptop has — a fresh `claude` login that the app auto-detect
 **does not exist in a container**. There is no interactive login to do and no
 stored session to find.
 
-Set whichever you choose as a **variable on the service** — this is the one key
-that does not go in Settings, because the drawer checks a key against the
-service it belongs to before storing it, and a model key has no free call to
-check with. Setting a variable redeploys, which is what you want here: the
-executor is decided once at boot, so a credential that arrives without a
-restart changes nothing until the next one.
+**The API key goes in Settings**, on the engine's own row, like every other key:
+paste it and it is checked against Anthropic before anything is stored. The
+check is `GET /v1/models`, which costs nothing and spends no tokens — it proves
+the key is valid, though not that the account has credit, which no check short
+of spending money can. The next job runs for real; there is no restart.
+
+You can also pick **which model** the crew runs on there. The list is whatever
+your own key can reach, asked of Anthropic rather than written down here, and
+leaving it on *the engine's default* is a real choice. A role that names its own
+model still uses that one.
+
+The long-lived token route is different: set `CLAUDE_CODE_OAUTH_TOKEN` as a
+**variable on the service**, since it is not something the drawer can check
+against Anthropic. Setting a variable redeploys, which is fine — but note that a
+variable set on the host **beats the secrets file for good** under that name, so
+if you set the API key as a service variable you will not be able to change it
+from Settings afterwards.
 
 ### Where every other key goes
 

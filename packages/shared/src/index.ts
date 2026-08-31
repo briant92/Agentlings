@@ -418,11 +418,16 @@ export interface ConnectionInfo {
   /** Whether jobs can reach it right now — the default unless Settings says otherwise. */
   enabled: boolean;
   /**
-   * What a run may read, or what approval may send (UI.md, step 7) — the
-   * boundary Settings draws. Read off the catalog's own `sendsOnly` flag, the
-   * one fact that already said it (D-097), rather than declared twice.
+   * What a run may read, what approval may send (UI.md, step 7), or the model
+   * engine that runs the job at all (#32) — the boundary Settings draws. Read
+   * off the catalog's own flags, the facts that already said it (D-097),
+   * rather than declared twice.
+   *
+   * `engine` is its own value rather than folded into `send`: both grant a run
+   * nothing, but this field says what a thing *is*, and the engine is not a
+   * send. The seams that ask whether a job may hold it use `grantsNothing`.
    */
-  kind: 'read' | 'send';
+  kind: 'read' | 'send' | 'engine';
   /**
    * Whether the connection holds any secret at all, so a row can offer to
    * forget it (D-218). `web` and `render` are ready and hold nothing.

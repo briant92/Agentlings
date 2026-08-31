@@ -33,7 +33,7 @@ import {
   mcpSecretValues,
   mcpToolNames,
   resolveForJob,
-  secretNames,
+  secretsHiddenFromSession,
   toMcpServers,
   type Connection,
 } from '../connections';
@@ -1581,7 +1581,7 @@ export class ClaudeAgentExecutor implements Executor {
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [this.runner, configPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: launderedEnv(secretNames(this.connections())),
+        env: launderedEnv(secretsHiddenFromSession(this.connections())),
       });
       // The stdio connections' secrets, over the one channel the session
       // cannot reach: not the config file, which lives in the sandbox it

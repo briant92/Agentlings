@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { NominaFormat, WirePayee, WireSettings } from '@agentlings/shared';
-import { missingSecrets, type Connection } from './connections';
+import { grantsNothing, missingSecrets, type Connection } from './connections';
 
 /**
  * What the user decided, as opposed to what the app shipped.
@@ -234,8 +234,11 @@ export function grantedTools(
   // Excluded here rather than at the surface, so one answer serves the quote,
   // the router and the run: what a job may reach is asked in exactly one
   // place, which is the whole point of this function.
-  const sending = new Set(connections.filter((c) => c.sendsOnly).map((c) => c.name));
-  const on = enabledNames(connections, settings, env).filter((name) => !sending.has(name));
+  // `grantsNothing`, not `sendsOnly`: the model engine (#32) grants a run
+  // nothing either, for its own reason, and this is one of the two places that
+  // must agree about it.
+  const ungrantable = new Set(connections.filter(grantsNothing).map((c) => c.name));
+  const on = enabledNames(connections, settings, env).filter((name) => !ungrantable.has(name));
   // A supervised door (D-255) is never part of "whatever is on": a job holds
   // it only when its list NAMES it. So the switch in Settings makes it
   // holdable, not held — a person queuing an ordinary job does not get a

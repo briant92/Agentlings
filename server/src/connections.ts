@@ -59,6 +59,22 @@ export interface Connection {
    */
   sendsOnly?: boolean;
   /**
+   * The model engine (#32): the thing that *runs* a job, not a door a job
+   * reaches. It sits in the catalog for one reason — so the secret drawer can
+   * take its key. The store, the validate-before-write and the way out (D-218)
+   * all come from being here, and none of them would be reached by a panel of
+   * its own.
+   *
+   * It grants a run nothing, for a different reason than `sendsOnly` does: a
+   * sender grants nothing because the send happens at approval and never
+   * inside a run (D-097); the engine grants nothing because "hold the engine
+   * as a tool" is not a meaningful thing for a job to do. Both answer
+   * `grantsNothing`; only one of them is a send, which is why this is its own
+   * flag rather than a second meaning loaded onto that one — the UI says
+   * `send` off `sendsOnly`, and the engine is not a send.
+   */
+  engine?: boolean;
+  /**
    * A door a person watches (D-255): the acting browser. Granted only to a
    * job someone queued by hand — a rule naming it is refused at creation and
    * a legacy firing is not handed it — in a visible window on the Settings
@@ -164,6 +180,27 @@ export function secretNames(connections: Connection[]): string[] {
   return [...new Set(connections.flatMap((c) => Object.keys(c.secrets ?? {})))];
 }
 
+/**
+ * Connection secrets a *session* child must never hold — which is every one
+ * except the engine's own key, because that key is what the session
+ * authenticates with (#32).
+ *
+ * The two children want opposite things, and D-217's rule was written when
+ * only one of them existed. A compiled tool is a plain node script: it needs
+ * no catalog secret at all, the model key included, and one holding the model
+ * key could spend money with nobody's door in the way — so `routed.ts` keeps
+ * using `secretNames` and strips the lot. A session is the thing the key is
+ * *for*: strip it there and every job fails to authenticate.
+ *
+ * Adding the engine to the catalog put its key in `secretNames` and so into
+ * the session child's drop list. The D-217 test caught it — the whole catalog
+ * dropped, `ANTHROPIC_API_KEY` surviving, is exactly what it asserts — which is
+ * why that assertion was written as a value and not as a count.
+ */
+export function secretsHiddenFromSession(connections: Connection[]): string[] {
+  return secretNames(connections.filter((c) => !c.engine));
+}
+
 export function readConnections(file: string): Connection[] {
   if (!existsSync(file)) return [];
   try {
@@ -172,6 +209,24 @@ export function readConnections(file: string): Connection[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * Does this connection grant a running session nothing at all?
+ *
+ * Two flags answer yes, for different reasons — a sender because the send
+ * happens at approval and never inside a run (D-097), the engine because it is
+ * what runs the job rather than something the job reaches (#32) — and two
+ * places have to agree on the answer: what a job may reach (`enabledForJob`)
+ * and what a schedule rule may name as a door.
+ *
+ * Both read `sendsOnly` directly before this existed. Adding the engine to
+ * each reading separately is exactly how two copies of one notion drift, and
+ * the copy that drifts here grants a job something it must never hold
+ * (D-030).
+ */
+export function grantsNothing(connection: Pick<Connection, 'sendsOnly' | 'engine'>): boolean {
+  return connection.sendsOnly === true || connection.engine === true;
 }
 
 /** A connection is usable only once every secret it declares is actually set. */
@@ -217,10 +272,16 @@ export function describe(
       ...(identities[c.name] ? { identity: identities[c.name] } : {}),
       defaultOn: c.defaultOn === true,
       enabled: enabled.has(c.name),
-      // The boundary Settings draws (UI.md, step 7), read off the one flag
-      // that already says it: a sends-only connection grants a run nothing
-      // and exists for approval to send through (D-097).
-      kind: c.sendsOnly ? 'send' : 'read',
+      // The boundary Settings draws (UI.md, step 7), read off the flag that
+      // already says it: a sends-only connection grants a run nothing and
+      // exists for approval to send through (D-097).
+      //
+      // `engine` is deliberately NOT folded into `send` here, though both
+      // answer `grantsNothing`. The grant seams ask "may a job hold this?",
+      // where the two are the same; this asks "what IS it?", where calling the
+      // model engine a send would be a plain lie to the person reading it
+      // (#32).
+      kind: c.engine ? 'engine' : c.sendsOnly ? 'send' : 'read',
       credentialed: Object.keys(c.secrets ?? {}).length > 0,
       sharesSecretsWith: sharingSecrets(c, connections),
       ...(c.supervised ? { supervised: true } : {}),

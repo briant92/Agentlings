@@ -144,7 +144,9 @@
       "description": "Fetches a page and returns its readable text, trimmed. No JavaScript, no sign-ins.",
       "transport": "builtin",
       "defaultOn": true,
-      "tools": ["fetch_page"],
+      "tools": [
+        "fetch_page"
+      ],
       "allow": [],
       "maxChars": 12000
     },
@@ -154,7 +156,10 @@
       "description": "Renders a run's own self-contained HTML through this install's own browser, offline — into a styled PDF, or a 2000×900 level-backdrop plate quantized to the backdrop budget. External URLs are blocked during the render; three.js is served from the server's own pinned copy.",
       "transport": "builtin",
       "defaultOn": true,
-      "tools": ["render_pdf", "render_plate"]
+      "tools": [
+        "render_pdf",
+        "render_plate"
+      ]
     },
     {
       "name": "github",
@@ -185,7 +190,9 @@
       "label": "Search the web",
       "description": "Finds pages by searching, and returns titles, snippets and links. Reading one is a separate step — hand a link to the web connection.",
       "transport": "builtin",
-      "tools": ["search_web"],
+      "tools": [
+        "search_web"
+      ],
       "secrets": {
         "BRAVE_API_KEY": "a Brave Search API key — free tier at brave.com/search/api"
       },
@@ -199,7 +206,9 @@
       "label": "US labour statistics",
       "description": "Reads US Bureau of Labor Statistics series — consumer prices, unemployment, payrolls — by series id, newest observations first. A registered key gets 500 calls a day and up to 50 series in one call; without one the only route is the keyless allowance, a shared bucket that is usually already empty.",
       "transport": "builtin",
-      "tools": ["bls_series"],
+      "tools": [
+        "bls_series"
+      ],
       "secrets": {
         "BLS_REGISTRATION_KEY": "a BLS API registration key — free at data.bls.gov/registrationEngine"
       },
@@ -213,7 +222,9 @@
       "label": "Read your calendar",
       "description": "Reads the events on your own Google Calendar — times, titles, what still awaits your reply, who is invited, where. Rides the same Google sign-in as sending, behind its own switch; reading grants no way to change anything.",
       "transport": "builtin",
-      "tools": ["calendar_events"],
+      "tools": [
+        "calendar_events"
+      ],
       "secrets": {
         "GOOGLE_OAUTH_CLIENT_ID": "the google connection's OAuth client id — stored by its Connect flow, nothing new to paste",
         "GOOGLE_OAUTH_CLIENT_SECRET": "that client's secret — stored by the same Connect flow",
@@ -229,7 +240,10 @@
       "label": "Read your mail",
       "description": "Searches your own Gmail with its native query language and reads a chosen message's text — attachments named, never fetched. Rides the same Google sign-in as sending, behind its own switch; reading grants no way to send, reply, label or delete anything.",
       "transport": "builtin",
-      "tools": ["mail_search", "mail_read"],
+      "tools": [
+        "mail_search",
+        "mail_read"
+      ],
       "secrets": {
         "GOOGLE_OAUTH_CLIENT_ID": "the google connection's OAuth client id — stored by its Connect flow, nothing new to paste",
         "GOOGLE_OAUTH_CLIENT_SECRET": "that client's secret — stored by the same Connect flow",
@@ -371,6 +385,24 @@
         "Install the app to the workspace — it answers with a Bot User OAuth Token (xoxb-…)",
         "Paste the token here, then Check — one real call says which bot and workspace it is",
         "For private channels, /invite the bot in Slack first"
+      ]
+    },
+    {
+      "name": "anthropic",
+      "engine": true,
+      "label": "The model your crew runs on",
+      "description": "The engine that does the work. Without a key the crew does pretend work: jobs run, write a result, and cost nothing. Grants the crew no tools at all — it is what runs a job, not something a job reaches.",
+      "transport": "builtin",
+      "tools": [],
+      "defaultOn": true,
+      "secrets": {
+        "ANTHROPIC_API_KEY": "an API key from console.anthropic.com — billed to that account, and every job says what it cost before you approve it"
+      },
+      "setup": [
+        "Open console.anthropic.com and sign in",
+        "Go to API keys and create one",
+        "Paste it here — it is checked against Anthropic before anything is stored",
+        "Jobs run for real from the next one; turn this off any time to go back to pretend work without losing the key"
       ]
     }
   ]

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fileURLToPath } from 'node:url';
-import { readConnections, secretNames } from '../connections';
+import { readConnections, secretNames, secretsHiddenFromSession } from '../connections';
 import { LEASH_CREDIBLE_UP_TO } from '../recipes';
 import {
   closeOutBrief,
@@ -1040,10 +1040,31 @@ describe('launderedEnv (D-217)', () => {
     ]) {
       expect(names).toContain(name);
     }
+    // What a SESSION child is handed, which is not the same list (#32). The
+    // engine is a catalog connection so the drawer can take its key, so its
+    // key is in `secretNames` — and a session stripped of it cannot
+    // authenticate at all. This assertion, written as a value rather than a
+    // count, is what caught that the moment the engine was added.
+    const hidden = secretsHiddenFromSession(readConnections(catalog));
     const loaded = Object.fromEntries(names.map((n) => [n, 'x']));
-    expect(launderedEnv(names, { ...loaded, ANTHROPIC_API_KEY: 'key' })).toEqual({
+    expect(launderedEnv(hidden, { ...loaded, ANTHROPIC_API_KEY: 'key' })).toEqual({
       ANTHROPIC_API_KEY: 'key',
     });
+  });
+
+  // The other child wants the opposite, and the two must not be collapsed: a
+  // compiled tool is a plain node script that needs no catalog secret, and one
+  // holding the model key could spend money with no door in the way. So the
+  // full list still names it, and only the session's list spares it.
+  it('the tool child is still denied the model key that the session child keeps', () => {
+    const catalog = fileURLToPath(new URL('../../../catalog/connections.json', import.meta.url));
+    const connections = readConnections(catalog);
+    expect(secretNames(connections)).toContain('ANTHROPIC_API_KEY');
+    expect(secretsHiddenFromSession(connections)).not.toContain('ANTHROPIC_API_KEY');
+    // Every other secret is hidden from both — the engine is the only exception.
+    for (const name of ['GITHUB_TOKEN', 'TELEGRAM_BOT_TOKEN', 'SLACK_BOT_TOKEN']) {
+      expect(secretsHiddenFromSession(connections)).toContain(name);
+    }
   });
 
   // R-01, in the seam the catalog list could never have covered: the session

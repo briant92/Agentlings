@@ -147,9 +147,10 @@ import { performOutboxSend } from './outboxsend';
 import {
   describe,
   doorEndpoints,
+  grantsNothing,
   missingSecrets,
   readConnections,
-  secretNames,
+  secretsHiddenFromSession,
   sharingSecrets,
   type Connection,
 } from './connections';
@@ -231,7 +232,7 @@ import {
   searchProvenance,
 } from './provenance';
 import { relevantLines } from './router';
-import type { Executor } from './executors/executor';
+import { ChosenExecutor, type Executor } from './executors/executor';
 import { RoutedExecutor } from './executors/routed';
 import { SimulatedExecutor } from './executors/simulated';
 import { categorise, entriesIn, indexedBySource } from './browse';
@@ -488,15 +489,41 @@ function syncLibrary(): Promise<LibraryIndex> {
 
 /** API key, a Claude Code login, or an explicit AGENTLINGS_EXECUTOR override. */
 const forced = process.env.AGENTLINGS_EXECUTOR;
+
+/**
+ * Whether real sessions run — asked when a job starts, never cached (#32).
+ *
+ * It was a boot-time `const`, which made a pasted key inert: the drawer stores
+ * the value and patches live `process.env` in the same call (D-078), so the
+ * key is *there*, and this had already decided it was not. An install given a
+ * key through Settings stayed in simulated mode until someone restarted a
+ * server that, on a host, has no shell to restart it from.
+ *
+ * Reading it at call time is D-078's own architecture — every consumer asks
+ * `process.env` when it calls — and it is what makes the engine's switch
+ * honest: turning the row off stops real spending without touching the key.
+ *
+ * The switch can only ever turn real work OFF. A person who has not touched it
+ * gets the same answer as before, from `shouldRunRealSessions`, which is the
+ * one that knows about a stored Claude Code login as well as a key.
+ */
+function useClaude(): boolean {
+  if (forced) return forced === 'claude';
+  const engine = allConnections().find((conn) => conn.engine);
+  if (engine && readSettings(SANDBOX_ROOT).connections?.[engine.name] === false) return false;
+  return shouldRunRealSessions(describeAuth(process.env, readStoredLogin(), Date.now()));
+}
+
 const auth = describeAuth(process.env, readStoredLogin(), Date.now());
-const useClaude = forced ? forced === 'claude' : shouldRunRealSessions(auth);
 const simulated = new SimulatedExecutor();
+// Boot-time, and deliberately still a snapshot: these two lines describe how
+// the server came up, not what it will decide for the next job.
 console.log(
-  `[agentlings] executor: ${useClaude ? 'claude-agent-sdk' : 'simulated (set ANTHROPIC_API_KEY in .env or AGENTLINGS_EXECUTOR=claude)'}`,
+  `[agentlings] executor: ${useClaude() ? 'claude-agent-sdk' : 'simulated (add a model key in Settings, set ANTHROPIC_API_KEY, or AGENTLINGS_EXECUTOR=claude)'}`,
 );
 // Say it once, at startup, instead of letting the user find out one failed
 // agentling at a time.
-if (useClaude && auth.problem) console.warn(`[agentlings] ${auth.problem}`);
+if (useClaude() && auth.problem) console.warn(`[agentlings] ${auth.problem}`);
 
 interface LevelRuntime {
   meta: LevelMeta;
@@ -549,8 +576,13 @@ function makeLevel(dir: string): LevelRuntime {
     () => readKnowledge(dir),
     () => allConnections().find((conn) => conn.name === 'web') ?? null,
     surfaceFor,
-    useClaude
-      ? new ClaudeAgentExecutor(
+    // Both are built, and which one runs is asked when a job starts (#32).
+    // Constructing the Claude executor costs nothing — its constructor assigns
+    // fields and nothing else — and building it unconditionally is what lets a
+    // key pasted in Settings take effect without a restart.
+    new ChosenExecutor(
+      useClaude,
+      new ClaudeAgentExecutor(
           registry,
           memory,
           SKILLS_DIR,
@@ -576,8 +608,9 @@ function makeLevel(dir: string): LevelRuntime {
           // a payee added this morning should be named in this afternoon's
           // batch brief without a restart.
           () => wireSettings(readSettings(SANDBOX_ROOT)),
-        )
-      : simulated,
+        ),
+      simulated,
+    ),
     // Absent without a key, which is what makes the free tier refuse to claim
     // a search it could not then run.
     process.env.BRAVE_API_KEY
@@ -1016,7 +1049,7 @@ function browserActSettings(): BrowserActSettings {
 
 app.get('/api/settings', (c) =>
   c.json({
-    executor: useClaude ? 'claude-agent-sdk' : 'simulated',
+    executor: useClaude() ? 'claude-agent-sdk' : 'simulated',
     auth,
     connections: connectionList(),
     browserAct: browserActSettings(),
@@ -2939,14 +2972,15 @@ app.post('/api/levels/:lid/schedules', async (c) => {
     const badInput = validateStanding(inputs);
     if (badInput) return c.json({ error: badInput }, 400);
   }
-  // A door is a connection that is not sends-only (D-254): a channel rides on
-  // `channel`, and a name that is neither would be stored and never granted.
-  // A supervised door (D-255) is refused by name: a firing has nobody at the
-  // window, so a rule may never hold it.
+  // A door is a connection that grants a run something (D-254): a channel
+  // rides on `channel`, the model engine runs the job rather than being
+  // reached by it (#32), and a name that is neither would be stored and never
+  // granted. A supervised door (D-255) is refused by name: a firing has nobody
+  // at the window, so a rule may never hold it.
   const catalogNow = allConnections();
   const badDoor = validTools(
     body.tools,
-    catalogNow.filter((conn) => !conn.sendsOnly).map((conn) => conn.name),
+    catalogNow.filter((conn) => !grantsNothing(conn)).map((conn) => conn.name),
     catalogNow.filter((conn) => conn.supervised).map((conn) => conn.name),
   );
   if (badDoor) return c.json({ error: badDoor }, 400);
@@ -4066,12 +4100,14 @@ app.post('/api/match/refine', async (c) => {
   const body = await c.req.json<{ text?: string }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  if (!useClaude) return c.json({ available: false, refined: null });
+  if (!useClaude()) return c.json({ available: false, refined: null });
   const refined = await refineMatch(
     text,
     registry.list(),
     listSkills(SKILLS_DIR),
-    secretNames(allConnections()),
+    // The engine’s own key is kept: this runs a session, and stripping it
+    // would leave the one-turn match unable to authenticate (#32).
+    secretsHiddenFromSession(allConnections()),
   );
   return c.json({ available: true, refined });
 });

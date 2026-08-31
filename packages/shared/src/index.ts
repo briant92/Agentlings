@@ -123,6 +123,12 @@ export interface SettingsInfo {
   browserAct: BrowserActSettings;
   /** The wire's charge account, layout and payee allowlist (D-268). */
   wire: WireSettings;
+  /**
+   * The model the crew runs on (#32), or null when nobody chose and the engine
+   * uses its own default. Null rather than a name, because naming one here
+   * would be a copy of a list that moves.
+   */
+  model: string | null;
 }
 
 export interface BrowserActSettings {

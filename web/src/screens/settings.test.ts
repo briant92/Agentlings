@@ -69,6 +69,34 @@ describe('byKind', () => {
     expect(reads.map((c) => c.name)).toEqual(['web', 'mail']);
     expect(sends.map((c) => c.name)).toEqual(['telegram', 'slack']);
   });
+
+  it('hands back the engine separately, so it lands on the app board (#32)', () => {
+    const list = [
+      connection({ name: 'web' }),
+      connection({ name: 'anthropic', kind: 'engine' }),
+      connection({ name: 'telegram', kind: 'send' }),
+    ];
+    const { reads, sends, engine } = byKind(list);
+    expect(engine?.name).toBe('anthropic');
+    // And on neither of the other boards: it is not something a run reaches,
+    // nor something approval sends through.
+    expect(reads.map((c) => c.name)).toEqual(['web']);
+    expect(sends.map((c) => c.name)).toEqual(['telegram']);
+  });
+
+  it('an engine the catalog does not offer is simply absent', () => {
+    expect(byKind([connection({ name: 'web' })]).engine).toBeUndefined();
+  });
+
+  it('a kind nobody splits out would render on no board at all', () => {
+    // The defect this function had: `engine` existed in the catalog, the
+    // type and the route, and byKind named only reads and sends — so the row
+    // rendered nowhere and the key could not be pasted through the UI at all.
+    const list = [connection({ name: 'anthropic', kind: 'engine' })];
+    const { reads, sends, engine } = byKind(list);
+    expect(reads.length + sends.length).toBe(0);
+    expect(engine).toBeDefined();
+  });
 });
 
 describe('splitReads', () => {

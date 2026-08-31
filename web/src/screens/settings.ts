@@ -14,14 +14,26 @@ export function tabOf(saved: string | null): Tab {
   return saved === 'sends' || saved === 'app' ? saved : 'reads';
 }
 
-/** Reads and sends in the catalog's order, by the connection's own kind (UI.md, step 7). */
+/**
+ * Reads, sends and the engine in the catalog's order, by the connection's own
+ * kind (UI.md, step 7).
+ *
+ * The engine is returned separately rather than folded into either (#32). It
+ * belongs on the `app` board — it is not something a run reaches or something
+ * approval sends through, it is what runs the job — and a kind this function
+ * does not name renders on no board at all, which is how a connection can be
+ * complete in the catalog, the type and the route and still be unreachable by
+ * the person who needs it.
+ */
 export function byKind(connections: readonly ConnectionInfo[]): {
   reads: ConnectionInfo[];
   sends: ConnectionInfo[];
+  engine: ConnectionInfo | undefined;
 } {
   return {
     reads: connections.filter((c) => c.kind === 'read'),
     sends: connections.filter((c) => c.kind === 'send'),
+    engine: connections.find((c) => c.kind === 'engine'),
   };
 }
 

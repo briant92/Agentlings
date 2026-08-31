@@ -213,6 +213,15 @@ export function SettingsModal({
    * would be the worst possible thing to be wrong about.
    */
   const wire = settings?.wire ?? null;
+  /**
+   * The model picker (#32). The list comes from the provider rather than from
+   * here, so it is what this install's own key can actually reach — and it is
+   * empty until there is a key, which is why it is only fetched once the
+   * engine is ready.
+   */
+  const [models, setModels] = useState<{ id: string; label: string }[]>([]);
+  const [model, setModel] = useState<string | null>(null);
+  const [modelProblem, setModelProblem] = useState<string | null>(null);
   const [chargeAccount, setChargeAccount] = useState('');
   const [payee, setPayee] = useState({
     rut: '',
@@ -231,6 +240,29 @@ export function SettingsModal({
     setSettings((prev) => (prev ? { ...prev, wire: saved } : prev));
     return saved;
   };
+  /**
+   * Stores the choice, and shows the server's refusal rather than swallowing
+   * it: picking a model this key cannot use is refused there, and a picker
+   * that silently kept the old value would leave the person believing they had
+   * changed something.
+   */
+  const saveModel = async (next: string) => {
+    setModelProblem(null);
+    const previous = model;
+    setModel(next || null);
+    try {
+      const saved = await api<{ model: string | null }>('/api/settings/model', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ model: next }),
+      });
+      setModel(saved.model);
+    } catch (err) {
+      setModel(previous);
+      setModelProblem(err instanceof Error ? err.message : 'could not save the model');
+    }
+  };
+
   const saveWire = async () => {
     setWireNote(null);
     try {
@@ -321,6 +353,18 @@ export function SettingsModal({
       .then((reply) => setAudience(reply.people))
       .catch(() => setAudience([]));
 
+  /**
+   * The models this key can reach, and what is chosen (#32). Asked only once
+   * the engine is ready: with no key the provider has nothing to tell us, and
+   * an empty picker with no explanation reads as a broken control rather than
+   * as "there is no key yet".
+   */
+  const loadModels = () => {
+    void api<{ models: { id: string; label: string }[] }>('/api/settings/models')
+      .then((reply) => setModels(reply.models))
+      .catch(() => setModels([]));
+  };
+
   const unknow = async (id: string) => {
     const reply = await api<{ people: AudiencePerson[] }>(
       `/api/channels/telegram/audience/${id}`,
@@ -333,6 +377,8 @@ export function SettingsModal({
     void api<SettingsInfo>('/api/settings').then((next) => {
       setSettings(next);
       if (next.connections.find((c) => c.name === 'telegram')?.ready) loadAudience();
+      setModel(next.model);
+      if (next.connections.find((c) => c.kind === 'engine')?.ready) loadModels();
     });
     void api<ChannelShelf>('/api/channels')
       .then(setShelf)
@@ -501,7 +547,7 @@ export function SettingsModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const { reads, sends } = byKind(settings?.connections ?? []);
+  const { reads, sends, engine } = byKind(settings?.connections ?? []);
   const { alwaysOn, sources } = splitReads(reads);
   const usage = new Map((doors ?? []).map((d) => [d.door, d]));
   const began = trailBegan(doors ?? []);
@@ -994,6 +1040,45 @@ export function SettingsModal({
           )}
           {tab === 'app' && (
             <>
+              {/* The engine's own row (#32): the key goes in here, on the board
+                  that is about the app rather than about what a run reaches.
+                  It is the same row and the same drawer every connection uses,
+                  so the paste is validated before it is stored like any other. */}
+              {engine && (
+                <>
+                  <div className="sect">engine</div>
+                  {row(engine)}
+                  {engine.ready && (
+                    <div className="secret-row">
+                      <label className="dim" htmlFor="model-pick">
+                        model
+                      </label>
+                      <select
+                        id="model-pick"
+                        aria-label="the model the crew runs on"
+                        value={model ?? ''}
+                        onChange={(e) => void saveModel(e.target.value)}
+                      >
+                        {/* Empty is a real choice, not a placeholder: it hands
+                            the decision back to the engine's own default. */}
+                        <option value="">the engine’s default</option>
+                        {models.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {engine.ready && modelProblem && <p className="stat-failed">{modelProblem}</p>}
+                  {engine.ready && (
+                    <p className="dim">
+                      A role that names its own model still uses that one — this is the default for
+                      every job that does not ask.
+                    </p>
+                  )}
+                </>
+              )}
               <div className="sect">display</div>
               <label className="toggle">
                 <input

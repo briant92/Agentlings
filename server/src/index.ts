@@ -1055,10 +1055,16 @@ function browserActSettings(): BrowserActSettings {
 app.get('/api/settings', (c) =>
   c.json({
     executor: useClaude() ? 'claude-agent-sdk' : 'simulated',
-    auth,
+    // Read now, not the boot snapshot (#32). The executor line beside it is
+    // already asked fresh, so a stale `auth` here would have the panel saying
+    // "running real sessions" and "no credentials" in the same breath the
+    // moment someone pasted a key — two answers to one question, from one
+    // response object.
+    auth: describeAuth(process.env, readStoredLogin(), Date.now()),
     connections: connectionList(),
     browserAct: browserActSettings(),
     wire: wireSettings(readSettings(SANDBOX_ROOT)),
+    model: chosenModel(readSettings(SANDBOX_ROOT)) ?? null,
   } satisfies SettingsInfo),
 );
 

@@ -176,3 +176,24 @@ export function disconnectWording(connection: Pick<ConnectionInfo, 'name' | 'sha
     ? 'revokes the sign-in at Google and forgets its three lines in .env; the switch goes off'
     : 'forgets the token in .env — the line stays, commented, for the next paste; the switch goes off';
 }
+
+/**
+ * What the engine's row says when it holds a key and is switched off (#32).
+ *
+ * That state is reachable in one ordinary move and reads as nothing being
+ * wrong: forgetting a key switches the row off (D-218), so the next paste
+ * leaves a valid, validated key beside a crew still doing pretend work. The
+ * key's own indicator says *stored*, which is true and is not the question.
+ *
+ * Storing a key deliberately does not switch the engine back on — that would
+ * resume spending for somebody who turned it off to stop spending and later
+ * rotated the key — so the honest fix is for the row to say what it is doing
+ * rather than to act (D-269). `null` where there is nothing to say, so the
+ * caller renders nothing rather than an empty line.
+ */
+export function engineIdleNote(
+  engine: Pick<ConnectionInfo, 'ready' | 'enabled'> | undefined,
+): string | null {
+  if (!engine?.ready || engine.enabled) return null;
+  return 'The key is stored. The crew keeps doing pretend work until you switch this on.';
+}

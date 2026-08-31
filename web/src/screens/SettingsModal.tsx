@@ -17,6 +17,7 @@ import { crtEnabled, setCrt } from '../ui/crt';
 import {
   authWording,
   byKind,
+  engineIdleNote,
   needsLine,
   splitReads,
   tabOf,
@@ -1048,6 +1049,11 @@ export function SettingsModal({
                 <>
                   <div className="sect">engine</div>
                   {row(engine)}
+                  {/* The one state the row does not otherwise account for, and
+                      the one nobody can read off the switch alone. The wording
+                      and the condition both live in `engineIdleNote`, so the
+                      four states are pinned without a DOM. */}
+                  {engineIdleNote(engine) && <p className="engine-idle">{engineIdleNote(engine)}</p>}
                   {engine.ready && (
                     <div className="secret-row">
                       <label className="dim" htmlFor="model-pick">

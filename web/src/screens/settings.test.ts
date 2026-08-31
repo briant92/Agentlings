@@ -5,6 +5,7 @@ import {
   byKind,
   disconnectLabel,
   disconnectWording,
+  engineIdleNote,
   needsLine,
   splitReads,
   tabOf,
@@ -224,5 +225,38 @@ describe('disconnect (D-218)', () => {
     expect(disconnectWording({ name: 'telegram', sharesSecretsWith: [] })).toMatch(
       /line stays, commented/,
     );
+  });
+});
+
+describe('engineIdleNote (#32)', () => {
+  const engine = (over: Partial<ConnectionInfo> = {}) =>
+    connection({ name: 'anthropic', kind: 'engine', credentialed: true, ...over });
+
+  it('speaks in the one state the switch cannot explain: keyed, and off', () => {
+    expect(engineIdleNote(engine({ ready: true, enabled: false }))).toMatch(
+      /crew keeps doing pretend work/,
+    );
+  });
+
+  it('and stays quiet in the other three', () => {
+    // Running for real — the row's own switch already says it.
+    expect(engineIdleNote(engine({ ready: true, enabled: true }))).toBeNull();
+    // No key: "needs ANTHROPIC_API_KEY" is the row's line, and saying the crew
+    // is pretending on top of it would be a second sentence for one fact.
+    expect(engineIdleNote(engine({ ready: false, enabled: false }))).toBeNull();
+    expect(engineIdleNote(engine({ ready: false, enabled: true }))).toBeNull();
+  });
+
+  it('says nothing where the catalog offers no engine at all', () => {
+    expect(engineIdleNote(undefined)).toBeNull();
+  });
+
+  it('names the state, not the remedy alone', () => {
+    // The failure this exists to prevent is a person believing the paste did
+    // not work. A line that only said "switch this on" would tell them what to
+    // do without telling them what is currently happening (D-269).
+    const note = engineIdleNote(engine({ ready: true, enabled: false })) ?? '';
+    expect(note).toMatch(/stored/);
+    expect(note).toMatch(/pretend work/);
   });
 });

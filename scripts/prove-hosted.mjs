@@ -608,22 +608,37 @@ process.exit(bad === 0 ? 0 : 1);
 //
 // ── what it costs ──
 // Free by default. `--paid` additionally lifts ANTHROPIC_API_KEY out of this
-// machine's `.env`, sets it as a service variable, runs ONE small web-fetch
-// summary, and removes the variable again — a few cents, and the flag exists
-// so that never happens because somebody ran the script.
+// machine's `.env`, PASTES it into the engine's row, runs ONE small web-fetch
+// summary, and forgets it again — a few cents, and the flag exists so that
+// never happens because somebody ran the script.
 //
-// ── why the model key is a variable and the door key is a paste ──
-// The Settings drawer can only paste a *connection*'s secret; there is no
-// field anywhere for the model key, and the drawer says so in words ("copy
-// .env.example → .env"). So on a hosted install the model key can only be a
-// host variable — which then beats `/data/.env` for good (D-270). That is the
-// gap #31's README has to carry, and it is why check 1 is proven with a door
-// key: a paste is the thing being tested, and only a door can be pasted.
+// ── why the door key is a paste, and the model key is one too now (#32) ──
+// This section used to say the opposite, and said it for a reason that was
+// true when written: "there is no field anywhere for the model key ... so on a
+// hosted install the model key can only be a host variable". #32 built that
+// field. The engine is a catalog connection, so its key goes through the same
+// drawer as every other — validated against Anthropic before anything is
+// stored, onto the volume, and reachable by `ChosenExecutor` at the next job.
 //
-// The pasted value is a well-formed throwaway and is never used to call
-// anything. What is under test is that the bytes survive the redeploy, and
-// they are checked by hashing that one line INSIDE the container — the value
-// never crosses back over the network.
+// So `--paid` no longer sets a service variable, and that is a CORRECTION and
+// not a tidy-up: a variable of that name beats `/data/.env` for good (D-270),
+// so the old path demonstrated, on the reference install, the one thing a
+// person deploying this must not do. It also asserted the executor turns real
+// "only after the restart the key forced" — true of the boot-time `useClaude`
+// it was written against, false of `ChosenExecutor`, which picks per job.
+//
+// Check 1 still uses a DOOR key, and still for its original reason: it must
+// run without `--paid`, when there is no real credential to spend. Its value
+// is a well-formed throwaway never used to call anything. What is under test
+// is that the bytes survive the redeploy, and they are checked by hashing that
+// one line INSIDE the container — the value never crosses back over the
+// network. With `--paid` the model key proves the same drawer with a real
+// credential, which is the half check 1 has to leave unproven.
+//
+// #32's own hosted box lives in `prove-hosted-engine.mjs`, which proves the
+// paste, the volume and the redeploy against a key a person pasted by hand.
+// This script keeps `--paid` because it proves something that one does not:
+// that a run's MONEY is on the volume too.
 //
 // ── running it ──
 //   node scripts/prove-hosted.mjs --hosted            (checks 1, 3, 4)
@@ -953,31 +968,46 @@ async function hostedMode() {
         existsSync(MINE.env) ? readFileSync(MINE.env, 'utf8') : '',
       )?.[1]?.trim();
       if (!key) throw new Error('--paid needs ANTHROPIC_API_KEY in this machine\'s .env');
-      // A host variable, because there is nowhere in the app to paste one.
-      // Removed again at the end — the install is a reference install and
-      // holds no real key when nobody is watching it.
-      //
-      // DELETED, never set empty. The first run of this blanked it instead,
-      // and an empty host variable is still a name `process.env` holds — so by
-      // D-270 it would have shadowed anything ever pasted into `/data/.env`
-      // under that name, permanently and silently. The rule this whole slice
-      // is about, caught in its own cleanup.
+      // A variable of this name would beat the paste for good (D-270), so the
+      // paste would be stored and inert and every check below would pass about
+      // the wrong mechanism. Refused rather than worked around: this script
+      // used to CREATE that condition itself.
+      if (Object.hasOwn(vars, 'ANTHROPIC_API_KEY')) {
+        throw new Error(
+          'the service has an ANTHROPIC_API_KEY variable — it would shadow the paste (D-270); delete it first',
+        );
+      }
+      // Forgotten through the app's own way out (D-218), not by deleting a
+      // variable and redeploying: the install is a reference install and holds
+      // no real key when nobody is watching it.
       cleanup.push(async () => {
-        await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
-        // Deleting stages it; only a new process forgets it.
-        await railway(['redeploy', '--service', service, '--yes']);
+        await send('DELETE', '/api/settings/connections/anthropic/secrets');
       });
-      const was = await latestDeploy();
-      const set = await railway(['variables', '--service', service, '--set', `ANTHROPIC_API_KEY=${key}`]);
-      if (set.code !== 0) throw new Error(`could not set the model key: ${set.err.trim()}`);
-      console.log('      model key set as a service variable — waiting out the redeploy it triggers');
-      await waitForNewDeploy(was, 'the model-key redeploy');
-      const settings = (await get('/api/settings')).body;
-      // The finding this sequence exists for: the executor is decided ONCE, at
-      // boot. A key that arrives after boot reaches `process.env` and changes
-      // nothing until the process comes back.
+      const pastedKey = await post('/api/settings/connections/anthropic/secret', {
+        values: { ANTHROPIC_API_KEY: key },
+      });
       check(
-        'the executor is real only after the restart the key forced',
+        'the model key is accepted through the drawer, checked against Anthropic first',
+        pastedKey.status === 200,
+        JSON.stringify(pastedKey.body?.identity ?? pastedKey.body?.error),
+      );
+      // Storing a key does NOT switch the engine on, deliberately (#32): an
+      // install whose row was forgotten — which is how this script leaves it,
+      // every run — carries an explicit `false`, and re-arming on store would
+      // resume spending for somebody who turned it off to stop. So the switch
+      // is part of the sequence and is flipped here in the open. Without this
+      // the check below fails on the SECOND run of this script and passes on
+      // the first, which is the worst way for it to be wrong.
+      const armed = await send('PATCH', '/api/settings/connections/anthropic', { enabled: true });
+      check('the engine row is switched on', armed.status === 200, `status=${armed.status}`);
+      const settings = (await get('/api/settings')).body;
+      // What #32 changed, and the reason this assertion is the opposite of the
+      // one it replaced: `useClaude` was read once at boot, so a key arriving
+      // afterwards changed nothing until the process came back. `ChosenExecutor`
+      // picks when a job starts, so there is no restart in this sequence at all
+      // — and its absence is the claim. A SWITCH is not a restart.
+      check(
+        'the executor is real immediately, with no restart and no variable',
         settings.executor === 'claude-agent-sdk',
         `executor=${settings.executor} auth=${settings.auth?.source}`,
       );
@@ -994,8 +1024,10 @@ async function hostedMode() {
     // reached it: so the value provably travelled, and no real key is spent.
     //
     // It is the same drawer and the same secrets file either way, which is the
-    // fact under test. What is NOT proven hosted is the validating route, and
-    // that is said here rather than glossed.
+    // fact under test. The validating route is NOT proven by this check, and
+    // that is said here rather than glossed — but it is no longer unproven
+    // hosted altogether: since #32 the `--paid` run above pastes a real model
+    // key through it, and a validated store is exactly what it answers.
     const SECRET = `pasted-into-settings-${randomUUID().replace(/-/g, '')}`;
     // Asked of the container rather than hardcoded: an image that moves node
     // or the fixture should fail here, loudly, not silently prove nothing.
@@ -1150,16 +1182,19 @@ async function hostedMode() {
       );
       // The money removed again before anything else runs on this install.
       //
-      // The delete is followed by an EXPLICIT redeploy: setting a variable
-      // triggers one, deleting one does not, and the first run to get this far
-      // sat waiting for a deployment that was never coming — while the running
-      // process still held the key in its environment. Deleting takes it out
-      // of Railway's store; only a new process takes it out of memory.
-      await railway(['variable', 'delete', 'ANTHROPIC_API_KEY', '--service', service]);
-      const wasPaid = await latestDeploy();
-      await railway(['redeploy', '--service', service, '--yes']);
-      console.log('      model key removed — waiting out the redeploy that clears it');
-      await waitForNewDeploy(wasPaid, 'the key-removal redeploy');
+      // No redeploy any more, and that is the point rather than a saving: the
+      // old path deleted a service variable, which Railway stages without
+      // restarting, so it needed an explicit redeploy to take the key out of
+      // the running process's memory — a run that got this far once sat
+      // waiting for a deployment that was never coming. `forgetSecret` takes
+      // it out of `/data/.env` AND out of the live `process.env` in one call
+      // (D-078), so the very next read is already simulated.
+      const forgot = await send('DELETE', '/api/settings/connections/anthropic/secrets');
+      check(
+        'the model key is forgotten through the app, no redeploy needed',
+        forgot.status === 200,
+        JSON.stringify(forgot.body?.forgot ?? forgot.body?.error),
+      );
       const back = (await get('/api/settings')).body;
       check('and the install is back to simulated before anything else runs', back.executor === 'simulated');
     }

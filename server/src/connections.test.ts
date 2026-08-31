@@ -3,6 +3,7 @@ import {
   DOORS,
   describe as describeConnections,
   doorEndpoints,
+  grantsNothing,
   expandArgs,
   mcpSecretValues,
   mcpToolNames,
@@ -530,5 +531,53 @@ describe('describe — the reason a door is not on offer here (#30)', () => {
     const needy = { ...WATCHED, secrets: { WATCH_TOKEN: 'a token' } };
     const listed = describeConnections([needy], {}, new Set(), {}, false);
     expect(listed[0]).toMatchObject({ ready: false, unavailable: NO_SCREEN });
+  });
+});
+
+describe('grantsNothing (#32)', () => {
+  const base = { name: 'x', label: 'x', transport: 'builtin' as const };
+
+  it('a sender grants nothing — the send happens at approval (D-097)', () => {
+    expect(grantsNothing({ sendsOnly: true })).toBe(true);
+  });
+
+  it('the engine grants nothing — it runs the job rather than being reached', () => {
+    expect(grantsNothing({ engine: true })).toBe(true);
+  });
+
+  it('an ordinary door grants something', () => {
+    expect(grantsNothing({})).toBe(false);
+  });
+
+  it('is what the two grant seams ask, so neither can drift from the other', () => {
+    // The point of the function. Both flags mean "a job may never hold this",
+    // and before it existed each seam read `sendsOnly` on its own — so adding
+    // the engine to one and not the other would have granted a job the engine.
+    const catalog: Connection[] = [
+      { ...base, name: 'reader' },
+      { ...base, name: 'sender', sendsOnly: true },
+      { ...base, name: 'engine', engine: true },
+    ];
+    expect(catalog.filter((c) => !grantsNothing(c)).map((c) => c.name)).toEqual(['reader']);
+  });
+});
+
+describe('the engine is named for what it is, not for what it grants (#32)', () => {
+  const env = {};
+  const base = { name: 'x', label: 'x', transport: 'builtin' as const };
+
+  it('reads as its own kind rather than as a send', () => {
+    const [info] = describeConnections([{ ...base, name: 'anthropic', engine: true }], env);
+    expect(info.kind).toBe('engine');
+  });
+
+  it('a sender is still a send', () => {
+    const [info] = describeConnections([{ ...base, name: 'telegram', sendsOnly: true }], env);
+    expect(info.kind).toBe('send');
+  });
+
+  it('an ordinary door is still a read', () => {
+    const [info] = describeConnections([{ ...base, name: 'web' }], env);
+    expect(info.kind).toBe('read');
   });
 });

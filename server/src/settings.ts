@@ -17,6 +17,15 @@ export interface StoredSettings {
   /** Connection name → the user's answer. */
   connections?: Record<string, boolean>;
   /**
+   * The model the crew runs on (#32), as the provider spells it. Absent
+   * means nothing was chosen and the engine picks its own default.
+   *
+   * A role naming its own model still wins over this: a role asks for a
+   * model because the work needs it, and a person choosing here is setting
+   * the default for everything that has not asked.
+   */
+  model?: string;
+  /**
    * Connection name → who it turned out to be ("brian@gmail.com"), recorded
    * when a connect flow learns it. Display only — never part of any gate.
    */
@@ -117,6 +126,29 @@ export function wireSettings(settings: StoredSettings): WireSettings {
  */
 export function setWire(settings: StoredSettings, chargeAccount: string): StoredSettings {
   return { ...settings, wire: { ...settings.wire, chargeAccount: chargeAccount.trim() } };
+}
+
+/**
+ * The model a person chose, or undefined when they have not.
+ *
+ * Undefined rather than a hardcoded default on purpose: naming a current model
+ * here would be a copy of a list that moves, and the copy is the one that goes
+ * stale. Nothing chosen means the engine uses its own default, which is the
+ * answer that stays right without being maintained.
+ */
+export function chosenModel(settings: StoredSettings): string | undefined {
+  const model = settings.model?.trim();
+  return model ? model : undefined;
+}
+
+/** Records the model the crew runs on; empty clears it back to the default. */
+export function setModel(settings: StoredSettings, model: string): StoredSettings {
+  const next = model.trim();
+  if (!next) {
+    const { model: _dropped, ...rest } = settings;
+    return rest;
+  }
+  return { ...settings, model: next };
 }
 
 /**

@@ -339,6 +339,28 @@ export function turnsFor(role: { maxTurns?: number } | undefined): number {
 }
 
 /**
+ * Which model a run uses (#32), in one place.
+ *
+ * A role naming its own wins: it asked for that model because the work needs
+ * it, and a person setting a default is answering for everything that has not
+ * asked. Then the choice in Settings, then `AGENTLINGS_MODEL` as the
+ * operator's default, then nothing at all — which leaves the engine to pick,
+ * and is the answer that never goes stale.
+ *
+ * One function because the precedence was already written out three times, and
+ * a fourth term added to two of the three is exactly how copies drift (D-030).
+ * Exported and taking its inputs, like `turnsFor` beside it, so the order can
+ * be pinned without constructing an executor.
+ */
+export function modelFor(
+  role: { model?: string } | undefined | null,
+  chosen: string | undefined,
+  env: Record<string, string | undefined>,
+): string | undefined {
+  return role?.model ?? chosen ?? env.AGENTLINGS_MODEL;
+}
+
+/**
  * The most turns this run may take before the quote is applied: a recipe
  * buys a short leash, a job that states its own need gets that, and anything
  * else gets the role's own budget.
@@ -1109,7 +1131,17 @@ export class ClaudeAgentExecutor implements Executor {
      * shown an account number, which it has no use for.
      */
     private wire: () => WireSettings = () => ({ chargeAccount: '', format: 'bci', payees: [] }),
+    /**
+     * The model a person chose in Settings (#32), read at the run so a change
+     * reaches the next job rather than the next restart — the same reason the
+     * allowlist and the payee list above are getters.
+     */
+    private chosenModel: () => string | undefined = () => undefined,
   ) {}
+
+  private modelFor(role: { model?: string } | undefined | null): string | undefined {
+    return modelFor(role, this.chosenModel(), process.env);
+  }
 
   /** Live sessions by job id, so one can be stopped on request. */
   private running = new Map<string, ChildProcess>();
@@ -1280,7 +1312,7 @@ export class ClaudeAgentExecutor implements Executor {
         mcpTools: mcpToolNames(granted),
         maxTurns: turnBudget,
         skills,
-        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        model: this.modelFor(role),
         mcpServers: toMcpServers(granted, process.env),
         // The supervised browser's window (D-255): which server to attach,
         // where its profile lives, and what it may reach. The runner launches
@@ -1394,7 +1426,7 @@ export class ClaudeAgentExecutor implements Executor {
       // filed as a full session pollutes the very history the quote reads.
       const failedMeter: JobMeter = {
         turnsAllowed: turnBudget,
-        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        model: this.modelFor(role),
         ...(hint?.oneShot ? { oneShot: true } : {}),
         ...(hint?.recipeKey ? { recipeKey: hint.recipeKey } : {}),
         ...(salvage.closeOutUsd ? { closeOutUsd: salvage.closeOutUsd } : {}),
@@ -1429,7 +1461,7 @@ export class ClaudeAgentExecutor implements Executor {
           ? { costUsd: (meter.costUsd ?? 0) + closeOutUsd, closeOutUsd }
           : {}),
         turnsAllowed: turnBudget,
-        model: role?.model ?? process.env.AGENTLINGS_MODEL,
+        model: this.modelFor(role),
         ...(hint?.oneShot ? { oneShot: true } : {}),
         ...(hint?.recipeKey ? { recipeKey: hint.recipeKey } : {}),
       },

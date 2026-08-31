@@ -11,6 +11,7 @@ import {
   closeOutEvidence,
   COMPILE_TURNS,
   launderedEnv,
+  modelFor,
   RECIPE_TURNS,
   repoListing,
   turnCapFor,
@@ -1075,5 +1076,37 @@ describe('launderedEnv (D-217)', () => {
     const out = launderedEnv([], { PATH: 'bin', AGENTLINGS_PASSWORD: 'correct horse' });
     expect(out).not.toHaveProperty('AGENTLINGS_PASSWORD');
     expect(out.PATH).toBe('bin');
+  });
+});
+
+describe('modelFor (#32)', () => {
+  it('a role naming its own model wins over everything', () => {
+    // A role asks for a model because the work needs it; a person choosing in
+    // Settings is answering for everything that has NOT asked.
+    expect(modelFor({ model: 'role-model' }, 'chosen', { AGENTLINGS_MODEL: 'env' })).toBe(
+      'role-model',
+    );
+  });
+
+  it("the person's choice beats the operator default", () => {
+    expect(modelFor(undefined, 'chosen', { AGENTLINGS_MODEL: 'env' })).toBe('chosen');
+  });
+
+  it('the operator default applies when nobody chose', () => {
+    expect(modelFor(undefined, undefined, { AGENTLINGS_MODEL: 'env' })).toBe('env');
+  });
+
+  it('is undefined when nothing says, so the engine picks its own', () => {
+    // Not a hardcoded model name: naming one here would be a copy of a list
+    // that moves, and it would silently pin every install to a stale default.
+    expect(modelFor(undefined, undefined, {})).toBeUndefined();
+  });
+
+  it('a role with no model of its own falls through rather than blocking', () => {
+    expect(modelFor({}, 'chosen', {})).toBe('chosen');
+  });
+
+  it('a null role is the same as no role', () => {
+    expect(modelFor(null, 'chosen', {})).toBe('chosen');
   });
 });

@@ -1037,9 +1037,18 @@ export function SettingsModal({
               {settings?.executor === 'simulated' && (
                 <>
                   <p className="dim">simulated — jobs are pretend work.</p>
+                  {/*
+                    This used to read "copy .env.example → .env … and restart the
+                    dev server", which is advice a hosted install has no shell to
+                    act on and no dev server to restart (#32). The key goes in
+                    above, on the engine's own row, and takes effect on the next
+                    job rather than at the next restart.
+                  */}
                   <p className="dim">
-                    To go live: copy .env.example → .env, set ANTHROPIC_API_KEY or a
-                    CLAUDE_CODE_OAUTH_TOKEN, and restart the dev server.
+                    To go live: add a model key on “
+                    {settings.connections.find((c) => c.kind === 'engine')?.label ?? 'the engine'}”
+                    above. It is checked against Anthropic before it is stored, and the next job
+                    runs for real.
                   </p>
                 </>
               )}

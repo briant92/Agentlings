@@ -7,6 +7,7 @@ import type { Connection } from './connections';
 import {
   addWirePayee,
   browserActHosts,
+  chosenModel,
   clearIdentity,
   removeWirePayee,
   setWire,
@@ -18,6 +19,7 @@ import {
   setBrowserAct,
   setConnection,
   setIdentity,
+  setModel,
   writeSettings,
 } from './settings';
 
@@ -321,5 +323,64 @@ describe('the wire’s settings (D-268)', () => {
     expect(wireSettings(removeWirePayee(both, PAYEE.rut)).payees).toEqual([other]);
     // Removing one nobody has is not an error — narrowing is always safe.
     expect(wireSettings(removeWirePayee(both, '1-9')).payees).toHaveLength(2);
+  });
+});
+
+describe('the model a person chose (#32)', () => {
+  it('is undefined until someone chooses, so the engine keeps its own default', () => {
+    // Not a hardcoded current model: that would be a copy of a list that
+    // moves, and the copy is the half that goes stale.
+    expect(chosenModel({})).toBeUndefined();
+  });
+
+  it('records a choice', () => {
+    expect(chosenModel(setModel({}, 'claude-haiku-4-5'))).toBe('claude-haiku-4-5');
+  });
+
+  it('trims what was pasted', () => {
+    expect(chosenModel(setModel({}, '  claude-opus-5  '))).toBe('claude-opus-5');
+  });
+
+  it('an empty choice clears the field rather than storing a blank', () => {
+    // A stored empty string would read as "chosen: nothing", which is a
+    // second way of saying the same thing and the shape D-032 keeps costing.
+    const cleared = setModel(setModel({}, 'claude-opus-5'), '');
+    expect(Object.hasOwn(cleared, 'model')).toBe(false);
+    expect(chosenModel(cleared)).toBeUndefined();
+  });
+
+  it('whitespace alone is not a choice', () => {
+    expect(chosenModel({ model: '   ' })).toBeUndefined();
+  });
+
+  it('keeps every other setting when the model changes', () => {
+    const before = { connections: { web: true }, model: 'a' };
+    expect(setModel(before, 'b')).toEqual({ connections: { web: true }, model: 'b' });
+  });
+});
+
+describe('a job can never be granted the engine (#32)', () => {
+  const base = { label: 'x', transport: 'builtin' as const };
+  const catalog: Connection[] = [
+    { ...base, name: 'web', tools: ['fetch'], defaultOn: true },
+    { ...base, name: 'telegram', sendsOnly: true, defaultOn: true },
+    { ...base, name: 'anthropic', engine: true, defaultOn: true },
+  ];
+
+  it('is absent from what a job may reach, even switched on and asking for everything', () => {
+    // The engine is on and has no secrets to be missing, so nothing but the
+    // grant rule keeps it out of this list.
+    const granted = grantedTools(undefined, catalog, {}, {});
+    expect(granted).not.toContain('anthropic');
+  });
+
+  it('is absent even when a caller names it outright', () => {
+    // Naming can only ever narrow (the rule this function already holds), so
+    // asking for the engine by name must not be the way in.
+    expect(grantedTools(['anthropic'], catalog, {}, {})).not.toContain('anthropic');
+  });
+
+  it('the ordinary door is still granted, so the exclusion is not a blanket', () => {
+    expect(grantedTools(undefined, catalog, {}, {})).toContain('web');
   });
 });

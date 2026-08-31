@@ -167,6 +167,7 @@ import {
 } from './userconnections';
 import {
   browserActHosts,
+  chosenModel,
   clearIdentity,
   enabledNames,
   grantedTools,
@@ -174,6 +175,7 @@ import {
   setBrowserAct,
   setConnection,
   setIdentity,
+  setModel,
   setWire,
   addWirePayee,
   removeWirePayee,
@@ -350,7 +352,7 @@ import {
   writeTool,
 } from './tools';
 import { type QuoteContext, quoteFor_ } from './quote';
-import { validateConnectionSecret } from './validate';
+import { modelsFor, validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
 import { callBls } from './bls';
@@ -608,6 +610,9 @@ function makeLevel(dir: string): LevelRuntime {
           // a payee added this morning should be named in this afternoon's
           // batch brief without a restart.
           () => wireSettings(readSettings(SANDBOX_ROOT)),
+          // The model a person picked, read at the run for the same reason
+          // (#32): choosing one in Settings should reach the next job.
+          () => chosenModel(readSettings(SANDBOX_ROOT)),
         ),
       simulated,
     ),
@@ -1242,6 +1247,51 @@ app.patch('/api/settings/connections/:name', async (c) => {
   if (typeof body.enabled !== 'boolean') return c.json({ error: 'enabled must be a boolean' }, 400);
   writeSettings(SANDBOX_ROOT, setConnection(readSettings(SANDBOX_ROOT), name, body.enabled));
   return c.json(connectionList());
+});
+
+/**
+ * The models this install's own key can reach (#32), for the picker.
+ *
+ * Asked of the provider rather than listed here: a hardcoded list is a copy of
+ * something that moves, and the copy is what goes stale — the same argument
+ * that keeps `chosenModel` undefined until a person chooses. With no usable
+ * key it answers an empty list, which is honest: there is nothing to choose
+ * between until the engine has a key.
+ */
+app.get('/api/settings/models', async (c) => {
+  return c.json({ models: await modelsFor(process.env) });
+});
+
+/**
+ * The model the crew runs on.
+ *
+ * Validated against what the key can actually reach, in the house style: a
+ * model this install cannot use would be stored, then fail every job with an
+ * error from the far end rather than from the field that accepted it. An empty
+ * string clears the choice and hands the decision back to the engine.
+ *
+ * A list that comes back empty refuses rather than accepts. "We could not ask"
+ * and "it is fine" must not be the same answer — the shape D-246 names, and
+ * the one `templateDrift` was built around.
+ */
+app.put('/api/settings/model', async (c) => {
+  const body = await c.req.json<{ model?: unknown }>();
+  if (typeof body.model !== 'string') return c.json({ error: 'model must be a string' }, 400);
+  const wanted = body.model.trim();
+  if (wanted) {
+    const available = await modelsFor(process.env);
+    if (available.length === 0) {
+      return c.json(
+        { error: 'could not ask Anthropic which models this key can use — check the key first' },
+        400,
+      );
+    }
+    if (!available.some((m) => m.id === wanted)) {
+      return c.json({ error: `this key cannot use "${wanted}"` }, 400);
+    }
+  }
+  writeSettings(SANDBOX_ROOT, setModel(readSettings(SANDBOX_ROOT), wanted));
+  return c.json({ model: chosenModel(readSettings(SANDBOX_ROOT)) ?? null });
 });
 
 /**

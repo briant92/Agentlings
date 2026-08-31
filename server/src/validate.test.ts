@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateConnectionSecret } from './validate';
+import { modelsFor, validateConnectionSecret } from './validate';
 
 /** A fetch stand-in that records calls and answers from a script. */
 function fakeFetch(respond: () => { ok: boolean; status?: number; body?: unknown }) {
@@ -128,5 +128,85 @@ describe('slack validation (D-104)', () => {
     const verdict = await validateConnectionSecret('slack', { SLACK_BOT_TOKEN: 't' }, fn);
     expect(verdict.ok).toBe(false);
     expect(verdict.reason).toContain('503');
+  });
+});
+
+describe('the model engine (#32)', () => {
+  const MODELS = {
+    data: [
+      { id: 'claude-opus-5', display_name: 'Claude Opus 5' },
+      { id: 'claude-haiku-4-5', display_name: 'Claude Haiku 4.5' },
+    ],
+  };
+
+  it('proves the key with the cheapest call there is, and spends no tokens', async () => {
+    const { fn, calls } = fakeFetch(() => ({ ok: true, body: MODELS }));
+    const verdict = await validateConnectionSecret('anthropic', { ANTHROPIC_API_KEY: 'sk-x' }, fn);
+    expect(verdict.ok).toBe(true);
+    // Listing models costs nothing. A validator that proved the key by asking
+    // for a completion would bill a person for typing their key in.
+    expect(calls[0].url).toBe('https://api.anthropic.com/v1/models');
+    expect(calls[0].headers['x-api-key']).toBe('sk-x');
+    expect(calls[0].headers['anthropic-version']).toBe('2023-06-01');
+  });
+
+  it('says how many models the key reaches, since a key has no name', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: MODELS }));
+    const verdict = await validateConnectionSecret('anthropic', { ANTHROPIC_API_KEY: 'sk-x' }, fn);
+    expect(verdict.identity).toBe('2 models available');
+  });
+
+  it('a rejected key is refused, and says to check it was copied whole', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 401 }));
+    const verdict = await validateConnectionSecret('anthropic', { ANTHROPIC_API_KEY: 'nope' }, fn);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('rejected');
+  });
+
+  it('a key that cannot list models is refused for that reason, not as invalid', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 403 }));
+    const verdict = await validateConnectionSecret('anthropic', { ANTHROPIC_API_KEY: 'sk-x' }, fn);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('permissions');
+  });
+
+  it('an unreachable provider is a refusal, never a pass', async () => {
+    // "We could not ask" and "the key is good" must never be the same answer
+    // (D-246). A validator that shrugged here would store an unchecked key.
+    const fn = (async () => {
+      throw new Error('getaddrinfo ENOTFOUND');
+    }) as unknown as typeof fetch;
+    const verdict = await validateConnectionSecret('anthropic', { ANTHROPIC_API_KEY: 'sk-x' }, fn);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain('could not reach Anthropic');
+  });
+});
+
+describe('modelsFor (#32)', () => {
+  it('returns what the key can reach, labelled as the provider names them', async () => {
+    const { fn } = fakeFetch(() => ({
+      ok: true,
+      body: { data: [{ id: 'claude-opus-5', display_name: 'Claude Opus 5' }] },
+    }));
+    expect(await modelsFor({ ANTHROPIC_API_KEY: 'sk-x' }, fn)).toEqual([
+      { id: 'claude-opus-5', label: 'Claude Opus 5' },
+    ]);
+  });
+
+  it('falls back to the id when the provider sends no display name', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: { data: [{ id: 'claude-x' }] } }));
+    expect(await modelsFor({ ANTHROPIC_API_KEY: 'sk-x' }, fn)).toEqual([
+      { id: 'claude-x', label: 'claude-x' },
+    ]);
+  });
+
+  it('is empty when the key is refused, so the picker offers nothing rather than a guess', async () => {
+    const { fn } = fakeFetch(() => ({ ok: false, status: 401 }));
+    expect(await modelsFor({ ANTHROPIC_API_KEY: 'bad' }, fn)).toEqual([]);
+  });
+
+  it('drops an entry with no id rather than inventing one', async () => {
+    const { fn } = fakeFetch(() => ({ ok: true, body: { data: [{ display_name: 'Nameless' }] } }));
+    expect(await modelsFor({ ANTHROPIC_API_KEY: 'sk-x' }, fn)).toEqual([]);
   });
 });

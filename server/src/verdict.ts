@@ -101,18 +101,23 @@ export interface VerdictRuntime {
  * a refusal that should have happened earlier and did not (500) — the nómina
  * composer's, when #36 moves it.
  */
-export type RefusalKind = 'refused' | 'busy' | 'bug';
+export type VerdictRefusalKind = 'refused' | 'busy' | 'bug';
 
-export interface Refusal {
+/**
+ * A gate saying no to a verdict. Not the glossary's **Refusal** — that is a
+ * sentence the desk was handed claiming a shelf-of-never row (`refusals.ts`);
+ * this is a reviewed job the app will not stamp yet, and says why.
+ */
+export interface VerdictRefusal {
   reason: string;
-  kind: RefusalKind;
+  kind: VerdictRefusalKind;
 }
 
 export type VerdictResult =
-  | { refused: Refusal; job?: undefined; sendApproval?: undefined }
+  | { refused: VerdictRefusal; job?: undefined; sendApproval?: undefined }
   | { refused?: undefined; job: Job; sendApproval?: SendApprovalInfo };
 
-const refuse = (reason: string, kind: RefusalKind = 'refused'): VerdictResult => ({
+const refuse = (reason: string, kind: VerdictRefusalKind = 'refused'): VerdictResult => ({
   refused: { reason, kind },
 });
 
@@ -152,9 +157,14 @@ export async function performVerdict(
    * Discarding a compile un-reserves its name. The manifest is written before
    * the compiling session runs, so refusing its output has to remove it — left
    * behind it is a tool with nothing to execute, and `promote` reads it as
-   * "a tool for that recipe already exists" and refuses every later attempt
-   * (D-045). A clear leaves the compile uninstalled exactly as a discard does,
-   * so the reserved name has to go either way (D-216).
+   * "a tool for that recipe already exists" and refuses every later attempt.
+   *
+   * Found by discarding one: the recipe became permanently uncompilable, which
+   * is the opposite of what reviewing its output is for. The router was never
+   * at risk — `usableTools` needs both scripts — so this was invisible until
+   * somebody tried again (D-045). A clear leaves the compile uninstalled
+   * exactly as a discard does, so the reserved name has to go either way
+   * (D-216).
    */
   if (!promote) {
     const abandoned = readTools(rt.dir).find((t) => t.pendingJobId === pending.id);
@@ -223,8 +233,9 @@ export async function performVerdict(
       /**
        * One door, claimed per job (D-160): a second Approve landing while
        * this one is mid-send is refused by name instead of racing through
-       * the read→send→stamp gap. The recipients list is re-read under the
-       * claim; `remaining` above only decides whether to enter at all.
+       * the read→send→stamp gap — job 3e14937a sent Sammy the same PDF twice
+       * through exactly that window. The recipients list is re-read under
+       * the claim; `remaining` above only decides whether to enter at all.
        */
       const runs = await ctx.send({
         outboxes,
@@ -234,7 +245,8 @@ export async function performVerdict(
         sandboxRoot: install.sandboxRoot,
         env: install.env,
         // The one thread a reply can reach: the mail that queued this job
-        // (D-248). A job with no trigger passes nothing.
+        // (D-248). A job with no trigger passes nothing, and a `reply: true`
+        // message is then refused by the channel client by name.
         ...(pending.mailTrigger
           ? {
               mailThread: {
@@ -327,7 +339,9 @@ export async function performVerdict(
           )
         : null;
     // The chain's cut legs earn their price the moment the end promotes
-    // (D-150): each at min(cost, its own quote); real failures in the chain
+    // (D-150): work that fed an approved delivery finished by any honest
+    // reading, and twice a chain of cut legs shipped a world for $0. Each
+    // leg prices at min(cost, its own quote); real failures in the chain
     // stay absorbed — only the funded-leash cuts are the seam.
     const cutLegs = promote
       ? rt.queue
@@ -340,7 +354,9 @@ export async function performVerdict(
       : { rows: 0, chargedUsd: 0 };
     // And the row stops calling accepted work a failure (D-205). Strictly
     // after the repricing: `repriceChain` only touches rows that read
-    // `failed`, so settling the outcome first would skip the price.
+    // `failed`, so settling the outcome first would skip the price. This
+    // moves no money — a promoted run whose spend was unmeasurable stays
+    // absorbed and still reads `done`, because absorbed is not failed.
     if (promote) settleOutcome(install.sandboxRoot, [pending.id, ...cutLegs]);
     rt.eventLog.emit({
       type: 'resolved',
@@ -369,10 +385,10 @@ export async function performVerdict(
 function resolvedLine(
   verdict: Verdict,
   by: ResolvedBy,
-  did: {
+  acts: {
     sentNow: number;
     channels: string;
-    chainPriced: { rows: number; chargedUsd: number };
+    chainPriced: ReturnType<typeof repriceChain>;
     rejected?: string;
   },
 ): string {
@@ -382,18 +398,18 @@ function resolvedLine(
   if (verdict === 'discard') {
     return (
       'discarded — nothing applied, the work stays in the sandbox' +
-      (did.rejected ? ` · ${did.rejected} banked what was turned down` : '')
+      (acts.rejected ? ` · ${acts.rejected} banked what was turned down` : '')
     );
   }
   const sent =
-    did.sentNow > 0
+    acts.sentNow > 0
       ? by === 'app'
-        ? `sent automatically — ${did.sentNow} via ${did.channels}, standing approval`
-        : `approved — sent ${did.sentNow} via ${did.channels}`
+        ? `sent automatically — ${acts.sentNow} via ${acts.channels}, standing approval`
+        : `approved — sent ${acts.sentNow} via ${acts.channels}`
       : 'approved';
   const priced =
-    did.chainPriced.rows > 0
-      ? ` · the chain's ${did.chainPriced.rows} cut leg${did.chainPriced.rows === 1 ? '' : 's'} now charged $${did.chainPriced.chargedUsd.toFixed(2)}`
+    acts.chainPriced.rows > 0
+      ? ` · the chain's ${acts.chainPriced.rows} cut leg${acts.chainPriced.rows === 1 ? '' : 's'} now charged $${acts.chainPriced.chargedUsd.toFixed(2)}`
       : '';
   return sent + priced;
 }

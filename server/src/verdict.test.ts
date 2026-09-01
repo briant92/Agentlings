@@ -421,6 +421,18 @@ describe('performVerdict (D-278)', () => {
       });
     });
 
+    it('banks the lesson before the stamp — a stamp that refuses still leaves it taught', async () => {
+      const job = finished();
+      const maker = rt.roster.find((s) => s.id === job.assignedTo)!;
+      vi.spyOn(rt.queue, 'resolve').mockImplementationOnce(() => {
+        throw new Error('the disk is full');
+      });
+      const got = await give(job, 'discard');
+      expect(got.refused).toEqual({ kind: 'refused', reason: 'the disk is full' });
+      expect(rt.memory.lessons(maker.name)).toHaveLength(1);
+      expect(resolved()).toHaveLength(0);
+    });
+
     it('a discard of a failed run banks nothing — nothing was delivered to refuse', async () => {
       const job = finished({}, { fail: 'ran out of turns' });
       expect(job.status).toBe('failed');

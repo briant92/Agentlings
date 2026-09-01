@@ -1614,6 +1614,15 @@ export function hasVerdict(status: JobStatus): boolean {
   return status === 'promoted' || status === 'discarded' || status === 'cleared';
 }
 
+/**
+ * Whether a job may take a verdict — the statuses `JobQueue.resolve` admits
+ * (D-278). Wider than `isDelivery`: a failed run is deliberately in, because
+ * a session that died still leaves a patch worth applying.
+ */
+export function isResolvable(status: JobStatus): boolean {
+  return status === 'done' || status === 'partial' || status === 'failed';
+}
+
 /** Whether a run left something for the user, whatever its ledger outcome. */
 export function isDelivery(status: JobStatus): boolean {
   return (

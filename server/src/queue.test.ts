@@ -4,7 +4,15 @@ import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { awaitingVerdict, isDelivery, outcomeOf, type Job, type MoveOp } from '@agentlings/shared';
+import {
+  awaitingVerdict,
+  isDelivery,
+  isResolvable,
+  outcomeOf,
+  type Job,
+  type JobStatus,
+  type MoveOp,
+} from '@agentlings/shared';
 import { SimulatedExecutor } from './executors/simulated';
 import { OUTBOX_FILE } from './outbox';
 import { deliveredFiles, describeOutputs, producedArtefacts } from './outputs';
@@ -1089,6 +1097,40 @@ describe('JobQueue', () => {
 
 import { mkdirSync as mkdirFs, writeFileSync as writeFs } from 'node:fs';
 import { jobsFile as jobsFileOf } from './queue';
+
+describe('isResolvable, the one rule for which jobs may take a verdict (D-278)', () => {
+  const all: JobStatus[] = [
+    'queued',
+    'running',
+    'done',
+    'partial',
+    'failed',
+    'promoted',
+    'discarded',
+    'cleared',
+  ];
+
+  it('admits exactly done, partial and failed', () => {
+    expect(all.filter(isResolvable)).toEqual(['done', 'partial', 'failed']);
+  });
+
+  it('refuses the rest: not started, mid-flight, or already decided', () => {
+    for (const status of ['queued', 'running', 'promoted', 'discarded', 'cleared'] as const) {
+      expect(isResolvable(status)).toBe(false);
+    }
+  });
+
+  // A session that died still leaves a patch worth applying, so failed takes a
+  // verdict without having delivered; and a delivery already judged takes none.
+  it('is not the same rule as isDelivery', () => {
+    expect(isResolvable('failed')).toBe(true);
+    expect(isDelivery('failed')).toBe(false);
+    for (const status of ['promoted', 'cleared'] as const) {
+      expect(isDelivery(status)).toBe(true);
+      expect(isResolvable(status)).toBe(false);
+    }
+  });
+});
 
 describe('delivered, the one notion of what a run left (UI.md, step 9)', () => {
   it('is stamped at the next start for a finished job that lacks it, from the sandbox it left', () => {

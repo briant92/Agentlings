@@ -19,7 +19,7 @@ import type {
   PromotedTo,
   ResolvedBy,
 } from '@agentlings/shared';
-import { MAX_STATIONS, opKey } from '@agentlings/shared';
+import { MAX_STATIONS, isResolvable, opKey } from '@agentlings/shared';
 import type { Verdict } from '@agentlings/shared';
 import { CANCELLED, parsePending } from './executors/claude';
 import { patchFile, summarizePatch, writeDiff } from './gitwork';
@@ -536,7 +536,7 @@ export class JobQueue {
    */
   resolve(jobId: string, action: Verdict, by: ResolvedBy): Job {
     const job = this.mustGet(jobId);
-    if (job.status !== 'done' && job.status !== 'failed' && job.status !== 'partial') {
+    if (!isResolvable(job.status)) {
       throw new Error(`job ${jobId} is ${job.status}, not resolvable`);
     }
     job.status = action === 'promote' ? 'promoted' : action === 'discard' ? 'discarded' : 'cleared';

@@ -747,6 +747,30 @@ describe('performVerdict (D-278)', () => {
       expect(resolved()).toHaveLength(0);
     });
 
+    it('while a tool is waiting nothing else acts — not even a send the record carries', async () => {
+      // The queue never stamps an outbox on a compile, so this state is the
+      // module's contract alone: whatever the record says, a waiting tool
+      // stands every other act down.
+      const job = finished({ [OUTBOX_FILE]: JSON.stringify(OUTBOX), [RUN_SCRIPT]: SCRIPT, [VERIFY_SCRIPT]: SCRIPT });
+      writeTool(rt.dir, {
+        name: 'uf-today',
+        recipeKey: 'uf today',
+        terms: ['uf'],
+        hasRepo: false,
+        description: 'the UF today',
+        learnedAt: Date.now(),
+        runs: 0,
+        failures: 0,
+        pendingJobId: job.id,
+      });
+      const { send, calls } = fakeSend();
+      const got = await give(job, 'promote', { send });
+      expect(got.job?.status).toBe('promoted');
+      expect(calls).toHaveLength(0);
+      expect(readTools(rt.dir)[0].pendingJobId).toBeUndefined();
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
     it('a compile promotes only its tool — the clone it tried the tool in never reaches the repository', async () => {
       const origin = gitRepo();
       const job = compiled(

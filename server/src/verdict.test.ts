@@ -38,6 +38,7 @@ import {
   type InstallContext,
   type QueueParty,
   type VerdictContext,
+  type VerdictGiven,
   type VerdictResult,
   type VerdictRuntime,
 } from './verdict';
@@ -246,7 +247,7 @@ describe('performVerdict (D-278)', () => {
     verdict: Verdict,
     over: Partial<VerdictContext> = {},
     by: ResolvedBy = 'you',
-    given: { packSlug?: string } = {},
+    given: VerdictGiven = {},
   ) {
     const ctx: VerdictContext = {
       install,
@@ -279,6 +280,21 @@ describe('performVerdict (D-278)', () => {
     mkdirSync(folder, { recursive: true });
     for (const name of files) writeFileSync(path.join(folder, name), 'x');
     return folder;
+  }
+
+  /** The manifest a compile writes before it runs: the name reserved, pending the job's output. */
+  function reserveTool(jobId: string): void {
+    writeTool(rt.dir, {
+      name: 'uf-today',
+      recipeKey: 'uf today',
+      terms: ['uf'],
+      hasRepo: false,
+      description: 'the UF today',
+      learnedAt: Date.now(),
+      runs: 0,
+      failures: 0,
+      pendingJobId: jobId,
+    });
   }
 
   describe('the gates, each refusing by name and leaving the job reviewable', () => {
@@ -596,17 +612,7 @@ describe('performVerdict (D-278)', () => {
       'a %s un-reserves the name a compile held (D-045, D-216)',
       async (verdict) => {
         const job = finished({ 'notes.md': 'tried' }, { channels: [] });
-        writeTool(rt.dir, {
-          name: 'uf-today',
-          recipeKey: 'uf today',
-          terms: ['uf'],
-          hasRepo: false,
-          description: 'the UF today',
-          learnedAt: Date.now(),
-          runs: 0,
-          failures: 0,
-          pendingJobId: job.id,
-        });
+        reserveTool(job.id);
         expect(existsSync(toolDir(rt.dir, 'uf-today'))).toBe(true);
         await give(job, verdict);
         expect(existsSync(toolDir(rt.dir, 'uf-today'))).toBe(false);
@@ -704,17 +710,7 @@ describe('performVerdict (D-278)', () => {
       rt.queue.assign(job.id, rt.roster[0].id);
       const sandbox = rt.queue.start(job.id);
       for (const [name, text] of Object.entries(files)) writeFileSync(path.join(sandbox, name), text);
-      writeTool(rt.dir, {
-        name: 'uf-today',
-        recipeKey: 'uf today',
-        terms: ['uf'],
-        hasRepo: false,
-        description: 'the UF today',
-        learnedAt: Date.now(),
-        runs: 0,
-        failures: 0,
-        pendingJobId: job.id,
-      });
+      reserveTool(job.id);
       rt.queue.complete(job.id, 'compiled');
       return rt.queue.get(job.id)!;
     }
@@ -752,17 +748,7 @@ describe('performVerdict (D-278)', () => {
       // module's contract alone: whatever the record says, a waiting tool
       // stands every other act down.
       const job = finished({ [OUTBOX_FILE]: JSON.stringify(OUTBOX), [RUN_SCRIPT]: SCRIPT, [VERIFY_SCRIPT]: SCRIPT });
-      writeTool(rt.dir, {
-        name: 'uf-today',
-        recipeKey: 'uf today',
-        terms: ['uf'],
-        hasRepo: false,
-        description: 'the UF today',
-        learnedAt: Date.now(),
-        runs: 0,
-        failures: 0,
-        pendingJobId: job.id,
-      });
+      reserveTool(job.id);
       const { send, calls } = fakeSend();
       const got = await give(job, 'promote', { send });
       expect(got.job?.status).toBe('promoted');
@@ -1070,6 +1056,21 @@ describe('performVerdict (D-278)', () => {
       expect(rt.queue.get(job.id)!.delivered?.files).toBe(before + 1);
       expect(resolved()[0].detail).toBe(
         'approved — composed nomina.txt, 1 payee; upload and authorise it at the bank',
+      );
+    });
+
+    it('counts the payees in the plural when there is more than one', async () => {
+      const two = {
+        paymentType: 'REM',
+        rows: [
+          { rut: '76123456-0', amount: 1 },
+          { rut: '9876543-3', amount: 2 },
+        ],
+      };
+      const job = finished({ [NOMINA_FILE]: JSON.stringify(two) }, { channels: [] });
+      await give(job, 'promote', { install: wired() });
+      expect(resolved()[0].detail).toBe(
+        'approved — composed nomina.txt, 2 payees; upload and authorise it at the bank',
       );
     });
 

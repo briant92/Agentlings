@@ -121,6 +121,14 @@ server on Approve. A send is the one act type built; a prepared sheet that
 Brian keys in himself is a deliverable, not an act.
 _Avoid_: action, tool call, write (for what the app performs)
 
+**Verdict**:
+What a reviewed job receives — promote, discard or clear — and everything
+performing it entails: the gates that may refuse it by name, the acts it
+carries out on Approve, and the settlement that stamps the job, records the
+approval and prices the work. One verdict, whoever gives it: a person at the
+desk, or the app under a standing approval.
+_Avoid_: resolve (the stamp alone), approval (one of the three), review outcome
+
 **Supervised live acting**:
 A run driving a visible browser on an allowlisted domain, in a profile Brian
 logged into himself, for one job he queued by hand and is watching. It never

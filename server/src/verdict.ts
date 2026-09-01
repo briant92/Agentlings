@@ -1,24 +1,42 @@
-import { rmSync } from 'node:fs';
-import type { Job, ResolvedBy, SendApprovalInfo, Verdict } from '@agentlings/shared';
-import { hasVerdict, isResolvable } from '@agentlings/shared';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import type { Job, PromotedTo, ResolvedBy, SendApprovalInfo, Verdict } from '@agentlings/shared';
+import {
+  hasVerdict,
+  isResolvable,
+  opKey,
+  opLabel,
+  promotedLine,
+  repoTarget,
+  slugProblem,
+} from '@agentlings/shared';
 import { describeApproval, recordApproval } from './approvals';
 import { outboxRefusal } from './channels';
 import type { Connection } from './connections';
 import type { EventLog } from './events';
-import { patchInFlight, type promoteToRemote } from './gitwork';
+import {
+  applyPatch,
+  beginPatch,
+  endPatch,
+  patchFile,
+  patchInFlight,
+  type promoteToRemote,
+} from './gitwork';
 import { repriceChain, settleOutcome } from './ledger';
 import { appendKnowledge, discardNotes, type CrewSeed, type LevelMeta } from './levels';
 import type { Http } from './library';
 import type { MemoryStore } from './memory';
-import { nominaRefusal } from './nomina';
+import { appendMovesJournal, executeMoves } from './moves';
+import { composeNomina, NOMINA_OUTPUT, nominaRefusal } from './nomina';
 import { sentOn } from './outbox';
 import type { OutboxSendOpts, performOutboxSend } from './outboxsend';
+import { installPack, scanPacks } from './packs';
 import type { PartyPlan } from './party';
 import type { JobQueue } from './queue';
 import { reconciliationRefusal, writeRollForward } from './reconciliation';
 import { withholdingLeaks, withholdingRefusal } from './redact';
 import { wireSettings, type StoredSettings } from './settings';
-import { readTools, toolDir } from './tools';
+import { installTool, readTools, RUN_SCRIPT, toolDir, VERIFY_SCRIPT } from './tools';
 
 /**
  * The verdict on a job — promote, discard or clear — performed whoever gives
@@ -79,10 +97,16 @@ export interface VerdictContext {
   install: InstallContext;
   /** The one send door (D-160): `performOutboxSend`, or a fake honouring its contract. */
   send: (opts: OutboxSendOpts) => ReturnType<typeof performOutboxSend>;
-  /** A branch and a pull request on a URL-backed level (D-275). Absent until #36 moves the push. */
-  pushRemote?: typeof promoteToRemote;
-  /** Absent until #36 moves the party act. */
-  queueParty?: QueueParty;
+  /** A branch and a pull request on a URL-backed level (D-275): `promoteToRemote`, or a fake. */
+  pushRemote: typeof promoteToRemote;
+  /** Queues a reviewed plan's hands, bound to the level. */
+  queueParty: QueueParty;
+}
+
+/** What the desk sent beside the verdict; nothing, on the auto path. */
+export interface VerdictGiven {
+  /** The pack's slug as the review modal sent it — prefilled, so usually unchanged. */
+  packSlug?: string;
 }
 
 /** The slice of a level's runtime a verdict touches. `index.ts`'s `LevelRuntime` satisfies it. */
@@ -99,7 +123,7 @@ export interface VerdictRuntime {
  * `refused` is a gate's answer (400), `busy` a claim's (409): another request
  * holds this job's send or patch, or resolved it while the send ran. `bug` is
  * a refusal that should have happened earlier and did not (500) — the nómina
- * composer's, when #36 moves it.
+ * composer's, after the payee gate let the batch through.
  */
 export type VerdictRefusalKind = 'refused' | 'busy' | 'bug';
 
@@ -126,8 +150,10 @@ const refuse = (reason: string, kind: VerdictRefusalKind = 'refused'): VerdictRe
  * the approval a promote of an outbox earned — or a refusal by name with the
  * job still reviewable. Every ordering rule the route used to carry lives
  * here: the send before anything applied, the racing-verdict re-read after
- * the send's await, the discard banked before the stamp, the roll-forward
- * only after it, the cut legs repriced strictly before the outcome settles.
+ * the send's await, then the tool, the pack, the party, the moves, the
+ * nómina and the patch in that order, the discard banked before the stamp,
+ * the roll-forward only after it, the cut legs repriced strictly before the
+ * outcome settles. A refusal at any act leaves what already landed stamped.
  */
 export async function performVerdict(
   rt: VerdictRuntime,
@@ -135,6 +161,7 @@ export async function performVerdict(
   verdict: Verdict,
   by: ResolvedBy,
   ctx: VerdictContext,
+  given: VerdictGiven = {},
 ): Promise<VerdictResult> {
   const { install } = ctx;
   // A verdict must never land inside this job's own patch-apply await
@@ -153,6 +180,13 @@ export async function performVerdict(
     return refuse(`job ${pending.id} is ${pending.status}, not resolvable`);
   }
   const promote = verdict === 'promote';
+  // A compiled tool is executable instruction, so it installs on the same
+  // approval as any other output rather than the moment it is written — and
+  // a compile promotes only its tool: the send, the pack, the party, the
+  // moves, the nómina and the patch all stand down while one is waiting.
+  const waitingTool = promote
+    ? readTools(rt.dir).find((t) => t.pendingJobId === pending.id)
+    : undefined;
   /**
    * Discarding a compile un-reserves its name. The manifest is written before
    * the compiling session runs, so refusing its output has to remove it — left
@@ -204,7 +238,7 @@ export async function performVerdict(
    * can never message anyone twice.
    */
   let sentNow = 0;
-  if (promote && pending.outbox?.length) {
+  if (promote && pending.outbox?.length && !waitingTool) {
     const outboxes = pending.outbox;
     // Counted per channel (D-179): the same address on two channels is two
     // messages, and one flat list would call the second one already sent.
@@ -290,8 +324,212 @@ export async function performVerdict(
       'busy',
     );
   }
-  // The acts that stay on the machine — the compiled tool, the pack, the
-  // party, the moves, the nómina, the patch or the push — join here (#36).
+  /**
+   * The compiling run has to have left both scripts; half a tool installs
+   * nothing, the name stays reserved and the job stays reviewable.
+   */
+  if (waitingTool && !installTool(rt.dir, waitingTool, rt.queue.sandboxDir(pending.id))) {
+    return refuse(`the compiling run did not leave both ${RUN_SCRIPT} and ${VERIFY_SCRIPT}`);
+  }
+  /**
+   * A reviewed pack is installed exactly as a reviewed outbox is sent and a
+   * reviewed patch applied: at Approve, by us, never by the session (M4).
+   * Installing the identical pack again succeeds, so a retry after a failure
+   * further down cannot be blocked by the work the first attempt did.
+   */
+  let installedPack: string | null = null;
+  // An authoring job's whole deliverable is the pack. Promoting one with no
+  // draft would stamp "promoted" while installing nothing and lock the retry
+  // door behind the stamp — the first smooth chain did exactly that (D-156).
+  // Refuse with the real reason instead. The marker is the author-pack
+  // route's own prompt prefix, read at the chain's root so every
+  // continuation leg carries it.
+  const rootAsk = rt.queue.rootPrompt(pending.id) ?? pending.prompt;
+  if (promote && !pending.packDraft && rootAsk.startsWith('Author a level pack:')) {
+    return refuse(
+      pending.packDraftError ??
+        'no PACK.json at the sandbox root — if the run wrote it inside a folder, ' +
+          'ask a follow-up run to move it up, then Approve again',
+    );
+  }
+  if (promote && pending.packDraft && !waitingTool) {
+    // The reviewer may rename it on the way through: a pack's name is the
+    // one thing about it that has to be unique, so colliding must be fixable
+    // at the review rather than a dead end. The modal prefills the slug and
+    // always sends it, so an UNCHANGED slug is not a rename and is not
+    // pre-checked against the installed list — measured on gates-of-troy
+    // (D-141): Approve #1 installed the pack and then failed its repo patch;
+    // Approve #2 was refused by #1's own install. installPack's
+    // already-identical tolerance is the designed retry path.
+    const sent = given.packSlug?.trim();
+    const renamed = sent && sent !== pending.packDraft.slug ? sent : undefined;
+    const draft = renamed ? { ...pending.packDraft, slug: renamed } : pending.packDraft;
+    if (renamed) {
+      const says = slugProblem(renamed, scanPacks(install.repoRoot).installed.map((p) => p.slug));
+      if (says) return refuse(`pack not installed — ${says}`);
+    }
+    // The sandbox is where a draft's plates live (D-143); the install copies
+    // them from there, re-checking at the moment of writing.
+    const result = installPack(install.repoRoot, draft, rt.queue.sandboxDir(pending.id));
+    if ('error' in result) return refuse(`pack not installed — ${result.error}`);
+    if (!result.already) installedPack = draft.slug;
+    // The name it went in under, so the record matches the world that now
+    // exists — through the queue, which is what persists a job.
+    if (renamed) rt.queue.setPackDraft(pending.id, draft);
+  }
+  /**
+   * A reviewed party plan is performed exactly as a reviewed pack is
+   * installed (TEAMWORK T3, D-196): approving it queues the hands as an
+   * ordinary T2 party, carrying the spec the plan job stored — channels,
+   * answers, and the load-bearing marks the reviewer just read. The model
+   * proposed, the person disposed, and only now does anything run. The plan
+   * job's own input files ride to every hand, since they are the request's
+   * material.
+   */
+  if (promote && pending.partyDraft && pending.party?.plan && !waitingTool) {
+    const spec = pending.party;
+    const draft = pending.partyDraft;
+    const loadBearing = draft.hands.flatMap((h, i) => (h.loadBearing ? [i + 1] : []));
+    const inputDir = rt.queue.inputDir(pending.id);
+    const carried: { name: string; data: Buffer }[] = existsSync(inputDir)
+      ? readdirSync(inputDir, { withFileTypes: true })
+          .filter((e) => e.isFile())
+          .map((e) => ({ name: e.name, data: readFileSync(path.join(inputDir, e.name)) }))
+      : [];
+    // A fully scoped plan on a repo level is a repo party (TEAMWORK T4):
+    // hands clone and patch their own paths, the gather merges. The draft
+    // validator already holds the all-or-none line, so a half-scoped plan
+    // cannot reach here.
+    const repoParty = Boolean(rt.meta.repoPath) && draft.hands.every((h) => h.scope?.length);
+    ctx.queueParty(
+      spec.asked ?? pending.prompt,
+      {
+        hands: draft.hands.map((h) => h.prompt),
+        asked: { n: draft.hands.length, words: 'a planned party' },
+      },
+      {
+        tools: pending.tools ?? [],
+        ...(spec.channels?.length ? { channels: spec.channels } : {}),
+        ...(spec.answers ? { answers: spec.answers } : {}),
+        ...(loadBearing.length ? { loadBearing } : {}),
+        ...(carried.length ? { attachments: carried } : {}),
+        ...(repoParty ? { repo: true, scopes: draft.hands.map((h) => h.scope) } : {}),
+        partyId: spec.id,
+      },
+    );
+  }
+  /**
+   * A reviewed folder reorganization is replayed at Approve, by us, never by
+   * the session (D-132): under the folder the job was pointed at — never a
+   * root the model could name — each op stamped so a retry skips what
+   * already moved, and a partial failure leaving the job reviewable so
+   * "Approve again" finishes the rest and moves nothing twice. This is the
+   * one act that touches a real folder outside the app.
+   *
+   * Deliberately synchronous end to end: with the recheck above, nothing
+   * yields between reading `movesRun.done` and stamping it, so two Approves
+   * cannot interleave here — the property D-160 had to build a claim to get
+   * for the outbox, the event loop grants this stretch for free, and an
+   * await introduced into it would silently take it away (D-162).
+   */
+  if (promote && pending.moves && pending.organizeRoot && !waitingTool) {
+    const root = pending.organizeRoot;
+    if (!existsSync(root)) return refuse(`the folder is not there any more: ${root}`);
+    const alreadyDone = (pending.movesRun?.done ?? []).map(opKey);
+    const run = executeMoves(pending.moves, root, alreadyDone);
+    appendMovesJournal(rt.queue.sandboxDir(pending.id), {
+      at: Date.now(),
+      root,
+      done: run.done,
+      failed: run.failed,
+    });
+    rt.queue.recordMoves(pending.id, run);
+    if (run.failed.length > 0) {
+      const detail = run.failed.map((f) => `${opLabel(f.op)}: ${f.reason}`).join('; ');
+      return refuse(
+        `moved ${run.done.length}, but some failed — ${detail}. Approve again to retry; nothing moves twice.`,
+      );
+    }
+  }
+  /**
+   * The batch, composed (D-268): written only here, only at Approve, and
+   * only once the payee gate let it through — the same shape as the patch:
+   * the real thing happens at the moment a person approves it, never when
+   * the run finished. Until then there is no file to upload, which is what
+   * "refused whole" has to mean for a deliverable.
+   *
+   * The composer re-asks the allowlist rather than trusting the gate, and
+   * can still refuse on a column the specification bounds — a payee name of
+   * 46 characters is nobody's fault and is not a file the bank would take.
+   */
+  let composedNomina = 0;
+  if (promote && pending.nomina && !waitingTool) {
+    const composed = composeNomina(pending.nomina, wireSettings(install.settings()));
+    // Cannot refuse here: the gate asked this exact question, of the same
+    // function, before anything was sent or applied. Kept as a guard rather
+    // than an assertion because the alternative is writing a file we did not
+    // check — but a refusal reaching this point is a bug, not a reviewer's
+    // problem, and says so.
+    if (composed.error !== undefined) {
+      return refuse(
+        `nómina not composed — ${composed.error} (this should have been refused before anything was sent; please report it)`,
+        'bug',
+      );
+    }
+    writeFileSync(path.join(rt.queue.sandboxDir(pending.id), NOMINA_OUTPUT), composed.text, 'utf8');
+    // The file lands after the completion stamp, so what the sandbox holds is
+    // counted again — otherwise the inbox reads a batch job as having
+    // delivered a JSON declaration and no bank file.
+    rt.queue.restampDelivered(pending.id);
+    composedNomina = pending.nomina.rows.length;
+  }
+  /**
+   * The reviewed patch, applied to the real repository — or, on a level
+   * whose repo is a URL, a branch pushed and a pull request opened (D-275).
+   * Where the level's repo actually is decides what promote *means*, and one
+   * reader answers which, the same one the clone asked.
+   *
+   * A compiling run's deliverable is the tool, never the clone it tried the
+   * tool out in: the session sensibly ran its own script to check it worked,
+   * which left the output file in its clone, and promoting the compile
+   * carried that stray file into the real repository. Its brief says to
+   * change nothing else, so nothing else is what gets applied.
+   */
+  if (promote && pending.repoPath && !waitingTool) {
+    const sandbox = rt.queue.sandboxDir(pending.id);
+    const patch = patchFile(sandbox);
+    const where = repoTarget(pending.repoPath);
+    if (where.kind === 'unsupported') return refuse(where.reason);
+    // A local path acts only when there is a patch to apply. A URL is asked
+    // every time, because "there is no patch" is not the same as "there is
+    // nothing to push" once a clone can hold commits — and deciding that
+    // here would put the question in two places.
+    if (where.kind === 'path' ? existsSync(patch) : true) {
+      // The verdict's second await, claimed at the door (D-163): a verdict
+      // landing inside it is refused as busy rather than racing `git apply`
+      // on the real repository or disowning a patch already going in.
+      // Released in `finally`, so a failed apply leaves the job resolvable.
+      beginPatch(pending.id);
+      try {
+        if (where.kind === 'path') {
+          await applyPatch(where.path, patch);
+        } else {
+          const to = await ctx.pushRemote(sandbox, where, pending, {
+            http: install.http,
+            token: install.env.GITHUB_TOKEN,
+          });
+          if (to) rt.queue.setPromotedTo(pending.id, to);
+        }
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        return refuse(
+          where.kind === 'path' ? `patch did not apply: ${detail}` : `nothing was pushed: ${detail}`,
+        );
+      } finally {
+        endPatch(pending.id);
+      }
+    }
+  }
 
   /**
    * A delivery the user refused is banked before the stamp (D-201). Only a
@@ -365,6 +603,9 @@ export async function performVerdict(
       detail: resolvedLine(verdict, by, {
         sentNow,
         channels: (pending.outbox ?? []).map((o) => o.channel).join(' and '),
+        installedPack,
+        composedNomina,
+        promotedTo: job.promotedTo,
         chainPriced,
         rejected: rejected?.name,
       }),
@@ -380,7 +621,9 @@ export async function performVerdict(
  * The feed line: your verb, not the ledger's. "promoted" is what the record
  * calls it; "approved" is what you did, and the feed is a list of your
  * decisions — and an auto-send says so, because it is precisely the case
- * nobody looked at (D-114).
+ * nobody looked at (D-114). It names the act that happened, so the feed
+ * remains the record: sent, installed the world, composed the batch, opened
+ * the pull request.
  */
 function resolvedLine(
   verdict: Verdict,
@@ -388,6 +631,9 @@ function resolvedLine(
   acts: {
     sentNow: number;
     channels: string;
+    installedPack: string | null;
+    composedNomina: number;
+    promotedTo: PromotedTo | undefined;
     chainPriced: ReturnType<typeof repriceChain>;
     rejected?: string;
   },
@@ -406,7 +652,18 @@ function resolvedLine(
       ? by === 'app'
         ? `sent automatically — ${acts.sentNow} via ${acts.channels}, standing approval`
         : `approved — sent ${acts.sentNow} via ${acts.channels}`
-      : 'approved';
+      : acts.installedPack
+        ? `approved — installed the ${acts.installedPack} world`
+        : acts.composedNomina > 0
+          ? // Never "paid": nothing was. The file is a deliverable, and the
+            // act is Brian's token press at the bank (D-219, D-251).
+            `approved — composed ${NOMINA_OUTPUT}, ${acts.composedNomina} ${acts.composedNomina === 1 ? 'payee' : 'payees'}; upload and authorise it at the bank`
+          : acts.promotedTo
+            ? // What promote did on a remote (D-275) — the feed is the record,
+              // so it says which half happened. The sentence is the review
+              // card's, from the one function both ask.
+              `approved — ${promotedLine(acts.promotedTo)}`
+            : 'approved';
   const priced =
     acts.chainPriced.rows > 0
       ? ` · the chain's ${acts.chainPriced.rows} cut leg${acts.chainPriced.rows === 1 ? '' : 's'} now charged $${acts.chainPriced.chargedUsd.toFixed(2)}`

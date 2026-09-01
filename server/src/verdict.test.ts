@@ -1,28 +1,44 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Job, JobEvent, ResolvedBy, Verdict } from '@agentlings/shared';
+import {
+  THEME_SLOTS,
+  type Job,
+  type JobEvent,
+  type LevelPack,
+  type PromotedTo,
+  type ResolvedBy,
+  type Verdict,
+  type WireSettings,
+} from '@agentlings/shared';
 import { readApprovals } from './approvals';
 import type { Connection } from './connections';
 import { EventLog } from './events';
-import { beginPatch, endPatch } from './gitwork';
+import { beginPatch, endPatch, patchFile } from './gitwork';
 import { append as appendLedger, ledgerRow, readLedger } from './ledger';
 import { createLevelFiles, levelDir, readRoster } from './levels';
 import { MemoryStore } from './memory';
-import { NOMINA_FILE } from './nomina';
+import { MOVES_FILE, MOVES_JOURNAL } from './moves';
+import { NOMINA_FILE, NOMINA_OUTPUT } from './nomina';
 import { OUTBOX_FILE } from './outbox';
 import { performOutboxSend, type OutboxSendOpts } from './outboxsend';
+import { PACK_FILE } from './packcontract';
+import { installPack, packsDir } from './packs';
+import { PARTY_FILE, PLAN_SENTENCE } from './party';
 import { JobQueue, type NewJobSpec } from './queue';
 import { RECONCILIATION_FILE, RECONCILIATIONS_DIR } from './reconciliation';
 import { WITHHELD_FILE } from './redact';
 import { readSettings } from './settings';
-import { readTools, toolDir, writeTool } from './tools';
+import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from './tools';
 import {
   performVerdict,
   type InstallContext,
+  type QueueParty,
   type VerdictContext,
+  type VerdictResult,
   type VerdictRuntime,
 } from './verdict';
 
@@ -70,6 +86,61 @@ const OUTBOX = {
   messages: [{ to: '1', name: 'Ana', body: 'padel on Thursday' }],
 };
 
+/** The pack contract's own worked draft — whole, plate-less, installable as it is. */
+const PACK: { slug: string; pack: LevelPack } = {
+  slug: 'moby-dick',
+  pack: {
+    name: 'The Pequod',
+    provenance: 'authored by the crew',
+    viewH: 450,
+    groundY: 388,
+    theme: Object.fromEntries(THEME_SLOTS.map((s) => [s, 0x112233])),
+    ops: [{ op: 'rect', x: 0, y: 'groundY', w: 'worldWidth', h: 62, color: 'wood' }],
+  } as unknown as LevelPack,
+};
+
+/** One folder made, one file moved into it. */
+const MOVES = {
+  moves: [
+    { op: 'mkdir', path: 'invoices' },
+    { op: 'move', from: 'a.pdf', to: 'invoices/a.pdf' },
+  ],
+};
+
+/** The nómina tests' wire: one account paying, two payees a person typed. */
+const WIRE: WireSettings = {
+  chargeAccount: '000012345678',
+  format: 'bci',
+  payees: [
+    {
+      rut: '76123456-0',
+      name: 'Imprenta Norte SpA',
+      bank: '016',
+      account: '00000000012345678',
+      accountLabel: 'Imprenta Norte',
+    },
+    { rut: '9876543-3', name: 'Ana Rivas', bank: '037', account: '77712345' },
+  ],
+};
+
+/** One row to Ana Rivas, composing to the line the bank's example shows. */
+const BATCH = { paymentType: 'REM', rows: [{ rut: '9876543-3', amount: 2 }] };
+
+/** The diff a run leaves against the fixture repository's one file. */
+const PATCH = [
+  'diff --git a/greet.js b/greet.js',
+  '--- a/greet.js',
+  '+++ b/greet.js',
+  '@@ -1 +1 @@',
+  "-console.log('Helo');",
+  "+console.log('Hello');",
+  '',
+].join('\n');
+
+function git(cwd: string, ...args: string[]): void {
+  execFileSync('git', ['-C', cwd, ...args], { stdio: 'pipe' });
+}
+
 /**
  * A send that honours the door's contract — reads who was already reached
  * under the call, stamps each channel through `record` — and records what it
@@ -92,6 +163,27 @@ function fakeSend(failing: Record<string, string> = {}) {
     });
   };
   return { send, calls };
+}
+
+/** A push that records what it was asked and answers `outcome` — or throws it. */
+function fakePush(outcome: PromotedTo | null | Error = null) {
+  const calls: Parameters<VerdictContext['pushRemote']>[] = [];
+  const pushRemote: VerdictContext['pushRemote'] = async (...args) => {
+    calls.push(args);
+    if (outcome instanceof Error) throw outcome;
+    return outcome;
+  };
+  return { pushRemote, calls };
+}
+
+/** The party thunk, recording what it was asked to queue and queueing nothing. */
+function fakeParty() {
+  const calls: Parameters<QueueParty>[] = [];
+  const queueParty: QueueParty = (...args) => {
+    calls.push(args);
+    return [];
+  };
+  return { queueParty, calls };
 }
 
 describe('performVerdict (D-278)', () => {
@@ -154,12 +246,40 @@ describe('performVerdict (D-278)', () => {
     verdict: Verdict,
     over: Partial<VerdictContext> = {},
     by: ResolvedBy = 'you',
+    given: { packSlug?: string } = {},
   ) {
-    const ctx: VerdictContext = { install, send: fakeSend().send, ...over };
-    return performVerdict(rt, job, verdict, by, ctx);
+    const ctx: VerdictContext = {
+      install,
+      send: fakeSend().send,
+      pushRemote: fakePush().pushRemote,
+      queueParty: fakeParty().queueParty,
+      ...over,
+    };
+    return performVerdict(rt, job, verdict, by, ctx, given);
   }
 
   const resolved = () => events.filter((e) => e.type === 'resolved');
+
+  /** A repository on this disk with one committed file, for the level to name. */
+  function gitRepo(): string {
+    const origin = path.join(root, 'origin');
+    mkdirSync(origin);
+    execFileSync('git', ['init', '-q', origin], { stdio: 'pipe' });
+    git(origin, 'config', 'user.name', 'Test');
+    git(origin, 'config', 'user.email', 'test@example.com');
+    writeFileSync(path.join(origin, 'greet.js'), "console.log('Helo');\n");
+    git(origin, 'add', '.');
+    git(origin, 'commit', '-q', '-m', 'init');
+    return origin;
+  }
+
+  /** A real folder holding `files`, for a job to reorganize. */
+  function folderWith(files: string[]): string {
+    const folder = path.join(root, 'folder');
+    mkdirSync(folder, { recursive: true });
+    for (const name of files) writeFileSync(path.join(folder, name), 'x');
+    return folder;
+  }
 
   describe('the gates, each refusing by name and leaving the job reviewable', () => {
     it("a patch in flight is busy (D-163) — the first Approve's apply must land first", async () => {
@@ -569,6 +689,533 @@ describe('performVerdict (D-278)', () => {
         'outbox not sent — channel "telegram" has no "telegram" connection in the catalog',
       );
       expect(rt.queue.get(job.id)!.status).toBe('done');
+    });
+  });
+
+  describe('the compiled tool (D-045)', () => {
+    /** A compile that left `files` in its sandbox, its name reserved in the manifest. */
+    function compiled(files: Record<string, string>, spec: Partial<NewJobSpec> = {}): Job {
+      const job = rt.queue.add({
+        title: 'Compile uf-today',
+        prompt: 'compile the uf today recipe',
+        compile: true,
+        ...spec,
+      });
+      rt.queue.assign(job.id, rt.roster[0].id);
+      const sandbox = rt.queue.start(job.id);
+      for (const [name, text] of Object.entries(files)) writeFileSync(path.join(sandbox, name), text);
+      writeTool(rt.dir, {
+        name: 'uf-today',
+        recipeKey: 'uf today',
+        terms: ['uf'],
+        hasRepo: false,
+        description: 'the UF today',
+        learnedAt: Date.now(),
+        runs: 0,
+        failures: 0,
+        pendingJobId: job.id,
+      });
+      rt.queue.complete(job.id, 'compiled');
+      return rt.queue.get(job.id)!;
+    }
+    const SCRIPT = 'export default 1;\n';
+
+    it('a promote installs the tool — both scripts copied in, the name no longer pending', async () => {
+      const job = compiled({ [RUN_SCRIPT]: SCRIPT, [VERIFY_SCRIPT]: SCRIPT });
+      expect(job.status).toBe('done');
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      const dir = toolDir(rt.dir, 'uf-today');
+      expect(existsSync(path.join(dir, RUN_SCRIPT))).toBe(true);
+      expect(existsSync(path.join(dir, VERIFY_SCRIPT))).toBe(true);
+      expect(readTools(rt.dir)).toHaveLength(1);
+      expect(readTools(rt.dir)[0].pendingJobId).toBeUndefined();
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('refuses by name when the run left only one of the two scripts, and keeps the name reserved', async () => {
+      const job = compiled({ [RUN_SCRIPT]: SCRIPT });
+      expect(job.status).toBe('failed');
+      const got = await give(job, 'promote');
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason: `the compiling run did not leave both ${RUN_SCRIPT} and ${VERIFY_SCRIPT}`,
+      });
+      expect(rt.queue.get(job.id)!.status).toBe('failed');
+      expect(readTools(rt.dir)[0].pendingJobId).toBe(job.id);
+      expect(existsSync(path.join(toolDir(rt.dir, 'uf-today'), RUN_SCRIPT))).toBe(false);
+      expect(resolved()).toHaveLength(0);
+    });
+
+    it('a compile promotes only its tool — the clone it tried the tool in never reaches the repository', async () => {
+      const origin = gitRepo();
+      const job = compiled(
+        { [RUN_SCRIPT]: SCRIPT, [VERIFY_SCRIPT]: SCRIPT, 'DIFF.patch': PATCH },
+        { repoPath: origin },
+      );
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      expect(existsSync(path.join(toolDir(rt.dir, 'uf-today'), VERIFY_SCRIPT))).toBe(true);
+      expect(readFileSync(path.join(origin, 'greet.js'), 'utf8')).toContain('Helo');
+    });
+  });
+
+  describe('the pack (M4, D-141, D-156)', () => {
+    const packJson = (slug: string) => path.join(packsDir(root), slug, 'pack.json');
+
+    it('a promote installs the pack from the sandbox and the feed names the world', async () => {
+      const job = finished({ [PACK_FILE]: JSON.stringify(PACK) }, { channels: [] });
+      expect(job.packDraft?.slug).toBe('moby-dick');
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      expect(JSON.parse(readFileSync(packJson('moby-dick'), 'utf8')).name).toBe('The Pequod');
+      expect(resolved()[0].detail).toBe('approved — installed the moby-dick world');
+    });
+
+    it('a rename at the review installs under the new name and is recorded through the queue, even when a later act refuses', async () => {
+      const folder = folderWith(['a.pdf']);
+      const job = finished(
+        { [PACK_FILE]: JSON.stringify(PACK), [MOVES_FILE]: JSON.stringify(MOVES) },
+        { channels: [], organizeRoot: folder },
+      );
+      rmSync(folder, { recursive: true });
+      const got = await give(job, 'promote', {}, 'you', { packSlug: ' pequod ' });
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason: `the folder is not there any more: ${folder}`,
+      });
+      expect(existsSync(packJson('pequod'))).toBe(true);
+      expect(existsSync(packJson('moby-dick'))).toBe(false);
+      // The record matches the world that now exists — persisted by the
+      // queue, not written on the record it handed back for a later stamp.
+      expect(new JobQueue(rt.dir).get(job.id)!.packDraft?.slug).toBe('pequod');
+    });
+
+    it('an unchanged slug is not a rename — the pack already installed is the designed retry path (D-141)', async () => {
+      const job = finished({ [PACK_FILE]: JSON.stringify(PACK) }, { channels: [] });
+      expect(installPack(root, PACK)).toEqual({ installed: true, already: false });
+      const got = await give(job, 'promote', {}, 'you', { packSlug: 'moby-dick' });
+      expect(got.job?.status).toBe('promoted');
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('a rename onto a name already taken is refused before anything is written', async () => {
+      const job = finished({ [PACK_FILE]: JSON.stringify(PACK) }, { channels: [] });
+      installPack(root, { ...PACK, slug: 'pequod' });
+      const got = await give(job, 'promote', {}, 'you', { packSlug: 'pequod' });
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason:
+          'pack not installed — a pack is already installed as "pequod"; choose a slug nothing is using yet',
+      });
+      expect(existsSync(packJson('moby-dick'))).toBe(false);
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(new JobQueue(rt.dir).get(job.id)!.packDraft?.slug).toBe('moby-dick');
+    });
+
+    it("a slug another world holds is refused in the palette's words, the job still reviewable", async () => {
+      const job = finished({ [PACK_FILE]: JSON.stringify(PACK) }, { channels: [] });
+      installPack(root, {
+        ...PACK,
+        pack: { ...PACK.pack, name: 'Something Else' },
+      });
+      const got = await give(job, 'promote');
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason:
+          'pack not installed — the name "moby-dick" already belongs to the world “Something Else” on your palette. Give this one a different name and approve again.',
+      });
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+    });
+
+    it('an authoring job with no draft is refused with the real reason (D-156), never stamped', async () => {
+      const job = finished(
+        { 'notes.md': 'tried' },
+        { channels: [], prompt: 'Author a level pack: The Pequod' },
+      );
+      const got = await give(job, 'promote');
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason:
+          'no PACK.json at the sandbox root — if the run wrote it inside a folder, ask a follow-up run to move it up, then Approve again',
+      });
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      const broken = finished(
+        { [PACK_FILE]: 'not json' },
+        { channels: [], prompt: 'Author a level pack: The Pequod' },
+      );
+      expect((await give(broken, 'promote')).refused?.reason).toBe('PACK.json: not valid JSON');
+    });
+
+    it('the cut-leg charge is appended to whichever act the line names', async () => {
+      const leg = rt.queue.add({ title: 'Author', prompt: 'Author a level pack: The Pequod' });
+      rt.queue.assign(leg.id, rt.roster[0].id);
+      rt.queue.start(leg.id);
+      rt.queue.fail(leg.id, 'out of turns', { turns: 6, costUsd: 0.6, outOfTurns: true });
+      appendLedger(
+        root,
+        ledgerRow({ ...rt.queue.get(leg.id)!, quotedUsd: 0.4 }, rt.meta.id, 'analyst', 'failed', 1),
+      );
+      const job = finished({ [PACK_FILE]: JSON.stringify(PACK) }, { channels: [], continues: leg.id });
+      await give(job, 'promote');
+      expect(resolved()[0].detail).toBe(
+        "approved — installed the moby-dick world · the chain's 1 cut leg now charged $0.40",
+      );
+    });
+  });
+
+  describe('the party plan (TEAMWORK T3, D-196)', () => {
+    const SPEC: Job['party'] = {
+      id: 'party-1',
+      hand: 0,
+      of: 0,
+      plan: true,
+      asked: 'write three haiku and telegram them to Ana',
+      channels: ['telegram'],
+      answers: { tone: 'dry' },
+    };
+    const DRAFT = {
+      hands: [{ prompt: 'write a haiku about rain', loadBearing: true }, { prompt: 'write a haiku about snow' }],
+      notes: 'two hands',
+    };
+
+    it('a promote queues the hands through the thunk, carrying channels, answers, load-bearing marks and the input files', async () => {
+      const job = finished(
+        { [PARTY_FILE]: JSON.stringify(DRAFT) },
+        {
+          channels: [],
+          prompt: PLAN_SENTENCE,
+          party: SPEC,
+          tools: ['telegram'],
+          attachments: [{ name: 'brief.txt', data: Buffer.from('the brief') }],
+        },
+      );
+      expect(job.partyDraft?.hands).toHaveLength(2);
+      const party = fakeParty();
+      const got = await give(job, 'promote', { queueParty: party.queueParty });
+      expect(got.job?.status).toBe('promoted');
+      expect(party.calls).toHaveLength(1);
+      const [text, plan, opts] = party.calls[0];
+      expect(text).toBe('write three haiku and telegram them to Ana');
+      expect(plan).toEqual({
+        hands: ['write a haiku about rain', 'write a haiku about snow'],
+        asked: { n: 2, words: 'a planned party' },
+      });
+      expect(opts).toEqual({
+        tools: ['telegram'],
+        channels: ['telegram'],
+        answers: { tone: 'dry' },
+        loadBearing: [1],
+        attachments: [{ name: 'brief.txt', data: Buffer.from('the brief') }],
+        partyId: 'party-1',
+      });
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('on a repo level a fully scoped plan queues a repo party, each hand with its scope (TEAMWORK T4)', async () => {
+      rt.meta = { id: rt.meta.id, repoPath: gitRepo() };
+      const scoped = {
+        hands: [
+          { prompt: 'fix the server half', scope: ['server/src'] },
+          { prompt: 'fix the web half', scope: ['web/src'] },
+        ],
+      };
+      const job = finished(
+        { [PARTY_FILE]: JSON.stringify(scoped) },
+        { channels: [], prompt: PLAN_SENTENCE, party: SPEC },
+      );
+      const party = fakeParty();
+      await give(job, 'promote', { queueParty: party.queueParty });
+      expect(party.calls[0][2]).toMatchObject({ repo: true, scopes: [['server/src'], ['web/src']] });
+    });
+
+    it('a discard queues no hands', async () => {
+      const job = finished(
+        { [PARTY_FILE]: JSON.stringify(DRAFT) },
+        { channels: [], prompt: PLAN_SENTENCE, party: SPEC },
+      );
+      const party = fakeParty();
+      const got = await give(job, 'discard', { queueParty: party.queueParty });
+      expect(got.job?.status).toBe('discarded');
+      expect(party.calls).toHaveLength(0);
+    });
+  });
+
+  describe('the folder moves (D-132, D-162)', () => {
+    it("a promote replays the manifest under the job's own root, journals it, and stamps each op", async () => {
+      const folder = folderWith(['a.pdf']);
+      const job = finished({ [MOVES_FILE]: JSON.stringify(MOVES) }, { channels: [], organizeRoot: folder });
+      expect(job.moves?.moves).toHaveLength(2);
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      expect(existsSync(path.join(folder, 'invoices', 'a.pdf'))).toBe(true);
+      expect(existsSync(path.join(folder, 'a.pdf'))).toBe(false);
+      expect(rt.queue.get(job.id)!.movesRun?.done).toEqual(MOVES.moves);
+      const journal = readFileSync(path.join(rt.queue.sandboxDir(job.id), MOVES_JOURNAL), 'utf8')
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+      expect(journal).toMatchObject([{ root: folder, done: MOVES.moves, failed: [] }]);
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('refuses when the folder is gone, before anything is touched or recorded', async () => {
+      const folder = folderWith(['a.pdf']);
+      const job = finished({ [MOVES_FILE]: JSON.stringify(MOVES) }, { channels: [], organizeRoot: folder });
+      rmSync(folder, { recursive: true });
+      const got = await give(job, 'promote');
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason: `the folder is not there any more: ${folder}`,
+      });
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(rt.queue.get(job.id)!.movesRun).toBeUndefined();
+      expect(existsSync(path.join(rt.queue.sandboxDir(job.id), MOVES_JOURNAL))).toBe(false);
+    });
+
+    it('a partial failure leaves the job reviewable with the op named, and Approve again moves nothing twice', async () => {
+      const folder = folderWith(['a.pdf']);
+      mkdirSync(path.join(folder, 'invoices'));
+      writeFileSync(path.join(folder, 'invoices', 'a.pdf'), 'already there');
+      const job = finished({ [MOVES_FILE]: JSON.stringify(MOVES) }, { channels: [], organizeRoot: folder });
+      const got = await give(job, 'promote');
+      expect(got.refused?.kind).toBe('refused');
+      expect(got.refused?.reason).toMatch(
+        /^moved 1, but some failed — a\.pdf → invoices\/a\.pdf: .+\. Approve again to retry; nothing moves twice\.$/,
+      );
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(rt.queue.get(job.id)!.movesRun?.done).toEqual([MOVES.moves[0]]);
+      expect(resolved()).toHaveLength(0);
+      // The obstacle cleared, the retry does the one op left and only that.
+      rmSync(path.join(folder, 'invoices', 'a.pdf'));
+      const again = await give(rt.queue.get(job.id)!, 'promote');
+      expect(again.job?.status).toBe('promoted');
+      expect(readFileSync(path.join(folder, 'invoices', 'a.pdf'), 'utf8')).toBe('x');
+      expect(rt.queue.get(job.id)!.movesRun?.done).toEqual(MOVES.moves);
+    });
+
+    it('nothing yields between the racing recheck and the stamp — a verdict queued for the very next turn finds the job already promoted (D-162)', async () => {
+      const folder = folderWith(['a.pdf']);
+      const job = finished(
+        { [OUTBOX_FILE]: JSON.stringify(OUTBOX), [MOVES_FILE]: JSON.stringify(MOVES) },
+        { organizeRoot: folder },
+      );
+      const inner = fakeSend();
+      let late: string | undefined;
+      const send: VerdictContext['send'] = async (opts) => {
+        const runs = await inner.send(opts);
+        // Queued from inside the send, this lands one microtask after the
+        // verdict's own continuation resumes — the first moment anything else
+        // could touch the job once the send is back. An await introduced
+        // anywhere between the recheck and the stamp would let it in.
+        queueMicrotask(() =>
+          queueMicrotask(() => {
+            try {
+              rt.queue.resolve(job.id, 'discard', 'you');
+              late = 'landed';
+            } catch (err) {
+              late = err instanceof Error ? err.message : String(err);
+            }
+          }),
+        );
+        return runs;
+      };
+      const got = await give(job, 'promote', { send });
+      expect(got.job?.status).toBe('promoted');
+      expect(late).toBe(`job ${job.id} is promoted, not resolvable`);
+      expect(existsSync(path.join(folder, 'invoices', 'a.pdf'))).toBe(true);
+      expect(resolved()[0].detail).toBe('approved — sent 1 via telegram');
+    });
+  });
+
+  describe('the nómina (D-268)', () => {
+    const wired = (payees = WIRE.payees): InstallContext => ({
+      ...install,
+      settings: () => ({ wire: { ...WIRE, payees } }),
+    });
+
+    it('a promote composes the file here and only here, re-stamps the delivery, and the feed says what landed', async () => {
+      const job = finished({ [NOMINA_FILE]: JSON.stringify(BATCH) }, { channels: [] });
+      expect(job.nomina?.rows).toHaveLength(1);
+      const out = path.join(rt.queue.sandboxDir(job.id), NOMINA_OUTPUT);
+      expect(existsSync(out)).toBe(false);
+      const before = job.delivered!.files;
+      const got = await give(job, 'promote', { install: wired() });
+      expect(got.job?.status).toBe('promoted');
+      expect(readFileSync(out, 'utf8')).toBe('000012345678;77712345;037;9876543;3;Ana Rivas;2;;;REM;;;\r\n');
+      expect(rt.queue.get(job.id)!.delivered?.files).toBe(before + 1);
+      expect(resolved()[0].detail).toBe(
+        'approved — composed nomina.txt, 1 payee; upload and authorise it at the bank',
+      );
+    });
+
+    it('a discard composes nothing', async () => {
+      const job = finished({ [NOMINA_FILE]: JSON.stringify(BATCH) }, { channels: [] });
+      const got = await give(job, 'discard', { install: wired() });
+      expect(got.job?.status).toBe('discarded');
+      expect(existsSync(path.join(rt.queue.sandboxDir(job.id), NOMINA_OUTPUT))).toBe(false);
+    });
+
+    it("a composer refusal after the gate passed is reported as a bug, not the reviewer's problem", async () => {
+      const job = finished({ [NOMINA_FILE]: JSON.stringify(BATCH) }, { channels: [] });
+      // The allowlist the gate reads, then the one the composer reads: the
+      // payee gone between the two asks.
+      const answers = [WIRE.payees, []];
+      const flapping: InstallContext = {
+        ...install,
+        settings: () => ({ wire: { ...WIRE, payees: answers.shift() ?? [] } }),
+      };
+      const got = await give(job, 'promote', { install: flapping });
+      expect(got.refused?.kind).toBe('bug');
+      expect(got.refused?.reason).toMatch(
+        /^nómina not composed — .+ \(this should have been refused before anything was sent; please report it\)$/,
+      );
+      expect(existsSync(path.join(rt.queue.sandboxDir(job.id), NOMINA_OUTPUT))).toBe(false);
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(resolved()).toHaveLength(0);
+    });
+  });
+
+  describe('the patch (D-163) and the push (D-275)', () => {
+    it('a promote applies the reviewed patch to the folder the level names', async () => {
+      const origin = gitRepo();
+      const job = finished({ 'DIFF.patch': PATCH }, { channels: [], repoPath: origin });
+      expect(job.changes?.names).toEqual(['greet.js']);
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      expect(readFileSync(path.join(origin, 'greet.js'), 'utf8')).toContain('Hello');
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('a repo job that left no patch applies nothing and still promotes', async () => {
+      const origin = gitRepo();
+      const job = finished({ 'notes.md': 'looked, changed nothing' }, { channels: [], repoPath: origin });
+      const got = await give(job, 'promote');
+      expect(got.job?.status).toBe('promoted');
+      expect(readFileSync(path.join(origin, 'greet.js'), 'utf8')).toContain('Helo');
+    });
+
+    it('a refused patch after a successful send leaves the sends stamped and the job reviewable; the retry sends nobody twice', async () => {
+      const origin = gitRepo();
+      const job = finished(
+        { [OUTBOX_FILE]: JSON.stringify(OUTBOX), 'DIFF.patch': 'not a patch\n' },
+        { repoPath: origin },
+      );
+      const first = fakeSend();
+      const got = await give(job, 'promote', { send: first.send });
+      expect(got.refused?.kind).toBe('refused');
+      expect(got.refused?.reason).toMatch(/^patch did not apply: /);
+      expect(first.calls).toHaveLength(1);
+      const after = rt.queue.get(job.id)!;
+      expect(after.status).toBe('done');
+      expect(after.outboxSent?.[0]?.sentTo).toEqual(['1']);
+      expect(readApprovals(rt.dir)).toHaveLength(0);
+      expect(resolved()).toHaveLength(0);
+      // The patch fixed, Approve again applies it and enters no send at all.
+      writeFileSync(patchFile(rt.queue.sandboxDir(job.id)), PATCH);
+      const second = fakeSend();
+      const again = await give(rt.queue.get(job.id)!, 'promote', { send: second.send });
+      expect(again.job?.status).toBe('promoted');
+      expect(second.calls).toHaveLength(0);
+      expect(readFileSync(path.join(origin, 'greet.js'), 'utf8')).toContain('Hello');
+      expect(rt.queue.get(job.id)!.outboxSent?.[0]?.sentTo).toEqual(['1']);
+      expect(resolved()[0].detail).toBe('approved');
+    });
+
+    it('a repository named in a form promote cannot take is refused by name', async () => {
+      const job = finished(
+        { 'notes.md': 'x' },
+        { channels: [], repoPath: 'git@github.com:acme/widgets' },
+      );
+      const got = await give(job, 'promote');
+      expect(got.refused).toEqual({
+        kind: 'refused',
+        reason: 'only an https github.com URL works — not ssh, git or http',
+      });
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+    });
+
+    it('a URL-backed level pushes through the adapter every time, records where, and the feed names the pull request', async () => {
+      const job = finished(
+        { 'notes.md': 'no patch — the clone holds a commit' },
+        { channels: [], repoPath: 'https://github.com/acme/widgets' },
+      );
+      const to: PromotedTo = {
+        branch: 'agentlings/padel-1a2b',
+        prNumber: 7,
+        prUrl: 'https://github.com/acme/widgets/pull/7',
+      };
+      const push = fakePush(to);
+      const got = await give(job, 'promote', {
+        install: { ...install, env: { ...ENV, GITHUB_TOKEN: 'ghp-test' } },
+        pushRemote: push.pushRemote,
+      });
+      expect(got.job?.status).toBe('promoted');
+      expect(push.calls).toHaveLength(1);
+      const [sandbox, target, pushed, deps] = push.calls[0];
+      expect(sandbox).toBe(rt.queue.sandboxDir(job.id));
+      expect(target).toEqual({
+        kind: 'url',
+        url: 'https://github.com/acme/widgets.git',
+        owner: 'acme',
+        name: 'widgets',
+      });
+      expect(pushed.id).toBe(job.id);
+      expect(deps).toEqual({ http: install.http, token: 'ghp-test' });
+      expect(got.job?.promotedTo).toEqual(to);
+      expect(new JobQueue(rt.dir).get(job.id)!.promotedTo).toEqual(to);
+      expect(resolved()[0].detail).toBe('approved — pull request #7 opened from agentlings/padel-1a2b');
+    });
+
+    it('a push that opened no pull request still says which half happened', async () => {
+      const job = finished(
+        { 'notes.md': 'x' },
+        { channels: [], repoPath: 'https://github.com/acme/widgets' },
+      );
+      const push = fakePush({ branch: 'agentlings/padel-1a2b', prError: 'no GITHUB_TOKEN' });
+      await give(job, 'promote', { pushRemote: push.pushRemote });
+      expect(resolved()[0].detail).toBe(
+        'approved — pushed agentlings/padel-1a2b; no pull request (no GITHUB_TOKEN)',
+      );
+    });
+
+    it('a push that failed is refused with the job reviewable and nowhere recorded', async () => {
+      const job = finished(
+        { 'notes.md': 'x' },
+        { channels: [], repoPath: 'https://github.com/acme/widgets' },
+      );
+      const push = fakePush(new Error('remote said no'));
+      const got = await give(job, 'promote', { pushRemote: push.pushRemote });
+      expect(got.refused).toEqual({ kind: 'refused', reason: 'nothing was pushed: remote said no' });
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(rt.queue.get(job.id)!.promotedTo).toBeUndefined();
+      expect(resolved()).toHaveLength(0);
+    });
+
+    it('a verdict landing while the push is in flight is busy (D-163), and the claim is released after', async () => {
+      const job = finished(
+        { 'notes.md': 'x' },
+        { channels: [], repoPath: 'https://github.com/acme/widgets' },
+      );
+      let during: VerdictResult | undefined;
+      const pushRemote: VerdictContext['pushRemote'] = async () => {
+        during = await give(job, 'discard');
+        return null;
+      };
+      const got = await give(job, 'promote', { pushRemote });
+      expect(during?.refused).toEqual({
+        kind: 'busy',
+        reason:
+          "this job's patch is still applying — the first Approve is doing it; try again when it lands",
+      });
+      expect(got.job?.status).toBe('promoted');
+      expect(got.job?.promotedTo).toBeUndefined();
+      expect(resolved()).toHaveLength(1);
+      expect(resolved()[0].detail).toBe('approved');
+      // The claim released: a later verdict meets the queue's rule, not the door's.
+      expect((await give(job, 'discard')).refused?.reason).toBe(
+        `job ${job.id} is promoted, not resolvable`,
+      );
     });
   });
 });

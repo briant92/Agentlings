@@ -16,6 +16,7 @@ import type {
   MoveOp,
   Outbox,
   OutboxSent,
+  PackDraft,
   PromotedTo,
   ResolvedBy,
 } from '@agentlings/shared';
@@ -849,6 +850,20 @@ export class JobQueue {
   setPromotedTo(jobId: string, promotedTo: PromotedTo): Job {
     const job = this.mustGet(jobId);
     job.promotedTo = promotedTo;
+    this.persist();
+    return job;
+  }
+
+  /**
+   * The name a reviewed pack went in under (D-141): the reviewer may rename
+   * it at Approve, and the record has to match the world that now exists
+   * rather than the one the run asked to be. Through here, not written on
+   * the record the queue handed back — the queue is the one thing that
+   * persists a job (D-278).
+   */
+  setPackDraft(jobId: string, draft: PackDraft): Job {
+    const job = this.mustGet(jobId);
+    job.packDraft = draft;
     this.persist();
     return job;
   }

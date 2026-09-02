@@ -23812,4 +23812,112 @@ question, if it ever becomes live, is asked of one gate list.
 
 ### What proved it
 
-Appended by the commit that moves the code.
+Five tickets, expand → migrate → contract, each with the server stopped or
+unwatched and `jobsRunning == 0` before the edit (D-140).
+
+| | | |
+|---|---|---|
+| #34 | `isResolvable` joins the shared predicates; `promotable` gone | `ebb1cd2` |
+| #35 | `verdict.ts`: the contexts, the gates, the send, settlement, discard, clear | `23680b3`, `133876b` |
+| #36 | the acts — tool, pack, party, moves, nómina, patch, push | `4939e61`, `f24538d`, `0a993b5` |
+| #37 | the desk route calls it: parse, one call, kind to status | `790bb65`, `7f3672f` |
+| #38 | the standing-approval path calls it; the inline copy deleted | `ac04c53`, `72bf531`, `1c7c4e3` |
+
+The resolve handler went from 568 lines to 29, and `autoSendIfApproved` from
+76 to 36 — of which the first eleven are the two eligibility checks Q2 keeps,
+and the rest is one call and one feed line.
+
+**Suites.** 2901 server tests across 112 files, 377 web, typecheck clean in
+all three workspaces. `verdict.test.ts` holds 65 of them, every one through
+`performVerdict` and nothing reaching past it.
+
+**Mutation round.** Sixteen mutations over `verdict.ts`, each asserted to have
+*landed* — a non-empty `git diff --stat` — before its result was believed, the
+#32 lesson. The no-op control reported DID NOT LAND, so the harness is honest.
+**15 of 15 landed mutations killed.**
+
+The single survivor of the first round is why the rule is "assert it landed,
+then explain the survivor". It turned `verdict === 'discard'` into
+`verdict !== 'clear'` in the D-201 banking gate: approving a delivery would
+have written *"my delivery was discarded, not what was wanted"* into the
+memory of the agentling whose work was just accepted, and KNOWLEDGE.md would
+have learnt it. Sixty-three tests did not notice — three covered the banking,
+two covered discards that bank nothing, none covered a promote that must not.
+Pinned; the mutation is dead.
+
+**Live proof.** `scripts/prove-realwork.mjs` against the restarted server
+(2026-09-02, pid 47160, 15:45Z): all PASS, no ledger row, $0. Its cleanup drove
+a **real Clear through the migrated route** — job `e35d40c7` on level
+`d-261-realwork-proof-4` reads `cleared`, `resolvedBy: you`, stamped
+15:46:04Z. #37's own run had already put four real Approves through it, each
+sending a real telegram, and a Clear on training-ground.
+
+The firing also drove the migrated **auto** call site: a report job lands
+`done` carrying a telegram outbox, `autoBlocker` passes it, and `autoSendable`
+declines it for want of a grant. The job stayed in review, nothing was sent,
+and the log holds no `standing approval failed:` line. That proves the call
+site is wired and does not throw. It does **not** prove an auto *send* through
+the module — that needs three hand approvals first (D-082), and would put a
+real message on the wire. Not claimed here.
+
+**What a person can see that changed.** The entry said nothing a person sees
+changes. Four things do, all on the standing-approval path, and none at the
+desk:
+
+1. **The D-160 stand-down is now visible.** A manual Approve racing an
+   auto-send used to make `autoSendIfApproved` `return` in silence. It is now
+   a progress line — *"standing approval could not send — this outbox is
+   already sending…"*. This is Q9 and story 10 of #33 working as intended: a
+   send that could not go out is visible where a person looks. Pinned by test.
+2. **The door refusal doubles its clause.** Today's line was *"standing
+   approval could not send — {channel refusal}"*; it now reads *"standing
+   approval could not send — outbox not sent — {channel refusal}"*, because
+   the module's named reason is more specific than the bare refusal the old
+   path passed through. The auto path's own opening words are unchanged.
+   Accepted rather than fixed: stripping a known prefix back off would be
+   string surgery on a sentence the module owns.
+3. **`by: 'app'` now settles.** The auto path runs `repriceChain` and
+   `settleOutcome`, which it never did — an auto-sent delivery now prices its
+   chain's cut legs and stops its ledger row calling accepted work a failure,
+   the same as an approved one. The roll-forward (D-223) is in the same
+   stretch but unreachable, since a statement is a file and `autoBlocker`
+   admits none.
+4. **The racing re-read now guards it** (D-162): a desk verdict landing while
+   an auto-send runs stops before the stamp instead of stamping over it.
+
+**One act is reordered.** The route installed a compiled tool *first* — before
+the compile un-reserve, both gates and the send. The module installs it after
+the send and the racing re-read. The observable effect is nil, because a
+compile carries no reconciliation, no nómina and no outbox, and `!waitingTool`
+already stood the send down; but it is a reorder, not a move, and saying so is
+the point of this line.
+
+**Two shapes widened past the eleven answers.** Q7 declared a refusal
+`{ reason, kind }`; it now carries an optional `partialSend { sent, of }`, set
+only where a send partly succeeded. The two callers say different things about
+that one outcome — the desk shows the reason, the auto path writes *"sent 1 of
+2 — the rest waits for your review"* — and the alternative was parsing prose
+back into numbers. Beside it, `autoRefusalLine` is exported from the module.
+Q9 says refusals are not *emitted* by the module and each caller decides where
+one goes; composing the sentence is not emitting, the module already owns
+`resolvedLine`'s words including the app's, and only the HTTP status is the
+route's.
+
+**A guard the migration introduced.** The auto-send now sits inside
+`if (chainRuntime)` at the completion seam, because a verdict takes the
+level's runtime. A finish whose level has left the map no longer auto-sends.
+Nothing reaches it — `closeBlocker` refuses a close while a job is running or
+queued — and the alternative was the old closure's stale queue.
+
+**The floor, and what is still ceiling.** `verdict.test.ts` drives both givers
+over one gate table and asserts the answers identical, so the module is blind
+to who asks. It cannot drive `autoSendIfApproved` or the route themselves:
+`index.ts` listens at import, so no test may load it (Q10). Those two remain
+the live proof's, as the entry planned.
+
+**Still duplicated, and known.** `close.ts:21` spells `done | partial |
+failed` a third time as `IN_REVIEW` — "what is still in review when a level
+closes". The same answer as `isResolvable`, arguably the same notion, and
+outside this move's scope. Left for its own ticket rather than collapsed on
+the way past, since D-030 warns that merging two things which only sound alike
+is the same mistake as duplicating one.

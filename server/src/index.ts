@@ -3456,7 +3456,7 @@ app.get('/api/levels/:lid/jobs/:id/nomina', (c) => {
  * that landed while the send ran (D-162) — is 409, and a refusal that should
  * have happened earlier is 500. The card reads only the reason.
  */
-const REFUSAL_STATUS = { refused: 400, busy: 409, bug: 500 } as const satisfies Record<
+const VERDICT_REFUSAL_STATUS = { refused: 400, busy: 409, bug: 500 } as const satisfies Record<
   VerdictRefusalKind,
   number
 >;
@@ -3488,7 +3488,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     { packSlug: body.packSlug },
   );
   if (result.refused) {
-    return c.json({ error: result.refused.reason }, REFUSAL_STATUS[result.refused.kind]);
+    return c.json({ error: result.refused.reason }, VERDICT_REFUSAL_STATUS[result.refused.kind]);
   }
   return c.json({
     ...result.job,

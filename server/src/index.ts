@@ -469,7 +469,9 @@ const INSTALL: InstallContext = {
  * The rest of what a verdict takes, bound to a level: the two acts that leave
  * the machine as adapters (D-278 Q3) and the party thunk the module cannot
  * import (Q4). Both callers — the desk route and the standing-approval path —
- * take this same one, so they differ in nothing but who gives the verdict.
+ * take this same one, so no part of a verdict's machinery differs between
+ * them; what they still choose for themselves is the verdict, who gives it
+ * and, at the desk, the slug sent beside it.
  */
 const verdictContext = (rt: LevelRuntime): VerdictContext => ({
   install: INSTALL,
@@ -674,8 +676,14 @@ function makeLevel(dir: string): LevelRuntime {
       if (chainRuntime) {
         // The one path that sends without review, gated hard (D-082). Fire
         // and forget: a send must never block the finish bookkeeping around
-        // it. First in the block, so it still opens before the chain glue as
-        // it did when it took the pieces rather than the runtime.
+        // it, and first in the block so it still opens before the chain glue.
+        //
+        // It sits inside the guard because a verdict now takes the level's
+        // runtime, and that is a change: a finish whose level has since left
+        // the map no longer auto-sends. Nothing can reach it — closing is
+        // refused while a job is running or queued — and stamping through the
+        // stale queue this closure used to hold would have been the worse
+        // half of the trade.
         void autoSendIfApproved(chainRuntime, job);
         // A delivered step queues the next through the same glue; a failed
         // one halts the chain with the reason in the feed (D-105).

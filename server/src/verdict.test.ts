@@ -716,11 +716,16 @@ describe('performVerdict (D-278)', () => {
     });
 
     /**
-     * One gate list, two callers (D-278 story 9). Each row is a gate; the
-     * same job meets it from the desk and from the app, and the two answers
-     * have to be identical — reason, kind and all. A gate added to the
-     * module joins this table and is met by both without either caller
-     * changing, which is the whole point of there being one module.
+     * One gate list, both givers (D-278 Q2). Each row is a gate; the same job
+     * meets it as the desk gives the verdict and as the app does, and the two
+     * answers have to be identical — reason, kind and all. A gate added to
+     * the module joins this table and is met under both, which is the whole
+     * point of there being one module.
+     *
+     * What it cannot reach is `autoSendIfApproved` itself: index.ts listens at
+     * import, so no test may load it (D-278 Q10). This proves the module is
+     * blind to who is asking; that the auto caller reaches the module at all
+     * is the live proof's to show, and its eligibility is approvals.test.ts's.
      */
     const GATES: [string, () => { job: Job; over?: Partial<VerdictContext> }][] = [
       [
@@ -782,7 +787,7 @@ describe('performVerdict (D-278)', () => {
      * rather than anything it recomputes: a partial send keeps its own
      * sentence, because "sent 1 of 2" is an outcome and not a failure to
      * send, and every other refusal becomes the progress line the
-     * standing-approval path has always written (D-278 story 10).
+     * standing-approval path has always written (D-278 Q9).
      */
     it('a partial send hands the app the numbers its own line needs, and stamps nothing', async () => {
       const job = finished({
@@ -803,6 +808,17 @@ describe('performVerdict (D-278)', () => {
       expect(rt.queue.get(job.id)!.status).toBe('done');
       expect(readApprovals(rt.dir)).toHaveLength(0);
       expect(resolved()).toHaveLength(0);
+    });
+
+    it("the send door's stand-down is a line now, where the old path returned in silence", async () => {
+      const job = finished();
+      const got = await give(job, 'promote', { send: async () => null }, 'app');
+      expect(got.refused?.kind).toBe('busy');
+      expect(autoRefusalLine(got.refused!)).toBe(
+        'standing approval could not send — this outbox is already sending — ' +
+          'the first Approve is doing it; the card updates when it lands',
+      );
+      expect(rt.queue.get(job.id)!.status).toBe('done');
     });
 
     it('every other refusal becomes the progress line, opening in the words it always did', async () => {

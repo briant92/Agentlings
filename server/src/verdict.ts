@@ -148,8 +148,12 @@ export type VerdictResult =
   | { refused: VerdictRefusal; job?: undefined; sendApproval?: undefined }
   | { refused?: undefined; job: Job; sendApproval?: SendApprovalInfo };
 
-const refuse = (reason: string, kind: VerdictRefusalKind = 'refused'): VerdictResult => ({
-  refused: { reason, kind },
+const refuse = (
+  reason: string,
+  kind: VerdictRefusalKind = 'refused',
+  partialSend?: { sent: number; of: number },
+): VerdictResult => ({
+  refused: { reason, kind, ...(partialSend ? { partialSend } : {}) },
 });
 
 /**
@@ -311,13 +315,11 @@ export async function performVerdict(
         // The channel is named per failure: with two in play, "ana@x — not
         // connected" leaves the user guessing which send it belonged to.
         const detail = failures.map((f) => `${f.to} on ${f.channel}: ${f.reason}`).join('; ');
-        return {
-          refused: {
-            reason: `sent ${sentNow} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
-            kind: 'refused',
-            partialSend: { sent: sentNow, of: remaining.length },
-          },
-        };
+        return refuse(
+          `sent ${sentNow} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
+          'refused',
+          { sent: sentNow, of: remaining.length },
+        );
       }
     }
   }
@@ -630,7 +632,7 @@ export async function performVerdict(
 
 /**
  * The progress line the standing-approval path writes when the verdict it
- * asked for came back refused (D-278 story 10): a send that could not go out
+ * asked for came back refused (D-278 Q9): a send that could not go out
  * is visible where a person looks rather than an error nobody sees. A
  * partial send keeps its own sentence — "sent 1 of 2" is an outcome, not a
  * failure to send, and what is left is now waiting for a person. The words

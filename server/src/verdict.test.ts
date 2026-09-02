@@ -573,6 +573,20 @@ describe('performVerdict (D-278)', () => {
       expect(resolved()).toHaveLength(0);
     });
 
+    // The other half of D-201, and the half a mutation walked straight
+    // through: only a *refused* delivery teaches its maker. Approving one
+    // and letting it bank would put "not what was wanted" in the memory of
+    // the agentling whose work was just accepted — the opposite lesson.
+    it('a promote of the same delivery banks nothing — it was wanted (D-201)', async () => {
+      const job = finished();
+      const maker = rt.roster.find((s) => s.id === job.assignedTo)!;
+      const { send } = fakeSend();
+      const got = await give(job, 'promote', { send });
+      expect(got.job?.status).toBe('promoted');
+      expect(rt.memory.lessons(maker.name)).toEqual([]);
+      expect(existsSync(path.join(rt.dir, 'KNOWLEDGE.md'))).toBe(false);
+    });
+
     it('a discard of a failed run banks nothing — nothing was delivered to refuse', async () => {
       const job = finished({}, { fail: 'ran out of turns' });
       expect(job.status).toBe('failed');

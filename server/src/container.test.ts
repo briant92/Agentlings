@@ -199,6 +199,7 @@ describe('the Railway template', async () => {
    */
   type Compiled = {
     type: string;
+    name: string;
     build: { builder: string; dockerfilePath: string };
     deploy: { healthcheckPath: string };
     variables: Record<string, { value: { value?: string; isOptional?: boolean } }>;
@@ -215,6 +216,20 @@ describe('the Railway template', async () => {
     expect(resources.map((r) => r.type).sort()).toEqual(['service', 'volume']);
   });
 
+  it('names the reference install exactly, because a mismatch is a delete', () => {
+    // Railway matches a declared resource to a live one by name, and nothing
+    // here pinned the names until now — the one property that decides update
+    // from destroy was the one property untested. It had drifted on all three:
+    // `agentlings` / `agentlings` / `agentlings-data` declared against a live
+    // `Agentlings` / `Agentlings` / `agentlings-volume`, and `railway config
+    // plan` read *2 to add, 0 to change, 1 to destroy* — the destroy being the
+    // service the operator's volume is attached to. A deliberate rename is
+    // ratified by editing this test, the way the template code is.
+    expect((graph as unknown as { name: string }).name).toBe('Agentlings');
+    expect(svc.name).toBe('Agentlings');
+    expect(resources.find((r) => r.type === 'volume')?.name).toBe('agentlings-volume');
+  });
+
   it('builds from the Dockerfile that exists', () => {
     expect(svc.build.builder).toBe('DOCKERFILE');
     expect(existsSync(path.join(REPO_ROOT, svc.build.dockerfilePath))).toBe(true);
@@ -225,7 +240,6 @@ describe('the Railway template', async () => {
     // install writing the operator's keys and ledger into the container layer
     // instead — working perfectly right up until the first redeploy.
     expect(attachment.mountPath).toBe(envLine(HOME_VAR));
-    expect(declared[HOME_VAR]).toBe(attachment.mountPath);
   });
 
   it('requires the password, and requires nothing else', () => {
@@ -235,16 +249,28 @@ describe('the Railway template', async () => {
     expect(required).toEqual([PASSWORD_VAR]);
   });
 
-  it('binds a public interface, which only the password makes safe', () => {
-    // The template's own declared environment, put through the policy the
-    // server actually runs: as written it listens with the gate on, and with
-    // the password taken away it refuses. Both branches, on the real values.
-    expect(declared[BIND_VAR]).toBeDefined();
-    expect(listenPolicy({ ...declared, [PASSWORD_VAR]: 'a password of my own' })).toMatchObject({
+  it('adds nothing the image already sets, and the two together listen behind the gate', () => {
+    // D-274 found the template generator turning every variable on the service
+    // into a required input with no default, so a stranger deploying was asked
+    // for the two values the template exists to set itself. They were deleted
+    // from the service and live in the image alone; re-adding either one here
+    // is caught on this line rather than by the next person to click Deploy.
+    expect(Object.keys(svc.variables)).not.toContain(HOME_VAR);
+    expect(Object.keys(svc.variables)).not.toContain(BIND_VAR);
+
+    // What a deployed install runs with is the image's environment *plus* this
+    // list, so the union is what the policy is asked about — neither half
+    // answers it alone, the image having no password and this list no bind.
+    const running = {
+      [HOME_VAR]: envLine(HOME_VAR),
+      [BIND_VAR]: envLine(BIND_VAR),
+      ...declared,
+    };
+    expect(listenPolicy({ ...running, [PASSWORD_VAR]: 'a password of my own' })).toMatchObject({
       listen: true,
       gate: true,
     });
-    expect(listenPolicy(declared).listen).toBe(false);
+    expect(listenPolicy(running).listen).toBe(false);
   });
 
   it('leaves the port to Railway', () => {

@@ -16,22 +16,37 @@ import { defineRailway, github, project, service, volume } from 'railway/iac';
  * directory, and that is the only state there is. Which is why the volume
  * carries the entire trust story — lose it and the operator's keys, ledger
  * and schedules go with it.
+ *
+ * **The names below are the reference install's, exactly.** Railway matches a
+ * declared resource to a live one by name, so declaring `agentlings` where the
+ * service is called `Agentlings` is not a rename — it is a create and a
+ * delete, and the delete takes the volume the sentence above is about. That
+ * was the standing plan here for a week: *2 to add, 0 to change, 1 to
+ * destroy*. `container.test.ts` pins all three names for that reason, so
+ * changing one is a decision rather than a tidy-up.
+ *
+ * On Windows `railway config plan` fails with "requires Railway CLI 5.42.1 or
+ * newer" whatever the installed version is: the SDK's guard spawns the
+ * `railway` shim through `execFileSync`, which cannot run a `.cmd`, and
+ * reports the ENOENT as a version. Call
+ * `node_modules/@railway/cli/bin/railway.exe` directly — the same workaround
+ * `railwayBin()` in the prove scripts already carries.
  */
 export default defineRailway(() => {
   /**
    * The operator's half (D-270), and nothing else.
    *
-   * The mount path is `AGENTLINGS_HOME`'s value, so the secrets file lands at
-   * `/data/.env` and the data directory at `/data/.agentlings` — which is what
-   * makes a key pasted into Settings on Monday still work after Railway
-   * rebuilds the container on Tuesday. The product half — the code, the
-   * roles, the skills, the built bundle — is *not* here on purpose: a volume
-   * holding the bundle would pin the install to whichever one landed on it
-   * first, forever.
+   * The mount path is the value the image sets `AGENTLINGS_HOME` to, so the
+   * secrets file lands at `/data/.env` and the data directory at
+   * `/data/.agentlings` — which is what makes a key pasted into Settings on
+   * Monday still work after Railway rebuilds the container on Tuesday. The
+   * product half — the code, the roles, the skills, the built bundle — is
+   * *not* here on purpose: a volume holding the bundle would pin the install
+   * to whichever one landed on it first, forever.
    */
-  const data = volume('agentlings-data', { sizeMB: 5_000 });
+  const data = volume('agentlings-volume', { sizeMB: 5_000 });
 
-  const agentlings = service('agentlings', {
+  const agentlings = service('Agentlings', {
     source: github('briant92/Agentlings'),
     build: { builder: 'DOCKERFILE', dockerfilePath: 'Dockerfile' },
     volumeMounts: { '/data': data },
@@ -50,13 +65,15 @@ export default defineRailway(() => {
         isOptional: false,
         isSealed: true,
       },
-      // Where the operator's half lives — the same path the volume mounts at.
-      // The Dockerfile sets this too; naming it here is what tells Railway the
-      // mount and the store are the same directory.
-      AGENTLINGS_HOME: { value: '/data' },
-      // A public address is exactly what a person deployed this to get, and
-      // it is safe only because of the password above.
-      AGENTLINGS_BIND: { value: '0.0.0.0' },
+      // `AGENTLINGS_HOME` and `AGENTLINGS_BIND` are deliberately absent, and
+      // the absence is the fix from D-274: the template generator turns every
+      // variable on the service into an input with no default, so naming them
+      // here asked a stranger for the two values the template exists to set
+      // itself. The image sets both, and `container.test.ts` holds the mount
+      // path against the image's `AGENTLINGS_HOME` and runs the listen policy
+      // on the image's `AGENTLINGS_BIND` — so this list carries the credential
+      // and nothing else.
+      //
       // Every other key — the model, Telegram, Google, Buk — is entered
       // inside the app, where it explains itself and lands in the secrets
       // file on the volume. Nothing else belongs in this list.
@@ -69,5 +86,5 @@ export default defineRailway(() => {
     deploy: { restartPolicyType: 'ON_FAILURE', restartPolicyMaxRetries: 3 },
   });
 
-  return project('agentlings', { resources: [agentlings, data] });
+  return project('Agentlings', { resources: [agentlings, data] });
 });

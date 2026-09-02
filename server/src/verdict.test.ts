@@ -34,6 +34,7 @@ import { WITHHELD_FILE } from './redact';
 import { readSettings } from './settings';
 import { RUN_SCRIPT, VERIFY_SCRIPT, readTools, toolDir, writeTool } from './tools';
 import {
+  autoRefusalLine,
   performVerdict,
   type InstallContext,
   type QueueParty,
@@ -485,6 +486,9 @@ describe('performVerdict (D-278)', () => {
         kind: 'refused',
         reason:
           'sent 1 of 2 — 2 on telegram: chat not found. Approve again to retry the failures; nobody is messaged twice.',
+        // The numbers ride the refusal for the caller whose sentence is its
+        // own — the desk shows the reason, the auto path counts (D-278).
+        partialSend: { sent: 1, of: 2 },
       });
       const after = rt.queue.get(job.id)!;
       expect(after.status).toBe('done');
@@ -695,6 +699,111 @@ describe('performVerdict (D-278)', () => {
         'outbox not sent — channel "telegram" has no "telegram" connection in the catalog',
       );
       expect(rt.queue.get(job.id)!.status).toBe('done');
+    });
+
+    /**
+     * One gate list, two callers (D-278 story 9). Each row is a gate; the
+     * same job meets it from the desk and from the app, and the two answers
+     * have to be identical — reason, kind and all. A gate added to the
+     * module joins this table and is met by both without either caller
+     * changing, which is the whole point of there being one module.
+     */
+    const GATES: [string, () => { job: Job; over?: Partial<VerdictContext> }][] = [
+      [
+        'the outbox door',
+        () => ({ job: finished(), over: { install: { ...install, connections: () => [] } } }),
+      ],
+      [
+        'the withholding gate (D-181)',
+        () => ({
+          job: finished({
+            [OUTBOX_FILE]: JSON.stringify({
+              channel: 'telegram',
+              messages: [{ to: '1', name: 'Ana', body: 'Acme Corp owes us' }],
+            }),
+            [WITHHELD_FILE]: JSON.stringify({
+              items: [{ what: 'the customer names', values: ['Acme Corp'] }],
+            }),
+          }),
+        }),
+      ],
+      [
+        'the reconciliation gate (D-222)',
+        () => ({
+          job: finished(
+            {
+              [RECONCILIATION_FILE]: JSON.stringify({
+                ...EDIG,
+                adjustments: EDIG.adjustments.slice(0, 4),
+              }),
+            },
+            { channels: [] },
+          ),
+        }),
+      ],
+      [
+        'the payee gate (D-268)',
+        () => ({ job: finished({ [NOMINA_FILE]: 'not json' }, { channels: [] }) }),
+      ],
+      [
+        'the statuses that may take a verdict (D-278 Q5)',
+        () => ({ job: { ...finished(), status: 'promoted' as const } }),
+      ],
+    ];
+
+    it.each(GATES)('%s refuses the desk and the app alike, and stamps neither', async (_, build) => {
+      const { job, over = {} } = build();
+      const asYou = await give(job, 'promote', over, 'you');
+      const asApp = await give(job, 'promote', over, 'app');
+      expect(asYou.refused?.reason).toBeTruthy();
+      expect(asApp).toEqual(asYou);
+      // A refusal writes no verdict, whoever asked for one.
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(resolved()).toHaveLength(0);
+    });
+
+    /**
+     * The auto path's three outcomes. A full send is the test above; these
+     * are the other two, and both are the numbers and words the caller needs
+     * rather than anything it recomputes: a partial send keeps its own
+     * sentence, because "sent 1 of 2" is an outcome and not a failure to
+     * send, and every other refusal becomes the progress line the
+     * standing-approval path has always written (D-278 story 10).
+     */
+    it('a partial send hands the app the numbers its own line needs, and stamps nothing', async () => {
+      const job = finished({
+        [OUTBOX_FILE]: JSON.stringify({
+          channel: 'telegram',
+          messages: [
+            { to: '1', name: 'Ana', body: 'padel' },
+            { to: '2', name: 'Luis', body: 'padel' },
+          ],
+        }),
+      });
+      const { send } = fakeSend({ '2': 'chat not found' });
+      const got = await give(job, 'promote', { send }, 'app');
+      expect(got.refused?.partialSend).toEqual({ sent: 1, of: 2 });
+      expect(autoRefusalLine(got.refused!)).toBe(
+        'standing approval sent 1 of 2 — the rest waits for your review',
+      );
+      expect(rt.queue.get(job.id)!.status).toBe('done');
+      expect(readApprovals(rt.dir)).toHaveLength(0);
+      expect(resolved()).toHaveLength(0);
+    });
+
+    it('every other refusal becomes the progress line, opening in the words it always did', async () => {
+      const job = finished();
+      const got = await give(
+        job,
+        'promote',
+        { install: { ...install, connections: () => [] } },
+        'app',
+      );
+      expect(got.refused?.partialSend).toBeUndefined();
+      expect(autoRefusalLine(got.refused!)).toBe(
+        'standing approval could not send — outbox not sent — ' +
+          'channel "telegram" has no "telegram" connection in the catalog',
+      );
     });
   });
 

@@ -47,7 +47,6 @@ import {
   autoSendable,
   describeApproval,
   readApprovals,
-  recordApproval,
   setAuto,
 } from './approvals';
 import { bundleFile } from './bundle';
@@ -120,8 +119,7 @@ import {
   planParty,
 } from './party';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
-import { CHANNELS, outboxRefusal } from './channels';
-import { sentOn } from './outbox';
+import { CHANNELS } from './channels';
 import { wantsWithholding } from './redact';
 import { recordRefusals, refusalRows } from './refusals';
 import {
@@ -134,7 +132,13 @@ import {
 } from './nomina';
 import { latestRollForward, wantsReconciliation } from './reconciliation';
 import { performOutboxSend } from './outboxsend';
-import { performVerdict, type InstallContext, type VerdictRefusalKind } from './verdict';
+import {
+  autoRefusalLine,
+  performVerdict,
+  type InstallContext,
+  type VerdictContext,
+  type VerdictRefusalKind,
+} from './verdict';
 import {
   describe,
   doorEndpoints,
@@ -461,6 +465,19 @@ const INSTALL: InstallContext = {
   settings: () => readSettings(SANDBOX_ROOT),
 };
 
+/**
+ * The rest of what a verdict takes, bound to a level: the two acts that leave
+ * the machine as adapters (D-278 Q3) and the party thunk the module cannot
+ * import (Q4). Both callers — the desk route and the standing-approval path —
+ * take this same one, so they differ in nothing but who gives the verdict.
+ */
+const verdictContext = (rt: LevelRuntime): VerdictContext => ({
+  install: INSTALL,
+  send: performOutboxSend,
+  pushRemote: promoteToRemote,
+  queueParty: (text, plan, opts) => queueParty(rt, text, plan, opts),
+});
+
 let library: LibraryIndex | null = loadIndex(SANDBOX_ROOT);
 let syncing: Promise<LibraryIndex> | null = null;
 
@@ -653,13 +670,15 @@ function makeLevel(dir: string): LevelRuntime {
       // difference between cost and price is only visible if both are kept.
       // This closes the row the start opened (D-199).
       finalizeLedger(SANDBOX_ROOT, ledgerRow(job, meta.id, agentling.role, outcome, Date.now()));
-      // The one path that sends without review, gated hard (D-082). Fire and
-      // forget: a send must never block the finish bookkeeping around it.
-      void autoSendIfApproved(dir, queue, eventLog, meta.id, job);
-      // A delivered step queues the next through the same glue; a failed
-      // one halts the chain with the reason in the feed (D-105).
       const chainRuntime = levels.get(meta.id);
       if (chainRuntime) {
+        // The one path that sends without review, gated hard (D-082). Fire
+        // and forget: a send must never block the finish bookkeeping around
+        // it. First in the block, so it still opens before the chain glue as
+        // it did when it took the pieces rather than the runtime.
+        void autoSendIfApproved(chainRuntime, job);
+        // A delivered step queues the next through the same glue; a failed
+        // one halts the chain with the reason in the feed (D-105).
         queueNextStep(chainRuntime, job);
         // The check pass rides the same completion seam (TEAMWORK T1): a
         // finished check settles its verdict on the job it checked; a
@@ -696,75 +715,35 @@ function makeLevel(dir: string): LevelRuntime {
  * Any doubt — a refusal, a partial failure, anything else produced — leaves
  * the job in review exactly as if no approval existed.
  */
-async function autoSendIfApproved(
-  dir: string,
-  queue: JobQueue,
-  eventLog: EventLog,
-  levelId: string,
-  job: Job,
-): Promise<void> {
+async function autoSendIfApproved(rt: LevelRuntime, job: Job): Promise<void> {
   try {
-    if (autoBlocker(job, outputNames(queue.sandboxDir(job.id))) !== null) return;
-    const outboxes = job.outbox!;
-    const approval = readApprovals(dir).find(
-      (a) => a.key === approvalKey(queue.rootPrompt(job.id) ?? job.prompt),
+    // Eligibility, and only eligibility: may the app act on this job at all
+    // (D-082, D-159, D-181, D-194, D-248). A job with files, code changes, a
+    // withholding, a check still out or a mail behind it never reaches the
+    // verdict from here.
+    if (autoBlocker(job, outputNames(rt.queue.sandboxDir(job.id))) !== null) return;
+    const approval = readApprovals(rt.dir).find(
+      (a) => a.key === approvalKey(rt.queue.rootPrompt(job.id) ?? job.prompt),
     );
-    if (!autoSendable(approval, outboxes)) return;
-    const refusal = outboxRefusal(
-      outboxes,
-      allConnections(),
-      readSettings(SANDBOX_ROOT),
-      process.env,
-    );
-    if (refusal) {
-      eventLog.emit({
-        type: 'progress',
-        jobId: job.id,
-        title: job.title,
-        detail: `standing approval could not send — ${refusal}`,
-      });
-      return;
-    }
-    // The one send door, claimed per job (D-160): if a manual Approve is
-    // mid-send this instant, auto quietly stands down — the review outcome
-    // is already in a human's hands, which is this path's whole philosophy.
-    const runs = await performOutboxSend({
-      outboxes,
-      jobId: job.id,
-      levelId,
-      dir: queue.sandboxDir(job.id),
-      sandboxRoot: SANDBOX_ROOT,
-      env: process.env,
-      ...(job.mailTrigger
-        ? { mailThread: { threadId: job.mailTrigger.threadId, msgId: job.mailTrigger.msgId } }
-        : {}),
-      alreadySent: (channel) => sentOn(queue.get(job.id), channel),
-      record: (channel, r) => queue.recordOutboxSends(job.id, channel, r),
-    });
-    if (!runs) return;
-    const at = Date.now();
-    const sent = runs.reduce((n, r) => n + r.run.sentTo.length, 0);
-    const failed = runs.reduce((n, r) => n + r.run.failed.length, 0);
-    if (failed > 0) {
-      eventLog.emit({
-        type: 'progress',
-        jobId: job.id,
-        title: job.title,
-        detail: `standing approval sent ${sent} of ${sent + failed} — the rest waits for your review`,
-      });
-      return;
-    }
-    queue.resolve(job.id, 'promote', 'app');
-    recordApproval(dir, queue.rootPrompt(job.id) ?? job.prompt, outboxes, at);
-    eventLog.emit({
-      type: 'resolved',
+    if (!autoSendable(approval, job.outbox!)) return;
+    // Everything past eligibility is the verdict a person gives at the desk,
+    // performed with the app as its giver (D-278): the same gates in the same
+    // order, the same door, the same stamp, the same approval record and the
+    // same resolved line. A gate added to the module protects this path
+    // without anyone remembering to add it here too.
+    const result = await performVerdict(rt, job, 'promote', 'app', verdictContext(rt));
+    if (!result.refused) return;
+    // A refusal becomes a progress line rather than an error nobody sees:
+    // this path has no request to answer, and a send that could not go out
+    // is worth looking at. The sentence is the verdict module's own.
+    rt.eventLog.emit({
+      type: 'progress',
       jobId: job.id,
       title: job.title,
-      detail: `sent automatically — ${sent} via ${runs.map((r) => r.channel).join(' and ')}, standing approval`,
-      by: 'app',
+      detail: autoRefusalLine(result.refused),
     });
   } catch (err) {
-    eventLog.emit({
+    rt.eventLog.emit({
       type: 'progress',
       jobId: job.id,
       title: job.title,
@@ -2412,7 +2391,7 @@ function settleCheck(rt: LevelRuntime, checkJob: Job): void {
   // The auto path asks again now the verdict is in. Everything is decided by
   // the same gate a clean finish uses (D-082): a refuted or missing verdict
   // is refused there by name, and a manual Approve was never blocked at all.
-  void autoSendIfApproved(rt.dir, rt.queue, rt.eventLog, rt.meta.id, primary);
+  void autoSendIfApproved(rt, primary);
 }
 
 /**
@@ -3479,12 +3458,7 @@ app.post('/api/levels/:lid/jobs/:id/resolve', async (c) => {
     pending,
     body.action,
     'you',
-    {
-      install: INSTALL,
-      send: performOutboxSend,
-      pushRemote: promoteToRemote,
-      queueParty: (text, plan, opts) => queueParty(rt, text, plan, opts),
-    },
+    verdictContext(rt),
     { packSlug: body.packSlug },
   );
   if (result.refused) {
@@ -5051,7 +5025,7 @@ function sweepSchedules(now = Date.now()): void {
             detail: `queued by its schedule — ${describeCadence(schedule.cadence)} · ${REPORT_NOTE}`,
           });
           rt.eventLog.emit({ type: 'done', jobId: job.id, title: job.title, detail: job.summary });
-          void autoSendIfApproved(rt.dir, rt.queue, rt.eventLog, rt.meta.id, job);
+          void autoSendIfApproved(rt, job);
           continue;
         }
         // Read inside the try, so a folder that moved or a month whose file

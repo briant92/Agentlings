@@ -135,6 +135,13 @@ export type VerdictRefusalKind = 'refused' | 'busy' | 'bug';
 export interface VerdictRefusal {
   reason: string;
   kind: VerdictRefusalKind;
+  /**
+   * Set only when a send partly succeeded before the refusal: how many
+   * messages went, of how many were waiting to go. The desk reads the
+   * reason and needs nothing else; the standing-approval path writes its own
+   * sentence, so it is handed the numbers rather than parsing them back out.
+   */
+  partialSend?: { sent: number; of: number };
 }
 
 export type VerdictResult =
@@ -304,9 +311,13 @@ export async function performVerdict(
         // The channel is named per failure: with two in play, "ana@x — not
         // connected" leaves the user guessing which send it belonged to.
         const detail = failures.map((f) => `${f.to} on ${f.channel}: ${f.reason}`).join('; ');
-        return refuse(
-          `sent ${sentNow} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
-        );
+        return {
+          refused: {
+            reason: `sent ${sentNow} of ${remaining.length} — ${detail}. Approve again to retry the failures; nobody is messaged twice.`,
+            kind: 'refused',
+            partialSend: { sent: sentNow, of: remaining.length },
+          },
+        };
       }
     }
   }
@@ -615,6 +626,21 @@ export async function performVerdict(
   } catch (err) {
     return refuse(err instanceof Error ? err.message : String(err));
   }
+}
+
+/**
+ * The progress line the standing-approval path writes when the verdict it
+ * asked for came back refused (D-278 story 10): a send that could not go out
+ * is visible where a person looks rather than an error nobody sees. A
+ * partial send keeps its own sentence — "sent 1 of 2" is an outcome, not a
+ * failure to send, and what is left is now waiting for a person. The words
+ * live here for the reason the resolved line's do: the feed is the module's,
+ * and only the HTTP status belongs to the route.
+ */
+export function autoRefusalLine(refused: VerdictRefusal): string {
+  return refused.partialSend
+    ? `standing approval sent ${refused.partialSend.sent} of ${refused.partialSend.of} — the rest waits for your review`
+    : `standing approval could not send — ${refused.reason}`;
 }
 
 /**

@@ -23,6 +23,18 @@ on that volume, which is what makes a key you paste on Monday still work after a
 rebuild on Tuesday. Lose the volume and you lose the keys, the ledger and the
 schedules with it.
 
+### Updates arrive on their own
+
+Your install builds from this repository and follows its `main` branch, so when
+this repository is pushed, Railway rebuilds yours. That is how a fix reaches you
+without your doing anything, and it is also the honest catch: a change lands on
+your install without asking you first. There is no telemetry here and no way to
+reach you, so an install that did not follow `main` would keep whatever fault it
+deployed with, silently and forever — which is the worse of the two.
+
+A rebuild does not touch your volume. The secrets file and the data directory
+survive it, which is the whole reason they live there.
+
 ### The one variable the template asks for
 
 `AGENTLINGS_PASSWORD`. Anyone with this and your URL is you, so make it long.

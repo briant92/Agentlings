@@ -289,6 +289,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-277 — 2026-08-30 — The model engine is a catalog connection, and which executor runs is asked when a job starts](#d-277--2026-08-30--the-model-engine-is-a-catalog-connection-and-which-executor-runs-is-asked-when-a-job-starts)
 - [D-278 — 2026-09-01 — The verdict on a job is one module with two callers: the route and the standing approval run the same gates, acts and settlement](#d-278--2026-09-01--the-verdict-on-a-job-is-one-module-with-two-callers-the-route-and-the-standing-approval-run-the-same-gates-acts-and-settlement)
 - [D-279 — 2026-09-02 — The IaC file names the reference install exactly, because Railway matches by name and a mismatch is a delete — and the four properties left over are ones a template and one install can never share](#d-279--2026-09-02--the-iac-file-names-the-reference-install-exactly-because-railway-matches-by-name-and-a-mismatch-is-a-delete--and-the-four-properties-left-over-are-ones-a-template-and-one-install-can-never-share)
+- [D-280 — 2026-09-03 — A push to `main` rebuilds strangers' installs, and that is accepted rather than pinned](#d-280--2026-09-03--a-push-to-main-rebuilds-strangers-installs-and-that-is-accepted-rather-than-pinned)
 
 ## By theme
 
@@ -1099,8 +1100,16 @@ entry updates one file rather than two.
   and the Railway link is PER DIRECTORY, so a stale one under `server/` answers
   `Project not found` as though your own file were broken. 5/5 mutants with a
   control at 0.
-  It cannot press the button: #24’s second box needs a second Railway account
-  on a paid plan, and that is now the only thing it needs
+  **D-280** closes the line, and not the way it expected: #24’s second box
+  needed no second account at all. Railway’s public template counter — 3
+  projects, 2 active, controlled against `minio` at 0 and `postgres` at
+  361,967 — said strangers had already deployed, and one of those installs
+  measured gated from outside (`GET /` 200, `GET /api/levels` 401 carrying
+  `gateRefusal` verbatim), closing #24, #31 and the spec #27. The consequence
+  is the entry: those installs track `main`, so a push rebuilds software
+  running for people who cannot be contacted, and that is ACCEPTED rather than
+  pinned to a release branch — because tracking `main` is the only update
+  channel that exists here
 - **Spatial documents — the drafter** — D-198: Phase 0's eight-for-eight
   turn-wall chain (SPATIAL.md holds the trial) bought a role whose budget the
   quote actually funds — the $2 clamp raised by `maxCostUsd`, the D-022 floor
@@ -24056,3 +24065,79 @@ reachable. Read the diff, not the label.
   now proven not to be always-on before its verdicts are believed.
 - **Green:** server 2902, web 377, typecheck clean. `container.test.ts` 20 → 21.
 - **Live:** the plan re-run after the change, `0 to destroy`. Nothing applied.
+
+## D-280 — 2026-09-03 — A push to `main` rebuilds strangers' installs, and that is accepted rather than pinned
+
+**Decided:** the published template goes on tracking `main`. Installs other
+people deployed keep rebuilding on every push, and the obligation that creates
+is discharged by **saying so** — in `PROJECT.md` where a push is offered, and in
+the README where a person decides to deploy — not by freezing what a stranger
+receives.
+
+### What forced the question
+
+#24's second box had stood open for a week on the premise that nobody but the
+maintainer had ever deployed the template. Railway's public template API says
+otherwise, and answers with no credential:
+
+    template(code:"agentlings")
+      projects 3   recentProjects 3   activeProjects 2   health 100
+
+**Controlled before it was believed.** `minio`, published 2026-05-23, reads
+`0/0/0` with `health: null`; `postgres` reads `361967/57519/261300`. So the
+field is a real *projects created from this template* counter and zero is
+expressible — 3 is not a default or an empty state.
+
+None of the three can be the reference install. `dc9682cc` was created
+`2026-08-27T12:42:45Z` and the template at `2026-08-27T17:37:53Z` — the install
+predates the thing that would have counted it by **4 h 55 m** — and `minio`'s
+zero says a template's source project is not counted either. This account holds
+one workspace and two projects. The installs are other people's.
+
+One was then measured, gated, from outside:
+
+    https://agentlings-production-2779.up.railway.app
+    GET /            200  text/html         <title>Agentlings</title>
+    GET /api/levels  401  application/json  {"error":"Sign in to reach this."}
+
+The refusal is `gateRefusal` from `session.ts:343` **verbatim**, so that install
+runs this code with D-271's listen policy armed and D-272 serving the bundle in
+front of the gate — configured on the first attempt by someone who read only the
+README. That closed #24, #31 and #27, and it retired both of #24's unmeasured
+trial catches: Railway's injected port survived, and 1 GB under the
+Playwright/Chromium image serves the gated title screen.
+
+### The alternative, and why it was declined
+
+A release branch would let a push to `main` leave strangers' installs alone
+until a deliberate promotion. Declined on what it costs the person who deployed:
+**tracking `main` is the only update channel that exists.** There is no
+telemetry, no version check and no way to reach an operator; a phone-home would
+contradict the product, and D-174 says there is no cloud account to phone from.
+Pinning would mean a stranger's install keeps whatever fault it deployed with,
+silently and forever. Automatic rebuild is the safer default *because*
+everything else is absent, not despite it.
+
+### What it costs, stated rather than hidden
+
+A push changes software running for people who did not agree to a change and
+cannot be told about one. That is ordinary for a live application and is now
+ordinary here. The rule in `PROJECT.md` says it at the moment a push is offered;
+the README says it at the moment a person decides to deploy, together with the
+one reassurance that is also true — a rebuild does not touch their volume. Both
+passages were written by this entry.
+
+### Two things left on report
+
+Named in the closing comments and kept here, because an entry that quietly
+upgraded them would be the exact fault this log exists to prevent:
+
+- The operator's photograph of the title screen has **no address bar in frame**.
+  On its own it proves a container install renders its title screen; that it is
+  *that* install is the operator's word.
+- **Whether the README's button or the template page was the route** is not
+  established. The counter proves a template deploy, not which link was clicked.
+
+Trial versus Hobby is also unknown, so the *unverified-trial* port restriction
+named on #24 remains strictly unmeasured — what was measured is that the port
+survived on one real outside account.

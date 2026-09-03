@@ -296,7 +296,11 @@ must do the same or its first real click is lost.
   nobody approved — so every batch is refused, which is the right default for
   money leaving. The Santander column table is not built either: its layout is
   not public and waits on Brian pasting the Office Banking template. Those two
-  things are exactly what the ticket's fourth box is waiting on.
+  things are what the ticket's fourth box was waiting on — **and it is now two
+  boxes** (2026-09-03): the bank's own parser accepting a composed file, which
+  an upload abandoned before the token can prove, and a real batch authorised by
+  hand, deferred to the first genuine payroll because a real one cannot be
+  authorised as a test. No code depends on the second.
 - Otherwise nothing is in flight.
 
 ---

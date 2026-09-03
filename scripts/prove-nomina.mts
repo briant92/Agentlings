@@ -505,7 +505,7 @@ check(
 );
 
 console.log(
-  `\n${bad === 0 ? 'PASS' : 'FAIL'}  ${ran - bad}/${ran} — NOT proven end to end until one real batch is composed here, uploaded at the bank and authorised by hand.`,
+  `\n${bad === 0 ? 'PASS' : 'FAIL'}  ${ran - bad}/${ran} — the bytes are checked against the bank's table here, never by the bank. NOT proven until a composed file is uploaded and its own parser accepts it; the authorisation by hand is a further step and a separate claim.`,
 );
 
 process.exit(bad === 0 ? 0 : 1);

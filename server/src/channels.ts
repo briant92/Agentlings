@@ -186,6 +186,7 @@ export function emailRfc822(
   return [
     `To: ${message.to}`,
     ...subject,
+    ...threading,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',
@@ -201,6 +202,39 @@ export function emailRfc822(
 /** The Gmail API's `raw` field: the RFC 822 message, base64url-encoded. */
 export function emailRaw(message: OutboxMessage, replyTo?: string): string {
   return base64url(Buffer.from(emailRfc822(message, [], replyTo), 'utf8'));
+}
+
+/** The boundary of the upload's two parts; stepped past the mail, as the mail's own is stepped past the body. */
+const UPLOAD_BOUNDARY = 'agentlings-upload';
+
+/**
+ * A message with files as Gmail's upload endpoint takes it (D-159, D-286):
+ * `uploadType=multipart`, the Message resource as a JSON part — where a
+ * reply's `threadId` rides — and the whole RFC 822 mail as the second. One
+ * request threads and carries files both, which the media-only shape D-248
+ * measured could not.
+ */
+export function uploadBody(
+  message: OutboxMessage,
+  files: { name: string; data: Buffer }[],
+  thread?: { threadId: string; msgId?: string },
+): { contentType: string; body: string } {
+  const mail = emailRfc822(message, files, thread?.msgId);
+  let boundary = UPLOAD_BOUNDARY;
+  for (let i = 0; mail.includes(boundary); i++) boundary = `${UPLOAD_BOUNDARY}${i}`;
+  const body = [
+    `--${boundary}`,
+    'Content-Type: application/json; charset="UTF-8"',
+    '',
+    JSON.stringify(thread ? { threadId: thread.threadId } : {}),
+    `--${boundary}`,
+    'Content-Type: message/rfc822',
+    '',
+    mail,
+    `--${boundary}--`,
+    '',
+  ].join('\r\n');
+  return { contentType: `multipart/related; boundary="${boundary}"`, body };
 }
 
 /**
@@ -236,20 +270,24 @@ const gmail: ChannelClient = {
     /**
      * Two endpoints on purpose (D-159): the JSON `raw` path is the one that
      * has sent live since D-080 and stays untouched for plain mail; a message
-     * with files goes to the media-upload endpoint, whose 35 MB ceiling is
-     * what the contract's 15 MB-per-message cap was sized against. One send
-     * either way — a failure leaves nothing half-delivered to this recipient.
+     * with files goes to the upload endpoint, whose 35 MB ceiling is what the
+     * contract's 15 MB-per-message cap was sized against — as a multipart
+     * upload since D-286, so a reply's thread id rides in the metadata part.
+     * One send either way — a failure leaves nothing half-delivered.
      */
-    const res = files.length
+    const upload = files.length
+      ? uploadBody(message, files, message.reply ? deps.mailThread : undefined)
+      : undefined;
+    const res = upload
       ? await doFetch(
-          'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media',
+          'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=multipart',
           {
             method: 'POST',
             headers: {
               authorization: `Bearer ${access.token}`,
-              'content-type': 'message/rfc822',
+              'content-type': upload.contentType,
             },
-            body: emailRfc822(message, files),
+            body: upload.body,
             signal: AbortSignal.timeout(SEND_FILE_TIMEOUT_MS),
           },
         )
@@ -265,7 +303,7 @@ const gmail: ChannelClient = {
               message.reply ? deps.mailThread?.msgId : undefined,
             ),
             // threadId is what places the reply in the Gmail conversation;
-            // parse already refused reply+files, so only this path threads.
+            // with files the same id rides the upload's metadata part above.
             ...(message.reply && deps.mailThread
               ? { threadId: deps.mailThread.threadId }
               : {}),

@@ -83,7 +83,13 @@ import {
   validTrigger,
 } from './schedules';
 import { fireRealWork, REALWORK_PROMPT, scoreBlock } from './report';
-import { MAIL_TRIGGER_SWEEP_MS, MAX_TRIGGER_FIRES_PER_DAY, pollTrigger } from './mailtrigger';
+import {
+  MAIL_TRIGGER_SWEEP_MS,
+  MAX_TRIGGER_FIRES_PER_DAY,
+  pollTrigger,
+  TRIGGER_MAIL_NAME,
+  TRIGGER_THREAD_NAME,
+} from './mailtrigger';
 import {
   downloadVoice,
   MAX_VOICE_SECONDS,
@@ -5066,9 +5072,6 @@ setInterval(sweepSchedules, SCHEDULE_SWEEP_MS);
 // once, now, rather than waiting out the first interval.
 sweepSchedules();
 
-/** What the triggering mail lands as in the job's input/ — one fixed name, so the prompt can say it (D-072, D-246). */
-const TRIGGER_MAIL_NAME = 'mail.txt';
-
 /**
  * The mail-trigger sweep (D-248): D-103's shape, extended from "a time came
  * due" to "a mail came in". Firings go through the same `queueSentence` glue,
@@ -5119,6 +5122,12 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
             const attachments = [
               ...(schedule.inputs?.length ? resolveStanding(schedule.inputs) : []),
               { name: TRIGGER_MAIL_NAME, data: Buffer.from(`${mail.text}\n`, 'utf8') },
+              // The conversation so far and the mail's own files (D-286),
+              // beside it under the same names the prompt uses.
+              ...(mail.thread !== undefined
+                ? [{ name: TRIGGER_THREAD_NAME, data: Buffer.from(`${mail.thread}\n`, 'utf8') }]
+                : []),
+              ...mail.files,
             ];
             queueSentence(rt, schedule.prompt, {
               // Bare, for the cadence sweep's reason (D-254) — and this is the

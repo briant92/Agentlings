@@ -28,6 +28,7 @@ const MAX_MAX = 50;
 /** One message's rendered text is capped like a code-host page (D-053). */
 const MAX_BODY_CHARS = 12000;
 const MESSAGES = 'https://gmail.googleapis.com/gmail/v1/users/me/messages';
+const THREADS = 'https://gmail.googleapis.com/gmail/v1/users/me/threads';
 
 export const MAIL_TOOLS: ToolSpec[] = [
   {
@@ -125,7 +126,7 @@ function htmlToText(html: string): string {
 interface RawPart {
   mimeType?: unknown;
   filename?: unknown;
-  body?: { data?: unknown; size?: unknown };
+  body?: { data?: unknown; size?: unknown; attachmentId?: unknown };
   parts?: RawPart[];
 }
 
@@ -165,7 +166,7 @@ function unread(message: RawMessage): boolean {
   return Array.isArray(message.labelIds) && message.labelIds.includes('UNREAD');
 }
 
-function human(bytes: number): string {
+export function human(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -383,7 +384,7 @@ async function read(id: string, http: Http, token: string): Promise<MailResult> 
  * trigger firing writes to `input/mail.txt` (D-248). One function on D-030's
  * rule: two renderings of "the mail" would drift into two documents.
  */
-function renderMail(message: RawMessage): string {
+function renderMail(message: RawMessage, attachmentsLine = true): string {
   const parts = flatten(message.payload);
   const attachments = parts
     .filter((p) => str(p.filename) !== '')
@@ -414,7 +415,10 @@ function renderMail(message: RawMessage): string {
     ...(header(message, 'Cc') ? [`Cc: ${header(message, 'Cc')}`] : []),
     `Subject: ${header(message, 'Subject') || '(no subject)'}`,
     `Received: ${Number.isFinite(arrived) && arrived > 0 ? when(arrived) : '(no date)'}${unread(message) ? ' — unread' : ''}`,
-    ...(attachments.length > 0
+    // The tool's truth. A trigger firing fetches them (D-286) and says what
+    // rode and what stayed behind at the foot of the same file, so it asks
+    // for the head without this line rather than contradicting itself.
+    ...(attachmentsLine && attachments.length > 0
       ? [`Attachments (named, never fetched): ${attachments.join(', ')}`]
       : []),
   ];
@@ -436,6 +440,16 @@ export interface TriggerMail {
   subject: string;
   arrivedMs: number;
   text: string;
+  /** What the mail carried, by name — fetched by the poll under the job's caps (D-286). */
+  attachments: TriggerAttachment[];
+}
+
+/** One attachment as Gmail names it: bytes inline when it sent them, an id to fetch otherwise. */
+export interface TriggerAttachment {
+  name: string;
+  size: number;
+  attachmentId?: string;
+  data?: Buffer;
 }
 
 /** The ids a trigger query matches right now, newest first — ids alone, like search. */
@@ -472,8 +486,20 @@ export async function fetchTriggerMail(
   const message = got.payload as RawMessage;
   const threadId = str(message.threadId);
   if (!threadId) return { error: `Gmail answered message ${id} without a thread id` };
-  const rendered = renderMail(message);
+  const rendered = renderMail(message, false);
   const arrived = Number(str(message.internalDate));
+  const attachments: TriggerAttachment[] = flatten(message.payload)
+    .filter((p) => str(p.filename) !== '')
+    .map((p) => {
+      const inline = str(p.body?.data);
+      const size = typeof p.body?.size === 'number' ? p.body.size : 0;
+      return {
+        name: str(p.filename),
+        size,
+        ...(str(p.body?.attachmentId) ? { attachmentId: str(p.body?.attachmentId) } : {}),
+        ...(inline ? { data: Buffer.from(inline, 'base64url') } : {}),
+      };
+    });
   return {
     id: str(message.id) || id,
     threadId,
@@ -482,5 +508,47 @@ export async function fetchTriggerMail(
     subject: header(message, 'Subject') || '(no subject)',
     arrivedMs: Number.isFinite(arrived) && arrived > 0 ? arrived : 0,
     text: rendered,
+    attachments,
   };
+}
+
+/** The bytes of one attachment, by the id the message named (D-286). */
+export async function fetchAttachment(
+  http: Http,
+  token: string,
+  messageId: string,
+  attachmentId: string,
+): Promise<Buffer | { error: string }> {
+  const url = `${MESSAGES}/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}`;
+  const got = await fetchJson(http, url, token);
+  if ('error' in got) return got;
+  const data = str(got.payload.data);
+  if (!data) return { error: `Gmail answered attachment ${attachmentId} without its bytes` };
+  return Buffer.from(data, 'base64url');
+}
+
+/**
+ * The whole conversation a mail belongs to, oldest first, every message
+ * through the one renderer (D-286). The attachments of the earlier messages
+ * stay named and unfetched — only the mail that fired hands a job files.
+ */
+export async function fetchThread(
+  http: Http,
+  token: string,
+  threadId: string,
+): Promise<{ text: string; count: number } | { error: string }> {
+  const url = new URL(`${THREADS}/${encodeURIComponent(threadId)}`);
+  url.searchParams.set('format', 'full');
+  url.searchParams.set('fields', 'messages(id,threadId,labelIds,internalDate,payload)');
+  const got = await fetchJson(http, url.toString(), token);
+  if ('error' in got) return got;
+  const messages = (Array.isArray(got.payload.messages) ? got.payload.messages : []) as RawMessage[];
+  const ordered = messages
+    .map((m) => ({ m, at: Number(str(m.internalDate)) || 0 }))
+    .sort((a, b) => a.at - b.at)
+    .map((x) => x.m);
+  const text = ordered
+    .map((m, i) => `———— message ${i + 1} of ${ordered.length} ————\n\n${renderMail(m)}`)
+    .join('\n\n');
+  return { text, count: ordered.length };
 }

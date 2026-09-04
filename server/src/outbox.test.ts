@@ -481,12 +481,13 @@ describe('the reply flag (D-248)', () => {
     expect(checkOutbox(withReply('yes')).error).toContain('true or false');
   });
 
-  it('never rides beside files', () => {
+  it('rides beside files, which follow it into the thread (D-286)', () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-outbox-reply-'));
     writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
     try {
       const got = checkOutbox(withReply(true, 'gmail', { files: ['report.pdf'] }), dir);
-      expect(got.error).toContain('a reply cannot carry files');
+      expect(got.error).toBeUndefined();
+      expect(got.outboxes?.[0].messages[0]).toMatchObject({ reply: true, files: ['report.pdf'] });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

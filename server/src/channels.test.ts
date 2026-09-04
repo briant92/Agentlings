@@ -265,7 +265,7 @@ describe('the gmail channel', () => {
     expect(sent.raw).toBe(emailRaw({ to: 'ana@example.com', subject: 'Padel', body: 'Thursday 9:00' }));
   });
 
-  it('a message with files goes whole to the upload endpoint as rfc822 (D-159)', async () => {
+  it('a message with files goes whole to the upload endpoint as a multipart upload: metadata, then the rfc822 mail (D-159, D-286)', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-gm-files-'));
     writeFileSync(path.join(dir, 'report.pdf'), 'pdf bytes');
     try {
@@ -278,14 +278,19 @@ describe('the gmail channel', () => {
         { env: ENV, fetchFn: fn, dir },
       );
       expect(calls[1].url).toBe(
-        'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media',
+        'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=multipart',
       );
       const headers = calls[1].init?.headers as Record<string, string>;
-      expect(headers['content-type']).toBe('message/rfc822');
+      expect(headers['content-type']).toMatch(/^multipart\/related; boundary="agentlings-upload"$/);
       const sent = String(calls[1].init?.body);
-      expect(sent).toContain('multipart/mixed');
-      expect(sent).toContain('filename="report.pdf"');
-      expect(sent).toContain(Buffer.from('pdf bytes').toString('base64'));
+      const [meta, mail] = sent.split('Content-Type: message/rfc822');
+      // An ordinary message's metadata part is empty: no thread.
+      expect(meta).toContain('Content-Type: application/json');
+      expect(meta).toContain('\r\n{}\r\n');
+      expect(mail).toContain('multipart/mixed');
+      expect(mail).toContain('filename="report.pdf"');
+      expect(mail).toContain(Buffer.from('pdf bytes').toString('base64'));
+      expect(mail).not.toContain('In-Reply-To');
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
@@ -318,6 +323,31 @@ describe('the gmail channel', () => {
       const rfc = Buffer.from(sent.raw, 'base64url').toString('utf8');
       expect(rfc).toContain('In-Reply-To: <orig@banco.cl>');
       expect(rfc).toContain('References: <orig@banco.cl>');
+    });
+
+    it('a reply with files rides the upload endpoint, the thread id in its metadata part and both headers in the mail (D-286)', async () => {
+      const dir = mkdtempSync(path.join(tmpdir(), 'agentlings-gm-reply-files-'));
+      writeFileSync(path.join(dir, 'review.md'), '# reviewed');
+      try {
+        const { fn, calls } = scripted([
+          { ok: true, body: { access_token: 'at-1' } },
+          { ok: true, body: { id: 'm1' } },
+        ]);
+        await CHANNELS.gmail.send(
+          { to: 'cpa@example.com', subject: 'Re: Tax assessment', body: 'my notes attached', reply: true, files: ['review.md'] },
+          { env: ENV, fetchFn: fn, mailThread: thread, dir },
+        );
+        expect(calls[1].url).toContain('uploadType=multipart');
+        const sent = String(calls[1].init?.body);
+        const [meta, mail] = sent.split('Content-Type: message/rfc822');
+        expect(meta).toContain(JSON.stringify({ threadId: 'thr-9' }));
+        expect(mail).toContain('In-Reply-To: <orig@banco.cl>');
+        expect(mail).toContain('References: <orig@banco.cl>');
+        expect(mail).toContain('filename="review.md"');
+        expect(mail).toContain(Buffer.from('# reviewed').toString('base64'));
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
     });
 
     it('threads by threadId alone when the original carried no Message-ID', async () => {

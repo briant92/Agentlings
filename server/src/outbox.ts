@@ -256,12 +256,8 @@ function checkMessage(
     if (checked.error) return { error: checked.error };
     cleanFiles = checked.files;
   }
-  // The threaded send rides Gmail's JSON endpoint, and files ride the media
-  // one, which cannot carry a thread id — so the combination is refused where
-  // the run can still hear it rather than half-honoured at send.
-  if (reply === true && cleanFiles && cleanFiles.length > 0) {
-    return { error: `message ${n}: a reply cannot carry files — send them as their own message` };
-  }
+  // A reply may carry files (D-286): the send rides the upload endpoint with
+  // the thread id in its metadata part, so nothing here has to choose.
   // Only the fields the contract names survive parsing — whatever else the
   // model wrote never reaches a channel client.
   return {

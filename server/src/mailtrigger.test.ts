@@ -8,7 +8,11 @@ import {
   triggerQuery,
 } from './mailtrigger';
 
-/** The mail fake from mail.test.ts: routes by message id, list otherwise. */
+/**
+ * The mail fake from mail.test.ts: routes by message id, list otherwise —
+ * and since D-286 an attachment answers under `att:<id>` and a thread under
+ * `thread:<id>`; one Gmail has not been told about is a 404, as Gmail's is.
+ */
 function fake(routes: Record<string, unknown>): {
   http: Http;
   calls: { url: string }[];
@@ -16,7 +20,18 @@ function fake(routes: Record<string, unknown>): {
   const calls: { url: string }[] = [];
   const http: Http = async (url) => {
     calls.push({ url });
-    const id = /\/messages\/([^/?]+)/.exec(new URL(url).pathname)?.[1];
+    const pathname = new URL(url).pathname;
+    const att = /\/attachments\/([^/?]+)/.exec(pathname)?.[1];
+    const thr = /\/threads\/([^/?]+)/.exec(pathname)?.[1];
+    const id = /\/messages\/([^/?]+)/.exec(pathname)?.[1];
+    if (att || thr) {
+      const hit = routes[att ? `att:${att}` : `thread:${thr}`];
+      return {
+        ok: hit !== undefined,
+        status: hit === undefined ? 404 : 200,
+        text: async () => JSON.stringify(hit ?? { error: { message: 'not found' } }),
+      };
+    }
     return { ok: true, status: 200, text: async () => JSON.stringify(id ? routes[id] : routes.list) };
   };
   return { http, calls };
@@ -107,6 +122,86 @@ describe('pollTrigger', () => {
     expect(got.fired[0].text).toContain('saldo al día');
     expect(got.sinceMs).toBe(NOW - 10_000);
     expect(got.seen).toEqual(expect.arrayContaining(['a', 'b']));
+  });
+
+  // What a firing carries besides the mail (D-286).
+  const pdf = (name: string, body: Record<string, unknown>) => ({ mimeType: 'application/pdf', filename: name, body });
+  const withParts = (id: string, at: number, parts: unknown[]) =>
+    message(id, at, {
+      payload: {
+        mimeType: 'multipart/mixed',
+        headers: [
+          { name: 'From', value: 'CPA <cpa@example.com>' },
+          { name: 'Subject', value: 'Tax assessment' },
+          { name: 'Message-ID', value: `<${id}@example.com>` },
+        ],
+        parts: [{ mimeType: 'text/plain', body: { data: Buffer.from('see attached', 'utf8').toString('base64url') } }, ...parts],
+      },
+    });
+  const b64 = (s: string) => Buffer.from(s, 'utf8').toString('base64url');
+
+  it("a firing carries the mail's attachments, fetched under the desk caps, and says what stayed behind", async () => {
+    const { http, calls } = fake({
+      list: { messages: [{ id: 'a' }] },
+      a: withParts('a', NOW - 1000, [
+        pdf('assessment.pdf', { attachmentId: 'att-1', size: 9 }),
+        pdf('scan.zip', { attachmentId: 'att-2', size: 20 * 1024 * 1024 }),
+        pdf('mail.txt', { data: b64('not the mail'), size: 12 }),
+      ]),
+      'att:att-1': { size: 9, data: b64('pdf-bytes') },
+    });
+    const got = await pollTrigger(schedule(), NOW, { http, env: ENV, mint });
+    if ('error' in got) throw new Error(got.error);
+    const [fired] = got.fired;
+    expect(fired.files.map((f) => [f.name, f.data.toString()])).toEqual([
+      ['assessment.pdf', 'pdf-bytes'],
+      // The firing's own file name is reserved; the attachment takes a number.
+      ['2-mail.txt', 'not the mail'],
+    ]);
+    expect(fired.text).toContain('Attachments beside this file: assessment.pdf (9 B), 2-mail.txt (12 B)');
+    expect(fired.text).toContain('Attachment scan.zip (20.0 MB) — left behind, over 10 MB');
+    // The oversize one was never asked for.
+    expect(calls.some((c) => c.url.includes('att-2'))).toBe(false);
+    expect(fired.text).not.toContain('never fetched');
+  });
+
+  it('a firing carries the whole conversation when the mail is not its first message, and nothing when it is', async () => {
+    const older = withParts('z', NOW - 90_000, []);
+    const { http } = fake({
+      list: { messages: [{ id: 'a' }] },
+      a: withParts('a', NOW - 1000, []),
+      'thread:t-a': { messages: [withParts('a', NOW - 1000, []), older] },
+    });
+    const got = await pollTrigger(schedule(), NOW, { http, env: ENV, mint });
+    if ('error' in got) throw new Error(got.error);
+    const [fired] = got.fired;
+    expect(fired.thread).toBeDefined();
+    expect(fired.thread!.indexOf('message 1 of 2')).toBeLessThan(fired.thread!.indexOf('message 2 of 2'));
+    expect(fired.text).toContain('a conversation of 2 messages — the whole thread, oldest first, is in input/thread.txt');
+
+    const alone = fake({
+      list: { messages: [{ id: 'a' }] },
+      a: withParts('a', NOW - 1000, []),
+      'thread:t-a': { messages: [withParts('a', NOW - 1000, [])] },
+    });
+    const one = await pollTrigger(schedule(), NOW, { http: alone.http, env: ENV, mint });
+    if ('error' in one) throw new Error(one.error);
+    expect(one.fired[0].thread).toBeUndefined();
+    expect(one.fired[0].text).not.toContain('thread.txt');
+  });
+
+  it('a file or thread that cannot be fetched is said at the foot of the mail, and the firing still goes', async () => {
+    const { http } = fake({
+      list: { messages: [{ id: 'a' }] },
+      a: withParts('a', NOW - 1000, [pdf('assessment.pdf', { attachmentId: 'att-1', size: 9 })]),
+    });
+    const got = await pollTrigger(schedule(), NOW, { http, env: ENV, mint });
+    if ('error' in got) throw new Error(got.error);
+    expect(got.fired).toHaveLength(1);
+    expect(got.fired[0].files).toEqual([]);
+    expect(got.fired[0].text).toContain('Attachment assessment.pdf — could not be fetched:');
+    expect(got.fired[0].text).toContain('The conversation so far could not be read:');
+    expect(got.seen).toContain('a');
   });
 
   it('a message already in the seen ring never fires again', async () => {

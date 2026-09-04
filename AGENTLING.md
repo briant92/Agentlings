@@ -2406,13 +2406,18 @@ list per channel (D-077; SPEC M5.11 has the slices):
       Gmail query instead of a cadence; the server polls every two minutes with
       no LLM in the loop, and an arriving match queues the row's sentence
       through the same quoted glue, the mail itself landing as
-      `input/mail.txt` rendered exactly as `mail_read` renders one. Three loop
+      `input/mail.txt` rendered exactly as `mail_read` renders one — and since
+      D-286 its attachments beside it under the desk caps (5 files, 10 MB
+      each, what stayed behind said at the foot of mail.txt) and the whole
+      conversation as `input/thread.txt` when the mail was not its first
+      message. Three loop
       guards are unconditional: `-from:me` rides every poll (the app's own
       sends can never fire a rule), a message id fires once, and a daily cap
       of 10 per rule whose overflow never fires later. The job may answer
       `"reply": true` on its gmail message and the server threads it into the
       triggering conversation from the job's own stamp — a session never holds
-      a thread id, a reply cannot carry files, and a mail-triggered job never
+      a thread id, a reply may carry files (a multipart upload with the thread
+      id in its metadata part, D-286), and a mail-triggered job never
       auto-sends: every reply waits for review. Reachable only through
       `POST /api/levels/:lid/schedules` and previewed at
       `GET /api/trigger/preview` (D-248)

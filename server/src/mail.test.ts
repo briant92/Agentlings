@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAIL_TOOL_NAMES, callMail, previewMail } from './mail';
+import { MAIL_TOOL_NAMES, callMail, fetchAttachment, fetchThread, fetchTriggerMail, previewMail } from './mail';
 import type { Http } from './library';
 
 /**
@@ -324,6 +324,98 @@ describe('callMail', () => {
  * search a session would, with the poll's own guard already applied — so the
  * preview and the firing can never disagree about what counts.
  */
+describe('what a trigger firing can fetch (D-286)', () => {
+  /** Routes by the tail of the path, so attachments and threads have addresses of their own. */
+  const routed = (routes: Record<string, unknown>) => {
+    const calls: string[] = [];
+    const http: Http = async (url) => {
+      const pathname = new URL(url).pathname;
+      calls.push(pathname);
+      const key = Object.keys(routes).find((k) => pathname.endsWith(k));
+      return {
+        ok: key !== undefined,
+        status: key === undefined ? 404 : 200,
+        text: async () => JSON.stringify(key === undefined ? { error: { message: 'no such route' } } : routes[key]),
+      };
+    };
+    return { http, calls };
+  };
+  const part = (filename: string, body: Record<string, unknown>, mimeType = 'application/pdf') => ({
+    mimeType,
+    filename,
+    body,
+  });
+  const withParts = (id: string, at: number, parts: unknown[]) => ({
+    id,
+    threadId: 't-1',
+    internalDate: String(at),
+    payload: {
+      mimeType: 'multipart/mixed',
+      headers: [
+        { name: 'From', value: 'CPA <cpa@example.com>' },
+        { name: 'Subject', value: 'Tax assessment' },
+      ],
+      parts: [{ mimeType: 'text/plain', body: { data: b64('see attached') } }, ...parts],
+    },
+  });
+
+  it('fetchTriggerMail names every attachment with its size, its id or its inline bytes, and renders no never-fetched line', async () => {
+    const { http } = routed({
+      '/messages/m1': withParts('m1', ARRIVED, [
+        part('assessment.pdf', { attachmentId: 'att-1', size: 120 }),
+        part('logo.png', { data: b64('png-bytes'), size: 9 }, 'image/png'),
+      ]),
+    });
+    const got = await fetchTriggerMail(http, 'tok', 'm1');
+    if ('error' in got) throw new Error(got.error);
+    expect(got.attachments).toEqual([
+      { name: 'assessment.pdf', size: 120, attachmentId: 'att-1' },
+      { name: 'logo.png', size: 9, data: Buffer.from('png-bytes') },
+    ]);
+    expect(got.text).not.toContain('never fetched');
+    expect(got.text).toContain('see attached');
+  });
+
+  it('fetchAttachment decodes the bytes Gmail answers, and says when it answered none', async () => {
+    const { http, calls } = routed({
+      '/messages/m1/attachments/att-1': { size: 9, data: b64('pdf-bytes') },
+      '/messages/m1/attachments/att-2': { size: 0 },
+    });
+    const bytes = await fetchAttachment(http, 'tok', 'm1', 'att-1');
+    expect(Buffer.isBuffer(bytes) && bytes.toString()).toBe('pdf-bytes');
+    expect(calls[0]).toBe('/gmail/v1/users/me/messages/m1/attachments/att-1');
+    expect(await fetchAttachment(http, 'tok', 'm1', 'att-2')).toEqual({
+      error: 'Gmail answered attachment att-2 without its bytes',
+    });
+  });
+
+  it('fetchThread renders every message oldest first through the one renderer, numbered', async () => {
+    const { http, calls } = routed({
+      '/threads/t-1': {
+        messages: [
+          withParts('m2', ARRIVED + 60_000, [part('reply.pdf', { attachmentId: 'att-9', size: 5 })]),
+          withParts('m1', ARRIVED, []),
+        ],
+      },
+    });
+    const got = await fetchThread(http, 'tok', 't-1');
+    if ('error' in got) throw new Error(got.error);
+    expect(got.count).toBe(2);
+    expect(calls[0]).toBe('/gmail/v1/users/me/threads/t-1');
+    const first = got.text.indexOf('message 1 of 2');
+    const second = got.text.indexOf('message 2 of 2');
+    expect(first).toBeGreaterThanOrEqual(0);
+    expect(second).toBeGreaterThan(first);
+    // The earlier messages' files stay named: only the mail that fired hands a job files.
+    expect(got.text).toContain('Attachments (named, never fetched): reply.pdf (5 B)');
+  });
+
+  it('a thread Gmail refuses is an error in a sentence, never a throw', async () => {
+    const { http } = routed({});
+    expect(await fetchThread(http, 'tok', 't-gone')).toMatchObject({ error: expect.stringContaining('refused') });
+  });
+});
+
 describe('previewMail — what a trigger rule reaches (D-248)', () => {
   it('asks with the poll guard and the week window, and counts what came back', async () => {
     const { http, calls } = fake(INBOX);

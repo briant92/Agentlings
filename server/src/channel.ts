@@ -699,11 +699,12 @@ function replyBlock(trigger: { from?: string; subject?: string }): string[] {
     '',
     '## This job was queued by a mail arriving',
     `The mail that triggered this job${which ? ` (${which})` : ''} is in input/mail.txt — read it there; nothing else about this job says what it asked.`,
+    'If input/thread.txt exists, it is the whole conversation so far, oldest first — read it before answering; the mail that fired is part of it. Files the mail carried are beside it in input/, named at the foot of mail.txt.',
     'To answer INTO that same conversation, add "reply": true to your gmail message and write the subject as a Re: of the original. The server threads it to the right conversation itself — you never see or write a thread id.',
     `- "to" is the address the mail came from — the From: line of input/mail.txt${trigger.from ? ` (${trigger.from})` : ''}. That address was given to you by the mail itself; answering it is what a reply means, so the no-invented-addresses rule above does not hold you back here.`,
     '- A reply is still a message like any other: it waits for the user\'s review, and Approve is the send. Nothing goes out because you wrote it.',
     '- One reply, not a correspondence: answer what the mail asked and finish. If their answer arrives later, it queues its own job.',
-    '- A reply cannot carry files. If a file must ride, send it as its own (non-reply) message and say so in RESULT.md.',
+    '- A reply may carry files: name them in "files" as on any message, and they ride the same threaded send.',
     '- "reply": true only makes sense on this job because a mail queued it; on any other job the send is refused.',
   ];
 }

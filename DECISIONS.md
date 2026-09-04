@@ -295,6 +295,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-283 — 2026-09-04 — The demand line: the next work is Brian's own week, logged one issue per item, gated on a real counterparty exchange, because the score was mostly the building](#d-283--2026-09-04--the-demand-line-the-next-work-is-brians-own-week-logged-one-issue-per-item-gated-on-a-real-counterparty-exchange-because-the-score-was-mostly-the-building)
 - [D-284 — 2026-09-04 — The horde survives the night: a dead network is an error not a throw, both unattended sweeps catch, and `serve` restarts a server that lived past a minute](#d-284--2026-09-04--the-horde-survives-the-night-a-dead-network-is-an-error-not-a-throw-both-unattended-sweeps-catch-and-serve-restarts-a-server-that-lived-past-a-minute)
 - [D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict](#d-285--2026-09-04--the-score-counts-a-chain-once-a-check-step-is-never-counted-and-the-job-it-checked-counts-by-brians-own-verdict)
+- [D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread](#d-286--2026-09-04--the-counterparty-thread-a-mail-firing-carries-its-attachments-and-the-conversation-so-far-a-reply-may-carry-files-and-brian-holds-every-thread)
 
 ## By theme
 
@@ -1289,7 +1290,13 @@ entry updates one file rather than two.
   D-284, the first ticket, above under the dev server’s own deaths; and
   D-285, the second (#42) — a `check` step counts nowhere and the job it
   checked counts once by Brian’s verdict, because five of HQ’s twenty promoted
-  last week were the horde checking its own briefs
+  last week were the horde checking its own briefs; and D-286, the third (#43)
+  — the **counterparty thread**: a firing carries the mail’s attachments under
+  the desk caps and the whole conversation as `thread.txt`, a reply may carry
+  files through a multipart upload with the thread id in its metadata part,
+  D-253 still closed because Brian holds the thread; the in-hop proven live
+  read-only (a 6 KB file by id, a ten-message thread), the out-hop owed to
+  the first real Approve
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project
 
@@ -24560,3 +24567,94 @@ lesson from a discarded check still lands). The report's *discarded* and
 *awaiting* columns lose a check's rows too, so a week's numbers are lower
 than the last report of the same week would have said; that is the
 correction, not a regression. Past Monday sends are not re-issued.
+
+## D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread
+
+**Decided.** A rule's firing now hands the job three things beside the
+sentence: the mail as before (`input/mail.txt`), **the mail's attachments**,
+fetched by the server at the poll and written where a desk attachment lands,
+under the same caps (`MAX_ATTACHMENTS` 5, `MAX_ATTACHMENT_BYTES` 10 MB) with
+whatever stayed behind said at the foot of `mail.txt`, and **the whole
+conversation** as `input/thread.txt`, every message oldest first through the
+one renderer, only when the mail was not the first message of its thread. A
+reply **may carry files**: the send rides Gmail's upload endpoint as a
+multipart upload with the Message resource — the thread id — in its metadata
+part and the RFC 822 mail, threading headers included, as the second; the
+parse-time refusal and the prompt line that said otherwise are gone. The
+mail door's `mail_read` still names attachments and never fetches them; the
+run gets no new tool, and the one message that can hand a job files is the
+one that queued it. Every send to a counterparty is Approve, or standing
+approval to that address once earned (D-082); a mail-triggered job never
+auto-sends (D-248); a first message to a stranger is sensitive (D-250).
+**D-253 stays closed**: no conversation runtime, no commitments policy —
+Brian holds the thread, the horde works inside it. Ticket #43.
+
+### What proved it
+
+**The friction, in the code's own words (D-283, Q8).** Brian's tax
+assessment is reviewed with the CPA and his pagaré with the lawyer, and the
+app "doesn't feel like it integrates seamlessly with operations with
+counterparties". `mail.ts` said *Attachments are named, never fetched*; a
+firing wrote one message and knew nothing of the thread; `outbox.ts` refused
+`reply` beside `files` because, as D-248 measured, the app's threaded send
+(the JSON `raw` path with `threadId`) and its file send (`uploadType=media`,
+a bare `message/rfc822` body) were different endpoints and only one could
+thread. Two manual hops per exchange, and the horde forgot the last one.
+
+**Three shapes were put and one taken (Q9–Q11).** Brian holds the thread
+(taken) against the horde holding it under a commitments policy (D-253's
+runtime, declined because his counterparties do not need the horde to
+answer unattended) and against fixing only the in-hop. Attachments fetched
+on firing (taken) against a tool the run may call on any message — D-254's
+problem in a new coat — and against a per-rule switch nobody would leave
+off. The whole thread rendered (taken) against the app keeping its own
+memory of the exchange, which Gmail already keeps, and against re-reading
+every earlier document, which a run can ask for in its reply.
+
+**What Gmail's own contract says about the out-hop.** The media-only shape
+D-248 measured cannot carry a thread id because it has nowhere to put one.
+The upload endpoint's `uploadType=multipart` takes two parts — the resource
+as JSON, where `threadId` rides, and the media — which is the documented
+shape for any Google media upload with metadata. `uploadBody()` builds it;
+`emailRfc822()` now puts `In-Reply-To`/`References` on a mail with files as
+it always did on one without. **This half is proven by shape, not live**:
+a send is Brian's Approve on a real job, and the first reply that carries a
+file into a counterparty's thread is the proof this entry still owes.
+
+**Proven live, read-only, on the real mailbox (`scripts/prove-thread-fetch.mts`).**
+Through the app's own consent, exactly as a firing reads: `has:attachment
+newer_than:30d` found a real mail carrying `invite.ics` (6 KB, by
+attachment id), fetched under the cap, no *never fetched* line in the text,
+the foot saying *Attachments beside this file: invite.ics (6 KB)*, a
+one-message thread and so no `thread.txt` — **9/9**. `subject:Re:
+newer_than:60d` found a real reply whose conversation holds **ten
+messages**, rendered oldest first and numbered into what `thread.txt` would
+be, the foot saying so — **8/8**. Nothing written, queued or sent.
+
+**What the tests pin, and the mutants that died.** `mail.test.ts`: a
+message's attachments named with size and id or inline bytes and no
+*never fetched* line; `fetchAttachment` decoding the bytes and naming an
+empty answer; `fetchThread` numbering every message oldest first with the
+earlier messages' files still only named; a refused thread an error, not a
+throw. `mailtrigger.test.ts`: a firing with one file fetched, one 20 MB file
+left behind unasked-for, and one named `mail.txt` renamed `2-mail.txt`
+because the firing's own name is reserved; a two-message thread riding and a
+one-message thread not; an unfetchable file and thread said at the foot with
+the firing still going and the seen ring advanced. `outbox.test.ts`: reply
+beside files parses. `channels.test.ts`: a message with files is a
+multipart upload whose metadata part is `{}`; a reply with files carries
+`{"threadId"}` in the metadata part and both threading headers in the mail.
+Four mutants killed by exactly the test that claims each: the size cap
+dropped, the thread id dropped from the metadata, the threading headers
+dropped from a mail with files, a one-message thread written anyway.
+Typecheck clean; the five touched files 224/224.
+
+### What is not built, said plainly
+
+The reply-with-files send has not gone live; the first real one is #43's
+last box. The thread's earlier messages' attachments are named, never
+fetched — a run that needs one asks for it in the reply. A thread is capped
+by nothing but its own length through the renderer's per-message trim.
+Standing approval to a counterparty is D-082's existing mechanism and has
+not been exercised on a lawyer or an accountant. No rule is armed yet on a
+counterparty's address; Brian arms it in Settings like the two on HQ.

@@ -1,6 +1,14 @@
+import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES } from '@agentlings/shared';
 import type { Http } from './library';
 import { GOOGLE_SECRETS, accessTokenFromRefresh } from './google';
-import { fetchTriggerMail, listMailIds, type TriggerMail } from './mail';
+import {
+  fetchAttachment,
+  fetchThread,
+  fetchTriggerMail,
+  human,
+  listMailIds,
+  type TriggerMail,
+} from './mail';
 import type { Schedule } from './schedules';
 
 /**
@@ -29,6 +37,11 @@ export const MAX_TRIGGER_FIRES_PER_DAY = 10;
 /** Matches one poll bothers listing — more than this arriving between polls is a broad rule, and the cap is about to say so anyway. */
 export const TRIGGER_POLL_MAX = 10;
 
+/** What the triggering mail lands as in the job's input/ — one fixed name, so the prompt can say it (D-072, D-246). */
+export const TRIGGER_MAIL_NAME = 'mail.txt';
+/** The conversation so far, beside it, when the mail was not the first (D-286). */
+export const TRIGGER_THREAD_NAME = 'thread.txt';
+
 /** The query as it actually reaches Gmail: the rule's own terms, never the user's own sends, nothing before the watermark. */
 export function triggerQuery(query: string, sinceMs: number): string {
   return `${query} -from:me after:${Math.floor(sinceMs / 1000)}`;
@@ -47,9 +60,17 @@ type Mint = (args: {
   refreshToken: string;
 }) => Promise<{ token: string } | { error: string }>;
 
+/** One firing: the mail, what it carried, and the conversation it belongs to (D-286). */
+export interface TriggerFiring extends TriggerMail {
+  /** The mail's attachments, fetched under the caps a desk attachment obeys; what stayed behind is said in `text`. */
+  files: { name: string; data: Buffer }[];
+  /** Every message of the thread, oldest first — only when the mail was not the first of them. */
+  thread?: string;
+}
+
 export interface TriggerPoll {
   /** Oldest first, so multiple arrivals queue in the order they came. */
-  fired: TriggerMail[];
+  fired: TriggerFiring[];
   /** Matches the daily cap refused. Recorded on the row, never fired later. */
   skippedByCap: number;
   /** New watermark and seen ring, for noteTriggerPoll. */
@@ -107,14 +128,82 @@ export async function pollTrigger(
   mails.sort((a, b) => a.arrivedMs - b.arrivedMs);
   const fired = mails.slice(0, capacity);
   const skippedByCap = mails.length - fired.length;
+  // Only what fires is gathered: a capped mail never queues, so its files
+  // and thread are never asked for.
+  const firings: TriggerFiring[] = [];
+  for (const mail of fired) firings.push(await gatherFiring(options.http, access.token, mail));
 
   const sinceMs = mails.reduce((max, m) => Math.max(max, m.arrivedMs), state.sinceMs);
   return {
-    fired,
+    fired: firings,
     skippedByCap,
     sinceMs,
     // Capped ones enter the ring too: past the cap means never, not later.
     seen: [...state.seen, ...mails.map((m) => m.id)],
     day,
   };
+}
+
+/** Names a fetched attachment may not take: the two files the firing writes itself. */
+const RESERVED_NAMES = new Set([TRIGGER_MAIL_NAME, TRIGGER_THREAD_NAME]);
+
+/**
+ * What a firing carries besides the mail (D-286): its attachments, fetched
+ * now under the caps a desk attachment obeys, and the conversation so far
+ * when the mail was not its first message. A file or thread that cannot be
+ * fetched is said at the foot of the mail's text and the firing goes ahead —
+ * the mail itself is the brief, and the seen ring has already advanced.
+ */
+export async function gatherFiring(http: Http, token: string, mail: TriggerMail): Promise<TriggerFiring> {
+  const files: { name: string; data: Buffer }[] = [];
+  const notes: string[] = [];
+  const taken = new Set<string>(RESERVED_NAMES);
+  const limitMb = MAX_ATTACHMENT_BYTES / (1024 * 1024);
+  for (const a of mail.attachments) {
+    if (files.length >= MAX_ATTACHMENTS) {
+      notes.push(`${a.name} — left behind, ${MAX_ATTACHMENTS} files at most`);
+      continue;
+    }
+    if (a.size > MAX_ATTACHMENT_BYTES) {
+      notes.push(`${a.name} (${human(a.size)}) — left behind, over ${limitMb} MB`);
+      continue;
+    }
+    const got =
+      a.data ??
+      (a.attachmentId
+        ? await fetchAttachment(http, token, mail.id, a.attachmentId)
+        : { error: 'Gmail named neither its bytes nor an id for it' });
+    if (!Buffer.isBuffer(got)) {
+      notes.push(`${a.name} — could not be fetched: ${got.error}`);
+      continue;
+    }
+    if (got.length > MAX_ATTACHMENT_BYTES) {
+      notes.push(`${a.name} (${human(got.length)}) — left behind, over ${limitMb} MB`);
+      continue;
+    }
+    // A leaf name, never a path; a clash takes a number so nothing is overwritten.
+    let name = a.name.split(/[\\/]/).pop() || 'attachment';
+    if (taken.has(name)) name = `${files.length + 1}-${name}`;
+    taken.add(name);
+    files.push({ name, data: got });
+  }
+  const lines: string[] = [];
+  if (files.length > 0) {
+    lines.push(
+      `Attachments beside this file: ${files.map((f) => `${f.name} (${human(f.data.length)})`).join(', ')}`,
+    );
+  }
+  for (const note of notes) lines.push(`Attachment ${note}`);
+  let thread: string | undefined;
+  const conversation = await fetchThread(http, token, mail.threadId);
+  if ('error' in conversation) {
+    lines.push(`The conversation so far could not be read: ${conversation.error}`);
+  } else if (conversation.count > 1) {
+    thread = conversation.text;
+    lines.push(
+      `This mail belongs to a conversation of ${conversation.count} messages — the whole thread, oldest first, is in input/${TRIGGER_THREAD_NAME}.`,
+    );
+  }
+  const text = lines.length > 0 ? `${mail.text}\n\n${lines.join('\n')}` : mail.text;
+  return { ...mail, text, files, ...(thread !== undefined ? { thread } : {}) };
 }

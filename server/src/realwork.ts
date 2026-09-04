@@ -172,6 +172,10 @@ export function realWork(
     for (const job of level.jobs) {
       // The score's own send is not work anyone would otherwise have done.
       if (job.prompt === REALWORK_PROMPT) continue;
+      // Nor is the horde checking the horde: a check step counts nowhere,
+      // whatever its verdict, and the job it checked counts by Brian's own
+      // verdict — once, not twice (D-285).
+      if (job.check) continue;
       if (failedRun(job)) {
         if (job.finishedAt !== undefined && inWindow(window, job.finishedAt)) w.failed++;
         continue;

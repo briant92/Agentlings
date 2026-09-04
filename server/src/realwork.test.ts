@@ -250,6 +250,29 @@ describe('realWork', () => {
     expect(levels).toEqual([]);
   });
 
+  it('a check step counts nowhere, and the job it checked counts once, by its own verdict (D-285)', () => {
+    const brief = job({ status: 'promoted', finishedAt: IN, resolvedAt: IN, resolvedBy: 'you' });
+    const checkOf = (extra: Partial<Job>) => job({ check: { of: brief.id }, finishedAt: IN, ...extra });
+    const hqOnly = realWork(
+      WINDOW,
+      [
+        {
+          id: 'hq',
+          name: 'HQ',
+          jobs: [
+            brief,
+            checkOf({ status: 'promoted', resolvedAt: IN, resolvedBy: 'you' }),
+            checkOf({ status: 'discarded', resolvedAt: IN, resolvedBy: 'you', delivered: EMPTY }),
+            checkOf({ status: 'done' }),
+          ],
+        },
+      ],
+      [],
+      [],
+    ).levels[0]!;
+    expect(hqOnly).toMatchObject({ promoted: 1, autoSent: 0, discarded: 0, awaiting: 0 });
+  });
+
   it("realCount is the last line's number", () => {
     expect(realCount(block)).toBe(3);
     expect(formatRealWork(block)).toContain('real work: 3 jobs promoted or auto-sent');

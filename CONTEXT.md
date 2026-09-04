@@ -11,7 +11,8 @@ Real work done under supervision — a job on a real level that Brian would
 otherwise have done by hand, promoted or auto-sent, with every refusal and
 failure counted as demand. It is what the Hireable Horde is measured by,
 counted weekly from the ledger and the job records. A `done` nobody reviewed
-is not yet real work.
+is not yet real work, and a check of another job is never counted: the job
+it checked counts once, by Brian's verdict.
 _Avoid_: hireable count, coverage percentage, KPI
 
 **Demand**:

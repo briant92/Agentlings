@@ -54,10 +54,11 @@ release, and since D-237 it leads with
 crew could hold down, counted only off duties whose grade rests on recorded
 evidence and never off a word match — and since D-249 that number is a
 **map** of where the crew cannot go, not the score: the score is real work
-under supervision, counted weekly from the ledger and the job records —
-`npm run ledger:report` now leads with it, per real level, last full week
-(D-260), and a `report: realwork` schedule row sends the same block on
-Monday at $0 with no model (D-261) — and the map recorded zero
+under supervision, counted weekly from the ledger and the job records, a
+check of another job never counted (D-285) — `npm run ledger:report` now
+leads with it, per real level, last full week (D-260), and a
+`report: realwork` schedule row sends the same block on Monday at $0 with
+no model (D-261) — and the map recorded zero
 for D-241–D-248. §8's figures regenerate with the same command, and §15 is
 the list of what is not here yet. The statuses gain a **fourth**, *Not
 available hosted*, on 2026-08-27 where the publish line closed (D-274, #31):

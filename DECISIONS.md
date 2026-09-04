@@ -294,6 +294,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-282 — 2026-09-04 — One spine and five cutaways, drawn by who acts: the spine and the install in the README, the rest beside the claims in AGENTLING.md](#d-282--2026-09-04--one-spine-and-five-cutaways-drawn-by-who-acts-the-spine-and-the-install-in-the-readme-the-rest-beside-the-claims-in-agentlingmd)
 - [D-283 — 2026-09-04 — The demand line: the next work is Brian's own week, logged one issue per item, gated on a real counterparty exchange, because the score was mostly the building](#d-283--2026-09-04--the-demand-line-the-next-work-is-brians-own-week-logged-one-issue-per-item-gated-on-a-real-counterparty-exchange-because-the-score-was-mostly-the-building)
 - [D-284 — 2026-09-04 — The horde survives the night: a dead network is an error not a throw, both unattended sweeps catch, and `serve` restarts a server that lived past a minute](#d-284--2026-09-04--the-horde-survives-the-night-a-dead-network-is-an-error-not-a-throw-both-unattended-sweeps-catch-and-serve-restarts-a-server-that-lived-past-a-minute)
+- [D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict](#d-285--2026-09-04--the-score-counts-a-chain-once-a-check-step-is-never-counted-and-the-job-it-checked-counts-by-brians-own-verdict)
 
 ## By theme
 
@@ -1285,7 +1286,10 @@ entry updates one file rather than two.
   still unbuilt because Brian holds every thread; proven by the score’s own
   composition (87 → 34 → 11 promoted as the building stopped, eight of
   last week’s 34 his own work) and by the server found dead two days; then
-  D-284, the first ticket, above under the dev server’s own deaths
+  D-284, the first ticket, above under the dev server’s own deaths; and
+  D-285, the second (#42) — a `check` step counts nowhere and the job it
+  checked counts once by Brian’s verdict, because five of HQ’s twenty promoted
+  last week were the horde checking its own briefs
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project
 
@@ -24509,3 +24513,50 @@ reporting drift that self-heals). No cap on restarts: a cap turns a flaky
 night back into a dead server. Boot failures are not retried. The first
 unattended restart in `server.log` is the live proof this entry still owes;
 the server was down when the fix landed and Brian restarts it himself.
+
+## D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict
+
+**Decided.** A job carrying `check: { of }` — the step whose brief is to
+check another job's delivery (D-201, D-233) — **is never counted by the
+score, whatever its verdict**: not promoted, not auto-sent, not discarded,
+not awaiting. The job it checked counts by Brian's own verdict exactly as
+before, and the check's finding (`checkVerdict` on the checked job) plays
+no part. The report row keeps counting its own job every Monday, as D-261
+wrote and D-249's tests pin. One field read in `realWork()`, the one pure
+function with two callers (`ledger:report` and the Monday send), so both
+change together. The glossary's Score entry gains the line. Ticket #42.
+
+### What proved it
+
+**The glossary against the instrument.** `CONTEXT.md` defines Score as *a
+job on a real level that Brian would otherwise have done by hand*. In the
+last full week (2026-08-24 to 30) the instrument reported HQ at 20
+promoted; re-read from the job records for D-283, five of those were
+`Check the delivered work against its brief` — the horde checking its own
+daily mail briefs — each promoted by Brian beside the brief it checked. All
+fourteen check jobs HQ has ever run are promoted. The horde checking the
+horde is not work Brian did by hand, and the same brief counted twice.
+
+**The rule chosen over its rivals (Q3, Q5).** Three were put: (a) leave it,
+a verdict is a verdict; (b) the check never counts, the checked job counts
+by Brian's verdict; (c) the checked job counts by the check's finding rather
+than Brian's verdict, or only when its check was promoted too. (b) was
+taken because D-249 says the score *is* Brian's verdict, and both other
+rules let the horde's opinion of itself into the count. The scenario that
+settled it: the mail brief is promoted, its check finds the brief missed a
+thread, and Brian promotes the check because the check was right — under
+(b) the brief counts once, and that is the answer wanted.
+
+**What the test pins.** In `realwork.test.ts`: a promoted check beside its
+promoted brief scores one, not two; a discarded check is not a discard; a
+check nobody reviewed is not awaiting; and a check on a proof level was
+never in the count to begin with. The fixture's `check: { of }` is the
+field the desk writes (`packages/shared`), read by name and nothing else.
+
+### What is not built, said plainly
+
+Nothing changes about how a check is queued, reviewed or banked (D-201's
+lesson from a discarded check still lands). The report's *discarded* and
+*awaiting* columns lose a check's rows too, so a week's numbers are lower
+than the last report of the same week would have said; that is the
+correction, not a regression. Past Monday sends are not re-issued.

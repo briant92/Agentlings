@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,8 +10,10 @@ import {
   normalise,
   readRecipes,
   rememberRecipe,
+  recipesFile,
   similarity,
   terms,
+  updateRecipes,
   writeRecipes,
   type Recipe,
 } from './recipes';
@@ -151,6 +153,47 @@ describe('persistence', () => {
 
   it('starts empty rather than throwing when there is nothing yet', () => {
     expect(readRecipes(dir)).toEqual([]);
+  });
+
+  it('reuses the parsed recipes while the file is unchanged', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 }));
+    const first = readRecipes(dir);
+    expect(readRecipes(dir)).toBe(first);
+  });
+
+  it('sees a rewrite of recipes.json on the next call', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'old', at: 1 }));
+    const first = readRecipes(dir);
+    expect(first[0].approach).toBe('old');
+    writeRecipes(
+      dir,
+      rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'a longer new approach', at: 2 }),
+    );
+    const second = readRecipes(dir);
+    expect(second).not.toBe(first);
+    expect(second[0].approach).toBe('a longer new approach');
+  });
+
+  it('sees a rewrite that did not go through writeRecipes', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'old', at: 1 }));
+    const first = readRecipes(dir);
+    writeFileSync(
+      recipesFile(dir),
+      JSON.stringify([
+        { key: 'x', terms: [], role: 'worker', approach: 'external rewrite', hits: 0, learnedAt: 1 },
+      ]),
+    );
+    const second = readRecipes(dir);
+    expect(second).not.toBe(first);
+    expect(second[0].approach).toBe('external rewrite');
+  });
+
+  it('does not write into a held recipe array when recording a hit', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 }));
+    const held = readRecipes(dir);
+    updateRecipes(dir, (recipes) => creditRecipe(recipes, 'x', 2));
+    expect(held[0].hits).toBe(0);
+    expect(readRecipes(dir)[0].hits).toBe(1);
   });
 });
 

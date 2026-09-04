@@ -12,6 +12,7 @@ import {
   rememberRecipe,
   similarity,
   terms,
+  updateRecipes,
   writeRecipes,
   type Recipe,
 } from './recipes';
@@ -151,6 +152,33 @@ describe('persistence', () => {
 
   it('starts empty rather than throwing when there is nothing yet', () => {
     expect(readRecipes(dir)).toEqual([]);
+  });
+
+  it('reuses the parsed recipes while the file is unchanged', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 }));
+    const first = readRecipes(dir);
+    expect(readRecipes(dir)).toBe(first);
+  });
+
+  it('sees a rewrite of recipes.json on the next call', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'old', at: 1 }));
+    const first = readRecipes(dir);
+    expect(first[0].approach).toBe('old');
+    writeRecipes(
+      dir,
+      rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'new', at: 2 }),
+    );
+    const second = readRecipes(dir);
+    expect(second).not.toBe(first);
+    expect(second[0].approach).toBe('new');
+  });
+
+  it('does not write into a held recipe array when recording a hit', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'y', at: 1 }));
+    const held = readRecipes(dir);
+    updateRecipes(dir, (recipes) => creditRecipe(recipes, 'x', 2));
+    expect(held[0].hits).toBe(0);
+    expect(readRecipes(dir)[0].hits).toBe(1);
   });
 });
 

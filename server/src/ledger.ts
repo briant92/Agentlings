@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { JobMeter } from '@agentlings/shared';
 
@@ -351,11 +351,31 @@ export function append(sandboxRoot: string, entry: LedgerEntry): void {
   appendFileSync(ledgerFile(sandboxRoot), `${JSON.stringify(entry)}\n`);
 }
 
-/** Every row on disk, open ones included. For the rewriters below only. */
-function readRows(sandboxRoot: string): LedgerEntry[] {
+/**
+ * Parsed rows of each install's ledger, kept between calls.
+ *
+ * The plan route re-quotes on every keystroke and `quoteFor_` re-reads the
+ * whole file each time. Keyed on mtime and size, so a rewrite is seen on the
+ * next call and a file that has not moved is never parsed twice. No clock
+ * staleness: unlike the store index, a ledger does not go stale by age.
+ *
+ * The arrays are shared between calls; every consumer maps or filters them
+ * and none writes into them.
+ */
+const held = new Map<string, { mtimeMs: number; size: number; rows: LedgerEntry[]; closed: LedgerEntry[] }>();
+
+function loadRows(sandboxRoot: string): { rows: LedgerEntry[]; closed: LedgerEntry[] } {
   const file = ledgerFile(sandboxRoot);
-  if (!existsSync(file)) return [];
-  return readFileSync(file, 'utf8')
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch {
+    held.delete(sandboxRoot);
+    return { rows: [], closed: [] };
+  }
+  const have = held.get(sandboxRoot);
+  if (have && have.mtimeMs === stat.mtimeMs && have.size === stat.size) return have;
+  const rows = readFileSync(file, 'utf8')
     .split(/\r?\n/)
     .filter(Boolean)
     .flatMap((line) => {
@@ -365,6 +385,14 @@ function readRows(sandboxRoot: string): LedgerEntry[] {
         return []; // a torn last line must not lose the rest of the history
       }
     });
+  const fresh = { mtimeMs: stat.mtimeMs, size: stat.size, rows, closed: rows.filter((entry) => !entry.open) };
+  held.set(sandboxRoot, fresh);
+  return fresh;
+}
+
+/** Every row on disk, open ones included. For the rewriters below only. */
+function readRows(sandboxRoot: string): LedgerEntry[] {
+  return loadRows(sandboxRoot).rows;
 }
 
 /**
@@ -374,7 +402,7 @@ function readRows(sandboxRoot: string): LedgerEntry[] {
  * as "stopped mid-run, cost unknown" for as long as it ran.
  */
 export function readLedger(sandboxRoot: string): LedgerEntry[] {
-  return readRows(sandboxRoot).filter((entry) => !entry.open);
+  return loadRows(sandboxRoot).closed;
 }
 
 /**

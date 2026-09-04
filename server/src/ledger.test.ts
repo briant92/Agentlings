@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -203,6 +203,22 @@ describe('persistence', () => {
 
   it('starts empty rather than throwing', () => {
     expect(readLedger(root)).toEqual([]);
+  });
+
+  it('reuses the parsed rows while the file is unchanged', () => {
+    append(root, entry({ jobId: 'a' }));
+    const first = readLedger(root);
+    expect(readLedger(root)).toBe(first);
+  });
+
+  it('sees a rewrite of ledger.jsonl on the next call', () => {
+    append(root, entry({ jobId: 'a' }));
+    const first = readLedger(root);
+    expect(first.map((e) => e.jobId)).toEqual(['a']);
+    writeFileSync(ledgerFile(root), `${JSON.stringify(entry({ jobId: 'swapped' }))}\n`);
+    const second = readLedger(root);
+    expect(second).not.toBe(first);
+    expect(second.map((e) => e.jobId)).toEqual(['swapped']);
   });
 });
 

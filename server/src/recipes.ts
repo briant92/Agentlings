@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { sameInputShape } from './inputshape';
 import { sameSurface } from './capability';
@@ -236,17 +236,40 @@ export function recipesFile(levelDir: string): string {
   return path.join(levelDir, 'recipes.json');
 }
 
+/**
+ * Parsed recipes of each level, kept between calls.
+ *
+ * `quoteFor_` re-reads this on every plan keystroke. Keyed on mtime and size,
+ * so a rewrite is seen on the next call and a file that has not moved is
+ * never parsed twice. No clock staleness: recipes do not go stale by age.
+ *
+ * The array is shared between calls; readers must not write into it.
+ * `updateRecipes` copies before handing the array to `mutate`.
+ */
+const held = new Map<string, { mtimeMs: number; size: number; recipes: Recipe[] }>();
+
 export function readRecipes(levelDir: string): Recipe[] {
   const file = recipesFile(levelDir);
-  if (!existsSync(file)) return [];
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch {
+    held.delete(levelDir);
+    return [];
+  }
+  const have = held.get(levelDir);
+  if (have && have.mtimeMs === stat.mtimeMs && have.size === stat.size) return have.recipes;
   try {
     const stored = JSON.parse(readFileSync(file, 'utf8')) as Recipe[];
     // Terms are derived from the key, never trusted from disk. They are only a
     // cache of `terms(key)`, so a change to how words are stemmed would
     // otherwise silently strand every recipe written before it — recomputing
     // on the way in means that migration never has to be written.
-    return stored.map((r) => ({ ...r, terms: terms(r.key) }));
+    const recipes = stored.map((r) => ({ ...r, terms: terms(r.key) }));
+    held.set(levelDir, { mtimeMs: stat.mtimeMs, size: stat.size, recipes });
+    return recipes;
   } catch {
+    held.delete(levelDir);
     return [];
   }
 }
@@ -279,7 +302,7 @@ export function writeRecipes(levelDir: string, recipes: Recipe[]): void {
  * `rememberRecipe` are happy to work on it in turn.
  */
 export function updateRecipes(levelDir: string, mutate: (recipes: Recipe[]) => Recipe[]): Recipe[] {
-  const next = mutate(readRecipes(levelDir));
+  const next = mutate(readRecipes(levelDir).map((r) => ({ ...r })));
   writeRecipes(levelDir, next);
   return next;
 }

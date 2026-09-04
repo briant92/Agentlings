@@ -22,7 +22,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { BUK_READS, bukBase, bukToolSchema, callBukRead, tenantProblem } from '../server/src/buk.ts';
+import { BUK_KEY_SCOPE, BUK_READS, bukBase, bukToolSchema, callBukRead, tenantProblem } from '../server/src/buk.ts';
 
 function argValue(flag: string): string {
   const at = process.argv.indexOf(flag);
@@ -44,7 +44,7 @@ const token = (process.env.BUK_API_KEY ?? '').trim();
 // Refused at startup rather than at the first call, so that a connection
 // cannot be *stored* without its key: the add flow probes before it writes
 // (D-244), and a probe that succeeds is the app's claim that this works.
-if (!token) refuseToStart('BUK_API_KEY is not set — add it as this connection\'s secret, a Buk API token with read permission');
+if (!token) refuseToStart(`BUK_API_KEY is not set — add it as this connection's secret, ${BUK_KEY_SCOPE}`);
 
 const config = { base: bukBase(tenant), token };
 

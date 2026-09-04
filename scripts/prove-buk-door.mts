@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { BUK_COUNTRY, BUK_READS } from '../server/src/buk.ts';
+import { BUK_COUNTRY, BUK_KEY_SCOPE, BUK_READS } from '../server/src/buk.ts';
 import { probeConnection } from '../server/src/mcpprobe.ts';
 import { connectionFromDraft, draftProblem, type ConnectionDraft } from '../server/src/userconnections.ts';
 import type { Connection } from '../server/src/connections.ts';
@@ -50,7 +50,7 @@ function draft(tenant: string, extra?: { noTenant?: boolean }): ConnectionDraft 
     transport: 'stdio',
     command: 'npx',
     args: extra?.noTenant ? ['tsx', ADAPTER] : ['tsx', ADAPTER, '--tenant', tenant],
-    secrets: { BUK_API_KEY: 'a Buk API token with read permission for this tenant' },
+    secrets: { BUK_API_KEY: BUK_KEY_SCOPE },
   };
 }
 
@@ -239,7 +239,8 @@ console.log(`  arguments   tsx`);
 console.log(`              ${ADAPTER}`);
 console.log(`              --tenant`);
 console.log(`              <your subdomain>`);
-console.log(`  secret      BUK_API_KEY = <a Buk API token with read permission>`);
+console.log(`  secret      BUK_API_KEY = <the token>`);
+console.log(`              ${BUK_KEY_SCOPE}`);
 
 console.log(
   `\n${bad === 0 ? 'PASS' : 'FAIL'}  ${ran - bad}/${ran} — NOT proven end to end until one real HQ job reads a real Buk through this connection and is promoted.`,

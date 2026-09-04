@@ -81,6 +81,27 @@ export interface BukRead {
 /** The one argument name every per-employee read uses. */
 const EMPLOYEE = 'employee';
 
+/**
+ * What the key must be allowed to do, said where a person creating one reads it.
+ *
+ * Buk's permissions are **per module**, and *see sensitive information* is a
+ * separate axis from read/modify — so a `Lectura` key does read pay stubs,
+ * which Buk's own help-centre prose (*"Lectura: solo verá los empleados y no
+ * su información sensible"*) reads as impossible. Off the contract's own
+ * per-endpoint *Permisos requeridos* lines, read 2026-09-04:
+ *
+ *     employees, active_employees, employee_plans   empleados:  Lectura
+ *     vacations_available                           vacaciones: Lectura
+ *     pay_stubs                                     empleados:  Lectura
+ *                                                   + ver información sensible: Sí
+ *
+ * `Lectura y Modificación` is wanted by none of the five, and `vacaciones` is
+ * the one a person granting "read" by eye leaves off — it is a different
+ * module from `empleados`, so `vacations_available` alone 403s.
+ */
+export const BUK_KEY_SCOPE =
+  'a Buk API token (Configuración → Accesos API) with empleados and vacaciones at "Lectura" and "Permitir ver información sensible" at "Sí"; modification is not needed';
+
 const PAGE_SIZE: BukParam = {
   name: 'page_size',
   kind: 'page-size',

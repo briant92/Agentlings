@@ -5078,6 +5078,7 @@ const TRIGGER_MAIL_NAME = 'mail.txt';
  * two minutes.
  */
 let mailSweepRunning = false;
+let lastMailSweepError: string | null = null;
 async function sweepMailTriggers(now = Date.now()): Promise<void> {
   // Gmail answering slowly must stack no second sweep on the first.
   if (mailSweepRunning) return;
@@ -5150,6 +5151,13 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
         });
       }
     }
+  } catch (err) {
+    // An unattended loop that throws is a server that exits (D-284): the
+    // timer's `void` drops the promise and Node treats the rejection as
+    // fatal. Said once per distinct failure, for the voice sweep's reason.
+    const message = err instanceof Error ? err.message : String(err);
+    if (message !== lastMailSweepError) console.warn(`[mail-trigger] sweep failed: ${message}`);
+    lastMailSweepError = message;
   } finally {
     mailSweepRunning = false;
   }
@@ -5225,6 +5233,14 @@ async function sweepVoice(): Promise<void> {
       writeVoiceNote(SANDBOX_ROOT, note);
       await readVoiceNoteAloud(note, audio);
     }
+  } catch (err) {
+    // The thirteen deaths (D-284): getUpdates rejecting on a network timeout
+    // escaped this function, the timer's `void` dropped the promise, and Node
+    // exited. The poll now answers a dead network as an error; this catch is
+    // for whatever else the sweep may throw, said once per distinct message.
+    const message = err instanceof Error ? err.message : String(err);
+    if (message !== lastVoiceError) console.warn(`[voice] sweep failed: ${message}`);
+    lastVoiceError = message;
   } finally {
     voiceSweepRunning = false;
   }

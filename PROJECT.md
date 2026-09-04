@@ -80,7 +80,10 @@ behavioral base lives there alone; this is the project half, split out on
 - Run dev: `npm run dev` (web on http://localhost:5173, API/WS on :4600)
 - Run stable: `npm run serve` — same server and log, **no file watching**, so
   a source edit or a OneDrive echo cannot restart it mid-session (D-140).
-  Drive the app with this; use `dev` only while changing server code.
+  Drive the app with this; use `dev` only while changing server code. Under
+  `serve` a server that dies after living a minute is started again by the
+  launcher, 5 s doubling to 5 min (D-284); one that dies at boot stops with
+  its reason. Nothing announces a restart but `server.log`.
 - Run on one port: `npm run build`, then the server alone — the API port
   serves the title screen too (D-272). This is what a container does; nobody
   here needs it, and `dev`/`serve` are unaffected by whether `web/dist` exists.

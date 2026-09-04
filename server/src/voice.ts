@@ -67,6 +67,24 @@ interface TelegramUpdate {
 }
 
 /**
+ * One Telegram call as an answer or an error, never a throw. A network that
+ * times out rejects the fetch rather than answering it, and this poll runs
+ * unattended four times a minute: an escaped rejection here killed the whole
+ * server thirteen times in ten days (D-284) before anyone read the log.
+ */
+async function reach(
+  http: VoiceHttp,
+  url: string,
+  step: string,
+): Promise<Awaited<ReturnType<VoiceHttp>> | { error: string }> {
+  try {
+    return await http(url);
+  } catch (err) {
+    return { error: `Telegram unreachable for ${step}: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
+/**
  * One poll, pure over what Telegram answered: nothing here writes. The caller
  * records the ring and fetches the audio. A failing call is an error with
  * nothing advanced, so the next sweep asks the same question again.
@@ -77,7 +95,8 @@ export async function pollVoice(opts: {
   roster: ReadonlySet<string>;
   seen: ReadonlySet<string>;
 }): Promise<VoicePoll | { error: string }> {
-  const reply = await opts.http(`https://api.telegram.org/bot${opts.token}/getUpdates`);
+  const reply = await reach(opts.http, `https://api.telegram.org/bot${opts.token}/getUpdates`, 'getUpdates');
+  if ('error' in reply) return reply;
   if (!reply.ok) return { error: `Telegram did not answer getUpdates (${reply.status})` };
   const body = (await reply.json()) as { result?: TelegramUpdate[] };
   const notes: IncomingVoice[] = [];
@@ -115,14 +134,18 @@ export async function downloadVoice(
   token: string,
   fileId: string,
 ): Promise<Buffer | { error: string }> {
-  const meta = await http(
+  const meta = await reach(
+    http,
     `https://api.telegram.org/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`,
+    'getFile',
   );
+  if ('error' in meta) return meta;
   if (!meta.ok) return { error: `Telegram did not answer getFile (${meta.status})` };
   const body = (await meta.json()) as { result?: { file_path?: string } };
   const filePath = body.result?.file_path;
   if (!filePath) return { error: 'Telegram named no file path for the note' };
-  const file = await http(`https://api.telegram.org/file/bot${token}/${filePath}`);
+  const file = await reach(http, `https://api.telegram.org/file/bot${token}/${filePath}`, 'the audio');
+  if ('error' in file) return file;
   if (!file.ok) return { error: `Telegram did not serve the audio (${file.status})` };
   return Buffer.from(await file.arrayBuffer());
 }

@@ -111,6 +111,16 @@ describe('pollVoice', () => {
     const poll = await pollVoice({ http, token: 'tok', roster: ROSTER, seen: new Set() });
     expect(poll).toEqual({ error: 'Telegram did not answer getUpdates (500)' });
   });
+
+  it('a network that never answers is an error too, never a throw (D-284)', async () => {
+    // The shape of the thirteen deaths: fetch rejects with ETIMEDOUT instead
+    // of answering, and the sweep that awaits it runs unattended.
+    const http: VoiceHttp = async () => {
+      throw new TypeError('fetch failed');
+    };
+    const poll = await pollVoice({ http, token: 'tok', roster: ROSTER, seen: new Set() });
+    expect(poll).toEqual({ error: 'Telegram unreachable for getUpdates: fetch failed' });
+  });
 });
 
 describe('downloadVoice', () => {
@@ -138,6 +148,24 @@ describe('downloadVoice', () => {
     });
     expect(await downloadVoice(noFile.http, 'tok', 'f-10')).toEqual({
       error: 'Telegram did not serve the audio (404)',
+    });
+  });
+
+  it('a network that never answers names the step it died on, never a throw (D-284)', async () => {
+    const dead: VoiceHttp = async () => {
+      throw new TypeError('fetch failed');
+    };
+    expect(await downloadVoice(dead, 'tok', 'f-10')).toEqual({
+      error: 'Telegram unreachable for getFile: fetch failed',
+    });
+    // The path answers, the file host does not.
+    const meta = fake({ getFile: { ok: true, result: { file_id: 'f-10', file_path: 'voice/file_3.oga' } } });
+    const halfDead: VoiceHttp = async (url) => {
+      if (url.includes('/file/bot')) throw new TypeError('fetch failed');
+      return meta.http(url);
+    };
+    expect(await downloadVoice(halfDead, 'tok', 'f-10')).toEqual({
+      error: 'Telegram unreachable for the audio: fetch failed',
     });
   });
 });

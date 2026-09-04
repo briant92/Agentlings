@@ -2084,6 +2084,7 @@ override. The subset rule is the same; the shape is stricter.
 | `DEFAULT_BIND` | `127.0.0.1` | The interface `serve()` binds; `AGENTLINGS_BIND` moves it, and moving it makes a password compulsory (D-271) |
 | `WORLD_WIDTH` | 1000 | Logical units the client scales |
 | `SCHEDULE_SWEEP_MS` | 30 s | How often due schedules are looked for; boot is a sweep too (D-103) |
+| `RESTART_AFTER_MS` · `RESTART_DELAY_MS` · `RESTART_DELAY_MAX_MS` · `HEALTHY_MS` | 60 s · 5 s · 5 min · 1 h | Under `serve` only: a server that lived past the first and exited non-zero is started again after the second, doubling to the third, reset by the fourth; inside the first it is a boot failure and stops with its code (D-284, `dev-logged.mjs`) |
 | `DECODE_TIMEOUT_MS` | 5 s | A plate that has not decoded by then is a plate that failed to load (D-185) |
 | `BOOT_WAIT_MS` | 10 s | The first render happens by then whatever the pack load is doing (D-185) |
 

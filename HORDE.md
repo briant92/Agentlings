@@ -32,6 +32,11 @@ glossary disagree, the glossary is right.
 
 ## 1. Where the line stands
 
+**Closed 2026-09-03 (D-281). The line that followed is the demand line
+(D-283): Brian's own week, one issue per item, on the tracker — #41–#48 as
+of 2026-09-04 — and not on this board.** Everything below is the record of
+the line that ended.
+
 | | |
 |---|---|
 | **Score** | **Counted, and built to send.** Last full week (2026-08-17 to 23): **87 promoted, 0 auto-sent** on three real levels — hq 48, training-ground 26, home-chores 13 — 32 discarded, 3 failed, 0 awaiting, $146 spent, no refusal on a real level; `npm run ledger:report` leads with it (#12, D-260). Every verdict is stamped when and by whom from the next restart; the refusals file counts (#11, D-259); **the Monday send is built and proven live (#13, D-261; 31/31 on the 2026-08-25 restart)** — a `report: realwork` schedule row, $0, no model — and **HQ row `15548352` is armed**, Mondays 08:05: its first firing is 2026-08-31, approved by hand; the standing offer appears at the third (2026-09-14). Slice #21 closes when that first firing is approved |

@@ -14,6 +14,13 @@ counted weekly from the ledger and the job records. A `done` nobody reviewed
 is not yet real work.
 _Avoid_: hireable count, coverage percentage, KPI
 
+**Demand**:
+Work the horde should have done and did not, from two sources: what it
+refused or failed on a real level, counted by the app, and what Brian did by
+hand and names each week, one issue each. An item leaves the log when the
+horde has scored it, or when what it needs is owed by a person.
+_Avoid_: backlog, wishlist, feature request
+
 **Report row**:
 A schedule row the app composes itself (`report: realwork`): its firing
 sends last week's score as an ordinary send in review, at $0 with no model

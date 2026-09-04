@@ -39,6 +39,63 @@ describe('dev-logged', () => {
   });
 
   /**
+   * The second catch (D-284): under `serve` a server that lived past the
+   * threshold and died is started again; one that died inside it is a boot
+   * failure and stops with its code. Spawned for real, like the first promise,
+   * because the policy lives in the launcher and nowhere a unit test reaches.
+   * The fixture dies once and lives the second time, so the run ends — status
+   * 0 is the second life's, and the log holds both plus the restart line.
+   */
+  const spawnServe = (env: NodeJS.ProcessEnv, args: string[]) => {
+    const tmp = mkdtempSync(path.join(os.tmpdir(), 'devlog-flaky-'));
+    const fixture = path.join(tmp, 'flaky.mjs');
+    // Dies with 1 the first time it runs, lives the second: the marker is the memory.
+    writeFileSync(
+      fixture,
+      [
+        "import { existsSync, writeFileSync } from 'node:fs';",
+        "const marker = process.argv[1] + '.once';",
+        "if (existsSync(marker)) { console.log('second-life'); process.exit(0); }",
+        "writeFileSync(marker, '');",
+        "console.error('first-death'); process.exit(1);",
+        '',
+      ].join('\n'),
+    );
+    const run = spawnSync(process.execPath, [path.join(SERVER, 'scripts', 'dev-logged.mjs'), ...args], {
+      env: { ...process.env, AGENTLINGS_DEV_ENTRY: fixture, AGENTLINGS_LOG_DIR: tmp, ...env },
+      timeout: 60_000,
+      encoding: 'utf8',
+    });
+    return { run, log: readFileSync(path.join(tmp, 'server.log'), 'utf8') };
+  };
+  const SHRUNK = { AGENTLINGS_RESTART_AFTER_MS: '0', AGENTLINGS_RESTART_DELAY_MS: '10' };
+
+  it('under serve, restarts a server that lived past the threshold and died', () => {
+    const { run, log } = spawnServe(SHRUNK, ['--no-watch']);
+    expect(run.status).toBe(0);
+    expect(log).toContain('first-death');
+    expect(log).toMatch(/restart 1 in 0\.01 s/);
+    expect(log).toMatch(/start .* restart=1/);
+    expect(log).toContain('second-life');
+  });
+
+  it('a death inside the threshold is a boot failure: no restart, the code propagates', () => {
+    // Mutation-checked: dropping `lived < RESTART_AFTER_MS` from the exit
+    // branch restarts this one and fails the status.
+    const { run, log } = spawnServe({ AGENTLINGS_RESTART_DELAY_MS: '10' }, ['--no-watch']);
+    expect(run.status).toBe(1);
+    expect(log).not.toContain('[dev-logged] restart');
+    expect(log).not.toContain('second-life');
+  });
+
+  it('dev gets none of it: without --no-watch the first death propagates', () => {
+    // Mutation-checked: dropping `!serve ||` restarts this one.
+    const { run, log } = spawnServe(SHRUNK, []);
+    expect(run.status).toBe(1);
+    expect(log).not.toContain('[dev-logged] restart');
+  });
+
+  /**
    * The launcher is plain node and cannot import `installpaths.ts` — it
    * *launches* tsx — so it reads AGENTLINGS_HOME itself. That is a second
    * derivation of the data directory, and the only thing stopping the two

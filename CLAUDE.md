@@ -87,11 +87,12 @@ Greenfield, started 2026-07-29. Solo developer (Brian).
 - `AGENTLING.md` — what one agentling can do, tagged Live / Partial / Not built.
 - `DECISIONS.md` — why each choice was made and what proved it. Opened on
   demand, never imported.
-- `HORDE.md` — the open board for the expansion line (D-235 → D-257): the
-  fourteen tickets in order, the three premises it had wrong, and how the
-  machine was left. Opened on demand. It exists because job deliverables live under the gitignored
+- `HORDE.md` — the board of the expansion line (D-235 → D-257), closed
+  2026-09-03 (D-281): the fourteen tickets in order, the three premises it
+  had wrong, and how the machine was left. Opened on demand. It exists because job deliverables live under the gitignored
   `.agentlings/`, so a plan nobody condensed into the repo is a plan one sweep
-  from gone.
+  from gone. The demand line that followed (D-283) lives on the issue
+  tracker, not in a file.
 
 @PROJECT.md
 

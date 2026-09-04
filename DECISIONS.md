@@ -292,6 +292,8 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-280 — 2026-09-03 — A push to `main` rebuilds strangers' installs, and that is accepted rather than pinned](#d-280--2026-09-03--a-push-to-main-rebuilds-strangers-installs-and-that-is-accepted-rather-than-pinned)
 - [D-281 — 2026-09-03 — The three applied-scenario tickets are archived, because every box left on them is owed by a person and not by the code](#d-281--2026-09-03--the-three-applied-scenario-tickets-are-archived-because-every-box-left-on-them-is-owed-by-a-person-and-not-by-the-code)
 - [D-282 — 2026-09-04 — One spine and five cutaways, drawn by who acts: the spine and the install in the README, the rest beside the claims in AGENTLING.md](#d-282--2026-09-04--one-spine-and-five-cutaways-drawn-by-who-acts-the-spine-and-the-install-in-the-readme-the-rest-beside-the-claims-in-agentlingmd)
+- [D-283 — 2026-09-04 — The demand line: the next work is Brian's own week, logged one issue per item, gated on a real counterparty exchange, because the score was mostly the building](#d-283--2026-09-04--the-demand-line-the-next-work-is-brians-own-week-logged-one-issue-per-item-gated-on-a-real-counterparty-exchange-because-the-score-was-mostly-the-building)
+- [D-284 — 2026-09-04 — The horde survives the night: a dead network is an error not a throw, both unattended sweeps catch, and `serve` restarts a server that lived past a minute](#d-284--2026-09-04--the-horde-survives-the-night-a-dead-network-is-an-error-not-a-throw-both-unattended-sweeps-catch-and-serve-restarts-a-server-that-lived-past-a-minute)
 
 ## By theme
 
@@ -418,7 +420,14 @@ entry updates one file rather than two.
   same server and log, no watching; and D-185, the *client's* own death — the
   first render gated on decoding every installed pack's plates with nothing
   bounding the wait, so a decode that never answered left a blank page with
-  no error in it at all, now bounded per image and again at the boot
+  no error in it at all, now bounded per image and again at the boot; and
+  D-284, the capture’s second catch — thirteen exits in ten days on one
+  shape, the voice sweep’s fetch to Telegram timing out and escaping a
+  `try … finally` with no catch, the last unnoticed for two days — answered
+  at the seam (`reach()` returns the error), in both unattended sweeps (a
+  catch each) and in the launcher, which under `serve` restarts a server
+  that lived past a minute, 5 s doubling to 5 min, no cap, and still stops on
+  a boot failure
 - **The listening surface** — D-127: the first architect run found `serve()`
   passed no hostname (0.0.0.0, netstat-confirmed, G7), and Brian's decision
   pinned it to 127.0.0.1 with vite's proxy dialing the address so a ::1
@@ -1266,6 +1275,17 @@ entry updates one file rather than two.
   the Santander chain summarised just above: the bank is **Banco de Chile**, so
   #20's third box is un-ticked and `BCI_LAYOUT` implements a real specification
   belonging to neither the assumed nor the used bank
+- **The demand line** — D-283, the record of the 2026-09-04 grilling, sixteen
+  answers one at a time: with the board empty the next work is **Brian’s own
+  week**, one issue per by-hand item (#41–#48 first), the glossary’s *Demand*
+  naming the two sources (what the app refused or failed, what Brian did by
+  hand), the compliance pile — Previred, F29, Pagos Masivos, Buk, the
+  facturas, each measured against its institution’s own documents — gated
+  behind **one real counterparty exchange promoted**, and D-253’s runtime
+  still unbuilt because Brian holds every thread; proven by the score’s own
+  composition (87 → 34 → 11 promoted as the building stopped, eight of
+  last week’s 34 his own work) and by the server found dead two days; then
+  D-284, the first ticket, above under the dev server’s own deaths
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project
 
@@ -24305,3 +24325,187 @@ files forwarded. The hand-drawn SVG draft that settled the shape is the
 artifact *One Sentence, End to End*
 (https://claude.ai/code/artifact/4a26170b-f20d-41e7-bd7f-be071e2187a0); the
 repo carries the Mermaid, not that page.
+
+## D-283 — 2026-09-04 — The demand line: the next work is Brian's own week, logged one issue per item, gated on a real counterparty exchange, because the score was mostly the building
+
+**Decided.** With the expansion line's board empty (D-281), the next line is
+**Brian's own work**, sourced from what he did by hand each week and named by
+him, **one GitHub issue per item** through the existing triage labels — the
+issues are the board, the decisions land here, and no new board file is
+opened (HORDE.md §1 and CLAUDE.md each carry one pointer). The glossary gains
+one term, **Demand**: work the horde should have done and did not, from two
+sources — what it refused or failed on a real level, counted by the app, and
+what Brian did by hand and names each week. The first log entry is ten
+items; the line's first tickets are, in order: **#41** the horde survives
+the night (D-284), **#42** the score counts a chain once (D-285), **#43** the
+counterparty thread (D-286), and **#44–#48** the five document reviews that
+need nothing built. The **compliance pile** — Previred, the F29, Pagos
+Masivos, Buk payroll, the facturas — **waits behind a gate: one real
+exchange with a counterparty, promoted**, visible in the Monday send. D-253
+stays closed: Brian holds every thread, the horde works inside it.
+
+Taken in the 2026-09-04 grilling — sixteen questions, one at a time, every
+recommendation accepted but one: the compliance pile was gated (Q12 c)
+rather than opened for the one item a session could finish alone.
+
+### What proved it
+
+**The score was mostly the building.** Promoted jobs and spend by week,
+Monday start, re-read from the job records and `ledger.jsonl` for this
+entry:
+
+| week | promoted | spend |
+|---|---|---|
+| 2026-08-10 | 26 | $76 |
+| 2026-08-17 | 87 | $139 |
+| 2026-08-24 | 34 | $40 |
+| 2026-08-31, to Friday | 11 | $5 |
+
+Of the 34 in the last full week, eleven were the daily briefs and the Monday
+sends, five were the horde checking its own briefs (D-285), about ten were
+proofs of features a session was building, and **eight were work Brian would
+otherwise have done by hand**: the Senior Suite report, the elevator pitch,
+the moat, the SOP, the reorder point, the dependency audit, a finances
+analysis, a page-16 question. This week every promoted job is a schedule
+firing and none was queued by hand. The refusals file holds thirteen rows,
+every one on a `d-259-refusals-proof` level — so the demand instrument
+D-249 built reads zero on real levels, and the not-built list's three items
+gated on it (media, the manager, outreach) had no trigger from that side.
+
+**The server was down, and had been for two days.** Nothing listened on
+:4600 when the grill began; the log's last line was `tsx exited code=1` at
+2026-09-02 16:08 UTC, and no daily brief fired on 09-03 or 09-04. The cause
+and the fix are D-284.
+
+**The ten items.** Payroll documents produced on Buk; social security paid
+in Previred; monthly taxes filed in the SII (F29); payroll paid with Pagos
+Masivos in Banco de Chile; the US branch's tax forms reviewed; the family
+branch's ultimate tax bill from the investment company in Panama; a pagaré
+renewed with creditors alongside the lawyer; the Reserva and Convenio de Pago
+for a new office signed; the SII facturas issued to the tenants; a new
+property appraisal reviewed. Against what is built they sort into three
+piles: five reviews that need only attachments and reading (Live); four that
+land on doors already built and archived — #18 (Buk, read-only by structure,
+D-266), #19 (the SII door, D-267; the F29 sits beside the register it
+reads), #20 (the wire file, D-268), and the facturas, which are the first
+act beyond send that D-250 named; and Previred, which has nothing.
+
+**Why the five reviews were by hand (Q9).** Brian's answer was habit *and*
+friction, and the friction was named: counterparties. The tax assessment is
+reviewed with the CPA, the pagaré with the lawyer, and the app "doesn't feel
+like it integrates seamlessly with operations with counterparties." In the
+code's own words: the mail door names attachments and never fetches them
+(`mail.ts`), a mail-fired job receives the one message and not the thread,
+and D-248 measured that the threaded reply cannot carry a file. Every
+exchange costs two manual hops and the horde forgets the previous one. That
+is D-286's brief, and it is the trigger D-253 named — *a real counterparty
+needing a second exchange* — arriving from the demand side rather than the
+refusal side.
+
+**The compliance pile, measured before it was gated.** A research pass
+against the institutions' own documents: Previred publishes its 105-field
+payroll file openly (fixed-width v82 of June 2025 and `;`-delimited v99 of
+September 2026), payment portal-only — a wire-file-shaped deliverable with
+nothing owed by a person; the SII has no F29 web service, its proposal is
+built from the purchases-and-sales register the door already reads with the
+certificate, so the figures are computable and the filing is Brian's; DTE
+emission needs CAF folios from the portal, a signed XML, the `DTEUpload`
+endpoint and a status query, and the library the door uses (`@emisso/sii`
+0.1.1) throws *Not implemented* on `uploadDte`, `applyTimbre` and
+`requestFolios` alike, while `@devlas/dte-sii` (active, 74 releases since
+March) does all three with the folio request driven through a headless
+browser. Recorded so the pile opens from facts when the gate lifts; none of
+it is built.
+
+### The sixteen answers
+
+Labelled as asked: the subject was Q1; then, on "ask one by one", the
+frontier's three were re-asked as Q1–Q3 and the count ran on from there.
+The subject: the next line, not a not-built item. Q1 survive the night by
+catch plus launcher restart, not catch alone, not a Monday drift line. Q2
+demand from Brian's week, not the desk proposing, not deeper briefs. Q3 a
+chain counted once. Q4 restart only past a sixty-second life, backoff, no
+cap. Q5 a `check` job is never counted; the checked job counts by Brian's
+verdict. Q6 the log is GitHub issues. Q7 the ten items. Q8 habit and
+counterparty friction. Q9 Brian holds the thread. Q10 attachments fetched
+on firing, no new tool. Q11 the whole thread rendered, not the app's own
+memory. Q12 the compliance pile waits. Q13 the gate is one promoted
+exchange. Q14 the term *Demand*, no new board file. Q15 the order #41, #42,
+#43, then the reviews. Q16 the tree confirmed as the shared understanding.
+
+### What is not built, said plainly
+
+No notification when the server restarts — the log line is the record, and
+the Monday send's lateness is the only trace a person sees. No compliance
+ticket is open; #18, #19 and #20 revive by `gh issue reopen` when the gate
+lifts and their owed items exist. The five reviews are jobs Brian queues,
+not code; their issues close on a promoted job.
+
+## D-284 — 2026-09-04 — The horde survives the night: a dead network is an error not a throw, both unattended sweeps catch, and `serve` restarts a server that lived past a minute
+
+**Decided.** The two loops that run with nobody watching — the voice sweep
+every fifteen seconds, the mail-trigger sweep every two minutes — may not
+take the server down. `pollVoice` and `downloadVoice` answer a rejected
+fetch as `{ error }` naming the step, through one `reach()` in `voice.ts`;
+both sweeps in `index.ts` catch whatever else escapes and say it once per
+distinct message. And under `npm run serve` the launcher
+(`server/scripts/dev-logged.mjs`) **restarts** a server that exited non-zero
+after living at least `RESTART_AFTER_MS` (60 s): delay `RESTART_DELAY_MS`
+(5 s) doubling to `RESTART_DELAY_MAX_MS` (5 min), reset once a life reaches
+`HEALTHY_MS` (1 h), **no cap**, one `[dev-logged] restart N` line per
+restart and `restart=N` on the start line. A process that died inside the
+threshold is a boot failure — the listen policy refusing (D-271), a broken
+`.env` — and the launcher stops with its code exactly as before. `dev` keeps
+tsx watch's own restarts and gets none of this. Ticket #41.
+
+### What proved it
+
+**Thirteen deaths, one shape.** `.agentlings/server.log` holds thirteen
+`tsx exited code=1` lines between 2026-08-26 11:30 and 2026-09-02 16:08 UTC,
+and every one that the log maps is preceded by the same stderr:
+`TypeError: fetch failed` with `connect ETIMEDOUT 149.154.166.110:443` —
+Telegram's API. The path: `sweepVoice` (D-265) awaits `pollVoice`, whose
+`fetch` rejects when the network times out instead of answering; the
+function's `try … finally` has no `catch`; `setInterval(() => void
+sweepVoice(), …)` drops the promise; Node exits on the unhandled rejection.
+The comment above `pollVoice` promised *"a failing call is an error with
+nothing advanced"* and the code honoured it only for a non-OK answer, never
+for no answer — a seam that learned only from clean answers, the kind D-119
+names. The last death went unnoticed for two days: no daily brief on 09-03
+or 09-04, the Monday send's row due again on 09-07. The mail path was
+checked the same way and already turns a dead network into an error at
+every seam (`fetchJson` in `mail.ts`, `tokenCall` in `google.ts`); its
+sweep got the catch anyway, because the timer's `void` is the same.
+
+**What the tests pin, and the mutants that died.** `voice.test.ts`: a
+`getUpdates` whose fetch throws is `Telegram unreachable for getUpdates:
+fetch failed`; a download whose file host throws names *the audio*.
+`dev-logged.test.ts` spawns the launcher for real with a fixture that dies
+once and lives the second time: under `--no-watch` with the clocks shrunk
+(`AGENTLINGS_RESTART_AFTER_MS=0`, `AGENTLINGS_RESTART_DELAY_MS=10`) the run
+ends with the second life's status 0 and the log holds `first-death`,
+`restart 1 in 0.01 s`, `restart=1` and `second-life`; with the default
+threshold the same fixture is a boot failure, status 1, no restart line;
+without `--no-watch` the first death propagates. Four mutants, each killed
+by exactly the test that claims it: the threshold dropped (the boot-failure
+test), the `!serve` guard dropped (the dev test), the clean-exit guard
+dropped (the restart test), `reach()` without its catch (both voice tests).
+30/30 across the three files, typecheck clean, restored from copies rather
+than `git checkout` (D-021).
+
+**Why a restart is safe here.** On boot the store closes runs the last
+process killed as *interrupted, cost unknown* (D-199) and harvests their
+changes; the cadence sweep fires each schedule that slept through its window
+once (D-103), which is how the 2026-08-31 report row fired at 18:12 UTC on a
+restart rather than at 12:05. D-140's objection was to restarts from file
+watching mid-session, which `serve` already disables; a restart after a
+crash kills nothing the crash had not already killed.
+
+### What is not built, said plainly
+
+Nothing tells Brian a restart happened; the log line is the record, and the
+Monday report's lateness is the only trace he sees (Q2's (c), declined as
+reporting drift that self-heals). No cap on restarts: a cap turns a flaky
+night back into a dead server. Boot failures are not retried. The first
+unattended restart in `server.log` is the live proof this entry still owes;
+the server was down when the fix landed and Brian restarts it himself.

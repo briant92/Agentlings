@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,6 +10,7 @@ import {
   normalise,
   readRecipes,
   rememberRecipe,
+  recipesFile,
   similarity,
   terms,
   updateRecipes,
@@ -166,11 +167,25 @@ describe('persistence', () => {
     expect(first[0].approach).toBe('old');
     writeRecipes(
       dir,
-      rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'new', at: 2 }),
+      rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'a longer new approach', at: 2 }),
     );
     const second = readRecipes(dir);
     expect(second).not.toBe(first);
-    expect(second[0].approach).toBe('new');
+    expect(second[0].approach).toBe('a longer new approach');
+  });
+
+  it('sees a rewrite that did not go through writeRecipes', () => {
+    writeRecipes(dir, rememberRecipe([], { prompt: 'x', role: 'worker', approach: 'old', at: 1 }));
+    const first = readRecipes(dir);
+    writeFileSync(
+      recipesFile(dir),
+      JSON.stringify([
+        { key: 'x', terms: [], role: 'worker', approach: 'external rewrite', hits: 0, learnedAt: 1 },
+      ]),
+    );
+    const second = readRecipes(dir);
+    expect(second).not.toBe(first);
+    expect(second[0].approach).toBe('external rewrite');
   });
 
   it('does not write into a held recipe array when recording a hit', () => {

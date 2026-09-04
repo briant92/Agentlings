@@ -244,7 +244,8 @@ export function recipesFile(levelDir: string): string {
  * never parsed twice. No clock staleness: recipes do not go stale by age.
  *
  * The array is shared between calls; readers must not write into it.
- * `updateRecipes` copies before handing the array to `mutate`.
+ * `updateRecipes` copies before handing the array to `mutate`. `writeRecipes`
+ * drops the entry, so a same-size counter bump in the same tick is seen.
  */
 const held = new Map<string, { mtimeMs: number; size: number; recipes: Recipe[] }>();
 
@@ -277,6 +278,7 @@ export function readRecipes(levelDir: string): Recipe[] {
 export function writeRecipes(levelDir: string, recipes: Recipe[]): void {
   mkdirSync(levelDir, { recursive: true });
   writeFileSync(recipesFile(levelDir), JSON.stringify(recipes, null, 2));
+  held.delete(levelDir);
 }
 
 /**

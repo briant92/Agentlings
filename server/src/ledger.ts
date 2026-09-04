@@ -346,11 +346,6 @@ export function ledgerFile(sandboxRoot: string): string {
   return path.join(sandboxRoot, 'ledger.jsonl');
 }
 
-export function append(sandboxRoot: string, entry: LedgerEntry): void {
-  mkdirSync(sandboxRoot, { recursive: true });
-  appendFileSync(ledgerFile(sandboxRoot), `${JSON.stringify(entry)}\n`);
-}
-
 /**
  * Parsed rows of each install's ledger, kept between calls.
  *
@@ -358,11 +353,19 @@ export function append(sandboxRoot: string, entry: LedgerEntry): void {
  * whole file each time. Keyed on mtime and size, so a rewrite is seen on the
  * next call and a file that has not moved is never parsed twice. No clock
  * staleness: unlike the store index, a ledger does not go stale by age.
+ * `append` and `rewrite` drop the entry, so a same-size write in the same
+ * tick cannot serve the previous parse.
  *
  * The arrays are shared between calls; every consumer maps or filters them
  * and none writes into them.
  */
 const held = new Map<string, { mtimeMs: number; size: number; rows: LedgerEntry[]; closed: LedgerEntry[] }>();
+
+export function append(sandboxRoot: string, entry: LedgerEntry): void {
+  mkdirSync(sandboxRoot, { recursive: true });
+  appendFileSync(ledgerFile(sandboxRoot), `${JSON.stringify(entry)}\n`);
+  held.delete(sandboxRoot);
+}
 
 function loadRows(sandboxRoot: string): { rows: LedgerEntry[]; closed: LedgerEntry[] } {
   const file = ledgerFile(sandboxRoot);
@@ -414,6 +417,7 @@ function rewrite(sandboxRoot: string, rows: readonly LedgerEntry[]): void {
   const sibling = `${file}.rewriting`;
   writeFileSync(sibling, rows.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
   renameSync(sibling, file);
+  held.delete(sandboxRoot);
 }
 
 /**

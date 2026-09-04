@@ -594,6 +594,57 @@ export function detectChannelAsk(
 }
 
 /**
+ * A channel counts only if it is wired — there is a client for it in the
+ * transport table. The one answer the routes and the ways in get to that
+ * question (#50): a pick, a firing's stored channel and a party's override
+ * are all checked here, never against the table from a handler, so the
+ * desk, Start and a schedule cannot disagree about which names exist.
+ *
+ * An own property, not a lookup: the table is a plain object, so a bare
+ * `CHANNELS[name]` answered true for "toString" — a pick nobody offered,
+ * settled as a channel and carried into the job. Found the day the rule
+ * moved here and got a test.
+ */
+export function isWiredChannel(name: string): boolean {
+  return Object.hasOwn(CHANNELS, name);
+}
+
+/**
+ * Every channel a sentence settles (D-179), the settled one first.
+ *
+ * The others come from the same ask the card was built from, and only ones
+ * that exist and are not the settled one — a `planned` or `never` channel
+ * fell out of the ask already, and adding it here would put a contract in
+ * the brief for a client that cannot send. A caller's explicit pick keeps
+ * its meaning: it settles which channel leads, it does not cancel the rest
+ * of the sentence. A settled channel is not required for the rest to ride:
+ * "send it on WhatsApp and email Ana" settles nothing (WhatsApp is refused)
+ * while Gmail is perfectly sendable.
+ *
+ * One function because every way in needs it — `queueSentence` for every
+ * ordinary job, the party ways in for the channels the gather will carry —
+ * and the desk reads the same list for what the card says Start would
+ * carry; two derivations of one list is D-030's mistake. Here rather than
+ * in the routes' file so the rule is reachable by a test (#50).
+ */
+export function settledChannels(
+  detected: ChannelAsk | null,
+  requested?: string,
+): { channel?: string; carried: string[] } {
+  const fromAsk = requested ? null : detected;
+  const channel =
+    requested && isWiredChannel(requested)
+      ? requested
+      : fromAsk?.channel && isWiredChannel(fromAsk.channel)
+        ? fromAsk.channel
+        : undefined;
+  const alsoWired = (detected?.also ?? [])
+    .map((option) => option.channel)
+    .filter((name) => isWiredChannel(name) && name !== channel);
+  return { channel, carried: [...(channel ? [channel] : []), ...alsoWired] };
+}
+
+/**
  * A prompt that asks for what was sent before (D-094). Deterministic like
  * every desk word list; a stray "previous" in an unrelated send costs only
  * a brief that carries one extra body the run ignores.

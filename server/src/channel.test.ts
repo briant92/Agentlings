@@ -10,10 +10,12 @@ import {
   legendAudience,
   droppedChannels,
   filelessChannels,
+  isWiredChannel,
   mentionsChannel,
   mergeSpans,
   RESEND_WORDS,
   sentenceSpans,
+  settledChannels,
 } from './channel';
 import type { Connection } from './connections';
 
@@ -797,6 +799,87 @@ describe('the channels an ask could not take', () => {
     );
     // Still not a claim where the object is a thing rather than a person.
     expect(ask('email Ana the report and telegram usage for the month')?.also).toBeUndefined();
+  });
+});
+
+describe('settledChannels — every channel a sentence settles (D-179)', () => {
+  it('the detected ask’s channel leads when there is no pick', () => {
+    const got = ask('telegram Sammy the total', CONNECTED, TOKEN);
+    expect(settledChannels(got)).toEqual({ channel: 'telegram', carried: ['telegram'] });
+    // Wired is enough — an unconnected Telegram still leads, because Start
+    // queues the job anyway and the connection happens before approval.
+    expect(settledChannels(ask('telegram Sammy the total')).channel).toBe('telegram');
+  });
+
+  it('a refused ask leads nothing, and the rest of the sentence still rides', () => {
+    // The doc comment’s own example: WhatsApp is refused, Gmail is sendable.
+    expect(settledChannels(ask('send it on WhatsApp and email Ana'))).toEqual({
+      channel: undefined,
+      carried: ['gmail'],
+    });
+  });
+
+  it('a caller’s pick supersedes the ask, and counts only if wired', () => {
+    // The pick the desk sends most: the connectable card’s only option is
+    // the asked channel itself, and picking it changes nothing.
+    expect(settledChannels(ask('telegram Sammy the total'), 'telegram')).toEqual({
+      channel: 'telegram',
+      carried: ['telegram'],
+    });
+    // Picking on the fork card (D-093’s mechanism): the pick leads.
+    expect(settledChannels(ask('send it on WhatsApp and email Ana'), 'gmail')).toEqual({
+      channel: 'gmail',
+      carried: ['gmail'],
+    });
+    // Picking the second channel makes the asked one the dropped one (D-178),
+    // and the picked one is carried once, not once as the pick and again as
+    // the also.
+    const two = ask('telegram Sammy the UF and email the figures to Ana', CONNECTED, TOKEN);
+    const picked = settledChannels(two, 'gmail');
+    expect(picked).toEqual({ channel: 'gmail', carried: ['gmail'] });
+    expect(droppedChannels(two, picked.carried)).toEqual([{ channel: 'telegram', label: 'Telegram' }]);
+    // A pick the app cannot send on leads nothing and does not fall back to
+    // the ask — the pick was the caller’s answer, and the answer was wrong.
+    expect(settledChannels(ask('telegram Sammy the total', CONNECTED, TOKEN), 'sms')).toEqual({
+      channel: undefined,
+      carried: [],
+    });
+  });
+
+  it('two channels both ride, the settled one first, and an unwired second falls out', () => {
+    expect(
+      settledChannels(ask('telegram Sammy the UF and email the figures to Ana', CONNECTED, TOKEN)),
+    ).toEqual({ channel: 'telegram', carried: ['telegram', 'gmail'] });
+    // SMS is planned, so the ask carries it and the job cannot — the brief
+    // must not promise a contract to a client that does not exist.
+    expect(settledChannels(ask('email Ana the note and sms me when it lands'))).toEqual({
+      channel: 'gmail',
+      carried: ['gmail'],
+    });
+  });
+
+  it('a confirmed near-miss counts like a detection (D-093)', () => {
+    // The 80¢ sentence: the typo’d verb detects nothing, the user confirms
+    // Telegram on the question line, and the pick settles it like a claim.
+    const typo = ask('Sen me a Telegram with the latest Warzone meta', CONNECTED, TOKEN);
+    expect(typo).toBeNull();
+    expect(settledChannels(typo, 'telegram')).toEqual({ channel: 'telegram', carried: ['telegram'] });
+    // No ask and no pick settles nothing at all.
+    expect(settledChannels(null)).toEqual({ channel: undefined, carried: [] });
+  });
+});
+
+describe('isWiredChannel — what the routes ask instead of reading the transport table', () => {
+  it('is true for a channel with a client, whether or not it is connected', () => {
+    expect(isWiredChannel('telegram')).toBe(true);
+    expect(isWiredChannel('gmail')).toBe(true);
+  });
+
+  it('is false for the planned and the refused, and for a name that is nothing', () => {
+    expect(isWiredChannel('sms')).toBe(false);
+    expect(isWiredChannel('whatsapp')).toBe(false);
+    expect(isWiredChannel('')).toBe(false);
+    expect(isWiredChannel('toString')).toBe(false);
   });
 });
 

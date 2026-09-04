@@ -125,7 +125,6 @@ import {
   planParty,
 } from './party';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
-import { CHANNELS } from './channels';
 import { wantsWithholding } from './redact';
 import { recordRefusals, refusalRows } from './refusals';
 import {
@@ -193,8 +192,10 @@ import {
   detectChannelAsk,
   droppedChannels,
   filelessChannels,
+  isWiredChannel,
   mentionsChannel,
   sentenceSpans,
+  settledChannels,
 } from './channel';
 import {
   closeBlocker,
@@ -1733,7 +1734,7 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // channel, so the send questions come from the server like any other —
   // honoured only for channels that exist, like every pick.
   const confirmed =
-    typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
+    typeof body.channel === 'string' && isWiredChannel(body.channel) ? body.channel : undefined;
   const matchedDraft = planWork(
     matcher(),
     registry.list(),
@@ -1764,16 +1765,10 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   // a send the desk holds whole is composed in code (D-097), and the card has
   // to say so while the user is still deciding.
   const askChannel = channelAsk?.channel ?? channelAsk?.asked ?? confirmed;
-  // The channels Start would carry (D-179) — the same wired-only rule
+  // The channels Start would carry (D-179) — settled by the one function
   // `queueSentence` settles by, so the card and the queued job agree about
   // how many sends this is.
-  const askChannels = [
-    ...(channelAsk?.channel && CHANNELS[channelAsk.channel] ? [channelAsk.channel] : []),
-    ...(confirmed && CHANNELS[confirmed] && confirmed !== channelAsk?.channel ? [confirmed] : []),
-    ...(channelAsk?.also ?? [])
-      .map((option) => option.channel)
-      .filter((name) => CHANNELS[name] && name !== channelAsk?.channel && name !== confirmed),
-  ];
+  const askChannels = settledChannels(channelAsk, confirmed).carried;
   const names = rosterNames(askChannel);
   const send = sendFacts(text, { channel: askChannel, names }, body.answers);
   const refuses = refusalRows(text);
@@ -1924,39 +1919,6 @@ function decodeAttachments(
 }
 
 /**
- * Every channel a sentence settles (D-179), the settled one first.
- *
- * The others come from the same ask the card was built from, and only ones
- * that exist and are not the settled one — a `planned` or `never` channel
- * fell out of the ask already, and adding it here would put a contract in
- * the brief for a client that cannot send. A caller's explicit pick keeps
- * its meaning: it settles which channel leads, it does not cancel the rest
- * of the sentence. A settled channel is not required for the rest to ride:
- * "send it on WhatsApp and email Ana" settles nothing (WhatsApp is refused)
- * while Gmail is perfectly sendable.
- *
- * One function because two callers need it — queueSentence for every
- * ordinary job, queueParty for the channels the gather will carry — and two
- * derivations of one list is D-030's mistake.
- */
-function settledChannels(
-  detected: ReturnType<typeof detectChannelAsk>,
-  requested?: string,
-): { channel?: string; carried: string[] } {
-  const fromAsk = requested ? null : detected;
-  const channel =
-    requested && CHANNELS[requested]
-      ? requested
-      : fromAsk?.channel && CHANNELS[fromAsk.channel]
-        ? fromAsk.channel
-        : undefined;
-  const alsoWired = (detected?.also ?? [])
-    .map((option) => option.channel)
-    .filter((name) => CHANNELS[name] && name !== channel);
-  return { channel, carried: [...(channel ? [channel] : []), ...alsoWired] };
-}
-
-/**
  * One sentence becomes one queued job — the body every way in shares.
  *
  * The /work route and the schedule sweep both call this (D-103), for
@@ -2078,7 +2040,7 @@ function queueSentence(
   // (TEAMWORK T2): hands carry [] because a hand never sends, and the
   // gather carries what Start settled for the whole request.
   const carried = opts.channelsOverride
-    ? opts.channelsOverride.filter((name) => CHANNELS[name])
+    ? opts.channelsOverride.filter(isWiredChannel)
     : settled;
   const channels = carried.length > 0 ? carried : undefined;
   // Read from the same sentence and the same answers the card was quoted on,
@@ -2994,7 +2956,7 @@ app.post('/api/levels/:lid/schedules', async (c) => {
   // is dropped, never stored — a firing replays what Start carried rather
   // than re-detecting (D-079's shape, frozen at creation).
   const channel =
-    typeof body.channel === 'string' && CHANNELS[body.channel] ? body.channel : undefined;
+    typeof body.channel === 'string' && isWiredChannel(body.channel) ? body.channel : undefined;
   // A report has nowhere to go without a real channel — refused, where every
   // other row would quietly drop the name and fire as a draft.
   if (report && !channel) {

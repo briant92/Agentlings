@@ -259,7 +259,7 @@ the app's memory is not the repository's.
     level.json              name, project, theme, repo path
     roster.json             everyone hired here, resting crew included
     jobs.json               the queue, so a restart resumes; each verdict stamped when and by whom (D-260)
-    schedules.json          sentences queued again on a cadence (D-103); a `report: realwork` row sends the week's score (D-261)
+    schedules.json          sentences queued again on a cadence (D-103); a `report: realwork` row sends the week's score (D-261; a check of another job never counts, D-285)
     KNOWLEDGE.md            what this level's crew has learned
     recipes.json            approaches worth reusing, and how often they land
     store-index.json        your own notes, indexed — source and date per entry
@@ -438,7 +438,7 @@ tried, measured and rejected is in `DECISIONS.md`:
 - M5.9 reading the crew record → D-056, D-057
 - M5.10 reading what you keep → D-058–D-062
 - M5.11 connections that send → D-075–D-077, D-097 · the wire file, a batch composed here and authorised at the bank by hand → D-219, D-251, D-268
-- M5.12 the recurrence timer → D-103 · mail triggers and one reply → D-248 ·
+- M5.12 the recurrence timer → D-103 · mail triggers and one reply → D-248 · the counterparty thread: a firing carries the mail's attachments and the conversation so far, and the reply may carry files → D-286 ·
   a rule holds only the doors it names → D-254 · a voice note is a sentence → D-265
 - M5.13 the acting surface finished → D-104
 - M5.14 composite work → D-105

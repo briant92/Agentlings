@@ -131,6 +131,14 @@ Every ticket is on github.com/briant92/Agentlings, labelled `ready-for-agent`,
 with its blocked-by edges native. The order is the order to take them; a
 ticket with no blocker can be taken any time after #7.
 
+**#18, #19 and #20 were archived 2026-09-03 (D-281)** — closed as *not
+planned*, `ready-for-agent` removed, because all three are code-complete
+(re-proven 30/30, 33/33 and 43/43 that morning) and every box left on them is
+owed by a person: a Buk tenant and read key, Brian's `.p12`, and a Banco de
+Chile layout PDF behind a bot wall. Their rows below stand as written, each
+closing comment names the trigger that revives it, and `gh issue reopen <n>`
+brings one back whole. **The board is empty — the line has no open ticket.**
+
 **#22 sits at the end of the table and was not one of the fourteen** — it was
 opened later, off #11's own finding: the desk counted a refusal and said
 nothing about it. A ticket added this way belongs here rather than in a new

@@ -290,6 +290,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-278 — 2026-09-01 — The verdict on a job is one module with two callers: the route and the standing approval run the same gates, acts and settlement](#d-278--2026-09-01--the-verdict-on-a-job-is-one-module-with-two-callers-the-route-and-the-standing-approval-run-the-same-gates-acts-and-settlement)
 - [D-279 — 2026-09-02 — The IaC file names the reference install exactly, because Railway matches by name and a mismatch is a delete — and the four properties left over are ones a template and one install can never share](#d-279--2026-09-02--the-iac-file-names-the-reference-install-exactly-because-railway-matches-by-name-and-a-mismatch-is-a-delete--and-the-four-properties-left-over-are-ones-a-template-and-one-install-can-never-share)
 - [D-280 — 2026-09-03 — A push to `main` rebuilds strangers' installs, and that is accepted rather than pinned](#d-280--2026-09-03--a-push-to-main-rebuilds-strangers-installs-and-that-is-accepted-rather-than-pinned)
+- [D-281 — 2026-09-03 — The three applied-scenario tickets are archived, because every box left on them is owed by a person and not by the code](#d-281--2026-09-03--the-three-applied-scenario-tickets-are-archived-because-every-box-left-on-them-is-owed-by-a-person-and-not-by-the-code)
 
 ## By theme
 
@@ -1253,6 +1254,14 @@ entry updates one file rather than two.
   shape with Start never disabled and one tail saying so once, a
   never-channel left to the ask card that has stated it since D-079, and
   nothing counted from a route that re-runs on every keystroke
+  — and D-281, the three applied-scenario tickets **archived** 2026-09-03:
+  #18, #19 and #20 closed as *not planned* with `ready-for-agent` removed,
+  because all three are code-complete (30/30, 33/33, 43/43 re-proven that
+  morning) and every box left on them is owed by a person — a Buk tenant, a
+  `.p12`, a PDF behind a bot wall — never by a session. Its own note supersedes
+  the Santander chain summarised just above: the bank is **Banco de Chile**, so
+  #20's third box is un-ticked and `BCI_LAYOUT` implements a real specification
+  belonging to neither the assumed nor the used bank
 
 ## D-001 — 2026-07-29 — Named "Agentlings"; separate from the maintainer's other project
 
@@ -24141,3 +24150,84 @@ upgraded them would be the exact fault this log exists to prevent:
 Trial versus Hobby is also unknown, so the *unverified-trial* port restriction
 named on #24 remains strictly unmeasured — what was measured is that the port
 survived on one real outside account.
+
+## D-281 — 2026-09-03 — The three applied-scenario tickets are archived, because every box left on them is owed by a person and not by the code
+
+**Decided:** #18 (Buk), #19 (the SII register) and #20 (the wire file) are
+closed as *not planned* and stripped of `ready-for-agent`. Work goes back to
+the generalist app; each ticket returns, whole, when its scenario is real.
+Nothing is deleted and nothing is `wontfix`: D-266, D-267 and D-268 stand,
+their code is untouched, and `gh issue reopen <n>` restores the body, the
+comments and the ticks exactly as they are.
+
+### What forced the question
+
+The open board held three tickets and not one of them could move. All three are
+code-complete, and each was re-proven on the morning it was archived — no
+server, no account, no credential, nothing written:
+
+    npx tsx scripts/prove-buk-door.mts    PASS 30/30
+    npx tsx scripts/prove-sii-door.mts    PASS 33/33
+    npx tsx scripts/prove-nomina.mts      PASS 43/43
+
+So the boxes left open are not a code debt. **Every one of them is owed by a
+person, and by the same person**, which is what makes them one decision rather
+than three:
+
+| Ticket | Boxes left | Owed by |
+|---|---|---|
+| #18 Buk | a modify-scoped key proving the write is unreachable; the add through the form; one real HQ job; the shelf entry | a Buk **tenant subdomain and read key** |
+| #19 SII register | one real HQ job listing a period's received DTEs; the shelf entry | Brian's **`.p12` and its password** in `.env` |
+| #20 The wire file | the operative bank's specification; the bank's parser accepting a composed file; (deferred) one real batch | **a human browser** — `PagosMasivosV4.pdf` is behind Incapsula |
+
+That makes `ready-for-agent` — *fully specified, ready for an AFK agent* —
+actively false on all three. No agent here can obtain a tenant, produce a
+certificate, or defeat a bot wall that already refused curl, headless Edge and
+headed Edge on the same day. A label that invites a pick-up which can only
+stall is worse than no label, and an open ticket nothing can move costs
+attention every time the board is read.
+
+### The alternative, and why it was declined
+
+Leave the three open under a new `parked` label. Declined because it keeps the
+exact cost the archive is meant to remove — they stay in the open count and in
+every `gh issue list` — while buying only a reminder that GitHub already gives
+for free: a closed issue keeps its body, its comments, its ticked boxes and its
+blocked-by edges, and comes back with one command. The reminder that actually
+matters is not the row; it is the *trigger*, and each closing comment names its
+own in a sentence.
+
+Closing without this entry was the other option, and is the one PROJECT.md
+forbids: a future session would find three tickets closed as *not planned* and
+no reason, which reads as abandonment rather than a park.
+
+### #20 is parked in a different state from the other two
+
+#18 and #19 are simply waiting for a credential. #20 had its **third box
+un-ticked the day before it was archived**: D-268 was built and reasoned
+against Santander, and payroll actually goes through Banco de Chile, so the
+chain *Santander publishes no layout → BCI's published specification is the one
+implemented → Santander joins as a second column table* is about an institution
+that is not in the picture. **This supersedes the Santander summary of D-268 in
+the By theme index above**, which is left as written because entries are not
+rewritten here.
+
+What survives is the part that was built bank-independent on purpose:
+`NominaLayout` (`server/src/nomina.ts:98`) is a bank name, a delimiter and an
+ordered column list, and `LAYOUTS` is a lookup, so Banco de Chile is a second
+table entry rather than a rebuild. `BCI_LAYOUT` remains a correct, proven
+implementation of a real published specification — it is simply not this
+operator's bank. The falsifier that could still turn the second table into a
+rebuild is named on the ticket and kept here: whether BdC's file opens with a
+header or control record. BCI's does not; many Chilean formats do.
+
+### What the archive does not change
+
+- **D-219 stands, and is still measured rather than asserted.** The re-run walks
+  262 sources across server, web, scripts and packages for a payment-shaped
+  path and finds none, on a check proven able to catch one.
+- **`AGENTLING.md` needs no edit.** It is derived from the code, the code did
+  not move, and the two doors read Live with their owed boxes named — which is
+  what they still are.
+- **The payee allowlist and the whole-file refusal at review are live**, ticked,
+  and unaffected by which bank's column table is loaded.

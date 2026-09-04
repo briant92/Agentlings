@@ -296,6 +296,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-284 — 2026-09-04 — The horde survives the night: a dead network is an error not a throw, both unattended sweeps catch, and `serve` restarts a server that lived past a minute](#d-284--2026-09-04--the-horde-survives-the-night-a-dead-network-is-an-error-not-a-throw-both-unattended-sweeps-catch-and-serve-restarts-a-server-that-lived-past-a-minute)
 - [D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict](#d-285--2026-09-04--the-score-counts-a-chain-once-a-check-step-is-never-counted-and-the-job-it-checked-counts-by-brians-own-verdict)
 - [D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread](#d-286--2026-09-04--the-counterparty-thread-a-mail-firing-carries-its-attachments-and-the-conversation-so-far-a-reply-may-carry-files-and-brian-holds-every-thread)
+- [D-287 — 2026-09-04 — Intake: a sentence becomes a job through one reading, shown at the desk and performed by every way in](#d-287--2026-09-04--intake-a-sentence-becomes-a-job-through-one-reading-shown-at-the-desk-and-performed-by-every-way-in)
 
 ## By theme
 
@@ -310,6 +311,13 @@ entry updates one file rather than two.
   `pushRemote` the only injected adapters; `isResolvable` joining the shared
   status predicates; the entry written before the code so a mutation round
   cannot eat it
+- **Intake: a sentence becomes a job** — D-287: the preview route and
+  `queueSentence` were two hand-written derivations of one answer, with six
+  `queue.add` sites and seven copies of add-then-emit around them; they
+  become one module with two verbs, `read` returning the card and `queue`
+  performing it, the shape chosen inside among the caller's admissions; the
+  catalog declared once beside `InstallContext`; the entry written before
+  the code, as D-278 was
 - **The engine, and choosing a model** — D-277: the model engine became a
   catalog connection so the secret drawer could take its key, and which
   executor runs is asked when a job starts rather than at boot — a hosted
@@ -24658,3 +24666,132 @@ by nothing but its own length through the renderer's per-message trim.
 Standing approval to a counterparty is D-082's existing mechanism and has
 not been exercised on a lawyer or an accountant. No rule is armed yet on a
 counterparty's address; Brian arms it in Settings like the two on HQ.
+
+## D-287 — 2026-09-04 — Intake: a sentence becomes a job through one reading, shown at the desk and performed by every way in
+
+From the 2026-09-04 architecture review, the top recommendation of its seven
+candidates; D-278 Q4 and Q8 reserved this seam by name. Written before the
+code by decision, as D-278 was (answer 9 below), so the terms survive a
+mutation round's `git checkout` (D-021).
+
+### The hole
+
+`index.ts` is the one server module with no test file — 5,276 of the
+server's 37,272 non-test lines, 33 of the last 120 commits — and the glue
+that turns a sentence into a job is the largest piece of it. Measured
+2026-09-04 on `164f4fb`:
+
+- **Two derivations of one answer.** `POST /api/levels/:lid/work/plan`
+  (252 lines) and `queueSentence` (208 lines) call the same seventeen
+  functions in two hand-written orders, and the code says four times that
+  they must agree (`index.ts:1768`, `1832`, `2084`, and `queueSentence`'s
+  own comment). Nothing holds them to it but those comments; D-097, D-179
+  and D-259 are each a time they did not.
+- **Seven ways in, one glue.** `queueSentence`'s comment calls it "the body
+  every way in shares"; there are six `rt.queue.add(` sites in the file
+  (1623, 2109, 3117, 3177, 3259, 4215) and one is inside it. `POST
+  /api/levels/:lid/jobs` is a bare add that counts no refusals, splits no
+  chain and detects no channel. Add-then-emit is written seven times (1633,
+  2173, 3135, 3226, 3275, 4272, 5036).
+- **Rules in the callers.** "A chain split wins, then a party, then plain" is
+  written in the preview and again in Start; the firing sweeps take a third
+  path that never queues a party (TEAMWORK T2). `recordRefusals` carries its
+  rule in prose at three sites. "A channel counts only if it is wired" is
+  `CHANNELS[…]` nine times across four handlers.
+- **Interfaces wide enough to be the bug.** `quoteFor_` takes ten positional
+  arguments, five optional, and its own comments say forgetting the seventh,
+  eighth or ninth each reproduced a priced fault (D-027, D-049, D-074,
+  D-097); eleven call sites, four omit the tail. `planWork` has eleven call
+  sites and every one passes the same first three arguments.
+- **What a test can reach.** `planWork`, `quoteFor_`, `clarificationLines`,
+  `detectChannelAsk`, `splitSteps` and `planParty` each have a test file. The
+  one thing that matters — this sentence becomes this job — has none,
+  because it exists only as glue in the file no test mounts (D-242).
+
+The deletion test answers in the direction wanted: delete `queueSentence`
+and its complexity reappears at nine call sites, and the four hand-rolled
+siblings already show that scattering is the live state, not a hypothetical.
+
+### The decision, in the nine answers it was settled by
+
+Grilled one question at a time on 2026-09-04; every answer was the
+recommendation.
+
+1. **Scope: the nine ways in through `queueSentence`, plus the preview
+   route.** Start, the chain's next step, the check pass, a party's hands,
+   plan and gather, pack authoring, the schedule firing and the mail-trigger
+   firing. Redo, reply and continue stay as they are: they are "the same job
+   again" under a different quote rule (D-074, D-139) and D-030 warns
+   against folding them in because they sound alike. The bare add route
+   stays too: three prove scripts are its only callers, and changing what it
+   queues would change what they prove. Both are named here as the
+   follow-up.
+2. **Two verbs, one value, and the value is the card.** `read(text, opts)`
+   is pure and returns a reading carrying everything the preview shows
+   today — the shape, the plan, the settled channels and the names, the
+   send facts, the quote, the questions, the refusal rows, the cadence and
+   trigger it read, the fileless-channel, organize and reconcile flags, the
+   mention and the dropped channels. `queue(reading, extras)` performs it:
+   one add for plain, step one with the rest for a chain, the hands for a
+   party, then the queued event. Preview = parse → read → json. Start =
+   parse → read → queue → json. Start never receives the card back from the
+   desk; it re-reads from the text, the answers and the picked channel, so
+   the server stays authoritative and "what the desk showed is what gets
+   queued" holds by construction rather than by comment.
+3. **`read` decides the shape, among the caller's admissions.** The desk
+   admits a party and may ask for the plan; a firing admits plain and chain
+   only; `single` admits plain only. The precedence — chain first, then
+   party, then plain — lives in one place, and a firing cannot drift into a
+   party because it cannot admit one, which is T2 kept.
+4. **Refusal counting stays Start's act**, fed from the reading's rows: one
+   read serves the card and the count (D-259), and firings, chain steps and
+   hands never count, as today. `queue` carries no ledger write that is
+   about the desk rather than the job.
+5. **The context is `InstallContext` plus the catalog.** The catalog is
+   `QuoteContext` — `sandboxRoot`, `registry`, `surfaceFor`, `searchToken`,
+   built once today as `QUOTE_CTX` — grown by a `matcher()` thunk, because
+   the match index is reset when the library installs something and nothing
+   install-level may be cached past a Settings change (D-277). Declared
+   once, taken by intake now and by the executors when their candidate
+   lands. `InstallContext` is not widened: the verdict never reads a role,
+   and widening would have cost its 65 tests a registry each.
+6. **Intake**, in `server/src/intake.ts`; a caller is a **way in**. Both
+   are CONTEXT.md terms as of this entry.
+7. **The verdict's `queueParty` thunk stays** and its body becomes one call
+   into intake's verb for a reviewed plan's hands. D-278 Q4 said the module
+   replaces the thunk; it is met in substance — the glue it pointed at no
+   longer lives in `index.ts` — while the verdict's seam, with its bound
+   call and its recording fake, is untouched.
+8. **Tests through the two verbs only.** `intake.test.ts` against a temp
+   level with a fake catalog: a case per shape, per way in, per admission;
+   the pins for the rules that move inside (chain wins over party, add then
+   emit, the card's quote is the queued quote, a firing cannot become a
+   party, `single` skips both). Then a mutation round asserting each
+   mutation landed (D-278's harness). The module tests underneath survive:
+   those modules are being called, not collapsed. No route test (D-242).
+   `prove-realwork.mjs` and `prove-trigger-ui.mjs` stay the live gate.
+9. **Record first, four tickets, code when the server stops.** This entry
+   and the glossary today; a spec issue and a chain with native blocked-by
+   edges: (1) `settledChannels` moves to `channel.ts`, the review's
+   candidate 4, as the cheap proof of the seam; (2) the catalog context and
+   `read`, with the preview route as its first caller — the only way in
+   that writes nothing; (3) `queue`, with Start and the nine ways in as
+   callers, and the thunk rebound; (4) the two firings, the mutation round,
+   and this entry's *What proved it*. One push per ticket.
+
+Settled without a question, each on an existing precedent: the level slice
+is structural like `VerdictRuntime` (meta, dir, queue, event log, the
+crew), satisfied by `LevelRuntime`; the preview's wire shape is unchanged,
+the reading serialising to today's JSON plus `shape`, so no client edit is
+in scope; request parsing stays in the routes — attachment decoding, the
+voice note and its spend, the repo-path and folder checks — and intake
+begins at a sentence and options; the chain, check and party ways in
+already know their shape and role and pass them as options, honoured as
+`queueSentence` honours them today.
+
+### What is not built, said plainly
+
+Nothing of the code, as of this entry. `index.ts` is unchanged; the server
+was listening when this was written and no server source is edited while
+it runs. *What proved it* is appended by the fourth ticket with the counts
+re-read from source.

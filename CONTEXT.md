@@ -162,3 +162,19 @@ a licensed act, an act on the world, a send on a channel refused by decision
 — or names a capability graded not built, whether or not it is queued anyway.
 Ordinary work is never one.
 _Avoid_: rejection, error, blocked job
+
+**Intake**:
+What the horde does with a sentence before any job exists: one reading of
+it — the shape it licenses (plain, chain, party or party plan), its role,
+the channels it settles, its quote and its questions — shown at the desk as
+the card and performed at Start or at a firing. The card and the job are
+the same reading, never two.
+_Avoid_: parsing, planning, submission, dispatch, desk (the surface that
+shows a reading)
+
+**Way in**:
+Any caller that hands intake a sentence — Start, a schedule or trigger rule
+firing, a chain queuing its next step, a check pass, a party's hands and
+gather, pack authoring. A way in says which shapes it admits; it never
+decides the shape itself.
+_Avoid_: entry point, route (for the notion), source

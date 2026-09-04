@@ -291,6 +291,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-279 — 2026-09-02 — The IaC file names the reference install exactly, because Railway matches by name and a mismatch is a delete — and the four properties left over are ones a template and one install can never share](#d-279--2026-09-02--the-iac-file-names-the-reference-install-exactly-because-railway-matches-by-name-and-a-mismatch-is-a-delete--and-the-four-properties-left-over-are-ones-a-template-and-one-install-can-never-share)
 - [D-280 — 2026-09-03 — A push to `main` rebuilds strangers' installs, and that is accepted rather than pinned](#d-280--2026-09-03--a-push-to-main-rebuilds-strangers-installs-and-that-is-accepted-rather-than-pinned)
 - [D-281 — 2026-09-03 — The three applied-scenario tickets are archived, because every box left on them is owed by a person and not by the code](#d-281--2026-09-03--the-three-applied-scenario-tickets-are-archived-because-every-box-left-on-them-is-owed-by-a-person-and-not-by-the-code)
+- [D-282 — 2026-09-04 — One spine and five cutaways, drawn by who acts: the spine and the install in the README, the rest beside the claims in AGENTLING.md](#d-282--2026-09-04--one-spine-and-five-cutaways-drawn-by-who-acts-the-spine-and-the-install-in-the-readme-the-rest-beside-the-claims-in-agentlingmd)
 
 ## By theme
 
@@ -607,7 +608,10 @@ entry updates one file rather than two.
   phrases against duties the release actually holds, +53 covered for a page
   of terms, and the structural blocker (`thin()`'s top-one role check) named
   and deliberately left alone rather than loosened for the gain; and D-237, the scoreboard — hireable positions as the programme`s one headline number, counted only off duties whose grade rests on recorded evidence, printed as a range with the strict figure first, and audited on its first run, which is how it found a position it had wrongly called hireable; and D-238, the four trades proven on real paid work — three delivered and one was cut by the ten-minute default wall its role file never overrode, every refusal held, and the security audit and the planner independently landed on the same unauthenticated socket; and D-239, that hole closed on both surfaces before Wave 0 rather than inside it — an Origin check on the WebSocket handshake and on every state-changing request, which needs no credential decided and is not authentication, with the HTTP half measured worse than the socket because a simple cross-origin POST reaches Approve; and D-240, both proven live on the restarted server — the probe refused 403, a bad-origin handshake closed 4403 with zero messages where the app itself is handed 946 KB, and the security trade re-run to completion at 24 turns, tracing every advisory to a call site and finding the .session.json seam that Wave 2 would walk into; and D-241, Wave 0's credential — a password exchanged for an HttpOnly cookie, chosen by the socket rather than by taste, because a browser cannot put a header on a handshake and a gate that left `/ws` open would be worse than none; loopback-exemption refused on a measurement (`tailscale serve` proxies into the same loopback the runner uses, so the test distinguishes nothing); off until `.env` arms it, so it cannot lock anyone out of a running server; `/internal/*` left uncredentialed, which dissolves R-01 rather than mitigating it, since the runner has no browser to hold a cookie; and the seam under it — `launderedEnv` drops what the catalog can name, and the password is nobody's connection secret, so it would have ridden into every sandbox; and D-242, the security ledger closed — the `.session.json` seam fixed by sending stdio secrets over **stdin** rather than the board's own prescription of the runner's env, which does not work because `launderedEnv` strips exactly those names and a `Bash` child inherits the environment anyway; a six-try five-minute lockout on `POST /api/session` that is deliberately **not per-IP**, because every request arrives on loopback and an address would be one bucket wearing a disguise; and the cost-shape re-read struck from the board as something that was never a task, since one run each is not a measurement and that data arrives by using the app; and D-243, Wave 2's first part — `transport: 'http'`, a remote MCP server reached over streamable HTTP, chosen ahead of the other three because it largely **subsumes** business-system doors (a vendor that publishes an MCP server becomes a catalog entry with no code) and because it supersedes nothing, carrying reads and tools but never sends; browser acting tools ranked last and left there, since clicking *submit* is D-075's *not-an-actor* clause superseded through a side door; the credential takes D-242's placeholder-and-stdin path from the first day rather than after someone notices, because an `Authorization` header **is** a bearer token; and the flaw a live run caught that three unit tests had agreed to miss — a whole-value placeholder rule sent the literal `Bearer ${TOKEN}` to the far end, and the fixtures passed only because they used a bare `${NAME}` no real API uses; and D-244, the catalog stopping being the ceiling — Settings can add **any MCP server**, `stdio` or `http`, on Brian's reframe that this is not about one user's stack but about any user reaching the system they need; the tool list is **read from the server** rather than typed, because D-044 requires a connection to name what it grants and for a server nobody curated the only honest source is the server itself — which also means the config is proven before it is stored and a connection that never worked leaves nothing behind; a user entry may never take a shipped name, since a second `github` would inherit every grant and recipe that already names one; and the twenty-eighth read site was `secretNames`, so a user connection's secrets are stripped from a spawned runner exactly like a shipped one's — the same shape as the seam D-242 closed; and D-245, suggestions rather than catalog entries — four starting points (Xero, Notion, Sentry, Stripe) that **fill the form** and become connections only when the user's own probe gets an answer, because shipping them ready-made would be vouching for servers this machine has never authenticated to; every shape read from a **primary** source with the source and date recorded and the vendor's page linked, which is why the list is short; **OAuth-only servers excluded** since our transports carry a static credential and a suggestion that cannot work is worse than none; and three of the four turned out to be `stdio`, which continues D-243's correction rather than softening it
-- **The project's own notes** — D-002, D-038
+- **The project's own notes** — D-002, D-038; and D-282, the platform drawn once — a
+  spine by who acts in the README, the install beside the deploy button, four
+  cutaways in `AGENTLING.md` beside the claims they draw, every Mermaid block
+  proven to parse, render and attach its edges before it landed
 - **Cost, continued** — D-039; and D-199, where the ledger learnt to open a
   row the moment a run starts, so a process dying under a session leaves an
   `interrupted` row rather than nothing — the vanish mode that had eaten 13
@@ -24231,3 +24235,73 @@ header or control record. BCI's does not; many Chilean formats do.
   what they still are.
 - **The payee allowlist and the whole-file refusal at review are live**, ticked,
   and unaffected by which bank's column table is loaded.
+
+## D-282 — 2026-09-04 — One spine and five cutaways, drawn by who acts: the spine and the install in the README, the rest beside the claims in AGENTLING.md
+
+**Decided:** the whole workflow is drawn once per figure and nowhere twice.
+The spine — one sentence end to end, coloured by who acts — lives in the
+README under *How a sentence becomes work*; the install figure sits in the
+README's deploy section, beside the button it explains; the ladder, learning,
+reach and verdict figures sit in `AGENTLING.md` beside the claims they draw
+(§6, §9, §10, §11), replacing the two figures §6 and §9 already carried, and
+§12 now points at the README rather than carrying a second spine to drift from
+it. No `WORKFLOW.md`: a third place the loop is described is how two
+descriptions come apart. Every figure is Mermaid because both files are read
+on GitHub, which renders it.
+
+### Why the axis is the actor
+
+The product's one rule is who may do what: nothing dispatches work but Brian,
+nothing runs a model but a sandboxed session, nothing touches the world outside
+but the server, at Approve. A pipeline of boxes hides that; a lane per actor
+shows the boundary each step crosses. Mermaid has no swimlanes, so the lane is
+a colour — blue you, green plain code, orange a session, grey outside — and the
+phases are the subgraphs. Lanes as subgraphs were tried and lay out as columns:
+a subgraph's `direction` is ignored the moment one of its nodes links outside,
+which every lane node does.
+
+### What was verified before it landed
+
+- Every number re-read from source rather than copied from the prose:
+  `MAX_STATIONS` 5 (`packages/shared/src/scene.ts:17`); `DEFAULT_MAX_TURNS`
+  10, `TURN_CEILING` 40, `RECIPE_TURNS` 5, `CLOSEOUT_TURNS` 3, `SESSION_NOTES`
+  8 (`server/src/executors/claude.ts`); `SIMILAR_ENOUGH` 0.65, `WORTH_A_HINT`
+  0.3, `TOOL_CANDIDATE_RUNS` 3 (`server/src/recipes.ts`); `APPROVALS_FOR_AUTO`
+  3 (`server/src/approvals.ts`); `MAX_STEPS` 4 (`server/src/steps.ts`); the
+  doors from `catalog/connections.json`, the six channels from
+  `server/src/channels.ts`. The §9 figure being replaced said the close-out ran
+  at **2** turns; the constant is 3 and the prose beside it already said three.
+- Every Mermaid block in both files — the six new and the two kept — parsed
+  and rendered in the repo's own Mermaid 11.16.1 under headless Edge through
+  the root `playwright-core`, with each edge's two endpoints tested against
+  the node boxes, so "renders" means the arrows reach what they name.
+
+### Three Mermaid faults found by measuring, not by looking
+
+1. **`direction` inside a subgraph clips edges.** With `direction TB|LR` on a
+   subgraph whose nodes link outside, every cross-subgraph edge stops at the
+   cluster border instead of the node: the spine attached **0/16** edges with
+   the lines and **16/16** without; learning 3/15 → 15/15; the verdict 5/13 →
+   13/13. The docs say the line is ignored in that case. It is worse than
+   ignored.
+2. **An edge aimed at a subgraph never reaches a node.** `t6 --> ex`,
+   `hi --> sb` and `lap --> inst` all ended on the border; re-aimed at the node
+   inside, the ladder attaches 18/18, reach 9/9, the install 6/6. The one edge
+   still on a border is §12's pre-existing *Inside one session*, left as it was.
+3. **Orientation decides width, labels barely do.** Breaking the fifteen
+   longest labels changed the reach figure's width by zero pixels (3096 →
+   3096). Orientation was 1274 vs 4116 px for the spine, 1556 vs 3767 for the
+   ladder, 1206 vs 2496 for the verdict (TB narrower), and the other way for
+   reach (1262 LR vs 1896 TB) and the install (992 vs 1261). Each figure took
+   the narrower orientation that kept every edge attached — chosen by the
+   measurement, not by eye — and the widest new figure is learning at 1776 px.
+
+### What is deliberately not drawn
+
+Roles and skills (a table, not a mechanism), the UI panels (a screenshot says
+it faster), and the composite shapes — steps, parties, the check pass — which
+ride the spine's return arrow because each is the same loop run again with
+files forwarded. The hand-drawn SVG draft that settled the shape is the
+artifact *One Sentence, End to End*
+(https://claude.ai/code/artifact/4a26170b-f20d-41e7-bd7f-be071e2187a0); the
+repo carries the Mermaid, not that page.

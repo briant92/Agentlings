@@ -696,15 +696,33 @@ own external credentials or has none — a stated non-goal.
 ### Quote → turns → ledger
 
 ```mermaid
-flowchart TD
-  A["your sentence"] --> B["router: which tier would this be?"]
-  B --> C["estimate.ts: what has this tier<br/>and this class actually cost?"]
-  C --> D["Quote — a ceiling, shown before anything runs"]
-  D --> E["turnsForBudget: quote ÷ observed cost per turn"]
-  E --> F["maxTurns = min(role cap, budget) — it only ever tightens"]
-  F --> G["the run"]
-  G --> H["ledger.jsonl — cost and price as separate numbers"]
-  H --> C
+flowchart TB
+  classDef free stroke:#6abe30,stroke-width:2px
+  classDef paid stroke:#df7126,stroke-width:2px
+  j0["a queued job"] --> rt{"the router — never guess<br/>claims only exact shapes"}
+  rt --> t1["answer — what the level knows, or an exact repeat · free, plain code"]:::free
+  rt --> t2["fetch — a bare “read this page” · free, plain code"]:::free
+  rt --> t3["search — a bare “find pages about X” · free, one API call"]:::free
+  rt --> t4["tool — a compiled tool matches words and shape · free, two Node scripts"]:::free
+  rt --> t5["compose — a send the desk already holds whole · free, plain code"]:::free
+  rt --> t6["oneshot — a landed recipe scoring ≥ 0.65 · 19c · the method, on a 5-turn leash"]:::paid
+  rt --> t7["agent — everything else, a weak match still lending its method · 87c"]:::paid
+  t4 -.->|"cannot prove its own output"| t7
+  subgraph ex["the executor stack — each layer can end the job without the next"]
+    e1["RoutedExecutor — the deterministic layer<br/>banks the method on the way back"]
+    e2["ChosenExecutor — Claude with a model key, else Simulated, decided per run"]
+    e3["ClaudeAgentExecutor — role → session<br/>prompt, tool allowlist, model, skills, memory, turn budget, close-out"]
+    e4["agent-runner.mjs — a child process, plain node, laundered env<br/>the SDK never enters the server<br/>doors over loopback: /internal/fetch · github · search · bls · calendar · mail · render<br/>browser and your MCP servers over MCP"]
+    e1 --> e2 --> e3 --> e4
+  end
+  subgraph bd["turns, not dollars — the only enforcement before the money is spent"]
+    lg["ledger.jsonl — what this tier and class have actually cost"] --> qt["the quote — a ceiling, shown before anything runs"]
+    qt --> tn["turns = quote ÷ observed cost per turn, keyed on shape<br/>a repo run and a no-repo run are two populations<br/>maxTurns = min(role cap, budget) — it only ever tightens<br/>10 by default · 40 hard ceiling · 5 on a leash"]
+  end
+  t6 --> e1
+  t7 --> e1
+  tn --> e4
+  e4 -->|"a row: cost and price apart, and the cut flag"| lg
 ```
 
 **The quote is a lookup, not a model.** It asks the router what it would do,
@@ -1165,19 +1183,39 @@ the run did *and* by what you made of it, because a method that was refused is
 worth as much to the next session as one that landed (D-201).
 
 ```mermaid
-flowchart TD
-  R["a run finishes — or dies"] --> C["close-out pass<br/>cheap model · 2 turns · never the patch"]
-  C --> L["LESSON.md → memory/&lt;name&gt;.md<br/>scope: one agentling"]
-  C --> A["APPROACH.md → recipes.json<br/>scope: the level"]
-  R --> K["summary → KNOWLEDGE.md<br/>scope: the level"]
-  R --> D{"you review it"}
-  D -->|"discarded"| X["what was refused → both<br/>memory/&lt;name&gt;.md and KNOWLEDGE.md"]
-  A --> M{"used again?"}
-  M -->|"credited, 3 clean deliveries"| T["tool-candidates.jsonl"]
-  T --> P["you ask for a compile"]
-  P --> W["one session writes run.mjs + verify.mjs"]
-  W --> V["you review and promote"]
-  V --> I["installed — the tier that removes the model"]
+flowchart TB
+  classDef sess stroke:#df7126,stroke-width:2px
+  classDef you stroke:#639bff,stroke-width:2px
+  r0["a run finishes — or dies"]:::sess --> c0["the close-out pass<br/>a cheap model, 3 turns<br/>handed RESULT.md and the names of changed files,<br/>never the patch<br/>every file asked for in one reply, so the last one lands"]:::sess
+  x0["you discard it"]:::you
+  subgraph sa["one agentling"]
+    l1["LESSON.md → memory/&lt;name&gt;.md"]
+  end
+  subgraph sl["the level"]
+    a1["APPROACH.md → recipes.json<br/>the method, keyed by the prompt"]
+    k1["a summary → KNOWLEDGE.md<br/>one line per finished job"]
+    p1["PENDING.md — only when it died before reporting"]
+    a1 -->|"used again<br/>credited on promote and on discard"| tc["3 clean deliveries → tool-candidates.jsonl"]
+    tc --> co["you ask for a compile<br/>one session writes run.mjs and verify.mjs"]:::you
+    co --> ins["you review and promote → tools/&lt;name&gt;/"]:::you
+  end
+  subgraph nx["the router, next time"]
+    o1["oneshot — a landed recipe scoring ≥ 0.65<br/>the method handed over, on a 5-turn leash"]:::sess
+    b1["the next brief<br/>8 relevant lines, and its own lessons"]:::sess
+    an["answer — an exact repeat, no repo, no web<br/>a run that made something banks no answer"]
+    tl["tool — run.mjs and verify.mjs, no model at all"]
+  end
+  c0 --> l1
+  c0 --> a1
+  c0 --> k1
+  c0 --> p1
+  x0 -.->|"what was refused banks too (D-201)"| l1
+  x0 -.-> k1
+  a1 --> o1
+  a1 --> an
+  k1 --> b1
+  l1 --> b1
+  ins --> tl
 ```
 
 ### The close-out pass — Live
@@ -1440,6 +1478,30 @@ It is **not an OS jail**. `Bash` runs with your own permissions, and
 `permissionMode: 'dontAsk'` means there is no interactive gate to catch a stray
 command. A session that decided to walk up a directory could.
 
+What is handed in, what a run can reach, and what it cannot:
+
+```mermaid
+flowchart LR
+  classDef sess stroke:#df7126,stroke-width:2px
+  classDef never stroke:#ac3232,stroke-width:2px
+  subgraph hi["handed in, before turn 1"]
+    h1["your sentence, and the brief the desk built"]
+    h2["attachments and standing-input files → input/"]
+    h3["8 relevant KNOWLEDGE lines, and its own lessons"]
+    h4["the method, if a recipe matched"]
+    h5["pages you named, already fetched and trimmed"]
+    h6["the repo listing, up to 40 files"]
+  end
+  subgraph sb["the sandbox — .agentlings/levels/&lt;level&gt;/jobs/&lt;id&gt;/"]
+    fs["repo/ — a clone · input/<br/>RESULT.md · DIFF.patch · OUTBOX.json · MOVES.json · .trajectory.jsonl"]
+    ps["the session — one child process<br/>a laundered env: no secret value, no send tool<br/>the role's tools ∩ the granted doors, and its turn count<br/>a working directory and an instruction — not an OS jail"]:::sess
+  end
+  h1 & h2 & h3 & h4 & h5 & h6 -->|"copied in"| fs
+  ps -->|"reads, over loopback with a per-job token<br/>the key stays in .env"| dr["doors — read, through the server<br/>web · search · github · bls<br/>calendar · mail · render · browser<br/>browser-act (headed, supervised, allowlisted)<br/>your own MCP servers"]
+  ps -.->|"no tool, no token"| ch["channels — never granted to a run<br/>telegram · gmail · whatsapp-business<br/>slack · calendar · a github comment<br/>the run writes OUTBOX.json,<br/>and the server sends at Approve"]:::never
+  fs -.->|"only at Approve, by the server"| rw["your real repository<br/>git apply of DIFF.patch, or a branch and a pull request<br/>your real folder<br/>MOVES.json replayed, reversible, never a delete"]
+```
+
 What actually holds, and what the app's guarantees really rest on:
 
 - **Your repository is a clone.** Nothing a session does reaches the real tree
@@ -1482,6 +1544,33 @@ movement.
 ## 11. Representation and privacy — the honest section
 
 ### Acting on your behalf — at approval only, never in a session (D-075)
+
+The verdict is one module whoever gives it (D-278): gates first, acts only on
+Promote, settlement always. The dashed path is the only place the app decides
+for you, and it reaches one act.
+
+```mermaid
+flowchart TB
+  classDef you stroke:#639bff,stroke-width:2px
+  classDef app stroke:#b06ac0,stroke-width:2px
+  classDef never stroke:#ac3232,stroke-width:2px
+  dl["delivered — done, partial or failed, all of them reviewable"] --> cd["the review card<br/>the files, the diff summary, one outbox card per channel<br/>where the turns went, both sides of a reconciliation, what the checker said"]
+  cd --> yo["you, at the desk<br/>promote · discard · clear<br/>every sensitive act, always"]:::you
+  cd -.-> ap["the app, under a standing approval<br/>same prompt, channel and recipient set — the recipient set is the boundary<br/>earned by 3 unchanged Approves · sends only · a signature change starts over"]:::app
+  subgraph vm["the verdict — one module, whoever gives it (D-278)"]
+    ga["gates — refuse by name, returned and never thrown<br/>a reconciliation whose sides do not meet · a recipient outside the allowlist<br/>a second Approve mid-send · a payee not on the wire allowlist"]:::never
+    ga --> ac["acts — on Promote only, by the server<br/>git apply to your repo, or a branch and a pull request<br/>a send per recipient, each stamped once, and a retry only of what failed<br/>MOVES.json replayed, reversible"]
+    ac --> st["settlement — every verdict<br/>the stamp: resolvedAt, and resolvedBy as you or the app<br/>the ledger row: cost, price, the cut flag<br/>the recipe credited on promote and on discard · the tool candidate · the approval count<br/>clear skips all of it but the stamp"]
+  end
+  yo --> ga
+  ap -.-> ga
+  st --> pm["promoted — a person's verdict"]
+  st -.-> au["auto-sent — the app's, with something sent"]:::app
+  st --> di["discarded — banks what was refused (§9)"]
+  st --> cl["cleared — nothing kept, nothing banked"]
+  pm --> sc["the score — counted weekly, from disk<br/>promoted and auto-sent on a real level, in the week the verdict was written<br/>a done nobody reviewed is not yet real work, and every refusal is demand<br/>sent on a Monday by a report row, at $0 with no model"]
+  au --> sc
+```
 
 An agentling is **not offered any tool that acts** from inside a run, with
 one built exception. The twelve Playwright acting tools stay off the
@@ -1726,37 +1815,10 @@ session — not a data control plane.**
 
 ### One job, end to end
 
-```mermaid
-flowchart TD
-  S["you type one sentence"] --> I["intake: title · role · who takes it<br/>quote · up to 3 optional questions"]
-  I --> Q["queued — claims 1 of 5 stations"]
-  Q --> W["an idle agentling walks to the station"]
-  W --> R{"router — never guess"}
-  R -->|"answer"| F1["from KNOWLEDGE.md — free"]
-  R -->|"fetch"| F2["pages read in code — free"]
-  R -->|"search"| F4["one search API call — free"]
-  R -->|"tool"| F3["run.mjs + verify.mjs — free"]
-  R -->|"compose"| F5["outbox built in code — free"]
-  R -->|"oneshot"| SE["session, 5-turn leash, method handed over"]
-  R -->|"agent"| SE2["full session"]
-  F3 -->|"could not prove it"| SE2
-  F1 --> D["sandbox: RESULT.md · files · DIFF.patch"]
-  F2 --> D
-  F4 --> D
-  F3 --> D
-  F5 --> D
-  SE --> D
-  SE2 --> D
-  D --> C["close-out: LESSON.md + APPROACH.md — then what it left is counted and stamped on the job (D-215)"]
-  C --> X["carries the result to the exit"]
-  X --> V{"you review"}
-  V -->|"Approve"| P["git apply to the real repo → promoted"]
-  V -->|"Discard"| DI["discarded"]
-  V -->|"Clear"| CL["cleared — nothing kept, nothing banked (D-216)"]
-  CL --> LN
-  P --> LN["recipe credited · ledger row, with the cut flag (D-214) · tool candidate counted"]
-  DI --> LN
-```
+The spine of one job — every way in, the intake, the queue, the ladder, the
+sandbox, the review and the verdict, coloured by who acts — is drawn once, under
+*How a sentence becomes work* in the README, so this file does not carry a
+second copy to drift from it. What follows is what that drawing cannot show.
 
 Failure does not leave the loop: on failure the agentling walks home, the job
 is marked `failed`, the close-out still runs, and the recipe is still credited

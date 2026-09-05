@@ -24795,3 +24795,166 @@ Nothing of the code, as of this entry. `index.ts` is unchanged; the server
 was listening when this was written and no server source is edited while
 it runs. *What proved it* is appended by the fourth ticket with the counts
 re-read from source.
+
+### What proved it
+
+Four tickets, one push each, every edit made under `serve --no-watch` with
+the running process untouched and restarted by the operator afterwards.
+Counts re-read from source on 2026-09-05, never copied from the prose above.
+
+| | | |
+|---|---|---|
+| #50 | `settledChannels` and `isWiredChannel` to `channel.ts`; zero `CHANNELS[` in `index.ts` | `b3372d3` |
+| #51 | the catalog context and `read`; the preview route as the first way in | `6a7133a` |
+| #52 | `queue`, `queueParty`, `queuedDetail`; Start and the nine ways in as callers; the thunk rebound | `b508683` |
+| #53 | the two firings' own cases; the mutation round; this section | `d340b14`, `b73bf4b` |
+
+**The file.** `index.ts` went from 5,276 lines to 4,633. `queueSentence`,
+`queueParty` and `queuePartyPlan` are gone from it; `intake.ts` is 850 lines
+and holds `read`, `queue`, `queueParty`, `queuedDetail`, the `PLAIN_ONLY`
+admits and the two context types. Of the six `rt.queue.add(` sites the entry
+counted, five remain — the bare add route, redo, reply, continue and the
+compile job — which is the follow-up answer 1 named, unchanged. `index.ts`
+calls `read` eight times (the preview, Start, the chain's next step, the check
+pass, the gather, pack authoring, the schedule firing, the mail firing),
+`queue` seven times, and binds the verdict's thunk to `queueParty` once; a
+party's hands and its plan job are `queue` acting on the reading's shape, not
+sites of their own.
+
+**Suites.** 2,961 server tests across 113 files, 377 web across 38, typecheck
+clean in all three workspaces. This line added 39 `it(` blocks: `intake.test.ts`
+30, `channel.test.ts` 79 → 86, `quote.test.ts` 8 → 10. `intake.test.ts` drives
+the two verbs only, against a temp level on disk, the real role catalog and a
+fake connection for the one channel; nothing in it reaches past them.
+
+**The two firings.** Both call `read` with `admits: { party: false }` — plain
+and chain admitted, never a party (TEAMWORK T2) — passing the row's `tools`
+bare (D-254: a list is exactly those, `[]` is none, absent is the legacy
+grant; `?? []` would collapse the first into the last), its stored `channel`
+and `answers`; then `queue` with the standing inputs, and for the mail firing
+the mail, the thread so far and its files as attachments (D-286) plus the
+`mailTrigger` stamp. `markFired` and `noteTriggerPoll` are still written
+before the attempt (D-103, D-248); the cadence sweep's per-row catch still
+lands a throw on the row as `lastError`, and the mail sweep's D-284 catch is
+untouched. Pinned through the verbs: a "then" sentence from a firing is a
+chain with step one queued and the rest riding it; a sentence that is both a
+party and a chain — a party with a send written at its end — is a chain at the
+desk and from a firing, the Q8 pin the first three tickets had not written;
+a legacy row holds a door, a row naming one holds exactly that, a row naming
+none holds none; the stored channel and answers replay into a composed, free
+send; the mail rides as material and as the stamp.
+
+**Mutation round.** Twenty-six mutations over `intake.ts`, each asserted to
+have *landed* — a non-empty `git diff --stat` — before its result was
+believed; the no-op control reported DID NOT LAND. Round one, against the 24
+tests then in the file: **20 killed, 6 survived.** Every survivor was a rule
+the #52 move had settled in one place and nothing asserted:
+
+1. `admits.chain` ignored — `PLAIN_ONLY` on a "then" sentence would have
+   split the check pass, the gather or a pack authoring into steps.
+2. The withholding flag read on a plain job — a plain job's own words are the
+   whole sentence (D-183); the flag exists to carry the ask past a split.
+3. `channelsOverride` ignored — the gather's fixed sentence names no channel
+   and carries the party's; a hand whose piece names one carries none.
+4. The card's answers dropped from the ride — they reach a later step of a
+   chain only by riding the job while steps remain.
+5. An organize sentence not forced to the worker — the matcher reads
+   "organize my downloads folder" as the scribe's (D-132's rule, a #52 delta).
+6. The clarifications emptied — a recipient in hand and no words rides the
+   job as its To line, the one way the desk's answers reach a session.
+
+Six tests pin them (`b73bf4b`); the round re-run on that commit reads **26 of
+26 landed mutants killed**, control still DID NOT LAND. The kill list names
+the rules that moved inside: chain wins over party; `single` and a chain step
+admit no split; a step never composes a send; the pick and the override settle
+the channel; add then emit; the reading's keys are the meter's; a hand's index,
+its spec's channels and its role; the tools the way in granted.
+
+**Live, on the restart.** The process was on `b508683` (booted 12:58:04Z,
+2026-09-05) — the firings had been on intake since #52, so #53's evidence was
+taken against it with no further restart:
+
+- `prove-realwork.mjs` all PASS: six report shapes refused by name, the row
+  accepted, fired into one `done` job with one telegram outbox, meter $0 and
+  zero turns, no door, nothing sent, row deleted, zero ledger rows.
+- `prove-trigger-ui.mjs` all PASS, 30 checks in the real app: the mail chip,
+  the door chips none ticked, Arm creating a row that carries exactly the one
+  door ticked, read back through the API and removed.
+- **One real schedule firing through intake**, on a proof level with both
+  agentlings resting, verified off `roster.json` before the row was armed: a
+  cadence row carrying *"summarise the expenses csv, then telegram Brian the
+  total"* and `tools: ['render']`, fired at 13:25:06Z with no `lastError`.
+  `jobs.json` then held exactly one job, `queued`: prompt *"summarise the
+  expenses csv"*, `steps: ['telegram Brian the total']`, `step: {1 of 2}` —
+  the composite sentence split at fire time (D-105) — `tools: ['render']`
+  exactly, `quotedUsd: 2`, `preferredRole: scribe`, no party, no mail stamp,
+  no attachment, no agentling, no meter. Cancelled through the route (a
+  cancelled queued job reads `failed`), the row deleted, the level closed,
+  zero ledger rows, $0.
+- `server.log` holds no line since the boot. A firing writes nothing to it —
+  measured: the schedule path has no console write — so the log's evidence is
+  what it lacks: no `[mail-trigger] sweep failed`, no exit.
+- hq's `jobs.json` is byte-identical before and after all three probes
+  (sha256 `5dcc2ff3…d2b6dd`, both times).
+
+**Not proven live, said plainly.** A *mail-trigger* firing through intake:
+the last real one (`c4a97302`, 2026-09-04 20:36Z) ran on the process before
+#52, through `queueSentence`; the next needs a real mail to arrive. The D-097
+free-flip (#51) and a party queued from Start are unit-pinned only — no real
+level has a telegram audience a composable send could name. An auto send
+through the standing approval is D-278's open item, unchanged.
+
+**What a person can see that changed.** The entry said the preview's wire
+shape is unchanged and the reading serialises to today's JSON plus `shape`.
+Seven things a person sees did change — each the card and the queue agreeing
+where they used to differ, found by writing the shared derivation:
+
+1. **Composable sends read free on the card again** (#51, D-097). `quoteFor_`'s
+   probe set the singular `channel` while D-179 had made the router's compose
+   branch read `channels`, so every held send — recipient and words both in
+   hand — had been quoted as a paid session since D-179, *"up to 50c"* for a
+   send built to cost nothing, with no test pinning it. Fixed in the probe;
+   `quote.test.ts` pins the flip and its guard.
+2. **A wired pick beside a differing detected ask leads the card** (#50, #52,
+   D-178): the questions, the names and the send facts follow the pick, as
+   the queue's always have. The old preview listed both.
+3. **The send facts are read against the channel the job will carry** (#52,
+   D-097), never an asked channel that fell to a fork — the card can no longer
+   promise free for a send the queue would then bill.
+4. **An organize sentence is forced to `worker` from its words on every
+   reading** (#52, D-132); `organizeRoot` rides the job only. A folder posted
+   beside a sentence with no organize verb no longer forces the role —
+   unreachable from the desk, which offers the picker only on the verb.
+5. **The planner offer's price is the plan job's own quote** (#52, T3/T4): on
+   a repo level it includes the clone the planner gets, and the architect role
+   is forced the way the job forces it.
+6. **On the `party plan` shape the card carries `planQuote` and not the hands
+   the press declined** (#52) — unreachable from the preview, which never
+   sends `planParty`.
+7. **An unwired pick settles to the draft everywhere** (#50, #52): to no
+   channel, never to a channel the words named. A bare `CHANNELS[name]` had
+   let `toString` through as a wired pick; #51's card had read an unwired
+   pick as no pick at all; both review axes caught the second.
+
+**Widened past the nine answers, and why.** `Reading` carries `refusalKeys`
+and the `jobs` it resolves to beside `shape` and `card` (answer 2 named the
+card alone): the keys so Start counts from the reading and never from a second
+look at the words (answer 4), the jobs so `queue` performs what `read` decided
+with no re-derivation between them. `recordRefusalKeys` is the meter's
+keys-taking core in `refusals.ts`; `recordRefusals(text)` delegates to it for
+the two sites with no reading. `queuedDetail` moved with the verbs; the five
+adds left in `index.ts` import it. `queueParty` takes the verdict thunk's own
+option type (`Parameters<QueueParty>[2]`) rather than a second declaration.
+Nine imports #51's move had orphaned were removed in #52 with the statements
+being edited — a stated rule-3 deviation; three unrelated unused names were
+left alone. `verdict.ts`'s thunk comment no longer says the module will
+replace it (Q7 kept it), and `channel.ts`'s doc comment names intake's
+`readJob`, not the function that is gone.
+
+**The floor, and what is still ceiling.** The tests cannot drive the route
+handlers or the sweeps themselves — `index.ts` listens at import, so no test
+may load it (D-242, D-278 Q10) — which is why the two prove scripts and the
+firing above are the live gate and stay so. The finish seam (the `onFinish`
+lambda, eight ordered steps, one caller) is the review's second candidate and
+shares this runtime slice; the five remaining adds and it are the next
+intake-shaped tickets, if one is wanted.

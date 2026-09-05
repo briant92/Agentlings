@@ -621,8 +621,8 @@ export function isWiredChannel(name: string): boolean {
  * "send it on WhatsApp and email Ana" settles nothing (WhatsApp is refused)
  * while Gmail is perfectly sendable.
  *
- * One function because every way in needs it — `queueSentence` for every
- * ordinary job, the party ways in for the channels the gather will carry —
+ * One function because every way in needs it — intake's `readJob` for every
+ * job it reads, `queueParty` for the channels the gather will carry —
  * and the desk reads the same list for what the card says Start would
  * carry; two derivations of one list is D-030's mistake. Here rather than
  * in the routes' file so the rule is reachable by a test (#50).

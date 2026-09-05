@@ -69,7 +69,8 @@ export interface InstallContext {
 /**
  * Queue the hands of a reviewed party plan (TEAMWORK T3). Intake glue the
  * verdict cannot import, so it rides the context bound to the level (D-278
- * Q4) until the Intake module replaces it. The shape is `queueParty`'s own.
+ * Q4); intake's own `queueParty` takes these options, and `index.ts` binds
+ * the thunk to it (D-287 Q7). The shape is the thunk's own.
  */
 export type QueueParty = (
   text: string,

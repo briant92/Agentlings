@@ -367,6 +367,76 @@ describe('intake (D-287)', () => {
     });
   });
 
+  describe('the two firings (D-103, D-248)', () => {
+    // A schedule coming due and a mail arriving are the two ways in that run
+    // with nobody watching. Both read with `admits: { party: false }` — plain
+    // and chain only — and queue what the row stored. The party side of the
+    // admission is pinned above ('a firing admits no party', 'a firing cannot
+    // become a party'); the chain side and the row's ride are pinned here.
+
+    it('a "then" sentence from a firing is a chain — the split still happens at fire time (D-105)', () => {
+      const reading = read(rt, CHAIN, ctx, { admits: { party: false } });
+      expect(reading.shape).toBe('chain');
+      const job = queue(rt, reading, { note: 'queued by its schedule — daily at 08:00' });
+      // Step one is queued with the rest riding it, exactly as from the desk.
+      expect(job.step).toEqual({ n: 1, of: 2 });
+      expect(job.steps).toEqual(['telegram Brian the total']);
+      expect(rt.queue.list().length).toBe(1);
+      expect(events[0].detail).toContain('queued by its schedule');
+    });
+
+    it('chain wins over party: a sentence that is both is a chain at the desk and from a firing', () => {
+      // A party with a send written at its end splits at the "then" (D-182),
+      // and the split wins first (D-287 Q3) — so the desk never offers hands
+      // for it, and a firing, which admits no party anyway, reads the same.
+      const both = `${PARTY}, then telegram Sammy the summary`;
+      const desk = read(rt, both, ctx, {});
+      expect(desk.shape).toBe('chain');
+      expect(desk.party).toBeUndefined();
+      expect(desk.card.party).toBeUndefined();
+      const firing = read(rt, both, ctx, { admits: { party: false } });
+      expect(firing.shape).toBe('chain');
+      expect((firing.card.steps as unknown[]).length).toBe(2);
+    });
+
+    it('the row rides the firing: doors passed bare (D-254), the channel and answers, the mail and its stamp', () => {
+      // A door beside the channel, so the grant has something to hold.
+      const WEB: Connection = { name: 'web', label: 'Web', transport: 'builtin', defaultOn: true };
+      const doors: IntakeContext = {
+        ...ctx,
+        install: { ...ctx.install, connections: () => [TELEGRAM, WEB] },
+      };
+      const row = {
+        channel: 'telegram',
+        answers: { 'send-to:telegram': 'Sammy', 'send-say': 'A darle' },
+        admits: { party: false },
+      };
+      // A legacy row — no list — holds the old grant, every enabled door; a
+      // row naming one holds exactly that; a row naming none holds none. The
+      // sweeps pass the field bare because `?? []` would collapse the first
+      // into the last without a word.
+      const legacy = queue(rt, read(rt, 'telegram Sammy', doors, row), {});
+      expect(legacy.tools).toContain('web');
+      const named = queue(rt, read(rt, 'telegram Sammy', doors, { ...row, tools: ['web'] }), {});
+      expect(named.tools).toEqual(['web']);
+      const mail = { id: 'm1', threadId: 't1', msgId: '<m1@example>', from: 'a@b.c', subject: 'receipt' };
+      const none = queue(rt, read(rt, 'telegram Sammy', doors, { ...row, tools: [] }), {
+        attachments: [{ name: 'mail.txt', data: Buffer.from('the mail\n') }],
+        mailTrigger: mail,
+        note: 'queued by mail arriving — a@b.c: receipt',
+      });
+      expect(none.tools).toBeUndefined();
+      // The stored channel and answers replay: the send is composed, free.
+      expect(none.channels).toEqual(['telegram']);
+      expect(none.send).toEqual({ to: 'Sammy', words: 'A darle' });
+      expect(none.quotedUsd).toBeUndefined();
+      // The mail rides as material and as the stamp the reply path threads to.
+      expect(none.attachments?.map((a) => a.name)).toEqual(['mail.txt']);
+      expect(none.mailTrigger).toEqual(mail);
+      expect(events[2].detail).toContain('queued by mail arriving');
+    });
+  });
+
   describe('a reviewed plan’s hands (TEAMWORK T3, D-287 Q7)', () => {
     it('queueParty carries the plan job’s spec forward onto every hand', () => {
       const hands = queueParty(

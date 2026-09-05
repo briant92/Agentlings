@@ -89,8 +89,12 @@ let stopping = false;
 let restarts = 0;
 let delay = RESTART_DELAY_MS;
 let child;
+/** The restart timer while a death is waited out — the only thing keeping the launcher alive then. */
+let pending;
 
 function launch() {
+  // Forgotten here rather than in the timer, so a Ctrl+C on this life reaches the child.
+  pending = undefined;
   const startedAt = Date.now();
   const again = restarts > 0 ? ` restart=${restarts}` : '';
   log(`\n[dev-logged] start ${new Date().toISOString()} entry=${entry.join(' ')}${again}\n`);
@@ -124,7 +128,7 @@ function launch() {
     );
     const wait = delay;
     delay = Math.min(delay * 2, RESTART_DELAY_MAX_MS);
-    setTimeout(launch, wait);
+    pending = setTimeout(launch, wait);
   });
   child.on('error', (err) => {
     log(`[dev-logged] spawn failed: ${String(err)} ${new Date().toISOString()}\n`);
@@ -136,6 +140,12 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     log(`[dev-logged] ${signal} ${new Date().toISOString()}\n`);
     stopping = true;
+    // A stop while a restart is being waited out: the child is already dead,
+    // and the timer would start a server the person just stopped.
+    if (pending) {
+      clearTimeout(pending);
+      process.exit(1);
+    }
     child.kill(signal);
   });
 }

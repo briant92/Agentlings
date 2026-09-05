@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { installPaths } from './installpaths';
 
 /**
@@ -95,6 +96,109 @@ describe('dev-logged', () => {
     expect(log).not.toContain('[dev-logged] restart');
   });
 
+  /**
+   * A Ctrl+C while a restart is being waited out (D-284, reviewed 2026-09-05):
+   * the child is already dead and the timer would start a server the person
+   * just stopped, leaving the launcher alive behind it. Windows delivers no
+   * signal a test can send — `kill()` there is termination, never the handler
+   * — so these load the launcher into the test process with `spawn` and the
+   * clocks faked, and raise the handler by hand.
+   */
+  class FakeChild extends EventEmitter {
+    stdout = new EventEmitter();
+    stderr = new EventEmitter();
+    killed = false;
+    kill() {
+      this.killed = true;
+      return true;
+    }
+  }
+  const loadLauncher = async () => {
+    const tmp = mkdtempSync(path.join(os.tmpdir(), 'devlog-stop-'));
+    const children: FakeChild[] = [];
+    vi.doMock('node:child_process', () => ({
+      spawn: () => {
+        const child = new FakeChild();
+        children.push(child);
+        return child;
+      },
+    }));
+    const exit = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`exit ${code}`);
+    }) as never);
+    const argv = process.argv;
+    process.argv = [...argv, '--no-watch'];
+    const seams = ['AGENTLINGS_LOG_DIR', 'AGENTLINGS_RESTART_AFTER_MS', 'AGENTLINGS_RESTART_DELAY_MS'] as const;
+    const was = Object.fromEntries(seams.map((k) => [k, process.env[k]]));
+    Object.assign(process.env, {
+      AGENTLINGS_LOG_DIR: tmp,
+      AGENTLINGS_RESTART_AFTER_MS: '0',
+      AGENTLINGS_RESTART_DELAY_MS: '60000',
+    });
+    const before = new Set([...process.listeners('SIGINT'), ...process.listeners('SIGTERM')]);
+    // @ts-expect-error — plain node with no declaration file; loaded for what it does on import
+    await import('../scripts/dev-logged.mjs');
+    vi.useFakeTimers();
+    return {
+      children,
+      exit,
+      log: () => readFileSync(path.join(tmp, 'server.log'), 'utf8'),
+      sigint: () => process.listeners('SIGINT').find((l) => !before.has(l))!('SIGINT'),
+      restore: () => {
+        for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+          for (const l of process.listeners(signal)) if (!before.has(l)) process.off(signal, l);
+        }
+        process.argv = argv;
+        for (const k of seams) {
+          if (was[k] === undefined) delete process.env[k];
+          else process.env[k] = was[k];
+        }
+        vi.useRealTimers();
+        exit.mockRestore();
+        vi.doUnmock('node:child_process');
+        vi.resetModules();
+      },
+    };
+  };
+
+  it('a stop while a restart is pending ends the launcher, and the timer starts nothing', async () => {
+    const launcher = await loadLauncher();
+    try {
+      const { children, exit } = launcher;
+      expect(children).toHaveLength(1);
+      // A death past the threshold: a restart is now pending, sixty seconds out.
+      children[0]!.emit('exit', 1, null);
+      expect(launcher.log()).toMatch(/restart 1 in 60 s/);
+      expect(() => launcher.sigint()).toThrow('exit 1');
+      expect(exit).toHaveBeenCalledWith(1);
+      // Mutation-checked: without the guard the timer runs on and a second
+      // child is spawned for a person who pressed Ctrl+C.
+      vi.runAllTimers();
+      expect(children).toHaveLength(1);
+    } finally {
+      launcher.restore();
+    }
+  });
+
+  it('once the restart has happened, a stop reaches the new child rather than ending the launcher', async () => {
+    // Mutation-checked: a `launch()` that does not forget the timer that
+    // started it exits here on the stale handle and orphans the new server.
+    const launcher = await loadLauncher();
+    try {
+      const { children, exit } = launcher;
+      children[0]!.emit('exit', 1, null);
+      vi.runAllTimers();
+      expect(children).toHaveLength(2);
+      expect(launcher.log()).toMatch(/start .* restart=1/);
+      launcher.sigint();
+      expect(exit).not.toHaveBeenCalled();
+      expect(children[1]!.killed).toBe(true);
+      // The child going down on our own signal is the ordinary end, as before.
+      expect(() => children[1]!.emit('exit', null, 'SIGINT')).toThrow('exit 1');
+    } finally {
+      launcher.restore();
+    }
+  });
   /**
    * The launcher is plain node and cannot import `installpaths.ts` — it
    * *launches* tsx — so it reads AGENTLINGS_HOME itself. That is a second

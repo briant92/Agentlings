@@ -24529,6 +24529,36 @@ night back into a dead server. Boot failures are not retried. The first
 unattended restart in `server.log` is the live proof this entry still owes;
 the server was down when the fix landed and Brian restarts it himself.
 
+### Reviewed 2026-09-05: the cause came back and the server lived, and #41 closes on that
+
+Between the hand restart of 2026-09-04 22:06 UTC and the review, `server.log`
+holds `[voice] Telegram unreachable for getUpdates: fetch failed` seven
+times across two server lives and one `did not answer getUpdates (429)`,
+and not one `code=1` exit; every exit since the fix is a SIGINT of Brian's
+own. That is the shape of the thirteen deaths, answered as an error on the
+real install, and it is why #41 closes on it rather than on the restart
+line it named: the crash the launcher would catch no longer happens by
+this cause, so the first unattended `restart N` line may never come. The
+launcher's restart stays proven by its spawn tests alone.
+
+The review found one gap in the launcher, fixed in the same commit. A
+Ctrl+C **while a restart was being waited out** — the child already dead,
+the timer armed for up to five minutes — set the stopping flag, killed
+nothing, and let the timer start a server the person had just stopped,
+with the launcher orphaned behind it; the next `npm run serve` would then
+have died on the port inside the threshold and read as a boot failure. The
+signal handler now clears the timer and exits when one is pending, and
+`launch()` forgets the timer that started it, so a Ctrl+C on the new life
+still reaches the child. Windows delivers no signal a test can send —
+`kill()` there is termination, never the handler — so the two new tests
+load the launcher into the test process with `spawn` and the clocks faked
+and raise the handler by hand. Three mutants: the guard dropped and
+`clearTimeout` dropped both die on the first test (the stop no longer
+exits; a second child is spawned); `launch()` not forgetting the timer
+**survived** the first test and is pinned by the second, where a stop after
+the restart must reach the new child rather than end the launcher on the
+stale handle. Reasoned from the code and pinned in-process, not reproduced
+with a console Ctrl+C.
 ## D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict
 
 **Decided.** A job carrying `check: { of }` — the step whose brief is to

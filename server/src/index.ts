@@ -340,6 +340,7 @@ import {
   writeTool,
 } from './tools';
 import { type QuoteContext, quoteFor_ } from './quote';
+import { type CatalogContext, read } from './intake';
 import { modelsFor, validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
@@ -994,13 +995,22 @@ function surfaceFor(job: Job, roleName?: string | null): string[] {
   });
 }
 
-/** What `quoteFor_` has to consult, gathered once — none of it varies per call. */
-const QUOTE_CTX: QuoteContext = {
+/**
+ * The catalog a sentence is read against (D-287 Q5): what `quoteFor_` has to
+ * consult — none of it varies per call — grown by the `matcher()` thunk, so
+ * the reading, the quote and the engine choice consult one declared catalog.
+ * `matcher` is a thunk because the match index is rebuilt when the library
+ * installs something (D-277); everything else here is fixed for the process.
+ */
+const CATALOG: CatalogContext = {
   sandboxRoot: SANDBOX_ROOT,
   registry,
   surfaceFor,
   searchToken: () => process.env.BRAVE_API_KEY,
+  matcher,
 };
+/** The quote's view of the same catalog — the object itself, never a second copy. */
+const QUOTE_CTX: QuoteContext = CATALOG;
 
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {
@@ -1660,227 +1670,21 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  // The split Start will queue (D-105), previewed like every other plan
-  // fact — each step quoted on its own sentence, because per-step tiers
-  // are the point of splitting at all.
-  const split = body.single === true ? null : splitSteps(text);
-  const stepPlans = split
-    ? split.map((sentence) => {
-        const stepDraft = planWork(
-          matcher(),
-          registry.list(),
-          rt.sim.agentlings,
-          rt.meta.repoPath,
-          sentence,
-        );
-        return {
-          sentence,
-          title: stepDraft.title,
-          quote: quoteFor_(
-            QUOTE_CTX,
-            rt.dir,
-            sentence,
-            granted(body.tools),
-            runnerRole(stepDraft),
-            rt.meta.repoPath || undefined,
-          ),
-        };
-      })
-    : null;
-  // The party the sentence licenses (TEAMWORK T2), previewed like the split
-  // is: every hand priced on its own piece, the gather priced on its fixed
-  // sentence, the words quoted back (D-184) — and a licence that cannot be
-  // honoured says why instead of being ignored. The chain split wins first.
-  const partyPlanned = body.single === true || split ? null : planParty(text);
-  const partyPlans =
-    partyPlanned && 'hands' in partyPlanned
-      ? {
-          words: partyPlanned.asked.words,
-          ...(partyPlanned.sendTail ? { sendTail: partyPlanned.sendTail } : {}),
-          hands: partyPlanned.hands.map((sentence) => {
-            const handDraft = planWork(
-              matcher(),
-              registry.list(),
-              rt.sim.agentlings,
-              undefined,
-              sentence,
-            );
-            return {
-              sentence,
-              title: handDraft.title,
-              quote: quoteFor_(
-                QUOTE_CTX,
-                rt.dir,
-                sentence,
-                granted(body.tools),
-                runnerRole(handDraft),
-                undefined,
-              ),
-            };
-          }),
-          gather: {
-            quote: quoteFor_(
-              QUOTE_CTX,
-              rt.dir,
-              GATHER_SENTENCE,
-              granted(body.tools),
-              runnerRole(planWork(matcher(), registry.list(), rt.sim.agentlings, undefined, text)),
-              undefined,
-            ),
-          },
-        }
-      : null;
-  // A near-miss the user confirmed (D-093): the client re-plans naming the
-  // channel, so the send questions come from the server like any other —
-  // honoured only for channels that exist, like every pick.
-  const confirmed =
-    typeof body.channel === 'string' && isWiredChannel(body.channel) ? body.channel : undefined;
-  const matchedDraft = planWork(
-    matcher(),
-    registry.list(),
-    rt.sim.agentlings,
-    rt.meta.repoPath,
+  const reading = read(
+    rt,
     text,
+    { install: INSTALL, catalog: CATALOG },
+    {
+      tools: body.tools,
+      channel: body.channel,
+      answers: body.answers,
+      single: body.single === true,
+      authoring: body.authoring === true,
+    },
   );
-  // An organize sentence runs as worker (it carries the organizing skill,
-  // D-132), forced at queue time by `organizeRoot`. The preview has to say so
-  // too, or the card shows the matcher's guess (scribe for "sort … into
-  // subfolders") while Start quietly runs a worker — the same shape as the
-  // authoring force right beside it.
-  const draft =
-    body.authoring === true && registry.get(AUTHOR_ROLE)
-      ? forceRole(matchedDraft, AUTHOR_ROLE, rt.sim.agentlings)
-      : wantsOrganize(text) && registry.get('worker')
-        ? forceRole(matchedDraft, 'worker', rt.sim.agentlings)
-        : matchedDraft;
-  // Derived at ask time from the catalog and Settings, so the same sentence
-  // gets a different card once a channel is connected (D-079).
-  const channelAsk = detectChannelAsk(
-    text,
-    allConnections(),
-    readSettings(SANDBOX_ROOT),
-    process.env,
-  );
-  // Settled before the quote now, because whether this is free depends on it:
-  // a send the desk holds whole is composed in code (D-097), and the card has
-  // to say so while the user is still deciding.
-  const askChannel = channelAsk?.channel ?? channelAsk?.asked ?? confirmed;
-  // The channels Start would carry (D-179) — settled by the one function
-  // `queueSentence` settles by, so the card and the queued job agree about
-  // how many sends this is.
-  const askChannels = settledChannels(channelAsk, confirmed).carried;
-  const names = rosterNames(askChannel);
-  const send = sendFacts(text, { channel: askChannel, names }, body.answers);
-  const refuses = refusalRows(text);
-  // The quote decides whether asking is worth it at all, and the quote needs
-  // the role the draft settles — so the questions are filled in last.
-  const quote = quoteFor_(
-    QUOTE_CTX,
-    rt.dir,
-    text,
-    granted(body.tools),
-    runnerRole(draft),
-    rt.meta.repoPath || undefined,
-    false,
-    undefined,
-    send ?? undefined,
-    askChannel,
-  );
-  return c.json({
-    ...draft,
-    quote,
-    // The desk's underlines: the channel detectors' evidence merged over the
-    // matcher's words, replacing the matcher-only list the draft carries.
-    spans: sentenceSpans(text, draft.spans),
-    // What the crew will refuse, said before Start (#22) rather than found
-    // inside a run that spent turns discovering it. Read from the *whole*
-    // sentence, exactly as the meter reads it at Start — so a split into
-    // steps cannot make the desk and the count disagree about what was
-    // claimed. Read only: `recordRefusals` is not called here and must never
-    // be, because this route re-runs on every keystroke (D-259).
-    ...(refuses.length > 0 ? { refuses } : {}),
-    ...(stepPlans ? { steps: stepPlans } : {}),
-    ...(partyPlans ? { party: partyPlans } : {}),
-    // A blocked party carries the planner offer, priced (TEAMWORK T3): the
-    // desk can say what pressing the button costs before it is pressed.
-    ...(partyPlanned && 'blocked' in partyPlanned
-      ? {
-          partyBlocked: partyPlanned.blocked,
-          planQuote: quoteFor_(
-            QUOTE_CTX,
-            rt.dir,
-            PLAN_SENTENCE,
-            granted(body.tools),
-            registry.get('architect') ? 'architect' : null,
-            undefined,
-          ),
-        }
-      : {}),
-    // A detected send asks its facts even when the ask fell to a fork — the
-    // asked name stands in for the channel so the hint has something to say,
-    // and a confirmed near-miss (D-093) counts like a detection.
-    questions: questionsFor(text, {
-      hasRepo: !!rt.meta.repoPath,
-      tier: quote.tier,
-      channel: askChannel,
-      // What Start will actually carry, so the card asks the questions the
-      // queued job would ask — a To box shown here and refused there is the
-      // drift `clarificationLines` exists to prevent (D-179).
-      channels: askChannels,
-      names,
-    }),
-    ...(channelAsk ? { channelAsk } : {}),
-    // A cadence written into the sentence (D-184). Read and shown, never
-    // acted on: Start with a repeat set creates a schedule, so the desk fills
-    // the controls in and says what it read rather than deciding quietly.
-    ...(() => {
-      const read = cadenceFrom(text);
-      return read
-        ? { cadence: { ...read, label: describeCadence(read.cadence) } }
-        : {};
-    })(),
-    // A mail trigger written into the sentence (D-248): the chip goes on and
-    // the words are quoted back; the query itself is never guessed.
-    ...(() => {
-      const read = triggerFrom(text);
-      return read ? { trigger: read } : {};
-    })(),
-    // A file asked to ride on a channel that cannot carry one. Said here
-    // because the outbox contract only refuses it at the end, once the run is
-    // written and paid for. Read against the channels Start would actually
-    // carry, so a file that rides on one of two channels names only the other.
-    ...(() => {
-      const noFiles = filelessChannels(text, askChannels.length ? askChannels : askChannel ? [askChannel] : []);
-      return noFiles.length ? { noFiles } : {};
-    })(),
-    // A folder reorganization is asked for by picking the folder, the way a
-    // send asks for its recipient (D-132): the sentence wants organizing, but
-    // only the native picker yields the absolute path, so the desk shows a
-    // "choose the folder" step rather than claiming one from the words.
-    ...(wantsOrganize(text)
-      ? {
-          organize: true,
-          // …and on an install with no desktop the picker is the whole ask,
-          // so the desk says so instead of offering a button that errors on
-          // the click (#30). Asked of the picker rather than restated here.
-          ...(pickFolderAvailable() ? {} : { organizeRefused: NO_ORGANIZE_HERE }),
-        }
-      : {}),
-    // A reconciliation is named here and counted at the desk (D-224): the
-    // preview carries no files, and the verb is the server's to hear.
-    ...(wantsReconciliation(text) ? { reconcile: true } : {}),
-    // The sentence asked for a check pass (TEAMWORK T1) — said on the card
-    // like the cadence is (D-184): what the desk read, before Start acts on
-    // it, with the second session's cost visible in the plan.
-    ...(wantsCheck(text) ? { checked: true } : {}),
-    // The near-miss itself, when no ask fired: a channel word with no send
-    // verb beside it (D-093), for the desk to question rather than claim.
-    ...(() => {
-      if (channelAsk) return {};
-      const mention = mentionsChannel(text);
-      return mention ? { channelMention: mention } : {};
-    })(),
-  });
+  // Byte-for-byte the shape the desk has always read, plus `shape` (D-287):
+  // the reading is the card, and from #52 the same reading is the job.
+  return c.json(reading.card);
 });
 
 /**

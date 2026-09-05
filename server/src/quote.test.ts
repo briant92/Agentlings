@@ -174,4 +174,32 @@ describe('quoteFor_', () => {
       expect(q.samples).toBe(2);
     });
   });
+
+  /**
+   * The send the desk already holds costs nothing (D-097): recipient and words
+   * both in hand, the outbox is composed in code and no session runs. The
+   * probe has to carry the send on `channels` — the list the router's compose
+   * branch reads since D-179 — or the flip never fires and a free send is
+   * quoted as a paid session. It was quoted as one: D-179 made channels a list
+   * and left this probe on the singular `channel`, and no test caught it.
+   */
+  describe('a held send is composed, not run (D-097, D-179)', () => {
+    const held = (text: string) =>
+      quoteFor_(ctx, levelDir, text, ['telegram'], 'worker', undefined, false, undefined, {
+        to: 'Sammy',
+        words: 'A darle',
+      }, 'telegram');
+
+    it('quotes free when the recipient and the words are in hand', () => {
+      const q = held('telegram Sammy');
+      expect(q.tier).toBe('routed');
+      expect(q.ceilingUsd).toBe(0);
+    });
+
+    it('quotes a session without them — the flip is the facts, not the sentence', () => {
+      const q = quoteFor_(ctx, levelDir, 'telegram Sammy', ['telegram'], 'worker', undefined);
+      expect(q.tier).toBe('session');
+      expect(q.ceilingUsd).toBeGreaterThan(0);
+    });
+  });
 });

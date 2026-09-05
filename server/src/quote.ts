@@ -82,7 +82,12 @@ export function quoteFor_(
     ...(repoPath ? { repoPath } : {}),
     ...(tools?.length ? { tools } : {}),
     ...(continues ? { continues } : {}),
-    ...(send && channel ? { send, channel } : {}),
+    // `channels`, not `channel`: the router's compose branch reads the list
+    // (D-179), so a probe that set the singular `channel` never composed and
+    // every held send was quoted as a paid session — the D-097 free-flip,
+    // silently lost when D-179 made channels a list and left this probe on the
+    // old field. No test pinned it; intake.test.ts does now.
+    ...(send && channel ? { send, channels: [channel] } : {}),
   };
   const decision: Decision = noRouter
     ? { kind: 'agent' }

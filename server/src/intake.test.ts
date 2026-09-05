@@ -4,21 +4,35 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Job, JobEvent, Quote } from '@agentlings/shared';
 import type { Connection } from './connections';
-import { createLevelFiles, levelDir, type LevelMeta } from './levels';
+import { EventLog } from './events';
+import { createLevelFiles, levelDir, readRoster, type LevelMeta } from './levels';
 import { MatchIndex } from './match';
-import { refusalsFile } from './refusals';
+import { PLAN_SENTENCE } from './party';
+import { JobQueue } from './queue';
+import { readRefusals, recordRefusalKeys, refusalsFile } from './refusals';
 import { RoleRegistry, listSkills } from './roles';
 import { readSettings } from './settings';
 import { writeAudience } from './audience';
 import type { InstallContext } from './verdict';
-import { type CatalogContext, type IntakeContext, type IntakeRuntime, read } from './intake';
+import {
+  type CatalogContext,
+  type IntakeContext,
+  type IntakeRuntime,
+  PLAIN_ONLY,
+  queue,
+  queueParty,
+  read,
+} from './intake';
 
 /**
- * `read` through its interface alone (D-287): a temp level on disk, the real
- * role catalog, a fake connection for the one channel, and assertions on the
- * shape it decides and the card it returns. `read` is pure — nothing here
- * reaches past it, and the refusals file is asserted absent before and after.
+ * Intake through its two verbs alone (D-287): a temp level on disk with a real
+ * queue, the real role catalog, a fake connection for the one channel, and
+ * assertions on the shape `read` decides, the card it returns, and the jobs
+ * `queue` then adds. `read` is pure — nothing here reaches past it, and the
+ * refusals file is asserted absent before and after — and `queue` counts
+ * nothing either: the meter is Start's, fed from the reading's keys.
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -43,11 +57,18 @@ const ENV = { TELEGRAM_BOT_TOKEN: 't' };
 const CHAIN = 'summarise the expenses csv, then telegram Brian the total';
 /** A party the grammar reads as three hands (party.test.ts's own example). */
 const PARTY = 'Research the pricing, the competitors and the market size — as a team of three';
+/** A chain whose withholding sits in the last step (D-183's own shape). */
+const CHAIN_WITHHOLDING =
+  'summarise the expenses csv, then redact the client names before it goes out';
 
-describe('read (D-287)', () => {
+const quoteOf = (card: Record<string, unknown>): Quote => card.quote as Quote;
+
+describe('intake (D-287)', () => {
   let root: string;
   let rt: IntakeRuntime;
   let ctx: IntakeContext;
+  /** What the feed received, in order; the sink also pins add-before-emit. */
+  let events: Omit<JobEvent, 'id' | 'at'>[];
 
   beforeEach(() => {
     root = mkdtempSync(path.join(tmpdir(), 'agentlings-intake-'));
@@ -56,7 +77,21 @@ describe('read (D-287)', () => {
     // Someone on Telegram, so a bare send reads as a send and not as content
     // (clarify.ts, bareSend): the name is a recipient, not a subject.
     writeAudience(root, 'telegram', [{ id: '1', name: 'Sammy', viaStart: true, sends: 0 }]);
-    rt = { meta, dir, sim: { agentlings: [] } };
+    events = [];
+    const jobQueue = new JobQueue(dir);
+    rt = {
+      meta,
+      dir,
+      sim: { agentlings: [] },
+      queue: jobQueue,
+      eventLog: new EventLog((event) => {
+        // Add, then emit (D-287): by the time the feed hears of a job, the
+        // queue already holds it — a listener acting on the event finds it.
+        if (event.type === 'queued') expect(jobQueue.get(event.jobId)).toBeDefined();
+        events.push(event);
+      }),
+      roster: readRoster(dir),
+    };
     const install: InstallContext = {
       sandboxRoot: root,
       repoRoot: root,
@@ -106,9 +141,13 @@ describe('read (D-287)', () => {
       expect(party.hands.length).toBe(3);
     });
 
-    it('the planner press makes the shape a party plan', () => {
+    it('the planner press makes the shape a party plan, priced on the card', () => {
       const reading = read(rt, PARTY, ctx, { planParty: true });
       expect(reading.shape).toBe('party plan');
+      // The card carries what Start would queue: the plan job's quote, and
+      // not the hands the press declined.
+      expect(reading.card.planQuote).toBeDefined();
+      expect(reading.card.party).toBeUndefined();
     });
 
     it('a firing admits no party — the same sentence reads plain', () => {
@@ -157,12 +196,25 @@ describe('read (D-287)', () => {
       const withFacts = read(rt, 'telegram Sammy', ctx, {
         answers: { 'send-to:telegram': 'Sammy', 'send-say': 'A darle' },
       });
-      const bareQuote = bare.card.quote as { ceilingUsd: number };
-      const factsQuote = withFacts.card.quote as { ceilingUsd: number };
       // Both in hand, the send is built in code and costs nothing; without
       // them it is a session that has words to write.
-      expect(factsQuote.ceilingUsd).toBe(0);
-      expect(bareQuote.ceilingUsd).toBeGreaterThan(0);
+      expect(quoteOf(withFacts.card).ceilingUsd).toBe(0);
+      expect(quoteOf(bare.card).ceilingUsd).toBeGreaterThan(0);
+    });
+
+    it('never for a step of a chain — the answers were given under the whole sentence’s promise', () => {
+      // D-097 inverted: a step whose own words read as a bare send must not
+      // compose the card's answers verbatim, so the shortcut is refused on
+      // any reading that is a step (queueSentence's `inChain`).
+      const reading = read(rt, 'telegram Sammy', ctx, {
+        answers: { 'send-to:telegram': 'Sammy', 'send-say': 'A darle' },
+        steps: [],
+        step: { n: 2, of: 2 },
+      });
+      expect(quoteOf(reading.card).ceilingUsd).toBeGreaterThan(0);
+      const job = queue(rt, reading, {});
+      expect(job.send).toBeUndefined();
+      expect(job.step).toEqual({ n: 2, of: 2 });
     });
   });
 
@@ -174,6 +226,177 @@ describe('read (D-287)', () => {
       expect(refuses?.some((r) => r.row === 'money')).toBe(true);
       // The preview re-runs on every keystroke, so it must never count.
       expect(existsSync(refusalsFile(root))).toBe(false);
+    });
+
+    it('queue counts nothing either; Start counts the reading’s keys, once', () => {
+      const reading = read(rt, 'pay the deposit to the supplier', ctx, {});
+      queue(rt, reading, {});
+      // The job exists and the meter has not moved: counting is Start's act.
+      expect(rt.queue.list().length).toBe(1);
+      expect(existsSync(refusalsFile(root))).toBe(false);
+      // Start feeds the meter from the reading — one read serves the card
+      // and the count — and one Start is one count.
+      expect(reading.refusalKeys).toEqual(['money']);
+      recordRefusalKeys(root, rt.meta.id, reading.refusalKeys, 1_700_000_000_000);
+      expect(readRefusals(root)).toEqual([
+        { at: 1_700_000_000_000, levelId: rt.meta.id, key: 'money' },
+      ]);
+    });
+  });
+
+  describe('queue performs the reading', () => {
+    it('a plain job: the card’s quote is the queued quote, add then emit', () => {
+      const reading = read(rt, 'summarise the expenses csv', ctx, { tools: [] });
+      const job = queue(rt, reading, { note: 'from a test' });
+      // The promise the move is for: what the desk showed is what was queued.
+      expect(job.quotedUsd).toBe(quoteOf(reading.card).ceilingUsd);
+      expect(job.prompt).toBe('summarise the expenses csv');
+      expect(job.preferredRole).toBe((reading.card as { role: string }).role);
+      expect(rt.queue.get(job.id)).toBeDefined();
+      // Exactly one queued event, carrying the way in's note.
+      expect(events.map((e) => e.type)).toEqual(['queued']);
+      expect(events[0]).toMatchObject({ jobId: job.id, title: job.title });
+      expect(events[0].detail).toContain('from a test');
+      // A plain reading is one job: no chain, no party.
+      expect(job.steps).toBeUndefined();
+      expect(job.party).toBeUndefined();
+    });
+
+    it('a chain queues step one with the rest, the withholding read off the whole sentence (D-183)', () => {
+      const reading = read(rt, CHAIN_WITHHOLDING, ctx, {});
+      expect(reading.shape).toBe('chain');
+      const steps = reading.card.steps as { sentence: string; quote: Quote }[];
+      const job = queue(rt, reading, {});
+      expect(job.prompt).toBe(steps[0].sentence);
+      expect(job.steps).toEqual([steps[1].sentence]);
+      expect(job.step).toEqual({ n: 1, of: 2 });
+      // Step one's own words say nothing about a withholding; the chain
+      // carries the flag read off the whole sentence.
+      expect(job.withholding).toBe(true);
+      // The card's step-one quote is step one's queued quote.
+      expect(job.quotedUsd).toBe(steps[0].quote.ceilingUsd);
+      // One job now; the next step does not exist until this one delivers.
+      expect(rt.queue.list().length).toBe(1);
+    });
+
+    it('a party queues its hands with no channels, the gather carrying what Start settled', () => {
+      // A party with a send written at its end is a chain first (the split's
+      // send-"and", D-182), so the channel a party settles arrives as a
+      // confirmed pick (D-093) — the near-miss the desk asked about.
+      const reading = read(rt, PARTY, ctx, { channel: 'telegram' });
+      expect(reading.shape).toBe('party');
+      const hands = (reading.card.party as { hands: { sentence: string; quote: Quote }[] }).hands;
+      const first = queue(rt, reading, { attachments: [{ name: 'brief.md', data: Buffer.from('x') }] });
+      const queued = rt.queue.list().sort((a, b) => a.party!.hand - b.party!.hand);
+      expect(queued.length).toBe(3);
+      expect(first.id).toBe(queued[0].id);
+      for (const [i, hand] of queued.entries()) {
+        // A hand never sends: `channelsOverride` is empty, whatever was picked.
+        expect(hand.channels).toBeUndefined();
+        expect(hand.party).toMatchObject({ hand: i + 1, of: 3, asked: PARTY });
+        // …but the party spec every hand carries holds what Start settled
+        // for the whole request, for the gather to send on.
+        expect(hand.party!.channels).toEqual(['telegram']);
+        expect(hand.prompt).toBe(hands[i].sentence);
+        expect(hand.quotedUsd).toBe(hands[i].quote.ceilingUsd);
+        // The material rides every hand; the sandbox-only shape rides no repo.
+        expect(hand.attachments?.map((a) => a.name)).toEqual(['brief.md']);
+        expect(hand.repoPath).toBeUndefined();
+      }
+      // One party, three hands, and every hand was announced after it existed.
+      expect(new Set(queued.map((j) => j.party!.id)).size).toBe(1);
+      expect(events.filter((e) => e.type === 'queued').length).toBe(3);
+    });
+
+    it('a party plan queues the plan job, spec and brief from the reading', () => {
+      const reading = read(rt, PARTY, ctx, { planParty: true, channel: 'telegram' });
+      const job = queue(rt, reading, {});
+      expect(job.prompt).toBe(PLAN_SENTENCE);
+      expect(job.preferredRole).toBe('architect');
+      expect(job.quotedUsd).toBe((reading.card.planQuote as Quote).ceilingUsd);
+      expect(job.party).toMatchObject({ hand: 0, of: 0, plan: true, asked: PARTY, channels: ['telegram'] });
+      expect(job.channels).toBeUndefined();
+      expect(job.brief).toContain(PARTY);
+      expect(rt.queue.list().length).toBe(1);
+    });
+
+    it('a firing cannot become a party — the reading it admits is one job', () => {
+      const reading = read(rt, PARTY, ctx, { admits: { party: false } });
+      const job = queue(rt, reading, { note: 'queued by its schedule' });
+      expect(rt.queue.list().length).toBe(1);
+      expect(job.party).toBeUndefined();
+      expect(job.prompt).toBe(PARTY);
+    });
+
+    it('a pre-decided way in reads plain and its fields ride the job', () => {
+      // The check pass, the gather and pack authoring know their shape and
+      // role; `read` honours both and `queue` stamps what they decided.
+      const reading = read(rt, 'check the delivered work against its brief', ctx, {
+        admits: PLAIN_ONLY,
+        role: 'worker',
+        tools: [],
+      });
+      expect(reading.shape).toBe('plain');
+      const job = queue(rt, reading, {
+        check: { of: 'abcd1234', avoid: 'a1' },
+        brief: 'the brief',
+        withholding: true,
+        checked: true,
+      });
+      expect(job.preferredRole).toBe('worker');
+      expect(job.check).toEqual({ of: 'abcd1234', avoid: 'a1' });
+      expect(job.brief).toBe('the brief');
+      expect(job.withholding).toBe(true);
+      expect(job.checked).toBe(true);
+    });
+
+    it('a chain’s next step: the rest and the link ride, and it is never re-split', () => {
+      const reading = read(rt, 'summarise the csv, then telegram Sammy the total', ctx, {
+        tools: [],
+        steps: ['telegram Sammy the total'],
+        step: { n: 2, of: 3 },
+      });
+      // The caller decided the chain; a "then" in the step's own words is inert.
+      expect(reading.shape).toBe('plain');
+      expect(reading.card.steps).toBeUndefined();
+      const job = queue(rt, reading, { stepPrev: 'abcd1234' });
+      expect(job.prompt).toBe('summarise the csv, then telegram Sammy the total');
+      expect(job.steps).toEqual(['telegram Sammy the total']);
+      expect(job.step).toEqual({ n: 2, of: 3 });
+      expect(job.stepPrev).toBe('abcd1234');
+    });
+  });
+
+  describe('a reviewed plan’s hands (TEAMWORK T3, D-287 Q7)', () => {
+    it('queueParty carries the plan job’s spec forward onto every hand', () => {
+      const hands = queueParty(
+        rt,
+        PARTY,
+        ctx,
+        {
+          hands: ['Research the pricing', 'Research the competitors'],
+          asked: { n: 2, words: 'a planned party' },
+        },
+        {
+          tools: [],
+          channels: ['telegram'],
+          loadBearing: [1],
+          partyId: 'p1234567',
+          scopes: [undefined, ['docs/']],
+        },
+      );
+      expect(hands.length).toBe(2);
+      const [one, two] = hands as [Job, Job];
+      expect(one.party).toMatchObject({ id: 'p1234567', hand: 1, of: 2, loadBearing: [1], channels: ['telegram'] });
+      expect(two.party).toMatchObject({ id: 'p1234567', hand: 2, of: 2, scope: ['docs/'] });
+      // A scoped hand is briefed on its scope; an unscoped one is not.
+      expect(one.brief).toBeUndefined();
+      expect(two.brief).toContain('docs/');
+      // Hands never send, whatever the spec carries for the gather.
+      expect(one.channels).toBeUndefined();
+      expect(two.channels).toBeUndefined();
+      expect(rt.queue.list().length).toBe(2);
+      expect(events.filter((e) => e.type === 'queued').length).toBe(2);
     });
   });
 });

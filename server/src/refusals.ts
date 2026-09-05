@@ -311,7 +311,21 @@ export function refusalKeys(text: string): string[] {
 
 /** One line per row the sentence claims; nothing at all when it claims none. Appends as the ledger does (D-259). */
 export function recordRefusals(sandboxRoot: string, levelId: string, text: string, at: number): void {
-  const keys = refusalKeys(text);
+  recordRefusalKeys(sandboxRoot, levelId, refusalKeys(text), at);
+}
+
+/**
+ * The meter itself, fed keys already read (D-287 Q4): Start counts what its
+ * reading claimed, so one read serves the card and the count and the two
+ * cannot disagree about what was claimed. A rule armed and a reply sent have
+ * no reading and go through `recordRefusals` above, which reads the words.
+ */
+export function recordRefusalKeys(
+  sandboxRoot: string,
+  levelId: string,
+  keys: readonly string[],
+  at: number,
+): void {
   if (keys.length === 0) return;
   mkdirSync(sandboxRoot, { recursive: true });
   const lines = keys.map((key) => `${JSON.stringify({ at, levelId, key } satisfies Refusal)}\n`);

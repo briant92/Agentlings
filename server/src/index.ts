@@ -64,7 +64,6 @@ import {
 } from './session';
 import { describeAuth, readStoredLogin, shouldRunRealSessions } from './auth';
 import {
-  cadenceFrom,
   createSchedule,
   describeCadence,
   describeSchedule,
@@ -75,7 +74,6 @@ import {
   removeSchedule,
   SCHEDULE_SWEEP_MS,
   setPaused,
-  triggerFrom,
   REPORT_NOTE,
   validCadence,
   validReport,
@@ -108,25 +106,18 @@ import {
 } from './voice';
 import { transcribe, voiceStatus } from './transcribe';
 import { newestMatch, resolveStanding, validateStanding, type StandingInput } from './standing';
-import { pickForwards, splitSteps, stepBrief } from './steps';
-import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck, wantsCheck } from './check';
+import { pickForwards, stepBrief } from './steps';
+import { CHECK_SENTENCE, CHECKED_WORK_REPORT, checkBrief, parseCheck } from './check';
 import {
   GATHER_SENTENCE,
-  PLAN_SENTENCE,
-  type PartyPlan,
   gatherBrief,
-  handBrief,
   handFileName,
   handReportName,
-  newPartyId,
   outOfScope,
   patchPaths,
-  planBrief,
-  planParty,
 } from './party';
 import { capabilityTokens, compileBlockers, compileDoors } from './capability';
-import { wantsWithholding } from './redact';
-import { recordRefusals, refusalRows } from './refusals';
+import { recordRefusalKeys, recordRefusals } from './refusals';
 import {
   column,
   columnProblem,
@@ -135,7 +126,7 @@ import {
   normalisePayee,
   payeeProblem,
 } from './nomina';
-import { latestRollForward, wantsReconciliation } from './reconciliation';
+import { latestRollForward } from './reconciliation';
 import { performOutboxSend } from './outboxsend';
 import {
   autoRefusalLine,
@@ -182,21 +173,12 @@ import {
   wireSettings,
   writeSettings,
 } from './settings';
-import { clarificationLines, questionsFor, sendFacts, sendToId } from './clarify';
+import { sendToId } from './clarify';
 import { activeCrew, crewMembers, syncRoster } from './crew';
 import { coverage as gradeCoverage, coverageLine, type CoverageContext } from './coverage';
 import { boardStatus, loadBoard, searchBoard, syncOnet, titleMatch } from './jobboard';
 import { crewCv } from './cv';
-import {
-  channelShelf,
-  detectChannelAsk,
-  droppedChannels,
-  filelessChannels,
-  isWiredChannel,
-  mentionsChannel,
-  sentenceSpans,
-  settledChannels,
-} from './channel';
+import { channelShelf, detectChannelAsk, isWiredChannel } from './channel';
 import {
   closeBlocker,
   closeLevelFiles,
@@ -304,7 +286,7 @@ import {
   safeOutputPath,
   deliverySummary,
 } from './outputs';
-import { NO_ORGANIZE_HERE, pickFolder, pickFolderAvailable } from './pickFolder';
+import { pickFolder } from './pickFolder';
 import { previewFile } from './preview';
 import { isDiscardNote, isJournal, productivityOf, recordOf } from './productivity';
 import { JobQueue } from './queue';
@@ -340,7 +322,15 @@ import {
   writeTool,
 } from './tools';
 import { type QuoteContext, quoteFor_ } from './quote';
-import { type CatalogContext, read } from './intake';
+import {
+  type CatalogContext,
+  type IntakeContext,
+  PLAIN_ONLY,
+  queue,
+  queueParty,
+  queuedDetail,
+  read,
+} from './intake';
 import { modelsFor, validateConnectionSecret } from './validate';
 import { callGithub } from './github';
 import { callRender } from './render';
@@ -351,17 +341,15 @@ import { logDoor, readDoorUsage } from './doorlog';
 import { readTrajectory } from './trajectory';
 import { callSearch } from './search';
 import { appendMovesJournal, reverseMoves } from './moves';
-import { folderInventory, wantsOrganize } from './organize';
+import { folderInventory } from './organize';
 import { fetchPage } from './web';
 import { AUTHOR_ROLE } from './packcontract';
 import {
   continuationBrief,
-  forceRole,
   planWork,
   queuedJobSpec,
   redoJobSpec,
   replyBrief,
-  rosterGapNote,
   runnerRole,
 } from './work';
 
@@ -485,7 +473,7 @@ const verdictContext = (rt: LevelRuntime): VerdictContext => ({
   install: INSTALL,
   send: performOutboxSend,
   pushRemote: promoteToRemote,
-  queueParty: (text, plan, opts) => queueParty(rt, text, plan, opts),
+  queueParty: (text, plan, opts) => queueParty(rt, text, INTAKE, plan, opts),
 });
 
 let library: LibraryIndex | null = loadIndex(SANDBOX_ROOT);
@@ -804,25 +792,6 @@ for (const rt of levels.values()) {
   });
 }
 
-/**
- * The queued line's detail: the caller's own note (a firing schedule, a
- * continuation) and, when the job is for a role nobody awake holds, the
- * roster-gap sentence (D-200). Every way in composes it, so a schedule, an
- * inbound message, a chain step, a reply or a compile says what the desk
- * card has said since D-192 — the record was the one place the fallback
- * was still silent.
- */
-function queuedDetail(
-  rt: LevelRuntime,
-  job: Job,
-  ...notes: (string | undefined)[]
-): { detail?: string } {
-  const parts = [...notes, rosterGapNote(rt.sim.agentlings, rt.roster, job.preferredRole)].filter(
-    (note): note is string => Boolean(note),
-  );
-  return parts.length > 0 ? { detail: parts.join(' · ') } : {};
-}
-
 function levelInfo(rt: LevelRuntime): LevelInfo {
   const jobs = rt.queue.list();
   return {
@@ -1011,6 +980,8 @@ const CATALOG: CatalogContext = {
 };
 /** The quote's view of the same catalog — the object itself, never a second copy. */
 const QUOTE_CTX: QuoteContext = CATALOG;
+/** What a reading takes (D-287 Q5): where this install keeps things, and its catalog. */
+const INTAKE: IntakeContext = { install: INSTALL, catalog: CATALOG };
 
 /** The registry as the UI sees it, qualified by what the user has switched. */
 function connectionList(): ConnectionInfo[] {
@@ -1153,25 +1124,6 @@ app.put('/api/settings/browser-act', async (c) => {
  * this menu will not grow.
  */
 app.get('/api/channels', (c) => c.json(channelShelf()));
-
-/**
- * Every name this channel could be asked to send to, aliases included.
- *
- * The bare-send test needs them because a recipient is not a subject (D-097):
- * "send a Telegram to Sammy" names a person, and without knowing that "Sammy"
- * is a person it reads as a topic. Names come from the same roster the picker
- * offers, so the two agree by construction — and a channel with nobody on it
- * simply contributes none, which reads every send as content-bearing and is
- * the old behaviour.
- */
-function rosterNames(channel: string | undefined): string[] {
-  if (!channel) return [];
-  return readAudience(SANDBOX_ROOT, rosterChannel(channel)).flatMap((person) => [
-    person.name,
-    ...(person.username ? [person.username] : []),
-    ...(person.aliases ?? []),
-  ]);
-}
 
 /**
  * The channel's audience (D-092), refreshed on every read — this GET is both
@@ -1670,18 +1622,13 @@ app.post('/api/levels/:lid/work/plan', async (c) => {
   }>();
   const text = body.text?.trim();
   if (!text) return c.json({ error: 'text is required' }, 400);
-  const reading = read(
-    rt,
-    text,
-    { install: INSTALL, catalog: CATALOG },
-    {
-      tools: body.tools,
-      channel: body.channel,
-      answers: body.answers,
-      single: body.single === true,
-      authoring: body.authoring === true,
-    },
-  );
+  const reading = read(rt, text, INTAKE, {
+    tools: body.tools,
+    channel: body.channel,
+    answers: body.answers,
+    single: body.single === true,
+    authoring: body.authoring === true,
+  });
   // Byte-for-byte the shape the desk has always read, plus `shape` (D-287):
   // the reading is the card, and from #52 the same reading is the job.
   return c.json(reading.card);
@@ -1720,228 +1667,6 @@ function decodeAttachments(
     }
     return { name, data };
   });
-}
-
-/**
- * One sentence becomes one queued job — the body every way in shares.
- *
- * The /work route and the schedule sweep both call this (D-103), for
- * queuedJobSpec's reason one level down: three separate faults in one day
- * were a field the route knew about and the thing building the object did
- * not (D-097), and a second hand-rolled copy of this glue is where the
- * fourth would live. The title is derived and the repository is the
- * level's; the channel is server-settled — a caller's pick counts only if
- * the channel exists, else the detected ask's own channel rides — and
- * every caller is quoted, because a scheduled firing is a new way in and
- * an unquoted way in is the D-027 bug.
- */
-function queueSentence(
-  rt: LevelRuntime,
-  fullText: string,
-  opts: {
-    tools?: string[];
-    channel?: string;
-    /** The real folder to reorganize, picked at intake (D-132). */
-    organizeRoot?: string;
-    answers?: Record<string, string>;
-    attachments?: { name: string; data: Buffer }[];
-    /** How this job came to exist, said on the queued event's line. */
-    note?: string;
-    /** The mail whose arrival queued this job (D-248). */
-    mailTrigger?: Job['mailTrigger'];
-    /** The chain, when the caller is the chain itself (D-105). */
-    steps?: string[];
-    step?: { n: number; of: number };
-    /** The previous step's job id — the chain link the review groups by. */
-    stepPrev?: string;
-    /** Standing instructions for the session, rides Job.brief. */
-    brief?: string;
-    /** The user chose "run as one job" — the split is skipped. */
-    noSplit?: boolean;
-    /**
-     * The role this job is for, when the route knows and the sentence does
-     * not. Honoured only for a role that exists, so a caller cannot invent a
-     * class the ledger would then carry.
-     */
-    role?: string;
-    /**
-     * The job's deliverable lives in the sandbox, never the repository — so
-     * the level's repo must not ride (D-141). Authoring learned this at a
-     * price: five clones paid for nothing, and the session "installed" its
-     * pack into the clone too, so the one Approve fired two installs that
-     * collided with each other.
-     */
-    noRepo?: boolean;
-    /** The chain asked for something to be kept out (D-183). */
-    withholding?: boolean;
-    /** The chain asked for the work to be checked (TEAMWORK T1, D-194). */
-    checked?: boolean;
-    /** This job is a check pass: the job it checks, and whose work to avoid. */
-    check?: { of: string; avoid?: string };
-    /** This job is a hand of a work party, or its gather (TEAMWORK T2). */
-    party?: Job['party'];
-    /**
-     * The channels this job carries, decided by the caller instead of by
-     * detection — the party seam: [] for hands, the party's settled list
-     * for the gather.
-     */
-    channelsOverride?: string[];
-  } = {},
-): Job {
-  // The split happens inside the glue (D-105), so every way in composes:
-  // a scheduled composite sentence splits at fire time exactly as a typed
-  // one splits at Start. A chain-queued step arrives with its chain already
-  // decided and is never re-split.
-  let text = fullText;
-  let steps = opts.steps;
-  let step = opts.step;
-  let withholding = opts.withholding === true;
-  if (!opts.noSplit && steps === undefined && step === undefined) {
-    const split = splitSteps(fullText);
-    if (split) {
-      text = split[0];
-      steps = split.slice(1);
-      step = { n: 1, of: split.length };
-      // Read off the WHOLE sentence, before the split loses it (D-183). "…then
-      // redact the client names, then email it to the partners" asks for a
-      // withholding in step three and sends in step four, and step four's own
-      // words say nothing about it — so the chain carries the flag rather than
-      // each step re-deriving it from a sentence that no longer contains it.
-      if (wantsWithholding(fullText)) withholding = true;
-    }
-  }
-  // Read off the whole sentence for D-183's reason: the deliverable lands at
-  // the end of a chain, so "…, have it checked" must ride every step and act
-  // on the last, whatever step the words fell into. A chain-queued step
-  // arrives with the flag already decided in opts.
-  const checked = opts.checked === true || wantsCheck(fullText);
-  const jobRepoPath = opts.noRepo ? '' : rt.meta.repoPath;
-  const matched = planWork(matcher(), registry.list(), rt.sim.agentlings, jobRepoPath, text);
-  // An organize job routes to the generalist worker, which carries the
-  // organizing skill (D-132) — the folder, not the sentence's verb, is what
-  // makes it one, so the role is forced rather than matched.
-  const forcedRole = opts.organizeRoot ? 'worker' : opts.role;
-  const plan =
-    forcedRole && registry.get(forcedRole)
-      ? forceRole(matched, forcedRole, rt.sim.agentlings)
-      : matched;
-  const tools = granted(opts.tools);
-  const requestedChannel = opts.channel;
-  // Detected once and read twice. `channelAsk` keeps its old meaning — the ask
-  // the *card* made, which a caller's own pick supersedes — while the stamp
-  // below needs what the sentence asked for however the channel was settled:
-  // picking Gmail on the fork card makes Telegram the dropped one, and a
-  // stamp built from `channelAsk` alone would name neither.
-  const detected = detectChannelAsk(
-    text,
-    allConnections(),
-    readSettings(SANDBOX_ROOT),
-    process.env,
-  );
-  const channelAsk = requestedChannel ? null : detected;
-  const { channel, carried: settled } = settledChannels(detected, requestedChannel);
-  // A party job's channels are decided by the party, never re-detected
-  // (TEAMWORK T2): hands carry [] because a hand never sends, and the
-  // gather carries what Start settled for the whole request.
-  const carried = opts.channelsOverride
-    ? opts.channelsOverride.filter(isWiredChannel)
-    : settled;
-  const channels = carried.length > 0 ? carried : undefined;
-  // Read from the same sentence and the same answers the card was quoted on,
-  // through the one function both ways in share — a desk that promised free
-  // and a queue that then billed a session would be the worst of both (D-097).
-  const names = rosterNames(channel ?? channelAsk?.asked);
-  // Never for a step of a chain. The desk asked its send questions of the
-  // whole sentence, so a chain's answers were given under whichever promise
-  // that sentence earned — "what should it say, roughly?" — and a step whose
-  // own sentence happens to read as a bare send would then compose those words
-  // verbatim under the other promise. That is D-097's fault inverted, and the
-  // shortcut is not owed here anyway: before the answers travelled at all, a
-  // chain could never take it.
-  const inChain = Boolean(steps?.length || step);
-  const send = inChain ? null : sendFacts(text, { channel, names }, opts.answers);
-  const quote = quoteFor_(
-    QUOTE_CTX,
-    rt.dir,
-    text,
-    tools,
-    runnerRole(plan),
-    jobRepoPath || undefined,
-    false,
-    undefined,
-    send ?? undefined,
-    channel,
-  );
-  const job = rt.queue.add(
-    queuedJobSpec({
-      title: plan.title,
-      prompt: text,
-      repoPath: jobRepoPath || undefined,
-      tools,
-      plan,
-      quote,
-      // Recomputed from the same sentence rather than trusted from the caller,
-      // so the only instructions that can reach a session are ones the user
-      // was actually shown.
-      clarifications: clarificationLines(
-        text,
-        // The same channel context the plan showed, or the send answers would
-        // be dropped by the recompute: the settled channel when one rides,
-        // else the detected ask's name (a draft still asked its facts).
-        {
-          hasRepo: !!rt.meta.repoPath,
-          tier: quote.tier,
-          channel: channel ?? channelAsk?.asked,
-          channels,
-          names,
-        },
-        opts.answers,
-      ),
-      attachments: opts.attachments ?? [],
-      channels,
-      ...(opts.organizeRoot ? { organizeRoot: opts.organizeRoot } : {}),
-      ...(send ? { send } : {}),
-      ...(opts.brief ? { brief: opts.brief } : {}),
-      ...(steps?.length ? { steps } : {}),
-      ...(step ? { step } : {}),
-      ...(opts.stepPrev ? { stepPrev: opts.stepPrev } : {}),
-      // The card's answers ride on while the chain has steps left, so a
-      // question the desk asked of the whole sentence still reaches the step
-      // that asks it too — the recompute below decides which ones those are.
-      ...(opts.answers ? { answers: opts.answers } : {}),
-      ...(opts.mailTrigger ? { mailTrigger: opts.mailTrigger } : {}),
-      ...(withholding ? { withholding: true } : {}),
-      ...(checked ? { checked: true } : {}),
-      ...(opts.check ? { check: opts.check } : {}),
-      ...(opts.party ? { party: opts.party } : {}),
-      // A channel word the job is NOT carrying (D-093): stamped so the
-      // review can say approving sends nothing, with the reply as the way
-      // out — the same table the ask reads, one notion.
-      ...(channel
-        ? {}
-        : (() => {
-            const mention = mentionsChannel(text);
-            return mention
-              ? { channelMention: { channel: mention.channel, label: mention.label } }
-              : {};
-          })()),
-      // The channels this sentence genuinely asked for that a one-channel job
-      // cannot take (D-178). Every channel the ask named, minus the one being
-      // carried — so the set is right whichever of them the job ended up on,
-      // and a draft job that asked for two still says it sends neither.
-      ...(() => {
-        const dropped = droppedChannels(detected, channels);
-        return dropped.length > 0 ? { alsoAsked: dropped } : {};
-      })(),
-    }),
-  );
-  rt.eventLog.emit({
-    type: 'queued',
-    jobId: job.id,
-    title: job.title,
-    ...queuedDetail(rt, job, opts.note),
-  });
-  return job;
 }
 
 /**
@@ -1985,20 +1710,23 @@ function queueNextStep(rt: LevelRuntime, job: Job): void {
     attachments.push({ name, data });
   }
   try {
-    queueSentence(rt, job.steps[0], {
+    const reading = read(rt, job.steps[0], INTAKE, {
       // The step holds the doors the delivered step held — the job's own
       // grant, where absent means none (#8), never re-granted as everything.
       tools: job.tools ?? [],
-      attachments,
+      // The chain, already decided: the step is never re-split (D-105).
       steps: job.steps.slice(1),
       step: { n, of },
-      // The chain link (D-233): the review surfaces walk it to show one
-      // prompt's steps as one thing instead of parallel reviews.
-      stepPrev: job.id,
       // What the user typed on the card, still travelling with the chain: this
       // step re-derives its own questions from its own sentence, so it hears
       // only the answers it would itself have asked for.
       ...(job.answers ? { answers: job.answers } : {}),
+    });
+    queue(rt, reading, {
+      attachments,
+      // The chain link (D-233): the review surfaces walk it to show one
+      // prompt's steps as one thing instead of parallel reviews.
+      stepPrev: job.id,
       // The chain's withholding rides to every later step (D-183), and the
       // check flag rides for the same reason — only the last step acts on it.
       ...(job.withholding ? { withholding: true } : {}),
@@ -2073,10 +1801,12 @@ function queueCheck(rt: LevelRuntime, job: Job): void {
     rt.roster.find((s) => s.id === job.assignedTo)?.role ??
     job.preferredRole;
   try {
-    queueSentence(rt, CHECK_SENTENCE, {
-      noSplit: true,
+    const reading = read(rt, CHECK_SENTENCE, INTAKE, {
+      admits: PLAIN_ONLY,
       ...(role && registry.get(role) ? { role } : {}),
       tools: job.tools ?? [],
+    });
+    queue(rt, reading, {
       attachments,
       check: { of: job.id, ...(job.assignedTo ? { avoid: job.assignedTo } : {}) },
       ...(job.withholding ? { withholding: true } : {}),
@@ -2172,135 +1902,6 @@ function settleCheck(rt: LevelRuntime, checkJob: Job): void {
   // the same gate a clean finish uses (D-082): a refuted or missing verdict
   // is refused there by name, and a manual Approve was never blocked at all.
   void autoSendIfApproved(rt, primary);
-}
-
-/**
- * Queue a work party (TEAMWORK T2, D-195): every hand at once, each an
- * ordinary job on its own piece of the sentence's list. Hands carry no
- * channels — a hand never sends, and stampOutbox refuses any outbox it
- * writes (D-193's seam) — and no repository: T2 is the non-repo shape, and
- * repo parties are T4's trial to earn. Attachments ride to every hand,
- * because "summarise the attached report's A, B and C" needs the report in
- * each hand's own input/. Everything the gather will need travels on every
- * hand, since the gather is built by whichever hand settles last.
- */
-function queueParty(
-  rt: LevelRuntime,
-  text: string,
-  plan: PartyPlan,
-  opts: {
-    tools?: string[];
-    channel?: string;
-    answers?: Record<string, string>;
-    attachments?: { name: string; data: Buffer }[];
-    /** Channels already settled (the planned party's path) — skips detection. */
-    channels?: string[];
-    /** Hands the gather halts without, from a reviewed plan (T3). */
-    loadBearing?: number[];
-    /** Carry the plan job's party id forward, so the trace is one thread. */
-    partyId?: string;
-    /** A repository party (T4): hands clone and patch their own scopes. */
-    repo?: boolean;
-    /** Per-hand scopes from the reviewed plan, aligned with plan.hands. */
-    scopes?: (string[] | undefined)[];
-  },
-): Job[] {
-  const id = opts.partyId ?? newPartyId();
-  const carried =
-    opts.channels ??
-    settledChannels(
-      detectChannelAsk(
-        text,
-        allConnections(),
-        readSettings(SANDBOX_ROOT),
-        process.env,
-      ),
-      opts.channel,
-    ).carried;
-  const withholding = wantsWithholding(text);
-  const of = plan.hands.length;
-  const spec: NonNullable<Job['party']> = {
-    id,
-    hand: 0,
-    of,
-    asked: text,
-    ...(plan.sendTail ? { sendTail: plan.sendTail } : {}),
-    ...(carried.length ? { channels: carried } : {}),
-    ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
-    ...(wantsCheck(text) ? { checked: true } : {}),
-    ...(opts.loadBearing?.length ? { loadBearing: opts.loadBearing } : {}),
-    ...(opts.repo ? { repo: true } : {}),
-  };
-  return plan.hands.map((piece, i) => {
-    const scope = opts.scopes?.[i];
-    return queueSentence(rt, piece, {
-      noSplit: true,
-      // A repo party's hands clone as any repo job does (T4); everything
-      // else stays the sandbox-only shape T2 built.
-      ...(opts.repo ? {} : { noRepo: true }),
-      tools: opts.tools,
-      channelsOverride: [],
-      ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
-      ...(withholding ? { withholding: true } : {}),
-      ...(scope ? { brief: handBrief(scope) } : {}),
-      party: { ...spec, hand: i + 1, ...(scope ? { scope } : {}) },
-      note: `hand ${i + 1} of ${of} — a party on "${plan.asked.words}"`,
-    });
-  });
-}
-
-/**
- * Queue a plan job (TEAMWORK T3, D-196): the user asked for a party and
- * wrote no list, so an architect-class run proposes the split as PARTY.json
- * — and queues nothing. Approving the reviewed proposal is what queues the
- * hands (the resolve route's branch), which is how the promote grammar
- * answers M6's goal-decomposition trust question: the model proposes, the
- * person disposes, exactly the organizer's MOVES.json shape (D-132).
- */
-function queuePartyPlan(
-  rt: LevelRuntime,
-  text: string,
-  opts: {
-    tools?: string[];
-    channel?: string;
-    answers?: Record<string, string>;
-    attachments?: { name: string; data: Buffer }[];
-  },
-): Job {
-  const carried = settledChannels(
-    detectChannelAsk(
-      text,
-      allConnections(),
-      readSettings(SANDBOX_ROOT),
-      process.env,
-    ),
-    opts.channel,
-  ).carried;
-  // On a repo level the planner gets its own clone to survey (TEAMWORK
-  // T4): partitioning by paths needs sight of the paths. Elsewhere the
-  // plan stays sandbox-only as T3 built it.
-  const repo = Boolean(rt.meta.repoPath);
-  return queueSentence(rt, PLAN_SENTENCE, {
-    noSplit: true,
-    ...(repo ? {} : { noRepo: true }),
-    ...(registry.get('architect') ? { role: 'architect' } : {}),
-    tools: opts.tools,
-    ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
-    channelsOverride: [],
-    ...(wantsWithholding(text) ? { withholding: true } : {}),
-    party: {
-      id: newPartyId(),
-      hand: 0,
-      of: 0,
-      plan: true,
-      asked: text,
-      ...(carried.length ? { channels: carried } : {}),
-      ...(opts.answers && Object.keys(opts.answers).length ? { answers: opts.answers } : {}),
-      ...(wantsCheck(text) ? { checked: true } : {}),
-    },
-    brief: planBrief({ asked: text, sends: carried.length > 0, repo }),
-    note: 'planning a party — the split is reviewed before any hand runs',
-  });
 }
 
 /** Deliverables forwarded per hand, beside its report; the rest is named. */
@@ -2438,15 +2039,17 @@ function queueGatherIfLastHand(rt: LevelRuntime, job: Job): void {
         `Send the result on ${key.slice('send-to:'.length)} to ${to} — write OUTBOX.json as briefed.`,
     );
   try {
-    queueSentence(rt, GATHER_SENTENCE, {
-      noSplit: true,
+    const reading = read(rt, GATHER_SENTENCE, INTAKE, {
+      admits: PLAIN_ONLY,
       // A repo party's gather merges on a fresh clone of its own (T4);
       // every other gather stays sandbox-only.
       ...(p.repo ? {} : { noRepo: true }),
       ...(matched.role && registry.get(matched.role) ? { role: matched.role } : {}),
       tools: job.tools ?? [],
-      attachments,
       channelsOverride: p.channels ?? [],
+    });
+    queue(rt, reading, {
+      attachments,
       ...(job.withholding ? { withholding: true } : {}),
       ...(p.checked ? { checked: true } : {}),
       party: { id: p.id, hand: 0, of: p.of, gather: true, asked, ...(p.repo ? { repo: true } : {}) },
@@ -2531,14 +2134,10 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
     }
   }
 
-  const job = queueSentence(rt, `Author a level pack: ${description}`, {
-    // What is already installed, so the session is told what is taken
-    // rather than finding out at Approve (M4, first real run).
-    brief: packBrief(scanPacks(REPO_ROOT).installed.map((p) => p.slug), reference, wantsPlate),
-    attachments,
+  const reading = read(rt, `Author a level pack: ${description}`, INTAKE, {
     // A description is prose about a place. Splitting it on the word "then"
     // would turn "a deck, then the sea beyond it" into two jobs (D-105).
-    noSplit: true,
+    admits: PLAIN_ONLY,
     // Authoring is design work, and the sentence cannot say so — it arrives
     // by a button. Naming the role here is also what finally gives the class
     // a ledger of its own, after two runs priced 3x under as `worker`.
@@ -2547,6 +2146,12 @@ app.post('/api/levels/:lid/author-pack', async (c) => {
     // a repo clone is a cost per leg and a second door — the gates-of-troy
     // chain paid five clones and double-installed through the diff (D-141).
     noRepo: true,
+  });
+  const job = queue(rt, reading, {
+    // What is already installed, so the session is told what is taken
+    // rather than finding out at Approve (M4, first real run).
+    brief: packBrief(scanPacks(REPO_ROOT).installed.map((p) => p.slug), reference, wantsPlate),
+    attachments,
     note: 'authoring a world',
   });
   return c.json(job, 201);
@@ -2649,51 +2254,27 @@ app.post('/api/levels/:lid/work', async (c) => {
     writeMeta(rt.dir, rt.meta);
   }
 
-  // The desk counts what it refuses (D-249, D-259): once per Start that
-  // happened — after every refusal of the request, before any of the ways
-  // in — off the whole sentence; a refusal queued anyway is still one
-  // refusal. Never at /work/plan, which re-runs on every keystroke.
-  recordRefusals(SANDBOX_ROOT, rt.meta.id, text, Date.now());
-
-  // The planner path (TEAMWORK T3): the user pressed the offer, so the
-  // split is proposed by an architect-class run and reviewed before any
-  // hand exists — never queued from here.
-  if (body.planParty === true && body.single !== true && splitSteps(text) === null) {
-    const job = queuePartyPlan(rt, text, {
-      tools: body.tools,
-      channel: typeof body.channel === 'string' ? body.channel : undefined,
-      answers: body.answers,
-      attachments,
-    });
-    return c.json(spentOn(job), 201);
-  }
-  // A party queues here and only here (TEAMWORK T2): the desk previewed it,
-  // Start carries it, and the schedule sweep deliberately does not — a
-  // schedule that wants a party will say so in its own sentence once
-  // parties have earned that (the T2 decision as taken). The chain split
-  // wins first: a "then" sentence is a chain today, party words inert.
-  if (body.single !== true && splitSteps(text) === null) {
-    const party = planParty(text);
-    if (party && 'hands' in party) {
-      const hands = queueParty(rt, text, party, {
-        tools: body.tools,
-        channel: typeof body.channel === 'string' ? body.channel : undefined,
-        answers: body.answers,
-        attachments,
-      });
-      return c.json(spentOn(hands[0]!), 201);
-    }
-  }
-  // Everything from the plan to the queued event is the shared glue above —
-  // one body for every way a sentence becomes a job, so the ways in cannot
-  // drift. The schedule sweep is the other caller (D-103).
-  const job = queueSentence(rt, text, {
+  // Start re-reads from the text, the answers and the picked channel
+  // (D-287): the desk never sends the card back, so the server stays
+  // authoritative and "what the desk showed is what gets queued" holds by
+  // construction. The desk admits everything — a chain, a party, the
+  // planner's press — and the reading decides the shape among them.
+  const reading = read(rt, text, INTAKE, {
     tools: body.tools,
     channel: typeof body.channel === 'string' ? body.channel : undefined,
-    ...(organizeRoot ? { organizeRoot } : {}),
     answers: body.answers,
+    single: body.single === true,
+    planParty: body.planParty === true,
+  });
+  // The desk counts what it refuses (D-249, D-259): once per Start that
+  // happened — after every refusal of the request, before the job exists —
+  // fed from the reading's own keys, so the count and the card cannot
+  // disagree about what was claimed; a refusal queued anyway is still one
+  // refusal. Never at /work/plan, which re-runs on every keystroke.
+  recordRefusalKeys(SANDBOX_ROOT, rt.meta.id, reading.refusalKeys, Date.now());
+  const job = queue(rt, reading, {
     attachments,
-    ...(body.single === true ? { noSplit: true } : {}),
+    ...(organizeRoot ? { organizeRoot } : {}),
     ...(voiceNote
       ? { note: `read from a voice note — ${voiceNote.from}, ${voiceNote.seconds} s, in ${voiceNote.language ?? '?'}` }
       : {}),
@@ -4813,7 +4394,10 @@ function sweepSchedules(now = Date.now()): void {
         // reconciliation missing one of its two inputs would otherwise run,
         // match nothing, and report a clean result (D-246).
         const attachments = schedule.inputs?.length ? resolveStanding(schedule.inputs) : undefined;
-        queueSentence(rt, schedule.prompt, {
+        // A firing admits plain and chain and never a party (TEAMWORK T2):
+        // a schedule that wants a party will say so in its own sentence
+        // once parties have earned that.
+        const reading = read(rt, schedule.prompt, INTAKE, {
           // The row's own doors, passed BARE (D-254): a list is exactly those,
           // empty is none, and absent — a legacy row from before the field —
           // is the old grant, every enabled door. `?? []` here would turn
@@ -4823,6 +4407,9 @@ function sweepSchedules(now = Date.now()): void {
           tools: schedule.tools,
           channel: schedule.channel,
           answers: schedule.answers,
+          admits: { party: false },
+        });
+        queue(rt, reading, {
           ...(attachments ? { attachments } : {}),
           note: `queued by its schedule — ${describeCadence(schedule.cadence)}`,
         });
@@ -4840,7 +4427,7 @@ sweepSchedules();
 
 /**
  * The mail-trigger sweep (D-248): D-103's shape, extended from "a time came
- * due" to "a mail came in". Firings go through the same `queueSentence` glue,
+ * due" to "a mail came in". Firings go through the same intake verbs,
  * and the discipline is advance-then-attempt exactly as the cadence sweep's —
  * the seen ring and watermark are written BEFORE the queueing is tried, so a
  * firing that throws lands as an error on the row rather than re-firing every
@@ -4895,7 +4482,7 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
                 : []),
               ...mail.files,
             ];
-            queueSentence(rt, schedule.prompt, {
+            const reading = read(rt, schedule.prompt, INTAKE, {
               // Bare, for the cadence sweep's reason (D-254) — and this is the
               // firing that carries a third party's mail as its brief; the
               // supervised door is left out of the omitted-list grant by
@@ -4903,6 +4490,10 @@ async function sweepMailTriggers(now = Date.now()): Promise<void> {
               tools: schedule.tools,
               channel: schedule.channel,
               answers: schedule.answers,
+              // Never a party (TEAMWORK T2), as the cadence sweep.
+              admits: { party: false },
+            });
+            queue(rt, reading, {
               attachments,
               mailTrigger: {
                 id: mail.id,

@@ -24799,8 +24799,11 @@ re-read from source.
 ### What proved it
 
 Four tickets, one push each, every edit made under `serve --no-watch` with
-the running process untouched and restarted by the operator afterwards.
-Counts re-read from source on 2026-09-05, never copied from the prose above.
+the running process untouched and restarted by the operator afterwards — a
+literal deviation from the tickets' *no server source is edited while the
+server runs*, disclosed in each of the four as D-278 did: the constraint's
+reason is tsx watch (D-140), and `serve` has no watcher. Counts re-read from
+source on 2026-09-05, never copied from the prose above.
 
 | | | |
 |---|---|---|
@@ -24824,8 +24827,9 @@ sites of their own.
 **Suites.** 2,961 server tests across 113 files, 377 web across 38, typecheck
 clean in all three workspaces. This line added 39 `it(` blocks: `intake.test.ts`
 30, `channel.test.ts` 79 → 86, `quote.test.ts` 8 → 10. `intake.test.ts` drives
-the two verbs only, against a temp level on disk, the real role catalog and a
-fake connection for the one channel; nothing in it reaches past them.
+the module's exports only — `read`, `queue`, and `queueParty` for a reviewed
+plan — against a temp level on disk, the real role catalog and a fake
+connection for the one channel; nothing in it reaches past them.
 
 **The two firings.** Both call `read` with `admits: { party: false }` — plain
 and chain admitted, never a party (TEAMWORK T2) — passing the row's `tools`
@@ -24877,11 +24881,12 @@ taken against it with no further restart:
 - `prove-realwork.mjs` all PASS: six report shapes refused by name, the row
   accepted, fired into one `done` job with one telegram outbox, meter $0 and
   zero turns, no door, nothing sent, row deleted, zero ledger rows.
-- `prove-trigger-ui.mjs` all PASS, 30 checks in the real app: the mail chip,
+- `prove-trigger-ui.mjs` all PASS, 28 checks in the real app: the mail chip,
   the door chips none ticked, Arm creating a row that carries exactly the one
   door ticked, read back through the API and removed.
-- **One real schedule firing through intake**, on a proof level with both
-  agentlings resting, verified off `roster.json` before the row was armed: a
+- **One real schedule firing through intake** (`scripts/prove-intake-firing.mjs`,
+  committed so it can be re-run), on a proof level with both agentlings
+  resting, verified off `roster.json` before the row was armed: a
   cadence row carrying *"summarise the expenses csv, then telegram Brian the
   total"* and `tools: ['render']`, fired at 13:25:06Z with no `lastError`.
   `jobs.json` then held exactly one job, `queued`: prompt *"summarise the
@@ -24954,7 +24959,9 @@ replace it (Q7 kept it), and `channel.ts`'s doc comment names intake's
 **The floor, and what is still ceiling.** The tests cannot drive the route
 handlers or the sweeps themselves — `index.ts` listens at import, so no test
 may load it (D-242, D-278 Q10) — which is why the two prove scripts and the
-firing above are the live gate and stay so. The finish seam (the `onFinish`
-lambda, eight ordered steps, one caller) is the review's second candidate and
-shares this runtime slice; the five remaining adds and it are the next
-intake-shaped tickets, if one is wanted.
+firing proof are the live gate and stay so. The mutation harness is a session
+script, as D-278's was; what stands is its recipe, above. The finish seam —
+the completion lambda `index.ts` hands `Sim` as `onOutcome`, eight ordered
+steps, one caller — is the review's second candidate and shares this runtime
+slice; the five remaining adds and it are the next intake-shaped tickets, if
+one is wanted.

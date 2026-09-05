@@ -21,16 +21,18 @@ import {
   type IntakeContext,
   type IntakeRuntime,
   PLAIN_ONLY,
+  type QueueExtras,
+  type ReadOpts,
   queue,
   queueParty,
   read,
 } from './intake';
 
 /**
- * Intake through its two verbs alone (D-287): a temp level on disk with a real
- * queue, the real role catalog, a fake connection for the one channel, and
- * assertions on the shape `read` decides, the card it returns, and the jobs
- * `queue` then adds. `read` is pure — nothing here reaches past it, and the
+ * Intake through its exports alone (D-287) — `read`, `queue`, and `queueParty`
+ * for a reviewed plan: a temp level on disk with a real queue, the real role
+ * catalog, a fake connection for the one channel, and assertions on the shape
+ * `read` decides, the card it returns, and the jobs `queue` then adds. `read` is pure — nothing here reaches past it, and the
  * refusals file is asserted absent before and after — and `queue` counts
  * nothing either: the meter is Start's, fed from the reading's keys.
  */
@@ -415,12 +417,14 @@ describe('intake (D-287)', () => {
       // row naming one holds exactly that; a row naming none holds none. The
       // sweeps pass the field bare because `?? []` would collapse the first
       // into the last without a word.
-      const legacy = queue(rt, read(rt, 'telegram Sammy', doors, row), {});
+      const fire = (opts: ReadOpts, extras: QueueExtras = {}) =>
+        queue(rt, read(rt, 'telegram Sammy', doors, { ...row, ...opts }), extras);
+      const legacy = fire({});
       expect(legacy.tools).toContain('web');
-      const named = queue(rt, read(rt, 'telegram Sammy', doors, { ...row, tools: ['web'] }), {});
+      const named = fire({ tools: ['web'] });
       expect(named.tools).toEqual(['web']);
       const mail = { id: 'm1', threadId: 't1', msgId: '<m1@example>', from: 'a@b.c', subject: 'receipt' };
-      const none = queue(rt, read(rt, 'telegram Sammy', doors, { ...row, tools: [] }), {
+      const none = fire({ tools: [] }, {
         attachments: [{ name: 'mail.txt', data: Buffer.from('the mail\n') }],
         mailTrigger: mail,
         note: 'queued by mail arriving — a@b.c: receipt',

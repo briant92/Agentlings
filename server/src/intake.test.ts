@@ -9,7 +9,7 @@ import type { Connection } from './connections';
 import { EventLog } from './events';
 import { createLevelFiles, levelDir, readRoster, type LevelMeta } from './levels';
 import { MatchIndex } from './match';
-import { PLAN_SENTENCE } from './party';
+import { GATHER_SENTENCE, PLAN_SENTENCE } from './party';
 import { JobQueue } from './queue';
 import { readRefusals, recordRefusalKeys, refusalsFile } from './refusals';
 import { RoleRegistry, listSkills } from './roles';
@@ -434,6 +434,63 @@ describe('intake (D-287)', () => {
       expect(none.attachments?.map((a) => a.name)).toEqual(['mail.txt']);
       expect(none.mailTrigger).toEqual(mail);
       expect(events[2].detail).toContain('queued by mail arriving');
+    });
+  });
+
+  describe('the rules that moved inside, pinned by the mutation round (D-278 harness)', () => {
+    // Six mutants of intake.ts survived the first round with 24 tests: each
+    // is a rule the #52 move settled in one place and nothing asserted.
+
+    it('PLAIN_ONLY on a "then" sentence reads plain — a pre-decided way in is one job whatever its words', () => {
+      const reading = read(rt, CHAIN, ctx, { admits: PLAIN_ONLY });
+      expect(reading.shape).toBe('plain');
+      expect(reading.card.steps).toBeUndefined();
+      const job = queue(rt, reading, {});
+      expect(job.prompt).toBe(CHAIN);
+      expect(job.steps).toBeUndefined();
+      expect(job.step).toBeUndefined();
+    });
+
+    it('a plain job carries no withholding flag — its own words are the whole sentence (D-183)', () => {
+      const reading = read(rt, 'summarise the expenses csv and redact the client names before it goes out', ctx, {});
+      expect(reading.shape).toBe('plain');
+      expect(reading.withholding).toBe(false);
+      expect(queue(rt, reading, {}).withholding).toBeUndefined();
+    });
+
+    it('the channel override decides what a job carries, over what its words settle (TEAMWORK T2)', () => {
+      // The gather's fixed sentence names no channel and carries the party's.
+      const gather = queue(rt, read(rt, GATHER_SENTENCE, ctx, { admits: PLAIN_ONLY, channelsOverride: ['telegram'] }), {});
+      expect(gather.channels).toEqual(['telegram']);
+      // A hand whose own piece names a channel still carries none.
+      const hand = queue(rt, read(rt, 'telegram Sammy the total', ctx, { channelsOverride: [] }), {});
+      expect(hand.channels).toBeUndefined();
+    });
+
+    it('the card’s answers ride a chain while it has steps left, and not a plain job', () => {
+      const answers = { 'send-to:telegram': 'Sammy' };
+      const first = queue(rt, read(rt, CHAIN, ctx, { answers }), {});
+      expect(first.answers).toEqual(answers);
+      const plain = queue(rt, read(rt, 'summarise the expenses csv', ctx, { answers }), {});
+      expect(plain.answers).toBeUndefined();
+    });
+
+    it('an organize sentence is forced to worker on every reading (D-132), card and job alike', () => {
+      // The matcher reads this as the scribe's; the folder work is the worker's.
+      const reading = read(rt, 'organize my downloads folder', ctx, {});
+      expect(reading.card.organize).toBe(true);
+      expect(reading.card.role).toBe('worker');
+      expect(queue(rt, reading, {}).preferredRole).toBe('worker');
+    });
+
+    it('the clarifications are recomputed from the sentence and the answers, and ride the job', () => {
+      // A recipient in hand but no words: a session runs, briefed on the To.
+      const reading = read(rt, 'telegram Sammy the total', ctx, {
+        answers: { 'send-to:telegram': 'Sammy' },
+      });
+      const job = queue(rt, reading, {});
+      expect(job.send).toBeUndefined();
+      expect(job.clarifications).toEqual(['Who should this go to? Sammy']);
     });
   });
 

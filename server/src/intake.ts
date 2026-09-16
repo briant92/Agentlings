@@ -52,7 +52,7 @@ import { forceRole, planWork, queuedJobSpec, rosterGapNote, runnerRole } from '.
  * on every keystroke. Counting refusals stays Start's act (D-259), fed from
  * the reading's keys and never re-derived from the words. `queue` adds and
  * then emits, in the one place that does either for a sentence; the five
- * adds left in `index.ts` — redo, reply, continue, the compile job and the
+ * adds left in `app.ts` — redo, reply, continue, the compile job and the
  * bare add route — are "the same job again" under other quote rules and are
  * named in D-287 as the follow-up.
  */
@@ -85,7 +85,7 @@ export interface IntakeContext {
 
 /**
  * The slice of a level's runtime intake touches — structural like
- * `VerdictRuntime`, satisfied by `index.ts`'s `LevelRuntime`. `read` takes
+ * `VerdictRuntime`, satisfied by `app.ts`'s `LevelRuntime`. `read` takes
  * the crew, so the plan can name who takes the job; the level's dir, for the
  * ledger the quote reads; its repository, which decides the route and the
  * rate. `queue` takes the queue it adds to, the feed it then tells, and the
@@ -807,7 +807,7 @@ export function queue(rt: IntakeRuntime, reading: Reading, extras: QueueExtras =
 
 /**
  * Queue the hands of a reviewed plan (TEAMWORK T3) — the verdict's way in,
- * bound to the level by `index.ts` (D-287 Q7), taking the options the
+ * bound to the level by `app.ts` (D-287 Q7), taking the options the
  * verdict's `QueueParty` thunk declares. The plan is the reviewer's, not the
  * grammar's, so this is not a reading of the sentence: each hand is read on
  * its own piece, and the spec the plan job stored — channels, answers, the

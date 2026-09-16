@@ -23,8 +23,8 @@ const ROOT = path.join(process.cwd(), '.agentlings');
 const LEDGER = path.join(process.cwd(), '.agentlings', 'ledger.jsonl');
 const LEVELS = path.join(process.cwd(), '.agentlings', 'levels');
 // Recomputed like LEDGER and LEVELS above: the server's own constant lives in
-// index.ts, which boots a server on import — a report must not. It is the
-// REPO-ROOT catalog (index.ts ROOT), not .agentlings/catalog — this script's
+// the app module (`installPaths()` since D-270, hand-run tools are outside
+// it). It is the REPO-ROOT catalog, not .agentlings/catalog — this script's
 // first run pointed there, read an empty list, and printed inverted verdicts:
 // an empty connections list voids the gate silently, passing every usedTools
 // recipe vacuously and blocking every capabilities-path one with nothing

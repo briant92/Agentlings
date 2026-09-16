@@ -1,7 +1,7 @@
 /**
  * Spawned by ledger.died.test.ts and killed from outside.
  *
- * Wires what index.ts wires — a queue, a Sim, and the ledger's open row on
+ * Wires what app.ts wires — a queue, a Sim, and the ledger's open row on
  * the start hook — starts one job on an executor that never returns, prints
  * the job id once the row is on disk, and then stays alive until the test
  * kills it. It does nothing on the way out because it is given no way to:

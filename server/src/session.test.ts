@@ -36,9 +36,11 @@ import {
 /**
  * Wave 0's gate, pinned in a module with no listener in it.
  *
- * The separation is not tidiness: `index.ts` calls `serve()` at import, so a
- * test that reached the gate through the app would start a real server on
- * :4600 — beside the one the user is running.
+ * The separation was not tidiness: until D-288 `index.ts` called `serve()` at
+ * import, so a test that reached the gate through the app would have started
+ * a real server on :4600 — beside the one the user is running. The app can be
+ * imported now (`app.test.ts`); the decision still lives here, where it is
+ * pinned without a request.
  */
 
 const ON: NodeJS.ProcessEnv = { [PASSWORD_VAR]: 'correct horse' };
@@ -305,10 +307,11 @@ describe('the login rate limit', () => {
 /**
  * The whole login decision, which lives here rather than in the route so that
  * a test can reach it at all. A mutation pass is what forced this: deleting
- * the lockout check from `index.ts` survived every test, because `serve()`
- * runs at import and no test can mount that route. A source-text assertion was
- * tried first and was worse than nothing — the mutation left both identifiers
- * in place, so it passed while the check did nothing.
+ * the lockout check from the entry file survived every test, because `serve()`
+ * ran at import and no test could mount that route (since D-288 one can). A
+ * source-text assertion was tried first and was worse than nothing — the
+ * mutation left both identifiers in place, so it passed while the check did
+ * nothing.
  */
 describe('attemptLogin — the decision the route only adapts', () => {
   it('lets anyone in with no token when the gate is off', () => {
@@ -367,14 +370,15 @@ describe('attemptLogin — the decision the route only adapts', () => {
  * cannot be caught by reading this commit — a route added *later* lands
  * outside a gated prefix and nobody notices.
  *
- * Read from the source text rather than by importing the app, for the reason
- * at the top of this file. It is a weaker check than mounting the real router
- * and a far stronger one than none: it fails on the next registration that
- * does not fit the two prefixes.
+ * Read from the source text rather than by importing the app — written when
+ * the app could not be imported (before D-288), and left as the read it was
+ * proven on. It is a weaker check than mounting the real router and a far
+ * stronger one than none: it fails on the next registration that does not fit
+ * the two prefixes.
  */
 describe('every route the server registers is covered by a prefix (R-05)', () => {
   const source = readFileSync(
-    path.join(path.dirname(fileURLToPath(import.meta.url)), 'index.ts'),
+    path.join(path.dirname(fileURLToPath(import.meta.url)), 'app.ts'),
     'utf8',
   );
   const paths = [...source.matchAll(/^app\.(?:get|post|put|patch|delete|all)\('([^']+)'/gm)].map(
@@ -440,10 +444,10 @@ describe('every route the server registers is covered by a prefix (R-05)', () =>
  * the URL can drive. So the two facts are joined here rather than left as a
  * habit: the bind decides whether the password is optional.
  *
- * These are the whole test of it, because the policy is a pure function and the
- * server's entry file starts listening at import — there is no seam there and
- * none was added. `scripts/prove-hosted.mjs --local` is what proves the boot
- * path actually calls this.
+ * These are the whole test of it, because the policy is a pure function and
+ * the call sits in `boot()`, which listens (D-288) — there is no seam there
+ * and none was added. `scripts/prove-hosted.mjs --local` is what proves the
+ * boot path actually calls this.
  */
 describe('the listen policy', () => {
   it('listens on loopback with the gate off when nothing is set, which is today', () => {

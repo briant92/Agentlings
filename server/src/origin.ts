@@ -159,7 +159,7 @@ export const originRefusal =
  * redirect URI Google is handed below, and `isExempt` in the session module,
  * which lets the callback through without a cookie (R-06). Both read this.
  *
- * `index.ts` registers the route with the literal rather than this constant,
+ * `app.ts` registers the route with the literal rather than this constant,
  * and that is deliberate rather than an oversight: `session.test.ts` scrapes
  * the app's registrations out of the source text to prove no route escapes the
  * gate (R-05), and it can only read literals. What keeps that third copy

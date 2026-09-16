@@ -176,7 +176,7 @@ describe('paths the server owns', () => {
  * Which of these spellings the *route* can actually deliver, measured — the
  * review of this ticket asked and the answer is not all of them.
  *
- * `index.ts` passes `new URL(c.req.url).pathname`, and the WHATWG parser
+ * `app.ts` passes `new URL(c.req.url).pathname`, and the WHATWG parser
  * removes dot segments before anyone here sees them: `/%2e%2e/.env` and
  * `/../.env` both arrive as `/.env`, refused by the dotfile rule rather than
  * by anything about traversal. `%2f` and `%5c` survive it intact, so

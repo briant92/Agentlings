@@ -34,7 +34,7 @@ import {
  * nothing downloads and no browser lands in the repo (D-128). The dependency
  * lives in the server workspace on purpose: root dependencies are read as
  * `lib:` capability tokens, and adding one there would demote every recipe on
- * the machine (D-036 via `LIBRARIES`, index.ts).
+ * the machine (D-036 via `LIBRARIES`, app.ts).
  *
  * The render is offline, and that is the security half: the page never
  * navigates (`setContent`), and every request it makes — an image, a font, a

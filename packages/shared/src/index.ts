@@ -2636,3 +2636,11 @@ export function branchName(jobId: string, title: string): string {
   const short = jobId.slice(0, 8);
   return `agentlings/${short}${slug ? `-${slug}` : ''}`;
 }
+
+/**
+ * A plain object and not an array — the first question every reader of a
+ * sandbox's JSON asks before it asks about fields. One guard, because
+ * `reconciliation.ts` and `nomina.ts` each carried the same line (D-288).
+ */
+export const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);

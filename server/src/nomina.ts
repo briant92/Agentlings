@@ -4,6 +4,7 @@ import {
   MAX_NOMINA_ROWS,
   MAX_NOMINA_TEXT_CHARS,
   NOMINA_PAYMENT_TYPES,
+  isRecord,
   type Job,
   type Nomina,
   type NominaCheck,
@@ -238,9 +239,6 @@ export function readNomina(dir: string): NominaRead | null {
   }
   return checkNomina(parsed);
 }
-
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** An optional one-line string; an empty one is an honest spelling of "none". */
 function optionalText(value: unknown, field: string): string | undefined | { error: string } {

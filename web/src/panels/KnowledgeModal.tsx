@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { KnowledgeStatus } from '@agentlings/shared';
 import { api, lvl, postJson } from '../api';
+import { ago } from './ago';
 import { ProvenanceSection } from './ProvenanceSection';
 import { Section } from './Section';
 
@@ -16,16 +17,6 @@ const FORMATS = ['.md', '.txt', '.docx', '.pdf', '.xlsx', '.pptx', '.png', '.jpg
  * rather than watching, and that a stale index has quietly stopped being used —
  * the last of which is invisible from anywhere else in the app.
  */
-
-function ago(at?: number): string {
-  if (!at) return 'never';
-  const mins = Math.round((Date.now() - at) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} h ago`;
-  return `${Math.round(hours / 24)} d ago`;
-}
 
 export function KnowledgeModal({
   levelId,

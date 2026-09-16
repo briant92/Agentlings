@@ -1,0 +1,36 @@
+# The suite, run on the platform the container deploys to.
+#
+# A push to `main` rebuilds the reference install and every install deployed
+# from the template (PROJECT.md, D-276/D-280); until this file the only check
+# before that was a hand-run on one Windows machine. Linux here because that
+# is what `mcr.microsoft.com/playwright:*-noble` is, and Node 24 because that
+# is the Node the image carries.
+#
+# It reports; it does not gate. Branch protection is the operator's call.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Both workspaces run even if the first fails — the root script is
+      # `--workspaces --if-present`, not an `&&` chain — so a red server suite
+      # still says whether the web suite is green.
+      - run: npm test

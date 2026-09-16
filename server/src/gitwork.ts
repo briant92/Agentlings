@@ -38,28 +38,56 @@ export function patchFile(sandboxDir: string): string {
  *
  * `GIT_TERMINAL_PROMPT=0` is the other half: without it a private repo and no
  * token is not a failure, it is a server waiting forever for a username.
+ *
+ * The same channel keeps the **operator's own git config** out of the sandbox
+ * (D-288). `pushBranch` already commits under its own identity so the
+ * operator is not the author; it was still signing with the operator's key
+ * when their global config said `commit.gpgsign=true`, and any `git add` was
+ * starting their file monitor when it said `core.fsmonitor=true`. Both were
+ * measured hanging `execFile`: the signer waiting on an agent socket that
+ * does not exist in a server process, the monitor's daemon (where a platform
+ * has one) holding the child's stdio open. The clone is Agentlings' working
+ * copy for one job — it is nobody's signed history and too small to need a
+ * monitor — so both are off for every git this module spawns. Config in the
+ * environment beats the global file and is written into no repository.
  */
-function gitAuth(token?: string): NodeJS.ProcessEnv {
+function gitEnv(token?: string): NodeJS.ProcessEnv {
+  const config: [string, string][] = [
+    ['credential.helper', ''],
+    ['core.fsmonitor', 'false'],
+    ['commit.gpgsign', 'false'],
+  ];
+  if (token) {
+    const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+    config.push(['http.extraHeader', `Authorization: Basic ${basic}`]);
+  }
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     GIT_TERMINAL_PROMPT: '0',
-    GIT_CONFIG_COUNT: '1',
-    GIT_CONFIG_KEY_0: 'credential.helper',
-    GIT_CONFIG_VALUE_0: '',
+    GIT_CONFIG_COUNT: String(config.length),
   };
-  if (token) {
-    const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
-    env.GIT_CONFIG_COUNT = '2';
-    env.GIT_CONFIG_KEY_1 = 'http.extraHeader';
-    env.GIT_CONFIG_VALUE_1 = `Authorization: Basic ${basic}`;
-  }
+  config.forEach(([key, value], i) => {
+    env[`GIT_CONFIG_KEY_${i}`] = key;
+    env[`GIT_CONFIG_VALUE_${i}`] = value;
+  });
   return env;
+}
+
+/** Every git this module runs, under `gitEnv`. */
+function git(
+  args: string[],
+  opts: { token?: string; maxBuffer?: number } = {},
+): Promise<{ stdout: string; stderr: string }> {
+  return run('git', args, {
+    env: gitEnv(opts.token),
+    ...(opts.maxBuffer !== undefined ? { maxBuffer: opts.maxBuffer } : {}),
+  });
 }
 
 /**
  * Every git failure this module reports, with the credential taken out of it.
  *
- * Belt and braces beside `gitAuth`: the token is no longer in anything git is
+ * Belt and braces beside `gitEnv`: the token is no longer in anything git is
  * handed on the command line, and an error that carried one anyway would be a
  * disclosure rather than a bug report. So the token and its base64 are struck
  * from the message before it can become an HTTP response.
@@ -84,12 +112,12 @@ export async function cloneRepo(
   if (where.kind === 'unsupported') throw new Error(where.reason);
   if (where.kind === 'url') {
     try {
-      await run('git', ['clone', where.url, target], { env: gitAuth(token) });
+      await git(['clone', where.url, target], { token });
     } catch (err) {
       throw scrubbed(err, token);
     }
   } else {
-    await run('git', ['clone', '--local', '--no-hardlinks', where.path, target]);
+    await git(['clone', '--local', '--no-hardlinks', where.path, target]);
   }
   return target;
 }
@@ -103,16 +131,10 @@ export async function cloneRepo(
 export async function baseBranch(sandboxDir: string): Promise<string> {
   const repo = repoDir(sandboxDir);
   try {
-    const { stdout } = await run('git', [
-      '-C',
-      repo,
-      'symbolic-ref',
-      '--short',
-      'refs/remotes/origin/HEAD',
-    ]);
+    const { stdout } = await git(['-C', repo, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD']);
     return stdout.trim().replace(/^origin\//, '');
   } catch {
-    const { stdout } = await run('git', ['-C', repo, 'rev-parse', '--abbrev-ref', 'HEAD']);
+    const { stdout } = await git(['-C', repo, 'rev-parse', '--abbrev-ref', 'HEAD']);
     return stdout.trim();
   }
 }
@@ -137,17 +159,17 @@ export async function pushBranch(
   // Its own identity, not the operator's: a container has no git config at
   // all, and a commit with no author is a promote that fails at the last step.
   const who = ['-c', 'user.name=Agentlings', '-c', 'user.email=agentlings@localhost'];
-  await run('git', [...at, 'checkout', '-B', opts.branch]);
-  await run('git', [...at, 'add', '-A']);
+  await git([...at, 'checkout', '-B', opts.branch]);
+  await git([...at, 'add', '-A']);
   // `--quiet` exits non-zero when there *is* something staged, so nothing has
   // to be buffered to find out — a name list is not a thing worth reading into
   // memory to ask a yes/no question.
-  const staged = await run('git', [...at, 'diff', '--cached', '--quiet']).then(
+  const staged = await git([...at, 'diff', '--cached', '--quiet']).then(
     () => false,
     () => true,
   );
   if (staged) {
-    await run('git', [...at, ...who, 'commit', '-m', opts.message]);
+    await git([...at, ...who, 'commit', '-m', opts.message]);
   }
   // A plain push, deliberately. `--force-with-lease` was here and bought
   // nothing: the remote is a bare URL with no remote-tracking ref to hold a
@@ -156,8 +178,8 @@ export async function pushBranch(
   // promote loudly rather than be overwritten. Nothing needed the force:
   // pushing the same commit twice is a no-op either way.
   try {
-    await run('git', [...at, 'push', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
-      env: gitAuth(opts.token),
+    await git([...at, 'push', opts.remote, `HEAD:refs/heads/${opts.branch}`], {
+      token: opts.token,
     });
   } catch (err) {
     throw scrubbed(err, opts.token);
@@ -170,10 +192,8 @@ export async function pushBranch(
  */
 export async function writeDiff(sandboxDir: string): Promise<boolean> {
   const repo = repoDir(sandboxDir);
-  await run('git', ['-C', repo, 'add', '-N', '.']);
-  const { stdout } = await run('git', ['-C', repo, 'diff', '--binary'], {
-    maxBuffer: MAX_DIFF_BYTES,
-  });
+  await git(['-C', repo, 'add', '-N', '.']);
+  const { stdout } = await git(['-C', repo, 'diff', '--binary'], { maxBuffer: MAX_DIFF_BYTES });
   const file = patchFile(sandboxDir);
   if (!stdout.trim()) {
     rmSync(file, { force: true });
@@ -211,7 +231,7 @@ export function summarizePatch(patch: string): JobChanges {
 /** Promote: replay the reviewed patch onto the real repository's working tree. */
 export async function applyPatch(targetRepoPath: string, patch: string): Promise<void> {
   if (!existsSync(patch)) throw new Error('no DIFF.patch to apply');
-  await run('git', ['-C', targetRepoPath, 'apply', '--whitespace=nowarn', patch]);
+  await git(['-C', targetRepoPath, 'apply', '--whitespace=nowarn', patch]);
 }
 
 /**
@@ -281,8 +301,8 @@ export async function promoteToRemote(
   // be described by the diff the reviewer read does not happen. Found by the
   // spec review, not by the eight tests that were already green.
   const [{ stdout: head }, { stdout: cloned }] = await Promise.all([
-    run('git', ['-C', repoDir(sandboxDir), 'rev-parse', 'HEAD']),
-    run('git', ['-C', repoDir(sandboxDir), 'rev-parse', `refs/remotes/origin/${base}`]),
+    git(['-C', repoDir(sandboxDir), 'rev-parse', 'HEAD']),
+    git(['-C', repoDir(sandboxDir), 'rev-parse', `refs/remotes/origin/${base}`]),
   ]);
   if (head.trim() !== cloned.trim()) {
     throw new Error(

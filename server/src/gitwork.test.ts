@@ -287,6 +287,51 @@ describe('pushBranch', () => {
     );
   });
 
+  /**
+   * The operator's global git config stays out of the sandbox (D-288). Found
+   * by bisecting a hanging suite: `commit.gpgsign=true` with an SSH signer
+   * left `git commit` waiting on an agent socket a server process does not
+   * have, and `core.fsmonitor=true` starts a daemon on the platforms that have
+   * one. The config here would sign through a program that does not exist,
+   * which fails fast everywhere rather than hanging — the control below shows
+   * it bites — and the same env channel that switches it off is the one that
+   * switches the monitor off, so one test covers the mechanism for both.
+   */
+  it('commits and diffs under a global config that would sign and monitor', async () => {
+    const config = path.join(root, 'gitconfig');
+    writeFileSync(
+      config,
+      `[commit]\n\tgpgsign = true\n[gpg]\n\tprogram = ${path.join(root, 'no-such-signer')}\n[core]\n\tfsmonitor = true\n`,
+    );
+    const before = process.env.GIT_CONFIG_GLOBAL;
+    process.env.GIT_CONFIG_GLOBAL = config;
+    try {
+      // Control: a plain commit under this config cannot sign, so it fails.
+      const seed = path.join(root, 'seed');
+      writeFileSync(path.join(seed, 'control.txt'), 'x\n');
+      execFileSync('git', ['-C', seed, 'add', '.'], { stdio: 'pipe' });
+      expect(() =>
+        execFileSync('git', ['-C', seed, 'commit', '-q', '-m', 'control'], { stdio: 'pipe' }),
+      ).toThrow();
+
+      await cloneRepo(remote, sandbox);
+      writeFileSync(path.join(repoDir(sandbox), 'greet.js'), "console.log('Hello');\n");
+      expect(await writeDiff(sandbox)).toBe(true);
+      await pushBranch(sandbox, {
+        remote,
+        branch: 'agentlings/abc123-unsigned',
+        message: 'Fix the greeting',
+      });
+    } finally {
+      if (before === undefined) delete process.env.GIT_CONFIG_GLOBAL;
+      else process.env.GIT_CONFIG_GLOBAL = before;
+    }
+    const blob = execFileSync('git', ['-C', remote, 'show', 'agentlings/abc123-unsigned:greet.js'], {
+      encoding: 'utf8',
+    });
+    expect(blob).toContain('Hello');
+  });
+
   it('is safe to run twice — a promote retried after a failed pull request lands once', async () => {
     await cloneRepo(remote, sandbox);
     writeFileSync(path.join(repoDir(sandbox), 'greet.js'), "console.log('Hello');\n");

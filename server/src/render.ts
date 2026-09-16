@@ -175,11 +175,16 @@ export async function callRender(
       error: `the document is too large to render (over ${Math.round(MAX_HTML_BYTES / 1_000_000)} MB) — inline less, or split it`,
     };
   }
+  // Arguments are refused before the renderer is looked for: a bad mode is a
+  // bad mode on an install with no browser too, and the answer the model can
+  // act on is the one that names it, not "no renderer".
+  const plate = tool === 'render_plate' ? plateSpec(args) : null;
+  if (plate && 'error' in plate) return plate;
   if (!(await renderAvailable())) {
     return { error: 'no renderer on this install — no Microsoft Edge and no Chromium was found' };
   }
 
-  if (tool === 'render_plate') return renderPlate(html, args);
+  if (plate) return renderPlate(html, plate);
 
   let pdf: Buffer;
   try {
@@ -203,17 +208,18 @@ export async function callRender(
 const PLATE_MODES = ['plate', 'plate-overscan', 'cutout', 'cutout-overscan', 'tile'] as const;
 type PlateMode = (typeof PLATE_MODES)[number];
 
-/**
- * Screenshots the page at the mode's size, then makes the result a legal
- * backdrop file: quantized into D-108's 128-colour budget — per render here;
- * the layer-wide union is the checker's to hold — and, for opaque plates,
- * measured for crew separation at the seven standing places, so the receipt
- * carries the same numbers the pack checker will. Cut-out modes keep the
- * page's transparency, snap it to on-or-off (the checker's contract), and
- * report coverage instead of separation: what a cut-out does to legibility
- * is a property of the composite, which pack:check measures.
- */
-async function renderPlate(html: string, args: Record<string, unknown>): Promise<PlateResult> {
+/** A plate render's arguments, validated: what to draw, at what size, how. */
+interface PlateSpec {
+  mode: PlateMode;
+  keepAsRendered: boolean;
+  overscan: boolean;
+  alpha: boolean;
+  width: number;
+  height: number;
+}
+
+/** The arguments read and refused by name — before any browser is looked for. */
+function plateSpec(args: Record<string, unknown>): PlateSpec | { error: string } {
   const rawMode = args.mode ?? 'plate';
   if (typeof rawMode !== 'string' || !(PLATE_MODES as readonly string[]).includes(rawMode)) {
     // Refused by name, never a silent default — the D-147 rule.
@@ -249,6 +255,21 @@ async function renderPlate(html: string, args: Record<string, unknown>): Promise
   // PLATE_OVERSCAN is world units; the plate frame is 2×.
   const width = mode === 'tile' ? (tileW as number) : PLATE_WIDTH + (overscan ? PLATE_OVERSCAN * 2 : 0);
   const height = mode === 'tile' ? (tileH as number) : PLATE_HEIGHT;
+  return { mode, keepAsRendered, overscan, alpha, width, height };
+}
+
+/**
+ * Screenshots the page at the mode's size, then makes the result a legal
+ * backdrop file: quantized into D-108's 128-colour budget — per render here;
+ * the layer-wide union is the checker's to hold — and, for opaque plates,
+ * measured for crew separation at the seven standing places, so the receipt
+ * carries the same numbers the pack checker will. Cut-out modes keep the
+ * page's transparency, snap it to on-or-off (the checker's contract), and
+ * report coverage instead of separation: what a cut-out does to legibility
+ * is a property of the composite, which pack:check measures.
+ */
+async function renderPlate(html: string, spec: PlateSpec): Promise<PlateResult> {
+  const { keepAsRendered, overscan, alpha, width, height } = spec;
 
   let shot: Buffer;
   try {

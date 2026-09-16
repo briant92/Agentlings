@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NO_ORGANIZE_HERE,
   NO_PICKER,
@@ -40,6 +40,16 @@ describe('parsePickOutput — the contract the script and the server share', () 
 });
 
 describe('pickFolder — one dialog at a time', () => {
+  // The gate sits behind the platform check, so it is only reachable as
+  // Windows; off Windows the tests below would be measuring the refusal.
+  const platform = process.platform;
+  beforeEach(() =>
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true }),
+  );
+  afterEach(() =>
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true }),
+  );
+
   const slow = (answer: string) => () =>
     new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve) =>
       setTimeout(() => resolve({ stdout: answer, stderr: '', code: 0 }), 30),

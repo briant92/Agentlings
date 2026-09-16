@@ -92,6 +92,40 @@ describe('the Dockerfile and the browsers it ships', () => {
     expect(dockerfile).not.toMatch(/npm ci[^\n]*--omit[= ]dev/);
     expect(envLine('NODE_ENV')).toBeUndefined();
   });
+
+  it('declares everything the runner imports at run time as a dependency', () => {
+    // The install above is what hides a misplacement: `zod` sat in
+    // devDependencies for two weeks and the runner kept resolving it, because
+    // nothing is ever pruned. A future prune would have found out on a host.
+    // So the runner's own imports are read here and held to `dependencies` —
+    // the server's, or the root's, which is the sandbox library shelf (D-031).
+    const runnerDir = path.join(REPO_ROOT, 'server', 'src', 'executors');
+    const declared = (file: string): Set<string> => {
+      const pkg = JSON.parse(readFileSync(file, 'utf8')) as {
+        dependencies?: Record<string, string>;
+      };
+      return new Set(Object.keys(pkg.dependencies ?? {}));
+    };
+    const runtime = new Set([
+      ...declared(path.join(REPO_ROOT, 'server', 'package.json')),
+      ...declared(path.join(REPO_ROOT, 'package.json')),
+    ]);
+    const source = readFileSync(path.join(runnerDir, 'agent-runner.mjs'), 'utf8');
+    const specifiers = [...source.matchAll(/(?:from|import\()\s*'([^']+)'/g)]
+      .map((m) => m[1])
+      .filter((s) => !s.startsWith('node:') && !s.startsWith('.'));
+    // The reader has to see something, or a regex that matched nothing
+    // would pass this against a runner importing anything at all.
+    expect(specifiers).toContain('zod');
+    for (const specifier of specifiers) {
+      const name = specifier.startsWith('@')
+        ? specifier.split('/').slice(0, 2).join('/')
+        : specifier.split('/')[0];
+      expect(runtime.has(name), `agent-runner.mjs imports ${specifier}, not in dependencies`).toBe(
+        true,
+      );
+    }
+  });
 });
 
 describe('the environment the container runs with', () => {

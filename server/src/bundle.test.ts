@@ -231,13 +231,20 @@ describe('a path that tries to leave the bundle', () => {
    * answers `Z:\` and the file is somewhere else on the disk entirely. So the
    * drive here is deliberately not the bundle's, or this test would pass
    * against a module with no containment check at all.
+   *
+   * Windows only, because the input only means "another drive" there: on a
+   * posix resolver `Z:` is an ordinary directory name inside the bundle, and
+   * the same call rightly falls through to the shell.
    */
-  it('refuses a path onto another drive, which is what containment is for', () => {
-    const drive = path.parse(path.resolve(DIST)).root.slice(0, 1).toUpperCase();
-    const other = drive === 'Z' ? 'Y' : 'Z';
-    expect(bundleFile(`/${other}:/secret.txt`, DIST)).toBeNull();
-    expect(bundleFile(`/${other}:/`, DIST)).toBeNull();
-  });
+  it.skipIf(process.platform !== 'win32')(
+    'refuses a path onto another drive, which is what containment is for',
+    () => {
+      const drive = path.parse(path.resolve(DIST)).root.slice(0, 1).toUpperCase();
+      const other = drive === 'Z' ? 'Y' : 'Z';
+      expect(bundleFile(`/${other}:/secret.txt`, DIST)).toBeNull();
+      expect(bundleFile(`/${other}:/`, DIST)).toBeNull();
+    },
+  );
 
   /**
    * A refused path must be refused, not answered with the shell. `/../.env`

@@ -421,7 +421,9 @@ describe('the browser-act connection carries the acting tools, under supervision
     expect(grantedTools(['browser-act'], all, { connections: { 'browser-act': true } }, {})).toEqual(['browser-act']);
     expect(grantedTools(['browser-act'], all, {}, {})).toEqual([]);
     expect(grantedTools(undefined, all, { connections: { 'browser-act': true } }, {})).not.toContain('browser-act');
-    const tools = mcpToolNames(resolveForJob(['browser-act'], all, {}).granted);
+    // Headed said outright: the door is refused on an install with no screen
+    // (connections.test.ts has that case), and this test is about the grant.
+    const tools = mcpToolNames(resolveForJob(['browser-act'], all, {}, true).granted);
     expect(tools).toContain('mcp__browser-act__browser_click');
     expect(tools).toContain('mcp__browser-act__browser_navigate');
   });

@@ -20,7 +20,7 @@ import { readStoredJobs } from './queue';
  * `carryForward` rebuilds a continuation from the parent's **DIFF.patch**
  * against a fresh clone (`executors/claude.ts:442`) and never reads the
  * parent's repo/ at all — and promote applies that same patch to the real
- * repository (`index.ts:2089`). `DIFF.patch` sits at the sandbox root, which
+ * repository (`app.ts`). `DIFF.patch` sits at the sandbox root, which
  * this sweep keeps. So nothing a finished job can still be asked to do
  * depends on its clone surviving; holding one only costs disk. Measured on
  * the 20 failed jobs that prompted this: 18 had no DIFF.patch at all, so

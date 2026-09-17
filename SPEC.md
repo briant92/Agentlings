@@ -239,8 +239,10 @@ the loop runs end to end without one.
 
 **Plumbing.**
 
-- `index.ts` — HTTP routes, the WebSocket, and the wiring that assembles a
-  level's runtime.
+- `app.ts` — HTTP routes, the WebSocket, and the wiring that assembles a
+  level's runtime; importing it writes nothing (D-288).
+- `index.ts` — the entry: calls `boot()`, which loads `.env`, reads the
+  install, listens and starts the sweeps.
 - `auth.ts` — which credentials are in play and whether they still work, said
   once at startup rather than one failed agentling at a time.
 

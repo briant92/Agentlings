@@ -69,7 +69,7 @@ export interface InstallContext {
 /**
  * Queue the hands of a reviewed party plan (TEAMWORK T3). Intake glue the
  * verdict cannot import, so it rides the context bound to the level (D-278
- * Q4); intake's own `queueParty` takes these options, and `index.ts` binds
+ * Q4); intake's own `queueParty` takes these options, and `app.ts` binds
  * the thunk to it (D-287 Q7). The shape is the thunk's own.
  */
 export type QueueParty = (
@@ -110,7 +110,7 @@ export interface VerdictGiven {
   packSlug?: string;
 }
 
-/** The slice of a level's runtime a verdict touches. `index.ts`'s `LevelRuntime` satisfies it. */
+/** The slice of a level's runtime a verdict touches. `app.ts`'s `LevelRuntime` satisfies it. */
 export interface VerdictRuntime {
   meta: Pick<LevelMeta, 'id' | 'repoPath'>;
   dir: string;

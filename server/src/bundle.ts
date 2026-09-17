@@ -32,7 +32,7 @@ import path from 'node:path';
  * moment it is registered, with nothing here to update. Same direction as
  * `isExempt`: the mistake falls towards the gate, not past it.
  *
- * **Exported because it is a claim about `index.ts` and has to be checked
+ * **Exported because it is a claim about `app.ts` and has to be checked
  * against it.** This middleware runs before the routes, so a top-level route
  * registered outside these prefixes — `/healthz`, `/metrics` — has no
  * extension, hits the deep-link fall-through, and is silently answered with
@@ -96,9 +96,10 @@ export type BundleHit = {
  * is not ours*, which the route turns back into the API's own 404.
  *
  * The whole decision is here rather than in the route, for the reason D-271
- * paid for: `index.ts` starts listening at import, so nothing registered in it
- * can be reached by a test. A route that only reads this function's answer is
- * an adapter; a route that decided any of this would be untestable.
+ * paid for: the entry file started listening at import, so nothing registered
+ * in it could be reached by a test (until D-288). A route that only reads this
+ * function's answer is an adapter; a route that decided any of this would have
+ * been untestable.
  */
 export function bundleFile(urlPath: string, distDir: string): BundleHit | null {
   const decoded = decodePath(urlPath);

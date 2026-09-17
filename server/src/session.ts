@@ -402,13 +402,13 @@ export function noteLoginSuccess(gate: LoginGate): void {
 /**
  * The whole login decision, so that the route is an adapter and nothing more.
  *
- * It lives here because `index.ts` cannot be imported by a test without
- * starting a listener — and a mutation pass proved that is not a theoretical
- * cost: deleting the lockout check from the route survived every test, because
- * no test could see the route. Logic in a testable module and a route that
- * only translates it is the answer; a source-text assertion was tried first
- * and was worse than useless, since the mutation left both identifiers in
- * place and it passed.
+ * It lives here because the entry file could not be imported by a test
+ * without starting a listener (until D-288) — and a mutation pass proved that
+ * was not a theoretical cost: deleting the lockout check from the route
+ * survived every test, because no test could see the route. Logic in a
+ * testable module and a route that only translates it is the answer; a
+ * source-text assertion was tried first and was worse than useless, since the
+ * mutation left both identifiers in place and it passed.
  */
 export type LoginResult =
   | { ok: true; token: string | null }

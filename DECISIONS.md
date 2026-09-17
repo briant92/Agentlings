@@ -297,6 +297,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-285 — 2026-09-04 — The score counts a chain once: a check step is never counted, and the job it checked counts by Brian's own verdict](#d-285--2026-09-04--the-score-counts-a-chain-once-a-check-step-is-never-counted-and-the-job-it-checked-counts-by-brians-own-verdict)
 - [D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread](#d-286--2026-09-04--the-counterparty-thread-a-mail-firing-carries-its-attachments-and-the-conversation-so-far-a-reply-may-carry-files-and-brian-holds-every-thread)
 - [D-287 — 2026-09-04 — Intake: a sentence becomes a job through one reading, shown at the desk and performed by every way in](#d-287--2026-09-04--intake-a-sentence-becomes-a-job-through-one-reading-shown-at-the-desk-and-performed-by-every-way-in)
+- [D-288 — 2026-09-16 — The app can be imported: `app.ts` builds the routes and writes nothing, `boot()` owns `.env`, the listen policy, the install, the port and the sweeps](#d-288--2026-09-16--the-app-can-be-imported-appts-builds-the-routes-and-writes-nothing-boot-owns-env-the-listen-policy-the-install-the-port-and-the-sweeps)
 
 ## By theme
 
@@ -304,6 +305,14 @@ The Contents above is chronological; this is the way in when you know the
 subject but not the ID. Lived in CLAUDE.md until D-038 and moved here so a new
 entry updates one file rather than two.
 
+- **The app can be imported** — D-288: importing the server's application
+  module is side-effect free — no write under `AGENTLINGS_HOME`, no listener,
+  no timer — and `boot()` owns everything that was at module load: `.env`,
+  the listen policy, `migrateLegacy`, the level load and HQ seed,
+  `closeOpenRows`, `harvestInterrupted`, `serve`, the socket, the four sweeps;
+  `app.test.ts` imports into an empty temp home and proves it stays empty;
+  the module is the factory rather than a `createApp(paths)` function, for a
+  reason given there
 - **The verdict on a job** — D-278: the 568-line resolve route and the
   standing approval's own shorter copy of it become one module,
   `performVerdict`, with the route and `autoSendIfApproved` as its two
@@ -24995,3 +25004,142 @@ the completion lambda `index.ts` hands `Sim` as `onOutcome`, eight ordered
 steps, one caller — is the review's second candidate and shares this runtime
 slice; the five remaining adds and it are the next intake-shaped tickets, if
 one is wanted.
+
+## D-288 — 2026-09-16 — The app can be imported: `app.ts` builds the routes and writes nothing, `boot()` owns `.env`, the listen policy, the install, the port and the sweeps
+
+From the 2026-09-16 fat review (#54, `docs/reviews/2026-09-16-fat-review.md`,
+P0-1), its first proposal; the second wave after #55's CI. Written with the
+code rather than before it, because the shape was settled by reading what
+the entry file did at import, not by choosing among designs.
+
+**Decided.** Importing the server's application module has **no effect on
+the install**: nothing is created or written under `AGENTLINGS_HOME`, nothing
+listens, no timer starts, no process exits, and the operator's `.env` is not
+read into the importing process. `server/src/app.ts` — the old `index.ts`,
+moved so history follows it — builds the Hono `app` (108 routes and three
+middlewares, the level map, the level runtime and every helper) for the
+install `installPaths()` names at import, and exports it. Everything else
+the file used to do at module load is one exported `boot()`, in the order it
+always ran: `process.loadEnvFile`; `listenPolicy()` and its `process.exit(1)`
+directly after, as D-271 requires; the executor line and the auth warning;
+`loadInstall()` — `mkdirSync` of the data dir, `migrateLegacy`, the open
+levels loaded, HQ seeded on a genuinely empty install, `closeOpenRows`
+(D-199), `harvestInterrupted`; `serve`; the stale-library sync; the
+WebSocket attached to the listening server; the tick, the cadence sweep and
+its boot firing (D-103), the mail-trigger sweep (D-248) and the voice sweep
+(D-265). The new `index.ts` is fifteen lines that import `boot` and call it,
+so the launcher (`dev-logged.mjs`), the Dockerfile, `npm run dev` and `npm
+run serve` are unchanged and boot exactly as before.
+
+**The rule this leaves.** A module a test may import must not touch the
+install; anything that must, belongs in `boot()` or behind a call. The
+reads that stay at import — `installPaths()` off the environment, the role
+registry off the repository's `roles/`, the library index off the data dir
+(`null` when there is none), the root `package.json` for `LIBRARIES` — are
+reads of product or of a file that may be absent, and none creates anything.
+`registry.load()` does `mkdirSync` on the roles dir, which is the shipped
+one and exists in every checkout; it is not under `AGENTLINGS_HOME`.
+
+**The module is the factory, not a `createApp(paths)` function.** The
+review's wording and the ticket's both named a factory taking its paths. It
+was not built, and the reason is the file's shape: the routes are 108
+registrations on a module-level `app`, interleaved with the functions and
+constants they close over (`SANDBOX_ROOT`, `levels`, `registry`,
+`INSTALL`, the caches). A function that took the paths would wrap 4,200
+lines in one closure for a parameter nobody has a second value for inside
+one process — and vitest already gives every test file its own module
+instance, so a test that wants a different home sets `AGENTLINGS_HOME` and
+imports; two homes in one file are `vi.resetModules()` and a second import.
+What a factory function would add is a re-indented file whose every line
+the diff and the blame attribute to this ticket. What it would not add is
+any test that cannot be written today. If a second install in one process
+is ever wanted, the wrap is the mechanical step it always was, and this
+entry is where to say why it was declined once.
+
+**Two small reads moved to call time, deliberately.** `AGENTLINGS_EXECUTOR`
+was snapshotted into a `const` at import, after `.env` had loaded; with the
+load in `boot()` that snapshot would run first and never see a value set in
+the file, so `useClaude()` reads the variable when asked — D-078's own
+architecture, and the same move #32 made for the key. The Google redirect
+URI took `PORT` from the module-level policy; it takes `listenPort()` now,
+which PROJECT.md already names as the only answer to what port an install is
+on. Neither changes what an install does.
+
+### What proved it
+
+**The smoke test, and the two mutants it kills.** `app.test.ts` sets
+`AGENTLINGS_HOME` to a fresh `mkdtemp` directory, imports `./app`
+dynamically — a static import is hoisted above the assignment and would
+bind every path to the checkout — and asserts: `installPaths().dataDir` and
+`secretsFile` are under the temp home; `readdirSync(home)` is `[]` after the
+import; `GET /api/session` answers `200 {required:false, authed:true}` — the
+route `session.ts` and `bundle.ts` each said no test could reach; `GET
+/api/levels` is `[]` and `/api/levels/nope/state` is `404 {error:'unknown
+level'}` because nothing was booted; and the home is still `[]` after
+answering. Import measured at 411 ms; the process exits on its own, so no
+timer survives it. Two mutants, each killed: `mkdirSync(SANDBOX_ROOT)` put
+back at import (two assertions fail — the data dir exists), and
+`loadInstall()` called at import (three fail — HQ is seeded and listed).
+Restored from a copy, not `git checkout` (D-021).
+
+**The production entry, booted live with a temp home.** `AGENTLINGS_HOME`
+pointed at an empty directory, `AGENTLINGS_PORT=4699`, `tsx src/index.ts`:
+the log shows the executor line, `server on 127.0.0.1:4699 — gate off`, the
+store line naming the temp paths, and `library: 542 templates from 4/4
+sources`; `GET /api/levels` answers the seeded HQ with a crew of two; the
+home afterwards holds `.agentlings/levels/hq` and `.agentlings/catalog/
+index.json`. With `AGENTLINGS_BIND=0.0.0.0` and no password the process
+prints D-271's refusal and exits 1. With `AGENTLINGS_PASSWORD` written to
+the temp home's `.env` and nothing in the environment, the gate is on and
+`/api/session` answers `{required:true, authed:false}` — the file is loaded
+by `boot()` and the policy still asked after it.
+
+**The suite.** Typecheck clean in all three workspaces. Server: 114 files,
+2,955 passed, 14 skipped on this Linux box (with `GIT_CONFIG_GLOBAL=
+/dev/null`, for the reason below); the only test that had to change is
+R-05 in `session.test.ts`, which reads the registrations out of the source
+and now reads `app.ts`. `git log --follow server/src/app.ts` lists the 214
+commits `index.ts` had.
+
+**What the comments said, and say now.** Eleven comments in `server/src`
+and one in `scripts/ledger-report.ts` stated that the entry listens at
+import or named `index.ts` as the module holding the routes; each now says
+it did until this entry, or names `app.ts`. The hand-run `scripts/prove-*`
+comments that give the same reason for existing were left as written: they
+are the record of why each was run, cited by the entries that ran them.
+
+### Also in this change, from the same review
+
+**Spawned git keeps the operator's config out of the sandbox.** #55 noted
+the git tests time out on a machine whose global config has
+`core.fsmonitor=true`, and read it as the fsmonitor daemon inheriting the
+child's stdio. Bisected here with `GIT_CONFIG_GLOBAL` pointed at one-line
+files: on this box (git 2.43, Linux) `core.fsmonitor=true` alone passes all
+26 tests in 65 ms — `git fsmonitor--daemon` answers *not supported on this
+platform* — and `commit.gpgsign=true` with an SSH signing program alone
+fails them, 29 s of a `git commit` waiting on an agent socket that is not
+there under vitest. Both are the same class of fault: `pushBranch` commits
+under `user.name=Agentlings` precisely so the operator's identity is not
+the author, and it was still signing with the operator's key and starting
+the operator's file monitor. Every git this module spawns now runs with
+`core.fsmonitor=false` and `commit.gpgsign=false` beside the
+`credential.helper=` it already injected through `GIT_CONFIG_*` — config
+that beats the global file and is never written into any repository — and
+`gitwork.test.ts` pins it with a global config that would sign through a
+program that does not exist: `writeDiff` and `pushBranch` succeed under it.
+Windows is unaffected in kind: the same keys, set the same way, and a
+sandbox clone of a few hundred files loses nothing by not having a monitor.
+
+**Tidied while passing** (review P2): `web/public/starbase.png` deleted —
+2,058,302 bytes, nine per cent of every tracked byte, referenced only by the
+Blender script that produced it while the title screen loads
+`starbase-scene.jpg` (Brian confirmed it is not a hand-opened reference);
+`.env.example` names the operator-facing variables it had missed —
+`BUK_API_KEY`, `SII_CERT_PATH`, `SII_CERT_PASSWORD`, `AGENTLINGS_MAX_COST_USD`
+— and the launcher's `AGENTLINGS_RESTART_AFTER_MS`/`_DELAY_MS`, `AGENTLINGS_
+LOG_DIR` and `AGENTLINGS_CLOSEOUT_MODEL` as the dev knobs they are; `ago()`
+is one function in `web/src/panels/ago.ts` rather than the same nine lines
+in `RolesModal.tsx` and `KnowledgeModal.tsx`; `isRecord` is one export in
+`packages/shared` rather than the same line in `reconciliation.ts` and
+`nomina.ts`. Not touched, per the review's own list: `WorkBar.tsx`, the
+data layer, `Schedule.tools`, the `three` path resolve, the ledger rename.

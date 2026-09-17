@@ -7,6 +7,7 @@ import {
   MAX_RECONCILIATION_TEXT_CHARS,
   MAX_RECONCILIATION_UNMATCHED,
   RECONCILIATION_TOLERANCE,
+  isRecord,
   type Job,
   type Reconciliation,
   type ReconciliationAdjustment,
@@ -71,9 +72,6 @@ export function readReconciliation(dir: string): ReconciliationRead | null {
   }
   return checkReconciliation(parsed);
 }
-
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** A required one-line string, trimmed and bounded; the error names the field. */
 function text(value: unknown, field: string): string | { error: string } {

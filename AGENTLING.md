@@ -209,7 +209,7 @@ demote to hints until they land again (D-036's surface doing its job).
 | Read, write and edit files | SDK `Read` / `Write` / `Edit`, gated by role |
 | Run commands | `Bash`, gated by role. No shell is available to a role without it |
 | Search | `Grep` / `Glob` |
-| Work on your code | A level's repo is a folder on this machine **or** a GitHub URL; `repoTarget` in `packages/shared` is the one reader that decides which, and the clone, the promote, the route that sets it and the review card all ask it (D-275). A folder: `git clone --local --no-hardlinks` into `sandbox/repo`, and Approve replays `DIFF.patch` onto its working tree. A URL: cloned over https with `GITHUB_TOKEN` as a transient `http.extraHeader`, and Approve pushes `agentlings/<job>-<title>` and opens a pull request against the default branch, recording `{branch, prNumber?, prUrl?, prError?}`. Either way every change is captured as `DIFF.patch` after the session, and a run that committed inside its own clone is refused at promote rather than pushed unreviewed. The folder half alone is **Not available hosted** (*repo work from a local path* — `existsSync(where.path)`, `server/src/index.ts`): it is a path on the operator's own machine, checked when it is set, and a container has none |
+| Work on your code | A level's repo is a folder on this machine **or** a GitHub URL; `repoTarget` in `packages/shared` is the one reader that decides which, and the clone, the promote, the route that sets it and the review card all ask it (D-275). A folder: `git clone --local --no-hardlinks` into `sandbox/repo`, and Approve replays `DIFF.patch` onto its working tree. A URL: cloned over https with `GITHUB_TOKEN` as a transient `http.extraHeader`, and Approve pushes `agentlings/<job>-<title>` and opens a pull request against the default branch, recording `{branch, prNumber?, prUrl?, prError?}`. Either way every change is captured as `DIFF.patch` after the session, and a run that committed inside its own clone is refused at promote rather than pushed unreviewed. The folder half alone is **Not available hosted** (*repo work from a local path* — `existsSync(where.path)`, `server/src/app.ts`): it is a path on the operator's own machine, checked when it is set, and a container has none |
 | Read your attachments | Up to 5 files, 10 MB each, waiting in `input/` — never at the sandbox root, because everything that asks "did this run deliver?" looks at top-level files |
 | Produce real documents | `.docx` (docx, mammoth), `.xlsx` (exceljs), `.pptx` (pptxgenjs), `.pdf` (pdf-lib, pdf-parse) — resolved from the project root, nothing installed per job. A **styled** PDF is printed, not drawn: the run authors one self-contained HTML and the `render_pdf` tool prints it through whichever Chromium this install has — Edge on Windows, the container's own on a host (`browserchannel.ts`) — offline, every external URL aborted (D-128) |
 | Author a backdrop plate stack | The run writes self-contained HTML pages — three.js served from the server's pinned copy at `http://three.local/three.module.js`, the offline rule's one stated exception — sets `document.title = "ready"`, and `render_plate` writes PNGs at the sandbox root, quantized to the 128-colour backdrop budget. Five modes (D-148): `plate` 2000×900 opaque, `plate-overscan` 2120×900 (drifts with the pointer), `cutout`/`cutout-overscan` (transparent-background upper plates and occlusion strips, alpha snapped binary, receipt reports coverage), `tile` ≤512×512 for `plateloop` regions — each crossed with `finish: quantized\|smooth` (D-151: smooth keeps the render exactly as drawn, for `backdrop.finish: "smooth"` packs and for `backdrop.depthMap` grayscale maps, which displace the back plate under the pointer on quantized packs). The budget is the layer's: one palette across every raster (`pack:quantize` cuts it jointly); a smooth pack has no budget at all. Named in `backdrop.plates`/`backdrop.occlusion`/`backdrop.depthMap`, the files ride the PACK.json draft through review, and Approve installs them all (D-143, D-148, D-151) |
@@ -578,7 +578,7 @@ by a sync you ask for**, into `store-index.json` beside that level's other
 files; the crew reads the index and never the source (D-047).
 
 **Not available hosted** (*the knowledge store over folders* —
-`paths.filter((p) => !existsSync(p))`, `server/src/index.ts`): the folders are
+`paths.filter((p) => !existsSync(p))`, `server/src/app.ts`): the folders are
 on the operator's own machine, and the route that saves them reports every one
 it cannot find rather than leaving a sync to come back empty. On an install with
 no operator disk that is all of them.
@@ -2004,8 +2004,8 @@ override. The subset rule is the same; the shape is stricter.
 | `TOOL_TIMEOUT_MS` | 60 s | `tools.ts` | A compiled tool that hangs is not cheaper |
 | KNOWLEDGE notes per session | 8 | `SESSION_NOTES`, `executors/claude.ts` | Chosen by term overlap, not recency |
 | KNOWLEDGE notes per recall | 6 | `router.ts` | The `answer` tier |
-| Provenance neighbourhood cap | 50 | `index.ts` | Edges past it are counted, not dropped (D-225) |
-| Provenance search cap | 50 | `index.ts` | Ranked by the same shared-word count as the notes |
+| Provenance neighbourhood cap | 50 | `app.ts` | Edges past it are counted, not dropped (D-225) |
+| Provenance search cap | 50 | `app.ts` | Ranked by the same shared-word count as the notes |
 | Provenance cache | 10 min | `provenance.ts` | Per level, from the last look; rebuilt when a file moves |
 | Provenance yield | 500 passages, 25 sandboxes | `provenance.ts` | The build breathes; worst slice 52 ms at the caps |
 | `STALE_MS` | 7 days | `store.ts` | Past it the knowledge store contributes nothing at all |

@@ -722,10 +722,12 @@ describe('performVerdict (D-278)', () => {
      * the module joins this table and is met under both, which is the whole
      * point of there being one module.
      *
-     * What it cannot reach is `autoSendIfApproved` itself: index.ts listens at
-     * import, so no test may load it (D-278 Q10). This proves the module is
-     * blind to who is asking; that the auto caller reaches the module at all
-     * is the live proof's to show, and its eligibility is approvals.test.ts's.
+     * What it does not reach is `autoSendIfApproved` itself: it is not exported
+     * from `app.ts`, and when this was written the file listened at import so
+     * no test could load it at all (D-278 Q10; D-288 lifted that). This proves
+     * the module is blind to who is asking; that the auto caller reaches the
+     * module at all is the live proof's to show, and its eligibility is
+     * approvals.test.ts's.
      */
     const GATES: [string, () => { job: Job; over?: Partial<VerdictContext> }][] = [
       [

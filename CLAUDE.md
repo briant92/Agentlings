@@ -108,4 +108,4 @@ The five default labels, each named as its role (`needs-triage` … `wontfix`). 
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` at the root is the glossary; decisions are `D-` entries in `DECISIONS.md`, never a `docs/adr/`. See `docs/agents/domain.md`.
+Single-context: `GLOSSARY.md` at the root is the glossary; decisions are `D-` entries in `DECISIONS.md`, never a `docs/adr/`. See `docs/agents/domain.md`.

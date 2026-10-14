@@ -15,7 +15,7 @@ Materialized memory for agents driving Agentlings live. Each map has:
 
 **Status:** honest stubs. PROVE_STATUS not yet; Nest owns the prove.
 
-**Source of truth:** `web/src/` (screens, panels, world), `CONTEXT.md` for the
+**Source of truth:** `web/src/` (screens, panels, world), `GLOSSARY.md` for the
 words, `DECISIONS.md` for why — not this folder alone. The app has no deep
 links: every screen is one URL and the click path is the route. Update a map
 when the DOM hooks or the click path drift; never fix a product bug by editing

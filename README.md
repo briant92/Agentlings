@@ -250,7 +250,7 @@ It runs shell commands with your credentials, so read it before you trust it.
 |---|---|
 | [SPEC.md](SPEC.md) | What the product is, milestone by milestone |
 | [AGENTLING.md](AGENTLING.md) | What one agentling can do — every capability tagged Live / Partial / Not built / Not available hosted |
-| [CONTEXT.md](CONTEXT.md) | The glossary. *Install*, *hosted*, *door*, *channel*, *act* |
+| [GLOSSARY.md](GLOSSARY.md) | The glossary. *Install*, *hosted*, *door*, *channel*, *act* |
 | [DECISIONS.md](DECISIONS.md) | Why each choice was made, and what measurement settled it |
 | [LICENSE](LICENSE) | Apache-2.0 |
 

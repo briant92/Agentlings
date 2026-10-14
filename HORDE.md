@@ -24,7 +24,7 @@ began from is the artifact *The Hireable Horde*
 (https://claude.ai/code/artifact/3b0e5728-aec3-4765-bd68-d3cc1c839c41), with
 the measurement behind it in *How Far Can the Horde Go*
 (https://claude.ai/code/artifact/66dc4321-39d6-4018-b097-336fad285a76). The
-vocabulary is `CONTEXT.md`'s — *score*, *real level*, *standing authority*,
+vocabulary is `GLOSSARY.md`'s — *score*, *real level*, *standing authority*,
 *act*, *door*, *channel*, *trigger rule* — and where this board and the
 glossary disagree, the glossary is right.
 

@@ -25,7 +25,7 @@ import { templateCodeFromReadme } from './template';
  */
 const read = (rel: string) => readFileSync(path.join(REPO_ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
 
-const CONTEXT = read('CONTEXT.md');
+const GLOSSARY = read('GLOSSARY.md');
 const CAPABILITY_FILE = read('AGENTLING.md');
 const README = read('README.md');
 
@@ -53,12 +53,12 @@ const TAGGED = taggedCapabilities(CAPABILITY_FILE);
 
 /**
  * The glossary's own list of what a hosted install refuses, out of the
- * *Hosted* entry rather than retyped here. `CONTEXT.md` is the vocabulary
+ * *Hosted* entry rather than retyped here. `GLOSSARY.md` is the vocabulary
  * (PROJECT.md), so it is the list the other two answer to and not a copy.
  */
 function glossaryDiskBound(text: string): string[] {
   const entry = text.match(/\*\*Hosted\*\*:\n([\s\S]*?)\n_Avoid_/);
-  if (!entry) throw new Error('CONTEXT.md has no Hosted entry');
+  if (!entry) throw new Error('GLOSSARY.md has no Hosted entry');
   const listed = entry[1].replace(/\n/g, ' ').match(/refuses at its probe — (.*?)\./);
   if (!listed) throw new Error('the Hosted entry no longer lists what a probe refuses');
   return listed[1].split(',').map((s) => s.trim());
@@ -185,7 +185,7 @@ describe('the readers', () => {
 });
 
 describe('the three lists agree', () => {
-  const glossary = glossaryDiskBound(CONTEXT);
+  const glossary = glossaryDiskBound(GLOSSARY);
 
   it('the glossary names five disk-bound capabilities', () => {
     // Not a magic number: it is the count the tag, the README and the probe

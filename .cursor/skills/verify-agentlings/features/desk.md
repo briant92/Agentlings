@@ -43,6 +43,6 @@ bar is Phase-2 drive — not built.
   the panels get 401 and the app returns to the login screen.
 - A hosted install may refuse supervised live acting without a desktop. Prefer
   loopback.
-- "Desk" in `CONTEXT.md` is the surface that shows a reading; the reading
+- "Desk" in `GLOSSARY.md` is the surface that shows a reading; the reading
   itself is *intake*. Do not conflate them in evidence captions.
 - Never paste `AGENTLINGS_PASSWORD` or any key here or in a caption.

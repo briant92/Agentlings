@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
  * Where this install keeps things.
  *
  * One operator's copy of Agentlings is one secrets file and one data
- * directory (CONTEXT.md, *Install*). Until this module those were derived in
+ * directory (GLOSSARY.md, *Install*). Until this module those were derived in
  * eight separate constants at the top of `index.ts`, each joining a name onto
  * the repository root — which is fine on a laptop, where the code and the
  * operator's data are the same folder, and wrong everywhere else.

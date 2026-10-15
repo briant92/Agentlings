@@ -1,5 +1,29 @@
 # Agentlings
 
+## Working here
+
+Four rules for anyone changing this repo. They sit in front of the
+behavioral guidelines below and the project rules in `PROJECT.md`
+(imported further down).
+
+1. **Read `GLOSSARY.md` first.** It is the domain glossary: definitions
+   only. Use its words for domain concepts.
+2. **Run the real checks. Do not invent others.**
+   - Local, from `package.json`: `npm install`, then `npm run typecheck`,
+     then `npm test`. Those two scripts are
+     `npm run typecheck --workspaces --if-present` and
+     `npm run test --workspaces --if-present`.
+   - CI, from `.github/workflows/ci.yml`, on a push to `main` and on pull
+     requests: `npm ci`, then `npm run typecheck`, then `npm test`. The
+     workflow reports; it does not gate.
+3. **Never push to `main`, and never merge.** A push to `main` updates the
+   reference install and every template install. Finished work goes out as
+   a draft pull request for Brian to review.
+4. **Never commit secrets:** `.env`, tokens, passwords, or keys. `.env` is
+   gitignored.
+
+---
+
 Behavioral base adapted from the Karpathy-inspired CLAUDE.md
 (https://github.com/multica-ai/andrej-karpathy-skills), followed by
 project-specific instructions. Where they conflict, project-specific wins.

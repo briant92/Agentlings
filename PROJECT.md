@@ -25,7 +25,7 @@ behavioral base lives there alone; this is the project half, split out on
   So the only live reopen trigger left is a second person needing access —
   wanting the horde on a phone is no longer one.
 - Architectural choices (language, engine, framework, storage) extend CLAUDE.md
-  rule 1:
+  Think Before Coding:
   present 2–3 options with a recommendation, wait for the decision, then
   append an entry to `DECISIONS.md`.
 - Keep this file lean: when a placeholder becomes real, replace it and delete
@@ -108,8 +108,8 @@ behavioral base lives there alone; this is the project half, split out on
 
 ## Workflow
 
-- Definition of done (extends CLAUDE.md rule 4): show the evidence — test output,
-  command results — don't just assert success.
+- Definition of done (extends CLAUDE.md Goal-Driven Execution): show the
+  evidence — test output, command results — don't just assert success.
 - Commit early and often with descriptive messages.
 - **A push to `main` is a deploy, and not only here.** The reference install
   rebuilds from `main` on every push — measured 2026-08-28, deployment

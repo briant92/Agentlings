@@ -44,7 +44,7 @@ import { outputNames, PREVIOUS_RESULT } from '../outputs';
 import type { CarryManifest } from '@agentlings/shared';
 import type { LoadedRole, RoleRegistry } from '../roles';
 import { relevantLines } from '../router';
-import { PASSWORD_VAR } from '../session';
+import { PASSWORD_VAR, RUNNER_SECRET_KEY, runnerSecret } from '../session';
 import { endLine, logTrajectory, trajectoryLine, type Pass } from '../trajectory';
 import { BLS_TOOLS } from '../bls';
 import { CALENDAR_TOOLS } from '../calendar';
@@ -1620,7 +1620,11 @@ export class ClaudeAgentExecutor implements Executor {
       // reads, and not the environment, which its `Bash` children inherit.
       // Always written and always ended — the runner reads to EOF, so a job
       // with no stdio connection sends `{}` rather than leaving it waiting.
-      child.stdin?.end(`${JSON.stringify(secrets)}\n`);
+      // This boot's runner secret rides along: it is what opens `/internal/*`
+      // to the runner on an install that is not on loopback alone (D-289).
+      child.stdin?.end(
+        `${JSON.stringify({ ...secrets, [RUNNER_SECRET_KEY]: runnerSecret() })}\n`,
+      );
       this.running.set(jobId, child);
       // The trail lands beside the config that started the child — the
       // sandbox — and the write-up's lines are tagged as its own pass, so a

@@ -1,14 +1,7 @@
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS, because the runner is spawned with plain `node`.
-import {
-  doorHeaders,
-  readSecrets,
-  resolveSecrets,
-  RUNNER_HEADER,
-  RUNNER_SECRET_KEY,
-  takeRunnerSecret,
-} from './runner-secrets.mjs';
+import { doorHeaders, readSecrets, resolveSecrets, RUNNER_HEADER, RUNNER_SECRET_KEY, takeRunnerSecret } from './runner-secrets.mjs';
 
 /**
  * D-242's runner half. It exists as its own module because a mutation pass

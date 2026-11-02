@@ -477,7 +477,7 @@ describe('every route the server registers is covered by a prefix (R-05)', () =>
    */
   it('serves the bundle before the gate, so the sign-in can be reached (#29)', () => {
     const bundle = source.indexOf('bundleFile(new URL(');
-    const gate = source.indexOf('requestAllowed(new URL(');
+    const gate = source.indexOf('if (requestAllowed(pathname,');
     expect(bundle).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(-1);
     expect(bundle).toBeLessThan(gate);

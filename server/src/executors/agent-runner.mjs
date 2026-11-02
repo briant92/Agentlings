@@ -6,7 +6,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { hostAllowed, originsArg, refusal } from './browser-act.mjs';
-import { readSecrets, resolveSecrets } from './runner-secrets.mjs';
+import { doorHeaders, readSecrets, resolveSecrets, takeRunnerSecret } from './runner-secrets.mjs';
 
 function emit(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
@@ -32,8 +32,9 @@ try {
   // be somewhere it reaches. Deliberately not in the config file, which lives
   // in the sandbox the agentling reads all job long, and deliberately not in
   // the environment, which `launderedEnv` strips for the same reason and which
-  // a `Bash` child inherits anyway (D-242).
-  const secrets = await readSecrets(process.stdin);
+  // a `Bash` child inherits anyway (D-242). The server's runner secret rides
+  // along and is split off first, so no MCP server is ever handed it (D-289).
+  const { runnerSecret, secrets } = takeRunnerSecret(await readSecrets(process.stdin));
   const { query, createSdkMcpServer, tool } = await import('@anthropic-ai/claude-agent-sdk');
 
   const mcpServers = resolveSecrets(config.mcpServers ?? {}, secrets);
@@ -147,7 +148,7 @@ try {
             try {
               const res = await fetch(config.web.endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers: doorHeaders(runnerSecret),
                 body: JSON.stringify({ url }),
               });
               const page = await res.json();
@@ -184,7 +185,7 @@ try {
             try {
               const res = await fetch(config.render.endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers: doorHeaders(runnerSecret),
                 body: JSON.stringify({ tool: 'render_pdf', args: { html } }),
               });
               const reply = await res.json();
@@ -227,7 +228,7 @@ try {
             try {
               const res = await fetch(config.render.endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers: doorHeaders(runnerSecret),
                 // Undefined fields drop out of the JSON; the door's own
                 // refuse-by-name validation stays the authority (D-147).
                 body: JSON.stringify({
@@ -305,7 +306,7 @@ try {
             try {
               const res = await fetch(builtin.endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers: doorHeaders(runnerSecret),
                 body: JSON.stringify({ tool: spec.name, args }),
               });
               const reply = await res.json();

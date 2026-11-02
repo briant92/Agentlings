@@ -15,7 +15,12 @@ import {
   attemptLogin,
   clearedCookie,
   gateEnabled,
+  internalCallerAllowed,
   isExempt,
+  isLoopbackAddress,
+  RUNNER_HEADER,
+  RUNNER_SECRET_KEY,
+  runnerSecret,
   listenPolicy,
   lockoutRefusal,
   lockoutRemaining,
@@ -212,6 +217,52 @@ describe('the request gate', () => {
 
   it('lets the runner through to its doors with no cookie at all', () => {
     expect(requestAllowed('/internal/fetch', null, NOW, ON)).toBe(true);
+  });
+});
+
+describe('who may call /internal/* (D-289)', () => {
+  const SECRET = 'a'.repeat(64);
+
+  it('reads loopback addresses, including the IPv4-mapped spelling node reports', () => {
+    expect(isLoopbackAddress('127.0.0.1')).toBe(true);
+    expect(isLoopbackAddress('127.8.9.10')).toBe(true);
+    expect(isLoopbackAddress('::1')).toBe(true);
+    expect(isLoopbackAddress('::ffff:127.0.0.1')).toBe(true);
+  });
+
+  it('reads nothing else as loopback — no address, a public one, a private one, a hostname', () => {
+    expect(isLoopbackAddress(undefined)).toBe(false);
+    expect(isLoopbackAddress('')).toBe(false);
+    expect(isLoopbackAddress('203.0.113.7')).toBe(false);
+    expect(isLoopbackAddress('10.0.0.5')).toBe(false);
+    expect(isLoopbackAddress('::ffff:10.0.0.5')).toBe(false);
+    expect(isLoopbackAddress('localhost')).toBe(false);
+  });
+
+  it('admits a loopback caller with no secret — the compiled tools call this way', () => {
+    expect(internalCallerAllowed('127.0.0.1', undefined, SECRET)).toBe(true);
+  });
+
+  it('admits any address that presents the runner secret', () => {
+    expect(internalCallerAllowed('203.0.113.7', SECRET, SECRET)).toBe(true);
+    expect(internalCallerAllowed(undefined, SECRET, SECRET)).toBe(true);
+  });
+
+  it('refuses a remote caller with no secret, a wrong one, or an empty one', () => {
+    expect(internalCallerAllowed('203.0.113.7', undefined, SECRET)).toBe(false);
+    expect(internalCallerAllowed('203.0.113.7', 'b'.repeat(64), SECRET)).toBe(false);
+    expect(internalCallerAllowed('203.0.113.7', 'short', SECRET)).toBe(false);
+    expect(internalCallerAllowed('203.0.113.7', '', SECRET)).toBe(false);
+    expect(internalCallerAllowed(undefined, undefined, SECRET)).toBe(false);
+  });
+
+  it('mints one long secret per boot, and the runner side names the same header and key', async () => {
+    expect(runnerSecret()).toMatch(/^[0-9a-f]{64}$/);
+    expect(runnerSecret()).toBe(runnerSecret());
+    // @ts-expect-error plain JS, because the runner is spawned with plain `node`.
+    const runner = await import('./executors/runner-secrets.mjs');
+    expect(runner.RUNNER_HEADER).toBe(RUNNER_HEADER);
+    expect(runner.RUNNER_SECRET_KEY).toBe(RUNNER_SECRET_KEY);
   });
 });
 
@@ -426,7 +477,7 @@ describe('every route the server registers is covered by a prefix (R-05)', () =>
    */
   it('serves the bundle before the gate, so the sign-in can be reached (#29)', () => {
     const bundle = source.indexOf('bundleFile(new URL(');
-    const gate = source.indexOf('requestAllowed(new URL(');
+    const gate = source.indexOf('if (requestAllowed(pathname,');
     expect(bundle).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(-1);
     expect(bundle).toBeLessThan(gate);

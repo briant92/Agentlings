@@ -298,6 +298,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread](#d-286--2026-09-04--the-counterparty-thread-a-mail-firing-carries-its-attachments-and-the-conversation-so-far-a-reply-may-carry-files-and-brian-holds-every-thread)
 - [D-287 — 2026-09-04 — Intake: a sentence becomes a job through one reading, shown at the desk and performed by every way in](#d-287--2026-09-04--intake-a-sentence-becomes-a-job-through-one-reading-shown-at-the-desk-and-performed-by-every-way-in)
 - [D-288 — 2026-09-16 — The app can be imported: `app.ts` builds the routes and writes nothing, `boot()` owns `.env`, the listen policy, the install, the port and the sweeps](#d-288--2026-09-16--the-app-can-be-imported-appts-builds-the-routes-and-writes-nothing-boot-owns-env-the-listen-policy-the-install-the-port-and-the-sweeps)
+- [D-290 — 2026-11-02 — D-241 and D-242 reopen for a hosted install: a public bind spent the network boundary both leaned on, so the doors check their caller and the lockout is owed](#d-290--2026-11-02--d-241-and-d-242-reopen-for-a-hosted-install-a-public-bind-spent-the-network-boundary-both-leaned-on-so-the-doors-check-their-caller-and-the-lockout-is-owed)
 
 ## By theme
 
@@ -25143,3 +25144,81 @@ in `RolesModal.tsx` and `KnowledgeModal.tsx`; `isRecord` is one export in
 `packages/shared` rather than the same line in `reconciliation.ts` and
 `nomina.ts`. Not touched, per the review's own list: `WorkBar.tsx`, the
 data layer, `Schedule.tools`, the `three` path resolve, the ledger rename.
+
+## D-290 — 2026-11-02 — D-241 and D-242 reopen for a hosted install: a public bind spent the network boundary both leaned on, so the doors check their caller and the lockout is owed
+
+A follow-up to PR #61 (D-289). That PR is the code; this entry is why it had to
+exist, and what is still owed once it lands.
+
+### What reopens, and what does not
+
+D-241 left `/internal/*` uncredentialed because *what protects them is the
+network boundary — unchanged*. D-242 made the login lockout one counter rather
+than per-IP because *every request arrives on loopback*. Both stand as accounts
+of what was true: the server bound `127.0.0.1` (D-127), and `tailscale serve`
+proxied into that same loopback.
+
+What reopens them is D-271 and D-273. D-271 let an install bind a public
+interface once a password is set; D-273 published Agentlings as a template
+others self-host, and the `Dockerfile` it ships sets `AGENTLINGS_BIND=0.0.0.0`.
+So a hosted install is on a public address by construction, and both premises
+are false there: no network boundary stands in front of the doors, and requests
+no longer all arrive on loopback. D-271 joined the bind to the **gate**. It never
+joined it to the two things that had been resting on the bind without saying so.
+
+An install on loopback alone is unchanged. For it, D-241 and D-242 still read as
+written.
+
+### The evidence — the 2026-11-01 review
+
+On an install with `AGENTLINGS_PASSWORD` set and a public bind, with no cookie:
+
+- `GET /api/levels` answered **401**. The gate was doing its job.
+- `POST /internal/github` **reached its handler.** `isExempt` lets every
+  `/internal/*` path past the cookie by design (D-241), and nothing else stood
+  between a stranger and the door.
+- **Six wrong passwords from an anonymous caller locked out the right one.** The
+  seventh request carried the correct password and answered **429**. That is
+  D-242 working exactly as written: one counter, and the right password refused
+  while locked. On a public address it means anyone with the URL can keep the
+  operator out, five minutes at a time, for as long as they care to.
+
+### What was decided
+
+1. **`/internal/*` answers only a loopback caller or the holder of this boot's
+   runner secret** (PR #61, D-289). The address is the socket's own peer, never
+   a header or a hostname, because the caller chooses both of those. The secret
+   is minted per boot and never written down. It reaches each spawned runner
+   over stdin, D-242's channel, and is split off before any placeholder is
+   filled, so no MCP server is ever handed it. Loopback stays allowed because it
+   is the boundary every unhosted install already had, and it is how compiled
+   tools reach their doors without a secret. On a public bind a stranger is
+   neither.
+2. **`fetchPage` refuses private and link-local addresses.** This is a separate
+   pull request, **pending**: it was not yet open when this entry was written,
+   and its number goes here when it is. `fetchPage` is what `/internal/fetch`
+   performs and what the executors call to read the URLs a job names. On a
+   hosted install the network behind the server is the host's. Its private range
+   and the link-local metadata address (`169.254.169.254`) are reachable from
+   the server and from nobody outside it. The caller check settles *who* may ask
+   the web door for a page; this settles *what* page may be asked for, including
+   by a run that holds that door legitimately.
+3. **The lockout is open follow-up work, not decided here.** There are two
+   shapes, and each has a cost:
+   - **Per-IP.** D-242's objection is gone on a public bind, because the socket's
+     peer is no longer always `127.0.0.1`. But a hosted install usually sits
+     behind its host's proxy. There the socket's peer is the proxy, and the
+     client's address arrives in `X-Forwarded-For`, a header the caller writes.
+     Per-IP is honest only where the install knows which proxy to believe.
+   - **The correct password passes the lock.** A stranger could no longer keep
+     the operator out. The cost is the one D-242 named: while locked, every
+     guess is still compared, so the lock stops bounding the guessing rate, and
+     a guess that is right on try seven gets in.
+
+   Until one of them lands, anyone who has a hosted install's URL can hold its
+   login shut.
+
+### What this entry does not do
+
+It changes no code. The caller check is PR #61's, the `fetchPage` guard is its
+own pull request, and the lockout has none yet.

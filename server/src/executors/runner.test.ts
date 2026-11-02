@@ -6,6 +6,7 @@ import type { Job, ReconciliationRollForward } from '@agentlings/shared';
 import { MemoryStore } from '../memory';
 import { outputNames } from '../outputs';
 import { RoleRegistry } from '../roles';
+import { RUNNER_SECRET_KEY, runnerSecret } from '../session';
 import { TRAJECTORY_FILE } from '../trajectory';
 import { CANCELLED, ClaudeAgentExecutor, SessionFailure } from './claude';
 
@@ -158,8 +159,9 @@ describe('the secrets channel, wired', () => {
     const result = await exec.run(job('j-secrets'), sandbox);
 
     // It finished at all, which is the hang check: this await would time out
-    // rather than fail if stdin were left open.
-    expect(result.summary).toBe('stdin:{}');
+    // rather than fail if stdin were left open. With no stdio connection the
+    // only thing on it is this boot's runner secret (D-289).
+    expect(result.summary).toBe(`stdin:${JSON.stringify({ [RUNNER_SECRET_KEY]: runnerSecret() })}`);
 
     // And the config beside it names no secret, because there is none to name.
     const config = JSON.parse(readFileSync(path.join(sandbox, '.session.json'), 'utf8'));

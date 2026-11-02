@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS, because the runner is spawned with plain `node`.
-import { readSecrets, resolveSecrets } from './runner-secrets.mjs';
+import { doorHeaders, readSecrets, resolveSecrets, RUNNER_HEADER, RUNNER_SECRET_KEY, takeRunnerSecret } from './runner-secrets.mjs';
 
 /**
  * D-242's runner half. It exists as its own module because a mutation pass
@@ -114,5 +114,33 @@ describe('resolveSecrets', () => {
     expect(resolveSecrets({ s: { command: 'npx' } }, {}).s.env).toEqual({});
     expect(resolveSecrets({}, {})).toEqual({});
     expect(resolveSecrets(undefined, {})).toEqual({});
+  });
+});
+
+describe('the runner secret (D-289)', () => {
+  it('takes the secret out of what stdin carried, so no MCP server can be handed it', () => {
+    const read = { [RUNNER_SECRET_KEY]: 'boot-secret', TRACKER_TOKEN: 'abc' };
+    const { runnerSecret, secrets } = takeRunnerSecret(read);
+    expect(runnerSecret).toBe('boot-secret');
+    expect(secrets).toEqual({ TRACKER_TOKEN: 'abc' });
+    // A user server that names the key gets nothing, the way a missing secret does.
+    const filled = resolveSecrets(
+      { s: { command: 'npx', env: { LEAK: '${' + RUNNER_SECRET_KEY + '}' } } },
+      secrets,
+    );
+    expect(filled.s.env).toEqual({});
+  });
+
+  it('answers no secret when the server sent none, or sent junk under the key', () => {
+    expect(takeRunnerSecret({}).runnerSecret).toBeUndefined();
+    expect(takeRunnerSecret({ [RUNNER_SECRET_KEY]: 42 }).runnerSecret).toBeUndefined();
+  });
+
+  it('puts the secret on every door call, and only a content type when there is none', () => {
+    expect(doorHeaders('boot-secret')).toEqual({
+      'content-type': 'application/json',
+      [RUNNER_HEADER]: 'boot-secret',
+    });
+    expect(doorHeaders(undefined)).toEqual({ 'content-type': 'application/json' });
   });
 });

@@ -7,11 +7,42 @@
  * flows. It reads documents, which is what "read this and tell me" needs.
  */
 
+import { lookup } from 'node:dns/promises';
+import { BlockList, isIP } from 'node:net';
+
 /** ~4 characters per token, so this is roughly a 3k-token ceiling. */
 export const DEFAULT_MAX_CHARS = 12_000;
 const FETCH_TIMEOUT_MS = 15_000;
 /** Refuse to even decode something obviously enormous. */
 const MAX_BYTES = 5_000_000;
+const MAX_REDIRECTS = 5;
+
+/**
+ * This machine and its network: never reachable through the web door,
+ * whatever the allowlist says. BlockList also matches the IPv4-mapped IPv6
+ * form of each IPv4 range.
+ */
+const PRIVATE = new BlockList();
+PRIVATE.addSubnet('127.0.0.0', 8, 'ipv4');
+PRIVATE.addSubnet('10.0.0.0', 8, 'ipv4');
+PRIVATE.addSubnet('172.16.0.0', 12, 'ipv4');
+PRIVATE.addSubnet('192.168.0.0', 16, 'ipv4');
+PRIVATE.addSubnet('169.254.0.0', 16, 'ipv4');
+PRIVATE.addAddress('0.0.0.0', 'ipv4');
+PRIVATE.addAddress('::1', 'ipv6');
+PRIVATE.addAddress('::', 'ipv6');
+PRIVATE.addSubnet('fc00::', 7, 'ipv6');
+PRIVATE.addSubnet('fe80::', 10, 'ipv6');
+
+/** Checks every address the host resolves to, not just the first. */
+async function isPrivateHost(hostname: string): Promise<boolean> {
+  const host = hostname.replace(/^\[|\]$/g, '');
+  const family = isIP(host);
+  const addresses = family ? [{ address: host, family }] : await lookup(host, { all: true });
+  return addresses.some(({ address, family }) =>
+    PRIVATE.check(address, family === 6 ? 'ipv6' : 'ipv4'),
+  );
+}
 
 const ENTITIES: Record<string, string> = {
   '&amp;': '&',
@@ -77,7 +108,8 @@ export function trim(text: string, maxChars = DEFAULT_MAX_CHARS): Trimmed {
 
 /**
  * Host allowlist. An empty list means the opt-in itself is the gate: a job
- * that never asked for this connection cannot reach the web at all.
+ * that never asked for this connection cannot reach the web at all. Private
+ * addresses are refused separately, in `fetchPage`, after DNS.
  */
 export function isAllowed(url: string, allow: string[] = []): boolean {
   let host: string;
@@ -118,16 +150,36 @@ export async function fetchPage(
   url: string,
   options: { allow?: string[]; maxChars?: number } = {},
 ): Promise<PageResult> {
-  if (!isAllowed(url, options.allow)) {
-    return { url, text: '', truncated: false, error: 'that address is not on the allowed list' };
-  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'user-agent': 'agentlings', accept: 'text/html,text/plain,*/*' },
-    });
+    let target = url;
+    let res: Response;
+    for (let hop = 0; ; hop++) {
+      if (!isAllowed(target, options.allow)) {
+        return { url, text: '', truncated: false, error: 'that address is not on the allowed list' };
+      }
+      if (await isPrivateHost(new URL(target).hostname)) {
+        return {
+          url,
+          text: '',
+          truncated: false,
+          error: 'that is a private address, inside this machine or its network',
+        };
+      }
+      res = await fetch(target, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: { 'user-agent': 'agentlings', accept: 'text/html,text/plain,*/*' },
+      });
+      const location = res.headers.get('location');
+      if (res.status < 300 || res.status >= 400 || !location) break;
+      await res.body?.cancel();
+      if (hop === MAX_REDIRECTS) {
+        return { url, text: '', truncated: false, error: 'the site redirected too many times' };
+      }
+      target = new URL(location, target).href;
+    }
     if (!res.ok) {
       return { url, text: '', truncated: false, error: `the site returned ${res.status}` };
     }

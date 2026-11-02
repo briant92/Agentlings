@@ -161,7 +161,7 @@ describe('fetchPage refuses addresses inside this machine or its network', () =>
     ['link-local (cloud metadata included)', ['http://169.254.169.254/latest/meta-data/', 'http://169.254.0.1/', 'http://[fe80::1]/']],
     ['unspecified', ['http://0.0.0.0/', 'http://[::]/']],
     ['IPv4-mapped IPv6', ['http://[::ffff:127.0.0.1]/', 'http://[::ffff:10.0.0.1]/', 'http://[::ffff:169.254.169.254]/', 'http://[::ffff:0.0.0.0]/']],
-  ])('refuses a %s address and never connects', async (_, urls) => {
+  ])('refuses %s addresses and never connects', async (_, urls) => {
     for (const url of urls) await refused(url);
     expect(fetchMock).not.toHaveBeenCalled();
   });

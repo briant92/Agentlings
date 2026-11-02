@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { GOOGLE_CALLBACK_PATH, isLoopbackHost } from './origin';
 
 /**
@@ -255,13 +255,12 @@ export function readCookie(header: string | null | undefined, name: string): str
  * *future* route cannot quietly slip out (R-05).
  */
 export function isExempt(path: string): boolean {
-  // The doors the spawned runner calls. Left uncredentialed on purpose: the
-  // credential here is a cookie a browser earns by typing a password, and the
-  // runner has no browser — so no session is ever handed anything, which is
-  // R-01 dissolved rather than mitigated. The doors are read-shaped and
-  // already gated per connection by `connection.tools` (D-158), the origin
-  // check already refuses a hostile page's POST, and what protects them is the
-  // network boundary, unchanged.
+  // The doors the spawned runner calls. Exempt from the *cookie* on purpose:
+  // the cookie is what a browser earns by typing a password, and the runner
+  // has no browser — so no session is ever handed anything, which is R-01
+  // dissolved rather than mitigated. They are not uncredentialed: since a
+  // hosted install binds a public interface (D-271), the network boundary is
+  // no longer theirs, and `internalCallerAllowed` decides who calls (D-289).
   if (path === '/internal' || path.startsWith('/internal/')) return true;
   // Logging in cannot require being logged in.
   if (path === '/api/session') return true;
@@ -286,6 +285,71 @@ export function requestAllowed(
   if (isExempt(path)) return true;
   return tokenValid(readCookie(cookieHeader, SESSION_COOKIE), password, now);
 }
+
+/** The header the runner puts its per-boot secret in. Mirrored, and pinned
+ * equal by test, in `executors/runner-secrets.mjs`, which cannot import this. */
+export const RUNNER_HEADER = 'x-agentlings-runner';
+
+/** The key the secret travels under in the runner's stdin object (D-242's
+ * channel), taken out before any placeholder is filled. Mirrored likewise. */
+export const RUNNER_SECRET_KEY = 'AGENTLINGS_RUNNER_SECRET';
+
+let bootSecret: string | null = null;
+
+/**
+ * This boot's runner secret: random, never written down, handed to each
+ * spawned runner over stdin and nowhere else. A restart mints another, which
+ * is harmless — every runner dies with the server that spawned it.
+ */
+export function runnerSecret(): string {
+  bootSecret ??= randomBytes(32).toString('hex');
+  return bootSecret;
+}
+
+export function isInternalPath(path: string): boolean {
+  return path === '/internal' || path.startsWith('/internal/');
+}
+
+/**
+ * Whether a socket's peer address is this machine. An *address*, as the
+ * socket reports it — never a hostname and never a header, both of which the
+ * caller chooses. Node reports an IPv4 peer on a dual-stack socket as
+ * `::ffff:127.0.0.1`.
+ */
+export function isLoopbackAddress(address: string | null | undefined): boolean {
+  if (!address) return false;
+  const bare = address.toLowerCase().replace(/^::ffff:/, '');
+  if (bare === '::1') return true;
+  const parts = bare.split('.');
+  return (
+    parts.length === 4 &&
+    parts[0] === '127' &&
+    parts.every((p) => /^\d{1,3}$/.test(p) && Number(p) <= 255)
+  );
+}
+
+/**
+ * Who may call `/internal/*` (D-289): this machine, or a caller holding this
+ * boot's runner secret. Loopback alone is not the runner — a same-host proxy
+ * such as `tailscale serve` arrives there too (D-241) — but it is the trust
+ * boundary every unhosted install already had, and it is how compiled tools
+ * reach their doors, which carry no secret. On a public bind every stranger
+ * is neither, which is the case this exists for.
+ */
+export function internalCallerAllowed(
+  remoteAddress: string | null | undefined,
+  presented: string | null | undefined,
+  secret: string = runnerSecret(),
+): boolean {
+  if (isLoopbackAddress(remoteAddress)) return true;
+  if (!presented) return false;
+  const a = Buffer.from(presented);
+  const b = Buffer.from(secret);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** What a refused `/internal/*` caller is told. */
+export const internalRefusal = 'These doors answer only the runner on this install';
 
 /**
  * The `Set-Cookie` value for a fresh login.

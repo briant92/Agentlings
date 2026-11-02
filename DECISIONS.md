@@ -298,6 +298,7 @@ decision plus what proved it — length is whatever the evidence takes.
 - [D-286 — 2026-09-04 — The counterparty thread: a mail firing carries its attachments and the conversation so far, a reply may carry files, and Brian holds every thread](#d-286--2026-09-04--the-counterparty-thread-a-mail-firing-carries-its-attachments-and-the-conversation-so-far-a-reply-may-carry-files-and-brian-holds-every-thread)
 - [D-287 — 2026-09-04 — Intake: a sentence becomes a job through one reading, shown at the desk and performed by every way in](#d-287--2026-09-04--intake-a-sentence-becomes-a-job-through-one-reading-shown-at-the-desk-and-performed-by-every-way-in)
 - [D-288 — 2026-09-16 — The app can be imported: `app.ts` builds the routes and writes nothing, `boot()` owns `.env`, the listen policy, the install, the port and the sweeps](#d-288--2026-09-16--the-app-can-be-imported-appts-builds-the-routes-and-writes-nothing-boot-owns-env-the-listen-policy-the-install-the-port-and-the-sweeps)
+- [D-289 — 2026-11-02 — The doors answer only the runner: `/internal/*` stays exempt from the cookie but not from a caller check, the socket's loopback address or this boot's runner secret](#d-289--2026-11-02--the-doors-answer-only-the-runner-internal-stays-exempt-from-the-cookie-but-not-from-a-caller-check-the-sockets-loopback-address-or-this-boots-runner-secret)
 
 ## By theme
 
@@ -25143,3 +25144,36 @@ in `RolesModal.tsx` and `KnowledgeModal.tsx`; `isRecord` is one export in
 `packages/shared` rather than the same line in `reconciliation.ts` and
 `nomina.ts`. Not touched, per the review's own list: `WorkBar.tsx`, the
 data layer, `Schedule.tools`, the `three` path resolve, the ledger rename.
+
+## D-289 — 2026-11-02 — The doors answer only the runner: `/internal/*` stays exempt from the cookie but not from a caller check, the socket's loopback address or this boot's runner secret
+
+From the 2026-11-01 read-only review (finding 1, High). On a hosted install
+(D-271's public bind, D-273's `Dockerfile` binding `0.0.0.0`) the
+`/internal/*` doors answered anyone: `isExempt` waived the cookie for the
+prefix and a request with no `Origin` passed the origin check. With a
+password set and a public bind, `/api/levels` returned 401 while
+`/internal/github`, `/internal/mail` and `/internal/render` reached their
+handlers. D-241's premise, that the network boundary protects these doors,
+does not hold off loopback; D-290 records the reopening.
+
+**Decided.** `/internal/*` stays exempt from the session cookie, because the
+runner has none, but every request to it now passes a caller check before
+the gate (`internalCallerAllowed`, `server/src/session.ts`). A caller is let
+through when the socket's own peer address is loopback, read from the
+connection and never from a hostname or header, or when it presents this
+boot's runner secret in `x-agentlings-runner`. Anything else gets 401 with
+`internalRefusal`. The secret is random, minted per boot, never written down,
+and reaches each spawned runner only over stdin under
+`AGENTLINGS_RUNNER_SECRET`, D-242's channel. The runner takes it out before
+any placeholder is filled (`takeRunnerSecret`,
+`server/src/executors/runner-secrets.mjs`), so a server config naming
+`${AGENTLINGS_RUNNER_SECRET}` is handed nothing.
+
+**Proof.** `internal.test.ts`, `session.test.ts` and
+`executors/runner-secrets.test.ts` run through `app.request()` with a
+password set and a public bind. An anonymous `/internal/*` request returns
+401; a loopback peer or the right secret passes; a wrong or absent secret is
+refused. CI on #61.
+
+**Not decided here.** The `fetchPage` private-address block and the
+per-client login lockout (review findings 2 and 3); see D-290.

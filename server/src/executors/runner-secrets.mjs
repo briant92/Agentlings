@@ -28,6 +28,31 @@ export async function readSecrets(stdin) {
   }
 }
 
+// The server's per-boot runner secret (D-289) rides the same stdin object
+// under this key, and goes back on every `/internal/*` call in this header.
+// Copies of `RUNNER_SECRET_KEY` and `RUNNER_HEADER` in `session.ts`, which
+// this file cannot import; `session.test.ts` pins the two equal.
+export const RUNNER_SECRET_KEY = 'AGENTLINGS_RUNNER_SECRET';
+export const RUNNER_HEADER = 'x-agentlings-runner';
+
+/**
+ * Splits the runner secret off what stdin carried, before any placeholder is
+ * filled — so a server whose config names `${AGENTLINGS_RUNNER_SECRET}` is
+ * handed nothing, the same as a secret that was never sent.
+ */
+export function takeRunnerSecret(read) {
+  const { [RUNNER_SECRET_KEY]: secret, ...secrets } = read ?? {};
+  return { runnerSecret: typeof secret === 'string' && secret ? secret : undefined, secrets };
+}
+
+/** The headers of one call to a server door. */
+export function doorHeaders(runnerSecret) {
+  return {
+    'content-type': 'application/json',
+    ...(runnerSecret ? { [RUNNER_HEADER]: runnerSecret } : {}),
+  };
+}
+
 /**
  * Fills every `${NAME}` inside one bag of key→value, dropping any entry it
  * cannot fully resolve.

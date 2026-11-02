@@ -56,10 +56,14 @@ import {
   clearedCookie,
   gateEnabled,
   gateRefusal,
+  internalCallerAllowed,
+  internalRefusal,
+  isInternalPath,
   listenPolicy,
   listenPort,
   newLoginGate,
   requestAllowed,
+  RUNNER_HEADER,
   requestIsSecure,
   sessionCookie,
 } from './session';
@@ -862,7 +866,18 @@ app.use('*', async (c, next) => {
  * password, which is what makes this commit safe to land on a running server.
  */
 app.use('*', async (c, next) => {
-  if (requestAllowed(new URL(c.req.url).pathname, c.req.header('cookie'), Date.now())) {
+  const pathname = new URL(c.req.url).pathname;
+  // The runner's doors are exempt from the cookie but not from a caller check
+  // (D-289): the socket's own peer address, or this boot's runner secret.
+  // `c.env` is what `@hono/node-server` hands over; under `app.request` it is
+  // whatever the test passes, and absent it there is no address to trust.
+  if (isInternalPath(pathname)) {
+    const env = c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined;
+    if (!internalCallerAllowed(env?.incoming?.socket?.remoteAddress, c.req.header(RUNNER_HEADER))) {
+      return c.json({ error: internalRefusal }, 401);
+    }
+  }
+  if (requestAllowed(pathname, c.req.header('cookie'), Date.now())) {
     return next();
   }
   return c.json({ error: gateRefusal }, 401);
@@ -4631,8 +4646,8 @@ export function boot(): void {
 
   loadInstall();
 
-  // The bind is the whole boundary: the /internal doors carry no auth, and
-  // with no hostname this listened on 0.0.0.0 — every route reachable from
+  // The bind was the whole boundary: the /internal doors carried no auth
+  // until D-289 gave them a caller check, and with no hostname this listened on 0.0.0.0 — every route reachable from
   // the LAN (found by the first architect run, measured by netstat; D-127).
   // Since #28 the address is `LISTEN`'s, decided above, and the one
   // arrangement that would spend D-127's reason — a public interface with the

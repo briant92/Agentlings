@@ -246,7 +246,12 @@ Two paths, one implementation:
 - An in-session `fetch_page` tool calls back into the server, so extraction,
   trimming and the allowlist have one implementation.
 
-Non-HTTP is refused. 15-second timeout, 5 MB cap.
+Non-HTTP is refused. So is anything inside this machine or its network,
+whatever the allowlist says: loopback, private, link-local (the cloud metadata
+address with it), `0.0.0.0` and `::`, in IPv4 and IPv6 and IPv4-mapped IPv6
+forms. The check runs on every address a host resolves to, and again on every
+redirect hop, which the fetch follows itself (at most five). 15-second
+timeout, 5 MB cap.
 
 **This reads a page you name. Finding one is the `search` connection**, added
 after the gap was measured rather than guessed at: two real jobs asked the same

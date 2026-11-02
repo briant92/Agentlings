@@ -1,9 +1,8 @@
-import { createServer, type Server } from 'node:http';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Agentling, type Job } from '@agentlings/shared';
 import { listenPort } from '../session';
 import type { Connection } from '../connections';
@@ -1043,27 +1042,33 @@ describe('RoutedExecutor', () => {
   });
 
   describe('pages it can fetch itself', () => {
-    let server: Server;
-    let origin: string;
+    // A documentation address (TEST-NET-3) with fetch stubbed: the web door
+    // refuses loopback whatever the allowlist says, so a local server is out.
+    const origin = 'http://203.0.113.7';
+    const realFetch = globalThis.fetch;
 
-    beforeAll(async () => {
-      server = createServer((req, res) => {
-        res.writeHead(200, { 'content-type': 'text/html' });
-        res.end(`<html><head><title>Page ${req.url?.slice(1)}</title></head><body><p>the body of ${req.url?.slice(1)}</p></body></html>`);
+    beforeEach(() => {
+      vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+        const url = new URL(input instanceof Request ? input.url : input);
+        if (url.origin !== origin) return realFetch(input, init);
+        const name = url.pathname.slice(1);
+        return new Response(
+          `<html><head><title>Page ${name}</title></head><body><p>the body of ${name}</p></body></html>`,
+          { status: 200, headers: { 'content-type': 'text/html' } },
+        );
       });
-      await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-      const address = server.address();
-      origin = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`;
     });
 
-    afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
 
     const fetchJob = (prompt: string) => job({ prompt, tools: ['web'] });
 
     it('reads the page into RESULT.md with no session', async () => {
       const session = new FakeSession();
       const out = await run(
-        build(session, { web: { allow: ['127.0.0.1'] } }),
+        build(session, { web: { allow: ['203.0.113.7'] } }),
         fetchJob(`read ${origin}/one`),
       );
 
@@ -1077,7 +1082,7 @@ describe('RoutedExecutor', () => {
 
     it('reads several, saying which one it is on', async () => {
       const out = await run(
-        build(new FakeSession(), { web: { allow: ['127.0.0.1'] } }),
+        build(new FakeSession(), { web: { allow: ['203.0.113.7'] } }),
         fetchJob(`read ${origin}/one and ${origin}/two`),
       );
 
@@ -1101,7 +1106,7 @@ describe('RoutedExecutor', () => {
     it('leaves the page to a session when the job asks for thought as well', async () => {
       const session = new FakeSession();
       await run(
-        build(session, { web: { allow: ['127.0.0.1'] } }),
+        build(session, { web: { allow: ['203.0.113.7'] } }),
         fetchJob(`read ${origin}/one and tell me what it says`),
       );
       expect(session.runs).toHaveLength(1);
@@ -1109,7 +1114,7 @@ describe('RoutedExecutor', () => {
 
     it('will not go outside for a job that never opted in', async () => {
       const session = new FakeSession();
-      await run(build(session, { web: { allow: ['127.0.0.1'] } }), job({ prompt: `read ${origin}/one` }));
+      await run(build(session, { web: { allow: ['203.0.113.7'] } }), job({ prompt: `read ${origin}/one` }));
       expect(session.runs).toHaveLength(1);
     });
   });

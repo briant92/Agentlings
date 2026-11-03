@@ -3806,70 +3806,57 @@ app.post('/internal/fetch', async (c) => {
 });
 
 /**
+ * One tool-shaped door for a running session, named for its connection. The
+ * catalog's own list is the grant. A tool this connection does not declare is
+ * refused here as well as by the allowlist, so the two cannot drift into
+ * disagreeing about what was granted. Every door registered here is under
+ * `/internal/`, so the caller check above (D-289) gates them all alike.
+ */
+function toolDoor(
+  name: string,
+  label: string,
+  call: (tool: string, args: Record<string, unknown>) => Promise<{ text?: unknown; error?: unknown }>,
+): void {
+  app.post(`/internal/${name}`, async (c) => {
+    const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
+    if (!body.tool) return c.json({ error: 'tool is required' }, 400);
+    const connection = allConnections().find((conn) => conn.name === name);
+    if (!connection) return c.json({ error: `${label} is not configured` }, 404);
+    if (!(connection.tools ?? []).includes(body.tool)) {
+      return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
+    }
+    const result = await call(body.tool, body.args ?? {});
+    logDoor(SANDBOX_ROOT, name, body.tool, body.args ?? {}, result);
+    return c.json(result);
+  });
+}
+
+/**
  * Code-host reads for a running session, for the same reason as /internal/fetch:
  * the server owns the call so it owns the size of the answer, and the token
  * never leaves this process. Localhost, like the rest of the API.
  */
-app.post('/internal/github', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'github');
-  if (!connection) return c.json({ error: 'the code host connection is not configured' }, 404);
-  // The catalog's own list is the grant. A tool this connection does not
-  // declare is refused here as well as by the allowlist, so the two cannot
-  // drift into disagreeing about what was granted.
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callGithub(body.tool, body.args ?? {}, {
-    http,
-    token: process.env.GITHUB_TOKEN,
-  });
-  logDoor(SANDBOX_ROOT, 'github', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('github', 'the code host connection', (tool, args) =>
+  callGithub(tool, args, { http, token: process.env.GITHUB_TOKEN }),
+);
 
 /**
  * Web search for a running session, gated exactly as `/internal/github` is:
  * the server owns the call so it owns the size of the answer, and the key
  * never leaves this process.
  */
-app.post('/internal/search', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'search');
-  if (!connection) return c.json({ error: 'the search connection is not configured' }, 404);
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callSearch(body.tool, body.args ?? {}, {
-    http,
-    token: process.env.BRAVE_API_KEY,
-  });
-  logDoor(SANDBOX_ROOT, 'search', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('search', 'the search connection', (tool, args) =>
+  callSearch(tool, args, { http, token: process.env.BRAVE_API_KEY }),
+);
 
 /**
  * US labour statistics, gated exactly as `/internal/github` and
  * `/internal/search` are. Its own door rather than the web one because the
  * registration key rides in a POST body and `fetchPage` is GET (D-187).
  */
-app.post('/internal/bls', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'bls');
-  if (!connection) return c.json({ error: 'the BLS connection is not configured' }, 404);
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callBls(body.tool, body.args ?? {}, {
-    http,
-    token: process.env.BLS_REGISTRATION_KEY,
-  });
-  logDoor(SANDBOX_ROOT, 'bls', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('bls', 'the BLS connection', (tool, args) =>
+  callBls(tool, args, { http, token: process.env.BLS_REGISTRATION_KEY }),
+);
 
 /**
  * Calendar reads for a running session, gated exactly as the doors above. The
@@ -3878,18 +3865,9 @@ app.post('/internal/bls', async (c) => {
  * from DOORS: a compiled tool can never be granted this one, which is D-158's
  * uncompilable-by-construction — desk work is live-data judgement.
  */
-app.post('/internal/calendar', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'calendar');
-  if (!connection) return c.json({ error: 'the calendar connection is not configured' }, 404);
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callCalendar(body.tool, body.args ?? {}, { http, env: process.env });
-  logDoor(SANDBOX_ROOT, 'calendar', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('calendar', 'the calendar connection', (tool, args) =>
+  callCalendar(tool, args, { http, env: process.env }),
+);
 
 /**
  * Mail reads for a running session — D-158's second reader, gated exactly as
@@ -3897,31 +3875,9 @@ app.post('/internal/calendar', async (c) => {
  * kept, and the connection is deliberately absent from DOORS so a method that
  * read the mailbox can never compile into a $0 tool.
  */
-app.post('/internal/mail', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'mail');
-  if (!connection) return c.json({ error: 'the mail connection is not configured' }, 404);
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callMail(body.tool, body.args ?? {}, { http, env: process.env });
-  logDoor(SANDBOX_ROOT, 'mail', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('mail', 'the mail connection', (tool, args) => callMail(tool, args, { http, env: process.env }));
 
-app.post('/internal/render', async (c) => {
-  const body = await c.req.json<{ tool?: string; args?: Record<string, unknown> }>();
-  if (!body.tool) return c.json({ error: 'tool is required' }, 400);
-  const connection = allConnections().find((conn) => conn.name === 'render');
-  if (!connection) return c.json({ error: 'the render connection is not configured' }, 404);
-  if (!(connection.tools ?? []).includes(body.tool)) {
-    return c.json({ error: `${body.tool} is not granted on this connection` }, 403);
-  }
-  const result = await callRender(body.tool, body.args ?? {});
-  logDoor(SANDBOX_ROOT, 'render', body.tool, body.args ?? {}, result);
-  return c.json(result);
-});
+toolDoor('render', 'the render connection', (tool, args) => callRender(tool, args));
 
 app.get('/api/roles', (c) => c.json(registry.list()));
 
